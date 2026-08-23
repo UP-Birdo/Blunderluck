@@ -58,12 +58,17 @@ const APP = {
                 ANMELDUNG.datenAktualisiert(daten);
                 RANGLISTE.zeichnen();
 
-                /* Auch der Schach-Bereich zeigt Spieler-Daten: Namen und —
-                   seit v0.11.0 — die Freunde-Karte auf dem
-                   Zwischenbildschirm. Eine fremde Anfrage soll erscheinen,
-                   ohne dass erst ein Zug passiert. */
+                /* Auch der Schach-Bereich zeigt Spieler-Daten: die Namen
+                   an den Teams und in der Rangliste. Eine fremde Anfrage
+                   soll ankommen, ohne dass erst ein Zug passiert. */
                 if (TEAM_SCHACH.abgleich) {
                     TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
+                }
+
+                /* Die Freundesliste hängt seit v0.19.0 (Wunsch 6) am
+                   Startbildschirm — steht sie offen, zieht sie mit. */
+                if (START.freundeOffen) {
+                    START._zeichnen();
                 }
             },
             beiStatus: (status, text) => APP.statusZeigen(status, text),

@@ -62,6 +62,14 @@ const START = {
             return;
         }
 
+        /* Die Freundesliste ist seit v0.19.0 (Wunsch 6) eine eigene Seite
+           INNERHALB des Starts — kein eigener Tab, sondern ein Fenster mit
+           Zurück-Knopf, wie die Einstellungen. */
+        if (START.freundeOffen) {
+            START._freundeZeichnen(wurzel);
+            return;
+        }
+
         /* Der Start ist nie ein Fenster — die Tab-Leiste gehört dazu. Wer
            aus einem Fenster (Einstellungen, Partie) hierher zurückkommt,
            bekommt sie so wieder. */
@@ -72,9 +80,23 @@ const START = {
         const seite = document.createElement("div");
         seite.className = "start";
 
-        /* Das Zahnrad oben rechts (F8) — der Weg in die Einstellungen. */
+        /*
+         * Oben rechts: die Freunde und das Zahnrad (F8; die Freunde seit
+         * v0.19.0, Wunsch 6 — „Freunde-Icon neben dem Zahnrad"). Die
+         * Reihenfolge ist Absicht: Das Zahnrad bleibt ganz aussen, wo es
+         * seit v0.9.0 sitzt.
+         */
         const kopf = document.createElement("div");
         kopf.className = "start-kopf";
+
+        const freunde = document.createElement("button");
+        freunde.type = "button";
+        freunde.className = "start-zahnrad start-freunde";
+        freunde.setAttribute("aria-label", "Freunde");
+        freunde.title = "Freunde";
+        freunde.appendChild(START._freundeZeichenBauen());
+        freunde.addEventListener("click", () => START.freundeOeffnen());
+        kopf.appendChild(freunde);
 
         const zahnrad = document.createElement("button");
         zahnrad.type = "button";
@@ -142,6 +164,55 @@ const START = {
     /* ---------------------------------------------------------------- *
      * Bedienung
      * ---------------------------------------------------------------- */
+
+    /* ---------------------------------------------------------------- *
+     * Die Freundesliste als Seite (Wunsch 6, 24.08.2026)
+     *
+     * Bis v0.18.0 hing die Karte „Freunde" auf dem Zwischenbildschirm
+     * „Spielen" — dort, wo man vor Bündel A seine Mitspieler suchte. Seit
+     * „Spielen" die Runde selbst anlegt (Wunsch 1), kommt man dort kaum
+     * noch vorbei. Sie hängt deshalb jetzt am eigenen Zeichen oben rechts.
+     *
+     * Ein Fenster, kein Tab: Die Leiste geht weg, oben links steht der eine
+     * Zurück-Knopf (Haus-Muster seit v0.110). Gezeichnet wird die KARTE aus
+     * freunde.js — dieselbe wie vorher, nur an einem anderen Ort.
+     * ---------------------------------------------------------------- */
+
+    freundeOffen: false,
+
+    _freundeZeichnen(wurzel) {
+        TABS.rundeSetzen("start", true);
+        wurzel.innerHTML = "";
+
+        const kopfzeile = document.createElement("div");
+        kopfzeile.className = "partie-kopf";
+
+        const zurueck = document.createElement("button");
+        zurueck.type = "button";
+        zurueck.className = "knopf knopf-still knopf-klein";
+        zurueck.textContent = "Zurück";
+        zurueck.addEventListener("click", () => START.freundeSchliessen());
+        kopfzeile.appendChild(zurueck);
+
+        const titel = document.createElement("h2");
+        titel.className = "partie-titel";
+        titel.textContent = "Freunde";
+        kopfzeile.appendChild(titel);
+        wurzel.appendChild(kopfzeile);
+
+        wurzel.appendChild(FREUNDE.karteBauen(ICH.person()));
+    },
+
+    freundeOeffnen() {
+        START.freundeOffen = true;
+        START._zeichnen();
+    },
+
+    freundeSchliessen() {
+        START.freundeOffen = false;
+        FREUNDE.suchtext = "";
+        START._zeichnen();
+    },
 
     /*
      * „Spielen" LEGT DIE RUNDE AN (Wunsch 1, 24.08.2026) — mit der
@@ -325,6 +396,57 @@ const START = {
             linie.setAttribute("stroke-linecap", "round");
             svg.appendChild(linie);
         }
+
+        return svg;
+    },
+
+    /*
+     * Das Freunde-Zeichen: zwei Personen — je ein Kopf über einer Schulter,
+     * die hintere kleiner und versetzt. Wie das Zahnrad gezeichnet statt
+     * als Bilddatei, und über currentColor gefärbt (kein Emoji, Haus-Regel).
+     */
+    _freundeZeichenBauen() {
+        const ns = "http://www.w3.org/2000/svg";
+        const svg = document.createElementNS(ns, "svg");
+        svg.setAttribute("viewBox", "0 0 24 24");
+        svg.setAttribute("class", "start-zeichen");
+        svg.setAttribute("aria-hidden", "true");
+
+        /* Die hintere Person, kleiner und nach rechts versetzt. */
+        const kopfHinten = document.createElementNS(ns, "circle");
+        kopfHinten.setAttribute("cx", "16.5");
+        kopfHinten.setAttribute("cy", "8.5");
+        kopfHinten.setAttribute("r", "2.6");
+        kopfHinten.setAttribute("fill", "none");
+        kopfHinten.setAttribute("stroke", "currentColor");
+        kopfHinten.setAttribute("stroke-width", "1.8");
+        svg.appendChild(kopfHinten);
+
+        const schulterHinten = document.createElementNS(ns, "path");
+        schulterHinten.setAttribute("d", "M14.6 19 C14.6 15.6 16 14.2 18 14.2 C20 14.2 21.4 15.6 21.4 19");
+        schulterHinten.setAttribute("fill", "none");
+        schulterHinten.setAttribute("stroke", "currentColor");
+        schulterHinten.setAttribute("stroke-width", "1.8");
+        schulterHinten.setAttribute("stroke-linecap", "round");
+        svg.appendChild(schulterHinten);
+
+        /* Die vordere Person — sie überdeckt die hintere. */
+        const kopf = document.createElementNS(ns, "circle");
+        kopf.setAttribute("cx", "9");
+        kopf.setAttribute("cy", "8");
+        kopf.setAttribute("r", "3.4");
+        kopf.setAttribute("fill", "none");
+        kopf.setAttribute("stroke", "currentColor");
+        kopf.setAttribute("stroke-width", "2.2");
+        svg.appendChild(kopf);
+
+        const schulter = document.createElementNS(ns, "path");
+        schulter.setAttribute("d", "M3.4 20 C3.4 15.6 5.8 13.4 9 13.4 C12.2 13.4 14.6 15.6 14.6 20");
+        schulter.setAttribute("fill", "none");
+        schulter.setAttribute("stroke", "currentColor");
+        schulter.setAttribute("stroke-width", "2.2");
+        schulter.setAttribute("stroke-linecap", "round");
+        svg.appendChild(schulter);
 
         return svg;
     },

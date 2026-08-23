@@ -4309,7 +4309,18 @@ pruefe("Der Zwischenbildschirm laesst per Code beitreten (v0.10.0)", () => {
     TEAM_SCHACH.uebersichtOeffnen();
 });
 
-pruefe("Die Freunde-Karte: suchen, anfragen, Freund entfernen (v0.11.0)", () => {
+pruefe("Die Freunde-Seite am Start: suchen, anfragen, entfernen (Wunsch 6)", () => {
+    /*
+     * DER GEMELDETE WUNSCH: „Freunde-Icon neben dem Zahnrad auf dem Start:
+     * dort die Freundesliste sehen, Freunde suchen und anhand des
+     * eingegebenen Benutzernamens einladen."
+     *
+     * Bis v0.18.0 hing dieselbe Karte auf dem Zwischenbildschirm; der Test
+     * lief deshalb gegen TEAM_SCHACH. Jetzt gegen START — der Ablauf
+     * darunter (Modell, Zusammenfuehrung) ist unveraendert.
+     */
+    const START = umgebung.START;
+
     const einsammeln = (element, passt, treffer) => {
         for (const kind of element.kinder || []) {
             if (passt(kind)) {
@@ -4319,20 +4330,33 @@ pruefe("Die Freunde-Karte: suchen, anfragen, Freund entfernen (v0.11.0)", () => 
         }
         return treffer;
     };
-    const knopfMitText = (text) => einsammeln(TEAM_SCHACH.wurzelEl, (kind) =>
+    const knopfMitText = (text) => einsammeln(START.wurzelEl, (kind) =>
         kind.tagName === "button"
         && String(kind.textContent || "") === text, [])[0] || null;
 
     const standVorher = ANMELDUNG.abgleich.daten;
 
     try {
-        TEAM_SCHACH.uebersichtOeffnen();
+        START.aufbauen(neuesElement("div"));
+
+        /* Das Zeichen steht neben dem Zahnrad und oeffnet die Seite. */
+        const zeichen = einsammeln(START.wurzelEl, (kind) =>
+            kind.tagName === "button" && kind.attribute
+            && kind.attribute["aria-label"] === "Freunde", [])[0];
+        if (!zeichen) {
+            throw new Error("kein Freunde-Zeichen auf dem Start");
+        }
+
+        zeichen.ausloesen("click");
+        if (!START.freundeOffen) {
+            throw new Error("das Zeichen oeffnet die Freundesliste nicht");
+        }
 
         /* Suchen: Der Filter laeuft ueber die Spielerliste. */
-        const feld = einsammeln(TEAM_SCHACH.wurzelEl, (kind) =>
+        const feld = einsammeln(START.wurzelEl, (kind) =>
             String(kind.className || "").indexOf("freunde-suche") !== -1, [])[0];
         if (!feld) {
-            throw new Error("kein Suchfeld in der Freunde-Karte");
+            throw new Error("kein Suchfeld auf der Freunde-Seite");
         }
 
         feld.value = "ber";
@@ -4350,11 +4374,11 @@ pruefe("Die Freunde-Karte: suchen, anfragen, Freund entfernen (v0.11.0)", () => 
             throw new Error("die Anfrage steht nicht im eigenen Eintrag");
         }
 
-        /* Bert nimmt an (Modell-Schritt seines Geraets) — die Karte zeigt
+        /* Bert nimmt an (Modell-Schritt seines Geraets) — die Seite zeigt
            ihn danach als Freund mit Entfernen-Knopf. */
         ANMELDUNG.abgleich.daten = SPIELER.freundHinzufuegen(
             ANMELDUNG.abgleich.daten, "id-bert", "id-anna", 9000);
-        TEAM_SCHACH.uebersichtOeffnen();
+        START._zeichnen();
 
         const entfernen = knopfMitText("Entfernen");
         if (!entfernen) {
@@ -4367,10 +4391,44 @@ pruefe("Die Freunde-Karte: suchen, anfragen, Freund entfernen (v0.11.0)", () => 
                 "id-anna", "id-bert") !== "keine") {
             throw new Error("Entfernen wirkt nicht");
         }
+
+        /* Zurueck fuehrt auf den Start — und der zeigt wieder Spielen. */
+        const zurueck = knopfMitText("Zurück");
+        if (!zurueck) {
+            throw new Error("kein Zurueck-Knopf auf der Freunde-Seite");
+        }
+        zurueck.ausloesen("click");
+        if (START.freundeOffen) {
+            throw new Error("Zurueck schliesst die Freundesliste nicht");
+        }
+        if (!knopfMitText("Spielen")) {
+            throw new Error("nach Zurueck steht der Start nicht wieder da");
+        }
     } finally {
         ANMELDUNG.abgleich.daten = standVorher;
         umgebung.FREUNDE.suchtext = "";
+        START.freundeOffen = false;
         TEAM_SCHACH.uebersichtOeffnen();
+    }
+});
+
+pruefe("Der Zwischenbildschirm traegt die Freunde-Karte nicht mehr (Wunsch 6)", () => {
+    TEAM_SCHACH.uebersichtOeffnen();
+
+    const einsammeln = (element, passt, treffer) => {
+        for (const kind of element.kinder || []) {
+            if (passt(kind)) {
+                treffer.push(kind);
+            }
+            einsammeln(kind, passt, treffer);
+        }
+        return treffer;
+    };
+
+    const feld = einsammeln(TEAM_SCHACH.wurzelEl, (kind) =>
+        String(kind.className || "").indexOf("freunde-suche") !== -1, []);
+    if (feld.length !== 0) {
+        throw new Error("die Freunde-Karte haengt noch am Zwischenbildschirm");
     }
 });
 

@@ -4237,9 +4237,13 @@ body.dialog-offen {
     margin: 0 auto;
 }
 
+/* Oben rechts stehen seit v0.19.0 (Wunsch 6) ZWEI Zeichen nebeneinander:
+   Freunde und Zahnrad. Ein kleiner Abstand hält sie auseinander, ohne dass
+   sie als getrennte Knöpfe auseinanderfallen. */
 .start-kopf {
     display: flex;
     justify-content: flex-end;
+    gap: 4px;
 }
 
 .start-zahnrad {

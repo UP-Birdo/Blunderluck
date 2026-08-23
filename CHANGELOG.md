@@ -3,6 +3,19 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.19.0 — 24.08.2026
+
+**Die Freunde haben jetzt ihr eigenes Zeichen auf dem Start.**
+
+- Oben rechts steht neben dem Zahnrad ein zweites Zeichen: **zwei
+  Personen**. Es öffnet die Freundesliste als eigene Seite — Anfragen an
+  dich, deine Freunde, deine offenen Anfragen und die Suche nach Namen.
+- Die Karte hing bisher auf dem Bildschirm „Spielen". Da man dorthin seit
+  v0.14.0 nur noch zum Beitreten kommt, wäre sie dort kaum noch
+  aufgefallen.
+- Am Einladen in eine laufende Runde ändert sich nichts: Das bleibt bei
+  der Liste an den Teams der Partie.
+
 ## v0.18.0 — 24.08.2026
 
 **Die Fähigkeiten-Seite ist jetzt kurz: nur noch das Raster.**

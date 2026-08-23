@@ -1096,10 +1096,10 @@ Object.assign(TEAM_SCHACH, {
          * die eigenen.
          */
 
-        /* ---- Freunde (seit v0.11.0, Schritt 6): Suchen, Anfragen,
-           Annehmen, Entfernen — die Karte baut freunde.js. Ab Schritt 7
-           wird von hier aus eingeladen. ---- */
-        wurzel.appendChild(FREUNDE.karteBauen(person));
+        /* ---- Die Freunde-Karte hing hier von v0.11.0 bis v0.18.0. Seit
+           Wunsch 6 (v0.19.0) wohnt sie am Freunde-Zeichen des
+           Startbildschirms (`START.freundeOeffnen`) — hierher kommt man
+           seit Wunsch 1 nur noch zum Beitreten. ---- */
 
         /* ---- Die eigenen offenen Partien. ---- */
         if (eigene.length > 0) {

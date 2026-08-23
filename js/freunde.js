@@ -2,10 +2,12 @@
  * freunde.js — die Freundesliste (seit v0.11.0, Bündel A Schritt 6).
  *
  * „Gross gedacht" (Nutzer-Entscheidung F13): Suchen, Anfrage stellen,
- * Annehmen, Ablehnen, Zurückziehen und Entfernen. Die Karte hängt auf dem
- * Zwischenbildschirm „Spielen" (team-schach-uebersicht.js) — dort sucht
- * man seine Mitspieler, und dort braucht Schritt 7 die Freunde fürs
- * Einladen.
+ * Annehmen, Ablehnen, Zurückziehen und Entfernen. Die Karte hing bis
+ * v0.18.0 auf dem Zwischenbildschirm „Spielen"; seit Wunsch 6 (v0.19.0)
+ * wohnt sie am Freunde-Zeichen des Startbildschirms
+ * (`START.freundeOeffnen`) — der Zwischenbildschirm ist seit Wunsch 1 nur
+ * noch der Weg ins Beitreten. Fürs Einladen in eine laufende Runde bleibt
+ * es bei der Liste an den Teams (v0.13.0).
  *
  * Die DATEN-Regeln wohnen in spieler.js (Abschnitt „Freundschaft"): Jeder
  * schreibt nur die eigene Sicht (`freunde`, `abgelehnt`), die Beziehung
@@ -175,7 +177,12 @@ const FREUNDE = {
         ANMELDUNG.abgleich.aendern(
             aenderung(ANMELDUNG.abgleich.daten, person.id), true);
 
-        /* Der Zwischenbildschirm zeigt die Karte — neu zeichnen. */
+        /* Wer die Karte gerade zeigt, zeichnet neu. Seit Wunsch 6
+           (v0.19.0) ist das der Startbildschirm; das Team Schach zeichnet
+           trotzdem mit, weil dort die Einladungen an den Teams hängen. */
+        if (typeof START !== "undefined" && START.freundeOffen) {
+            START._zeichnen();
+        }
         if (typeof TEAM_SCHACH !== "undefined" && TEAM_SCHACH.abgleich) {
             TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
         }
