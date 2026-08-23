@@ -1,0 +1,4630 @@
+/*
+ * stil.css — das gesamte Aussehen der App.
+ *
+ * Farben stehen ausschließlich als Variablen im :root, damit sie an einer
+ * Stelle änderbar bleiben. Dunkle Darstellung folgt der Systemeinstellung.
+ *
+ * Farbregel (Haus-Stil): genau EINE Hauptaktion je Bildschirm in Blau,
+ * Löschen und Zurücksetzen in Rot, alles andere zurückhaltend grau.
+ */
+
+:root {
+    /*
+     * DIE SEITE SAGT DEM BROWSER, IN WELCHEM LICHT SIE STEHT (seit v0.76).
+     *
+     * Ohne diese Zeile zeichnet der Browser alles, was IHM gehört — Bildlauf-
+     * leisten, Auswahlfelder, den Rand von Textfeldern — in seiner hellen
+     * Vorgabe, auch wenn die Seite dunkel ist. Genau so wurde es gemeldet:
+     * eine weisse Bildlaufleiste an einem dunklen Fenster.
+     */
+    color-scheme: light dark;
+
+    --flaeche: #f5f6f8;
+    --karte: #ffffff;
+    --karte-leise: #eef0f4;
+    --rahmen: #d8dbe0;
+    --schrift: #1c1f23;
+    --schrift-leise: #5c636e;
+    --haupt: #1f5fa8;
+    --haupt-schrift: #ffffff;
+    --gefahr: #b3261e;
+    --gut: #1e7d43;
+    --gut-flaeche: #e4f4ea;
+    --warnung: #8a5a00;
+    --warnung-flaeche: #fff4d6;
+    --fehler-flaeche: #fbe6e5;
+    --abstand: 16px;
+    --radius: 10px;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --flaeche: #16181c;
+        --karte: #1f2228;
+        --karte-leise: #262a31;
+        --rahmen: #363b44;
+        --schrift: #e9ebef;
+        --schrift-leise: #a3abb8;
+        --haupt: #4a8fd6;
+        --haupt-schrift: #0d1116;
+        --gefahr: #e05a52;
+        --gut: #4cb87a;
+        --gut-flaeche: #1d3327;
+        --warnung: #e0b458;
+        --warnung-flaeche: #3a3016;
+        --fehler-flaeche: #3a1e1d;
+    }
+}
+
+* {
+    box-sizing: border-box;
+}
+
+/* Der Platz des Rollbalkens bleibt reserviert (seit v0.108). Ohne das ruckte
+   am Rechner die ganze Seite zur Seite, sobald ein Dialog sie festhält und
+   der Rollbalken verschwindet (`body.dialog-offen`). */
+html {
+    scrollbar-gutter: stable;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    background: var(--flaeche);
+    color: var(--schrift);
+    font-family: "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.45;
+}
+
+/* ------------------------------------------------------------------ *
+ * Bildlaufleisten (seit v0.76)
+ *
+ * Gemeldet an der Anleitung zum Bauernschub: „die Bildlaufleiste ist noch
+ * nicht eingefärbt wie alles andere." Sie gehört dem Browser, nicht der Seite
+ * — sie folgt also nur, wenn man es ihm sagt. Zwei Wege sind nötig, weil sie
+ * sich die Browser teilen:
+ *
+ *   `scrollbar-color`      der Standard (Firefox, Chromium ab 121)
+ *   `::-webkit-scrollbar`  der ältere Weg (Edge, Chrome, Safari)
+ *
+ * Beide bekommen dieselben Variablen wie der Rest der Seite. Gilt für JEDEN
+ * Bereich, der scrollt — Dialoge, Zugverlauf, Aufschlüsselung, die ganze
+ * Seite —, damit nirgends eine helle Leiste in einem dunklen Fenster steht.
+ * ------------------------------------------------------------------ */
+
+/* ------------------------------------------------------------------ *
+ * DIE EBENEN — wer liegt über wem (seit v0.94)
+ *
+ * Vorher vergab jedes Bauteil seine Nummer für sich, und drei Stellen lagen
+ * dadurch falsch herum. Gemeldet wurde die auffälligste: Im Einsetzen-Fenster
+ * lag eine Schachfigur des Anleitungsbretts ÜBER dem Knopf „Abbrechen".
+ *
+ * WARUM DAS PASSIERT, obwohl die Knopfleiste im Quelltext weiter unten steht
+ * und einen eigenen Hintergrund hat: Der Browser zeichnet erst alles ohne
+ * eigene Nummer und DANACH alles mit positiver Nummer. Die Knopfleiste hatte
+ * keine (`z-index: auto`), die Figur hat `z-index: 1` — also wurde die Figur
+ * nach der Leiste gezeichnet, quer über sie hinweg. Ein Hintergrund hilft
+ * dagegen nicht; nur eine höhere Nummer hilft.
+ *
+ * Deshalb stehen die Ebenen ab jetzt HIER an einer Stelle, mit Abstand
+ * zwischen den Stufen, damit dazwischen noch etwas passt:
+ *
+ *   1 bis 5     Marken IM Brettfeld: Figur (1), Lootbox und Mauerbalken und
+ *               Ringe (2), Pfeile der Anleitung (3), Fingerabdruck (4),
+ *               Restzeit (5). Sie gehören alle zum Feld und liegen deshalb
+ *               unten.
+ *   6           Das Wirkungs-Schauspiel über dem GANZEN Brett (die
+ *               Nudelholz-Walze, seit v0.115) — über jeder Feldmarke,
+ *               unter den klebenden Leisten.
+ *   10          Leisten, die beim Scrollen kleben: die Standleiste über dem
+ *               Brett und die Knopfleiste im Fenster. Sie müssen über JEDER
+ *               Feldmarke liegen — sonst schiebt sich die Restzeit-Zahl eines
+ *               Feldes über die Leiste.
+ *   50          Knöpfe, die frei am Bildschirmrand schweben (der Zurück-Knopf
+ *               der Bibliothek).
+ *   100         Der Dialog. Er liegt über ALLEM — auch über dem schwebenden
+ *               Knopf, der bis v0.93 mit 40 über dem Dialog lag und sich
+ *               anklicken liess, während ein Fenster offen war.
+ *
+ * Wer eine neue Ebene braucht, trägt sie hier ein, statt sich eine Zahl
+ * auszudenken.
+ * ------------------------------------------------------------------ */
+
+:root {
+    --ebene-feldmarke: 5;
+    --ebene-schauspiel: 6;
+    --ebene-leiste: 10;
+    --ebene-schwebend: 50;
+    --ebene-dialog: 100;
+}
+
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--rahmen) transparent;
+}
+
+*::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+    background: var(--rahmen);
+    border-radius: 6px;
+
+    /* Der Rand ist durchsichtig und lässt die Fläche darunter durchscheinen —
+       so wirkt der Greifer schmaler als seine Klickfläche. */
+    border: 2px solid transparent;
+    background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+    background: var(--schrift-leise);
+    background-clip: padding-box;
+}
+
+/* Wo zwei Leisten aufeinandertreffen, bleibt sonst ein helles Quadrat übrig. */
+*::-webkit-scrollbar-corner {
+    background: transparent;
+}
+
+/* ------------------------------------------------------------------ *
+ * Kopf
+ * ------------------------------------------------------------------ */
+
+.kopf {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: var(--abstand);
+    background: var(--karte);
+    border-bottom: 1px solid var(--rahmen);
+}
+
+.kopf-titel {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.kopf h1 {
+    margin: 0;
+    font-size: 1.35rem;
+}
+
+.version {
+    color: var(--schrift-leise);
+    font-size: 0.85rem;
+}
+
+.kopf-rechts {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: var(--schrift-leise);
+}
+
+.status-punkt {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--schrift-leise);
+    flex: none;
+}
+
+.status[data-status="bereit"] .status-punkt {
+    background: var(--gut);
+}
+
+.status[data-status="schreibt"] .status-punkt,
+.status[data-status="laedt"] .status-punkt {
+    background: var(--warnung);
+}
+
+.status[data-status="fehler"] .status-punkt {
+    background: var(--gefahr);
+}
+
+.hinweis {
+    margin: 0;
+    padding: 12px var(--abstand);
+    background: var(--warnung-flaeche);
+    color: var(--warnung);
+    border-bottom: 1px solid var(--rahmen);
+    font-size: 0.9rem;
+}
+
+/* ------------------------------------------------------------------ *
+ * Tabs
+ * ------------------------------------------------------------------ */
+
+.tab-leiste {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 0 var(--abstand);
+    background: var(--karte);
+    border-bottom: 1px solid var(--rahmen);
+
+    /* Bezugspunkt für den gleitenden Strich (`tab-marker`). */
+    position: relative;
+}
+
+.tab-knopf {
+    appearance: none;
+    border: none;
+    background: none;
+    padding: 12px 16px;
+    font: inherit;
+    color: var(--schrift-leise);
+    cursor: pointer;
+    border-radius: 999px;
+
+    /* Der Text liegt ÜBER der Pille (`.tab-marker`), die als Geschwister-
+       Element hinter ihm gleitet. */
+    position: relative;
+    z-index: 1;
+}
+
+.tab-knopf:hover {
+    color: var(--schrift);
+}
+
+/*
+ * Die Markierung des aktiven Tabs ist seit v0.107 ein EIGENES Element
+ * (`tabs.js` setzt Lage und Grösse) und gleitet beim Wechsel dorthin. Seit
+ * v0.111 ist sie eine PILLE hinter dem Knopf statt eines Strichs darunter —
+ * dasselbe Muster wie die Segment-Reihen beim Anlegen (`.reihen-pille`),
+ * nach dem Vorbild der Komponenten-Galerien.
+ */
+.tab-marker {
+    position: absolute;
+    background: var(--haupt);
+    border-radius: 999px;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.tab-knopf-aktiv {
+    color: var(--haupt-schrift);
+    font-weight: 600;
+}
+
+.tab-inhalt {
+    padding: var(--abstand);
+    max-width: 820px;
+    margin: 0 auto;
+}
+
+/*
+ * EINE OFFENE RUNDE IST EIN EIGENES FENSTER (seit v0.113, Nutzer-Ansage
+ * 22.08.): Solange eine Partie oder ein Imposter-Raum offen ist, gibt es
+ * keine Tab-Leiste — man ist IM Spiel und verlässt es über dessen
+ * Zurück-Knopf. Die Klasse setzt `TABS.rundeSetzen`.
+ */
+body.runde-offen .tab-leiste {
+    display: none;
+}
+
+/* ------------------------------------------------------------------ *
+ * Phasenleiste
+ * ------------------------------------------------------------------ */
+
+.phasen-leiste {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: var(--abstand);
+}
+
+/*
+ * Die Standleiste EINER Partie klebt oben fest (seit v3.3).
+ *
+ * Warum: Auf dem Handy füllt das Brett den Schirm. Wer daran spielt, hat
+ * „Weiss ist am Zug" längst nach oben weggescrollt — und genau das ist die
+ * Frage, die man am häufigsten hat. Jetzt bleibt sie stehen.
+ *
+ * Der Hintergrund ist Pflicht: Ohne ihn schöbe sich das Brett sichtbar unter
+ * der Schrift durch. Der negative Rand plus das gleiche Polster ziehen die
+ * Fläche über die Ränder von `.tab-inhalt` hinaus, damit auch seitlich nichts
+ * vorbeiläuft.
+ */
+.stand-leiste {
+    position: sticky;
+    top: 0;
+    z-index: var(--ebene-leiste);
+    margin-left: calc(-1 * var(--abstand));
+    margin-right: calc(-1 * var(--abstand));
+    padding: 10px var(--abstand);
+    background: var(--flaeche);
+    border-bottom: 1px solid var(--rahmen);
+}
+
+.phasen-text {
+    color: var(--schrift-leise);
+    font-size: 0.9rem;
+}
+
+/* ------------------------------------------------------------------ *
+ * Karten
+ * ------------------------------------------------------------------ */
+
+.karte {
+    background: var(--karte);
+    border: 1px solid var(--rahmen);
+    border-radius: var(--radius);
+    padding: var(--abstand);
+    margin-bottom: 12px;
+}
+
+.karte-ich {
+    border-color: var(--haupt);
+    border-width: 2px;
+}
+
+.karte-ergebnis {
+    background: var(--karte-leise);
+}
+
+/* Wer aufgedeckt hat, ist optisch abgeschlossen. */
+.karte-aufgedeckt {
+    border-left: 4px solid var(--gut);
+}
+
+.karte-kopf {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.karte-kopf h2,
+.karte-kopf h3 {
+    margin: 0;
+    font-size: 1.05rem;
+    flex: 1 1 auto;
+}
+
+.karte-fuss {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.bereich {
+    margin-top: 24px;
+}
+
+.bereich-titel {
+    font-size: 1.1rem;
+    margin: 0 0 8px 0;
+}
+
+.erklaerung {
+    margin: 0 0 12px 0;
+    color: var(--schrift-leise);
+    font-size: 0.92rem;
+}
+
+/* ------------------------------------------------------------------ *
+ * Marken (Chips) und Meldungen
+ * ------------------------------------------------------------------ */
+
+.chip {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    border: 1px solid var(--rahmen);
+    color: var(--schrift-leise);
+    background: var(--karte-leise);
+    white-space: nowrap;
+}
+
+.chip-fertig {
+    color: var(--gut);
+    border-color: var(--gut);
+    background: var(--gut-flaeche);
+}
+
+.chip-laeuft {
+    color: var(--haupt);
+    border-color: var(--haupt);
+    background: transparent;
+}
+
+.chip-fehler {
+    color: var(--gefahr);
+    border-color: var(--gefahr);
+    background: var(--fehler-flaeche);
+}
+
+.chip-verwaltung {
+    color: var(--warnung);
+    border-color: var(--warnung);
+    background: var(--warnung-flaeche);
+}
+
+.meldung {
+    margin: 10px 0 0 0;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 0.88rem;
+}
+
+.meldung-gut {
+    background: var(--gut-flaeche);
+    color: var(--gut);
+}
+
+.meldung-warnung {
+    background: var(--warnung-flaeche);
+    color: var(--warnung);
+}
+
+.meldung-fehler {
+    background: var(--fehler-flaeche);
+    color: var(--gefahr);
+}
+
+/*
+ * Der Streifen nach einem Unglückswürfel (seit v0.59, Wunsch #13).
+ *
+ * Er steht zwischen Stand-Leiste und Brett und ist damit das Erste, was man
+ * liest, wenn sich am Brett etwas verändert hat, das man nicht selbst
+ * angestossen hat. Aufbau wie eine Zeile im Zugverlauf: erst die Seite, die es
+ * erwischt hat, dann der Satz aus dem Modell.
+ */
+/*
+ * Die Auswahl der Brettform (seit v0.63, Wunsch #22). Drei Knöpfe nebeneinander
+ * über den Kacheln; der gewählte trägt die Hauptfarbe. Auf schmalen Geräten
+ * brechen sie um, statt sich zu quetschen.
+ */
+/* Aussehen der Form-Reihe: seit v0.110 beim Segment-Block der übrigen
+   Reihen (Suchwort `Segment-Schalter`). Hier nur ihr Abstand. */
+.form-leiste {
+    margin-bottom: 8px;
+}
+
+/*
+ * Die Rückschau (seit v0.61) — bewusst neutral: Ob es ein Sieg war, sagt das
+ * NÄCHSTE Bild. Hier geht es um den Hergang, und eine grüne oder rote Fläche
+ * würde die Antwort vorwegnehmen.
+ */
+.abschluss-rueckschau {
+    background: var(--karte);
+}
+
+/*
+ * Zwei Spalten (seit v0.64): links die Schlussstellung, rechts der Text.
+ * `align-items: flex-start` hält das Brett oben, statt es über die ganze
+ * Texthöhe zu strecken.
+ */
+.rueckschau-spalten {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: var(--abstand);
+    width: 100%;
+    max-width: 900px;
+    text-align: left;
+}
+
+.rueckschau-brett {
+    flex: 0 1 320px;
+    min-width: 220px;
+}
+
+.rueckschau-marke {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 0.85rem;
+    color: var(--schrift-leise);
+}
+
+.rueckschau-text {
+    flex: 1 1 320px;
+    min-width: 240px;
+}
+
+.rueckschau-liste {
+    margin-top: var(--abstand);
+    width: 100%;
+    text-align: left;
+}
+
+/* Ein Unglückswürfel hebt sich ab: Er ist niemandem zuzuschreiben. */
+.rueckschau-unglueck .zug-text {
+    color: var(--gefahr);
+}
+
+.unglueck-meldung {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    border: 1px solid var(--gefahr);
+    font-size: 0.92rem;
+}
+
+.unglueck-text {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+/* Der schwebende Zurück-Knopf (v0.59 bis v0.109) ist raus — Nutzer-Ansage
+   22.08.: EIN Zurück-Knopf, in der ganzen App gleich zu finden. In den
+   langen Ansichten klebt stattdessen die Kopfzeile (`partie-kopf-klebt`). */
+
+/* ------------------------------------------------------------------ *
+ * Würfel: Eingabe und Anzeige
+ * ------------------------------------------------------------------ */
+
+.wuerfel-reihe {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.wuerfel-feld-halter {
+    flex: 1 1 90px;
+    min-width: 90px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+/* Steht über jeder Eingabereihe: die Felder tragen bewusst keine Nummern. */
+.reihenfolge-hinweis {
+    margin: 0 0 8px 0;
+    font-size: 0.82rem;
+    color: var(--schrift-leise);
+}
+
+.wuerfel-feld {
+    width: 100%;
+    padding: 10px;
+    font: inherit;
+    color: var(--schrift);
+    background: var(--karte);
+    border: 1px solid var(--rahmen);
+    border-radius: 6px;
+}
+
+.wuerfel-anzeige {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.wuerfel-marke {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 42px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--rahmen);
+    background: var(--karte-leise);
+    font-weight: 600;
+}
+
+.wuerfel-marke-stern {
+    border-color: var(--haupt);
+    color: var(--haupt);
+}
+
+.wuerfel-marke-leer {
+    color: var(--schrift-leise);
+    font-weight: 400;
+}
+
+/* Platzhalter, solange die eigenen Zahlen verdeckt sind. */
+.wuerfel-marke-verdeckt {
+    color: var(--schrift-leise);
+    background: repeating-linear-gradient(
+        45deg,
+        var(--karte-leise),
+        var(--karte-leise) 5px,
+        var(--flaeche) 5px,
+        var(--flaeche) 10px
+    );
+    min-width: 52px;
+    font-size: 1.1rem;
+}
+
+.verdeckt-hinweis {
+    margin: 8px 0 0 0;
+}
+
+/* ------------------------------------------------------------------ *
+ * Augen-Knopf (eigene Würfel verstecken)
+ * ------------------------------------------------------------------ */
+
+.auge-knopf {
+    appearance: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    flex: none;
+    border-radius: 8px;
+    border: 1px solid var(--rahmen);
+    background: var(--karte-leise);
+    color: var(--schrift-leise);
+    cursor: pointer;
+}
+
+.auge-knopf:hover {
+    color: var(--schrift);
+}
+
+/* Offenes Auge heißt: die Zahlen sind gerade sichtbar. */
+.auge-knopf-offen {
+    color: var(--haupt);
+    border-color: var(--haupt);
+    background: transparent;
+}
+
+.auge-knopf:focus-visible {
+    outline: 2px solid var(--haupt);
+    outline-offset: 1px;
+}
+
+.wuerfel-echt .wuerfel-marke {
+    font-size: 1.1rem;
+    min-width: 52px;
+    border-color: var(--haupt);
+}
+
+.wuerfel-tipp .wuerfel-marke {
+    font-size: 0.85rem;
+    min-width: 34px;
+    padding: 3px 8px;
+}
+
+/* ------------------------------------------------------------------ *
+ * Tipp-Liste in der Auflösung
+ * ------------------------------------------------------------------ */
+
+.tipp-liste {
+    margin-top: 14px;
+    border-top: 1px solid var(--rahmen);
+    padding-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.tipp-zeile {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+}
+
+.tipp-name {
+    min-width: 110px;
+    color: var(--schrift-leise);
+    font-size: 0.9rem;
+}
+
+.treffer {
+    margin-left: auto;
+    font-size: 0.85rem;
+    color: var(--schrift-leise);
+    white-space: nowrap;
+}
+
+.treffer-gut {
+    color: var(--gut);
+    font-weight: 600;
+}
+
+/* ------------------------------------------------------------------ *
+ * Ergebnistabelle
+ * ------------------------------------------------------------------ */
+
+.ergebnis-tabelle {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 8px;
+}
+
+.ergebnis-tabelle th,
+.ergebnis-tabelle td {
+    padding: 8px 10px;
+    text-align: left;
+    border-bottom: 1px solid var(--rahmen);
+}
+
+.ergebnis-tabelle th {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--schrift-leise);
+}
+
+.ergebnis-tabelle tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.zeile-ich {
+    font-weight: 600;
+    color: var(--haupt);
+}
+
+/* Zweite Zeile in der Namensspalte: woraus die Punkte entstanden sind. */
+.ergebnis-detail {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 400;
+    color: var(--schrift-leise);
+}
+
+.ergebnis-punkte {
+    text-align: right;
+    white-space: nowrap;
+}
+
+.punkte-zahl {
+    font-size: 1.15rem;
+    font-weight: 700;
+}
+
+.punkte-von {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 400;
+    color: var(--schrift-leise);
+}
+
+/* ------------------------------------------------------------------ *
+ * Spielerprofil (seit v3.3)
+ *
+ * Der Name in der Wertung ist ein Knopf, der ins Profil führt. Er sieht
+ * aus wie Text und verhält sich wie ein Knopf: Tippfläche über die
+ * ganze Zelle, damit man auf dem Handy nicht zielen muss.
+ * ------------------------------------------------------------------ */
+
+.name-knopf {
+    display: block;
+    width: 100%;
+    padding: 6px 0;
+    border: none;
+    background: none;
+    font: inherit;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+    min-height: 46px;
+}
+
+.name-knopf:hover .name-text,
+.name-knopf:focus-visible .name-text {
+    text-decoration: underline;
+}
+
+.name-text {
+    display: block;
+    font-weight: 600;
+}
+
+/* Die drei Summen nebeneinander, oben im Profil. */
+.profil-summen {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.profil-summe {
+    flex: 1;
+    padding: 10px 6px;
+    border: 1px solid var(--rahmen);
+    border-radius: 10px;
+    text-align: center;
+}
+
+.profil-summe-zahl {
+    display: block;
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.profil-summe-titel {
+    display: block;
+    margin-top: 2px;
+    font-size: 0.72rem;
+    color: var(--schrift-leise);
+}
+
+/* Eine Partie oder Runde im Verlauf. */
+.profil-zeile {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--rahmen);
+}
+
+.profil-zeile:last-of-type {
+    border-bottom: none;
+}
+
+.profil-zeile-kopf {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+}
+
+.profil-titel {
+    font-weight: 600;
+}
+
+/* Die Punktzahl rechts — auch dann, wenn die Chips davor umbrechen. */
+.profil-punkte {
+    margin-left: auto;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.profil-angaben,
+.profil-gegner {
+    display: block;
+    margin-top: 4px;
+    font-size: 0.8rem;
+    color: var(--schrift-leise);
+}
+
+/* Der i-Knopf neben der Überschrift des Punktestands. */
+.info-knopf {
+    appearance: none;
+    flex: none;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border-radius: 50%;
+    border: 1px solid var(--rahmen);
+    background: var(--karte);
+    color: var(--schrift-leise);
+    font-family: Georgia, "Times New Roman", serif;
+    font-style: italic;
+    font-size: 0.95rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.info-knopf:hover {
+    color: var(--haupt);
+    border-color: var(--haupt);
+}
+
+.info-knopf:focus-visible {
+    outline: 2px solid var(--haupt);
+    outline-offset: 1px;
+}
+
+/* ------------------------------------------------------------------ *
+ * Knöpfe
+ * ------------------------------------------------------------------ */
+
+.fussleiste {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    margin-top: 24px;
+    padding-top: var(--abstand);
+    border-top: 1px solid var(--rahmen);
+}
+
+.knopf {
+    appearance: none;
+    font: inherit;
+    padding: 10px 18px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    cursor: pointer;
+}
+
+.knopf:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.knopf-klein {
+    padding: 6px 12px;
+    font-size: 0.88rem;
+}
+
+.knopf-haupt {
+    background: var(--haupt);
+    color: var(--haupt-schrift);
+    font-weight: 600;
+}
+
+.knopf-still {
+    background: transparent;
+    color: var(--schrift-leise);
+    border-color: var(--rahmen);
+}
+
+.knopf-gefahr {
+    background: transparent;
+    color: var(--gefahr);
+    border-color: var(--gefahr);
+}
+
+.knopf-gefahr:hover {
+    background: var(--gefahr);
+    color: var(--karte);
+}
+
+/*
+ * DER FOKUS-RING ERSCHEINT NUR BEI TASTATUR-BEDIENUNG (seit v0.108,
+ * `:focus-visible` statt `:focus`). Beim Tippen und Klicken weiss man selbst,
+ * was man gedrückt hat — der Ring blieb aber stehen und liess jeden Knopf
+ * „hängen" aussehen. Für die Tastatur bleibt er unverändert; nur das
+ * EINGABEFELD zeigt seinen Rahmen weiterhin immer, denn dort ist der Fokus
+ * die Einfügemarke.
+ */
+.wuerfel-feld:focus-visible,
+.knopf:focus-visible,
+.tab-knopf:focus-visible,
+.dialog-feld:focus {
+    outline: 2px solid var(--haupt);
+    outline-offset: 1px;
+}
+
+/* Nur für Vorleseprogramme sichtbar. */
+.nur-vorlesen {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+/* ------------------------------------------------------------------ *
+ * Team Schach
+ * ------------------------------------------------------------------ */
+
+/*
+ * Das Brett ist blau und weiss — dieselbe Blaufamilie wie die Hauptaktion,
+ * damit die Seite aus einem Guss wirkt. Die Figuren tragen einen vollen
+ * Umriss in der Gegenfarbe: Ohne ihn verschwände eine weisse Figur auf einem
+ * weissen Feld.
+ */
+:root {
+    --feld-hell: #ffffff;
+    --feld-dunkel: #4a7fb5;
+
+    /* Die Kachel-Kanten des 3D-Looks (v0.120): abgedunkelte Geschwister
+       der beiden Feldfarben — die Farben selbst bleiben die gewohnten. */
+    --feld-kante-hell: #c4cfda;
+    --feld-kante-dunkel: #35618c;
+
+    --feld-gewaehlt: #f2d675;
+    --figur-weiss: #ffffff;
+    --figur-schwarz: #16181c;
+    --figur-umriss-hell: #ffffff;
+    --figur-umriss-dunkel: #16181c;
+    --bonus-feld: #1e7d43;
+
+    /*
+     * Zugvorhersage. Jede Markierung hat ZWEI Farben: einen dunklen Kern und
+     * einen hellen Rand. Grund: Das Brett hat helle UND dunkle Felder, und
+     * eine einzelne Farbe verschwindet immer auf einer der beiden. Bis v1.5
+     * war der Zielpunkt blau — auf den blauen Feldern also praktisch
+     * unsichtbar. Dieselbe Doppel-Kontur trägt schon die Figuren.
+     */
+    --ziel-kern: #10233a;
+    --ziel-rand: #ffffff;
+    --schlag-kern: #b3261e;
+    --schlag-rand: #ffffff;
+
+    /*
+     * Die Spur des letzten Zuges. Ein gedecktes Grün — es muss auf dem weissen
+     * UND auf dem blauen Feld stehen und darf sich nicht mit dem Gelb der
+     * angetippten Figur (`--feld-gewaehlt`) verwechseln lassen.
+     */
+    --spur: #cfe3b8;
+    --spur-ende: #a8ce85;
+
+    /* Was ein Unglückswürfel bewegt hat. */
+    --pech: #e8c000;
+    --pech-spur: #f2e08a;
+
+    /*
+     * Das Aufleuchten nach einer Wirkung (seit v0.41): ROT, wenn es gegen die
+     * betroffene Figur ging (Unglückswürfel), BLAU, wenn eine Fähigkeit
+     * eingesetzt wurde. Vorher leuchtete beides in derselben Richtung — grün
+     * für die Fähigkeit, gelb fürs Unglück —, und aus dem Augenwinkel war
+     * nicht zu erkennen, ob einem gerade etwas Gutes oder etwas Schlechtes
+     * passiert ist. Der helle Rand daneben ist Pflicht: Eine einzelne Farbe
+     * verschwindet auf einer der beiden Feldfarben.
+     */
+    --wirkung-gut: #1f5fa8;
+    --wirkung-schlecht: #c1281f;
+    --wirkung-rand: #ffffff;
+
+    /* Wie lange das Aufleuchten dauert. Dieselbe Zahl steht als
+       TEAM_SCHACH.WIRKUNG_MS im Bildschirm-Code — dort wird die Klasse nach
+       Ablauf wieder entfernt. */
+    --wirkung-dauer: 1600ms;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --feld-hell: #cfdcea;
+        --feld-dunkel: #35608f;
+        --feld-kante-hell: #97a9bc;
+        --feld-kante-dunkel: #223f5f;
+        --feld-gewaehlt: #d9b64a;
+        --figur-weiss: #ffffff;
+        --figur-schwarz: #14161a;
+        --figur-umriss-hell: #e9ebef;
+        --figur-umriss-dunkel: #14161a;
+        --bonus-feld: #4cb87a;
+
+        --ziel-kern: #0b1420;
+        --ziel-rand: #f4f7fb;
+        --schlag-kern: #8f1c16;
+        --schlag-rand: #ffd9d6;
+
+        --spur: #6f8f5c;
+        --spur-ende: #8fb877;
+        --pech: #ffe14d;
+        --pech-spur: #8a7a2a;
+
+        --wirkung-gut: #4a8fd6;
+        --wirkung-schlecht: #e8544a;
+        --wirkung-rand: #f4f7fb;
+    }
+}
+
+.team-reihe {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.team-karte {
+    flex: 1 1 220px;
+    margin-bottom: 0;
+}
+
+.team-karte-meine {
+    border-color: var(--haupt);
+    border-width: 2px;
+}
+
+.team-namen {
+    margin: 0;
+    color: var(--schrift-leise);
+    font-size: 0.92rem;
+}
+
+.brett-halter {
+    margin: 20px 0;
+}
+
+/*
+ * Brett mit Randbeschriftung. Die Buchstaben unten sind genauso breit wie die
+ * Felder darüber (dieselbe Spaltenzahl), die Zahlen links stehen in einer
+ * schmalen Spalte daneben. Beides wächst mit dem Brett — auch auf dem
+ * Doppelbrett mit sechzehn Spalten.
+ */
+.brett-rahmen {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 2px;
+    width: 100%;
+    max-width: min(calc(var(--brett-max, 520px) + 18px), 100%);
+    margin: 0 auto;
+}
+
+.brett-rand {
+    display: grid;
+    color: var(--schrift-leise);
+    font-size: clamp(0.55rem, calc(min(var(--brett-max, 520px), 88vw) / var(--brett-spalten, 8) * 0.32), 0.8rem);
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+
+.brett-rand-reihen {
+    grid-template-rows: repeat(var(--brett-reihen, 8), 1fr);
+    align-items: center;
+    justify-items: center;
+    width: 16px;
+}
+
+.brett-rand-spalten {
+    grid-column: 2;
+    grid-template-columns: repeat(var(--brett-spalten, 8), 1fr);
+    justify-items: center;
+    padding-top: 2px;
+}
+
+.brett-marke {
+    text-transform: uppercase;
+}
+
+/*
+ * Spaltenzahl und Höchstbreite setzt team-schach.js als Variablen, weil sie
+ * von der Spielart abhängen (6 mal 6 bis 16 mal 8). Alles Übrige — Größe der
+ * Felder, Schriftgröße der Figuren — rechnet sich hier daraus aus. Deshalb
+ * passt auch ein breites Brett ohne Sonderregel aufs Handy.
+ */
+.brett {
+    display: grid;
+    grid-template-columns: repeat(var(--brett-spalten, 8), 1fr);
+    width: 100%;
+    max-width: min(var(--brett-max, 520px), 100%);
+    margin: 0 auto;
+    border: 2px solid var(--rahmen);
+    border-radius: 6px;
+    overflow: hidden;
+    /* Bezugspunkt für alles, was in den Feldern absolut liegt. */
+    position: relative;
+}
+
+/* ------------------------------------------------------------------ *
+ * Ein Feld, auf das ein Unglückswürfel gewirkt hat: ROT (seit v0.41)
+ *
+ * Es pulst zweimal, statt einmal kurz aufzublitzen — auf dem Handy sah man
+ * das eine Aufblitzen von 900 ms nur, wenn man ohnehin hinschaute. Die Dauer
+ * muss zu TEAM_SCHACH.WIRKUNG_MS passen.
+ *
+ * Die betroffene FIGUR glüht mit (`.figur`), nicht nur ihr Feld: Gemeldet war
+ * „die betroffene Figur soll rot umrandet leuchten", und bei einem Erdrutsch
+ * mit einem halben Dutzend verschobener Figuren ist genau das die Frage —
+ * welche hat es erwischt.
+ * ------------------------------------------------------------------ */
+
+.feld-wirkung-pech {
+    animation: feld-pech var(--wirkung-dauer, 1600ms) ease-out;
+}
+
+@keyframes feld-pech {
+    0%, 45% {
+        box-shadow:
+            inset 0 0 0 2px var(--wirkung-rand),
+            inset 0 0 0 6px var(--wirkung-schlecht);
+    }
+    30%, 70% {
+        box-shadow:
+            inset 0 0 0 2px transparent,
+            inset 0 0 0 6px transparent;
+    }
+    100% {
+        box-shadow:
+            inset 0 0 0 2px transparent,
+            inset 0 0 0 6px transparent;
+    }
+}
+
+.feld-wirkung-pech .figur {
+    animation: figur-glut-schlecht var(--wirkung-dauer, 1600ms) ease-out;
+}
+
+@keyframes figur-glut-schlecht {
+    0%, 45% {
+        filter:
+            drop-shadow(0 0 2px var(--wirkung-schlecht))
+            drop-shadow(0 0 7px var(--wirkung-schlecht));
+    }
+    30%, 70% { filter: none; }
+    100% { filter: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .feld-wirkung-pech,
+    .feld-wirkung-pech .figur {
+        animation: none;
+    }
+}
+
+/* ------------------------------------------------------------------ *
+ * Übersicht der Fähigkeiten (hinter dem i)
+ * ------------------------------------------------------------------ */
+
+.stufen-karte {
+    border-left: 6px solid var(--stufe-farbe, var(--rahmen));
+}
+
+.stufen-titel {
+    color: var(--stufe-farbe, var(--schrift));
+}
+
+/*
+ * Ein Eintrag der Bibliothek ist ein `details`: Wer auf die Fähigkeit tippt,
+ * klappt ihre Bildanleitung auf (seit v0.41). Deshalb liegt der Innenabstand
+ * am Eintrag und die Spalte im `summary` — ein `display: flex` am `details`
+ * selbst würde das Aufklapp-Dreieck verschieben.
+ */
+.stufen-eintrag {
+    display: block;
+    padding: 8px 0;
+    border-top: 1px solid var(--rahmen);
+}
+
+/*
+ * Zugeklappt stehen hier nur die Überschrift und die Zeichen der Fähigkeit
+ * (Pluszeichen, Blitz — seit v0.47). Die ganze Zeile ist die Fläche zum
+ * Tippen; auf dem Handy trifft man einen Namen sonst knapp daneben.
+ */
+.stufen-kopf {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    cursor: pointer;
+    padding: 2px 0;
+}
+
+/* Beim Aufklappen soll der Name sich abheben — sonst sieht man nicht, welcher
+   Eintrag offen ist. */
+.stufen-eintrag[open] > .stufen-kopf .stufen-name {
+    color: var(--haupt);
+}
+
+.stufen-name {
+    font-weight: 600;
+}
+
+/*
+ * Die Legende „Die Zeichen am Vorrat" benutzt dieselben Klassen, ist aber kein
+ * `details`, sondern eine schlichte Zeile mit zwei Spannen. Ohne diese Regel
+ * stünden Name und Text dort nebeneinander statt untereinander.
+ */
+.stufen-eintrag > .stufen-name,
+.stufen-eintrag > .stufen-text {
+    display: block;
+}
+
+/* Was hinter der Überschrift steckt: erst die Beschreibung, dann die
+   abgespielte Anleitung. */
+.stufen-inhalt {
+    margin-top: 6px;
+}
+
+.stufen-text {
+    font-size: 0.88rem;
+    color: var(--schrift-leise);
+}
+
+.stufen-inhalt .stufen-text {
+    margin: 0;
+}
+
+/* Was die Fähigkeit KOSTET — steht bei jedem Eintrag, damit man die Zeichen
+   am Vorrat wiedererkennt. */
+.stufen-kosten {
+    margin: 6px 0 0 0;
+    font-size: 0.82rem;
+    color: var(--schrift-leise);
+    font-style: italic;
+}
+
+/* Der Unglückswürfel hebt sich ab — er ist keine Belohnung. */
+.stufen-pech .stufen-name {
+    color: var(--gefahr);
+}
+
+/* ------------------------------------------------------------------ *
+ * Einstellungen beim Anlegen und Abstimmung im Team
+ * ------------------------------------------------------------------ */
+
+.schalter-zeile {
+    display: flex;
+
+    /* Mittig statt oben (seit v0.108): Seit die Erklärsätze hinter dem i
+       stehen, ist jede Zeile einzeilig — der Kipp-Schalter sitzt auf halber
+       Höhe neben seinem Titel. */
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    cursor: pointer;
+}
+
+/*
+ * EIN UNTERPUNKT RÜCKT EIN — AUF JEDEM GERÄT (seit v0.59, Wunsch #21).
+ *
+ * Die Einrückung gab es seit v0.51, aber nur im Handy-Abschnitt ganz unten in
+ * dieser Datei. Am Notebook standen „Seltenheit anzeigen", „Unglückswürfel
+ * anzeigen" und „Glücksboxen-Regen" deshalb auf derselben Höhe wie
+ * „Zufalls-Würfel" — man sah nicht, dass sie dazugehören und ohne den
+ * Oberpunkt gar nicht da wären.
+ *
+ * Die Linie links macht die Zugehörigkeit sichtbar, ohne Platz zu kosten;
+ * dieselbe Farbe wie ein Rahmen, damit sie nicht wie eine Warnung wirkt.
+ */
+/*
+ * UNTERPUNKTE LIEGEN IN EINEM GRUPPEN-KASTEN (seit v0.110). Der Einrück-
+ * Strich von früher (`schalter-unterpunkt`, bis v0.109) ist auf Nutzer-Ansage
+ * komplett raus — die Zugehörigkeit zeigt jetzt der leise hinterlegte Kasten,
+ * wie in den Einstellungen moderner Apps.
+ */
+.schalter-gruppe {
+    background: var(--karte-leise);
+    border-radius: 10px;
+    padding: 2px 12px;
+    margin: 2px 0 8px;
+}
+
+/*
+ * DER HAKEN IST EIN KIPP-SCHALTER (seit v0.108): eine Pille mit Knubbel, wie
+ * man sie aus jeder Handy-Einstellung kennt. Technisch bleibt es dasselbe
+ * `<input type="checkbox">` — nur die eingebaute Optik ist abgeschaltet
+ * (`appearance: none`) und neu gezeichnet. An/aus, Tastatur und Vorlesen
+ * funktionieren unverändert.
+ */
+.schalter-kasten {
+    appearance: none;
+    width: 40px;
+    height: 24px;
+    margin: 0;
+    flex: none;
+    border: 1px solid var(--rahmen);
+    border-radius: 12px;
+    background: var(--karte-leise);
+    position: relative;
+    cursor: pointer;
+}
+
+.schalter-kasten::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--karte);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.schalter-kasten:checked {
+    background: var(--haupt);
+    border-color: var(--haupt);
+}
+
+.schalter-kasten:checked::after {
+    transform: translateX(16px);
+    background: var(--haupt-schrift);
+}
+
+/*
+ * DIE VIER STUFEN FÜR DIE LOOTBOX-MENGE (seit v0.71).
+ *
+ * Sie stehen als Unterpunkt unter dem Lootbox-Haken und erben von dort die
+ * Einrückung; hier kommt nur die Anordnung dazu. Aufbau wie die Brettform
+ * darunter: Knöpfe nebeneinander, der gewählte in der Hauptfarbe, auf schmalen
+ * Geräten brechen sie um statt sich zu quetschen. Sie ersetzen den
+ * Schieberegler von v0.60 samt seiner `.regler`-Klassen.
+ */
+.mengen-zeile,
+.vorrat-zeile {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px 0;
+}
+
+/*
+ * DIE FIGURENZAHL IST EINE EIGENE KARTE (seit v0.109). Bis v0.108 trug die
+ * Reihe die Unterpunkt-Klasse samt Einrück-Strich — der Strich gehört aber zu
+ * Unterpunkten UNTER einem Haken, und diese Reihe steht allein ganz oben:
+ * Dort hing er im Leeren (Nutzer-Meldung 22.08.). Jetzt sieht sie aus wie
+ * ihre Nachbarn „Einstellungen" und „Welche Brettform?".
+ */
+.armee-karte {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.armee-karte h3,
+.leisten-kopf h3 {
+    margin: 0;
+}
+
+/*
+ * DIE FRAGE LINKS, DAS i RECHTS (seit v0.105). Der Erklärsatz, der bis v0.104
+ * unter jeder Reihe stand, sitzt jetzt dahinter — siehe `_leistenKopfBauen`.
+ */
+.leisten-kopf {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/*
+ * DIE VIER KNOPFREIHEN SIND SEGMENT-SCHALTER (seit v0.110): EIN leiser
+ * Kasten, die Stufen als gleich breite Segmente darin, und die blaue Pille
+ * gleitet beim Umschalten von Segment zu Segment (`.reihen-pille`). Das ist
+ * das Muster der Komponenten-Galerien — vorher standen hier lose Einzel-
+ * Knöpfe mit Rahmen. Kein Umbruch: Jede Reihe trägt höchstens vier kurze
+ * Wörter, die auch auf einem schmalen Handy nebeneinander passen; die eigene
+ * Wahl des Item-Vorrats steht deshalb als eigener Knopf darunter (v0.105).
+ */
+.mengen-leiste,
+.vorrat-leiste,
+.armee-leiste,
+.form-leiste {
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    background: var(--karte-leise);
+    border: 1px solid var(--rahmen);
+    border-radius: 10px;
+}
+
+.mengen-knopf,
+.vorrat-knopf,
+.armee-knopf,
+.form-knopf {
+    flex: 1 1 0;
+    min-width: 0;
+    padding-left: 4px;
+    padding-right: 4px;
+    text-align: center;
+}
+
+/* Segmente tragen keinen eigenen Rahmen und keine eigene Fläche — die
+   Auswahl zeigt allein die Pille. */
+.mengen-leiste .knopf,
+.vorrat-leiste .knopf,
+.armee-leiste .knopf,
+.form-leiste .knopf {
+    border-color: transparent;
+    background: transparent;
+}
+
+/* Im Gruppen-Kasten (selbst schon leise hinterlegt) heben sich die
+   Segment-Kästen hell ab. */
+.schalter-gruppe .mengen-leiste,
+.schalter-gruppe .vorrat-leiste {
+    background: var(--karte);
+}
+
+.vorrat-eigene {
+    width: 100%;
+    margin-top: 6px;
+}
+
+/*
+ * DIE FARBE DES AKTIVEN KNOPFS LIEFERT SEINE PILLE (seit v0.109) — ein
+ * absolut liegendes Kind hinter dem Text (`_aktivPille`). Nur so kann beim
+ * weichen Neuzeichnen die FLÄCHE zum neuen Knopf wandern, während der Text
+ * stehen bleibt; bis v0.108 wanderte der ganze Knopf und die Beschriftung
+ * verschmierte. Der Knopf selbst wird durchsichtig.
+ */
+.mengen-knopf-aktiv,
+.vorrat-knopf-aktiv,
+.armee-knopf-aktiv,
+.form-knopf-aktiv {
+    background: transparent;
+    color: var(--haupt-schrift);
+    border-color: transparent;
+}
+
+.mengen-knopf,
+.vorrat-knopf,
+.armee-knopf,
+.form-knopf,
+.vorrat-eigene {
+    position: relative;
+
+    /* Eigener Stapel-Raum: So liegt die Pille mit `z-index: -1` HINTER dem
+       Text, aber nicht hinter dem Knopf. */
+    isolation: isolate;
+}
+
+.reihen-pille {
+    position: absolute;
+    inset: -1px;
+
+    /* Ein Pixel mehr als der Knopf darunter — die Pille liegt ja auch ein
+       Pixel weiter aussen, sonst blitzten die Ecken durch. */
+    border-radius: 7px;
+    background: var(--haupt);
+    z-index: -1;
+    pointer-events: none;
+}
+
+.reihen-pille-armee {
+    view-transition-name: armee-aktiv;
+}
+
+.reihen-pille-mengen {
+    view-transition-name: mengen-aktiv;
+}
+
+.reihen-pille-vorrat {
+    view-transition-name: vorrat-aktiv;
+}
+
+.reihen-pille-form {
+    view-transition-name: form-aktiv;
+}
+
+/*
+ * DIE ANKREUZLISTE DER ITEMS (seit v0.100) — seit v0.105 im Popup.
+ *
+ * Bis v0.104 hing sie im Anlege-Bildschirm und brauchte dort eine feste Höhe
+ * mit eigenem Rollbalken: zwei Rollbalken ineinander, und die Spielart-Kacheln
+ * waren aus dem Bild geschoben. Im Dialog rollt der Kasten selbst (90 vh,
+ * siehe `.dialog-kasten`), also darf die Liste hier so hoch sein, wie sie ist.
+ */
+.item-auswahl {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+    margin-top: 4px;
+}
+
+/* Die Stufen-Überschrift bricht die Reihe um: Sie nimmt die ganze Breite,
+   damit darunter wieder von links begonnen wird. */
+.item-auswahl-stufe {
+    flex: 0 0 100%;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-top: 4px;
+}
+
+.item-haken {
+    flex: 0 0 auto;
+    font-variant-numeric: tabular-nums;
+}
+
+.item-haken-an {
+    background: var(--haupt);
+    color: #fff;
+    border-color: var(--haupt);
+}
+
+.schalter-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.schalter-titel {
+    font-weight: 600;
+}
+
+.schalter-hinweis {
+    font-size: 0.85rem;
+    color: var(--schrift-leise);
+}
+
+.abstimmung {
+    border-color: var(--haupt);
+    border-width: 2px;
+    margin-top: var(--abstand);
+}
+
+.abstimmung-zug {
+    margin: 0 0 4px 0;
+    font-weight: 600;
+}
+
+.abstimmung-frist {
+    margin: 0 0 6px 0;
+    color: var(--warnung);
+    font-size: 0.9rem;
+    font-variant-numeric: tabular-nums;
+}
+
+/* ------------------------------------------------------------------ *
+ * Bilanz der geschlagenen Figuren
+ * ------------------------------------------------------------------ */
+
+.bilanz-reihe {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--rahmen);
+}
+
+.bilanz-seite {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1 1 200px;
+    min-width: 0;
+}
+
+.bilanz-beute {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1px;
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 1.15rem;
+    line-height: 1;
+}
+
+/* Im Kleinen braucht die Figur keinen dicken Umriss. */
+.bilanz-figur {
+    text-shadow: 0 0 1px rgba(0, 0, 0, 0.6);
+}
+
+.bilanz-punkte {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    color: var(--schrift-leise);
+    white-space: nowrap;
+}
+
+.bilanz-vorn {
+    color: var(--gut);
+}
+
+.feld {
+    appearance: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    aspect-ratio: 1 / 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+    /*
+     * Die Figurengröße kommt aus der GEMESSENEN Feldbreite
+     * (TEAM_SCHACH._figurGroesseSetzen). Die Rechnung dahinter ist nur der
+     * Rückfall für den Augenblick vor der ersten Messung: Sie schätzt die
+     * Brettbreite mit `88vw` und liegt daneben, sobald ein Scrollbalken
+     * erscheint — was mitten im Spiel passiert, weil der Verlauf wächst.
+     * Genau daher kam der Eindruck, Figuren würden nach einem Zug kleiner.
+     */
+    font-size: var(--figur-groesse,
+        calc(min(var(--brett-max, 520px), 88vw) / var(--brett-spalten, 8) * 0.68));
+    line-height: 1;
+    /* Die Figur wandert beim Ziehen über ihr Feld hinaus. */
+    overflow: visible;
+}
+
+.feld:disabled {
+    cursor: default;
+}
+
+.feld-hell {
+    background: var(--feld-hell);
+}
+
+.feld-dunkel {
+    background: var(--feld-dunkel);
+}
+
+/* ------------------------------------------------------------------ *
+ * DER 3D-LOOK (Vorschau, seit v0.119) — Stufe 1: Pastell-Kacheln mit
+ * Tiefe. Hängt an `body.design-3d` (Tab Einstellungen, nur dieses
+ * Gerät); die weiteren Stufen (Spielzeug-Figuren, Schräg-Ansicht)
+ * docken an DERSELBEN Klasse an — ROADMAP, Bündel Z.
+ * ------------------------------------------------------------------ */
+
+/*
+ * DIE FARBEN BLEIBEN DIE GEWOHNTEN (Nutzer-Ansage 22.08., zweite Runde —
+ * die Pastell-Lila-Palette von v0.119 ist wieder raus): Der 3D-Look ändert
+ * nur die FORM der Kacheln. Die Kantenfarben sind abgedunkelte Geschwister
+ * der Feldfarben und stehen bei ihnen im :root (hell wie dunkel).
+ */
+
+/* Das Brett verliert Rahmen und Fläche — die Kacheln stehen frei wie
+   kleine Klötze; unten Platz für ihre Kanten. */
+body.design-3d .brett {
+    border-color: transparent;
+    background: transparent;
+    gap: 5px;
+    padding: 2px 2px 8px 2px;
+    overflow: visible;
+}
+
+body.design-3d .feld,
+body.design-3d .vorschau-feld {
+    border-radius: 12%;
+}
+
+/* Die „Dicke" der Kachel: eine harte Kante unten plus weicher Schatten.
+   Als Variable, damit Ziel- und Schlag-Ringe sie ERGÄNZEN können, statt
+   sie zu überschreiben. */
+body.design-3d .feld-hell {
+    --kachel-schatten: 0 5px 0 var(--feld-kante-hell),
+        0 8px 8px rgba(20, 35, 55, 0.28);
+    box-shadow: var(--kachel-schatten);
+}
+
+body.design-3d .feld-dunkel {
+    --kachel-schatten: 0 5px 0 var(--feld-kante-dunkel),
+        0 8px 8px rgba(20, 35, 55, 0.28);
+    box-shadow: var(--kachel-schatten);
+}
+
+/* Ziel und Schlag leuchten als Ring AUF der Kachel — wie im Vorbild die
+   umrandeten Felder. Der Punkt bzw. Ring der klassischen Ansicht bleibt
+   zusätzlich stehen. */
+body.design-3d .feld-ziel {
+    box-shadow: var(--kachel-schatten), inset 0 0 0 3px var(--ziel-rand);
+}
+
+body.design-3d .feld-schlag {
+    box-shadow: var(--kachel-schatten), inset 0 0 0 3px #e05a52;
+}
+
+/* Auch die Beispielbretter der Anleitungen tragen den Look. */
+body.design-3d .vorschau {
+    gap: 4px;
+    border-color: transparent;
+    background: transparent;
+    overflow: visible;
+}
+
+/*
+ * Z2 — BEWEGUNG IM 3D-LOOK (seit v0.120): Die ziehende Figur hüpft mit
+ * Stauchen und Strecken, statt nur zu gleiten. `scale` und `translate`
+ * sind EIGENE Eigenschaften und mischen sich nicht in den `transform`-
+ * Übergang des Gleitens — beides läuft gleichzeitig.
+ */
+body.design-3d .figur-zieht {
+    animation: figur-hopser 260ms ease-out;
+}
+
+@keyframes figur-hopser {
+    0% {
+        scale: 1.05 0.75;
+        translate: 0 6%;
+    }
+    45% {
+        scale: 0.92 1.12;
+        translate: 0 -14%;
+    }
+    100% {
+        scale: 1 1;
+        translate: 0 0;
+    }
+}
+
+/* Und der Schlag platzt als gestrichelter Funkenkranz auf, statt nur zu
+   verpuffen. */
+body.design-3d .verpufft-schlag {
+    border-style: dashed;
+    border-width: 3px;
+    animation: verpuffen-funken 480ms ease-out;
+}
+
+@keyframes verpuffen-funken {
+    from {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(0.3) rotate(0deg);
+    }
+    to {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(1.9) rotate(60deg);
+    }
+}
+
+/*
+ * Z3 — DIE GEMALTEN FIGUREN (seit v0.121, auf die Kachel gestellt in v0.122)
+ *
+ * Im 3D-Look zeigt jede Figur ihr in Blender gerendertes Bild aus
+ * `img\figuren\` statt des Schriftzeichens. Die Bilder erzeugt
+ * `tools\Figuren-Blender.py`; gestartet wird es per Doppelklick auf
+ * `tools\Figuren rendern.cmd` (NICHT aus dem Blender-Fenster — Begründung in
+ * `docs\FIGUREN-BLENDER.md`).
+ *
+ * DAS SCHRIFTZEICHEN BLEIBT STEHEN und wird nur durchsichtig geschaltet. Es
+ * bleibt für Vorlese-Programme lesbar und ist die Rückfallebene: Fällt eine
+ * Figur durch — unbekannte Art, fehlendes Bild —, greift keine der Regeln
+ * unten und das Zeichen ist einfach wieder da. Die Rückfallebene ist nicht
+ * gebaut, sondern übrig.
+ *
+ * Die Klassen kommen aus `TEAM_SCHACH._figurKlasse`: `figur-bild` sagt „hier
+ * steht ein Bild", `figur-art-*` sagt welches. Alles hier hängt an
+ * `body.design-3d` — das gewohnte Brett bleibt Zeichen-Brett.
+ */
+body.design-3d .figur-bild {
+    color: transparent;
+    text-shadow: none;
+    background-repeat: no-repeat;
+    background-position: center bottom;
+    background-size: contain;
+}
+
+/*
+ * DIE FIGUR STEHT AUF DER KACHEL, sie sitzt nicht darin (seit v0.122, nach
+ * dem Dribbble-Vorbild).
+ *
+ * Sie wird aus dem Fluss genommen und mit ihrem Fuss an der Kachel
+ * festgemacht; nach oben darf sie über die Kachel hinausragen und die
+ * dahinterliegende überlappen. Genau das erzeugt den Eindruck von Höhe.
+ *
+ * Vier Dinge daran sind nicht beliebig:
+ *
+ *  - **`left`/`margin-left` statt `transform`.** `_zugAnimieren` schreibt
+ *    beim Ziehen ein eigenes `transform` auf die Figur. Würde die Mitte per
+ *    `transform: translateX(-50%)` gesetzt, überschriebe der Zug sie und die
+ *    Figur spränge zur Seite. `margin-left` ist die halbe Breite, von Hand.
+ *  - **`pointer-events: none`.** Die Figur überlappt die Kachel DAHINTER.
+ *    Ohne diese Zeile fingen ihre überstehenden Teile die Klicks für ein
+ *    Feld ab, das ganz woanders liegt. Ihre eigene Kachel bleibt darunter
+ *    voll anklickbar — es geht nichts verloren.
+ *  - **Die Reihenfolge stimmt von selbst.** Der Browser zeichnet die Felder
+ *    in der Reihenfolge des Quelltextes, also von hinten nach vorn. Eine
+ *    Figur aus einer vorderen Reihe deckt damit die hintere korrekt ab.
+ *  - **Der Platz oben.** Die Figuren der ersten Reihe ragen über das Brett
+ *    hinaus; ohne den zusätzlichen Rand oben würden sie abgeschnitten.
+ */
+body.design-3d .feld > .figur-bild,
+body.design-3d .vorschau-feld > .figur-bild {
+    position: absolute;
+    left: 50%;
+    margin-left: -1.15em;
+    bottom: 12%;
+    width: 2.3em;
+    height: 2.3em;
+    pointer-events: none;
+}
+
+body.design-3d .brett,
+body.design-3d .vorschau {
+    padding-top: calc(var(--figur-groesse, 30px) * 1.35);
+}
+
+/*
+ * Die zwölf Bilder. Farbe und Art stehen in zwei getrennten Klassen, deshalb
+ * sind es zwölf Zeilen und keine sechs. Die Namen sind der Paket-Vertrag aus
+ * `docs\FIGUREN-BLENDER.md` — wer eine Datei umbenennt, benennt sie hier mit.
+ */
+body.design-3d .figur-weiss.figur-art-bauer { background-image: url("../img/figuren/figur-bauer-weiss.png"); }
+body.design-3d .figur-weiss.figur-art-springer { background-image: url("../img/figuren/figur-springer-weiss.png"); }
+body.design-3d .figur-weiss.figur-art-laeufer { background-image: url("../img/figuren/figur-laeufer-weiss.png"); }
+body.design-3d .figur-weiss.figur-art-turm { background-image: url("../img/figuren/figur-turm-weiss.png"); }
+body.design-3d .figur-weiss.figur-art-dame { background-image: url("../img/figuren/figur-dame-weiss.png"); }
+body.design-3d .figur-weiss.figur-art-koenig { background-image: url("../img/figuren/figur-koenig-weiss.png"); }
+
+body.design-3d .figur-schwarz.figur-art-bauer { background-image: url("../img/figuren/figur-bauer-schwarz.png"); }
+body.design-3d .figur-schwarz.figur-art-springer { background-image: url("../img/figuren/figur-springer-schwarz.png"); }
+body.design-3d .figur-schwarz.figur-art-laeufer { background-image: url("../img/figuren/figur-laeufer-schwarz.png"); }
+body.design-3d .figur-schwarz.figur-art-turm { background-image: url("../img/figuren/figur-turm-schwarz.png"); }
+body.design-3d .figur-schwarz.figur-art-dame { background-image: url("../img/figuren/figur-dame-schwarz.png"); }
+body.design-3d .figur-schwarz.figur-art-koenig { background-image: url("../img/figuren/figur-koenig-schwarz.png"); }
+
+/*
+ * Die kleinen Figuren ausserhalb des Bretts (Beute-Bilanz im Abschluss,
+ * Werte-Liste in „Schach lernen") stehen in Textzeilen, nicht auf Kacheln.
+ * Sie bleiben deshalb im Fluss und bekommen nur einen passenden Kasten.
+ */
+body.design-3d .bilanz-figur,
+body.design-3d .werte-figur {
+    display: inline-block;
+    width: 1.3em;
+    height: 1.3em;
+    vertical-align: -0.25em;
+}
+
+/* ------------------------------------------------------------------ *
+ * Die Spur des letzten Zuges (seit v3.6)
+ *
+ * Bis v3.5 lag hier ein gezeichneter Pfeil über dem Brett — mit Maske, damit
+ * er unter den Figuren verschwindet. Er hatte einen Geburtsfehler: Ein Pfeil
+ * ist eine gerade Linie und passte damit zu keiner Gangart ausser der
+ * geraden. Beim schlagenden Bauern und beim Springer war die Strecke sogar zu
+ * kurz, um überhaupt gezeichnet zu werden.
+ *
+ * Jetzt wird der Weg eingefärbt, wie bei jedem anderen Schachprogramm. Die
+ * Felder liegen ohnehin da; es braucht keine zweite Zeichenebene mehr.
+ *
+ * DIE REIHENFOLGE IST PFLICHT — alle diese Regeln haben dieselbe Spezifität
+ * wie `.feld-hell`, `.feld-gewaehlt` und `.feld-ziel`, und bei Gleichstand
+ * gewinnt die SPÄTERE. Die Spur muss deshalb NACH den Feldfarben stehen
+ * (sonst wäre sie unsichtbar) und VOR den Auswahl-Markierungen (denn was
+ * gerade möglich ist, zählt mehr als die Erinnerung an den letzten Zug).
+ * ------------------------------------------------------------------ */
+
+.feld-spur {
+    background: var(--spur);
+}
+
+/* Start und Ziel kräftiger als die Felder dazwischen — man sieht so auf einen
+   Blick, WOHER und WOHIN gezogen wurde. */
+.feld-spur-ende {
+    background: var(--spur-ende);
+}
+
+/* Was ein Unglückswürfel bewegt hat, ist gelb. */
+.feld-spur-pech {
+    background: var(--pech-spur);
+}
+
+/*
+ * Wirkung ohne Bewegung (Schutzschild, Fessel, Verstärkung): kein Weg, nur
+ * ein Punkt. Deshalb ein Ring statt einer Fläche — sonst sähe es aus, als
+ * wäre dorthin gezogen worden.
+ */
+.feld-spur-wirkung::after {
+    content: "";
+    position: absolute;
+    inset: 14%;
+    border: 3px solid var(--spur-ende);
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+/* Die angetippte Figur: gelbes Feld plus dunkler Rahmen, damit sie sich auch
+   vom hellen Feld absetzt. */
+.feld-gewaehlt {
+    background: var(--feld-gewaehlt);
+    box-shadow: inset 0 0 0 3px var(--ziel-kern);
+}
+
+.feld-schach {
+    box-shadow: inset 0 0 0 3px var(--gefahr);
+}
+
+/*
+ * Mögliches Zielfeld: das ganze Feld bekommt einen Rahmen, dazu ein kräftiger
+ * Punkt in der Mitte. Beides zweifarbig — außen hell, innen dunkel —, damit es
+ * auf hellen wie auf dunklen Feldern steht. Das ist der Unterschied zu v1.5,
+ * wo ein einzelner blauer Punkt auf blauem Grund verschwand.
+ */
+.feld-ziel {
+    box-shadow:
+        inset 0 0 0 2px var(--ziel-rand),
+        inset 0 0 0 4px var(--ziel-kern);
+}
+
+.feld-ziel::after {
+    content: "";
+    position: absolute;
+    width: 32%;
+    height: 32%;
+    border-radius: 50%;
+    background: var(--ziel-kern);
+    border: 2px solid var(--ziel-rand);
+}
+
+/*
+ * `feld-rochade` gibt es seit v0.44 nicht mehr: Der Turm trägt bei der Rochade
+ * dieselbe Marke wie jedes andere Ziel (`feld-ziel`). Der Punkt in der Mitte
+ * verschwindet dort ohnehin hinter der Figur — übrig bleibt die Kontur, also
+ * genau das, was diese Regel vorher eigens gezeichnet hat.
+ */
+
+.erklaerung-rochade {
+    font-weight: 600;
+}
+
+/*
+ * Wirkende Fähigkeiten am Brett. Der Schild umrandet die Figur blau, die
+ * Fessel violett — beides in der Farbe der Stufe, aus der die Fähigkeit kommt.
+ */
+/* ------------------------------------------------------------------ *
+ * Mauer (seit v3.3)
+ *
+ * Ein blauer Riegel quer über drei Felder. Er liegt ÜBER dem Feld, aber
+ * unter den Figuren-Markierungen — dort steht ohnehin nichts, solange die
+ * Mauer steht.
+ *
+ * Die abgerundeten Ecken sitzen nur aussen (`mauer-anfang`/`mauer-ende`),
+ * damit drei Felder wie EIN Block aussehen und nicht wie drei Kacheln.
+ *
+ * DER HELLE RAND LIEGT NUR AUSSEN (seit v0.41). Vorher zog ein umlaufender
+ * Ring um JEDES der drei Stücke — dazwischen standen also zwei senkrechte
+ * Striche, und die Mauer sah aus wie drei aneinandergelegte Steine statt wie
+ * ein geschlossener Riegel. Gemeldet wurde das als „die Mauer ist nicht in
+ * sich geschlossen". Oben und unten bekommt jedes Stück seine Linie, links
+ * und rechts nur die beiden Enden.
+ *
+ * Dazu reicht jedes Stück ein Pixel in seinen rechten Nachbarn hinein: Die
+ * Felder sind Bruchteile der Brettbreite, und ohne diesen Überstand bleibt je
+ * nach Bildschirm ein Haarriss zwischen zwei Stücken stehen.
+ * ------------------------------------------------------------------ */
+
+.feld-mauer::after {
+    --mauer-licht: rgba(255, 255, 255, 0.35);
+
+    content: "";
+    position: absolute;
+    left: 0;
+    right: -1px;
+    top: 22%;
+    bottom: 22%;
+    background: linear-gradient(180deg, #4a8fd6 0%, #2f7fd0 55%, #1f5fa8 100%);
+    box-shadow:
+        inset 0 1px 0 var(--mauer-licht),
+        inset 0 -1px 0 var(--mauer-licht);
+    z-index: 2;
+    pointer-events: none;
+}
+
+/* ------------------------------------------------------------------ *
+ * DIE SENKRECHTE MAUER (seit v0.80)
+ *
+ * Dieselbe Leiste, um 90 Grad gekippt: Der Balken läuft von oben nach unten
+ * statt von links nach rechts, und die runden Enden sitzen oben und unten.
+ * Gesetzt wird `mauer-senkrecht` in `team-schach-brett.js`, und zwar nach der
+ * Lage IN DER ANSICHT — auf einem gedrehten Brett erscheint eine senkrechte
+ * Mauer waagerecht.
+ *
+ * Die Regeln stehen VOR `mauer-anfang`/`mauer-ende`, damit die waagerechten
+ * Enden sie nicht überschreiben; die senkrechten Fassungen weiter unten
+ * gewinnen dann über die höhere Spezifität.
+ * ------------------------------------------------------------------ */
+.feld-mauer.mauer-senkrecht::after {
+    left: 22%;
+    right: 22%;
+    top: 0;
+    bottom: -1px;
+    background: linear-gradient(90deg, #4a8fd6 0%, #2f7fd0 55%, #1f5fa8 100%);
+    box-shadow:
+        inset 1px 0 0 var(--mauer-licht),
+        inset -1px 0 0 var(--mauer-licht);
+}
+
+.feld-mauer.mauer-anfang::after {
+    left: 8%;
+    border-top-left-radius: 6px;
+    border-bottom-left-radius: 6px;
+    box-shadow:
+        inset 0 1px 0 var(--mauer-licht),
+        inset 0 -1px 0 var(--mauer-licht),
+        inset 1px 0 0 var(--mauer-licht);
+}
+
+.feld-mauer.mauer-ende::after {
+    right: 8%;
+    border-top-right-radius: 6px;
+    border-bottom-right-radius: 6px;
+    box-shadow:
+        inset 0 1px 0 var(--mauer-licht),
+        inset 0 -1px 0 var(--mauer-licht),
+        inset -1px 0 0 var(--mauer-licht);
+}
+
+/* Eine Mauer, die an beiden Enden aufhört (nur ein Feld breit): Sie braucht
+   beide senkrechten Linien. Ohne diese Regel gewänne `mauer-ende` und die
+   linke Kante bliebe offen. */
+.feld-mauer.mauer-anfang.mauer-ende::after {
+    box-shadow:
+        inset 0 1px 0 var(--mauer-licht),
+        inset 0 -1px 0 var(--mauer-licht),
+        inset 1px 0 0 var(--mauer-licht),
+        inset -1px 0 0 var(--mauer-licht);
+}
+
+/* Die senkrechten Enden — dieselben drei Regeln, um 90 Grad gedreht. Sie
+   stehen NACH den waagerechten und gewinnen über die höhere Spezifität. */
+.feld-mauer.mauer-senkrecht.mauer-anfang::after {
+    left: 22%;
+    right: 22%;
+    top: 8%;
+    border-radius: 6px 6px 0 0;
+    box-shadow:
+        inset 1px 0 0 var(--mauer-licht),
+        inset -1px 0 0 var(--mauer-licht),
+        inset 0 1px 0 var(--mauer-licht);
+}
+
+.feld-mauer.mauer-senkrecht.mauer-ende::after {
+    left: 22%;
+    right: 22%;
+    bottom: 8%;
+    border-radius: 0 0 6px 6px;
+    box-shadow:
+        inset 1px 0 0 var(--mauer-licht),
+        inset -1px 0 0 var(--mauer-licht),
+        inset 0 -1px 0 var(--mauer-licht);
+}
+
+.feld-mauer.mauer-senkrecht.mauer-anfang.mauer-ende::after {
+    box-shadow:
+        inset 1px 0 0 var(--mauer-licht),
+        inset -1px 0 0 var(--mauer-licht),
+        inset 0 1px 0 var(--mauer-licht),
+        inset 0 -1px 0 var(--mauer-licht);
+}
+
+/*
+ * Geliehene Figur (Fähigkeit „Friedhof", seit v3.3): Sie gehört dir nur
+ * auf Zeit. Der gestrichelte Rahmen sagt „nicht von Dauer" — anders als
+ * die vollen Ringe von Schild, Fessel und Frost, die einen Zustand
+ * anzeigen, der zur Figur gehört.
+ */
+.feld-geliehen::before {
+    content: "";
+    position: absolute;
+    inset: 8%;
+    border: 2px dashed #8b46c8;
+    border-radius: 6px;
+    z-index: 2;
+    pointer-events: none;
+}
+
+.feld-schild::before,
+.feld-fessel::before {
+    content: "";
+    position: absolute;
+    inset: 6%;
+    border-radius: 50%;
+    z-index: 2;
+    pointer-events: none;
+}
+
+.feld-schild::before {
+    border: 3px solid #2f7fd0;
+    box-shadow: 0 0 0 1px var(--ziel-rand), inset 0 0 6px rgba(47, 127, 208, 0.8);
+}
+
+.feld-fessel::before {
+    border: 3px dashed #8b46c8;
+    box-shadow: 0 0 0 1px var(--ziel-rand);
+}
+
+/* ------------------------------------------------------------------ *
+ * EIN RAHMEN UM EINE FELDERGRUPPE (seit v0.56, geteilt seit v0.57)
+ *
+ * Zwei Dinge zeichnen sich so: der eingefrorene 2×2-Block (`feld-frost`,
+ * blau) und der Vorschau-Kasten beim Platzieren (`feld-vorschau`, grün).
+ * Beide sollen als EINE Fläche erscheinen, nicht als Kästchen — der
+ * Strich läuft nur aussen um die Gruppe herum, innen bleibt er weg.
+ * Dieselbe Bauweise wie bei der Mauer.
+ *
+ * Dass der Vorschau-Kasten genauso gebaut ist wie der Frost, ist
+ * Absicht: Er zeigt vorher, was hinterher dasteht.
+ *
+ * WARUM DIE KANTEN AUS DEM HINTERGRUND KOMMEN UND NICHT AUS `border`:
+ * Jede Markierung auf dem Brett muss zweifarbig sein (heller Rand,
+ * dunkler Kern) — sonst verschwindet sie auf einem der beiden
+ * Feldtöne. Ein `border` kann das nicht, ein Farbverlauf schon: 1 Pixel
+ * hell, dann 3 Pixel Kern. Und weil jede Kante ihr eigenes Bild ist,
+ * lassen sich beliebige Kombinationen aus vier Klassen zusammensetzen,
+ * ohne fünfzehn Regeln zu schreiben.
+ * ------------------------------------------------------------------ */
+
+.feld-frost::before,
+.feld-vorschau::before {
+    --umriss-licht: rgba(255, 255, 255, 0.55);
+
+    /* Ohne Kante: kein Bild. Die vier Klassen unten setzen ein. */
+    --kante-oben: none;
+    --kante-unten: none;
+    --kante-links: none;
+    --kante-rechts: none;
+
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-color: var(--umriss-fuellung);
+    background-image:
+        var(--kante-oben), var(--kante-unten),
+        var(--kante-links), var(--kante-rechts);
+    background-repeat: no-repeat;
+    background-position: top left, bottom left, top left, top right;
+    background-size: 100% 4px, 100% 4px, 4px 100%, 4px 100%;
+    z-index: 2;
+    pointer-events: none;
+}
+
+.feld-frost::before {
+    --umriss-kern: #2f7fd0;
+    --umriss-fuellung: rgba(47, 127, 208, 0.28);
+}
+
+/*
+ * DER VORSCHAU-KASTEN STEHT NACH DEM FROST — und das entscheidet den
+ * Gleichstand: Liegt der Kasten gerade über einem eingefrorenen Feld,
+ * gewinnt er. Richtig so, denn in diesem Moment fragt man sich, wohin
+ * die neue Wirkung geht, nicht wo die alte liegt.
+ */
+.feld-vorschau::before {
+    --umriss-kern: #2e9e52;
+    --umriss-fuellung: rgba(46, 158, 82, 0.28);
+}
+
+.kante-oben::before {
+    --kante-oben: linear-gradient(180deg,
+        var(--umriss-licht) 0 1px, var(--umriss-kern) 1px 4px);
+}
+
+.kante-unten::before {
+    --kante-unten: linear-gradient(0deg,
+        var(--umriss-licht) 0 1px, var(--umriss-kern) 1px 4px);
+}
+
+.kante-links::before {
+    --kante-links: linear-gradient(90deg,
+        var(--umriss-licht) 0 1px, var(--umriss-kern) 1px 4px);
+}
+
+.kante-rechts::before {
+    --kante-rechts: linear-gradient(270deg,
+        var(--umriss-licht) 0 1px, var(--umriss-kern) 1px 4px);
+}
+
+/* Die Knöpfe unter dem Brett beim Platzieren. */
+.knopf-zeile {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+
+/* Mögliches Schlagfeld: derselbe Aufbau in Rot, dazu ein Ring um die Figur. */
+.feld-schlag {
+    box-shadow:
+        inset 0 0 0 2px var(--schlag-rand),
+        inset 0 0 0 5px var(--schlag-kern);
+}
+
+.feld-schlag::after {
+    content: "";
+    position: absolute;
+    inset: 10%;
+    border-radius: 50%;
+    border: 3px solid var(--schlag-kern);
+    box-shadow: 0 0 0 2px var(--schlag-rand);
+}
+
+/* Feld, dessen Figur gerade wandert: liegt über seinen Nachbarn. */
+.feld-zieht {
+    z-index: 2;
+}
+
+/*
+ * Feld mit einer Fähigkeit darauf: Der Würfel liegt als SVG darin (siehe
+ * TEAM_SCHACH._wuerfelBauen). Er schwebt leicht, damit man ihn zwischen den
+ * Figuren bemerkt.
+ */
+.wuerfel {
+    position: absolute;
+    width: 76%;
+    height: 76%;
+    pointer-events: none;
+    z-index: 2;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.45));
+    animation: wuerfel-schweben 2.4s ease-in-out infinite;
+}
+
+.wuerfel-zeichen {
+    fill: #ffffff;
+    font-size: 34px;
+    font-weight: 700;
+    font-family: "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
+}
+
+@keyframes wuerfel-schweben {
+    0%, 100% { transform: translateY(-3%); }
+    50% { transform: translateY(3%); }
+}
+
+/* Mögliches Ziel einer Fähigkeit, die auf ein Feld wartet. */
+.feld-wahl {
+    box-shadow:
+        inset 0 0 0 2px var(--ziel-rand),
+        inset 0 0 0 5px var(--bonus-feld);
+}
+
+/*
+ * Ein Feld, auf das eine Fähigkeit gewirkt hat: BLAU (seit v0.41) — dasselbe
+ * Pulsen wie beim Unglückswürfel, nur in der anderen Farbe. Rot heisst „gegen
+ * dich", Blau heisst „für dich"; mehr muss man aus dem Augenwinkel nicht
+ * unterscheiden können.
+ */
+.feld-wirkung {
+    animation: feld-leuchten var(--wirkung-dauer, 1600ms) ease-out;
+}
+
+@keyframes feld-leuchten {
+    0%, 45% {
+        box-shadow:
+            inset 0 0 0 2px var(--wirkung-rand),
+            inset 0 0 0 6px var(--wirkung-gut);
+    }
+    30%, 70% {
+        box-shadow:
+            inset 0 0 0 2px transparent,
+            inset 0 0 0 6px transparent;
+    }
+    100% {
+        box-shadow:
+            inset 0 0 0 2px transparent,
+            inset 0 0 0 6px transparent;
+    }
+}
+
+.feld-wirkung .figur {
+    animation: figur-glut-gut var(--wirkung-dauer, 1600ms) ease-out;
+}
+
+@keyframes figur-glut-gut {
+    0%, 45% {
+        filter:
+            drop-shadow(0 0 2px var(--wirkung-gut))
+            drop-shadow(0 0 7px var(--wirkung-gut));
+    }
+    30%, 70% { filter: none; }
+    100% { filter: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .wuerfel {
+        animation: none;
+    }
+
+    .feld-wirkung,
+    .feld-wirkung .figur {
+        animation: none;
+    }
+}
+
+/* ------------------------------------------------------------------ *
+ * DIE STILLEN ANIMATIONEN (seit v0.77)
+ *
+ * Vier kleine Bewegungen: Eine Lootbox erscheint, eine verschwindet, eine
+ * Figur kommt dazu, eine wird geschlagen. Wann sie laufen, entscheidet
+ * `TEAM_SCHACH._veraenderungen` — durch Vergleich mit dem letzten Anblick des
+ * Bretts, nicht aus dem Verlauf.
+ *
+ * OHNE FARBE, AUSDRÜCKLICH (Nutzer-Ansage 18.08.: „sie sollen keine Farben
+ * haben und sehr simpel"). Benutzt werden nur Grösse und Deckkraft; der Ring
+ * ist weiss mit einem dunklen Saum, damit er auf einem hellen wie auf einem
+ * dunklen Feld lesbar bleibt. Keine der Farben, die am Brett schon etwas
+ * BEDEUTEN, wird dabei aufgegriffen — blau ist die Wirkung, rot das Unglück,
+ * grün die Zugspur, gelb die Wirkung eines Unglücks.
+ *
+ * WARUM `scale` UND NICHT `transform: scale(…)`: Beides zusammen geht nicht.
+ * Der Würfel schwebt bereits über `transform`, und die ziehende Figur gleitet
+ * darüber (`.figur-zieht`). `scale` ist eine eigenständige Eigenschaft und
+ * rechnet sich mit einem vorhandenen `transform` zusammen, statt es zu
+ * überschreiben. Ein Browser, der sie nicht kennt, zeigt einfach keine
+ * Animation — es geht nichts dabei kaputt.
+ * ------------------------------------------------------------------ */
+
+/* Eine gerade erschienene Lootbox: Sie wächst auf und schwebt danach weiter
+   wie jede andere. Zwei Animationen nebeneinander — die eine fasst `scale`
+   und `opacity` an, die andere `transform`, sie kommen sich nicht ins Gehege. */
+.feld-bonus-neu .wuerfel {
+    animation:
+        wuerfel-auftauchen 360ms ease-out,
+        wuerfel-schweben 2.4s ease-in-out infinite;
+}
+
+@keyframes wuerfel-auftauchen {
+    from { scale: 0.2; opacity: 0; }
+    to { scale: 1; opacity: 1; }
+}
+
+/* Eine Figur, die wirklich DAZUGEKOMMEN ist — Nachschub, Spiegel,
+   Wiedergeburt, Wiederbelebung, Friedhof. Eine, die nur hingezogen ist,
+   bekommt sie nicht; das unterscheidet `_veraenderungen`. */
+.figur-erscheint {
+    animation: figur-auftauchen 320ms ease-out;
+}
+
+@keyframes figur-auftauchen {
+    from { scale: 0.3; opacity: 0; }
+    to { scale: 1; opacity: 1; }
+}
+
+/*
+ * Der Ring, der übrig bleibt: nach einem Schlag, und dort wo eine Lootbox
+ * verschwunden ist. Er wächst kurz aus der Feldmitte auf und ist weg.
+ *
+ * `pointer-events: none`, damit er den Tipp auf das Feld nicht abfängt — er
+ * liegt in der Sekunde nach dem Zug genau dort, wo man als Nächstes hinfasst.
+ */
+.verpufft {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 46%;
+    height: 46%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.45);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 3;
+    animation: verpuffen 420ms ease-out;
+}
+
+@keyframes verpuffen {
+    from {
+        opacity: 0.95;
+        transform: translate(-50%, -50%) scale(0.35);
+    }
+    to {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(1.7);
+    }
+}
+
+/* Nach einem Schlag geht er etwas weiter auf als bei der Lootbox: Dort
+   verschwindet ein Gegenstand, hier fällt eine Figur. */
+.verpufft-schlag {
+    width: 60%;
+    height: 60%;
+}
+
+/* ------------------------------------------------------------------ *
+ * Die Wirkungs-Schauspiele (seit v0.115, Bündel Y) — je Fähigkeit ein
+ * kleines Bild auf dem Brett. Erzeugt in `_wirkungSchauspiel`; das
+ * Skript unterlässt das bei „weniger Bewegung", deshalb stehen die
+ * Regeln hier und nicht im no-preference-Block.
+ * ------------------------------------------------------------------ */
+
+.wirkung-marke {
+    position: absolute;
+    inset: 4%;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 3;
+}
+
+/* Das Schutzschild: ein blauer Ring, der aufwächst und kurz glänzt. */
+.wirkung-schild {
+    border: 3px solid var(--haupt);
+    box-shadow: 0 0 12px var(--haupt), inset 0 0 10px rgba(255, 255, 255, 0.5);
+    animation: schild-glanz 0.8s ease-out forwards;
+}
+
+@keyframes schild-glanz {
+    from {
+        transform: scale(0.35);
+        opacity: 0;
+    }
+    35% {
+        opacity: 1;
+    }
+    to {
+        transform: scale(1.05);
+        opacity: 0;
+    }
+}
+
+/* Die Fessel: ein dunkler, gestrichelter Ring, der zuschnappt … */
+.wirkung-fessel {
+    border: 3px dashed var(--schrift);
+    animation: fessel-zuschnappen 0.7s ease-out forwards;
+}
+
+@keyframes fessel-zuschnappen {
+    from {
+        transform: scale(1.6) rotate(20deg);
+        opacity: 0;
+    }
+    40% {
+        opacity: 1;
+    }
+    70% {
+        transform: scale(0.95) rotate(-4deg);
+    }
+    to {
+        transform: scale(1) rotate(0deg);
+        opacity: 0;
+    }
+}
+
+/* … und die gefangene Figur rüttelt kurz. */
+.figur-ruettelt {
+    animation: figur-ruetteln 0.45s ease-in-out;
+}
+
+@keyframes figur-ruetteln {
+    0%, 100% {
+        transform: rotate(0);
+    }
+    25% {
+        transform: rotate(-8deg);
+    }
+    75% {
+        transform: rotate(8deg);
+    }
+}
+
+/* Der Frost: Eis wächst aus der Feldmitte auf und verweht. */
+.wirkung-frost {
+    inset: 0;
+    border-radius: 0;
+    background: radial-gradient(circle,
+        rgba(150, 205, 255, 0.9) 0%,
+        rgba(150, 205, 255, 0.35) 55%,
+        rgba(150, 205, 255, 0) 75%);
+    animation: frost-wachsen 0.9s ease-out forwards;
+}
+
+@keyframes frost-wachsen {
+    from {
+        transform: scale(0);
+        opacity: 0.3;
+    }
+    55% {
+        opacity: 1;
+    }
+    to {
+        transform: scale(1.2);
+        opacity: 0;
+    }
+}
+
+/*
+ * DAS ROLLENDE NUDELHOLZ: eine Holzwalze mit Griffen, die einmal über
+ * die betroffenen Spalten rollt. Lage und Grösse setzt `_nudelholzRollen`
+ * in Pixeln an den echten Zellen; die Streifen wandern während der Fahrt
+ * nach unten — das lässt die Walze sichtbar rollen.
+ */
+.nudelholz-walze {
+    position: absolute;
+    z-index: var(--ebene-schauspiel);
+    border-radius: 999px;
+    background:
+        repeating-linear-gradient(0deg,
+            rgba(70, 40, 10, 0.18) 0 3px,
+            rgba(255, 255, 255, 0.10) 3px 6px),
+        linear-gradient(180deg, #d2ab72, #aa7f47 55%, #86622f);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35);
+    pointer-events: none;
+
+    /* Dieselbe Dauer wie TEAM_SCHACH.NUDELHOLZ_ROLL_MS — daran hängen die
+       Verzögerungen der geschobenen Figuren. */
+    animation: nudelholz-rollen 0.9s ease-in-out forwards;
+}
+
+/* Die Griffe links und rechts. */
+.nudelholz-walze::before,
+.nudelholz-walze::after {
+    content: "";
+    position: absolute;
+    top: 28%;
+    height: 44%;
+    width: 10px;
+    background: #86622f;
+    border-radius: 4px;
+}
+
+.nudelholz-walze::before {
+    left: -9px;
+}
+
+.nudelholz-walze::after {
+    right: -9px;
+}
+
+/* Die QUER liegende Walze (seit v0.117): Sie rollt waagerecht über eine
+   Reihe — Holz und Streifen sind gedreht, die Griffe sitzen oben und
+   unten. */
+.nudelholz-walze-quer {
+    background:
+        repeating-linear-gradient(90deg,
+            rgba(70, 40, 10, 0.18) 0 3px,
+            rgba(255, 255, 255, 0.10) 3px 6px),
+        linear-gradient(90deg, #d2ab72, #aa7f47 55%, #86622f);
+}
+
+.nudelholz-walze-quer::before,
+.nudelholz-walze-quer::after {
+    top: auto;
+    left: 28%;
+    width: 44%;
+    height: 10px;
+}
+
+.nudelholz-walze-quer::before {
+    top: -9px;
+}
+
+.nudelholz-walze-quer::after {
+    bottom: -9px;
+}
+
+/*
+ * Der Schub durch die Walze (v0.117.1): Die Figur wartet auf ihrem alten
+ * Feld — `backwards` am Aufruf hält das erste Bild während der
+ * Verzögerung — und gleitet erst, wenn die Walze sie erreicht. Eine
+ * ANIMATION statt eines Übergangs: kein Zwischenbild, in dem die Figur
+ * schon am Ziel steht (so entstand das gemeldete Hüpfen).
+ */
+@keyframes nudelholz-schub {
+    from {
+        transform: translate(var(--schub-von, 0px, 0px));
+    }
+    to {
+        transform: translate(0px, 0px);
+    }
+}
+
+/* Start und Ziel setzt das Skript je Richtung (`--roll-von`/`--roll-bis`,
+   seit v0.117 — vorher rollte sie fest von oben nach unten). */
+@keyframes nudelholz-rollen {
+    from {
+        transform: translate(var(--roll-von, 0px, 0px));
+        opacity: 0;
+    }
+    12% {
+        opacity: 1;
+    }
+    88% {
+        opacity: 1;
+    }
+    to {
+        transform: translate(var(--roll-bis, 0px, 0px));
+        opacity: 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .feld-bonus-neu .wuerfel,
+    .figur-erscheint,
+    .verpufft {
+        animation: none;
+    }
+}
+
+/* Marke einer eingesammelten Fähigkeit — die Farbe zeigt die Seltenheit. */
+.faehigkeit-marke,
+.faehigkeit-knopf {
+    border-color: var(--stufe-farbe, var(--rahmen));
+    border-width: 2px;
+    border-style: solid;
+    color: var(--stufe-farbe, var(--schrift-leise));
+    font-weight: 600;
+    /* Platz für die beiden Zeichen dahinter (Pluszeichen, Blitz). */
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/*
+ * Eine Fähigkeit, die man gerade nicht einsetzen darf (seit v0.48).
+ *
+ * Antippen geht trotzdem — es zeigt dann nur Beschreibung und Anleitung. Sie
+ * muss sich deshalb sichtbar von einer einsatzbereiten unterscheiden, ohne
+ * auszusehen wie abgeschaltet: gestrichelter Rand statt durchgezogenem, dazu
+ * ein zurückgenommener Grund.
+ */
+.faehigkeit-knopf-fremd {
+    border-style: dashed;
+    background: transparent;
+    font-weight: 500;
+}
+
+/*
+ * Die beiden Zeichen am Vorrat (seit v3.6):
+ *
+ *     +      Danach bleibt dir dein normaler Zug.
+ *     Blitz  Geht auch, während der Gegner am Zug ist.
+ *
+ * Sie sind bewusst leise: Sie erklären eine Fähigkeit, sie sind nicht die
+ * Fähigkeit. Wer wissen will, was sie bedeuten, findet es hinter dem i.
+ */
+.faehigkeit-zeichen {
+    font-size: 0.95em;
+    font-weight: 700;
+    opacity: 0.75;
+}
+
+.faehigkeit-blitz {
+    width: 0.85em;
+    height: 0.85em;
+    fill: currentColor;
+    opacity: 0.75;
+    flex: 0 0 auto;
+}
+
+.figur {
+    position: relative;
+    z-index: 1;
+    /*
+     * Voller Umriss in der Gegenfarbe. Auf einem blau-weissen Brett steht eine
+     * weisse Figur sonst unsichtbar auf einem weissen Feld — ein weicher
+     * Schatten allein reicht dafür nicht.
+     */
+    text-shadow:
+        1px 0 0 var(--figur-umriss-dunkel),
+        -1px 0 0 var(--figur-umriss-dunkel),
+        0 1px 0 var(--figur-umriss-dunkel),
+        0 -1px 0 var(--figur-umriss-dunkel),
+        0 0 3px rgba(0, 0, 0, 0.4);
+}
+
+.figur-weiss {
+    color: var(--figur-weiss);
+}
+
+/* Unter dem vollen Glas: leicht verschwommen, damit man ahnt, dass etwas
+   nicht stimmt — ohne zu verraten, was in Wirklichkeit dort steht. */
+.figur-getruebt {
+    filter: blur(0.4px) saturate(0.85);
+    opacity: 0.92;
+}
+
+.figur-schwarz {
+    color: var(--figur-schwarz);
+    text-shadow:
+        1px 0 0 var(--figur-umriss-hell),
+        -1px 0 0 var(--figur-umriss-hell),
+        0 1px 0 var(--figur-umriss-hell),
+        0 -1px 0 var(--figur-umriss-hell);
+}
+
+/*
+ * Die Zugbewegung. team-schach.js setzt die Figur zuerst auf ihr altes Feld
+ * (transform) und nimmt die Verschiebung im nächsten Bild wieder weg — mit
+ * dieser Klasse gleitet sie dabei hinüber. Die Dauer muss zu
+ * TEAM_SCHACH.ANIMATION_MS passen.
+ */
+.figur-zieht {
+    transition: transform 260ms ease-out;
+}
+
+/* Wer keine Bewegung mag oder braucht, bekommt keine. */
+@media (prefers-reduced-motion: reduce) {
+    .figur-zieht {
+        transition: none;
+    }
+}
+
+.zug-liste {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 220px;
+    overflow-y: auto;
+}
+
+.zug-zeile {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 8px;
+    font-size: 0.9rem;
+    padding: 4px 0;
+    border-bottom: 1px solid var(--rahmen);
+}
+
+.zug-zeile:last-child {
+    border-bottom: none;
+}
+
+.zug-farbe {
+    min-width: 62px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--schrift-leise);
+}
+
+.zug-wer {
+    margin-left: auto;
+    font-size: 0.8rem;
+    color: var(--schrift-leise);
+}
+
+/* Der Verlauf ist eingeklappt — auf dem Handy soll das Brett den Platz haben. */
+.verlauf-kasten {
+    margin: 0;
+}
+
+.verlauf-titel {
+    cursor: pointer;
+    font-weight: 600;
+    padding: 2px 0;
+}
+
+.verlauf-titel:focus-visible {
+    outline: 2px solid var(--haupt);
+    outline-offset: 1px;
+}
+
+/* ------------------------------------------------------------------ *
+ * Abschluss einer Partie (Sieg, Niederlage, Punktestand)
+ *
+ * Nimmt den ganzen Bereich ein — das Ende einer Partie, an der tagelang
+ * gespielt wurde, ist kein Nebensatz.
+ * ------------------------------------------------------------------ */
+
+.abschluss {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    min-height: 60vh;
+    padding: 28px 20px;
+    border-radius: var(--radius);
+
+    /* Bezugsrahmen für den Konfettiregen (seit v0.116). */
+    position: relative;
+    overflow: hidden;
+    text-align: center;
+}
+
+.abschluss-sieg {
+    background: var(--gut-flaeche);
+    border: 2px solid var(--gut);
+}
+
+.abschluss-niederlage {
+    background: var(--fehler-flaeche);
+    border: 2px solid var(--gefahr);
+}
+
+.abschluss-remis,
+.abschluss-stand {
+    background: var(--karte);
+    border: 2px solid var(--rahmen);
+}
+
+.abschluss-marke {
+    margin: 0;
+    font-size: 0.85rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--schrift-leise);
+}
+
+.abschluss-titel {
+    margin: 0;
+    font-size: clamp(1.8rem, 9vw, 3rem);
+    line-height: 1.1;
+}
+
+.abschluss-sieg .abschluss-titel {
+    color: var(--gut);
+}
+
+.abschluss-niederlage .abschluss-titel {
+    color: var(--gefahr);
+}
+
+.abschluss-text {
+    margin: 0;
+    font-size: 1.05rem;
+}
+
+.abschluss-grund {
+    margin: 0;
+    color: var(--schrift-leise);
+    font-size: 0.92rem;
+}
+
+.abschluss-punkte {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    margin-top: 8px;
+    padding: 14px 22px;
+    background: var(--karte);
+    border: 1px solid var(--rahmen);
+    border-radius: var(--radius);
+}
+
+.abschluss-zahl {
+    font-size: 2rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--haupt);
+}
+
+.abschluss-punkte-text {
+    font-size: 0.82rem;
+    color: var(--schrift-leise);
+}
+
+.abschluss-leiste {
+    margin-top: 12px;
+}
+
+.abschluss-tabelle {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    width: 100%;
+    max-width: 420px;
+    max-height: 45vh;
+    overflow-y: auto;
+}
+
+.abschluss-zeile {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    background: var(--karte-leise);
+}
+
+.abschluss-ich {
+    background: var(--haupt);
+    color: var(--haupt-schrift);
+    font-weight: 600;
+}
+
+.abschluss-platz {
+    min-width: 28px;
+    text-align: right;
+    color: var(--schrift-leise);
+    font-variant-numeric: tabular-nums;
+}
+
+.abschluss-ich .abschluss-platz {
+    color: inherit;
+}
+
+.abschluss-name {
+    flex: 1 1 auto;
+    text-align: left;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.abschluss-gesamt {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+}
+
+/* ------------------------------------------------------------------ *
+ * Auswahl der Spielart
+ * ------------------------------------------------------------------ */
+
+.spielart-feld {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 12px;
+    margin-top: var(--abstand);
+}
+
+.spielart-kachel {
+    appearance: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+    font: inherit;
+    text-align: left;
+    color: var(--schrift);
+    background: var(--karte);
+    border: 1px solid var(--rahmen);
+    border-radius: var(--radius);
+    cursor: pointer;
+}
+
+.spielart-kachel:hover {
+    border-color: var(--haupt);
+}
+
+.spielart-kachel:focus-visible {
+    outline: 2px solid var(--haupt);
+    outline-offset: 1px;
+}
+
+.spielart-kopf {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.spielart-titel {
+    font-weight: 600;
+    font-size: 1.05rem;
+}
+
+.spielart-masse {
+    font-size: 0.8rem;
+    color: var(--schrift-leise);
+    white-space: nowrap;
+}
+
+/*
+ * Wie viele Figuren je Seite (seit v0.83). Sie steht unter dem Kopf und nicht
+ * daneben: In der Kopfzeile drängelt sie sich mit dem Titel um den Platz, und
+ * auf dem Handy bricht dann der Titel um.
+ */
+.spielart-anzahl,
+.spielart-dauer {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 0.8rem;
+    color: var(--schrift-leise);
+}
+
+.spielart-text {
+    font-size: 0.85rem;
+    color: var(--schrift-leise);
+}
+
+/*
+ * Das Vorschaubild. Dieselben Feldfarben und Figurenzeichen wie das echte
+ * Brett — nur klein und ohne Bedienung. Die Spaltenzahl kommt aus der Spielart,
+ * deshalb sieht man dem Bild die Brettform sofort an (6 mal 6 quadratisch,
+ * Doppelbrett breit).
+ */
+.vorschau {
+    display: grid;
+    grid-template-columns: repeat(var(--vorschau-spalten, 8), 1fr);
+    width: 100%;
+    border: 1px solid var(--rahmen);
+    border-radius: 4px;
+    overflow: hidden;
+    /* Bezugspunkt für die Pfeile, die über dem ganzen Brett liegen. */
+    position: relative;
+    /* Die Figuren sollen im Kleinen noch erkennbar bleiben. */
+    font-size: calc(min(260px, 70vw) / var(--vorschau-spalten, 8) * 0.8);
+    line-height: 1;
+}
+
+.vorschau-feld {
+    aspect-ratio: 1 / 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+/* Im Vorschaubild bleibt der Würfel ruhig — dort geht es um die Brettform. */
+.vorschau .wuerfel {
+    animation: none;
+}
+
+/* ------------------------------------------------------------------ *
+ * Die Bildanleitung zu einer Fähigkeit (seit v0.41)
+ *
+ * Zwei Bretter nebeneinander — vorher und nachher. Auf dem Handy passen sie
+ * nebeneinander, weil sie klein sind; wird es zu eng, rutscht das zweite
+ * darunter (`flex-wrap`). Ein waagerechter Balken darf dabei nie entstehen.
+ * ------------------------------------------------------------------ */
+
+.anleitung {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.anleitung-bild {
+    flex: 1 1 140px;
+    min-width: 130px;
+    max-width: 220px;
+}
+
+/*
+ * Ein Riss im Boden (seit v0.54, Unglückswürfel „Erdbeben").
+ *
+ * Er trägt die Hintergrundfarbe der Seite statt einer Feldfarbe — das Feld
+ * sieht aus, als wäre es weggebrochen. Anders als die Mauer bekommt er keine
+ * Ränder: Eine Mauer ist ein Riegel und gehört zusammen, Risse sind einzelne
+ * Löcher.
+ */
+/*
+ * EIN RISS SIEHT AUS WIE EIN LOCH (v0.57 nachgeschärft).
+ *
+ * Bis v0.56 lag ein kräftiger Schatten darüber — das wirkte wie ein dunkles
+ * Feld, nicht wie fehlendes Brett. Jetzt trägt das Feld GENAU die Farbe der
+ * Fläche hinter dem Brett, und ein zarter Schatten liegt nur an der Oberkante:
+ * So sieht man Tiefe, aber die Farbe bleibt die des Untergrundes.
+ *
+ * Ein Riss darf ausserdem NICHTS mehr darüber bekommen — keine Spur, keine
+ * Auswahlmarke, keinen Zugpunkt. Er ist kein Feld mehr, auf das man zieht,
+ * und jede Markierung darauf wäre eine Einladung ins Leere.
+ */
+/*
+ * EIN RISS IST EIN LOCH — also DURCHSICHTIG (seit v0.73, Meldung I7).
+ *
+ * Seit v0.57 trug das Feld die Hintergrundfarbe der Seite. Das ist fast
+ * dasselbe, aber eben nur fast: Das Brett liegt in einer Karte, und deren Grund
+ * ist eine Spur heller — der Riss sah dadurch aus wie ein eingefärbtes Feld mit
+ * Rahmen, nicht wie ein Loch. Gemeldet als „eingerahmte Felder, wo man die
+ * Feldfarbe noch sieht". Durchsichtig lässt wirklich das durchscheinen, worauf
+ * das Brett liegt.
+ */
+.feld-riss {
+    background: transparent !important;
+    box-shadow: inset 0 3px 4px -2px rgba(0, 0, 0, 0.5);
+    cursor: default;
+}
+
+.feld-riss::before,
+.feld-riss::after {
+    content: none !important;
+}
+
+/*
+ * Eine gefallene Figur, blass gezeigt (seit v0.54, seit v0.57 für beide
+ * Fähigkeiten).
+ *
+ * Nur solange der Friedhof oder die Wiederbelebung auf ihr Zielfeld warten:
+ * Dann sieht man, WO jemand gefallen ist — beim Friedhof, um den 2×2-Kasten
+ * gut zu legen, bei der Wiederbelebung, um die richtige Figur zu wählen.
+ * Solange sie liegen, sind die Würfel ausgeblendet; beides übereinander wäre
+ * nicht lesbar.
+ */
+.figur-schemen {
+    opacity: 0.3;
+    filter: grayscale(0.6);
+    pointer-events: none;
+}
+
+/*
+ * Die Aufschlüsselung im Abschluss-Bildschirm (seit v0.53): links wofür,
+ * rechts wie viel. Die grosse Summe steht darüber.
+ */
+.abschluss-aufschluesselung {
+    width: 100%;
+    max-width: 320px;
+    margin: 10px auto 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.abschluss-posten {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    font-size: 0.9rem;
+}
+
+.abschluss-posten-was {
+    color: inherit;
+    opacity: 0.85;
+}
+
+.abschluss-posten-wert {
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+/* Eine leere Zeile als Trenner vor der Beute-Aufstellung. */
+.abschluss-posten-still {
+    height: 4px;
+}
+
+/*
+ * Der Zuwachs aus dieser Partie im Punktestand (seit v0.53): grüner Pfeil und
+ * die Zahl daneben, zwischen Name und Gesamtstand.
+ */
+.abschluss-zuwachs {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    color: #2e9e52;
+    font-weight: 700;
+    font-size: 0.85rem;
+    margin-left: auto;
+    margin-right: 10px;
+}
+
+.zuwachs-pfeil {
+    width: 0.8em;
+    height: 0.8em;
+    fill: currentColor;
+    flex: 0 0 auto;
+}
+
+/*
+ * Die Restzeit an einem Feld (seit v0.53).
+ *
+ * Klein und in der Ecke, damit sie die Figur nicht verdeckt — sie ist eine
+ * Nebenauskunft, keine Beschriftung. Zweifarbig wie jede Markierung auf dem
+ * Brett (heller Rand, dunkler Kern): Das Brett hat helle UND dunkle Felder,
+ * eine einzelne Farbe verschwindet immer auf einer der beiden.
+ */
+.feld-restzeit {
+    position: absolute;
+    top: 1px;
+    right: 2px;
+    z-index: 5;
+    font-size: 0.5em;
+    font-weight: 700;
+    line-height: 1;
+    padding: 1px 3px;
+    border-radius: 6px;
+    color: #fff;
+    background: rgba(20, 24, 32, 0.82);
+    border: 1px solid rgba(255, 255, 255, 0.75);
+    pointer-events: none;
+}
+
+/*
+ * Eine Einstellungszeile mit i daneben (seit v0.52).
+ *
+ * Die Zeile selbst ist ein `label` und schaltet den Haken um; das i muss
+ * deshalb NEBEN ihr stehen, nicht darin — sonst löst ein Tipp auf das i beides
+ * gleichzeitig aus.
+ */
+.schalter-halter {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.schalter-halter > .schalter-zeile {
+    flex: 1 1 auto;
+}
+
+.schalter-halter > .info-knopf {
+    flex: 0 0 auto;
+    margin-top: 2px;
+}
+
+/*
+ * Der Griff an den Vorrat (seit v0.50).
+ *
+ * In einem Bild wird nicht das Brett angetippt, sondern die Fähigkeit. Sie
+ * steht dann UNTER dem Brett, an der Stelle, an der sie auch im Spiel steht —
+ * mit demselben Fingerabdruck, den das Brett sonst trägt. Das Brett bleibt
+ * dabei stehen und behält seine Grösse: Sonst hüpfte das Bild bei jedem Takt.
+ */
+.anleitung-mitknopf {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.anleitung-vorrat {
+    display: flex;
+    justify-content: center;
+}
+
+/*
+ * DAS NACHGESTELLTE FENSTER IN DER ANLEITUNG (seit v0.75, Meldung I6).
+ *
+ * Es soll wie der echte Dialog AUSSEHEN, ohne einer zu sein: derselbe Grund,
+ * derselbe Rahmen, dieselben zwei Knöpfe rechts unten — nur kleiner und ohne
+ * Funktion. Ein echter Dialog liesse sich hier gar nicht zeigen, er liegt über
+ * der ganzen Seite.
+ */
+.anleitung-fenster {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px 10px;
+    border: 1px solid var(--rahmen);
+    border-radius: 8px;
+    background: var(--karte);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
+}
+
+.anleitung-fenster-titel {
+    font-weight: 700;
+    font-size: 0.82rem;
+}
+
+.anleitung-fenster-text {
+    margin: 0;
+    font-size: 0.74rem;
+    line-height: 1.35;
+    color: var(--schrift-leise);
+    white-space: pre-line;
+}
+
+.anleitung-fenster-knoepfe {
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.anleitung-knopf {
+    position: relative;
+    --stufe-farbe: var(--haupt);
+}
+
+/*
+ * Die Marke steht seit v0.58 in JEDEM Bild, damit die Anleitung nicht mit
+ * jedem Takt in der Höhe springt. In den Bildern, in denen gerade nicht
+ * gedrückt wird, tritt sie zurück — sichtbar, aber ohne sich anzubieten.
+ */
+.anleitung-knopf-ruht {
+    opacity: 0.45;
+}
+
+/*
+ * Auf dem Brett füllt der Abdruck ein Feld; auf der Marke sitzt er daneben.
+ *
+ * DER ABDRUCK BRAUCHT PLATZ NACH UNTEN (seit v0.73, Meldung I5: „der
+ * Fingerabdruck am Vorrat-Knopf ist abgeschnitten"). Die Marke ist eine Pille,
+ * deren Höhe der Text bestimmt — ein quadratisches Zeichen von 1,1em stiess
+ * dort oben und unten an den Rand, und die äusseren Bögen lagen genau auf der
+ * Kante. Jetzt bekommt die Pille etwas mehr Höhe, das Zeichen darf nicht
+ * schrumpfen (`flex: none`, sonst quetscht der Flex-Kasten es schmal), und ein
+ * kleiner Abstand hält es von der Rundung weg.
+ */
+.anleitung-knopf {
+    padding-top: 5px;
+    padding-bottom: 5px;
+    padding-right: 8px;
+    overflow: visible;
+}
+
+.anleitung-knopf .anleitung-finger {
+    position: static;
+    flex: none;
+    width: 1.15em;
+    height: 1.15em;
+    margin-left: 5px;
+}
+
+.anleitung-marke {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--schrift-leise);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 4px;
+}
+
+.anleitung-text {
+    margin: 6px 0 0 0;
+    font-size: 0.82rem;
+    line-height: 1.35;
+    color: var(--schrift-leise);
+}
+
+/*
+ * Das markierte Feld: worauf es in DIESEM Bild ankommt. Zweifarbig wie jede
+ * Markierung auf dem Brett — heller Rand, dunkler Kern —, sonst verschwände
+ * es auf einer der beiden Feldfarben.
+ */
+.vorschau-marke {
+    box-shadow:
+        inset 0 0 0 2px var(--ziel-rand),
+        inset 0 0 0 4px var(--ziel-kern);
+}
+
+/* ------------------------------------------------------------------ *
+ * Die Figurenwerte in der Schachregel-Anleitung (seit v0.96)
+ *
+ * Links das Zeichen, in der Mitte Name und Satz, rechts die Zahl. Die Zahl
+ * steht rechtsbündig und in gleichen Ziffernbreiten, damit die Spalte eine
+ * Spalte bleibt — daran liest man die Reihenfolge ab, und genau darum geht es.
+ * ------------------------------------------------------------------ */
+
+.werte-liste {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 10px;
+}
+
+.werte-zeile {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 10px;
+    background: var(--karte-leise);
+    border: 1px solid var(--rahmen);
+    border-radius: 8px;
+}
+
+.werte-figur {
+    flex: 0 0 auto;
+    font-size: 1.7rem;
+    line-height: 1;
+}
+
+.werte-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.werte-name {
+    font-weight: 600;
+}
+
+.werte-satz {
+    font-size: 0.82rem;
+    line-height: 1.35;
+    color: var(--schrift-leise);
+}
+
+.werte-zahl {
+    flex: 0 0 auto;
+    font-size: 1.2rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--haupt);
+    min-width: 1.6em;
+    text-align: right;
+}
+
+/* Die Kapitel klappen auf wie die Eintraege der Fähigkeiten-Bibliothek und
+   teilen sich deren Stil (`stufen-eintrag`). Eigen ist nur der Abstand: Hier
+   stehen mehrere Kapitel direkt untereinander in EINER Karte. */
+.grundlagen-eintrag + .grundlagen-eintrag {
+    margin-top: 6px;
+}
+
+/*
+ * DAS BRETT DER SCHACHREGELN IST BREITER (seit v0.97).
+ *
+ * Es hat acht Spalten statt sechs wie die Fähigkeits-Anleitung. Bei gleicher
+ * Breite wäre jedes Feld ein Viertel kleiner — und hier ist das Brett die
+ * Sache selbst, nicht der Rahmen für eine Wirkung. Nach oben begrenzt bleibt
+ * es trotzdem: Auf dem Handy soll neben ihm kein Rand entstehen, über den man
+ * waagerecht scrollen müsste.
+ */
+.grundlagen-brett {
+    flex: 0 1 360px;
+    max-width: min(360px, 100%);
+}
+
+/*
+ * DIE GANZE BESCHREIBUNG UNTER DEN BILDERN (seit v0.94).
+ *
+ * Ein Aufklapper, zu wie jeder Aufklapper. Oben im Fenster steht ein Satz,
+ * dann kommen die Bilder — wer die Feinheiten lesen will, tippt hier. Vorher
+ * stand der ganze Text über den Bildern und schob sie aus dem Sichtfeld.
+ */
+.anleitung-mitbeschreibung {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.mehr-text {
+    margin-top: 4px;
+    border-top: 1px solid var(--rahmen);
+    padding-top: 8px;
+}
+
+.mehr-text > summary {
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--haupt);
+    /* Der Griff ist klein — die Fläche zum Treffen darf es nicht sein. */
+    padding: 4px 0;
+}
+
+.mehr-text > summary:focus-visible {
+    outline: 2px solid var(--haupt);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+.mehr-text-satz {
+    margin: 6px 0 0 0;
+    font-size: 0.88rem;
+    line-height: 1.45;
+    color: var(--schrift-leise);
+}
+
+/*
+ * Der abgespielte Ablauf: EIN Brett, das die Schritte durchläuft. Es steht in
+ * der Mitte und darf grösser sein als die ruhigen Einzelbilder — es ist ja das
+ * einzige.
+ */
+.anleitung-film {
+    justify-content: center;
+}
+
+.anleitung-film .anleitung-bild {
+    flex: 0 1 260px;
+    max-width: 260px;
+}
+
+/*
+ * Die Schrittliste unter dem Bild (seit v0.44).
+ *
+ * ALLE Sätze stehen gleichzeitig da, der laufende ist hervorgehoben. Vorher
+ * wechselte EIN Satz mit dem Bild — und weil die Sätze verschieden lang sind,
+ * hüpfte alles darunter im Sekundentakt.
+ */
+.anleitung-schritte {
+    list-style: none;
+    margin: 8px 0 0 0;
+    padding: 0;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.anleitung-schritt {
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+    font-size: 0.82rem;
+    line-height: 1.35;
+    color: var(--schrift-leise);
+    opacity: 0.7;
+}
+
+.anleitung-schritt-jetzt {
+    opacity: 1;
+    color: var(--schrift);
+}
+
+.anleitung-nummer {
+    flex: 0 0 auto;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--schrift-leise);
+}
+
+.anleitung-schritt-jetzt .anleitung-nummer {
+    color: var(--haupt);
+}
+
+/*
+ * Der Fingerabdruck: HIER wird getippt. Er liegt über allem anderen im Feld —
+ * über der Figur, über dem Würfel —, denn er ist die Aussage des Bildes.
+ */
+.anleitung-finger {
+    position: absolute;
+    width: 78%;
+    height: 78%;
+    z-index: 4;
+    pointer-events: none;
+    filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.55));
+}
+
+/*
+ * DIE TIPPENDE HAND (seit v0.116, sie ersetzt den Fingerabdruck von v0.45):
+ * weisse Fläche mit dunklem Umriss — so bleibt sie auf hellen wie dunklen
+ * Feldern lesbar, in beiden Farbwelten.
+ */
+.anleitung-hand-flaeche {
+    fill: #ffffff;
+    stroke: #1c1f23;
+    stroke-width: 1.1;
+    stroke-linejoin: round;
+}
+
+/* Die Funken-Bögen über der Kuppe sind seit 22.08. wieder raus (Nutzer:
+   „der Strich vorne weg") — die Tipp-Bewegung der Hand sagt schon alles. */
+
+/* ------------------------------------------------------------------ *
+ * Der Konfettiregen zum Sieg (seit v0.116). Erzeugt in
+ * `_konfettiStreuen`; das Skript unterlässt das bei „weniger Bewegung",
+ * deshalb stehen die Regeln ausserhalb des no-preference-Blocks.
+ * ------------------------------------------------------------------ */
+
+.konfetti-regen {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.konfetti-stueck {
+    position: absolute;
+    top: -14px;
+    width: 8px;
+    height: 12px;
+    border-radius: 2px;
+    opacity: 0;
+    animation: konfetti-fallen 2.6s ease-in forwards;
+}
+
+/* Sechs feste Farben — die Rot-, Blau-, Gelb- und Grüntöne des Hauses. */
+.konfetti-0 { background: #e05a52; }
+.konfetti-1 { background: #1f5fa8; }
+.konfetti-2 { background: #e0b458; }
+.konfetti-3 { background: #4cb87a; }
+.konfetti-4 { background: #9a6fd0; }
+.konfetti-5 { background: #4a8fd6; }
+
+@keyframes konfetti-fallen {
+    0% {
+        opacity: 0;
+        transform: translateY(0) rotate(0);
+    }
+    8% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(70vh) rotate(540deg);
+    }
+}
+
+/*
+ * Die Bewegungspfeile. Zweifarbig wie jede Markierung auf dem Brett: der
+ * helle Rand liegt unten und ist dicker, der dunkle Kern darüber — sonst
+ * verschwände der Pfeil auf einer der beiden Feldfarben.
+ */
+.anleitung-pfeile {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 3;
+    pointer-events: none;
+}
+
+.anleitung-pfeil-rand {
+    stroke: var(--ziel-rand);
+    stroke-width: 0.16;
+    stroke-linecap: round;
+}
+
+.anleitung-spitze-rand {
+    fill: var(--ziel-rand);
+    stroke: var(--ziel-rand);
+    stroke-width: 0.12;
+    stroke-linejoin: round;
+}
+
+.anleitung-pfeil-kern {
+    stroke: var(--ziel-kern);
+    stroke-width: 0.08;
+    stroke-linecap: round;
+}
+
+.anleitung-spitze-kern {
+    fill: var(--ziel-kern);
+}
+
+/* ------------------------------------------------------------------ *
+ * Übersicht der Partien
+ * ------------------------------------------------------------------ */
+
+.partie-karte .karte-fuss {
+    justify-content: flex-start;
+}
+
+.partie-zeile {
+    margin: 0 0 4px 0;
+    font-size: 0.92rem;
+}
+
+/*
+ * Die Herkunftszeile einer Partie (seit v0.77): mit welcher App-Version sie
+ * angelegt wurde. Sie steht nur da, wenn es eine ANDERE als die laufende ist —
+ * eine Auskunft für den Fall, dass etwas gemeldet wird, kein Teil des Spiels.
+ * Deshalb leise: kleiner und in der stillen Schriftfarbe.
+ */
+.partie-herkunft {
+    font-size: 0.82rem;
+    color: var(--schrift-leise);
+}
+
+/* Kopfzeile einer geöffneten Partie: Zurück, Name, Spielart. */
+.partie-kopf {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: var(--abstand);
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--rahmen);
+}
+
+/*
+ * IN LANGEN ANSICHTEN KLEBT DIE KOPFZEILE (seit v0.110): Bibliothek und
+ * „Schach lernen" tragen diese Klasse, damit der EINE Zurück-Knopf beim
+ * Rollen erreichbar bleibt — er ersetzt den schwebenden Zweitknopf von
+ * v0.59 bis v0.109. Die Fläche dahinter deckt den rollenden Text ab.
+ */
+.partie-kopf-klebt {
+    position: sticky;
+    top: 0;
+    z-index: var(--ebene-schwebend);
+    background: var(--flaeche);
+    padding-top: 8px;
+}
+
+.partie-titel {
+    margin: 0;
+    font-size: 1.15rem;
+    /* Nimmt den Platz zwischen Zurück-Knopf und Spielart ein. */
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.faehigkeit-zeile {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+    border-top: 1px solid var(--rahmen);
+}
+
+/* ------------------------------------------------------------------ *
+ * Imposter
+ * ------------------------------------------------------------------ */
+
+/*
+ * Das Wort steht groß und allein — es ist das Einzige, was in dieser Runde
+ * zählt. Für die Imposter steht dort ihre Rolle, in Rot: Sie sollen im ersten
+ * Moment merken, dass sie etwas anderes sehen als die anderen.
+ */
+.imposter-wort {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 28px 20px;
+    margin-bottom: var(--abstand);
+    text-align: center;
+    background: var(--karte);
+    border: 2px solid var(--haupt);
+    border-radius: var(--radius);
+}
+
+.imposter-wort-rolle {
+    border-color: var(--gefahr);
+    background: var(--fehler-flaeche);
+}
+
+.imposter-wort-marke {
+    font-size: 0.8rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--schrift-leise);
+}
+
+.imposter-wort-text {
+    font-size: clamp(1.8rem, 9vw, 3rem);
+    font-weight: 700;
+    line-height: 1.1;
+    overflow-wrap: anywhere;
+}
+
+.imposter-wort-rolle .imposter-wort-text {
+    color: var(--gefahr);
+}
+
+.imposter-wort-hinweis {
+    font-size: 0.9rem;
+    color: var(--schrift-leise);
+    max-width: 32em;
+}
+
+.imposter-uhr {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.imposter-wahl {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.imposter-wahl-titel {
+    font-size: 0.9rem;
+    color: var(--schrift-leise);
+}
+
+.imposter-knopfreihe {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.imposter-zeile {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--rahmen);
+}
+
+.imposter-zeile:last-child {
+    border-bottom: none;
+}
+
+.imposter-zeile-ich {
+    background: var(--karte-leise);
+    border-radius: 6px;
+    padding: 8px;
+}
+
+.imposter-name {
+    flex: 1 1 120px;
+    min-width: 0;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.imposter-ich {
+    color: var(--haupt);
+}
+
+.imposter-treffer {
+    font-size: 0.85rem;
+    color: var(--schrift-leise);
+}
+
+.imposter-punkte {
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    color: var(--haupt);
+    margin-left: auto;
+}
+
+/* Verdächtig rot, unverdächtig grün — aber nur, wenn gewählt. */
+.knopf-haupt.imposter-stufe-imposter {
+    background: var(--gefahr);
+    color: var(--karte);
+}
+
+.knopf-haupt.imposter-stufe-save {
+    background: var(--gut);
+    color: var(--karte);
+}
+
+/* ------------------------------------------------------------------ *
+ * Dialog
+ * ------------------------------------------------------------------ */
+
+.dialog-hintergrund {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--abstand);
+    z-index: var(--ebene-dialog);
+
+    /* Wer im Dialog ans Ende rollt, rollt NICHT die Seite dahinter weiter
+       (seit v0.108, gemeldet 22.08.: „wenn man in Popups scrollt und zurück
+       geht, dann hat man dort auch gescrollt"). */
+    overscroll-behavior: contain;
+}
+
+/*
+ * Die zweite Hälfte desselben Fixes: Solange ein Dialog offen ist, ist die
+ * Seite dahinter festgehalten (`dialog.js` setzt die Klasse). Ohne das rollte
+ * ein Wisch auf dem SCHLEIER — neben dem Kasten — weiterhin die Seite.
+ */
+body.dialog-offen {
+    overflow: hidden;
+}
+
+.dialog-hintergrund[hidden] {
+    display: none;
+}
+
+/*
+ * DER KASTEN PASST IMMER AUF DEN SCHIRM (seit v0.67, Wunsch #27).
+ *
+ * Gemeldet als: „Wenn man eine Fähigkeit aus dem Inventar anklickt, kommt eine
+ * Info, und die muss man wegklicken." Genau daran lag es — der Dialog trägt
+ * seit v0.41 die abgespielte Bildanleitung mit Brett und Schrittliste, und mit
+ * sechs Bildern ist er höher als ein Handybildschirm. Der Knopf zum Wegklicken
+ * stand damit UNTER dem Bildrand: Man musste erst im Dialog nach unten
+ * scrollen, um ihn überhaupt zu sehen.
+ *
+ * Jetzt hat der Kasten eine Höchsthöhe und scrollt selbst; die Knopfleiste
+ * klebt unten fest (siehe `.dialog-knopfleiste`). Das gilt für JEDEN Dialog —
+ * ein hoher Dialog ist überall dasselbe Problem, nicht nur bei den
+ * Fähigkeiten.
+ */
+.dialog-kasten {
+    background: var(--karte);
+    border-radius: var(--radius);
+    border: 1px solid var(--rahmen);
+    padding: 20px;
+    max-width: 420px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+
+    /* Am Ende des Kastens endet auch das Rollen — nichts läuft auf die
+       Seite dahinter über (siehe `.dialog-hintergrund`). */
+    overscroll-behavior: contain;
+}
+
+.dialog-kasten h2 {
+    margin: 0 0 8px 0;
+    font-size: 1.1rem;
+}
+
+.dialog-kasten p {
+    margin: 0 0 16px 0;
+    color: var(--schrift-leise);
+    /* Zeilenumbrüche im Text zählen — die Punkteregeln kommen mehrzeilig. */
+    white-space: pre-line;
+    /* KEIN eigener Scrollbereich mehr (seit v0.67): Der Kasten scrollt jetzt
+       als Ganzes. Zwei Scrollbereiche ineinander sind auf dem Handy kaum zu
+       treffen — man erwischt beim Wischen den falschen. */
+}
+
+.dialog-feld {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 20px;
+    font: inherit;
+    color: var(--schrift);
+    background: var(--karte);
+    border: 1px solid var(--rahmen);
+    border-radius: 6px;
+}
+
+/*
+ * Das mehrzeilige Feld (seit v0.59): Es wächst mit dem Text nach unten —
+ * `dialog.js` misst dafür nach jedem Tastendruck nach. Ab `max-height` hört
+ * das Wachsen auf und das Feld scrollt selbst, sonst schöbe ein langer Wunsch
+ * die Knöpfe aus dem Bild.
+ */
+.dialog-feld-lang {
+    min-height: 6em;
+    max-height: 40vh;
+    resize: vertical;
+    line-height: 1.4;
+}
+
+/*
+ * DIE SCHWEBENDE BESCHRIFTUNG (seit v0.114): Sie steht im leeren Feld und
+ * wandert bei Eingabe oder Fokus klein an den oberen Rand — `dialog.js`
+ * setzt `dialog-feld-gefuellt`, sobald etwas im Feld steht.
+ */
+.dialog-feld-halter {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.dialog-feld-halter .dialog-feld {
+    margin-bottom: 0;
+}
+
+.dialog-feld-marke {
+    position: absolute;
+    left: 11px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--schrift-leise);
+    pointer-events: none;
+    padding: 0 4px;
+}
+
+.dialog-feld-halter:focus-within .dialog-feld-marke,
+.dialog-feld-gefuellt .dialog-feld-marke {
+    top: 0;
+    font-size: 0.72rem;
+    color: var(--haupt);
+    background: var(--karte);
+}
+
+/*
+ * DIE KURZMELDUNG (seit v0.114): kleine „hat geklappt"-Meldung am unteren
+ * Rand, geht von selbst wieder (`DIALOG.kurzmeldung`). Dunkel auf hell und
+ * umgekehrt — sie soll sich abheben, aber nichts verdecken.
+ */
+.kurzmeldung {
+    position: fixed;
+    left: 50%;
+    bottom: 24px;
+    transform: translateX(-50%);
+    background: var(--schrift);
+    color: var(--karte);
+    padding: 10px 18px;
+    border-radius: 999px;
+    font-size: 0.9rem;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+    z-index: var(--ebene-dialog);
+    max-width: calc(100vw - 32px);
+    pointer-events: none;
+}
+
+/* PIN-Eingabe: wenige Ziffern, groß und gut lesbar. */
+.dialog-feld-zahlen {
+    font-size: 1.6rem;
+    letter-spacing: 0.5em;
+    text-align: center;
+    font-family: "Consolas", "Courier New", monospace;
+}
+
+/* Auswahlliste (Bist du schon dabei?) */
+.dialog-liste {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 20px;
+    max-height: 50vh;
+    overflow-y: auto;
+}
+
+.dialog-listeneintrag {
+    appearance: none;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    width: 100%;
+    padding: 12px 14px;
+    font: inherit;
+    text-align: left;
+    color: var(--schrift);
+    background: var(--karte-leise);
+    border: 1px solid var(--rahmen);
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.dialog-listeneintrag:hover {
+    border-color: var(--haupt);
+}
+
+.dialog-listeneintrag:focus-visible {
+    outline: 2px solid var(--haupt);
+    outline-offset: 1px;
+}
+
+.dialog-listenname {
+    font-weight: 600;
+}
+
+.dialog-listenhinweis {
+    font-size: 0.8rem;
+    color: var(--schrift-leise);
+}
+
+/*
+ * DIE KNOPFLEISTE KLEBT UNTEN FEST (seit v0.67, Wunsch #27).
+ *
+ * Egal wie hoch der Inhalt ist — „Verstanden", „Abbrechen" und „Einsetzen"
+ * sind immer da, ohne Scrollen. Die negativen Ränder heben das Polster des
+ * Kastens auf, damit die Leiste bis an seine Kanten reicht; sonst bliebe
+ * darunter ein Streifen, durch den der Inhalt hindurchscrollt.
+ *
+ * UND SIE BRAUCHT IHRE EBENE (seit v0.94). Der Hintergrund allein genügt
+ * nicht: Alles im Fenster, was eine eigene Nummer trägt — die Figuren des
+ * Anleitungsbretts, die Lootbox, der Fingerabdruck, die Restzeit — wurde
+ * sonst NACH der Leiste gezeichnet und lag quer über den Knöpfen. Genau so
+ * wurde es gemeldet: eine Dame mitten im Wort „Abbrechen". Siehe den
+ * Abschnitt „DIE EBENEN" ganz oben.
+ */
+.dialog-knopfleiste {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    position: sticky;
+    bottom: -20px;
+    z-index: var(--ebene-leiste);
+    margin: 0 -20px -20px -20px;
+    padding: 12px 20px;
+    background: var(--karte);
+    border-top: 1px solid var(--rahmen);
+}
+
+/* ------------------------------------------------------------------ *
+ * Kleine Bildschirme
+ * ------------------------------------------------------------------ */
+
+@media (max-width: 600px) {
+
+    /*
+     * DIE TAB-LEISTE IST AM HANDY EIN DOCK (seit v0.113, Nutzer-Ansage
+     * 22.08.): Sie klebt am unteren Rand — dort, wo der Daumen ist —, und
+     * die Tabs teilen sich die Breite zu gleichen Teilen. Die gleitende
+     * Pille funktioniert unverändert, sie misst ja die echte Lage.
+     * `env(safe-area-inset-bottom)` hält den Streifen des iPhone-Balkens
+     * frei; dafür steht `viewport-fit=cover` in der index.html.
+     */
+    .tab-leiste {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: var(--ebene-schwebend);
+        border-bottom: none;
+        border-top: 1px solid var(--rahmen);
+        padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px)) 8px;
+        gap: 4px;
+        flex-wrap: nowrap;
+    }
+
+    .tab-knopf {
+        flex: 1 1 0;
+        min-width: 0;
+        padding: 10px 4px;
+        font-size: 0.85rem;
+        line-height: 1.2;
+        text-align: center;
+    }
+
+    .tab-inhalt {
+        padding: 12px;
+
+        /* Der Inhalt läuft nicht unter dem Dock hindurch. */
+        padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+    }
+
+    /* Die Kurzmeldung schwebt über dem Dock, nicht dahinter. */
+    .kurzmeldung {
+        bottom: calc(78px + env(safe-area-inset-bottom, 0px));
+    }
+
+    body.runde-offen .kurzmeldung {
+        bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    }
+
+    /* Im Runden-Fenster gibt es kein Dock und keinen Kopf — der ganze
+       Schirm gehört dem laufenden Spiel. */
+    body.runde-offen .kopf {
+        display: none;
+    }
+
+    body.runde-offen .tab-inhalt {
+        padding-bottom: 12px;
+    }
+
+    .kopf {
+        padding: 12px;
+    }
+
+    .wuerfel-feld-halter {
+        flex-basis: 56px;
+        min-width: 56px;
+    }
+
+    .treffer {
+        margin-left: 0;
+    }
+
+    /* -------------------------------------------------------------- *
+     * Team Schach auf dem Handy
+     *
+     * Gespielt wird unterwegs. Deshalb bekommt das Brett den Platz und
+     * alles Beiwerk wird schmaler: Die Partie steht in einer Spalte,
+     * das Brett zieht sich über die ganze Breite, und der Rand um den
+     * Inhalt fällt für das Brett weg.
+     * -------------------------------------------------------------- */
+
+    .schach .brett-halter {
+        /* Zieht das Brett bis an den Bildschirmrand — 12px Rand hat
+           .tab-inhalt oben gesetzt. */
+        margin-left: -12px;
+        margin-right: -12px;
+    }
+
+    .schach .brett {
+        border-left: none;
+        border-right: none;
+        border-radius: 0;
+    }
+
+    .schach .brett-halter .erklaerung {
+        padding: 0 12px;
+    }
+
+    /* Beide Teams nebeneinander statt untereinander: So bleibt das Brett
+       ohne Scrollen sichtbar. */
+    .schach .team-reihe {
+        gap: 8px;
+    }
+
+    .schach .team-karte {
+        flex: 1 1 0;
+        min-width: 0;
+        padding: 10px;
+    }
+
+    .schach .team-karte .karte-fuss {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .schach .team-namen {
+        font-size: 0.85rem;
+        overflow-wrap: anywhere;
+    }
+
+    .partie-titel {
+        font-size: 1.05rem;
+    }
+
+    /* Die Knöpfe am Fuß einer Partie sollen sich am Daumen bedienen
+       lassen, nicht mit der Lupe. */
+    .schach .fussleiste .knopf-klein {
+        padding: 10px 14px;
+        font-size: 0.92rem;
+    }
+
+    /* -------------------------------------------------------------- *
+     * Was seit v2.9 dazugekommen ist — ebenfalls für den Daumen
+     * -------------------------------------------------------------- */
+
+    /* Jeder Knopf bekommt eine Tippfläche, die man trifft. */
+    .knopf {
+        min-height: 44px;
+    }
+
+    .knopf-klein {
+        min-height: 40px;
+        padding: 8px 14px;
+    }
+
+    /* Die i-Knöpfe sind rund und klein — auf dem Handy zu klein. */
+    .info-knopf {
+        width: 32px;
+        height: 32px;
+        font-size: 1rem;
+    }
+
+    /* Die Einstellungen: großer Kasten, Text darunter statt daneben
+       gequetscht. */
+    /* Der Kipp-Schalter ist auf dem Handy etwas grösser — Fingerziel. */
+    .schalter-kasten {
+        width: 46px;
+        height: 28px;
+        border-radius: 14px;
+    }
+
+    .schalter-kasten::after {
+        width: 22px;
+        height: 22px;
+    }
+
+    .schalter-kasten:checked::after {
+        transform: translateX(18px);
+    }
+
+    .schalter-zeile {
+        padding: 10px 0;
+    }
+
+    /* Die Einrückung der Unterpunkte stand bis v0.59 NUR hier und galt
+       deshalb nur auf dem Handy. Sie steht jetzt oben bei den übrigen
+       Schalter-Regeln und gilt überall. */
+
+    /* Spielart-Kacheln: eine je Zeile, damit das Vorschaubild groß bleibt. */
+    .spielart-feld {
+        grid-template-columns: 1fr;
+    }
+
+    .vorschau {
+        font-size: calc(min(320px, 84vw) / var(--vorschau-spalten, 8) * 0.8);
+    }
+
+    /* Der Abschluss füllt den Schirm, die Zeilen bleiben lesbar. */
+    .abschluss {
+        min-height: 70vh;
+        padding: 20px 12px;
+    }
+
+    .abschluss-zeile {
+        padding: 10px;
+    }
+
+    /* Bilanz und Fähigkeiten untereinander statt nebeneinander. */
+    .bilanz-seite {
+        flex: 1 1 100%;
+    }
+
+    .faehigkeit-zeile {
+        gap: 6px;
+    }
+
+    /* Die Randbeschriftung des Bretts darf schmaler sein. */
+    .brett-rand-reihen {
+        width: 12px;
+    }
+
+    /* Der Kasten mit den beendeten Partien und der Zugverlauf: mehr
+       Platz für den Finger an der Aufklapp-Zeile. */
+    .verlauf-titel {
+        padding: 10px 0;
+    }
+}
+
+/* ------------------------------------------------------------------ *
+ * UI-Politur (seit v0.107) — alles Gleiten und Blenden an einem Ort.
+ *
+ * Nutzer-Ansage 21.08.: „dass generell alles viel flüssiger wird."
+ * Vorbild sind die Bewegungsmuster moderner Komponenten-Galerien;
+ * gebaut ist alles mit Bordmitteln — CSS-Übergänge und die eingebaute
+ * View-Transitions-Schnittstelle (`TEAM_SCHACH.weichZeichnen`).
+ *
+ * ALLES BEWEGTE STEHT IM no-preference-BLOCK: Wer in den
+ * Systemeinstellungen weniger Bewegung wünscht, bekommt die App exakt
+ * wie vor v0.107. Deshalb gibt es hier kein reduce-Gegenstück — was
+ * nie anspringt, muss nicht abgeschaltet werden.
+ * ------------------------------------------------------------------ */
+
+/*
+ * Die Namen der wandernden Flächen stehen seit v0.109 an den PILLEN
+ * (siehe `.reihen-pille` bei den Knopfreihen) — der Knopf selbst wandert
+ * nicht mehr, sonst verschmierte seine Beschriftung.
+ */
+
+@media (prefers-reduced-motion: no-preference) {
+
+    /* Die gleitende Markierung braucht nur ihren Takt. */
+    ::view-transition-group(*) {
+        animation-duration: 0.22s;
+    }
+
+    /*
+     * DIE SEITE SELBST BLENDET NICHT (seit v0.109). Ohne diese Regel legt
+     * der Browser bei jedem weichen Neuzeichnen eine Ueberblendung ueber den
+     * GANZEN Bildschirm — jeder Text flackerte einmal durch. Jetzt wechselt
+     * alles Unbenannte sofort, und nur die Pillen wandern.
+     */
+    ::view-transition-old(root),
+    ::view-transition-new(root) {
+        animation: none;
+    }
+
+    /* Die Pille hinter dem aktiven Tab gleitet zum neuen Tab (`tabs.js`). */
+    .tab-marker-weich {
+        transition: left 0.25s ease, top 0.25s ease, width 0.25s ease,
+            height 0.25s ease;
+    }
+
+    /*
+     * Der Status-Punkt im Kopf atmet, solange die App lädt oder schreibt —
+     * so sieht man auf einen Blick, dass gerade etwas unterwegs ist. Der
+     * Farbwechsel zwischen den Zuständen blendet weich über.
+     */
+    .status-punkt {
+        transition: background-color 0.3s ease;
+    }
+
+    .status[data-status="laedt"] .status-punkt,
+    .status[data-status="schreibt"] .status-punkt {
+        animation: status-atmen 1.2s ease-in-out infinite;
+    }
+
+    @keyframes status-atmen {
+        50% {
+            opacity: 0.35;
+        }
+    }
+
+    /* Der frisch geöffnete Tab-Inhalt steigt kurz ein. */
+    .tab-bereich-zeigt {
+        animation: bereich-auf 0.18s ease-out;
+    }
+
+    /*
+     * AUFKLAPPEN GLEITET (seit v0.114, Bündel X5): Der Zug-Verlauf, die
+     * Bibliothekseinträge und die Regel-Kapitel (alles `details`-Elemente)
+     * öffnen und schliessen weich statt schlagartig. Browser ohne
+     * `interpolate-size` klappen einfach hart wie bisher — kein Schaden.
+     */
+    :root {
+        interpolate-size: allow-keywords;
+    }
+
+    ::details-content {
+        transition: height 0.25s ease, content-visibility 0.25s allow-discrete;
+        height: 0;
+        overflow: clip;
+    }
+
+    [open]::details-content {
+        height: auto;
+    }
+
+    /* Die Kurzmeldung steigt kurz auf und blendet am Ende aus. */
+    .kurzmeldung {
+        animation: kurzmeldung-auf 0.2s ease-out;
+    }
+
+    @keyframes kurzmeldung-auf {
+        from {
+            opacity: 0;
+            transform: translateX(-50%) translateY(10px);
+        }
+    }
+
+    .kurzmeldung-geht {
+        animation: kurzmeldung-zu 0.25s ease-in forwards;
+    }
+
+    @keyframes kurzmeldung-zu {
+        to {
+            opacity: 0;
+            transform: translateX(-50%) translateY(6px);
+        }
+    }
+
+    /* Die schwebende Beschriftung wandert weich nach oben. */
+    .dialog-feld-marke {
+        transition: top 0.15s ease, font-size 0.15s ease, color 0.15s ease;
+    }
+
+    /*
+     * Die tippende Hand der Bildanleitung tippt sichtbar (seit v0.116).
+     * Nur in der Bibliothek — die ist eine STATISCHE Ansicht, die
+     * regelmässige Abfrage zeichnet sie nicht neu (Bewegungs-Regel 3).
+     */
+    .anleitung-hand {
+        transform-origin: 50% 65%;
+        animation: hand-tippen 1.6s ease-in-out infinite;
+    }
+
+    @keyframes hand-tippen {
+        0%, 24%, 100% {
+            transform: translateY(-6%) scale(1);
+        }
+        12% {
+            transform: translateY(3%) scale(0.92);
+        }
+    }
+
+    @keyframes bereich-auf {
+        from {
+            opacity: 0;
+            transform: translateY(6px);
+        }
+    }
+
+    /*
+     * KNÖPFE REAGIEREN SPÜRBAR: Farbwechsel weich, beim Drücken ein
+     * kurzes Eindrücken. `:active` statt einer Skript-Lösung — der
+     * Browser nimmt die Hand nie zu spät weg.
+     */
+    .knopf,
+    .tab-knopf,
+    .info-knopf,
+    .dialog-listeneintrag {
+        transition: background-color 0.15s ease, color 0.15s ease,
+            border-color 0.15s ease, transform 0.08s ease;
+    }
+
+    .knopf:active:not(:disabled),
+    .info-knopf:active {
+        transform: scale(0.96);
+    }
+
+    /* Der Knopf im „Wirklich?"-Zustand (`DIALOG.zweiSchritt`, seit v0.112)
+       ploppt kurz auf — man sieht, dass sich die Frage in den Knopf gelegt
+       hat und der nächste Druck zählt. */
+    .knopf-wirklich {
+        animation: wirklich-auf 0.15s ease-out;
+    }
+
+    @keyframes wirklich-auf {
+        from {
+            transform: scale(0.9);
+        }
+    }
+
+    /* Die Spielart-Kacheln heben sich unter dem Zeiger leicht an. */
+    .spielart-kachel {
+        transition: transform 0.15s ease, border-color 0.15s ease,
+            box-shadow 0.15s ease;
+    }
+
+    .spielart-kachel:hover {
+        transform: translateY(-2px);
+    }
+
+    /*
+     * DIALOGE: Schleier blendet ein, der Kasten steigt kurz auf.
+     * Beide Animationen spielen von selbst bei jedem Öffnen, weil der
+     * Kasten jedes Mal neu gebaut wird (`DIALOG._zeigen`).
+     */
+    .dialog-hintergrund:not([hidden]) {
+        animation: dialog-schleier 0.15s ease-out;
+    }
+
+    .dialog-kasten {
+        animation: dialog-auf 0.18s cubic-bezier(0.2, 0.9, 0.3, 1.1);
+    }
+
+    @keyframes dialog-schleier {
+        from {
+            opacity: 0;
+        }
+    }
+
+    @keyframes dialog-auf {
+        from {
+            opacity: 0;
+            transform: scale(0.95) translateY(10px);
+        }
+    }
+
+    /*
+     * Beim Schliessen blendet alles kurz aus — die Klassen setzt
+     * `DIALOG.schliessen`, nach 100 ms räumt es auf. `forwards` hält
+     * das Endbild, sonst spränge der Dialog fürs letzte Einzelbild
+     * zurück.
+     */
+    .dialog-geht {
+        animation: dialog-zu 0.1s ease-in forwards;
+    }
+
+    /* Gleiche Stärke wie die Einblende-Regel oben — bei Gleichstand
+       gewinnt die spätere, also diese. */
+    .dialog-hintergrund.dialog-geht-hintergrund {
+        animation: dialog-schleier-zu 0.1s ease-in forwards;
+    }
+
+    @keyframes dialog-zu {
+        to {
+            opacity: 0;
+            transform: scale(0.97);
+        }
+    }
+
+    @keyframes dialog-schleier-zu {
+        to {
+            opacity: 0;
+        }
+    }
+
+    /*
+     * Die Einträge einer Dialog-Liste (Anmeldung, Item-Übersicht)
+     * treten kurz nacheinander ein — `backwards` hält jeden unsichtbar,
+     * bis seine Verzögerung abgelaufen ist. Ab dem sechsten Eintrag
+     * kommt alles gleichzeitig, sonst wartete man bei langen Listen.
+     */
+    .dialog-listeneintrag {
+        animation: eintrag-auf 0.18s ease-out backwards;
+    }
+
+    .dialog-listeneintrag:nth-child(2) { animation-delay: 0.03s; }
+    .dialog-listeneintrag:nth-child(3) { animation-delay: 0.06s; }
+    .dialog-listeneintrag:nth-child(4) { animation-delay: 0.09s; }
+    .dialog-listeneintrag:nth-child(5) { animation-delay: 0.12s; }
+
+    @keyframes eintrag-auf {
+        from {
+            opacity: 0;
+            transform: translateY(4px);
+        }
+    }
+
+    /* Der Knubbel des Kipp-Schalters gleitet, die Pille färbt weich um
+       (seit v0.108 — der Schalter selbst steht bei `.schalter-kasten`). */
+    .schalter-kasten {
+        transition: background-color 0.18s ease, border-color 0.18s ease;
+    }
+
+    .schalter-kasten::after {
+        transition: transform 0.18s ease, background-color 0.18s ease;
+    }
+
+    /*
+     * Der Inhalt eines Aufklappers der BIBLIOTHEK und der Anleitung tritt
+     * weich ein (seit v0.108). Nur dort: Diese Ansichten stehen still, sobald
+     * sie gebaut sind. Die Verlaufs-Kästen baut die regelmässige Abfrage neu —
+     * eine Animation dort spielte bei jedem fremden Zug erneut.
+     */
+    details.stufen-eintrag[open] > :not(summary) {
+        animation: bereich-auf 0.16s ease-out;
+    }
+}

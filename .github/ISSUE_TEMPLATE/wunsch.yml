@@ -1,0 +1,24 @@
+name: Wunsch / Fehler
+description: Etwas ergänzen, ändern oder einen Fehler melden
+title: "[Wunsch] "
+labels: ["wunsch"]
+body:
+    - type: textarea
+      id: idee
+      attributes:
+          label: Was wünschst du dir?
+          placeholder: z. B. Beim Schach eine Anzeige, wie lange der Gegner schon nicht gezogen hat …
+      validations:
+          required: true
+    - type: input
+      id: stelle
+      attributes:
+          label: An welcher Stelle?
+          description: Füllt die App automatisch aus, wenn der Wunsch von dort kommt.
+          placeholder: z. B. Team Schach
+    - type: input
+      id: fassung
+      attributes:
+          label: Fassung
+          description: Version der App, aus der der Wunsch stammt.
+          placeholder: z. B. v3.1

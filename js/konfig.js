@@ -1,0 +1,93 @@
+/*
+ * konfig.js — die einzige Datei, die von Hand angepasst wird.
+ *
+ * Hier stehen Version und Speicher-Einstellungen. Wer die App auf GitHub Pages
+ * stellt, trägt unten die Adresse der Firebase-Datenbank ein — mehr ist nicht
+ * nötig. Ohne Adresse läuft die App vollständig, speichert dann aber nur lokal
+ * im Browser des jeweiligen Besuchers.
+ *
+ * Hinweis zu Bezeichnern: Namen im Code bleiben ohne Umlaute (wuerfel, aendern),
+ * Kommentare und alle sichtbaren Texte werden korrekt deutsch geschrieben.
+ * Siehe docs\ARCHITECTURE.md, Abschnitt Code-Konventionen.
+ */
+
+const KONFIG = {
+
+    /* Version der App (SemVer: 0.MINOR.PATCH — die 0 vorne heisst "noch in
+       Entwicklung", 1.0.0 erst bei erfuellten Fertig-Kriterien der ROADMAP).
+       Wird im Kopf angezeigt und muss zu CHANGELOG.md passen. */
+    APP_VERSION: "0.3.0",
+
+    speicher: {
+
+        /* "lokal"     — jeder Besucher hat seine eigene Tabelle (Browser-Speicher).
+           "gemeinsam" — alle Besucher sehen dieselbe Tabelle (Firebase).
+           Steht hier "gemeinsam", ist aber keine Basis-Adresse hinterlegt,
+           fällt die App automatisch auf "lokal" zurück und sagt es im Kopf. */
+        modus: "gemeinsam",
+
+        /* Basis-Adresse der Firebase Realtime Database, OHNE Schrägstrich am
+           Ende. Beispiel:
+           "https://blunderluck-12345-default-rtdb.europe-west1.firebasedatabase.app"
+           Anleitung zum Anlegen: docs\DEPLOYMENT.md.
+           NOCH LEER: Die eigene Datenbank ist noch nicht angelegt — die App
+           läuft bis dahin im Lokal-Modus (jeder Browser für sich). */
+        firebaseBasis: "",
+
+        /* Ablage-Pfade innerhalb der Datenbank. Jeder Stand hat seinen eigenen,
+           damit sich die Teile nicht ins Gehege kommen.
+           ACHTUNG: Für jeden Pfad braucht es in den Firebase-Regeln einen
+           eigenen Eintrag — siehe docs\DEPLOYMENT.md, Abschnitt 2.
+           "spieler" ist die Spielerliste (Namen, PIN-Prüfsummen) —
+           kein Spielstand, siehe js\spieler.js. */
+        pfad: "spieler",
+        schachPfad: "team-schach",
+
+        /* Wie oft (in Millisekunden) nach fremden Änderungen gefragt wird.
+           Gefragt wird nur, solange die Seite im Vordergrund ist — im
+           Hintergrund ruht die Abfrage, damit sie unterwegs kein Datenvolumen
+           verbraucht. Wer die Runde träger, aber noch sparsamer will, setzt
+           hier einen größeren Wert (z. B. 10000 für zehn Sekunden). */
+        abfrageIntervallMs: 3000,
+
+        /* Wie lange (in Millisekunden) nach der letzten Eingabe gewartet wird,
+           bevor gespeichert wird. Verhindert einen Schreibvorgang je Tastendruck. */
+        schreibVerzoegerungMs: 500,
+
+        /* Schlüssel im Browser-Speicher für den lokalen Modus, je Stand einer. */
+        lokalerSchluessel: "blunderluck.spieler",
+        lokalerSchluesselSchach: "blunderluck.team-schach"
+    },
+
+    verwaltung: {
+
+        /*
+         * Prüfsumme des Verwaltungs-Passworts (SHA-256 über
+         * "blunderluck-admin|<passwort>"). Das Passwort selbst steht bewusst
+         * NIRGENDWO in den Dateien — diese Seite ist öffentlich, jeder könnte
+         * es sonst abschreiben.
+         *
+         * NOCH LEER: Solange hier keine Prüfsumme steht, lässt sich die
+         * Verwaltung nicht öffnen. Der Nutzer setzt sie so:
+         * In PowerShell die Prüfsumme rechnen und den Wert unten einsetzen.
+         * Der Text vor dem Passwort gehört dazu.
+         *
+         *     $text  = "blunderluck-admin|<neues Passwort>"
+         *     $bytes = [System.Text.Encoding]::UTF8.GetBytes($text)
+         *     $summe = [System.Security.Cryptography.SHA256]::Create().ComputeHash($bytes)
+         *     ($summe | ForEach-Object { $_.ToString("x2") }) -join ""
+         *
+         * Was die Verwaltung darf, steht in docs\ARCHITECTURE.md; was sie NICHT
+         * leistet (eine sechsstellige Zahl ist durchprobierbar), in
+         * docs\DECISIONS.md.
+         */
+        pruefwert: "",
+
+        /* Wie viele Ziffern das Verwaltungs-Passwort hat. Muss zur Prüfsumme
+           oben passen, sonst lässt sich der Dialog nicht bestätigen. */
+        passwortStellen: 6,
+
+        /* Wie viele Ziffern eine Spieler-PIN hat. */
+        pinStellen: 4
+    }
+};
