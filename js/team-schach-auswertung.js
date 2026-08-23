@@ -749,6 +749,22 @@ Object.assign(TEAM_SCHACH, {
             "Nachschub kommt, solange ein Feld frei ist; liegen gelassene bleiben "
             + "liegen. Was du schon im Vorrat hast, kommt seltener nach."));
 
+        /*
+         * DAS ICON-RASTER (seit v0.12.0, Bündel A Schritt 8): alle
+         * Fähigkeiten und Unglücke als Kacheln, der Rahmen zeigt die
+         * Seltenheit, ein Tipp öffnet die Vorschau. Die echten Bilder
+         * kommen später — bis dahin trägt jede Kachel ihren
+         * Anfangsbuchstaben (Lückenfüller, Nutzer-Entscheidung F4).
+         * Die Stufen-Karten mit den vollen Beschreibungen bleiben darunter
+         * stehen, bis die echten Icons da sind.
+         *
+         * In der BIBLIOTHEK darf der Rahmen die Stufe immer zeigen — sie
+         * ist kein Spiel. Wer die Kacheln je in den Vorrat unterm Brett
+         * übernimmt, MUSS dort `seltenheitZeigen` beachten (Entwurf,
+         * Abschnitt 4.2).
+         */
+        wurzel.appendChild(TEAM_SCHACH._iconRasterBauen());
+
         /* Die beiden Zeichen aus dem Vorrat erklären — dort ist kein Platz
            für Text, hier schon. */
         const legende = TEAM_SCHACH._element("section", "karte");
@@ -773,6 +789,54 @@ Object.assign(TEAM_SCHACH, {
         for (const stufe of SCHACH_VARIANTEN.STUFEN) {
             wurzel.appendChild(TEAM_SCHACH._stufenKarteBauen(stufe));
         }
+    },
+
+    _iconRasterBauen() {
+        const raster = TEAM_SCHACH._element("div", "faehigkeiten-raster");
+
+        for (const stufe of SCHACH_VARIANTEN.STUFEN) {
+            for (const art of SCHACH_VARIANTEN.faehigkeitenDerStufe(stufe.id)) {
+                raster.appendChild(TEAM_SCHACH._iconKachelBauen(
+                    art, SCHACH_VARIANTEN.faehigkeitTitel(art), stufe, false));
+            }
+            for (const pechArt of SCHACH_VARIANTEN.pechDerStufe(stufe.id)) {
+                raster.appendChild(TEAM_SCHACH._iconKachelBauen(
+                    pechArt, SCHACH_VARIANTEN.pechTitel(pechArt), stufe, true));
+            }
+        }
+
+        return raster;
+    },
+
+    /*
+     * Eine Raster-Kachel: kein Text (Entwurf, Abschnitt 4.1) — nur der
+     * Lückenfüller-Buchstabe, der Stufen-Rahmen und für Vorleseprogramme
+     * der Titel. Unglücke tragen einen gestrichelten Rahmen.
+     */
+    _iconKachelBauen(art, titel, stufe, istPech) {
+        const kachel = document.createElement("button");
+        kachel.type = "button";
+        kachel.className = "faehigkeit-kachel" + (istPech ? " kachel-pech" : "");
+        kachel.style.setProperty("--stufe-farbe", stufe.farbe);
+        kachel.title = titel + (istPech ? " (Unglück)" : "");
+        kachel.setAttribute("aria-label", kachel.title);
+
+        kachel.appendChild(TEAM_SCHACH._element("span", "kachel-zeichen",
+            titel.charAt(0).toUpperCase()));
+
+        kachel.addEventListener("click", () => {
+            if (istPech) {
+                DIALOG.hinweis(
+                    titel + " (Unglück)",
+                    SCHACH_VARIANTEN.pechBeschreibung(art),
+                    TEAM_SCHACH._anleitungBauen(art)
+                );
+            } else {
+                TEAM_SCHACH.faehigkeitAnsehen(art);
+            }
+        });
+
+        return kachel;
     },
 
     _stufenKarteBauen(stufe) {

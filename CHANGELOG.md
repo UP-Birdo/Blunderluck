@@ -3,6 +3,20 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.12.0 — 24.08.2026
+
+**Die Fähigkeiten auf einen Blick: das Icon-Raster.** (Bündel A, Schritt 8)
+
+- Die Fähigkeiten-Bibliothek beginnt jetzt mit einem **Raster aus
+  Kacheln** — jede Fähigkeit und jedes Unglück eine Kachel, der **Rahmen
+  in der Farbe der Seltenheitsstufe** (Unglücke gestrichelt). Ein Tipp
+  öffnet die Beschreibung mit der abgespielten Bild-Anleitung.
+- Die echten Icon-Bilder kommen später: Bis dahin trägt jede Kachel den
+  **Anfangsbuchstaben** ihrer Fähigkeit als Lückenfüller, damit das Raster
+  von Anfang an vollständig ist.
+- Die ausführlichen Stufen-Listen darunter bleiben, bis die echten Bilder
+  da sind.
+
 ## v0.11.0 — 24.08.2026
 
 **Die Freundesliste ist da.** (Bündel A, Schritt 6)

@@ -4345,6 +4345,47 @@ body.dialog-offen {
     outline-offset: 1px;
 }
 
+/* ------------------------------------------------------------------ *
+ * DAS ICON-RASTER DER BIBLIOTHEK (seit v0.12.0, Bündel A Schritt 8)
+ *
+ * Kacheln ohne Text; der Rahmen trägt die Stufenfarbe, Unglücke sind
+ * gestrichelt. Bis die echten Bilder da sind, steht der Anfangsbuchstabe
+ * als Lückenfüller in der Kachel (F4).
+ * ------------------------------------------------------------------ */
+
+.faehigkeiten-raster {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.faehigkeit-kachel {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    background: var(--karte-leise);
+    border: 3px solid var(--stufe-farbe, var(--rahmen));
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+.faehigkeit-kachel:hover {
+    background: var(--karte);
+}
+
+.kachel-pech {
+    border-style: dashed;
+}
+
+.kachel-zeichen {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--schrift-leise);
+}
+
 /* Auswahlliste (Bist du schon dabei?) */
 .dialog-liste {
     display: flex;

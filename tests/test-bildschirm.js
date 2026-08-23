@@ -4007,6 +4007,49 @@ pruefe("Der Faehigkeiten-Tab zeichnet die Bibliothek ohne Zurueck (v0.9.0)", () 
     }
 });
 
+pruefe("Das Icon-Raster zeigt jede Faehigkeit mit Stufenrahmen (v0.12.0)", () => {
+    const FAEHIGKEITEN = umgebung.FAEHIGKEITEN;
+    FAEHIGKEITEN.gezeichnet = false;
+    FAEHIGKEITEN.aufbauen(neuesElement("div"));
+    FAEHIGKEITEN.beimOeffnen();
+
+    const einsammeln = (element, passt, treffer) => {
+        for (const kind of element.kinder || []) {
+            if (passt(kind)) {
+                treffer.push(kind);
+            }
+            einsammeln(kind, passt, treffer);
+        }
+        return treffer;
+    };
+
+    const kacheln = einsammeln(FAEHIGKEITEN.wurzelEl, (kind) =>
+        String(kind.className || "").indexOf("faehigkeit-kachel") !== -1, []);
+
+    /* Vollstaendig: jede Faehigkeit und jedes Unglueck hat seine Kachel —
+       das Raster darf keine Luecke lassen (Entwurf, Abschnitt 4.1). */
+    let erwartet = 0;
+    for (const stufe of umgebung.SCHACH_VARIANTEN.STUFEN) {
+        erwartet += umgebung.SCHACH_VARIANTEN.faehigkeitenDerStufe(stufe.id).length;
+        erwartet += umgebung.SCHACH_VARIANTEN.pechDerStufe(stufe.id).length;
+    }
+    if (kacheln.length !== erwartet) {
+        throw new Error("erwartet " + erwartet + " Kacheln, sind " + kacheln.length);
+    }
+
+    for (const kachel of kacheln) {
+        if (!kachel.style || !kachel.style["--stufe-farbe"]) {
+            throw new Error("eine Kachel traegt keine Stufenfarbe");
+        }
+        if (!kachel.kinder || kachel.kinder.length === 0) {
+            throw new Error("eine Kachel hat keinen Lueckenfueller-Buchstaben");
+        }
+        if (!kachel.hoerer || !kachel.hoerer.click) {
+            throw new Error("eine Kachel ist nicht antippbar");
+        }
+    }
+});
+
 pruefe("Der Zwischenbildschirm laesst per Code beitreten (v0.10.0)", () => {
     /*
      * Schritt 5 des Entwurfs: Die Uebersicht ist der Zwischenbildschirm
