@@ -459,10 +459,33 @@ const ANMELDUNG = {
         ANMELDUNG._anzeigenAuffrischen();
     },
 
+    /* ---------------------------------------------------------------- *
+     * Account — Abmelden und Konto löschen (Bündel A, Schritt 1)
+     *
+     * Zwei Aktionen, die leicht zu verwechseln wären; die Karte „Account"
+     * in einstellungen.js hält sie deshalb sichtbar auseinander.
+     * ---------------------------------------------------------------- */
+
     /*
-     * „Ich bin raus": entfernt den EIGENEN Eintrag und meldet das Gerät ab —
-     * ohne Verwaltung, jeder darf über sich selbst entscheiden. Danach fragt
-     * die Anmeldung neu (wie beim ersten Besuch).
+     * Abmelden: NUR dieses Gerät vergisst die Anmeldung. Das Konto bleibt
+     * samt Punkten und Partien in der Spielerliste bestehen — mit der PIN
+     * meldet man sich jederzeit wieder an, auch von einem anderen Gerät.
+     * Danach fragt die Anmeldung neu, wie beim ersten Besuch.
+     */
+    abmelden() {
+        if (!ANMELDUNG.ichId) {
+            return;
+        }
+        ICH.personVergessen();
+        ANMELDUNG._ichIdSetzen(null);
+        ANMELDUNG.anmelden();
+    },
+
+    /*
+     * Konto löschen (bis v0.5.0 „Ich bin raus"): entfernt den EIGENEN
+     * Eintrag und meldet das Gerät ab — ohne Verwaltung, jeder darf über
+     * sich selbst entscheiden. Danach fragt die Anmeldung neu (wie beim
+     * ersten Besuch).
      *
      * Die „Wirklich?"-Frage stellt der Knopf (DIALOG.zweiSchritt in
      * einstellungen.js). Beendete Partien bleiben in der Chronik stehen; nur

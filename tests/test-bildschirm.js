@@ -3834,4 +3834,48 @@ pruefe("Der Einstellungen-Tab schaltet das Brett-Design um (v0.119)", () => {
     }
 });
 
+pruefe("Die Account-Karte trennt Abmelden und Konto loeschen (v0.6.0)", () => {
+    /*
+     * Buendel A, Schritt 1: Abmelden (Geraet vergisst die Anmeldung, das
+     * Konto bleibt) und Konto loeschen (der Eintrag verschwindet) stehen in
+     * einer eigenen Karte „Account". Der alte Knopf „Ich bin raus" darf
+     * nirgends mehr auftauchen — er hiesse zwei Dinge zugleich.
+     */
+    const EINSTELLUNGEN = umgebung.EINSTELLUNGEN;
+    EINSTELLUNGEN.aufbauen(neuesElement("div"));
+
+    const knoepfe = [];
+    const sammeln = (element) => {
+        for (const kind of element.kinder || []) {
+            if (kind.tagName === "button") {
+                knoepfe.push(kind);
+            }
+            sammeln(kind);
+        }
+    };
+    sammeln(EINSTELLUNGEN.wurzelEl);
+
+    const texte = knoepfe.map((knopf) => String(knopf.textContent || ""));
+
+    if (texte.indexOf("Abmelden") === -1) {
+        throw new Error("kein Abmelden-Knopf in den Einstellungen");
+    }
+    if (texte.indexOf("Konto löschen") === -1) {
+        throw new Error("kein Konto-loeschen-Knopf in den Einstellungen");
+    }
+    if (texte.indexOf("Ich bin raus") !== -1) {
+        throw new Error("der alte Knopf Ich bin raus steht noch da");
+    }
+
+    /* Konto loeschen ist zerstoerend und muss rot sein — Abmelden nicht. */
+    const loeschen = knoepfe[texte.indexOf("Konto löschen")];
+    if (String(loeschen.className).indexOf("knopf-gefahr") === -1) {
+        throw new Error("Konto loeschen ist nicht als Gefahr gekennzeichnet");
+    }
+    const abmelden = knoepfe[texte.indexOf("Abmelden")];
+    if (String(abmelden.className).indexOf("knopf-gefahr") !== -1) {
+        throw new Error("Abmelden darf nicht rot sein — es loescht nichts");
+    }
+});
+
 zeitlimitPruefen();

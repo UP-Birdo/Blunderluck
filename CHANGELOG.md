@@ -3,6 +3,21 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.6.0 — 23.08.2026
+
+**Neuer Abschnitt „Account" in den Einstellungen — Abmelden und Konto
+löschen, sauber getrennt.** (Bündel A, Schritt 1)
+
+- **Abmelden (neu):** Dieses Gerät vergisst die Anmeldung, dein Konto bleibt
+  samt Punkten und Partien bestehen. Du meldest dich jederzeit wieder an —
+  auch von einem anderen Handy.
+- **Konto löschen** (hiess bisher „Ich bin raus"): entfernt dich aus
+  Spielerliste und Rangliste. Wie bisher mit Zwei-Schritt-Sicherung — erst
+  der zweite Druck löscht wirklich.
+- Beide Aktionen stehen jetzt in einer eigenen Karte „Account" mit
+  Erklärtext, damit niemand das eine tut und das andere meint. Die Karte
+  „Spieler" behält Profil und Verwaltung.
+
 ## v0.5.0 — 23.08.2026
 
 **Jetzt könnt ihr gemeinsam spielen.**
