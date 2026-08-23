@@ -3,6 +3,17 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.22.0 — 24.08.2026
+
+**Die Figuren passen jetzt auf ihre Platten.**
+
+- Die 3D-Figuren waren rund ein Fünftel zu gross für die Kacheln, auf
+  denen sie stehen — sie deckten die Felder dahinter zu weit ab. Sie sind
+  jetzt kleiner, und der Rand über dem Brett ist entsprechend
+  mitgeschrumpft.
+- Zum Nachjustieren gibt es nur noch EINE Zahl in der Stildatei
+  (`--figur-3d-groesse`); vorher stand dieselbe Grösse an drei Stellen.
+
 ## v0.21.0 — 24.08.2026
 
 **Zwei Bildschirme statt einem langen: Brett hier, Regler dort.**

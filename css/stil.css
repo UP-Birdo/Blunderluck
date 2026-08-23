@@ -1930,20 +1930,40 @@ body.design-3d .figur-bild {
  *  - **Der Platz oben.** Die Figuren der ersten Reihe ragen über das Brett
  *    hinaus; ohne den zusätzlichen Rand oben würden sie abgeschnitten.
  */
+/*
+ * DIE GRÖSSE STEHT AN EINER STELLE (seit v0.22.0, Wunsch 9: „Die
+ * Schachfiguren sind zu gross für die 3D-Platten"). Bis v0.21.0 standen
+ * 2.3em an drei Stellen — Breite, Höhe und die halbe Breite als
+ * `margin-left`; wer eine vergass, stellte die Figuren schief. Jetzt zählt
+ * nur `--figur-3d-groesse`, alles andere rechnet sich daraus.
+ *
+ * Die Zahl ist ein Vielfaches der Feldschrift und wächst mit dem Brett mit.
+ * Sie wird HIER gesetzt, an derselben Regel, die sie benutzt — `em` in einer
+ * eigenen Eigenschaft rechnet gegen die Schrift des Elements, das sie
+ * einsetzt, und das ist genau dieses.
+ *
+ * 1.85em statt 2.3em: hoch genug für den 3D-Eindruck, ohne die Kachel
+ * dahinter zuzudecken. Wer nachjustieren will, ändert nur diese Zeile — und
+ * den Faktor beim Rand oben, gleich darunter.
+ */
 body.design-3d .feld > .figur-bild,
 body.design-3d .vorschau-feld > .figur-bild {
+    --figur-3d-groesse: 1.85em;
+
     position: absolute;
     left: 50%;
-    margin-left: -1.15em;
+    margin-left: calc(var(--figur-3d-groesse) / -2);
     bottom: 12%;
-    width: 2.3em;
-    height: 2.3em;
+    width: var(--figur-3d-groesse);
+    height: var(--figur-3d-groesse);
     pointer-events: none;
 }
 
+/* Der Platz oben wächst mit der Figur: Was über die erste Reihe hinausragt,
+   würde sonst abgeschnitten. Der Faktor gehört zur Grösse oben. */
 body.design-3d .brett,
 body.design-3d .vorschau {
-    padding-top: calc(var(--figur-groesse, 30px) * 1.35);
+    padding-top: calc(var(--figur-groesse, 30px) * 1.1);
 }
 
 /*
