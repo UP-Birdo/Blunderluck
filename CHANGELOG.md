@@ -3,6 +3,23 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.11.0 — 24.08.2026
+
+**Die Freundesliste ist da.** (Bündel A, Schritt 6)
+
+- **Neue Karte „Freunde" auf dem Spielen-Bildschirm:** Namen suchen,
+  Anfrage stellen, Anfragen annehmen oder ablehnen, eigene Anfragen
+  zurückziehen und Freunde wieder entfernen (mit Zwei-Schritt-Sicherung).
+- **Niemand wird blossgestellt:** Lehnt jemand deine Anfrage ab, siehst du
+  weiter nur „gesendet" — bei ihm verschwindet sie einfach. Entfernst du
+  einen Freund, taucht seine alte Eintragung bei dir nicht als neue
+  Anfrage auf.
+- Die Freundschaft entsteht, sobald BEIDE einander eingetragen haben —
+  gespeichert wird immer nur die eigene Sicht, deshalb kann kein Gerät
+  einem anderen etwas überschreiben.
+- Sie ist die Grundlage fürs Einladen (kommt als Nächstes): erst
+  befreunden, dann einladen — für alle anderen gibt es den Beitritts-Code.
+
 ## v0.10.0 — 24.08.2026
 
 **Der Beitritts-Code: Runden teilen ohne Freundesliste.** (Bündel A,

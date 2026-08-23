@@ -21,10 +21,20 @@
  *                 "id": "3f2c…",             // eindeutig, unveränderlich
  *                 "name": "Anna",
  *                 "pinPruefwert": "7c1f…",   // Prüfsumme der PIN, "" = keine
- *                 "pinSalz": "a91b…"         // offen; jedes Gerät muss prüfen können
+ *                 "pinSalz": "a91b…",        // offen; jedes Gerät muss prüfen können
+ *                 "freunde": ["9d2a…"],      // wen ICH als Freund führe (seit v0.11.0)
+ *                 "abgelehnt": []            // wen ich abgelehnt oder entfernt habe
  *             }
  *         ]
  *     }
+ *
+ * FREUNDSCHAFT WIRD GELESEN, NIE GESCHRIEBEN (seit v0.11.0, Bündel A
+ * Schritt 6): Wegen der Abgleich-Regel „jeder ist Herr über seinen eigenen
+ * Eintrag" kann niemand eine Anfrage in einen FREMDEN Eintrag schreiben —
+ * sie würde beim nächsten Speichern der anderen Person überschrieben.
+ * Deshalb schreibt jeder nur seine eigene Sicht (`freunde`, `abgelehnt`),
+ * und die Beziehung ergibt sich aus dem Vergleich BEIDER Listen
+ * (`freundschaft`).
  *
  * Die PIN selbst steht NIRGENDWO in diesen Daten — nur ihre Prüfsumme
  * (siehe js\versiegelung.js).
@@ -56,7 +66,9 @@ const SPIELER = {
             id: id || SPIELER.idErzeugen(),
             name: (name === undefined || name === null) ? "" : String(name),
             pinPruefwert: "",
-            pinSalz: ""
+            pinSalz: "",
+            freunde: [],
+            abgelehnt: []
         };
     },
 
@@ -103,6 +115,15 @@ const SPIELER = {
             }
             if (typeof roh.pinSalz === "string") {
                 spieler.pinSalz = roh.pinSalz;
+            }
+
+            /* Die Freundes-Sicht (seit v0.11.0) — der additive Datenvertrag:
+               fehlende Listen bleiben leer, fremder Müll fliegt raus. */
+            for (const feld of ["freunde", "abgelehnt"]) {
+                if (Array.isArray(roh[feld])) {
+                    spieler[feld] = roh[feld].filter(
+                        (eintrag) => typeof eintrag === "string" && eintrag !== "");
+                }
             }
 
             daten.spieler.push(spieler);
@@ -294,9 +315,135 @@ const SPIELER = {
                 || spielerA.pinSalz !== spielerB.pinSalz) {
                 return false;
             }
+
+            /* Auch die Freundes-Sicht (seit v0.11.0) — sonst zeichnet die
+               App eine neue Anfrage nicht (Entwurf, Abschnitt 3.4). */
+            if (spielerA.freunde.join("|") !== spielerB.freunde.join("|")
+                || spielerA.abgelehnt.join("|") !== spielerB.abgelehnt.join("|")) {
+                return false;
+            }
         }
 
         return true;
+    },
+
+    /* ---------------------------------------------------------------- *
+     * Freundschaft (seit v0.11.0, Bündel A Schritt 6)
+     *
+     * Jeder schreibt NUR seine eigene Sicht; die Beziehung zwischen zwei
+     * Personen wird aus beiden Listen GELESEN (Begründung im Datenvertrag
+     * oben). Die vier Lagen aus Sicht von `ichId`:
+     *
+     *     "freunde"   beide führen einander
+     *     "gesendet"  ich führe ihn, er mich (noch) nicht — auch wenn er
+     *                 mich abgelehnt hat: Das sieht für mich gleich aus
+     *     "offen"     er führt mich, ich habe nicht abgelehnt — seine
+     *                 Anfrage wartet auf meine Antwort
+     *     "keine"     nichts von alledem (Fremde, oder ich habe abgelehnt)
+     * ---------------------------------------------------------------- */
+
+    freundschaft(daten, ichId, andererId) {
+        if (!ichId || !andererId || ichId === andererId) {
+            return "keine";
+        }
+
+        const stand = SPIELER.normalisieren(daten);
+        const ich = stand.spieler.find((spieler) => spieler.id === ichId);
+        const anderer = stand.spieler.find((spieler) => spieler.id === andererId);
+        if (!ich || !anderer) {
+            return "keine";
+        }
+
+        const ichFuehre = ich.freunde.indexOf(andererId) !== -1;
+        const erFuehrt = anderer.freunde.indexOf(ichId) !== -1;
+
+        if (ichFuehre && erFuehrt) {
+            return "freunde";
+        }
+        if (ichFuehre) {
+            return "gesendet";
+        }
+        if (erFuehrt && ich.abgelehnt.indexOf(andererId) === -1) {
+            return "offen";
+        }
+        return "keine";
+    },
+
+    /* Die ganze Freundes-Sicht einer Person, fürs Zeichnen:
+       { freunde, offen, gesendet } — jeweils Listen von Spieler-Objekten. */
+    freundeVon(daten, ichId) {
+        const stand = SPIELER.normalisieren(daten);
+        const sicht = { freunde: [], offen: [], gesendet: [] };
+
+        for (const anderer of stand.spieler) {
+            const lage = SPIELER.freundschaft(stand, ichId, anderer.id);
+            if (lage === "freunde") {
+                sicht.freunde.push(anderer);
+            } else if (lage === "offen") {
+                sicht.offen.push(anderer);
+            } else if (lage === "gesendet") {
+                sicht.gesendet.push(anderer);
+            }
+        }
+
+        return sicht;
+    },
+
+    /*
+     * Anfrage stellen UND Anfrage annehmen sind dieselbe Handlung: sich
+     * selbst den anderen in `freunde` eintragen. Eine eigene frühere
+     * Ablehnung wird dabei aufgehoben — wer anfragt oder annimmt, meint es
+     * ja jetzt anders.
+     */
+    freundHinzufuegen(daten, ichId, andererId, zeitpunkt) {
+        const neu = SPIELER.kopieren(daten);
+        for (const spieler of neu.spieler) {
+            if (spieler.id === ichId && ichId !== andererId) {
+                if (spieler.freunde.indexOf(andererId) === -1) {
+                    spieler.freunde.push(andererId);
+                }
+                spieler.abgelehnt = spieler.abgelehnt.filter(
+                    (eintrag) => eintrag !== andererId);
+            }
+        }
+        neu.geaendertAm = (zeitpunkt === undefined) ? Date.now() : zeitpunkt;
+        return neu;
+    },
+
+    /* Eine eigene Anfrage zurückziehen: nur aus `freunde` streichen —
+       KEINE Ablehnung, die Gegenseite sieht die Anfrage einfach
+       verschwinden. */
+    freundStreichen(daten, ichId, andererId, zeitpunkt) {
+        const neu = SPIELER.kopieren(daten);
+        for (const spieler of neu.spieler) {
+            if (spieler.id === ichId) {
+                spieler.freunde = spieler.freunde.filter(
+                    (eintrag) => eintrag !== andererId);
+            }
+        }
+        neu.geaendertAm = (zeitpunkt === undefined) ? Date.now() : zeitpunkt;
+        return neu;
+    },
+
+    /*
+     * Ablehnen und „Freund entfernen" sind dieselbe Handlung: den anderen
+     * in `abgelehnt` aufnehmen UND aus `freunde` streichen. Ohne das
+     * Streichen sähe die Gegenseite die verbliebene einseitige Eintragung
+     * als frische Anfrage (Entwurf, Abschnitt 3.4).
+     */
+    freundAblehnen(daten, ichId, andererId, zeitpunkt) {
+        const neu = SPIELER.kopieren(daten);
+        for (const spieler of neu.spieler) {
+            if (spieler.id === ichId && ichId !== andererId) {
+                spieler.freunde = spieler.freunde.filter(
+                    (eintrag) => eintrag !== andererId);
+                if (spieler.abgelehnt.indexOf(andererId) === -1) {
+                    spieler.abgelehnt.push(andererId);
+                }
+            }
+        }
+        neu.geaendertAm = (zeitpunkt === undefined) ? Date.now() : zeitpunkt;
+        return neu;
     }
 };
 

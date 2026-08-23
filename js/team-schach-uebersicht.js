@@ -1081,6 +1081,11 @@ Object.assign(TEAM_SCHACH, {
         erstellen.appendChild(erstellenFuss);
         wurzel.appendChild(erstellen);
 
+        /* ---- Freunde (seit v0.11.0, Schritt 6): Suchen, Anfragen,
+           Annehmen, Entfernen — die Karte baut freunde.js. Ab Schritt 7
+           wird von hier aus eingeladen. ---- */
+        wurzel.appendChild(FREUNDE.karteBauen(person));
+
         /* ---- Die eigenen offenen Partien. ---- */
         if (eigene.length > 0) {
             wurzel.appendChild(TEAM_SCHACH._element("p", "erklaerung",

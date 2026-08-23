@@ -4304,6 +4304,47 @@ body.dialog-offen {
     color: var(--schrift);
 }
 
+/* ------------------------------------------------------------------ *
+ * DIE FREUNDESLISTE (seit v0.11.0, Bündel A Schritt 6)
+ * ------------------------------------------------------------------ */
+
+.freunde-zeile {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 6px 0;
+}
+
+.freunde-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.freunde-knoepfe {
+    display: flex;
+    flex: 0 0 auto;
+    gap: 6px;
+}
+
+.freunde-suche {
+    width: 100%;
+    margin-top: 8px;
+    padding: 10px;
+    font: inherit;
+    color: var(--schrift);
+    background: var(--karte);
+    border: 1px solid var(--rahmen);
+    border-radius: 6px;
+}
+
+.freunde-suche:focus {
+    outline: 2px solid var(--haupt);
+    outline-offset: 1px;
+}
+
 /* Auswahlliste (Bist du schon dabei?) */
 .dialog-liste {
     display: flex;

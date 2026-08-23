@@ -53,6 +53,14 @@ const APP = {
             beiDaten: (daten) => {
                 ANMELDUNG.datenAktualisiert(daten);
                 RANGLISTE.zeichnen();
+
+                /* Auch der Schach-Bereich zeigt Spieler-Daten: Namen und —
+                   seit v0.11.0 — die Freunde-Karte auf dem
+                   Zwischenbildschirm. Eine fremde Anfrage soll erscheinen,
+                   ohne dass erst ein Zug passiert. */
+                if (TEAM_SCHACH.abgleich) {
+                    TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
+                }
             },
             beiStatus: (status, text) => APP.statusZeigen(status, text),
             leereDaten: () => SPIELER.leereDaten(),

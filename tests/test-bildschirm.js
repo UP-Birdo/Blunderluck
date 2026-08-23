@@ -368,7 +368,7 @@ umgebung.TABS = {
  */
 const bausteinNamen = ["SPIELER", "ANMELDUNG", "SCHACH_VARIANTEN", "SCHACH", "SCHACH_RUNDE",
     "SCHACH_TAFEL", "SCHACH_VORSCHAU", "SCHACH_GRUNDLAGEN", "TEAM_SCHACH",
-    "RANGLISTE", "START", "FAEHIGKEITEN", "EINSTELLUNGEN",
+    "RANGLISTE", "START", "FAEHIGKEITEN", "FREUNDE", "EINSTELLUNGEN",
     "SpeicherGemeinsam",
     /* Seit v0.76 auch der Abgleich: Sein Rennen mit der regelmaessigen Abfrage
        war der „Doppelzug-Fehler", und ohne Test kaeme es unbemerkt zurueck. */
@@ -384,7 +384,8 @@ const dateien = ["konfig.js", "spieler.js", "speicher.js", "abgleich.js",
     "team-schach.js",
     "team-schach-uebersicht.js", "team-schach-brett.js", "team-schach-auswertung.js",
     "team-schach-grundlagen.js",
-    "rangliste.js", "start.js", "faehigkeiten.js", "einstellungen.js"];
+    "rangliste.js", "start.js", "faehigkeiten.js", "freunde.js",
+    "einstellungen.js"];
 
 const quelltext = dateien
     .map((name) => dateisystem.readFileSync(pfad.join(jsOrdner, name), "utf8"))
@@ -412,7 +413,15 @@ const Abgleich = umgebung.Abgleich;
 let spielerDaten = SPIELER.leereDaten(1000);
 spielerDaten = SPIELER.spielerHinzufuegen(spielerDaten, "Anna", "id-anna", 1000);
 spielerDaten = SPIELER.spielerHinzufuegen(spielerDaten, "Bert", "id-bert", 1000);
-ANMELDUNG.abgleich = { daten: spielerDaten };
+ANMELDUNG.abgleich = {
+    daten: spielerDaten,
+
+    /* Die Freunde-Karte (v0.11.0) schreibt ueber den Abgleich — hier
+       reicht es, den Stand zu uebernehmen. */
+    aendern(neu) {
+        ANMELDUNG.abgleich.daten = neu;
+    }
+};
 
 let tafel = SCHACH_TAFEL.leereTafel(1000);
 const kennungen = {};
@@ -2787,7 +2796,15 @@ pruefe("Die Rangliste zeichnet auch ohne Mitspieler", () => {
     try {
         RANGLISTE.zeichnen();
     } finally {
-        ANMELDUNG.abgleich = { daten: spielerDaten };
+        ANMELDUNG.abgleich = {
+    daten: spielerDaten,
+
+    /* Die Freunde-Karte (v0.11.0) schreibt ueber den Abgleich — hier
+       reicht es, den Stand zu uebernehmen. */
+    aendern(neu) {
+        ANMELDUNG.abgleich.daten = neu;
+    }
+};
     }
 });
 
@@ -4058,6 +4075,71 @@ pruefe("Der Zwischenbildschirm laesst per Code beitreten (v0.10.0)", () => {
 
     /* Aufraeumen fuer die folgenden Tests. */
     TEAM_SCHACH.uebersichtOeffnen();
+});
+
+pruefe("Die Freunde-Karte: suchen, anfragen, Freund entfernen (v0.11.0)", () => {
+    const einsammeln = (element, passt, treffer) => {
+        for (const kind of element.kinder || []) {
+            if (passt(kind)) {
+                treffer.push(kind);
+            }
+            einsammeln(kind, passt, treffer);
+        }
+        return treffer;
+    };
+    const knopfMitText = (text) => einsammeln(TEAM_SCHACH.wurzelEl, (kind) =>
+        kind.tagName === "button"
+        && String(kind.textContent || "") === text, [])[0] || null;
+
+    const standVorher = ANMELDUNG.abgleich.daten;
+
+    try {
+        TEAM_SCHACH.uebersichtOeffnen();
+
+        /* Suchen: Der Filter laeuft ueber die Spielerliste. */
+        const feld = einsammeln(TEAM_SCHACH.wurzelEl, (kind) =>
+            String(kind.className || "").indexOf("freunde-suche") !== -1, [])[0];
+        if (!feld) {
+            throw new Error("kein Suchfeld in der Freunde-Karte");
+        }
+
+        feld.value = "ber";
+        feld.ausloesen("input");
+
+        const senden = knopfMitText("Anfrage senden");
+        if (!senden) {
+            throw new Error("die Suche nach ber findet Bert nicht");
+        }
+
+        /* Anfragen: schreibt NUR die eigene Sicht. */
+        senden.ausloesen("click");
+        if (SPIELER.freundschaft(ANMELDUNG.abgleich.daten,
+                "id-anna", "id-bert") !== "gesendet") {
+            throw new Error("die Anfrage steht nicht im eigenen Eintrag");
+        }
+
+        /* Bert nimmt an (Modell-Schritt seines Geraets) — die Karte zeigt
+           ihn danach als Freund mit Entfernen-Knopf. */
+        ANMELDUNG.abgleich.daten = SPIELER.freundHinzufuegen(
+            ANMELDUNG.abgleich.daten, "id-bert", "id-anna", 9000);
+        TEAM_SCHACH.uebersichtOeffnen();
+
+        const entfernen = knopfMitText("Entfernen");
+        if (!entfernen) {
+            throw new Error("der Freund Bert hat keinen Entfernen-Knopf");
+        }
+
+        /* Entfernen (zweiSchritt sagt im Test sofort zu). */
+        entfernen.ausloesen("click");
+        if (SPIELER.freundschaft(ANMELDUNG.abgleich.daten,
+                "id-anna", "id-bert") !== "keine") {
+            throw new Error("Entfernen wirkt nicht");
+        }
+    } finally {
+        ANMELDUNG.abgleich.daten = standVorher;
+        umgebung.FREUNDE.suchtext = "";
+        TEAM_SCHACH.uebersichtOeffnen();
+    }
 });
 
 /* ------------------------------------------------------------------ *
