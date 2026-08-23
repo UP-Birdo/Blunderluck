@@ -136,6 +136,11 @@ body {
     --ebene-schauspiel: 6;
     --ebene-leiste: 10;
     --ebene-schwebend: 50;
+
+    /* Das Anmelde-Vollbild (v0.8.0) liegt über der ganzen App, aber unter
+       dem Dialog — der stellt auch während der Anmeldung Fragen
+       (Konto ohne Passwort, dreimal falsch). */
+    --ebene-vollbild: 90;
     --ebene-dialog: 100;
 }
 
@@ -4074,6 +4079,102 @@ body.dialog-offen {
 
 .dialog-passwort-zeigen {
     flex: 0 0 auto;
+}
+
+/* ------------------------------------------------------------------ *
+ * DAS ANMELDE-VOLLBILD (seit v0.8.0, Bündel A Schritt 3)
+ *
+ * Solange auf diesem Gerät niemand angemeldet ist, liegt es über der
+ * ganzen App — es gibt darunter nichts zu sehen und nichts wegzuklicken.
+ * Nur der Dialog liegt darüber (Ebenen am Dateianfang).
+ * ------------------------------------------------------------------ */
+
+.anmeldung-vollbild {
+    position: fixed;
+    inset: 0;
+    z-index: var(--ebene-vollbild);
+    background: var(--flaeche);
+    overflow-y: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px;
+}
+
+/* `display: flex` schlägt die eingebaute hidden-Regel des Browsers —
+   deshalb hier ausdrücklich. */
+.anmeldung-vollbild[hidden] {
+    display: none;
+}
+
+.anmeldung-kasten {
+    width: 100%;
+    max-width: 420px;
+    background: var(--karte);
+    border: 1px solid var(--rahmen);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin: auto 0;
+}
+
+.anmeldung-kasten h2 {
+    margin: 0 0 8px 0;
+}
+
+/* Die grossen Knöpfe der Weiche und der Formulare — volle Breite,
+   gut zu treffen. */
+.anmeldung-knopf {
+    display: block;
+    width: 100%;
+    padding: 14px;
+    margin-top: 12px;
+    font-size: 1rem;
+}
+
+.anmeldung-beschriftung {
+    display: block;
+    margin: 12px 0 4px 0;
+    font-size: 0.85rem;
+    color: var(--schrift-leise);
+}
+
+.anmeldung-feld {
+    width: 100%;
+    padding: 10px;
+    font: inherit;
+    color: var(--schrift);
+    background: var(--karte);
+    border: 1px solid var(--rahmen);
+    border-radius: 6px;
+}
+
+.anmeldung-feld:focus {
+    outline: 2px solid var(--haupt);
+    outline-offset: 1px;
+}
+
+.anmeldung-passwort-halter {
+    display: flex;
+    align-items: stretch;
+    gap: 8px;
+}
+
+.anmeldung-passwort-halter .anmeldung-feld {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.anmeldung-zeigen {
+    flex: 0 0 auto;
+}
+
+/* Die Fehlerzeile ist immer da und wächst bei Bedarf — so springt das
+   Formular nicht, wenn eine Meldung erscheint. */
+.anmeldung-fehler {
+    min-height: 1.2em;
+    margin: 4px 0 0 0;
+    font-size: 0.85rem;
+    color: var(--gefahr);
 }
 
 /* Auswahlliste (Bist du schon dabei?) */

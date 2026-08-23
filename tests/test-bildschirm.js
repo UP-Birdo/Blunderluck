@@ -152,6 +152,10 @@ function neuesElement(tag) {
             this.hoerer[art] = behandler;
         },
 
+        /* Das Anmelde-Vollbild (v0.8.0) setzt den Fokus auf sein erstes
+           Feld — hier reicht es, dass der Aufruf nicht scheitert. */
+        focus() { },
+
         /*
          * Löst ein gemerktes Ereignis aus — damit ein Test einen Fingertipp
          * nachstellen kann, statt die Behandlungsfunktion direkt aufzurufen.
@@ -3878,6 +3882,117 @@ pruefe("Die Account-Karte trennt Abmelden und Konto loeschen (v0.6.0)", () => {
     const abmelden = knoepfe[texte.indexOf("Abmelden")];
     if (String(abmelden.className).indexOf("knopf-gefahr") !== -1) {
         throw new Error("Abmelden darf nicht rot sein — es loescht nichts");
+    }
+});
+
+/* ------------------------------------------------------------------ *
+ * Das Anmelde-Vollbild (v0.8.0, Buendel A Schritt 3)
+ * ------------------------------------------------------------------ */
+
+pruefe("Das Anmelde-Vollbild prueft Name und Passwort live (v0.8.0)", () => {
+    /*
+     * Auf einem unbekannten Geraet zeigt anmelden() die Weiche; „Neues
+     * Konto erstellen" fuehrt auf das Formular mit drei Feldern. Die Regeln
+     * (Name vergeben, Passwoerter ungleich) melden sich sofort unter dem
+     * Feld, und der Erstellen-Knopf bleibt gesperrt, bis alles gueltig ist.
+     */
+    const echtePerson = umgebung.ICH.person;
+    const echterAbgleich = ANMELDUNG.abgleich;
+    umgebung.ICH.person = () => null;
+    ANMELDUNG.abgleich = { daten: spielerDaten, eigeneIdSetzen() { } };
+
+    const inhalte = (wurzel, tagName) => {
+        const treffer = [];
+        const sammeln = (element) => {
+            for (const kind of element.kinder || []) {
+                if (kind.tagName === tagName) {
+                    treffer.push(kind);
+                }
+                sammeln(kind);
+            }
+        };
+        sammeln(wurzel);
+        return treffer;
+    };
+    const knopfMitText = (text) => inhalte(ANMELDUNG.wurzelEl, "button")
+        .find((knopf) => String(knopf.textContent || "") === text) || null;
+
+    try {
+        ANMELDUNG.aufbauen(neuesElement("div"));
+        ANMELDUNG.anmelden();
+
+        if (ANMELDUNG.wurzelEl.hidden !== false) {
+            throw new Error("das Vollbild ist nicht sichtbar");
+        }
+        if (!knopfMitText("Vorhandenes Konto")) {
+            throw new Error("die Weiche hat keinen Knopf fuer das vorhandene Konto");
+        }
+        const neu = knopfMitText("Neues Konto erstellen");
+        if (!neu) {
+            throw new Error("die Weiche hat keinen Knopf fuer das neue Konto");
+        }
+
+        neu.ausloesen("click");
+
+        const felder = inhalte(ANMELDUNG.wurzelEl, "input");
+        if (felder.length !== 3) {
+            throw new Error("erwartet drei Felder, sind " + felder.length);
+        }
+        const fehlerzeilen = inhalte(ANMELDUNG.wurzelEl, "p").filter(
+            (element) => String(element.className).indexOf("anmeldung-fehler") !== -1);
+        if (fehlerzeilen.length !== 3) {
+            throw new Error("erwartet drei Fehlerzeilen, sind " + fehlerzeilen.length);
+        }
+
+        const weiter = knopfMitText("Konto erstellen");
+        if (!weiter) {
+            throw new Error("kein Erstellen-Knopf");
+        }
+        if (weiter.disabled !== true) {
+            throw new Error("Erstellen ist ohne Eingaben schon frei");
+        }
+
+        /* Vergebener Name — ohne Ruecksicht auf Gross-/Kleinschreibung. */
+        felder[0].value = "anna";
+        felder[0].ausloesen("input");
+        if (String(fehlerzeilen[0].textContent).indexOf("vergeben") === -1) {
+            throw new Error("der vergebene Name anna wird nicht gemeldet");
+        }
+
+        felder[0].value = "Dora";
+        felder[0].ausloesen("input");
+        if (String(fehlerzeilen[0].textContent) !== "") {
+            throw new Error("ein freier Name wird faelschlich gemeldet");
+        }
+
+        /* Ungleiche Passwoerter sperren und melden sich sofort. */
+        felder[1].value = "abcd";
+        felder[1].ausloesen("input");
+        felder[2].value = "abce";
+        felder[2].ausloesen("input");
+        if (weiter.disabled !== true) {
+            throw new Error("ungleiche Passwoerter lassen Erstellen frei");
+        }
+        if (String(fehlerzeilen[2].textContent).indexOf("stimmen nicht") === -1) {
+            throw new Error("die ungleiche Wiederholung wird nicht gemeldet");
+        }
+
+        felder[2].value = "abcd";
+        felder[2].ausloesen("input");
+        if (weiter.disabled !== false) {
+            throw new Error("gueltige Eingaben geben Erstellen nicht frei");
+        }
+
+        /* Zurueck fuehrt auf die Weiche. */
+        knopfMitText("Zurück").ausloesen("click");
+        if (!knopfMitText("Vorhandenes Konto")) {
+            throw new Error("Zurueck fuehrt nicht auf die Weiche");
+        }
+    } finally {
+        umgebung.ICH.person = echtePerson;
+        ANMELDUNG.abgleich = echterAbgleich;
+        ANMELDUNG.anmeldenLaeuft = false;
+        ANMELDUNG.wurzelEl = null;
     }
 });
 

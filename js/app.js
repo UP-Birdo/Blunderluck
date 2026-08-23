@@ -61,6 +61,7 @@ const APP = {
         });
 
         ANMELDUNG.verbinden(spielerAbgleich);
+        ANMELDUNG.aufbauen(document.getElementById("anmeldung"));
 
         /* ---- Team Schach ---- */
         const schachSpeicher = speicherErzeugen(
@@ -91,9 +92,9 @@ const APP = {
         /*
          * ---- Tabs ----
          * Die Reihenfolge der Registrierung ist die Reihenfolge in der
-         * Leiste. Die Anmeldung (anmeldung.js) hat KEINEN Tab — sie läuft in
-         * Dialogen beim Start; Profil und Verwaltung hängen im Tab
-         * Einstellungen.
+         * Leiste. Die Anmeldung (anmeldung.js) hat KEINEN Tab — sie ist ein
+         * Vollbild beim Start (seit v0.8.0); Profil und Verwaltung hängen
+         * im Tab Einstellungen.
          */
         TABS.registrieren(TEAM_SCHACH);
         TABS.registrieren(RANGLISTE);

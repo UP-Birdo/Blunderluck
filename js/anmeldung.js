@@ -3,14 +3,15 @@
  *
  * Das Gegenstück zu spieler.js: Dort steht, WIE die Daten aussehen, hier
  * steht der Ablauf am Bildschirm. Einen eigenen Tab gibt es nicht — die
- * Anmeldung läuft in Dialogen beim Start, Profil und Verwaltung hängen im
- * Tab Einstellungen (einstellungen.js ruft die Funktionen hier auf).
+ * Anmeldung ist ein VOLLBILD beim Start (seit v0.8.0, Bündel A Schritt 3);
+ * Profil und Verwaltung hängen im Tab Einstellungen (einstellungen.js ruft
+ * die Funktionen hier auf).
  *
- * Drei Wege in die Runde (Ablauf wie im Quizz erprobt):
- *   1. Das Gerät kennt seinen Spieler schon — nichts zu tun.
- *   2. Man wählt sich aus der Liste der Mitspieler und weist sich mit dem
- *      Passwort aus. Das geht von jedem Gerät aus.
- *   3. Man meldet sich neu an: Name und Passwort festlegen.
+ * Drei Wege in die Runde:
+ *   1. Das Gerät kennt seinen Spieler schon — kein Bild, direkt hinein.
+ *   2. Vorhandenes Konto: Benutzername eintippen, mit dem Passwort
+ *      ausweisen. Das geht von jedem Gerät aus.
+ *   3. Neues Konto: Name und Passwort festlegen (doppelte Eingabe).
  *
  * Seit v0.7.0 (Bündel A, Schritt 2) ist die 4-stellige PIN ein Passwort mit
  * 4 bis 8 Zeichen (Regel: SPIELER.passwortPruefen). Die Datenfelder heissen
@@ -27,14 +28,22 @@ const ANMELDUNG = {
     ichId: null,
 
     /*
-     * Läuft gerade eine Anmeldung? Solange ja, darf keine zweite starten —
-     * sonst öffnen sich mehrere Dialoge übereinander, von denen nur der
-     * letzte sichtbar ist.
+     * Läuft gerade eine Anmeldung (das Vollbild ist offen)? Solange ja,
+     * darf keine zweite starten — datenAktualisiert würde sonst mitten in
+     * einer Eingabe ein zweites Bild darüberlegen.
      */
     anmeldenLaeuft: false,
 
+    /* Der Behälter des Anmelde-Vollbilds (das <div id="anmeldung"> aus
+       index.html). Wird von app.js gesetzt. */
+    wurzelEl: null,
+
     verbinden(abgleich) {
         ANMELDUNG.abgleich = abgleich;
+    },
+
+    aufbauen(behaelter) {
+        ANMELDUNG.wurzelEl = behaelter;
     },
 
     /* Setzt an einer Stelle, wer an diesem Gerät sitzt — die Abgleich-Schicht
@@ -71,156 +80,275 @@ const ANMELDUNG = {
     },
 
     /* ---------------------------------------------------------------- *
-     * Anmelden
+     * Anmelden — das Vollbild (seit v0.8.0, Bündel A Schritt 3)
+     *
+     * Solange auf diesem Gerät niemand angemeldet ist, liegt ein
+     * vollflächiger Bildschirm über der ganzen App: erst die Weiche
+     * (vorhandenes oder neues Konto), dahinter je ein Formular. Die
+     * Dialog-Kette von früher gibt es nicht mehr; DIALOG dient nur noch
+     * den Sonderfällen (Konto ohne Passwort, dreimal falsch) und liegt
+     * ÜBER dem Vollbild (Ebenen in css\stil.css).
+     *
+     * Wer einmal angemeldet ist, sieht das Bild nie wieder — bis er sich
+     * abmeldet oder sein Eintrag über die Verwaltung entfernt wird
+     * (datenAktualisiert).
      * ---------------------------------------------------------------- */
 
-    async anmelden() {
-        /* Nur eine Anmeldung gleichzeitig. */
+    anmelden() {
         if (ANMELDUNG.anmeldenLaeuft) {
             return;
         }
-        ANMELDUNG.anmeldenLaeuft = true;
-        try {
-            await ANMELDUNG._anmeldenAblauf();
-        } finally {
-            ANMELDUNG.anmeldenLaeuft = false;
-        }
-        ANMELDUNG._anzeigenAuffrischen();
-    },
 
-    async _anmeldenAblauf() {
-        const abgleich = ANMELDUNG.abgleich;
+        /* Weg 1: bekanntes Gerät, Spieler existiert noch — kein Bild. */
         const person = ICH.person();
-
-        /* Weg 1: bekanntes Gerät, Spieler existiert noch. */
         if (person) {
-            const bekannt = SPIELER.spielerFinden(abgleich.daten, person.id);
+            const bekannt = SPIELER.spielerFinden(ANMELDUNG.abgleich.daten, person.id);
             if (bekannt) {
                 ANMELDUNG._ichIdSetzen(bekannt.id);
                 if (bekannt.name !== person.name) {
                     ICH.personSetzen(bekannt.id, bekannt.name);
                 }
+                ANMELDUNG._anzeigenAuffrischen();
                 return;
             }
         }
 
-        /* Weg 2: aus der Liste der Mitspieler wählen. */
-        const spielerliste = SPIELER.normalisieren(abgleich.daten).spieler;
-        if (spielerliste.length > 0) {
-            const eintraege = spielerliste.map((spieler) => ({
-                beschriftung: spieler.name,
-                hinweis: SPIELER.hatPin(spieler)
-                    ? "mit Passwort gesichert" : "ohne Passwort angelegt",
-                wert: spieler.id
-            }));
-
-            const gewaehlt = await DIALOG.liste(
-                "Bist du schon dabei?",
-                "Wähle deinen Namen, wenn du schon mitspielst — mit deinem "
-                    + "Passwort kommst du von jedem Gerät aus wieder hinein.",
-                eintraege,
-                "Ich bin neu hier"
-            );
-
-            if (gewaehlt) {
-                const erfolg = await ANMELDUNG._alsBestehenderAnmelden(gewaehlt);
-                if (!erfolg) {
-                    /* Abgebrochen oder Passwort falsch: von vorn fragen. */
-                    await ANMELDUNG._anmeldenAblauf();
-                }
-                return;
-            }
-        }
-
-        /* Weg 3: neu anmelden. */
-        await ANMELDUNG._neuAnmelden();
+        ANMELDUNG._vollbildZeigen();
     },
 
-    /* Weg 2: bestehenden Spieler übernehmen, ausgewiesen durchs Passwort. */
-    async _alsBestehenderAnmelden(spielerId) {
-        const abgleich = ANMELDUNG.abgleich;
-        const spieler = SPIELER.spielerFinden(abgleich.daten, spielerId);
-        if (!spieler) {
-            return false;
+    _vollbildZeigen() {
+        if (!ANMELDUNG.wurzelEl) {
+            return;
         }
+        ANMELDUNG.anmeldenLaeuft = true;
+        ANMELDUNG.wurzelEl.hidden = false;
+        ANMELDUNG._weicheZeigen();
+    },
 
-        /* Ohne Passwort angelegt (sollte nicht vorkommen — es ist Pflicht):
-           dann bleibt nur die Nachfrage, und anschließend MUSS ein Passwort
-           vergeben werden, damit die Lücke sich nicht fortsetzt. */
-        if (!SPIELER.hatPin(spieler)) {
-            const binIch = await DIALOG.frage(
-                "Ohne Passwort angelegt",
-                spieler.name + " hat kein Passwort hinterlegt, deshalb lässt sich "
-                    + "das hier nicht prüfen. Bist du das wirklich?",
-                "Ja, das bin ich"
-            );
-            if (!binIch) {
-                return false;
-            }
-
-            ANMELDUNG._uebernehmen(spieler);
-            await ANMELDUNG._passwortVergeben(
-                spieler.id,
-                "Jetzt fehlt nur noch dein Passwort. Damit kommst du künftig von "
-                    + "jedem Gerät wieder als du selbst hinein."
-            );
-            return true;
+    /* Angemeldet: Das Bild verschwindet, die App dahinter wird aufgefrischt. */
+    _vollbildSchliessen() {
+        ANMELDUNG.anmeldenLaeuft = false;
+        if (ANMELDUNG.wurzelEl) {
+            ANMELDUNG.wurzelEl.hidden = true;
+            ANMELDUNG.wurzelEl.innerHTML = "";
         }
+        ANMELDUNG._anzeigenAuffrischen();
+    },
 
-        for (let versuch = 1; versuch <= 3; versuch++) {
-            const text = (versuch === 1)
-                ? "Gib dein Passwort ein. (Wer noch eine alte 4-stellige PIN "
-                    + "hat: Sie gilt weiter.)"
-                : "Das war nicht richtig. Noch " + (4 - versuch)
-                    + (versuch === 3 ? " Versuch." : " Versuche.");
-
-            const passwort = await DIALOG.passwort(
-                "Passwort von " + spieler.name, text, "Anmelden");
-
-            if (passwort === null) {
-                return false;
-            }
-            if (await VERSIEGELUNG.pinPruefen(
-                    passwort, spieler.pinSalz, spieler.pinPruefwert)) {
-                ANMELDUNG._uebernehmen(spieler);
-                return true;
-            }
-        }
-
-        await DIALOG.hinweis(
-            "Dreimal falsch",
-            "Das Passwort stimmt nicht. Vergessen? Dann muss dich jemand mit "
-                + "dem Verwaltungs-Zugang aus der Runde entfernen."
+    /* Die Weiche: zwei grosse Knöpfe, man MUSS sich entscheiden. */
+    _weicheZeigen() {
+        const kasten = ANMELDUNG._kastenBauen(
+            "Blunderluck",
+            "Schach mit Lootboxen. Melde dich an, um mitzuspielen."
         );
-        return false;
+
+        kasten.appendChild(ANMELDUNG._knopfBauen(
+            "Vorhandenes Konto", "knopf-haupt anmeldung-knopf",
+            () => ANMELDUNG._vorhandenesKontoZeigen()));
+
+        kasten.appendChild(ANMELDUNG._knopfBauen(
+            "Neues Konto erstellen", "knopf-still anmeldung-knopf",
+            () => ANMELDUNG._neuesKontoZeigen()));
     },
 
-    /* Weg 3: neuer Spieler mit Name und Passwort. */
-    async _neuAnmelden() {
-        const abgleich = ANMELDUNG.abgleich;
+    /*
+     * Vorhandenes Konto: Benutzername eintippen (ohne Rücksicht auf
+     * Gross-/Kleinschreibung gesucht), Passwort dazu — erst dann kommt man
+     * hinein. Eine alte 4-stellige PIN gilt weiter als Passwort.
+     *
+     * Nach drei falschen Passwörtern geht es mit einem Hinweis zurück auf
+     * die Weiche — die alte Dreier-Grenze, angepasst ans Vollbild, damit
+     * keine Sackgasse entsteht (Entwurf, Frage F5).
+     */
+    _vorhandenesKontoZeigen() {
+        const kasten = ANMELDUNG._kastenBauen(
+            "Vorhandenes Konto",
+            "Melde dich mit Benutzername und Passwort an — das geht von "
+                + "jedem Gerät aus. Eine alte 4-stellige PIN gilt weiter."
+        );
 
-        /* Name — darf noch nicht vergeben sein. */
-        let name = "";
-        while (!name) {
-            name = await DIALOG.eingabe(
-                "Wie heißt du?",
-                "Diesen Namen sehen die anderen in der Runde.",
-                "",
-                "Weiter",
-                false
-            );
+        const name = ANMELDUNG._feldBauen(kasten, "Benutzername", false);
+        const passwort = ANMELDUNG._feldBauen(kasten, "Passwort", true);
 
-            if (name && SPIELER.spielerNachName(abgleich.daten, name)) {
-                await DIALOG.hinweis(
-                    "Name schon vergeben",
-                    name + " spielt bereits mit. Bist du das selbst, melde dich über "
-                        + "die Liste mit deinem Passwort an. Sonst nimm bitte einen "
-                        + "anderen Namen."
-                );
-                name = "";
+        const anmelden = ANMELDUNG._knopfBauen(
+            "Anmelden", "knopf-haupt anmeldung-knopf anmeldung-weiter", null);
+
+        const pruefen = () => {
+            anmelden.disabled = (name.feld.value.trim() === ""
+                || passwort.feld.value === "");
+        };
+        name.feld.addEventListener("input", pruefen);
+        passwort.feld.addEventListener("input", pruefen);
+        pruefen();
+
+        let fehlversuche = 0;
+
+        anmelden.addEventListener("click", async () => {
+            if (anmelden.disabled) {
+                return;
             }
-        }
+            anmelden.disabled = true;
 
+            const spieler = SPIELER.spielerNachName(
+                ANMELDUNG.abgleich.daten, name.feld.value);
+
+            if (!spieler) {
+                name.fehler.textContent = "Diesen Namen gibt es hier nicht. "
+                    + "Neu hier? Dann erstell ein neues Konto.";
+                pruefen();
+                return;
+            }
+            name.fehler.textContent = "";
+
+            /* Ohne Passwort angelegt (sollte nicht vorkommen — es ist
+               Pflicht): Nachfrage, dann MUSS eins vergeben werden, damit
+               die Lücke sich nicht fortsetzt. Der Dialog liegt über dem
+               Vollbild. */
+            if (!SPIELER.hatPin(spieler)) {
+                const binIch = await DIALOG.frage(
+                    "Ohne Passwort angelegt",
+                    spieler.name + " hat kein Passwort hinterlegt, deshalb "
+                        + "lässt sich das hier nicht prüfen. Bist du das "
+                        + "wirklich?",
+                    "Ja, das bin ich"
+                );
+                if (!binIch) {
+                    pruefen();
+                    return;
+                }
+                ANMELDUNG._uebernehmen(spieler);
+                await ANMELDUNG._passwortVergeben(
+                    spieler.id,
+                    "Jetzt fehlt nur noch dein Passwort. Damit kommst du "
+                        + "künftig von jedem Gerät wieder als du selbst hinein."
+                );
+                ANMELDUNG._vollbildSchliessen();
+                return;
+            }
+
+            const richtig = await VERSIEGELUNG.pinPruefen(
+                passwort.feld.value, spieler.pinSalz, spieler.pinPruefwert);
+
+            if (richtig) {
+                ANMELDUNG._uebernehmen(spieler);
+                ANMELDUNG._vollbildSchliessen();
+                return;
+            }
+
+            fehlversuche += 1;
+            if (fehlversuche >= 3) {
+                await DIALOG.hinweis(
+                    "Dreimal falsch",
+                    "Das Passwort stimmt nicht. Vergessen? Dann muss dich "
+                        + "jemand mit dem Verwaltungs-Zugang aus der Runde "
+                        + "entfernen."
+                );
+                ANMELDUNG._weicheZeigen();
+                return;
+            }
+
+            passwort.feld.value = "";
+            passwort.fehler.textContent = "Das war nicht richtig. Noch "
+                + (3 - fehlversuche)
+                + (fehlversuche === 2 ? " Versuch." : " Versuche.");
+            pruefen();
+        });
+
+        kasten.appendChild(anmelden);
+        ANMELDUNG._eingabetaste([name, passwort], anmelden);
+
+        kasten.appendChild(ANMELDUNG._knopfBauen(
+            "Zurück", "knopf-still anmeldung-knopf",
+            () => ANMELDUNG._weicheZeigen()));
+
+        name.feld.focus();
+    },
+
+    /*
+     * Neues Konto: Benutzername, Passwort und Wiederholung auf EINEM Bild.
+     * Jede Regel meldet sich sofort unter ihrem Feld — nicht erst nach dem
+     * Absenden —, und der Erstellen-Knopf wird erst frei, wenn alle drei
+     * Felder gültig sind.
+     */
+    _neuesKontoZeigen() {
+        const kasten = ANMELDUNG._kastenBauen(
+            "Neues Konto",
+            "Diesen Namen sehen die anderen in der Runde."
+        );
+
+        const name = ANMELDUNG._feldBauen(kasten, "Benutzername", false);
+        const passwort = ANMELDUNG._feldBauen(kasten,
+            "Passwort (" + SPIELER.PASSWORT_MIN + " bis " + SPIELER.PASSWORT_MAX
+                + " Zeichen, Gross-/Kleinschreibung zählt)", true);
+        const wiederholung = ANMELDUNG._feldBauen(kasten,
+            "Passwort wiederholen", true);
+
+        const weiter = ANMELDUNG._knopfBauen(
+            "Konto erstellen", "knopf-haupt anmeldung-knopf anmeldung-weiter",
+            null);
+
+        const pruefen = () => {
+            let gueltig = true;
+
+            /* Der Name darf noch nicht vergeben sein — derselbe Vergleich
+               ohne Gross-/Kleinschreibung wie überall, sonst gäbe es
+               „Anna" und „anna" nebeneinander. */
+            const nameWert = name.feld.value.trim();
+            let nameFehler = "";
+            if (nameWert === "") {
+                gueltig = false;
+            } else if (SPIELER.spielerNachName(ANMELDUNG.abgleich.daten, nameWert)) {
+                nameFehler = "Dieser Name ist schon vergeben.";
+                gueltig = false;
+            }
+            name.fehler.textContent = nameFehler;
+
+            const passwortWert = passwort.feld.value;
+            const passwortFehler = (passwortWert === "")
+                ? "" : SPIELER.passwortPruefen(passwortWert);
+            if (passwortWert === "" || passwortFehler !== "") {
+                gueltig = false;
+            }
+            passwort.fehler.textContent = passwortFehler;
+
+            let wiederholungFehler = "";
+            if (wiederholung.feld.value === "") {
+                gueltig = false;
+            } else if (wiederholung.feld.value !== passwortWert) {
+                wiederholungFehler = "Die beiden Passwörter stimmen nicht überein.";
+                gueltig = false;
+            }
+            wiederholung.fehler.textContent = wiederholungFehler;
+
+            weiter.disabled = !gueltig;
+        };
+
+        name.feld.addEventListener("input", pruefen);
+        passwort.feld.addEventListener("input", pruefen);
+        wiederholung.feld.addEventListener("input", pruefen);
+        pruefen();
+
+        weiter.addEventListener("click", () => {
+            if (weiter.disabled) {
+                return;
+            }
+            weiter.disabled = true;
+            ANMELDUNG._neuesKontoAnlegen(
+                name.feld.value.trim(), passwort.feld.value);
+        });
+
+        kasten.appendChild(weiter);
+        ANMELDUNG._eingabetaste([name, passwort, wiederholung], weiter);
+
+        kasten.appendChild(ANMELDUNG._knopfBauen(
+            "Zurück", "knopf-still anmeldung-knopf",
+            () => ANMELDUNG._weicheZeigen()));
+
+        name.feld.focus();
+    },
+
+    async _neuesKontoAnlegen(name, passwort) {
+        const abgleich = ANMELDUNG.abgleich;
         const spielerId = SPIELER.idErzeugen();
 
         /* Erst bekannt machen, wer wir sind — die Abgleich-Schicht braucht das
@@ -232,13 +360,124 @@ const ANMELDUNG = {
             SPIELER.spielerHinzufuegen(abgleich.daten, name, spielerId), true
         );
 
-        await ANMELDUNG._passwortVergeben(
-            spielerId,
-            "Denk dir ein Passwort aus — " + SPIELER.PASSWORT_MIN + " bis "
-                + SPIELER.PASSWORT_MAX + " Zeichen, Gross- und Kleinschreibung "
-                + "zählt. Damit kommst du auch von einem anderen Handy wieder "
-                + "als du selbst hinein."
+        const salz = VERSIEGELUNG.verfuegbar() ? VERSIEGELUNG.salzErzeugen() : "";
+        const pinPruefwert = await VERSIEGELUNG.pinPruefwertBilden(passwort, salz);
+
+        abgleich.aendern(
+            SPIELER.pinSetzen(abgleich.daten, spielerId, pinPruefwert, salz),
+            true
         );
+
+        ANMELDUNG._vollbildSchliessen();
+    },
+
+    /* ---------------------------------------------------------------- *
+     * Bausteine des Vollbilds
+     * ---------------------------------------------------------------- */
+
+    /* Ein leerer Kasten in der Mitte des Vollbilds — jede Ansicht beginnt so. */
+    _kastenBauen(titel, erklaerung) {
+        const wurzel = ANMELDUNG.wurzelEl;
+        wurzel.innerHTML = "";
+
+        const kasten = document.createElement("div");
+        kasten.className = "anmeldung-kasten";
+
+        const kopf = document.createElement("h2");
+        kopf.textContent = titel;
+        kasten.appendChild(kopf);
+
+        if (erklaerung) {
+            const absatz = document.createElement("p");
+            absatz.className = "erklaerung";
+            absatz.textContent = erklaerung;
+            kasten.appendChild(absatz);
+        }
+
+        wurzel.appendChild(kasten);
+        return kasten;
+    },
+
+    /*
+     * Ein beschriftetes Eingabefeld mit Fehlerzeile darunter. Passwörter
+     * sind verdeckt und bekommen den Zeigen-Knopf (dasselbe Muster wie in
+     * DIALOG.passwort); Leerraum kommt gar nicht erst hinein.
+     * Liefert { feld, fehler }.
+     */
+    _feldBauen(kasten, beschriftung, verdeckt) {
+        const marke = document.createElement("label");
+        marke.className = "anmeldung-beschriftung";
+        marke.textContent = beschriftung;
+        kasten.appendChild(marke);
+
+        const feld = document.createElement("input");
+        feld.className = "anmeldung-feld";
+        feld.value = "";
+        feld.autocomplete = "off";
+        feld.setAttribute("aria-label", beschriftung);
+
+        if (verdeckt) {
+            feld.type = "password";
+            feld.maxLength = SPIELER.PASSWORT_MAX;
+            feld.addEventListener("input", () => {
+                const ohneLeerraum = feld.value.replace(/\s/g, "");
+                if (feld.value !== ohneLeerraum) {
+                    feld.value = ohneLeerraum;
+                }
+            });
+
+            const halter = document.createElement("div");
+            halter.className = "anmeldung-passwort-halter";
+            halter.appendChild(feld);
+
+            const zeigen = document.createElement("button");
+            zeigen.type = "button";
+            zeigen.className = "knopf knopf-still anmeldung-zeigen";
+            zeigen.textContent = "Zeigen";
+            zeigen.setAttribute("aria-label", "Passwort anzeigen");
+            zeigen.addEventListener("click", () => {
+                const offen = (feld.type === "text");
+                feld.type = offen ? "password" : "text";
+                zeigen.textContent = offen ? "Zeigen" : "Verbergen";
+                feld.focus();
+            });
+            halter.appendChild(zeigen);
+            kasten.appendChild(halter);
+        } else {
+            feld.type = "text";
+            kasten.appendChild(feld);
+        }
+
+        /* Die Fehlerzeile ist immer da (auch leer) — so springt das
+           Formular nicht, wenn eine Meldung erscheint. */
+        const fehler = document.createElement("p");
+        fehler.className = "anmeldung-fehler";
+        fehler.setAttribute("role", "alert");
+        kasten.appendChild(fehler);
+
+        return { feld: feld, fehler: fehler };
+    },
+
+    _knopfBauen(beschriftung, klasse, beiKlick) {
+        const knopf = document.createElement("button");
+        knopf.type = "button";
+        knopf.className = "knopf " + klasse;
+        knopf.textContent = beschriftung;
+        if (beiKlick) {
+            knopf.addEventListener("click", beiKlick);
+        }
+        return knopf;
+    },
+
+    /* Die Eingabetaste löst den Haupt-Knopf der Ansicht aus. */
+    _eingabetaste(teile, knopf) {
+        for (const teil of teile) {
+            teil.feld.addEventListener("keydown", (ereignis) => {
+                if (ereignis && ereignis.key === "Enter" && !knopf.disabled) {
+                    knopf.click();
+                }
+            });
+        }
     },
 
     /*

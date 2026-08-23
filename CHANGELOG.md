@@ -3,6 +3,26 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.8.0 — 23.08.2026
+
+**Die Anmeldung ist jetzt ein eigener Bildschirm.** (Bündel A, Schritt 3)
+
+- Statt der Dialog-Kette beim Start gibt es ein **vollflächiges
+  Anmelde-Bild**: Solange auf dem Gerät niemand angemeldet ist, sieht man
+  nur dieses Bild — mit zwei grossen Knöpfen: **Vorhandenes Konto** und
+  **Neues Konto erstellen**.
+- **Vorhandenes Konto:** Benutzernamen eintippen (Gross-/Kleinschreibung
+  egal), Passwort dazu, fertig. Es gibt keine öffentliche Namensliste mehr
+  zum Durchblättern. Nach dreimal falsch geht es mit Hinweis zurück zur
+  Auswahl.
+- **Neues Konto:** Name, Passwort und Wiederholung auf einem Bild. Jede
+  Regel meldet sich sofort unter dem Feld (Name vergeben, Passwort zu kurz,
+  Wiederholung ungleich) — nicht erst nach dem Absenden. Der
+  Erstellen-Knopf wird erst frei, wenn alles passt.
+- **Wer angemeldet ist, sieht das Bild nie** — beim Öffnen der Seite geht es
+  direkt in die App, bis man sich abmeldet (Einstellungen → Account) oder
+  der eigene Eintrag über die Verwaltung entfernt wird.
+
 ## v0.7.0 — 23.08.2026
 
 **Aus der PIN wird ein Passwort.** (Bündel A, Schritt 2)
