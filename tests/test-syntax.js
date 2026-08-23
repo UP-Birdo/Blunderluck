@@ -208,26 +208,50 @@ pruefe("Die Pruefsummen-Zutaten heissen blunderluck", () => {
     }
 });
 
-pruefe("Der sichtbare Name ist Blunderluck", () => {
+pruefe("Der Name der App ist Blunderluck", () => {
     /*
-     * Der sichtbare Name und die technischen Kennungen sollen nicht
-     * auseinanderlaufen — die Lehre stammt aus dem Quizz (v0.89/v0.90).
-     * Der Test darueber haelt die technische Kennung stabil, dieser den
-     * sichtbaren Namen.
+     * Der Name und die technischen Kennungen sollen nicht auseinanderlaufen
+     * — die Lehre stammt aus dem Quizz (v0.89/v0.90). Der Test darueber
+     * haelt die technische Kennung stabil, dieser den Namen.
+     *
+     * SEIT v0.16.0 (Wunsch 3) IST DER SCHRIFTZUG IM KOPF UNSICHTBAR
+     * (`class="nur-vorlesen"`). Die Ueberschrift muss trotzdem dastehen —
+     * fuer Vorleseprogramme —, deshalb wird jetzt auf das ENDE des
+     * h1-Elements geprueft statt auf die frueher feste Schreibweise
+     * „<h1>Blunderluck</h1>".
      */
     const seite = dateisystem.readFileSync(pfad.join(projekt, "index.html"), "utf8");
     const anzeige = dateisystem.readFileSync(
         pfad.join(projekt, "manifest.webmanifest"), "utf8");
 
-    for (const stelle of ["<title>Blunderluck</title>", "<h1>Blunderluck</h1>"]) {
+    for (const stelle of ["<title>Blunderluck</title>", ">Blunderluck</h1>"]) {
         if (seite.indexOf(stelle) === -1) {
             throw new Error("index.html: " + stelle + " fehlt —"
-                + " der sichtbare Name muss Blunderluck sein");
+                + " der Name der App muss Blunderluck sein");
         }
     }
 
     if (anzeige.indexOf("\"name\": \"Blunderluck\"") === -1) {
         throw new Error("manifest.webmanifest: der Name heisst nicht Blunderluck");
+    }
+});
+
+pruefe("Der Schriftzug im Kopf ist unsichtbar (Wunsch 3, v0.16.0)", () => {
+    /*
+     * „Der Schriftzug Blunderluck oben soll ueberall verschwinden."
+     * Geloescht wurde die Ueberschrift NICHT (siehe oben) — sie traegt die
+     * Klasse `nur-vorlesen`. Ohne diesen Test kaeme sie beim naechsten
+     * Anfassen der Kopfzeile lautlos zurueck.
+     */
+    const seite = dateisystem.readFileSync(pfad.join(projekt, "index.html"), "utf8");
+    const stil = dateisystem.readFileSync(
+        pfad.join(projekt, "css", "stil.css"), "utf8");
+
+    if (seite.indexOf("<h1 class=\"nur-vorlesen\">Blunderluck</h1>") === -1) {
+        throw new Error("die Ueberschrift im Kopf ist wieder sichtbar");
+    }
+    if (stil.indexOf(".nur-vorlesen") === -1) {
+        throw new Error("die Klasse nur-vorlesen fehlt in der Stildatei");
     }
 });
 

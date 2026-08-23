@@ -3,6 +3,19 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.16.0 — 24.08.2026
+
+**Der Schriftzug oben ist weg.**
+
+- „Blunderluck" stand auf jedem Bildschirm gross im Kopf. Er ist jetzt
+  unsichtbar — der Balken oben trägt nur noch die Versionsnummer und den
+  Wunsch-Knopf und ist entsprechend schmaler geworden. Mehr Platz fürs
+  Spiel, besonders auf dem Handy.
+- Auf dem Anmelde-Bildschirm bleibt der Name stehen: Dort ist er die
+  Begrüssung, nicht die Kopfzeile.
+- Für Vorleseprogramme steht die Überschrift technisch weiter da, sie ist
+  nur nicht mehr zu sehen.
+
 ## v0.15.0 — 24.08.2026
 
 **Der Kopf der Seite wird leerer: Der grüne Punkt zieht in die

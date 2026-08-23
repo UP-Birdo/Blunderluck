@@ -182,13 +182,19 @@ body {
  * Kopf
  * ------------------------------------------------------------------ */
 
+/*
+ * SEIT v0.16.0 (Wunsch 3) TRÄGT DER KOPF NUR NOCH DIE VERSIONSNUMMER
+ * und den Wunsch-Knopf — der Schriftzug ist unsichtbar, der Stand des
+ * Abgleichs zog in die Einstellungen (v0.15.0). Ein Balken in voller
+ * Höhe wäre jetzt fast leer, deshalb ein knapperer Innenabstand.
+ */
 .kopf {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
     gap: 8px;
-    padding: var(--abstand);
+    padding: 8px var(--abstand);
     background: var(--karte);
     border-bottom: 1px solid var(--rahmen);
 }

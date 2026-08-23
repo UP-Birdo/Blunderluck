@@ -24,7 +24,14 @@
 
     <header class="kopf">
         <div class="kopf-titel">
-            <h1>Blunderluck</h1>
+            <!-- DER SCHRIFTZUG IST SEIT v0.16.0 UNSICHTBAR (Wunsch 3:
+                 „Der Schriftzug Blunderluck oben soll überall
+                 verschwinden"). Die Überschrift selbst BLEIBT stehen —
+                 Vorleseprogramme brauchen eine Seiten-Überschrift, und
+                 der sichtbare Name der App wird an dieser Stelle geprüft
+                 (tests\test-syntax.js). Sichtbar bleibt nur noch die
+                 Versionsnummer. -->
+            <h1 class="nur-vorlesen">Blunderluck</h1>
             <span class="version" id="app-version"></span>
         </div>
         <div class="kopf-rechts">
