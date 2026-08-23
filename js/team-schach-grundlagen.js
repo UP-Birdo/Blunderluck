@@ -189,8 +189,8 @@ Object.assign(TEAM_SCHACH, {
      * Den vorigen Aufklapper zumachen und seinen Inhalt wegräumen.
      *
      * Gemerkt wird der EINE offene Eintrag, statt beim Aufklappen alle zu
-     * durchsuchen — dasselbe Muster wie `infoOffenerEintrag` in der
-     * Fähigkeiten-Bibliothek. Es ist nicht nur billiger: Ein Griff nach
+     * durchsuchen — dasselbe Muster, das bis v0.17.0 auch die
+     * Fähigkeiten-Bibliothek benutzte. Es ist nicht nur billiger: Ein Griff nach
      * `document` hinaus wäre der einzige in dieser Datei, und der
      * Bildschirm-Test hat kein ganzes Dokument, nur den Baum, den er selbst
      * gebaut hat.

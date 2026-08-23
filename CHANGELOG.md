@@ -3,6 +3,22 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.18.0 — 24.08.2026
+
+**Die Fähigkeiten-Seite ist jetzt kurz: nur noch das Raster.**
+
+- Unter dem Icon-Raster standen bisher vier lange Karten mit allen 23
+  Einträgen zum Aufklappen. Sie sind weg — die Seite passt jetzt fast auf
+  einen Bildschirm.
+- **Verloren geht nichts:** Ein Tipp auf eine Kachel zeigt weiterhin die
+  Beschreibung und die abgespielte Anleitung, genau wie vorher der
+  aufgeklappte Eintrag.
+- Neu darunter die kurze Liste **„Die Stufen"**: welche Rahmenfarbe zu
+  welcher Seltenheit gehört, und hinter dem i wie oft sie vorkommt. Das
+  war bisher die einzige Auskunft, die nur in den langen Karten stand.
+- Dieselbe Ansicht gilt auch für die Bibliothek im Spiel (das i neben dem
+  Fähigkeiten-Haken) — es ist dieselbe Seite.
+
 ## v0.17.0 — 24.08.2026
 
 **Der 3D-Look ist jetzt einfach an.**

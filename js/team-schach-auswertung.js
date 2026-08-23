@@ -700,7 +700,6 @@ Object.assign(TEAM_SCHACH, {
      */
     faehigkeitenOeffnen() {
         TEAM_SCHACH.infoOffen = true;
-        TEAM_SCHACH.infoOffenerEintrag = null;
         /* Einmal neu bauen — danach lässt die regelmässige Abfrage sie in
            Ruhe (siehe `infoGezeichnet`). */
         TEAM_SCHACH.infoGezeichnet = false;
@@ -710,7 +709,6 @@ Object.assign(TEAM_SCHACH, {
     infoSchliessen() {
         TEAM_SCHACH.infoOffen = false;
         TEAM_SCHACH.infoGezeichnet = false;
-        TEAM_SCHACH.infoOffenerEintrag = null;
         TEAM_SCHACH.infoStufe = "";
         TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
     },
@@ -786,9 +784,53 @@ Object.assign(TEAM_SCHACH, {
 
         wurzel.appendChild(legende);
 
+        /*
+         * DIE STUFEN-LISTEN SIND SEIT v0.18.0 WEG (Wunsch 5, 24.08.2026:
+         * „Fähigkeiten-Tab: nur noch das neue Icon-Raster — die
+         * Stufen-Listen darunter sollen weg"). Bis v0.17.0 standen unter
+         * dem Raster vier Karten mit allen 23 Einträgen zum Aufklappen.
+         *
+         * Verloren geht dabei nichts: Beschreibung und abgespielte
+         * Anleitung stecken hinter jeder Raster-Kachel
+         * (`faehigkeitAnsehen` bzw. der Pech-Hinweis). Was NUR in den
+         * Karten stand, war die Auskunft „wie oft kommt diese Stufe" —
+         * dafür steht jetzt die Stufen-Legende hier, vier Zeilen statt
+         * vier Karten.
+         */
+        wurzel.appendChild(TEAM_SCHACH._stufenLegendeBauen());
+    },
+
+    /*
+     * Die Stufen-Legende (seit v0.18.0): Welche Rahmenfarbe im Raster
+     * welche Stufe ist — und hinter dem i, wie oft sie vorkommt. Sie
+     * ersetzt die vier Stufen-Karten, nicht das Raster.
+     */
+    _stufenLegendeBauen() {
+        const karte = TEAM_SCHACH._element("section", "karte");
+        karte.appendChild(TEAM_SCHACH._element("h3", "", "Die Stufen"));
+
         for (const stufe of SCHACH_VARIANTEN.STUFEN) {
-            wurzel.appendChild(TEAM_SCHACH._stufenKarteBauen(stufe));
+            const zeile = TEAM_SCHACH._element("div", "stufen-legende-zeile");
+            zeile.style.setProperty("--stufe-farbe", stufe.farbe);
+
+            zeile.appendChild(TEAM_SCHACH._element("span", "stufen-legende-punkt"));
+            zeile.appendChild(TEAM_SCHACH._element("span", "stufen-name", stufe.titel));
+
+            const zahlen = document.createElement("button");
+            zahlen.type = "button";
+            zahlen.className = "info-knopf";
+            zahlen.textContent = "i";
+            zahlen.setAttribute("aria-label", "Wie oft kommt " + stufe.titel + "?");
+            zahlen.title = "Wie oft kommt " + stufe.titel + "?";
+            zahlen.addEventListener("click", () => {
+                DIALOG.hinweis(stufe.titel, SCHACH_VARIANTEN.stufenErklaerung(stufe.id));
+            });
+            zeile.appendChild(zahlen);
+
+            karte.appendChild(zeile);
         }
+
+        return karte;
     },
 
     _iconRasterBauen() {
@@ -839,152 +881,13 @@ Object.assign(TEAM_SCHACH, {
         return kachel;
     },
 
-    _stufenKarteBauen(stufe) {
-        const karte = TEAM_SCHACH._element("section", "karte stufen-karte");
-        karte.style.setProperty("--stufe-farbe", stufe.farbe);
-
-        const kopf = TEAM_SCHACH._element("div", "karte-kopf");
-        kopf.appendChild(TEAM_SCHACH._element("h3", "stufen-titel", stufe.titel));
-
-        /* Das zweite i: die Zahlen zu dieser Stufe. */
-        const zahlen = document.createElement("button");
-        zahlen.type = "button";
-        zahlen.className = "info-knopf";
-        zahlen.textContent = "i";
-        zahlen.setAttribute("aria-label", "Wie oft kommt " + stufe.titel + "?");
-        zahlen.title = "Wie oft kommt " + stufe.titel + "?";
-        zahlen.addEventListener("click", () => {
-            DIALOG.hinweis(stufe.titel, SCHACH_VARIANTEN.stufenErklaerung(stufe.id));
-        });
-        kopf.appendChild(zahlen);
-        karte.appendChild(kopf);
-
-        for (const art of SCHACH_VARIANTEN.faehigkeitenDerStufe(stufe.id)) {
-            karte.appendChild(TEAM_SCHACH._bibliothekEintragBauen(art,
-                SCHACH_VARIANTEN.faehigkeitTitel(art),
-                SCHACH_VARIANTEN.faehigkeitBeschreibung(art), false));
-        }
-
-        /*
-         * Die Unglückswürfel dieser Stufe — ALLE. Bis v0.40 stand hier ein
-         * `find`, das nur den ersten fand; in der gewöhnlichen Stufe liegen
-         * aber zwei (Stolperstein und Volles Glas), und der zweite tauchte in
-         * der Bibliothek nie auf.
-         */
-        for (const pechArt of SCHACH_VARIANTEN.pechDerStufe(stufe.id)) {
-            karte.appendChild(TEAM_SCHACH._bibliothekEintragBauen(pechArt,
-                SCHACH_VARIANTEN.pechTitel(pechArt) + " (Unglück)",
-                SCHACH_VARIANTEN.pechBeschreibung(pechArt), true));
-        }
-
-        return karte;
-    },
-
     /*
-     * Ein Eintrag der Bibliothek: DER EINTRAG SELBST KLAPPT AUF (seit v0.41).
-     *
-     * Zugeklappt steht dort NUR DIE ÜBERSCHRIFT (seit v0.42). Vorher stand die
-     * Beschreibung daneben — bei 23 Einträgen war die Liste damit so lang, dass
-     * man auf dem Handy scrollte, bevor man wusste, welche Fähigkeiten es
-     * überhaupt gibt. Wer auf die Überschrift tippt, bekommt beides:
-     * Beschreibung und abgespielte Anleitung.
-     *
-     * Gebaut wird der Inhalt ERST BEIM AUFKLAPPEN. Alle 23 Anleitungen auf
-     * einmal wären über zweitausend Elemente, von denen man eines braucht —
-     * und je ein Takt, der sie abspielt.
+     * HIER STANDEN BIS v0.17.0 `_stufenKarteBauen`, `_bibliothekEintragBauen`
+     * und `_bibliothekSchliessen` — die aufklappbare Bibliothek in vier
+     * Stufen-Karten. Sie sind mit Wunsch 5 entfallen; an ihre Stelle traten
+     * das Icon-Raster (v0.12.0) und die Stufen-Legende (oben). Wer sie
+     * nachlesen will, findet sie im Backup `Backup\Blunderluck\v0.15.0`.
      */
-    _bibliothekEintragBauen(art, titel, beschreibung, istPech) {
-        const beschreibungsSatz = SCHACH_VARIANTEN.FAEHIGKEITEN[art] || {};
-
-        const eintrag = document.createElement("details");
-        eintrag.className = "stufen-eintrag" + (istPech ? " stufen-pech" : "");
-
-        const kopf = document.createElement("summary");
-        kopf.className = "stufen-kopf";
-        kopf.appendChild(TEAM_SCHACH._element("span", "stufen-name", titel));
-
-        /*
-         * DIESELBEN ZEICHEN WIE AM VORRAT (seit v0.47) — und seit v0.48 nach
-         * derselben Rechnung: Beide lesen die Eigenschaft der Fähigkeit, nicht
-         * den Spielstand. Nur so ist das Zeichen hier gelernt und dort
-         * wiedererkannt.
-         */
-        if (!istPech && SCHACH_VARIANTEN.zeigtPlus(art)) {
-            const plus = TEAM_SCHACH._element("span", "faehigkeit-zeichen", "+");
-            plus.title = "Danach bleibt dir dein normaler Zug.";
-            kopf.appendChild(plus);
-        }
-        if (beschreibungsSatz.imGegenzug) {
-            kopf.appendChild(TEAM_SCHACH._blitzBauen());
-        }
-
-        eintrag.appendChild(kopf);
-
-        eintrag.addEventListener("toggle", () => {
-            if (!eintrag.open) {
-                return;
-            }
-
-            /*
-             * NUR EINER ZUR ZEIT (seit v0.44). Wer eine zweite Fähigkeit
-             * ansieht, hat die erste hinter sich gelassen: Sie klappt zu, und
-             * ihr Inhalt wird weggeräumt — damit ihr Takt aufhört, statt
-             * unsichtbar weiterzulaufen. Nebenbei bleibt die Liste kurz genug,
-             * dass man den nächsten Eintrag ohne Scrollen findet.
-             */
-            TEAM_SCHACH._bibliothekSchliessen(eintrag);
-            TEAM_SCHACH.infoOffenerEintrag = eintrag;
-
-            if (eintrag.querySelector(".stufen-inhalt")) {
-                return;
-            }
-
-            const inhalt = TEAM_SCHACH._element("div", "stufen-inhalt");
-            inhalt.appendChild(TEAM_SCHACH._element("p", "stufen-text", beschreibung));
-
-            /* Was die Zeichen bedeuten — bei JEDEM Eintrag, nicht nur einmal
-               ganz oben. Wer hier nachschlägt, sucht diese eine Fähigkeit. */
-            if (!istPech) {
-                inhalt.appendChild(TEAM_SCHACH._element("p", "stufen-kosten",
-                    TEAM_SCHACH._kostenSatz(beschreibungsSatz)));
-
-                if (beschreibungsSatz.imGegenzug) {
-                    inhalt.appendChild(TEAM_SCHACH._element("p", "stufen-kosten",
-                        "Blitz: Du darfst sie auch einsetzen, während der Gegner am "
-                            + "Zug ist. Wer zuerst drückt, war zuerst."));
-                }
-            }
-
-            const anleitung = TEAM_SCHACH._anleitungBauen(art);
-            if (anleitung) {
-                inhalt.appendChild(anleitung);
-            }
-
-            eintrag.appendChild(inhalt);
-        });
-
-        return eintrag;
-    },
-
-    /* Klappt den zuletzt geöffneten Eintrag zu — ausser er ist der neue. */
-    _bibliothekSchliessen(ausser) {
-        const offen = TEAM_SCHACH.infoOffenerEintrag;
-
-        if (!offen || offen === ausser) {
-            return;
-        }
-
-        offen.open = false;
-
-        /* Den Inhalt wegnehmen: Der Takt der Anleitung merkt daran, dass sein
-           Bild nicht mehr im Bildschirm steht, und hört auf. */
-        const inhalt = offen.querySelector(".stufen-inhalt");
-        if (inhalt && offen.removeChild) {
-            offen.removeChild(inhalt);
-        }
-
-        TEAM_SCHACH.infoOffenerEintrag = null;
-    },
 
     /* ---------------------------------------------------------------- *
      * Die Bildanleitung zu einer Fähigkeit (seit v0.41)

@@ -1981,47 +1981,66 @@ pruefe("Die Werte-Tabelle nennt jede Figur mit ihrer Zahl (v0.96)", () => {
     }
 });
 
-pruefe("Die Faehigkeiten-Uebersicht zeigt jede Stufe mit ihren Eintraegen", () => {
+pruefe("Die Bibliothek zeigt das Raster und die Stufen-Legende (Wunsch 5)", () => {
+    /*
+     * DER GEMELDETE WUNSCH: „Faehigkeiten-Tab: nur noch das neue
+     * Icon-Raster — die Stufen-Listen darunter (alte Bibliothek) sollen
+     * weg."
+     *
+     * Bis v0.17.0 prueften hier vier Stufen-Karten mit allen Eintraegen.
+     * An ihre Stelle tritt die Zusage von v0.18.0: KEINE Stufen-Karte mehr,
+     * dafuer das Raster mit jeder Faehigkeit und eine Legende mit einer
+     * Zeile je Stufe — damit die Auskunft „wie oft kommt diese Stufe"
+     * nicht verloren geht.
+     */
     TEAM_SCHACH.faehigkeitenOeffnen();
 
-    const karten = TEAM_SCHACH.wurzelEl.kinder.filter(
-        (kind) => String(kind.className || "").indexOf("stufen-karte") !== -1);
+    const einsammeln = (element, passt, treffer) => {
+        for (const kind of element.kinder || []) {
+            if (passt(kind)) {
+                treffer.push(kind);
+            }
+            einsammeln(kind, passt, treffer);
+        }
+        return treffer;
+    };
 
-    if (karten.length !== SCHACH_VARIANTEN.STUFEN.length) {
-        throw new Error("erwartet " + SCHACH_VARIANTEN.STUFEN.length
-            + " Stufen, waren " + karten.length);
+    const karten = einsammeln(TEAM_SCHACH.wurzelEl, (kind) =>
+        String(kind.className || "").indexOf("stufen-karte") !== -1, []);
+    if (karten.length !== 0) {
+        throw new Error("es haengen noch " + karten.length + " Stufen-Karten da");
     }
 
-    /*
-     * Je Stufe: Kopfzeile, die Fähigkeiten und ALLE Unglückswürfel dieser
-     * Stufe. „Alle" seit v0.41 — in der gewoehnlichen Stufe liegen zwei, und
-     * der zweite fehlte bis dahin in der Bibliothek.
-     */
-    for (let stelle = 0; stelle < karten.length; stelle++) {
-        const stufe = SCHACH_VARIANTEN.STUFEN[stelle];
-        const eintraege = karten[stelle].kinder.filter(
-            (kind) => String(kind.className || "").indexOf("stufen-eintrag") !== -1);
+    /* Das Raster zeigt weiterhin JEDE Faehigkeit und JEDES Unglueck. */
+    const kacheln = einsammeln(TEAM_SCHACH.wurzelEl, (kind) =>
+        String(kind.className || "").indexOf("faehigkeit-kachel") !== -1, []);
 
-        const erwartet = SCHACH_VARIANTEN.faehigkeitenDerStufe(stufe.id).length
+    let erwartet = 0;
+    for (const stufe of SCHACH_VARIANTEN.STUFEN) {
+        erwartet += SCHACH_VARIANTEN.faehigkeitenDerStufe(stufe.id).length
             + SCHACH_VARIANTEN.pechDerStufe(stufe.id).length;
-        if (eintraege.length !== erwartet) {
-            throw new Error(stufe.id + ": " + eintraege.length + " Eintraege statt " + erwartet);
-        }
+    }
+    if (kacheln.length !== erwartet) {
+        throw new Error("das Raster zeigt " + kacheln.length + " statt " + erwartet);
+    }
 
-        /*
-         * Ein Unglueckswuerfel gehoert in die Karte — sofern die Stufe noch
-         * einen SICHTBAREN hat. Seit v0.84 darf eine Stufe leer sein (Blau
-         * ist es, seit Ausdehnung und Einsturz aus dem Spiel sind); dann darf
-         * dort auch nichts stehen.
-         */
-        const pech = eintraege.find(
-            (kind) => String(kind.className || "").indexOf("stufen-pech") !== -1);
-        if (SCHACH_VARIANTEN.pechDerStufe(stufe.id).length > 0 && !pech) {
-            throw new Error(stufe.id + ": kein Unglueckswuerfel");
+    /* Und je Stufe eine Zeile in der Legende, mit dem i fuer die Zahlen. */
+    const zeilen = einsammeln(TEAM_SCHACH.wurzelEl, (kind) =>
+        String(kind.className || "").indexOf("stufen-legende-zeile") !== -1, []);
+    if (zeilen.length !== SCHACH_VARIANTEN.STUFEN.length) {
+        throw new Error("die Legende hat " + zeilen.length + " Zeilen statt "
+            + SCHACH_VARIANTEN.STUFEN.length);
+    }
+    for (const zeile of zeilen) {
+        if (!(zeile.kinder || []).some((kind) =>
+                String(kind.className || "").indexOf("info-knopf") !== -1)) {
+            throw new Error("eine Stufen-Zeile hat kein i mit den Zahlen");
         }
-        if (SCHACH_VARIANTEN.pechDerStufe(stufe.id).length === 0 && pech) {
-            throw new Error(stufe.id + ": leere Stufe zeigt trotzdem ein Unglueck");
-        }
+    }
+
+    /* Die abgeschafften Bausteine sind wirklich weg. */
+    if (TEAM_SCHACH._stufenKarteBauen || TEAM_SCHACH._bibliothekEintragBauen) {
+        throw new Error("die alte Bibliothek steckt noch im Code");
     }
 
     TEAM_SCHACH.infoSchliessen();
@@ -2067,22 +2086,32 @@ pruefe("Die Bibliothek hat EINEN Zurueck-Knopf im klebenden Kopf (v0.110)", () =
     }
 });
 
-/* Der erste Eintrag der ersten Stufenkarte in der offenen Bibliothek. */
-function ersterBibliothekEintrag() {
-    const karte = TEAM_SCHACH.wurzelEl.kinder.find(
-        (kind) => String(kind.className || "").indexOf("stufen-karte") !== -1);
+/*
+ * Die erste Kachel des Icon-Rasters in der offenen Bibliothek.
+ *
+ * Bis v0.17.0 hiess der Helfer `ersterBibliothekEintrag` und suchte den
+ * ersten Aufklapper der ersten Stufen-Karte. Beides gibt es seit Wunsch 5
+ * nicht mehr — geblieben ist das Raster.
+ */
+function ersteRasterKachel() {
+    const suchen = (element) => {
+        for (const kind of element.kinder || []) {
+            if (String(kind.className || "").indexOf("faehigkeit-kachel") !== -1) {
+                return kind;
+            }
+            const tiefer = suchen(kind);
+            if (tiefer) {
+                return tiefer;
+            }
+        }
+        return null;
+    };
 
-    if (!karte) {
-        throw new Error("keine Stufenkarte gezeichnet");
+    const kachel = suchen(TEAM_SCHACH.wurzelEl);
+    if (!kachel) {
+        throw new Error("keine Raster-Kachel gezeichnet");
     }
-
-    const eintrag = karte.kinder.find(
-        (kind) => String(kind.className || "").indexOf("stufen-eintrag") !== -1);
-
-    if (!eintrag) {
-        throw new Error("kein Eintrag in der Stufenkarte");
-    }
-    return eintrag;
+    return kachel;
 }
 
 pruefe("Das Einsetzen-Fenster zeigt Bilder oben und den langen Text im Aufklapper (v0.94)", () => {
@@ -2134,76 +2163,22 @@ pruefe("Wo die Beschreibung nur ein Satz ist, gibt es keinen Aufklapper (v0.94)"
     }
 });
 
-pruefe("Ein Eintrag der Bibliothek klappt seine Anleitung auf", () => {
-    /*
-     * v0.41: Der Eintrag SELBST ist der Knopf — wer auf die Fähigkeit tippt,
-     * sieht ihre Bildanleitung. Gebaut wird sie erst dabei; alle 23 auf einmal
-     * wären über zweitausend Elemente.
-     */
-    TEAM_SCHACH.faehigkeitenOeffnen();
-    const eintrag = ersterBibliothekEintrag();
-
-    const kopf = eintrag.kinder.find((kind) => kind.className === "stufen-kopf");
-    if (!kopf || kopf.tagName !== "summary") {
-        throw new Error("der Eintrag hat keine aufklappbare Kopfzeile");
-    }
-
-    /*
-     * Zugeklappt steht die Ueberschrift da — und seit v0.47 die Zeichen der
-     * Faehigkeit (Pluszeichen, Blitz). Die BESCHREIBUNG erst beim Aufklappen.
-     */
-    if (String(kopf.kinder[0].className || "").indexOf("stufen-name") === -1) {
-        throw new Error("die Ueberschrift steht nicht zuerst");
-    }
-    for (const kind of kopf.kinder.slice(1)) {
-        const klasse = String(kind.className
-            || (kind.attribute && kind.attribute["class"]) || "");
-
-        if (klasse.indexOf("faehigkeit-zeichen") === -1
-            && klasse.indexOf("faehigkeit-blitz") === -1) {
-            throw new Error("zugeklappt steht mehr als Ueberschrift und Zeichen da");
-        }
-    }
-    if (eintrag.querySelector(".anleitung") || eintrag.querySelector(".stufen-text")) {
-        throw new Error("der Inhalt steht schon da, bevor jemand aufklappt");
-    }
-
-    eintrag.open = true;
-    eintrag.ausloesen("toggle");
-
-    if (!eintrag.querySelector(".stufen-text")) {
-        throw new Error("nach dem Aufklappen fehlt die Beschreibung");
-    }
-    /* Und die Erklaerung, was die Zeichen kosten (seit v0.47). */
-    if (!eintrag.querySelector(".stufen-kosten")) {
-        throw new Error("nach dem Aufklappen fehlt die Erklaerung zum Pluszeichen");
-    }
-    if (!eintrag.querySelector(".anleitung")) {
-        throw new Error("nach dem Aufklappen fehlt die Anleitung");
-    }
-    if (TEAM_SCHACH.anleitungTakte.length === 0) {
-        throw new Error("kein Takt angemeldet — die Anleitung liefe nicht");
-    }
-});
-
 pruefe("Die Bibliothek wird nicht bei jeder Abfrage neu gezeichnet", () => {
     /*
      * Sie hängt an keinem Spielstand. Würde die regelmässige Abfrage sie neu
-     * bauen, klappte jeder Eintrag alle drei Sekunden wieder zu und jede
-     * Anleitung finge von vorn an.
+     * bauen, verlöre man beim Rollen dauernd die Stelle — und bis v0.17.0
+     * klappte ausserdem jeder Eintrag alle drei Sekunden wieder zu.
+     *
+     * Gemessen wird an der IDENTITAET der ersten Raster-Kachel: Ein
+     * Neuaufbau brächte ein anderes Element.
      */
-    const eintrag = ersterBibliothekEintrag();
-    if (!eintrag.querySelector(".anleitung")) {
-        throw new Error("Voraussetzung fehlt: der Eintrag ist nicht aufgeklappt");
-    }
+    TEAM_SCHACH.faehigkeitenOeffnen();
+    const kachel = ersteRasterKachel();
 
     TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
 
-    if (ersterBibliothekEintrag() !== eintrag) {
+    if (ersteRasterKachel() !== kachel) {
         throw new Error("die Bibliothek wurde neu gebaut");
-    }
-    if (!eintrag.querySelector(".anleitung")) {
-        throw new Error("die aufgeklappte Anleitung ist verschwunden");
     }
 
     /* Beim Schliessen wird sie sehr wohl neu gebaut. */
@@ -2211,48 +2186,6 @@ pruefe("Die Bibliothek wird nicht bei jeder Abfrage neu gezeichnet", () => {
     if (TEAM_SCHACH.anleitungTakte.length !== 0) {
         throw new Error("die Takte laufen weiter, obwohl neu gezeichnet wurde");
     }
-});
-
-pruefe("Es ist immer nur ein Eintrag aufgeklappt", () => {
-    /*
-     * v0.44: Wer die naechste Faehigkeit ansieht, hat die vorige hinter sich
-     * gelassen. Ihr Inhalt wird weggeraeumt — daran merkt der Takt ihrer
-     * Anleitung, dass er aufhoeren kann.
-     */
-    TEAM_SCHACH.faehigkeitenOeffnen();
-
-    const karte = TEAM_SCHACH.wurzelEl.kinder.find(
-        (kind) => String(kind.className || "").indexOf("stufen-karte") !== -1);
-    const eintraege = karte.kinder.filter(
-        (kind) => String(kind.className || "").indexOf("stufen-eintrag") !== -1);
-
-    if (eintraege.length < 2) {
-        throw new Error("zum Pruefen braucht es zwei Eintraege");
-    }
-
-    const erster = eintraege[0];
-    const zweiter = eintraege[1];
-
-    erster.open = true;
-    erster.ausloesen("toggle");
-    if (!erster.querySelector(".anleitung")) {
-        throw new Error("der erste zeigt keine Anleitung");
-    }
-
-    zweiter.open = true;
-    zweiter.ausloesen("toggle");
-
-    if (erster.open) {
-        throw new Error("der erste Eintrag ist noch offen");
-    }
-    if (erster.querySelector(".anleitung")) {
-        throw new Error("die Anleitung des ersten steht noch da");
-    }
-    if (!zweiter.querySelector(".anleitung")) {
-        throw new Error("der zweite zeigt keine Anleitung");
-    }
-
-    TEAM_SCHACH.infoSchliessen();
 });
 
 /*
@@ -4236,11 +4169,19 @@ pruefe("Der Faehigkeiten-Tab zeichnet die Bibliothek ohne Zurueck (v0.9.0)", () 
         return treffer;
     };
 
+    /* Seit Wunsch 5 (v0.18.0) steht im Tab das Raster mit der
+       Stufen-Legende — keine Stufen-Karten mehr. */
     const karten = einsammeln(FAEHIGKEITEN.wurzelEl, (kind) =>
         String(kind.className || "").indexOf("stufen-karte") !== -1, []);
-    if (karten.length !== umgebung.SCHACH_VARIANTEN.STUFEN.length) {
+    if (karten.length !== 0) {
+        throw new Error("im Tab haengen noch " + karten.length + " Stufen-Karten");
+    }
+
+    const zeilen = einsammeln(FAEHIGKEITEN.wurzelEl, (kind) =>
+        String(kind.className || "").indexOf("stufen-legende-zeile") !== -1, []);
+    if (zeilen.length !== umgebung.SCHACH_VARIANTEN.STUFEN.length) {
         throw new Error("erwartet " + umgebung.SCHACH_VARIANTEN.STUFEN.length
-            + " Stufen-Karten, sind " + karten.length);
+            + " Legenden-Zeilen, sind " + zeilen.length);
     }
 
     /* Im Tab ist die Leiste der Weg zurueck — kein eigener Knopf. */

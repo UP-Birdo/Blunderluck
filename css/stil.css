@@ -1313,6 +1313,33 @@ body.runde-offen .tab-leiste {
 }
 
 /*
+ * DIE STUFEN-LEGENDE (seit v0.18.0, Wunsch 5): eine Zeile je Stufe —
+ * farbiger Punkt, Name, das i mit den Zahlen. Sie ersetzt die vier
+ * Stufen-Karten, die bis v0.17.0 unter dem Icon-Raster standen.
+ */
+.stufen-legende-zeile {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 0;
+}
+
+/* Gefüllt statt gemischt: `color-mix` kommt in dieser Datei sonst nirgends
+   vor, und ein Rahmen in Stufenfarbe reicht zum Wiedererkennen. */
+.stufen-legende-punkt {
+    width: 14px;
+    height: 14px;
+    flex: none;
+    border-radius: 4px;
+    background: var(--stufe-farbe, var(--rahmen));
+}
+
+/* Der Name füllt die Zeile, damit das i rechts steht. */
+.stufen-legende-zeile > .stufen-name {
+    flex: 1 1 auto;
+}
+
+/*
  * Die Legende „Die Zeichen am Vorrat" benutzt dieselben Klassen, ist aber kein
  * `details`, sondern eine schlichte Zeile mit zwei Spannen. Ohne diese Regel
  * stünden Name und Text dort nebeneinander statt untereinander.

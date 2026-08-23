@@ -78,7 +78,7 @@ const TEAM_SCHACH = {
     grundlagenGezeichnet: false,
 
     /* Welches Kapitel gerade aufgeklappt ist — es ist immer höchstens eines
-       (dasselbe Muster wie `infoOffenerEintrag`). */
+       (bis v0.17.0 gab es dasselbe Muster in der Bibliothek). */
     grundlagenOffenerEintrag: null,
 
     /* Zeitgeber für den Countdown einer laufenden Abstimmung. */
@@ -325,13 +325,6 @@ const TEAM_SCHACH = {
      * `vorratVorstellen`.
      */
     vorratGezeigt: {},
-
-    /*
-     * Welcher Eintrag der Bibliothek gerade aufgeklappt ist. Es ist immer
-     * höchstens einer (seit v0.44) — wer den nächsten öffnet, schliesst den
-     * vorigen und beendet damit auch dessen Anleitung.
-     */
-    infoOffenerEintrag: null,
 
     /* Das Brett und ein Feld daraus, gemerkt beim Zeichnen — nur zum Messen. */
     brettEl: null,
