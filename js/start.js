@@ -108,11 +108,25 @@ const START = {
         kopf.appendChild(zahnrad);
         seite.appendChild(kopf);
 
-        /* Obere Hälfte: das Vorschaubild der eingestellten Spielart (F2). */
+        /*
+         * Obere Hälfte: das Vorschaubild der eingestellten Spielart (F2).
+         *
+         * SEIT v0.20.0 (Wunsch 7) IST SIE DRÜCKBAR: „Die Schachbrett-
+         * Vorschau über Spielen wird drückbar: Ein Tipp darauf öffnet die
+         * Wahl der Brettform." Sie ist deshalb ein Knopf und kein `div`
+         * mehr — mit Beschriftung für Vorleseprogramme, denn zu sehen ist
+         * nur ein Brett.
+         */
         const variante = START._spielart();
 
-        const vorschau = document.createElement("div");
+        const vorschau = document.createElement("button");
+        vorschau.type = "button";
         vorschau.className = "start-vorschau";
+        vorschau.setAttribute("aria-label",
+            "Brettform wählen — eingestellt ist " + variante.titel);
+        vorschau.title = "Brettform wählen";
+        vorschau.addEventListener("click", () => START.brettformWaehlen());
+
         vorschau.appendChild(TEAM_SCHACH._vorschauBauen(
             variante, TEAM_SCHACH._vorschauBrett(variante)));
 
@@ -235,6 +249,17 @@ const START = {
     /* Das Pfeil-Quadrat: die Match-Einstellungen — heute die
        Spielart-Auswahl mit allen Reglern (team-schach-uebersicht.js). */
     matchEinstellungen() {
+        TABS.wechseln("team-schach");
+        TEAM_SCHACH.partieAnlegen();
+    },
+
+    /*
+     * Ein Tipp auf die Vorschau (Wunsch 7, v0.20.0): die Wahl der
+     * Brettform. Heute führt sie auf denselben Bildschirm wie der Pfeil —
+     * dort stehen Brettform und Grössen ja beieinander. Wunsch 8 teilt ihn
+     * auf: Der Pfeil behält die Regler, hier bleiben Form und Grösse.
+     */
+    brettformWaehlen() {
         TABS.wechseln("team-schach");
         TEAM_SCHACH.partieAnlegen();
     },

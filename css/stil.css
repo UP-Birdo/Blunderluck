@@ -4266,7 +4266,13 @@ body.dialog-offen {
     height: 28px;
 }
 
-/* Die obere Hälfte: das Vorschaubild wächst in den freien Raum. */
+/*
+ * Die Vorschau ist seit v0.20.0 (Wunsch 7) ein KNOPF und öffnet die Wahl
+ * der Brettform. Sie soll deshalb wie ein Knopf reagieren, aber nicht wie
+ * einer aussehen: kein Rahmen, kein Hintergrund — das Brett selbst ist die
+ * Fläche. Die Browser-Vorgaben eines `button` (Rahmen, Grund, Schriftart,
+ * mittiger Text) müssen dafür ausdrücklich zurückgenommen werden.
+ */
 .start-vorschau {
     flex: 1 1 auto;
     display: flex;
@@ -4274,6 +4280,17 @@ body.dialog-offen {
     align-items: center;
     justify-content: center;
     gap: 10px;
+    padding: 8px;
+    font: inherit;
+    color: inherit;
+    background: none;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+}
+
+.start-vorschau:hover {
+    background: var(--karte-leise);
 }
 
 /* Das Kachel-Vorschaubrett (Klasse `vorschau`) darf hier grösser sein als

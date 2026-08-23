@@ -4052,6 +4052,58 @@ pruefe("Der Startbildschirm zeigt Vorschau, Spielen und Zahnrad (v0.9.0)", () =>
     umgebung.TABS.gewechseltZu = "";
 });
 
+pruefe("Ein Tipp auf die Vorschau oeffnet die Brettform (Wunsch 7)", () => {
+    /*
+     * DER GEMELDETE WUNSCH: „Die Schachbrett-Vorschau ueber Spielen wird
+     * drueckbar: Ein Tipp darauf oeffnet die Wahl der Brettform."
+     *
+     * Sie ist deshalb seit v0.20.0 ein `button`. Zu SEHEN ist nur ein
+     * Brett — der Test besteht darum auf einer Beschriftung fuer
+     * Vorleseprogramme.
+     */
+    const START = umgebung.START;
+    START.aufbauen(neuesElement("div"));
+
+    const suchen = (element) => {
+        for (const kind of element.kinder || []) {
+            if (String(kind.className || "").split(" ")
+                    .indexOf("start-vorschau") !== -1) {
+                return kind;
+            }
+            const tiefer = suchen(kind);
+            if (tiefer) {
+                return tiefer;
+            }
+        }
+        return null;
+    };
+
+    const vorschau = suchen(START.wurzelEl);
+    if (!vorschau) {
+        throw new Error("keine Vorschau auf dem Start");
+    }
+    if (vorschau.tagName !== "button") {
+        throw new Error("die Vorschau ist kein Knopf, sondern: " + vorschau.tagName);
+    }
+    if (!vorschau.attribute || !vorschau.attribute["aria-label"]) {
+        throw new Error("die Vorschau hat keine Beschriftung");
+    }
+
+    TEAM_SCHACH.auswahlOffen = false;
+    umgebung.TABS.gewechseltZu = "";
+    vorschau.ausloesen("click");
+
+    if (umgebung.TABS.gewechseltZu !== "team-schach") {
+        throw new Error("die Vorschau wechselt nicht ins Team Schach");
+    }
+    if (!TEAM_SCHACH.auswahlOffen) {
+        throw new Error("die Vorschau oeffnet die Brettform-Wahl nicht");
+    }
+
+    TEAM_SCHACH.auswahlSchliessen();
+    umgebung.TABS.gewechseltZu = "";
+});
+
 /* ------------------------------------------------------------------ *
  * Wunsch 1 (24.08.2026): Die Kachel merkt nur, „Spielen" legt an
  * ------------------------------------------------------------------ */

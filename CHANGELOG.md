@@ -3,6 +3,16 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.20.0 — 24.08.2026
+
+**Das Brett über „Spielen" ist drückbar.**
+
+- Ein Tipp auf die Vorschau führt direkt zur Wahl der Brettform und der
+  Grösse. Bisher ging das nur über den Pfeil daneben — und der ist auf
+  dem Handy deutlich kleiner zu treffen als das halbe Brett.
+- Der Pfeil bleibt vorerst, wie er ist; er führt auf denselben
+  Bildschirm.
+
 ## v0.19.0 — 24.08.2026
 
 **Die Freunde haben jetzt ihr eigenes Zeichen auf dem Start.**
