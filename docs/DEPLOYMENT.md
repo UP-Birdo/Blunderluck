@@ -119,15 +119,30 @@ auf dem jeweiligen Gerät.
    [../js/konfig.js](../js/konfig.js) bei `firebaseBasis` eintragen.
 8. Lokal neu laden: Der Hinweisbalken verschwindet, im Kopf steht
    `Gemeinsame Tabelle für alle Besucher` mit grünem Punkt.
-9. **Budget-Alarm setzen** (fünf Minuten, einmalig): In der Google Cloud
-   Console (`https://console.cloud.google.com`, oben das Projekt
-   `blunderluck` wählen) unter **Abrechnung → Budgets und
-   Benachrichtigungen** ein Budget von z. B. 5 Euro im Monat anlegen, mit
-   E-Mail-Warnung bei 50/90/100 Prozent. Kostet nichts und meldet sich,
-   BEVOR eine Endlos-Abfrage oder ein Architekturfehler Geld kostet —
-   der Freundeskreis-Betrieb selbst bleibt im kostenlosen Kontingent
-   (Begründung: `entscheidungen\offen-und-abgelehnt.md`, „Die offene
-   Datenbank").
+## 2c. Kosten — und warum im Spark-Plan keine entstehen können
+
+**Auf dem kostenlosen Spark-Plan ist eine Rechnung strukturell unmöglich:**
+Es ist kein Zahlungsmittel hinterlegt. Ist ein Kontingent erschöpft, hört
+der Dienst auf zu antworten — abgebucht wird nichts. Kosten können erst
+entstehen, wenn jemand aktiv auf **Blaze** wechselt.
+
+Enthalten sind 1 GB Speicher, 10 GB Download im Monat und 100 gleichzeitige
+Verbindungen. Speicher und Verbindungen sind hier belanglos (Partien wiegen
+Kilobytes; REST hält keine Dauerverbindung). **Die einzige Größe, die zählt,
+ist der Download**, und der kommt fast vollständig aus der Abfrage alle drei
+Sekunden, die den ganzen Stand neu holt — deshalb ruht sie im Hintergrund.
+Stellschrauben, falls es je eng wird, in dieser Reihenfolge:
+`abfrageIntervallMs` in `js\konfig.js` hochsetzen (z. B. 10000), und erst
+danach über Listener statt Abfrage nachdenken (siehe
+`entscheidungen\offen-und-abgelehnt.md`, „Die offene Datenbank").
+Den echten Verbrauch zeigt Firebase unter **Nutzung** — messen statt
+schätzen.
+
+> **BUDGET-ALARM ERST BEI BLAZE.** Hier stand bis 23.08.2026 der Rat, in der
+> Google Cloud Console ein Budget anzulegen. Das läuft im Spark-Plan ins
+> Leere: Budgets setzen ein Abrechnungskonto voraus, und ein Spark-Projekt
+> hat keines. Wer eines Tages auf Blaze wechselt, legt das Budget als
+> ERSTES an — vorher ist nichts zu tun.
 
 **Bewusst in Kauf genommen** (geerbte Quizz-Entscheidung): Wer die Seite
 aufruft, kann die Ablage lesen und ändern — ohne Anmeldung. Deshalb: nur Vor-

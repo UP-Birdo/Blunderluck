@@ -3,6 +3,23 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.5.0 — 23.08.2026
+
+**Jetzt könnt ihr gemeinsam spielen.**
+
+- Die gemeinsame Datenbank ist angelegt und eingetragen. Ab sofort sehen
+  alle dieselben Partien: Wer eine Partie anlegt, den sehen die anderen;
+  wer zieht, dessen Zug erscheint bei allen innerhalb weniger Sekunden.
+  Bisher war jeder Browser eine Insel für sich.
+- Der Hinweisbalken oben verschwindet, im Kopf steht jetzt
+  „Gemeinsame Tabelle für alle Besucher" mit grünem Punkt.
+- **Alte Partien aus dem Lokal-Modus wandern nicht mit.** Was du zum
+  Ausprobieren gespielt hast, bleibt in deinem Browser liegen und taucht in
+  der gemeinsamen Runde nicht auf. Einfach neu anfangen.
+- **Die Verwaltung ist freigeschaltet:** Mit dem Passwort lassen sich
+  Mitspieler aus der Runde entfernen und fremde Partien löschen — zu finden
+  im Tab Einstellungen unter „Spieler".
+
 ## v0.4.0 — 23.08.2026
 
 **Ein eigenes Zeichen: Springer und Funke.**

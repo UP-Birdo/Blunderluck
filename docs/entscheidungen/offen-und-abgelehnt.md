@@ -32,11 +32,16 @@ gebaut wurde:
   dessen Voraussetzung.
 
 **Bekannter Kostenpunkt derselben Entscheidung:** Die App fragt alle drei
-Sekunden per REST den GANZEN Stand ab (nur im Vordergrund). Fuer den
-Freundeskreis liegt das im Cent-Bereich; bei fremdem Publikum waere die
-Abfrage der erste Umbaupunkt (Listener statt Abfrage, ein Pfad je Partie).
-Beim Anlegen der Datenbank wird deshalb ein Budget-Alarm gesetzt
-(`DEPLOYMENT.md`, Abschnitt 2).
+Sekunden per REST den GANZEN Stand ab (nur im Vordergrund). Das ist die
+einzige Groesse, die am kostenlosen Kontingent (10 GB Download im Monat)
+ueberhaupt zehrt; bei fremdem Publikum waere die Abfrage der erste
+Umbaupunkt (Listener statt Abfrage, ein Pfad je Partie). Vorher gibt es die
+billigere Stellschraube `abfrageIntervallMs` in `js\konfig.js`.
+
+**Im Spark-Plan koennen dabei KEINE Kosten entstehen** - es ist kein
+Zahlungsmittel hinterlegt, ein erschoepftes Kontingent stoppt den Dienst,
+statt eine Rechnung zu erzeugen. Ein Budget-Alarm ist deshalb erst bei einem
+Wechsel auf Blaze noetig (Einzelheiten: `DEPLOYMENT.md`, Abschnitt 2c).
 
 ## Warum die Abstimmung eine Frist braucht
 

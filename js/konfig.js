@@ -16,7 +16,7 @@ const KONFIG = {
     /* Version der App (SemVer: 0.MINOR.PATCH — die 0 vorne heisst "noch in
        Entwicklung", 1.0.0 erst bei erfuellten Fertig-Kriterien der ROADMAP).
        Wird im Kopf angezeigt und muss zu CHANGELOG.md passen. */
-    APP_VERSION: "0.4.0",
+    APP_VERSION: "0.5.0",
 
     speicher: {
 
@@ -27,12 +27,11 @@ const KONFIG = {
         modus: "gemeinsam",
 
         /* Basis-Adresse der Firebase Realtime Database, OHNE Schrägstrich am
-           Ende. Beispiel:
-           "https://blunderluck-12345-default-rtdb.europe-west1.firebasedatabase.app"
-           Anleitung zum Anlegen: docs\DEPLOYMENT.md.
-           NOCH LEER: Die eigene Datenbank ist noch nicht angelegt — die App
-           läuft bis dahin im Lokal-Modus (jeder Browser für sich). */
-        firebaseBasis: "",
+           Ende. Angelegt am 23.08.2026, Region europe-west1 (Belgien — die
+           einzige EU-Region der Realtime Database). Die Adresse ist kein
+           Geheimnis: Sie steht ohnehin im Quelltext jeder ausgelieferten
+           Seite. Anleitung und Regeln: docs\DEPLOYMENT.md, Abschnitt 2. */
+        firebaseBasis: "https://blunderluck-8b7f0-default-rtdb.europe-west1.firebasedatabase.app",
 
         /* Ablage-Pfade innerhalb der Datenbank. Jeder Stand hat seinen eigenen,
            damit sich die Teile nicht ins Gehege kommen.
@@ -67,10 +66,11 @@ const KONFIG = {
          * NIRGENDWO in den Dateien — diese Seite ist öffentlich, jeder könnte
          * es sonst abschreiben.
          *
-         * NOCH LEER: Solange hier keine Prüfsumme steht, lässt sich die
-         * Verwaltung nicht öffnen. Der Nutzer setzt sie so:
-         * In PowerShell die Prüfsumme rechnen und den Wert unten einsetzen.
-         * Der Text vor dem Passwort gehört dazu.
+         * Gesetzt am 23.08.2026. Das Passwort selbst kennt nur der Nutzer —
+         * es wurde nie übermittelt, gerechnet hat er die Prüfsumme selbst.
+         *
+         * Passwort ändern: In PowerShell die neue Prüfsumme rechnen und den
+         * Wert unten ersetzen. Der Text vor dem Passwort gehört dazu.
          *
          *     $text  = "blunderluck-admin|<neues Passwort>"
          *     $bytes = [System.Text.Encoding]::UTF8.GetBytes($text)
@@ -81,7 +81,7 @@ const KONFIG = {
          * leistet (eine sechsstellige Zahl ist durchprobierbar), in
          * docs\DECISIONS.md.
          */
-        pruefwert: "",
+        pruefwert: "da9675146c86f5988647847c5062a24eea0cdb36d7a309325a82027ef88f6703",
 
         /* Wie viele Ziffern das Verwaltungs-Passwort hat. Muss zur Prüfsumme
            oben passen, sonst lässt sich der Dialog nicht bestätigen. */
