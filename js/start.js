@@ -11,7 +11,8 @@
  *     aus team-schach-uebersicht.js, deshalb kann sie nicht veralten);
  *   - untere Hälfte: der Spielen-Knopf (zwei Drittel breit, für den
  *     Daumen) und daneben ein Quadrat mit Pfeil, das die
- *     Match-Einstellungen öffnet (die heutige Spielart-Auswahl).
+ *     Match-Einstellungen öffnet (die Spielart-Auswahl);
+ *   - darunter still „Runde beitreten" — der Weg zum Zwischenbildschirm.
  *
  * DER WIEDEREINSTIEG (Entwurf, Abschnitt 3.2) wohnt ebenfalls hier: Nach
  * jeder Anmeldung wird die Schach-Tafel nach der eigenen Kennung
@@ -19,9 +20,12 @@
  * heisst: direkt hinein, ohne Liste. Mehrere sind ein Fehlerzustand und
  * bekommen einen Ausweg (F11). Fremde Partien ziehen niemanden hinein.
  *
- * „Spielen" führt ÜBERGANGSWEISE in die heutige Partien-Übersicht des Team
- * Schach — bis Schritt 5 des Entwurfs den Zwischenbildschirm „Runde
- * beitreten / Runde erstellen" bringt (blockiert von F18/F19).
+ * SEIT WUNSCH 1 (v0.14.0, 24.08.2026) LEGT „SPIELEN" DIE RUNDE AN. Vorher
+ * führte der Knopf nur weiter, und angelegt wurde erst mit einem Tipp auf
+ * eine Spielart-Kachel — samt Namensfrage. Jetzt hält dieser Bildschirm
+ * die WAHL (Spielart und Regler, beides im Gerätespeicher: `_spielart`
+ * und `regeln`), und `TEAM_SCHACH.rundeStarten` macht daraus eine Runde.
+ * Runden bekommen keinen Namen mehr, nur den Titel der Spielart.
  */
 
 const START = {
@@ -31,9 +35,13 @@ const START = {
 
     wurzelEl: null,
 
-    /* Die zuletzt angelegte Spielart — nur eine Geräte-Erinnerung fürs
-       Vorschaubild, kein gemeinsamer Stand. */
+    /* Die zuletzt gewählte Spielart — nur eine Geräte-Erinnerung fürs
+       Vorschaubild und für „Spielen", kein gemeinsamer Stand. */
     SCHLUESSEL_SPIELART: "blunderluck.start-spielart",
+
+    /* Dasselbe für die Regler der nächsten Runde (seit Wunsch 1) — siehe
+       `regeln` weiter unten. */
+    SCHLUESSEL_REGELN: "blunderluck.start-regeln",
 
     aufbauen(behaelter) {
         START.wurzelEl = behaelter;
@@ -114,6 +122,20 @@ const START = {
         zeile.appendChild(match);
 
         seite.appendChild(zeile);
+
+        /*
+         * Der Weg zum Zwischenbildschirm (seit Wunsch 1): Seit „Spielen"
+         * die Runde selbst anlegt, führt nichts anderes mehr dorthin —
+         * dort liegen aber die Einladungen, das Code-Feld und die eigenen
+         * Partien. Still gehalten: Die Hauptaktion bleibt „Spielen".
+         */
+        const beitreten = document.createElement("button");
+        beitreten.type = "button";
+        beitreten.className = "knopf knopf-still start-beitreten";
+        beitreten.textContent = "Runde beitreten";
+        beitreten.addEventListener("click", () => START.beitreten());
+        seite.appendChild(beitreten);
+
         wurzel.appendChild(seite);
     },
 
@@ -121,9 +143,21 @@ const START = {
      * Bedienung
      * ---------------------------------------------------------------- */
 
-    /* Übergang bis Schritt 5 (Zwischenbildschirm „Runde beitreten /
-       Runde erstellen"): Spielen führt in die Partien-Übersicht. */
+    /*
+     * „Spielen" LEGT DIE RUNDE AN (Wunsch 1, 24.08.2026) — mit der
+     * gemerkten Spielart und den gemerkten Reglern, ohne Namens-Dialog und
+     * ohne Zwischenbildschirm. Gebaut wird sie im Team Schach
+     * (`TEAM_SCHACH.rundeStarten`); wer schon in einer laufenden Partie
+     * steckt, wird dort abgewiesen (F11).
+     */
     spielen() {
+        return TEAM_SCHACH.rundeStarten(START._spielart().id, START.regeln());
+    },
+
+    /* Der stille Knopf darunter: der Weg zum Zwischenbildschirm, auf dem
+       Einladungen, das Code-Feld und die eigenen Partien liegen. Erstellt
+       wird dort nicht mehr — das macht „Spielen". */
+    beitreten() {
         TABS.wechseln("team-schach");
     },
 
@@ -204,12 +238,58 @@ const START = {
             || SCHACH_VARIANTEN.liste[0];
     },
 
-    /* Gerufen aus `spielartGewaehlt` (team-schach.js), wenn eine Partie
-       angelegt wurde — das Vorschaubild zeigt beim nächsten Start diese
-       Spielart. */
+    /* Gerufen aus `spielartGewaehlt` (team-schach.js), wenn eine Spielart
+       gewählt wurde — das Vorschaubild zeigt beim nächsten Start diese
+       Spielart, und „Spielen" legt sie an. */
     spielartMerken(varianteId) {
         try {
             window.localStorage.setItem(START.SCHLUESSEL_SPIELART, varianteId);
+        } catch (fehler) {
+            /* Dann bleibt es eben bei der Vorgabe. */
+        }
+    },
+
+    /*
+     * Die gemerkten Regler einer künftigen Runde (seit Wunsch 1). Wie die
+     * Spielart nur eine GERÄTE-Erinnerung, kein gemeinsamer Stand: Sie
+     * sagt, womit „Spielen" die nächste Runde anlegt.
+     *
+     * Gelesen wird vorsichtig — was im Gerätespeicher liegt, kann von
+     * einer älteren Fassung stammen. Deshalb gilt immer die Vorgabe als
+     * Grundlage, und nur bekannte Felder werden daraus überschrieben.
+     */
+    regeln() {
+        const vorgabe = TEAM_SCHACH._regelnVorgabe();
+        let roh = null;
+
+        try {
+            roh = JSON.parse(
+                window.localStorage.getItem(START.SCHLUESSEL_REGELN) || "null");
+        } catch (fehler) {
+            /* Ohne Gerätespeicher oder bei Schrott bleibt die Vorgabe. */
+        }
+        if (!roh || typeof roh !== "object") {
+            return vorgabe;
+        }
+
+        for (const feld of Object.keys(vorgabe)) {
+            if (Object.prototype.hasOwnProperty.call(roh, feld)
+                    && typeof roh[feld] === typeof vorgabe[feld]) {
+                vorgabe[feld] = roh[feld];
+            }
+        }
+
+        /* Die Item-Liste ist die einzige Sammlung — sie muss eine bleiben. */
+        if (!Array.isArray(vorgabe.itemAuswahl)) {
+            vorgabe.itemAuswahl = [];
+        }
+        return vorgabe;
+    },
+
+    regelnMerken(regeln) {
+        try {
+            window.localStorage.setItem(
+                START.SCHLUESSEL_REGELN, JSON.stringify(regeln || {}));
         } catch (fehler) {
             /* Dann bleibt es eben bei der Vorgabe. */
         }

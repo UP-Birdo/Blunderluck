@@ -291,7 +291,25 @@ const umgebung = {
 
         /* Ohne Angabe gilt: normale Bewegung erlaubt. */
         matchMedia() { return { matches: false }; },
-        localStorage: { getItem() { return null; }, setItem() { /* leer */ } }
+        /*
+         * EIN ECHTER KLEINER GERAETESPEICHER (seit Wunsch 1, 24.08.2026).
+         * Vorher gab `getItem` immer null zurueck; das reichte, solange nur
+         * die Vorschau-Spielart darin lag. Seit „Spielen" die Runde mit den
+         * GEMERKTEN Reglern anlegt, muss ein Test schreiben und wieder
+         * lesen koennen — sonst prueft er die halbe Kette.
+         */
+        localStorage: (() => {
+            const inhalt = {};
+            return {
+                getItem(schluessel) {
+                    return Object.prototype.hasOwnProperty.call(inhalt, schluessel)
+                        ? inhalt[schluessel]
+                        : null;
+                },
+                setItem(schluessel, wert) { inhalt[schluessel] = String(wert); },
+                removeItem(schluessel) { delete inhalt[schluessel]; }
+            };
+        })()
     }
 };
 umgebung.globalThis = umgebung;
@@ -1396,7 +1414,9 @@ pruefe("Anlegen und Loeschen melden sich beim Abgleich an (v0.52)", () => {
      * Rennen nicht zuverlaessig nachstellen, die Sperre dagegen schon. Gezaehlt
      * wird mit dem Stellvertreter aus dieser Datei.
      */
-    const quelltext = String(TEAM_SCHACH.spielartGewaehlt)
+    /* Seit Wunsch 1 (24.08.2026) legt `rundeStarten` an, nicht mehr
+       `spielartGewaehlt` — die Anmeldepflicht wanderte mit. */
+    const quelltext = String(TEAM_SCHACH.rundeStarten)
         + String(TEAM_SCHACH.partieLoeschen);
 
     if (quelltext.indexOf("eigenerVorgangBeginnt") === -1) {
@@ -3578,6 +3598,71 @@ async function zeitlimitPruefen() {
             }
         });
 
+    /* ---------------------------------------------------------------- *
+     * Wunsch 1 (24.08.2026): „Spielen" legt die Runde an — ohne Namen
+     * ---------------------------------------------------------------- */
+
+    await pruefeMitWarten("Spielen legt die Runde ohne Namens-Dialog an (Wunsch 1)",
+        async () => {
+            const START = umgebung.START;
+            const echteDaten = TEAM_SCHACH.abgleich.daten;
+            const echteEingabe = umgebung.DIALOG.eingabe;
+
+            /*
+             * Ein leeres Brett: Sonst greift die Sperre gegen die zweite
+             * Partie (F11) — Anna steckt in allen Partien der Testtafel.
+             */
+            TEAM_SCHACH.abgleich.daten = SCHACH_TAFEL.leereTafel(9000);
+
+            /* WUERDE DER NAMENS-DIALOG NOCH GESTELLT, schlaegt der Test hier
+               fehl statt lautlos durchzulaufen. */
+            umgebung.DIALOG.eingabe = async () => {
+                throw new Error("der Namens-Dialog wird noch gestellt");
+            };
+
+            try {
+                const variante = SCHACH_VARIANTEN.liste[1]
+                    || SCHACH_VARIANTEN.liste[0];
+                START.spielartMerken(variante.id);
+                START.regelnMerken(Object.assign(TEAM_SCHACH._regelnVorgabe(),
+                    { faehigkeiten: true, armeeStaerke: "wenig" }));
+
+                umgebung.TABS.gewechseltZu = "";
+                await START.spielen();
+
+                const liste = SCHACH_TAFEL.liste(TEAM_SCHACH.abgleich.daten);
+                if (liste.length !== 1) {
+                    throw new Error("Spielen hat keine Runde angelegt");
+                }
+
+                const partie = liste[0];
+                if (partie.variante !== variante.id) {
+                    throw new Error("die gemerkte Spielart wurde nicht genommen");
+                }
+                if (partie.titel !== variante.titel) {
+                    throw new Error("der Anzeigetitel kommt nicht von der Spielart");
+                }
+                if (partie.regeln.armeeStaerke !== "wenig"
+                        || partie.regeln.faehigkeiten !== true) {
+                    throw new Error("die gemerkten Regler kamen nicht an");
+                }
+                if (!SCHACH_RUNDE.teamVon(partie, "id-anna")) {
+                    throw new Error("wer anlegt, steht nicht im Team");
+                }
+                if (TEAM_SCHACH.offeneId !== partie.id) {
+                    throw new Error("die neue Runde wird nicht geoeffnet");
+                }
+                if (umgebung.TABS.gewechseltZu !== "team-schach") {
+                    throw new Error("es wird nicht ins Team Schach gewechselt");
+                }
+            } finally {
+                umgebung.DIALOG.eingabe = echteEingabe;
+                TEAM_SCHACH.abgleich.daten = echteDaten;
+                TEAM_SCHACH.offeneId = "";
+                umgebung.TABS.gewechseltZu = "";
+            }
+        });
+
     console.log(anzahlOk + " ok, " + anzahlFehler + " Fehler");
     process.exit(anzahlFehler === 0 ? 0 : 1);
 }
@@ -3972,6 +4057,104 @@ pruefe("Der Startbildschirm zeigt Vorschau, Spielen und Zahnrad (v0.9.0)", () =>
     umgebung.TABS.gewechseltZu = "";
 });
 
+/* ------------------------------------------------------------------ *
+ * Wunsch 1 (24.08.2026): Die Kachel merkt nur, „Spielen" legt an
+ * ------------------------------------------------------------------ */
+
+pruefe("Die Spielart-Kachel legt nichts mehr an, sie merkt nur (Wunsch 1)", () => {
+    const START = umgebung.START;
+
+    /*
+     * DER GEMELDETE WUNSCH: „Wenn in der Auswahl alles gewaehlt ist und man
+     * auf die Spielart-Kachel drueckt, soll NICHT ‚Name eingeben' kommen —
+     * die Wahl soll nur GEMERKT werden, und man kommt zurueck zum
+     * Start-Screen."
+     *
+     * Geprueft wird beides: dass keine Partie entsteht und dass Spielart
+     * UND Regler im Geraetespeicher landen.
+     */
+    TEAM_SCHACH.partieAnlegen();
+    if (!TEAM_SCHACH.auswahlOffen) {
+        throw new Error("die Auswahl ist gar nicht offen");
+    }
+
+    /* Zwei Regler verstellen — sie muessen die Kachel ueberleben. */
+    TEAM_SCHACH.neueRegeln.faehigkeiten = true;
+    TEAM_SCHACH.neueRegeln.armeeStaerke = "wenig";
+
+    const vorher = SCHACH_TAFEL.liste(TEAM_SCHACH.abgleich.daten).length;
+
+    /* Eine Spielart, die NICHT die Vorgabe ist — sonst beweist der
+       Vergleich unten nichts. */
+    const gewaehlt = SCHACH_VARIANTEN.liste[1] || SCHACH_VARIANTEN.liste[0];
+    umgebung.TABS.gewechseltZu = "";
+    TEAM_SCHACH.spielartGewaehlt(gewaehlt.id);
+
+    if (SCHACH_TAFEL.liste(TEAM_SCHACH.abgleich.daten).length !== vorher) {
+        throw new Error("die Kachel hat doch eine Partie angelegt");
+    }
+    if (TEAM_SCHACH.auswahlOffen) {
+        throw new Error("die Auswahl bleibt nach der Wahl offen");
+    }
+    if (umgebung.TABS.gewechseltZu !== "start") {
+        throw new Error("die Kachel fuehrt nicht zurueck zum Start");
+    }
+    if (START._spielart().id !== gewaehlt.id) {
+        throw new Error("die Spielart wurde nicht gemerkt");
+    }
+
+    const gemerkt = START.regeln();
+    if (gemerkt.faehigkeiten !== true || gemerkt.armeeStaerke !== "wenig") {
+        throw new Error("die Regler wurden nicht gemerkt");
+    }
+
+    /* Und die Auswahl zeigt beim naechsten Oeffnen genau das wieder. */
+    TEAM_SCHACH.partieAnlegen();
+    if (TEAM_SCHACH.neueRegeln.armeeStaerke !== "wenig") {
+        throw new Error("die Auswahl faengt wieder bei den Vorgaben an");
+    }
+    if (TEAM_SCHACH.gewaehlteForm !== SCHACH_VARIANTEN.formVon(gewaehlt)) {
+        throw new Error("die Auswahl oeffnet die falsche Brettform");
+    }
+
+    TEAM_SCHACH.auswahlSchliessen();
+    umgebung.TABS.gewechseltZu = "";
+});
+
+pruefe("Der Start fuehrt zum Beitreten und Spielen ist die Hauptaktion (Wunsch 1)", () => {
+    const START = umgebung.START;
+    START.aufbauen(neuesElement("div"));
+
+    const einsammeln = (element, passt, treffer) => {
+        for (const kind of element.kinder || []) {
+            if (passt(kind)) {
+                treffer.push(kind);
+            }
+            einsammeln(kind, passt, treffer);
+        }
+        return treffer;
+    };
+
+    const knoepfe = einsammeln(START.wurzelEl,
+        (kind) => kind.tagName === "button", []);
+
+    const beitreten = knoepfe.find(
+        (knopf) => String(knopf.textContent || "") === "Runde beitreten");
+    if (!beitreten) {
+        throw new Error("kein Knopf Runde beitreten auf dem Start");
+    }
+    if (String(beitreten.className).indexOf("knopf-haupt") !== -1) {
+        throw new Error("Beitreten macht Spielen die Hauptaktion streitig");
+    }
+
+    umgebung.TABS.gewechseltZu = "";
+    beitreten.ausloesen("click");
+    if (umgebung.TABS.gewechseltZu !== "team-schach") {
+        throw new Error("Beitreten fuehrt nicht auf den Zwischenbildschirm");
+    }
+    umgebung.TABS.gewechseltZu = "";
+});
+
 pruefe("Der Faehigkeiten-Tab zeichnet die Bibliothek ohne Zurueck (v0.9.0)", () => {
     const FAEHIGKEITEN = umgebung.FAEHIGKEITEN;
     if (!FAEHIGKEITEN || FAEHIGKEITEN.id !== "faehigkeiten") {
@@ -4097,9 +4280,12 @@ pruefe("Der Zwischenbildschirm laesst per Code beitreten (v0.10.0)", () => {
     if (beitreten.disabled !== true) {
         throw new Error("Beitreten ist ohne Code schon frei");
     }
-    if (!knoepfe.some(
+
+    /* SEIT WUNSCH 1 (24.08.2026) hat der Zwischenbildschirm KEINE Karte
+       „Runde erstellen" mehr — erstellt wird auf dem Startbildschirm. */
+    if (knoepfe.some(
             (knopf) => String(knopf.textContent || "") === "Runde erstellen")) {
-        throw new Error("kein Knopf Runde erstellen");
+        throw new Error("die Karte Runde erstellen haengt noch hier");
     }
 
     /* Der echte Code einer laufenden Partie, klein getippt. */

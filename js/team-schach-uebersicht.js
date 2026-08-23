@@ -23,18 +23,16 @@ Object.assign(TEAM_SCHACH, {
         kopf.appendChild(TEAM_SCHACH._knopf("Zurück", "knopf-still knopf-klein",
             () => TEAM_SCHACH.auswahlSchliessen()));
         /*
-         * „NEUE PARTIE" STATT „WELCHE SPIELART?" (seit v0.94).
+         * „RUNDE EINSTELLEN" STATT „NEUE PARTIE" (seit Wunsch 1, 24.08.2026).
          *
-         * Die Überschrift stammte aus v0.44, als hier wirklich nur Kacheln
-         * standen. Inzwischen kommen davor die Figurenzahl, sechs
-         * Einstellungen, die Lootbox-Menge, der Item-Vorrat und die Brettform
-         * — die Spielart ist der LETZTE Schritt, nicht der erste. Eine
-         * Überschrift, die nach etwas fragt, das erst nach zwei Bildschirmen
-         * kommt, führt in die Irre. Die Reihenfolge selbst bleibt, wie sie
-         * ist: Die Kachel legt die Partie sofort an, also müssen die
-         * Einstellungen davor stehen.
+         * Bis v0.13.0 legte die Kachel die Partie sofort an — die Überschrift
+         * „Neue Partie" stimmte deshalb. Jetzt merkt sie die Wahl nur; angelegt
+         * wird auf dem Startbildschirm mit „Spielen". Eine Überschrift, die
+         * etwas ankündigt, das hier gar nicht mehr passiert, führt in die Irre.
+         * (Davor hiess sie seit v0.44 „Welche Spielart?" und wurde in v0.94
+         * ersetzt, als die Einstellungen vor die Kacheln rückten.)
          */
-        kopf.appendChild(TEAM_SCHACH._element("h2", "partie-titel", "Neue Partie"));
+        kopf.appendChild(TEAM_SCHACH._element("h2", "partie-titel", "Runde einstellen"));
 
         /*
          * DER ERKLÄRSATZ STEHT HINTER DEM i (seit v0.52). Er sagt etwas, das man
@@ -44,10 +42,11 @@ Object.assign(TEAM_SCHACH, {
          * Fähigkeiten-Fenster in v3.5.
          */
         kopf.appendChild(TEAM_SCHACH._infoZeichenBauen(
-            "Was gilt beim Anlegen?",
-            "Spielart und Einstellungen stehen mit dem Anlegen fest und lassen "
-            + "sich später nicht mehr ändern. Das Bild auf der Kachel zeigt die "
-            + "Startaufstellung."));
+            "Was gilt beim Einstellen?",
+            "Hier wird noch nichts angelegt: Deine Wahl wird gemerkt, und der "
+            + "Startbildschirm zeigt sie als Vorschau. Erst \"Spielen\" macht "
+            + "daraus eine Runde — und dann stehen Spielart und Einstellungen "
+            + "fest. Das Bild auf der Kachel zeigt die Startaufstellung."));
 
         wurzel.appendChild(kopf);
 
@@ -1087,18 +1086,15 @@ Object.assign(TEAM_SCHACH, {
         beitreten.appendChild(codeZeile);
         wurzel.appendChild(beitreten);
 
-        /* ---- Runde erstellen. ---- */
-        const erstellen = TEAM_SCHACH._element("section", "karte");
-        erstellen.appendChild(TEAM_SCHACH._element("h3", "", "Runde erstellen"));
-        erstellen.appendChild(TEAM_SCHACH._element("p", "erklaerung",
-            "Wähle Spielart und Regeln. Den Beitritts-Code deiner Runde "
-            + "bekommst du danach zum Weitergeben."));
-
-        const erstellenFuss = TEAM_SCHACH._element("div", "karte-fuss");
-        erstellenFuss.appendChild(TEAM_SCHACH._knopf("Runde erstellen",
-            "knopf-still", () => TEAM_SCHACH.partieAnlegen()));
-        erstellen.appendChild(erstellenFuss);
-        wurzel.appendChild(erstellen);
+        /*
+         * DIE KARTE „RUNDE ERSTELLEN" IST WEG (Wunsch 1, 24.08.2026).
+         * Erstellt wird jetzt auf dem Startbildschirm: Die Vorschau zeigt
+         * die gewählte Spielart, der Pfeil daneben öffnet die
+         * Einstellungen, und „Spielen" legt die Runde an
+         * (`TEAM_SCHACH.rundeStarten`). Dieser Bildschirm ist damit nur
+         * noch der Weg HINEIN in fremde Runden — und die Übersicht über
+         * die eigenen.
+         */
 
         /* ---- Freunde (seit v0.11.0, Schritt 6): Suchen, Anfragen,
            Annehmen, Entfernen — die Karte baut freunde.js. Ab Schritt 7

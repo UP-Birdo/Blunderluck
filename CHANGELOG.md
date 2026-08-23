@@ -3,6 +3,27 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.14.0 — 24.08.2026
+
+**Eine Runde starten geht jetzt vom Startbildschirm aus — ohne Namensfrage.**
+
+- **„Spielen" legt die Runde an.** Bisher führte der Knopf nur weiter, und
+  angelegt wurde erst zwei Bildschirme später mit einem Tipp auf die
+  Spielart-Kachel. Jetzt ist es umgekehrt: Der Pfeil neben „Spielen" führt
+  in die Einstellungen, die Kachel **merkt** sich deine Wahl und bringt
+  dich zurück — und der grosse Knopf startet.
+- **Runden haben keinen Namen mehr.** Der Dialog „Name der Partie" ist
+  weg; auf den Karten steht die Spielart. Eine Frage weniger vor jedem
+  Spiel.
+- **Deine Einstellungen bleiben stehen.** Brettform, Figurenzahl,
+  Lootbox-Menge, Item-Vorrat und die Haken merkt sich dein Gerät. Beim
+  nächsten Öffnen der Einstellungen steht alles noch so da — und die
+  Vorschau auf dem Start zeigt genau das Brett, mit dem „Spielen" beginnt.
+- **Neu unter „Spielen": „Runde beitreten".** Dort liegen wie bisher die
+  Einladungen, das Feld für den Beitritts-Code und deine offenen und
+  beendeten Partien. Die Karte „Runde erstellen" ist dort verschwunden —
+  erstellt wird jetzt auf dem Start.
+
 ## v0.13.0 — 24.08.2026
 
 **Freunde einladen — und Bündel A ist damit komplett.** (Schritt 7, der

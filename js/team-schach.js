@@ -1723,16 +1723,11 @@ const TEAM_SCHACH = {
      * Aktionen rund um die Partie
      * ---------------------------------------------------------------- */
 
-    /* Der Knopf "Neue Partie" führt in die Auswahl der Spielart. */
-    partieAnlegen() {
-        if (!TEAM_SCHACH._ich()) {
-            return;
-        }
-        TEAM_SCHACH.auswahlOffen = true;
-        TEAM_SCHACH.offeneId = "";
-
-        /* Jede neue Partie fängt mit den Vorgaben an. */
-        TEAM_SCHACH.neueRegeln = {
+    /* Die Vorgaben einer neuen Runde. EINE Quelle für beides: die Auswahl
+       (unten) und die Geräte-Erinnerung des Startbildschirms
+       (START.regeln) — sonst laufen sie auseinander. */
+    _regelnVorgabe() {
+        return {
             faehigkeiten: false,
             seltenheitZeigen: false,
             pechZeigen: false,
@@ -1741,24 +1736,54 @@ const TEAM_SCHACH = {
             armeeUnterschiedlich: false,
             armeeStaerke: "normal",
             itemVorrat: "alle",
-            
 
             /* Die selbst angehakte Liste (seit v0.100) - nur bei
-
                `itemVorrat: "auswahl"` von Bedeutung. */
             itemAuswahl: [],
 
             /* Einigkeit ist die Vorgabe (seit v0.76) — siehe `neueRegeln`. */
             einigkeit: true
         };
+    },
+
+    /*
+     * Der Pfeil neben „Spielen" führt in die Auswahl der Spielart.
+     *
+     * SEIT WUNSCH 1 (24.08.2026) LEGT DIE AUSWAHL NICHTS MEHR AN: Sie zeigt,
+     * was zuletzt eingestellt war, und schreibt jede Wahl in die
+     * Geräte-Erinnerung des Starts zurück (siehe `spielartGewaehlt`).
+     * Angelegt wird die Runde erst mit „Spielen" (`rundeStarten`).
+     */
+    partieAnlegen() {
+        if (!TEAM_SCHACH._ich()) {
+            return;
+        }
+        TEAM_SCHACH.auswahlOffen = true;
+        TEAM_SCHACH.offeneId = "";
+
+        /* Die zuletzt gemerkten Einstellungen, sonst die Vorgaben. */
+        TEAM_SCHACH.neueRegeln = (typeof START !== "undefined")
+            ? START.regeln()
+            : TEAM_SCHACH._regelnVorgabe();
+
+        /* Die offene Brettform folgt der gemerkten Spielart — sonst läge
+           die Kachel, auf der man zuletzt war, unter einem anderen Reiter. */
+        if (typeof START !== "undefined") {
+            TEAM_SCHACH.gewaehlteForm =
+                SCHACH_VARIANTEN.formVon(START._spielart());
+        }
 
         TEAM_SCHACH._auswahlAufheben();
         TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
     },
 
+    /* „Zurück" aus der Auswahl. Seit Wunsch 1 kommt man hier vom
+       Startbildschirm herein — also geht es auch dorthin zurück, und nicht
+       mehr in den Zwischenbildschirm. */
     auswahlSchliessen() {
         TEAM_SCHACH.auswahlOffen = false;
         TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
+        TABS.wechseln("start");
     },
 
     /*
@@ -1783,8 +1808,38 @@ const TEAM_SCHACH = {
         return true;
     },
 
-    /* Eine Kachel wurde angetippt: Namen erfragen und die Partie anlegen. */
-    async spielartGewaehlt(varianteId) {
+    /*
+     * Eine Kachel wurde angetippt. SIE LEGT NICHTS MEHR AN (Wunsch 1,
+     * 24.08.2026): Die Wahl wird nur GEMERKT — Spielart und die
+     * eingestellten Regler wandern in den Gerätespeicher —, und man landet
+     * wieder auf dem Startbildschirm. Dort zeigt die Vorschau das gewählte
+     * Brett, und erst „Spielen" legt die Runde an (`rundeStarten`).
+     *
+     * Damit ist auch der Namens-Dialog weg: Runden bekommen gar keinen
+     * eigenen Namen mehr, nur einen Anzeigetitel aus der Spielart.
+     */
+    spielartGewaehlt(varianteId) {
+        if (!SCHACH_VARIANTEN.gibtEs(varianteId)) {
+            return;
+        }
+
+        if (typeof START !== "undefined") {
+            START.spielartMerken(varianteId);
+            START.regelnMerken(TEAM_SCHACH.neueRegeln);
+        }
+
+        TEAM_SCHACH.auswahlOffen = false;
+        TEAM_SCHACH._auswahlAufheben();
+        TABS.wechseln("start");
+    },
+
+    /*
+     * „Spielen" auf dem Startbildschirm: die Runde mit der gemerkten
+     * Spielart und den gemerkten Reglern anlegen und gleich betreten.
+     * Gerufen aus START.spielen; bis v0.13.0 stand dieser Rumpf hinter dem
+     * Namens-Dialog in `spielartGewaehlt`.
+     */
+    async rundeStarten(varianteId, regelnWunsch) {
         const person = TEAM_SCHACH._ich();
         if (!person || !SCHACH_VARIANTEN.gibtEs(varianteId)) {
             return;
@@ -1793,16 +1848,12 @@ const TEAM_SCHACH = {
             return;
         }
 
-        const titel = await DIALOG.eingabe(
-            "Name der Partie",
-            "Damit ihr sie in der Übersicht wiederfindet.",
-            SCHACH_VARIANTEN.holen(varianteId).titel,
-            "Anlegen",
-            true
-        );
-        if (titel === null) {
-            return;
-        }
+        const variante = SCHACH_VARIANTEN.holen(varianteId);
+        const wunsch = regelnWunsch || TEAM_SCHACH._regelnVorgabe();
+
+        /* Den Anzeigetitel vergibt die App (Wunsch 1) — gefragt wird nicht
+           mehr. Er steht auf den Karten und in den Hinweisen. */
+        const titel = variante.titel;
 
         /* Angelegt wird auf dem Stand vom Server, damit keine fremde Partie
            verloren geht. */
@@ -1822,17 +1873,16 @@ const TEAM_SCHACH = {
         /* Die Spielart „Fähigkeiten sammeln“ hat sie ohnehin an; für alle
            anderen entscheidet der Schalter. */
         const regeln = {
-            faehigkeiten: TEAM_SCHACH.neueRegeln.faehigkeiten
-                || !!SCHACH_VARIANTEN.holen(varianteId).faehigkeiten,
-            seltenheitZeigen: TEAM_SCHACH.neueRegeln.seltenheitZeigen,
-            pechZeigen: TEAM_SCHACH.neueRegeln.pechZeigen,
-            lootboxMenge: TEAM_SCHACH.neueRegeln.lootboxMenge,
-            zufallsArmee: TEAM_SCHACH.neueRegeln.zufallsArmee,
-            armeeUnterschiedlich: TEAM_SCHACH.neueRegeln.armeeUnterschiedlich,
-            armeeStaerke: TEAM_SCHACH.neueRegeln.armeeStaerke,
-            itemVorrat: TEAM_SCHACH.neueRegeln.itemVorrat,
-            itemAuswahl: TEAM_SCHACH.neueRegeln.itemAuswahl,
-            einigkeit: TEAM_SCHACH.neueRegeln.einigkeit
+            faehigkeiten: wunsch.faehigkeiten || !!variante.faehigkeiten,
+            seltenheitZeigen: wunsch.seltenheitZeigen,
+            pechZeigen: wunsch.pechZeigen,
+            lootboxMenge: wunsch.lootboxMenge,
+            zufallsArmee: wunsch.zufallsArmee,
+            armeeUnterschiedlich: wunsch.armeeUnterschiedlich,
+            armeeStaerke: wunsch.armeeStaerke,
+            itemVorrat: wunsch.itemVorrat,
+            itemAuswahl: wunsch.itemAuswahl,
+            einigkeit: wunsch.einigkeit
         };
 
         const ergebnis = SCHACH_TAFEL.partieAnlegen(
@@ -1855,11 +1905,10 @@ const TEAM_SCHACH = {
          * tippt, und erkenne nicht, dass eine Partie schon begonnen hat."
          *
          * Die Ursache ist nicht der Bildschirm, sondern das Rennen mit der
-         * regelmässigen Abfrage: Sie läuft weiter, während der Namensdialog
-         * offen steht und während gespeichert wird. Landet ihre Antwort nach
-         * dem Schreiben, ersetzt sie `abgleich.daten` durch den Stand VOM
-         * SERVER — und der kennt die eben angelegte Partie noch nicht. Das
-         * frisch gesetzte `offeneId` zeigt dann ins Leere.
+         * regelmässigen Abfrage: Sie läuft weiter, während gespeichert wird.
+         * Landet ihre Antwort nach dem Schreiben, ersetzt sie `abgleich.daten`
+         * durch den Stand VOM SERVER — und der kennt die eben angelegte Partie
+         * noch nicht. Das frisch gesetzte `offeneId` zeigt dann ins Leere.
          *
          * Genau dafür gibt es `eigenerVorgangBeginnt` (eiserne Regel: „Wer am
          * Abgleich vorbei schreibt, meldet sich an"). Züge tun das seit v3.8,
@@ -1872,6 +1921,10 @@ const TEAM_SCHACH = {
         try {
             await abgleich.speicher.speichern(ergebnis.tafel);
             abgleich.daten = ergebnis.tafel;
+
+            /* Gestartet wird jetzt vom Startbildschirm aus — der Tab muss
+               also erst gewechselt werden (Wunsch 1). */
+            TABS.wechseln("team-schach");
             TEAM_SCHACH.partieOeffnen(ergebnis.partie.id);
 
             /* Der Startbildschirm merkt sich die Spielart fürs
