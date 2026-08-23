@@ -3,6 +3,17 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.4.0 — 23.08.2026
+
+**Ein eigenes Zeichen: Springer und Funke.**
+
+- Blunderluck hat sein eigenes App-Zeichen — ein weisser Springer auf blauem
+  Grund, dazu ein goldener Funke für das Glück. Bisher stand dort noch der
+  geerbte Würfel des Quizz.
+- Zu sehen im Lesezeichen des Browsers und auf dem Startbildschirm, wenn du
+  die Seite dort ablegst. **Wer sie schon abgelegt hat, muss sie einmal
+  entfernen und neu hinzufügen** — Handys merken sich das alte Bild.
+
 ## v0.3.0 — 23.08.2026
 
 **„Ich bin raus" — den eigenen Eintrag selbst löschen.**

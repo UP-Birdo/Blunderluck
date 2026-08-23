@@ -37,20 +37,24 @@ if (-not (Test-Path -LiteralPath $zielOrdner)) {
 
 $grundfarbe = [System.Drawing.ColorTranslator]::FromHtml("#1f5fa8")
 $hell       = [System.Drawing.Color]::White
+$gold       = [System.Drawing.ColorTranslator]::FromHtml("#ffc83d")
 
-# Augen weit aussen, Stern klein: bei 32 Pixeln verschmelzen die Formen sonst
-# zu einem Fleck. Die Werte sind mit icon.svg gleichzuhalten.
-$augen = @(
-    @{ x = 142; y = 142 },
-    @{ x = 370; y = 142 },
-    @{ x = 142; y = 370 },
-    @{ x = 370; y = 370 }
+# Springer und Funke - dieselben Koordinaten wie in icon.svg. Nur zwei Formen,
+# damit das Zeichen bei 32 Pixeln nicht zu einem Fleck verschmilzt; wer sie
+# aendert, aendert beide Dateien und sieht sich das Ergebnis in 32 Pixeln an.
+$springer = @(
+    @(140, 424), @(140, 396), @(158, 396), @(158, 372), @(176, 372),
+    @(186, 340), @(196, 306), @(206, 282), @(196, 264), @(166, 258),
+    @(130, 252), @(108, 240), @(104, 222), @(120, 208), @(152, 202),
+    @(184, 194), @(206, 178), @(228, 156), @(250, 132), @(264, 112),
+    @(280, 140), @(306, 108), @(322, 150), @(334, 186), @(352, 214),
+    @(338, 232), @(356, 258), @(342, 278), @(358, 304), @(346, 330),
+    @(352, 354), @(354, 372), @(354, 396), @(372, 396), @(372, 424)
 )
-$augenRadius = 38
 
-$stern = @(
-    @(256, 185), @(274, 234), @(326, 237), @(286, 269), @(299, 319),
-    @(256, 290), @(213, 319), @(226, 269), @(186, 237), @(238, 234)
+$funke = @(
+    @(124, 84), @(134, 116), @(166, 126), @(134, 136),
+    @(124, 168), @(114, 136), @(82, 126), @(114, 116)
 )
 
 # Abgerundetes Quadrat als Zeichenpfad.
@@ -95,23 +99,28 @@ function New-Icon {
         $linie.Dispose()
     }
 
+    # Umrechnung einer Punktliste aus dem 512er-Raster in diese Bildgroesse.
+    function ConvertTo-Punkte {
+        param($Liste, [single]$Mass)
+
+        $punkte = @()
+        foreach ($punkt in $Liste) {
+            $punkte += New-Object System.Drawing.PointF(
+                ($punkt[0] * $Mass), ($punkt[1] * $Mass))
+        }
+        return [System.Drawing.PointF[]]$punkte
+    }
+
+    # Der Springer.
     $weiss = New-Object System.Drawing.SolidBrush($hell)
-
-    # Die vier Augen.
-    foreach ($auge in $augen) {
-        $r = $augenRadius * $mass
-        $zeichnung.FillEllipse($weiss,
-            ($auge.x * $mass - $r), ($auge.y * $mass - $r), (2 * $r), (2 * $r))
-    }
-
-    # Der Stern.
-    $punkte = @()
-    foreach ($punkt in $stern) {
-        $punkte += New-Object System.Drawing.PointF(($punkt[0] * $mass), ($punkt[1] * $mass))
-    }
-    $zeichnung.FillPolygon($weiss, [System.Drawing.PointF[]]$punkte)
-
+    $zeichnung.FillPolygon($weiss, (ConvertTo-Punkte -Liste $springer -Mass $mass))
     $weiss.Dispose()
+
+    # Der Funke.
+    $goldPinsel = New-Object System.Drawing.SolidBrush($gold)
+    $zeichnung.FillPolygon($goldPinsel, (ConvertTo-Punkte -Liste $funke -Mass $mass))
+    $goldPinsel.Dispose()
+
     $flaeche.Dispose()
     $zeichnung.Dispose()
 

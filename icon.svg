@@ -1,13 +1,27 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Quizz">
-    <title>Quizz</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Blunderluck">
+    <title>Blunderluck</title>
 
     <!--
-        Das Zeichen der App: eine Würfelfläche mit vier Augen und einem Stern in
-        der Mitte. Beides zusammen ist genau das Würfel Quizz — die Werte 1 bis 5
-        und der Stern. Bewusst eine gezeichnete Form und kein Emoji (Haus-Regel).
+        Das Zeichen der App: ein Springer und ein goldener Funke.
+
+        WARUM GENAU DIESE ZWEI FORMEN
+        Der Springer ist die Figur, an der jeder sofort "Schach" erkennt — kein
+        anderes Schachzeichen ist auch als blosse Silhouette eindeutig. Der
+        Funke ist das Glück: Lootbox, Zufall, "luck" aus dem Namen. Mehr als
+        zwei Formen verträgt das Zeichen nicht, denn es muss bei 32 Pixeln
+        (Lesezeichen im Browser) noch lesbar sein.
+
+        WAS DEN SPRINGER ZUM SPRINGER MACHT (erste Fassung sah aus wie ein
+        Fuchskopf — daran lag es): der abgesetzte SOCKEL in zwei Stufen unten,
+        die lange, nach links unten gezogene SCHNAUZE, und die gestufte MÄHNE
+        am Hinterkopf. Fehlt eines davon, wird ein beliebiges Tier daraus.
+        Wer die Punkte ändert, prüft das Ergebnis in 32 Pixeln nach.
+
+        Bewusst gezeichnete Formen, kein Emoji (Haus-Regel).
 
         Quelle für alle Bildgrössen. Die PNG-Fassungen erzeugt
-        tools\Icons-Erzeugen.ps1 aus denselben Koordinaten.
+        tools\Icons-Erzeugen.ps1 aus DENSELBEN Koordinaten — wer hier etwas
+        ändert, ändert beide Dateien.
     -->
 
     <rect x="0" y="0" width="512" height="512" rx="96" ry="96" fill="#1f5fa8"/>
@@ -15,16 +29,25 @@
           fill="none" stroke="#ffffff" stroke-opacity="0.28" stroke-width="10"/>
 
     <!--
-        Die vier Augen sitzen weit aussen und der Stern bleibt klein: In der
-        Grösse eines Lesezeichens (32 Pixel) verschmelzen sonst alle Formen zu
-        einem Fleck. Wer die Werte ändert, prüft das Zeichen in 32 Pixel nach.
+        Der Springer, nach links blickend (die übliche Richtung). Ein
+        Streckenzug statt weicher Kurven: So lässt er sich in der
+        PowerShell-Fassung mit FillPolygon Punkt für Punkt gleich nachbauen.
+        Reihenfolge: Sockel links hoch, Brust, Schnauze, Stirn, Ohren,
+        Mähne hinunter, Sockel rechts.
     -->
-    <circle cx="142" cy="142" r="38" fill="#ffffff"/>
-    <circle cx="370" cy="142" r="38" fill="#ffffff"/>
-    <circle cx="142" cy="370" r="38" fill="#ffffff"/>
-    <circle cx="370" cy="370" r="38" fill="#ffffff"/>
-
-    <!-- Der Stern in der Mitte, fünfzackig. -->
     <polygon fill="#ffffff"
-             points="256,185 274,234 326,237 286,269 299,319 256,290 213,319 226,269 186,237 238,234"/>
+             points="140,424 140,396 158,396 158,372 176,372
+                     186,340 196,306 206,282 196,264 166,258
+                     130,252 108,240 104,222 120,208 152,202
+                     184,194 206,178 228,156 250,132 264,112
+                     280,140 306,108 322,150 334,186 352,214
+                     338,232 356,258 342,278 358,304 346,330
+                     352,354 354,372 354,396 372,396 372,424"/>
+
+    <!--
+        Der Funke im freien Eck über der Schnauze. Vierzackig und klein: Er
+        soll den Blick nicht vom Springer nehmen.
+    -->
+    <polygon fill="#ffc83d"
+             points="124,84 134,116 166,126 134,136 124,168 114,136 82,126 114,116"/>
 </svg>
