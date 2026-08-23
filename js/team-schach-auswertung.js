@@ -729,6 +729,16 @@ Object.assign(TEAM_SCHACH, {
         kopf.appendChild(TEAM_SCHACH._element("h2", "partie-titel", "Fähigkeiten"));
         wurzel.appendChild(kopf);
 
+        TEAM_SCHACH._infoInhaltBauen(wurzel);
+    },
+
+    /*
+     * Der INHALT der Bibliothek, ohne Kopfzeile — seit v0.9.0 getrennt,
+     * weil ihn zwei Ansichten brauchen: die Bibliothek im Spiel (oben, mit
+     * Zurück-Knopf) und der Tab „Fähigkeiten" (faehigkeiten.js, die Leiste
+     * ist dort der Weg zurück).
+     */
+    _infoInhaltBauen(wurzel) {
         wurzel.appendChild(TEAM_SCHACH._element("p", "erklaerung",
             "Wer mit einer Figur über eine Lootbox oder auf sie zieht, sammelt ein, "
             + "was darin steckt — vorher sieht man es nie. Nur der Springer sammelt "

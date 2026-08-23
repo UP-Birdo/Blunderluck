@@ -1010,6 +1010,13 @@ Object.assign(TEAM_SCHACH, {
             && SCHACH_RUNDE.teamVon(partie, person.id));
 
         const kopf = TEAM_SCHACH._element("div", "phasen-leiste");
+
+        /* Seit v0.9.0 hat das Team Schach keinen Leisten-Knopf mehr — man
+           kommt über den Spielen-Knopf des Starts hierher und hier wieder
+           zurück. */
+        kopf.appendChild(TEAM_SCHACH._knopf("Zurück", "knopf-still knopf-klein",
+            () => TABS.wechseln("start")));
+
         kopf.appendChild(TEAM_SCHACH._element("span", "phasen-text",
             "Offene Partien: " + offene.length));
 

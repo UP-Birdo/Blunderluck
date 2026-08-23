@@ -349,6 +349,13 @@ umgebung.TABS = {
     zuletzt: null,
     rundeSetzen(tabId, offen) {
         umgebung.TABS.zuletzt = { tabId: tabId, offen: offen === true };
+    },
+
+    /* Seit v0.9.0 wechseln Startbildschirm und Einstellungen die Tabs
+       selbst — hier reicht es, sich das Ziel zu merken. */
+    gewechseltZu: "",
+    wechseln(id) {
+        umgebung.TABS.gewechseltZu = id;
     }
 };
 
@@ -361,7 +368,7 @@ umgebung.TABS = {
  */
 const bausteinNamen = ["SPIELER", "ANMELDUNG", "SCHACH_VARIANTEN", "SCHACH", "SCHACH_RUNDE",
     "SCHACH_TAFEL", "SCHACH_VORSCHAU", "SCHACH_GRUNDLAGEN", "TEAM_SCHACH",
-    "RANGLISTE", "EINSTELLUNGEN",
+    "RANGLISTE", "START", "FAEHIGKEITEN", "EINSTELLUNGEN",
     "SpeicherGemeinsam",
     /* Seit v0.76 auch der Abgleich: Sein Rennen mit der regelmaessigen Abfrage
        war der „Doppelzug-Fehler", und ohne Test kaeme es unbemerkt zurueck. */
@@ -377,7 +384,7 @@ const dateien = ["konfig.js", "spieler.js", "speicher.js", "abgleich.js",
     "team-schach.js",
     "team-schach-uebersicht.js", "team-schach-brett.js", "team-schach-auswertung.js",
     "team-schach-grundlagen.js",
-    "rangliste.js", "einstellungen.js"];
+    "rangliste.js", "start.js", "faehigkeiten.js", "einstellungen.js"];
 
 const quelltext = dateien
     .map((name) => dateisystem.readFileSync(pfad.join(jsOrdner, name), "utf8"))
@@ -3882,6 +3889,104 @@ pruefe("Die Account-Karte trennt Abmelden und Konto loeschen (v0.6.0)", () => {
     const abmelden = knoepfe[texte.indexOf("Abmelden")];
     if (String(abmelden.className).indexOf("knopf-gefahr") !== -1) {
         throw new Error("Abmelden darf nicht rot sein — es loescht nichts");
+    }
+});
+
+/* ------------------------------------------------------------------ *
+ * Der Startbildschirm und der Faehigkeiten-Tab (v0.9.0, Schritt 4)
+ * ------------------------------------------------------------------ */
+
+pruefe("Der Startbildschirm zeigt Vorschau, Spielen und Zahnrad (v0.9.0)", () => {
+    const START = umgebung.START;
+    if (!START || START.id !== "start") {
+        throw new Error("der Start-Baustein fehlt");
+    }
+
+    START.aufbauen(neuesElement("div"));
+
+    const einsammeln = (element, passt, treffer) => {
+        for (const kind of element.kinder || []) {
+            if (passt(kind)) {
+                treffer.push(kind);
+            }
+            einsammeln(kind, passt, treffer);
+        }
+        return treffer;
+    };
+
+    const knoepfe = einsammeln(START.wurzelEl,
+        (kind) => kind.tagName === "button", []);
+
+    const spielen = knoepfe.find(
+        (knopf) => String(knopf.textContent || "") === "Spielen");
+    if (!spielen) {
+        throw new Error("kein Spielen-Knopf");
+    }
+    if (String(spielen.className).indexOf("knopf-haupt") === -1) {
+        throw new Error("Spielen ist nicht die Hauptaktion");
+    }
+
+    if (!knoepfe.some((knopf) => knopf.attribute
+            && knopf.attribute["aria-label"] === "Match-Einstellungen")) {
+        throw new Error("kein Quadrat fuer die Match-Einstellungen");
+    }
+    if (!knoepfe.some((knopf) => knopf.attribute
+            && knopf.attribute["aria-label"] === "Einstellungen")) {
+        throw new Error("kein Zahnrad fuer die Einstellungen");
+    }
+
+    /* Das Vorschaubrett ist da und hat Felder. */
+    const vorschau = einsammeln(START.wurzelEl, (kind) =>
+        String(kind.className || "").split(" ").indexOf("vorschau") !== -1, [])[0];
+    if (!vorschau) {
+        throw new Error("kein Vorschaubrett auf dem Start");
+    }
+    if (!vorschau.kinder || vorschau.kinder.length < 16) {
+        throw new Error("das Vorschaubrett hat keine Felder");
+    }
+
+    /* Das Zahnrad fuehrt in die Einstellungen. */
+    const zahnrad = knoepfe.find((knopf) => knopf.attribute
+        && knopf.attribute["aria-label"] === "Einstellungen");
+    zahnrad.ausloesen("click");
+    if (umgebung.TABS.gewechseltZu !== "einstellungen") {
+        throw new Error("das Zahnrad wechselt nicht zu den Einstellungen");
+    }
+    umgebung.TABS.gewechseltZu = "";
+});
+
+pruefe("Der Faehigkeiten-Tab zeichnet die Bibliothek ohne Zurueck (v0.9.0)", () => {
+    const FAEHIGKEITEN = umgebung.FAEHIGKEITEN;
+    if (!FAEHIGKEITEN || FAEHIGKEITEN.id !== "faehigkeiten") {
+        throw new Error("der Faehigkeiten-Baustein fehlt");
+    }
+
+    FAEHIGKEITEN.aufbauen(neuesElement("div"));
+    FAEHIGKEITEN.beimOeffnen();
+
+    const einsammeln = (element, passt, treffer) => {
+        for (const kind of element.kinder || []) {
+            if (passt(kind)) {
+                treffer.push(kind);
+            }
+            einsammeln(kind, passt, treffer);
+        }
+        return treffer;
+    };
+
+    const karten = einsammeln(FAEHIGKEITEN.wurzelEl, (kind) =>
+        String(kind.className || "").indexOf("stufen-karte") !== -1, []);
+    if (karten.length !== umgebung.SCHACH_VARIANTEN.STUFEN.length) {
+        throw new Error("erwartet " + umgebung.SCHACH_VARIANTEN.STUFEN.length
+            + " Stufen-Karten, sind " + karten.length);
+    }
+
+    /* Im Tab ist die Leiste der Weg zurueck — kein eigener Knopf. */
+    const zurueck = einsammeln(FAEHIGKEITEN.wurzelEl, (kind) =>
+        kind.tagName === "button"
+        && String(kind.textContent || "") === "Zurück", []);
+    if (zurueck.length !== 0) {
+        throw new Error("der Tab traegt einen ueberfluessigen Zurueck-Knopf");
     }
 });
 

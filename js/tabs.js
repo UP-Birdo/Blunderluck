@@ -8,6 +8,9 @@
  *     {
  *         id:        "wuerfel-quizz",          // eindeutig, auch für die Adresse
  *         titel:     "Würfel Quizz",           // Beschriftung in der Leiste
+ *         inLeiste:  false,                    // optional (seit v0.9.0): kein
+ *                                              // Knopf — erreichbar nur über
+ *                                              // TABS.wechseln (Startbildschirm)
  *         aufbauen(behaelter),                 // legt das Gerüst einmalig an
  *         beimOeffnen()                        // optional: bei jedem Wechsel
  *     }
@@ -35,13 +38,19 @@ const TABS = {
         TABS.liste.push(tab);
     },
 
-    /* Zeichnet die Leiste und öffnet den ersten Tab. */
-    starten(leisteEl, inhaltEl) {
+    /* Zeichnet die Leiste und öffnet den Start-Tab (ohne Angabe: den
+       ersten). Tabs mit `inLeiste: false` bekommen keinen Knopf — sie sind
+       nur über TABS.wechseln erreichbar (seit v0.9.0: Team Schach über den
+       Spielen-Knopf, die Einstellungen über das Zahnrad). */
+    starten(leisteEl, inhaltEl, startId) {
         TABS.leisteEl = leisteEl;
         TABS.inhaltEl = inhaltEl;
         TABS.leisteEl.innerHTML = "";
 
         for (const tab of TABS.liste) {
+            if (tab.inLeiste === false) {
+                continue;
+            }
             const knopf = document.createElement("button");
             knopf.type = "button";
             knopf.className = "tab-knopf";
@@ -70,7 +79,9 @@ const TABS = {
         }
 
         if (TABS.liste.length > 0) {
-            TABS.wechseln(TABS.liste[0].id);
+            const start = startId
+                && TABS.liste.some((eintrag) => eintrag.id === startId);
+            TABS.wechseln(start ? startId : TABS.liste[0].id);
         }
     },
 

@@ -38,6 +38,11 @@ const ANMELDUNG = {
        index.html). Wird von app.js gesetzt. */
     wurzelEl: null,
 
+    /* Wird von app.js gesetzt: läuft nach JEDER erfolgreichen Anmeldung
+       (Weg 1 wie Vollbild) — der Wiedereinstieg in die eigene laufende
+       Partie (start.js, seit v0.9.0). */
+    beiAngemeldet: null,
+
     verbinden(abgleich) {
         ANMELDUNG.abgleich = abgleich;
     },
@@ -109,6 +114,7 @@ const ANMELDUNG = {
                     ICH.personSetzen(bekannt.id, bekannt.name);
                 }
                 ANMELDUNG._anzeigenAuffrischen();
+                ANMELDUNG._angemeldetMelden();
                 return;
             }
         }
@@ -133,6 +139,16 @@ const ANMELDUNG = {
             ANMELDUNG.wurzelEl.innerHTML = "";
         }
         ANMELDUNG._anzeigenAuffrischen();
+        ANMELDUNG._angemeldetMelden();
+    },
+
+    /* Nach jeder erfolgreichen Anmeldung — NICHT bei blossen
+       Profil-Änderungen (deshalb ein eigener Haken und nicht
+       _anzeigenAuffrischen). */
+    _angemeldetMelden() {
+        if (typeof ANMELDUNG.beiAngemeldet === "function") {
+            ANMELDUNG.beiAngemeldet();
+        }
     },
 
     /* Die Weiche: zwei grosse Knöpfe, man MUSS sich entscheiden. */

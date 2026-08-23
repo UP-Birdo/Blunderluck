@@ -289,5 +289,61 @@ pruefe("JEDE Einstellung aus der Auswahl kommt in der Partie an (v0.91)", () => 
         "der Vorrat wurde mit der gewaehlten Groesse ausgelost");
 });
 
+/* ------------------------------------------------------------------ *
+ * Die eigenen laufenden Partien (v0.9.0, Buendel A Schritt 4)
+ * ------------------------------------------------------------------ */
+
+pruefe("eigeneLaufende findet nur laufende Partien mit eigener Beteiligung", () => {
+    let tafel = SCHACH_TAFEL.leereTafel(1000);
+
+    /* Partie 1: laeuft, Anna spielt mit. */
+    const eins = SCHACH_TAFEL.partieAnlegen(tafel, "standard", "Laeuft", 2000);
+    let partieEins = SCHACH_RUNDE.teamBeitreten(eins.partie, "id-anna", "weiss", 2000);
+    partieEins = SCHACH_RUNDE.teamBeitreten(partieEins, "id-bert", "schwarz", 2000);
+    partieEins = SCHACH_RUNDE.bereitSetzen(partieEins, "weiss", true, 2000);
+    partieEins = SCHACH_RUNDE.bereitSetzen(partieEins, "schwarz", true, 2000);
+    tafel = SCHACH_TAFEL.partieEinsetzen(eins.tafel, partieEins, 2000);
+
+    /* Partie 2: laeuft, aber OHNE Anna — fremde Partien ziehen niemanden
+       hinein (Entwurf, F9). */
+    const zwei = SCHACH_TAFEL.partieAnlegen(tafel, "standard", "Fremd", 3000);
+    let partieZwei = SCHACH_RUNDE.teamBeitreten(zwei.partie, "id-cem", "weiss", 3000);
+    partieZwei = SCHACH_RUNDE.teamBeitreten(partieZwei, "id-bert", "schwarz", 3000);
+    partieZwei = SCHACH_RUNDE.bereitSetzen(partieZwei, "weiss", true, 3000);
+    partieZwei = SCHACH_RUNDE.bereitSetzen(partieZwei, "schwarz", true, 3000);
+    tafel = SCHACH_TAFEL.partieEinsetzen(zwei.tafel, partieZwei, 3000);
+
+    /* Partie 3: Anna ist beigetreten, aber die Partie laeuft noch NICHT
+       (Wartephase) — kein Wiedereinstiegs-Fall. */
+    const drei = SCHACH_TAFEL.partieAnlegen(tafel, "standard", "Wartet", 4000);
+    const partieDrei = SCHACH_RUNDE.teamBeitreten(drei.partie, "id-anna", "weiss", 4000);
+    tafel = SCHACH_TAFEL.partieEinsetzen(drei.tafel, partieDrei, 4000);
+
+    const anna = SCHACH_TAFEL.eigeneLaufende(tafel, "id-anna");
+    gleich(anna.length, 1, "genau eine eigene laufende Partie");
+    gleich(anna[0].titel, "Laeuft", "die richtige Partie");
+
+    const bert = SCHACH_TAFEL.eigeneLaufende(tafel, "id-bert");
+    gleich(bert.length, 2, "Bert steckt in beiden laufenden");
+
+    gleich(SCHACH_TAFEL.eigeneLaufende(tafel, "id-nix").length, 0,
+        "Unbeteiligte bekommen nichts");
+});
+
+pruefe("eigeneLaufende laesst beendete Partien aus", () => {
+    let tafel = SCHACH_TAFEL.leereTafel(1000);
+
+    const eins = SCHACH_TAFEL.partieAnlegen(tafel, "standard", "Vorbei", 2000);
+    let partie = SCHACH_RUNDE.teamBeitreten(eins.partie, "id-anna", "weiss", 2000);
+    partie = SCHACH_RUNDE.teamBeitreten(partie, "id-bert", "schwarz", 2000);
+    partie = SCHACH_RUNDE.bereitSetzen(partie, "weiss", true, 2000);
+    partie = SCHACH_RUNDE.bereitSetzen(partie, "schwarz", true, 2000);
+    partie = SCHACH_RUNDE.aufgeben(partie, "schwarz", 2100);
+    tafel = SCHACH_TAFEL.partieEinsetzen(eins.tafel, partie, 2100);
+
+    gleich(SCHACH_TAFEL.eigeneLaufende(tafel, "id-anna").length, 0,
+        "eine beendete Partie zaehlt nicht");
+});
+
 console.log(anzahlOk + " ok, " + anzahlFehler + " Fehler");
 process.exit(anzahlFehler === 0 ? 0 : 1);

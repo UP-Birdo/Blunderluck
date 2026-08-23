@@ -209,6 +209,20 @@ const SCHACH_TAFEL = {
     },
 
     /*
+     * Die eigenen LAUFENDEN Partien (Bündel A, Schritt 4): Die Partie läuft,
+     * hat kein Ergebnis, und die Person steht in einem Team. Grundlage des
+     * Wiedereinstiegs nach der Anmeldung und der Sperre gegen eine zweite
+     * Partie (Entwurf, F9 und F11). Dank der Sortierung von `liste` steht
+     * die zuletzt geänderte vorn.
+     */
+    eigeneLaufende(tafel, spielerId) {
+        return SCHACH_TAFEL.liste(tafel).filter((partie) =>
+            partie.laeuft === true
+            && !partie.ergebnis
+            && !!SCHACH_RUNDE.teamVon(partie, spielerId));
+    },
+
+    /*
      * Alle Partien als Liste, sortiert für die Übersicht:
      * erst die laufenden, dann die noch nicht gestarteten, zuletzt die
      * beendeten — innerhalb jeder Gruppe die zuletzt geänderte zuerst.

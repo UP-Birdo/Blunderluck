@@ -22,6 +22,11 @@ const EINSTELLUNGEN = {
     id: "einstellungen",
     titel: "Einstellungen",
 
+    /* Seit v0.9.0 (Bündel A, Schritt 4) kein Tab mehr: Man kommt über das
+       Zahnrad des Startbildschirms hierher; die Ansicht ist ein Fenster
+       ohne Tab-Leiste, der Zurück-Knopf führt zum Start. */
+    inLeiste: false,
+
     /* Die gewählte Darstellung: "klassisch" oder "3d". */
     SCHLUESSEL_DESIGN: "blunderluck-design",
     design: "klassisch",
@@ -76,6 +81,23 @@ const EINSTELLUNGEN = {
             return;
         }
         wurzel.innerHTML = "";
+
+        /* Ein Fenster wie die offene Partie: Tab-Leiste weg, oben links
+           der eine Zurück-Knopf (Haus-Muster seit v0.110). */
+        if (typeof TABS !== "undefined" && TABS.rundeSetzen) {
+            TABS.rundeSetzen("einstellungen", true);
+        }
+
+        const kopfzeile = document.createElement("div");
+        kopfzeile.className = "partie-kopf";
+        kopfzeile.appendChild(EINSTELLUNGEN._knopf("Zurück",
+            "knopf-still knopf-klein", () => TABS.wechseln("start")));
+
+        const kopfTitel = document.createElement("h2");
+        kopfTitel.className = "partie-titel";
+        kopfTitel.textContent = "Einstellungen";
+        kopfzeile.appendChild(kopfTitel);
+        wurzel.appendChild(kopfzeile);
 
         const karte = document.createElement("section");
         karte.className = "karte";

@@ -92,12 +92,18 @@ const APP = {
         /*
          * ---- Tabs ----
          * Die Reihenfolge der Registrierung ist die Reihenfolge in der
-         * Leiste. Die Anmeldung (anmeldung.js) hat KEINEN Tab — sie ist ein
-         * Vollbild beim Start (seit v0.8.0); Profil und Verwaltung hängen
-         * im Tab Einstellungen.
+         * Leiste (seit v0.9.0: Fähigkeiten / Start / Rangliste, der Start
+         * in der Mitte und als Erstes offen). Team Schach und die
+         * Einstellungen sind registriert, stehen aber NICHT in der Leiste
+         * (`inLeiste: false`) — sie werden über den Startbildschirm
+         * betreten (Spielen-Knopf bzw. Zahnrad). Die Anmeldung
+         * (anmeldung.js) hat KEINEN Tab — sie ist ein Vollbild beim Start
+         * (seit v0.8.0).
          */
-        TABS.registrieren(TEAM_SCHACH);
+        TABS.registrieren(FAEHIGKEITEN);
+        TABS.registrieren(START);
         TABS.registrieren(RANGLISTE);
+        TABS.registrieren(TEAM_SCHACH);
         TABS.registrieren(EINSTELLUNGEN);
 
         /* Die gewählte Darstellung VOR dem ersten Zeichnen anwenden — sonst
@@ -106,17 +112,28 @@ const APP = {
 
         TABS.starten(
             document.getElementById("tab-leiste"),
-            document.getElementById("tab-inhalt")
+            document.getElementById("tab-inhalt"),
+            "start"
         );
 
         /* Der Wunsch-Knopf im Kopf — nach den Tabs, weil er den offenen Tab
            als Herkunft mitschickt. */
         WUNSCH.aufbauen(document.getElementById("wunsch-platz"));
 
-        spielerAbgleich.starten().then(() => {
+        /* Nach jeder Anmeldung entscheidet der Wiedereinstieg (start.js),
+           ob es auf den Start geht oder direkt in die eigene laufende
+           Partie (Entwurf, Abschnitt 3.2). */
+        ANMELDUNG.beiAngemeldet = () => START.wiedereinstieg();
+
+        /* Angemeldet wird erst, wenn BEIDE Stände da sind: die
+           Spielerliste für die Anmeldung selbst, die Schach-Tafel für die
+           Suche nach der eigenen laufenden Partie. */
+        Promise.all([
+            spielerAbgleich.starten(),
+            schachAbgleich.starten()
+        ]).then(() => {
             ANMELDUNG.anmelden();
         });
-        schachAbgleich.starten();
     },
 
     /* status ist einer von: laedt, bereit, schreibt, fehler */

@@ -3,6 +3,30 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.9.0 — 24.08.2026
+
+**Der neue Startbildschirm — drei Seiten, und die Anmeldung führt direkt
+ins Spiel.** (Bündel A, Schritt 4)
+
+- **Die Leiste hat jetzt drei Seiten: Fähigkeiten / Start / Rangliste.**
+  Der Start ist die Mitte und das Erste, was du siehst: oben das
+  Vorschaubild der eingestellten Spielart (es ändert sich mit deinen
+  Match-Einstellungen), unten der grosse **Spielen-Knopf** — daneben ein
+  Quadrat mit Pfeil für die Match-Einstellungen (Spielart, Brettform,
+  Lootboxen, Armee, wie bisher).
+- **Die Einstellungen sind kein Tab mehr:** Sie öffnen sich über das
+  Zahnrad oben rechts auf dem Start und haben einen Zurück-Knopf.
+- **Die Fähigkeiten-Bibliothek ist eine eigene Seite** links vom Start —
+  dieselben Einträge samt Bildanleitungen wie bisher hinter dem i.
+- **Wer in einer laufenden Partie steckt, landet beim Öffnen der App
+  direkt darin** — auf jedem Gerät, ohne Suchen. Und: **Während der
+  eigenen laufenden Partie zeigt die App nur das Brett** — heraus kommt
+  man durch Zu-Ende-Spielen, Aufgeben oder Team verlassen.
+- **Eine laufende Partie je Person:** Wer schon spielt, kann keine zweite
+  Partie anlegen und keiner beitreten. Steckst du (etwa von früher) doch
+  in mehreren, bietet die App beim Anmelden an, alle bis auf die jüngste
+  zu verlassen.
+
 ## v0.8.0 — 23.08.2026
 
 **Die Anmeldung ist jetzt ein eigener Bildschirm.** (Bündel A, Schritt 3)

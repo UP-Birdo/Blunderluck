@@ -4177,6 +4177,94 @@ body.dialog-offen {
     color: var(--gefahr);
 }
 
+/* ------------------------------------------------------------------ *
+ * DER STARTBILDSCHIRM (seit v0.9.0, Bündel A Schritt 4)
+ *
+ * Obere Hälfte das Vorschaubild der eingestellten Spielart, untere Hälfte
+ * der Spielen-Knopf (zwei Drittel breit, für den Daumen) mit dem
+ * Pfeil-Quadrat der Match-Einstellungen daneben. Das Zahnrad sitzt oben
+ * rechts (F8) und ist der einzige Weg in die Einstellungen.
+ * ------------------------------------------------------------------ */
+
+.start {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-height: 70vh;
+    max-width: 480px;
+    margin: 0 auto;
+}
+
+.start-kopf {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.start-zahnrad {
+    padding: 8px;
+    color: var(--schrift-leise);
+    background: none;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.start-zahnrad:hover {
+    color: var(--schrift);
+    background: var(--karte-leise);
+}
+
+.start-zeichen {
+    display: block;
+    width: 28px;
+    height: 28px;
+}
+
+/* Die obere Hälfte: das Vorschaubild wächst in den freien Raum. */
+.start-vorschau {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+/* Das Kachel-Vorschaubrett (Klasse `vorschau`) darf hier grösser sein als
+   auf den Spielart-Kacheln. */
+.start-vorschau .vorschau {
+    width: min(70vw, 340px);
+}
+
+.start-spielart {
+    margin: 0;
+    color: var(--schrift-leise);
+    font-size: 0.92rem;
+}
+
+/* Die untere Hälfte: Spielen zwei Drittel, daneben das Quadrat. */
+.start-spielen-zeile {
+    display: flex;
+    align-items: stretch;
+    gap: 12px;
+    padding-bottom: 24px;
+}
+
+.start-spielen {
+    flex: 2 1 0;
+    padding: 18px;
+    font-size: 1.15rem;
+    font-weight: 600;
+}
+
+.start-match {
+    flex: 0 0 auto;
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 /* Auswahlliste (Bist du schon dabei?) */
 .dialog-liste {
     display: flex;

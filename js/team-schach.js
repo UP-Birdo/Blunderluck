@@ -52,6 +52,10 @@ const TEAM_SCHACH = {
     id: "team-schach",
     titel: "Team Schach",
 
+    /* Seit v0.9.0 (Bündel A, Schritt 4) kein Knopf mehr in der Leiste:
+       Man kommt über den Spielen-Knopf des Startbildschirms hierher. */
+    inLeiste: false,
+
     /* Wird von app.js gesetzt. */
     abgleich: null,
 
@@ -684,8 +688,22 @@ const TEAM_SCHACH = {
     _partieKopfBauen(partie) {
         const kopf = TEAM_SCHACH._element("div", "partie-kopf");
 
-        kopf.appendChild(TEAM_SCHACH._knopf("Zurück", "knopf-still knopf-klein",
-            () => TEAM_SCHACH.uebersichtOeffnen()));
+        /*
+         * WÄHREND DER EIGENEN LAUFENDEN PARTIE GIBT ES KEIN ZURÜCK (seit
+         * v0.9.0 — Nutzer-Entscheidung F10, Entwurf Bündel A): Die App
+         * zeigt nur das Brett, bis die Partie vorbei ist oder man sie
+         * WIRKLICH verlässt (Aufgeben / Team verlassen). Zuschauer und
+         * Betrachter beendeter Partien dürfen weiterhin zurück.
+         */
+        const person = TEAM_SCHACH._ich();
+        const eingesperrt = partie.laeuft === true
+            && !partie.ergebnis
+            && !!(person && SCHACH_RUNDE.teamVon(partie, person.id));
+
+        if (!eingesperrt) {
+            kopf.appendChild(TEAM_SCHACH._knopf("Zurück", "knopf-still knopf-klein",
+                () => TEAM_SCHACH.uebersichtOeffnen()));
+        }
         kopf.appendChild(TEAM_SCHACH._element("h2", "partie-titel", partie.titel));
         kopf.appendChild(TEAM_SCHACH._element("span", "chip chip-offen",
             SCHACH_RUNDE.varianteVon(partie).titel));
@@ -1654,10 +1672,35 @@ const TEAM_SCHACH = {
         TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
     },
 
+    /*
+     * F11 (Nutzer-Entscheidung 23.08.2026, Bündel A): Eine Person spielt
+     * höchstens EINE laufende Partie. Geprüft am Vollzug — beim Anlegen und
+     * beim Beitreten —, nicht schon beim Öffnen der Auswahl. Liefert true,
+     * wenn gesperrt wurde.
+     */
+    async _zweitePartieVerhindern(person) {
+        const eigene = SCHACH_TAFEL.eigeneLaufende(
+            TEAM_SCHACH.abgleich.daten, person.id);
+        if (eigene.length === 0) {
+            return false;
+        }
+
+        await DIALOG.hinweis(
+            "Du spielst schon",
+            "Du steckst noch in der laufenden Partie \"" + eigene[0].titel
+                + "\". Mehr als eine gleichzeitig gibt es nicht — spiel sie "
+                + "zu Ende oder verlass sie, dann kannst du neu starten."
+        );
+        return true;
+    },
+
     /* Eine Kachel wurde angetippt: Namen erfragen und die Partie anlegen. */
     async spielartGewaehlt(varianteId) {
         const person = TEAM_SCHACH._ich();
         if (!person || !SCHACH_VARIANTEN.gibtEs(varianteId)) {
+            return;
+        }
+        if (await TEAM_SCHACH._zweitePartieVerhindern(person)) {
             return;
         }
 
@@ -1741,6 +1784,12 @@ const TEAM_SCHACH = {
             await abgleich.speicher.speichern(ergebnis.tafel);
             abgleich.daten = ergebnis.tafel;
             TEAM_SCHACH.partieOeffnen(ergebnis.partie.id);
+
+            /* Der Startbildschirm merkt sich die Spielart fürs
+               Vorschaubild (seit v0.9.0). */
+            if (typeof START !== "undefined") {
+                START.spielartMerken(varianteId);
+            }
         } catch (fehler) {
             await DIALOG.hinweis("Nicht angelegt",
                 "Die Partie konnte nicht gespeichert werden: " + fehler.message);
@@ -1821,6 +1870,15 @@ const TEAM_SCHACH = {
         if (!person) {
             return;
         }
+
+        /* F11: Wer schon in einer laufenden Partie steckt, tritt keiner
+           weiteren bei. Der Wechsel INNERHALB derselben Partie bleibt
+           unberührt (das regelt das Modell). */
+        if (!SCHACH_RUNDE.teamVon(partie, person.id)
+                && await TEAM_SCHACH._zweitePartieVerhindern(person)) {
+            return;
+        }
+
         TEAM_SCHACH._auswahlAufheben();
         await TEAM_SCHACH._sendenMitPruefung(
             SCHACH_RUNDE.teamBeitreten(partie, person.id, farbe),
