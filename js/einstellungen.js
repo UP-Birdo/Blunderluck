@@ -1,7 +1,7 @@
 /*
  * einstellungen.js — der Tab Einstellungen.
  *
- * Drei Karten:
+ * Vier Karten:
  *
  *   1. DARSTELLUNG (Geräte-Einstellung, kein gemeinsamer Stand): der Wechsel
  *      zwischen dem klassischen Brett und dem 3D-Look. Alles hängt an EINER
@@ -15,6 +15,9 @@
  *      die Abläufe selbst stehen in anmeldung.js, dieser Tab zeigt nur die
  *      Knöpfe. Mit aktiver Verwaltung erscheint zusätzlich die Liste der
  *      Mitspieler mit einem Entfernen-Knopf je Person.
+ *   4. VERBINDUNG (seit v0.15.0, Wunsch 2): der Stand des Abgleichs —
+ *      grüner Punkt und Text. Bis v0.14.0 stand er dauerhaft im Kopf der
+ *      Seite; gehalten wird er weiterhin in app.js (`APP.status`).
  */
 
 const EINSTELLUNGEN = {
@@ -151,6 +154,68 @@ const EINSTELLUNGEN = {
 
         wurzel.appendChild(EINSTELLUNGEN._accountKarteBauen());
         wurzel.appendChild(EINSTELLUNGEN._spielerKarteBauen());
+        wurzel.appendChild(EINSTELLUNGEN._statusKarteBauen());
+    },
+
+    /* ---------------------------------------------------------------- *
+     * Die Verbindungs-Karte (Wunsch 2, 24.08.2026)
+     *
+     * Der grüne Punkt mit „Gemeinsame Tabelle …" stand bis v0.14.0
+     * dauerhaft im Kopf der Seite. Er sagt etwas, das man einmal
+     * nachsehen will und danach nicht mehr — im Kopf nahm er auf dem
+     * Handy die halbe Zeile weg. Gehalten wird der Stand in app.js
+     * (`APP.status`), diese Karte zeigt ihn nur.
+     * ---------------------------------------------------------------- */
+
+    statusEl: null,
+    statusTextEl: null,
+
+    _statusKarteBauen() {
+        const karte = document.createElement("section");
+        karte.className = "karte";
+
+        const kopf = document.createElement("h2");
+        kopf.textContent = "Verbindung";
+        karte.appendChild(kopf);
+
+        const zeile = document.createElement("div");
+        zeile.className = "status status-karte";
+
+        const punkt = document.createElement("span");
+        punkt.className = "status-punkt";
+        punkt.setAttribute("aria-hidden", "true");
+        zeile.appendChild(punkt);
+
+        const text = document.createElement("span");
+        zeile.appendChild(text);
+        karte.appendChild(zeile);
+
+        const erklaerung = document.createElement("p");
+        erklaerung.className = "erklaerung";
+        erklaerung.textContent = "Grün heisst: Der gemeinsame Stand ist da "
+            + "und aktuell. Gelb heisst laden oder senden, Rot heisst, dass "
+            + "die Datenbank gerade nicht erreichbar ist.";
+        karte.appendChild(erklaerung);
+
+        EINSTELLUNGEN.statusEl = zeile;
+        EINSTELLUNGEN.statusTextEl = text;
+        EINSTELLUNGEN.statusAktualisieren();
+
+        return karte;
+    },
+
+    /* Gerufen beim Zeichnen und aus APP.statusZeigen, solange die Karte
+       hängt. Ohne Karte ist nichts zu tun — der Stand steht in app.js. */
+    statusAktualisieren() {
+        if (!EINSTELLUNGEN.statusEl) {
+            return;
+        }
+
+        const stand = (typeof APP !== "undefined") ? APP.status : "laedt";
+        const text = (typeof APP !== "undefined") ? APP.statusText : "";
+
+        EINSTELLUNGEN.statusEl.setAttribute("data-status", stand);
+        EINSTELLUNGEN.statusTextEl.textContent = text;
     },
 
     /* ---------------------------------------------------------------- *

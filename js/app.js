@@ -26,16 +26,20 @@
 
 const APP = {
 
-    statusEl: null,
-    statusTextEl: null,
+    /*
+     * DER STAND DES ABGLEICHS (grüner Punkt) WOHNT SEIT WUNSCH 2
+     * (v0.15.0, 24.08.2026) IN DEN EINSTELLUNGEN, nicht mehr im Kopf der
+     * Seite. Gehalten wird er hier, weil er schon läuft, bevor der Tab
+     * das erste Mal gezeichnet ist — die Einstellungen holen ihn sich
+     * beim Zeichnen ab (EINSTELLUNGEN.statusAktualisieren).
+     */
+    status: "laedt",
+    statusText: "Wird geladen …",
 
     starten() {
         DIALOG.aufbauen(document.getElementById("dialog"));
 
         document.getElementById("app-version").textContent = "v" + KONFIG.APP_VERSION;
-
-        APP.statusEl = document.getElementById("status");
-        APP.statusTextEl = document.getElementById("status-text");
 
         /* ---- Spielerliste (Anmeldung) ---- */
         const spielerSpeicher = speicherErzeugen(
@@ -144,13 +148,21 @@ const APP = {
         });
     },
 
-    /* status ist einer von: laedt, bereit, schreibt, fehler */
+    /*
+     * status ist einer von: laedt, bereit, schreibt, fehler.
+     *
+     * Gemerkt wird immer; gezeigt wird er nur, wenn die Einstellungen
+     * gerade offen sind (seit Wunsch 2). Wer sie öffnet, sieht den
+     * aktuellen Stand, weil die Karte ihn beim Zeichnen abholt.
+     */
     statusZeigen(status, text) {
-        if (!APP.statusEl) {
-            return;
+        APP.status = status;
+        APP.statusText = text;
+
+        if (typeof EINSTELLUNGEN !== "undefined"
+                && EINSTELLUNGEN.statusAktualisieren) {
+            EINSTELLUNGEN.statusAktualisieren();
         }
-        APP.statusEl.dataset.status = status;
-        APP.statusTextEl.textContent = text;
     },
 
     hinweisZeigen(text) {

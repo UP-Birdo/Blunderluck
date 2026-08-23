@@ -3,6 +3,20 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.15.0 — 24.08.2026
+
+**Der Kopf der Seite wird leerer: Der grüne Punkt zieht in die
+Einstellungen.**
+
+- Die Zeile „Gemeinsame Tabelle …" mit dem farbigen Punkt stand bisher
+  dauerhaft oben rechts und nahm auf dem Handy die halbe Kopfzeile weg.
+  Sie steht jetzt als eigene Karte **„Verbindung" ganz unten in den
+  Einstellungen** (Zahnrad auf dem Start) — samt einer Zeile, die die
+  Farben erklärt: grün heisst da und aktuell, gelb heisst laden oder
+  senden, rot heisst nicht erreichbar.
+- Am Verhalten ändert sich nichts: Die App merkt sich den Stand
+  weiterhin durchgehend, du siehst ihn nur noch, wenn du nachsiehst.
+
 ## v0.14.0 — 24.08.2026
 
 **Eine Runde starten geht jetzt vom Startbildschirm aus — ohne Namensfrage.**

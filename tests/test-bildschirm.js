@@ -3950,6 +3950,60 @@ pruefe("Der Einstellungen-Tab schaltet das Brett-Design um (v0.119)", () => {
     }
 });
 
+pruefe("Der Stand des Abgleichs steht in den Einstellungen (Wunsch 2)", () => {
+    /*
+     * DER GEMELDETE WUNSCH: „Status-Anzeige (gruener Punkt ‚Gemeinsame
+     * Tabelle …') aus dem Kopf in die Einstellungen verschieben — nicht
+     * mehr dauerhaft oben."
+     *
+     * app.js laeuft in diesem Test nicht mit (es haengt am echten
+     * Dokument). Sein Stand wird deshalb nachgestellt — geprueft wird,
+     * dass die Karte ihn abholt und dass eine spaetere Meldung durchkommt.
+     */
+    const EINSTELLUNGEN = umgebung.EINSTELLUNGEN;
+    umgebung.APP = { status: "bereit", statusText: "Gemeinsame Tabelle" };
+
+    try {
+        EINSTELLUNGEN.aufbauen(neuesElement("div"));
+
+        const suchen = (element, klasse) => {
+            for (const kind of element.kinder || []) {
+                if (String(kind.className || "").indexOf(klasse) !== -1) {
+                    return kind;
+                }
+                const tiefer = suchen(kind, klasse);
+                if (tiefer) {
+                    return tiefer;
+                }
+            }
+            return null;
+        };
+
+        const zeile = suchen(EINSTELLUNGEN.wurzelEl, "status-karte");
+        if (!zeile) {
+            throw new Error("keine Verbindungs-Karte in den Einstellungen");
+        }
+        if (zeile.attribute["data-status"] !== "bereit") {
+            throw new Error("die Karte zeigt den Stand nicht: "
+                + zeile.attribute["data-status"]);
+        }
+        if (String(EINSTELLUNGEN.statusTextEl.textContent) !== "Gemeinsame Tabelle") {
+            throw new Error("die Karte zeigt den Text nicht");
+        }
+
+        /* Eine spaetere Meldung erreicht die haengende Karte. */
+        umgebung.APP.status = "fehler";
+        umgebung.APP.statusText = "Nicht erreichbar";
+        EINSTELLUNGEN.statusAktualisieren();
+
+        if (zeile.attribute["data-status"] !== "fehler") {
+            throw new Error("eine spaetere Meldung kommt nicht an");
+        }
+    } finally {
+        delete umgebung.APP;
+    }
+});
+
 pruefe("Die Account-Karte trennt Abmelden und Konto loeschen (v0.6.0)", () => {
     /*
      * Buendel A, Schritt 1: Abmelden (Geraet vergisst die Anmeldung, das

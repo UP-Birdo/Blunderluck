@@ -245,6 +245,15 @@ body {
     background: var(--gefahr);
 }
 
+/* Der Stand des Abgleichs in der Einstellungen-Karte (seit v0.15.0). Im
+   Kopf war die Zeile klein und leise; in der Karte darf sie normal gross
+   sein, weil sie dort das Thema ist. */
+.status-karte {
+    margin-bottom: 8px;
+    font-size: 0.95rem;
+    color: var(--schrift);
+}
+
 .hinweis {
     margin: 0;
     padding: 12px var(--abstand);
