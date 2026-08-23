@@ -410,6 +410,10 @@ const TEAM_SCHACH = {
            anderen Ansichten zeigen die Leiste. */
         TABS.rundeSetzen("team-schach", false);
 
+        /* Neue Einladungen als Banner melden (seit v0.13.0) — bei jedem
+           geholten Stand, unabhängig von der gezeigten Ansicht. */
+        TEAM_SCHACH._einladungenMelden(tafel);
+
         /* Die Bibliothek steht schon — sie hängt an keinem Spielstand (siehe
            `infoGezeichnet`). Für die Schachregel-Anleitung gilt dasselbe. */
         if (TEAM_SCHACH.infoOffen && TEAM_SCHACH.infoGezeichnet) {
@@ -912,6 +916,46 @@ const TEAM_SCHACH = {
             codeZeile.appendChild(TEAM_SCHACH._element("span", "",
                 " — wer ihn unter Spielen eintippt, kommt in diese Runde."));
             bereich.appendChild(codeZeile);
+        }
+
+        /*
+         * FREUNDE EINLADEN (seit v0.13.0, Schritt 7): nur Freunde („erst
+         * befreunden, dann einladen", F17), die weder mitspielen noch
+         * schon eingeladen sind noch in einer anderen laufenden Partie
+         * stecken (F16d). Der Eingeladene bekommt ein Banner und findet
+         * die Runde unter „Runde beitreten".
+         */
+        if (!partie.ergebnis && meinTeam
+                && typeof ANMELDUNG !== "undefined" && ANMELDUNG.abgleich) {
+            const einladbare = SPIELER.freundeVon(
+                ANMELDUNG.abgleich.daten, person.id).freunde.filter((freund) =>
+                    !SCHACH_RUNDE.teamVon(partie, freund.id)
+                    && !SCHACH_RUNDE.istEingeladen(partie, freund.id)
+                    && SCHACH_TAFEL.eigeneLaufende(
+                        TEAM_SCHACH.abgleich.daten, freund.id).length === 0);
+
+            if (einladbare.length > 0) {
+                bereich.appendChild(TEAM_SCHACH._element("p", "erklaerung",
+                    "Freunde einladen:"));
+                for (const freund of einladbare) {
+                    const zeile = TEAM_SCHACH._element("div", "freunde-zeile");
+                    zeile.appendChild(TEAM_SCHACH._element("span",
+                        "freunde-name", freund.name));
+                    zeile.appendChild(TEAM_SCHACH._knopf("Einladen",
+                        "knopf-still knopf-klein",
+                        () => TEAM_SCHACH.einladen(partie, freund.id)));
+                    bereich.appendChild(zeile);
+                }
+            }
+
+            /* Wer schon eingeladen ist, steht dabei — niemand fragt doppelt. */
+            const wartend = SCHACH_RUNDE.normalisieren(partie).eingeladen
+                .filter((id) => SCHACH_RUNDE.istEingeladen(partie, id));
+            if (wartend.length > 0) {
+                bereich.appendChild(TEAM_SCHACH._element("p", "erklaerung",
+                    "Eingeladen: " + wartend.map(
+                        (id) => TEAM_SCHACH._nameVon(id)).join(", ")));
+            }
         }
 
         return bereich;
@@ -1948,6 +1992,83 @@ const TEAM_SCHACH = {
             SCHACH_RUNDE.bereitSetzen(partie, farbe, bereit),
             partie.zugZaehler
         );
+    },
+
+    /* Einen Freund in die Runde einladen (seit v0.13.0, Schritt 7). */
+    async einladen(partie, spielerId) {
+        await TEAM_SCHACH._sendenMitPruefung(
+            SCHACH_RUNDE.einladen(partie, spielerId),
+            partie.zugZaehler
+        );
+    },
+
+    /* ---------------------------------------------------------------- *
+     * Das Einladungs-Banner (seit v0.13.0, Bündel A Schritt 7)
+     *
+     * Es fährt oben herein, sobald das Gerät eine Einladung im geholten
+     * Stand sieht — also nur, solange die Seite offen ist (F15: das
+     * genügt, entschieden 24.08.). Nach zehn Sekunden verschwindet es von
+     * selbst (Nutzer-Vorgabe zu F16); die Einladung selbst bleibt unter
+     * „Runde beitreten" liegen, bis die Runde vorbei ist (F16a).
+     * ---------------------------------------------------------------- */
+
+    /* Je Sitzung wird jede Einladung nur einmal als Banner gemeldet. */
+    _einladungGemeldet: {},
+
+    _einladungenMelden(tafel) {
+        if (typeof document === "undefined" || !document.body
+                || !document.body.appendChild) {
+            return;
+        }
+        const person = TEAM_SCHACH._ich();
+        if (!person) {
+            return;
+        }
+
+        for (const partie of SCHACH_TAFEL.liste(tafel)) {
+            if (!SCHACH_RUNDE.istEingeladen(partie, person.id)) {
+                continue;
+            }
+            if (TEAM_SCHACH._einladungGemeldet[partie.id]) {
+                continue;
+            }
+            TEAM_SCHACH._einladungGemeldet[partie.id] = true;
+            TEAM_SCHACH._bannerZeigen(partie);
+            break;
+        }
+    },
+
+    _bannerZeigen(partie) {
+        /* Immer nur eines — ein neues löst das alte ab. */
+        const altes = document.body.querySelector
+            ? document.body.querySelector(".einladung-banner") : null;
+        if (altes && altes.parentNode) {
+            altes.parentNode.removeChild(altes);
+        }
+
+        const banner = document.createElement("div");
+        banner.className = "einladung-banner";
+        banner.setAttribute("role", "status");
+
+        banner.appendChild(TEAM_SCHACH._element("span", "einladung-text",
+            "Du bist eingeladen: " + partie.titel));
+
+        const weg = () => {
+            if (banner.parentNode) {
+                banner.parentNode.removeChild(banner);
+            }
+        };
+
+        banner.appendChild(TEAM_SCHACH._knopf("Ansehen",
+            "knopf-haupt knopf-klein", () => {
+                weg();
+                TABS.wechseln("team-schach");
+                TEAM_SCHACH.partieOeffnen(partie.id);
+            }));
+
+        document.body.appendChild(banner);
+
+        window.setTimeout(weg, 10000);
     },
 
     /*

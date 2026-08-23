@@ -4185,6 +4185,65 @@ pruefe("Die Freunde-Karte: suchen, anfragen, Freund entfernen (v0.11.0)", () => 
     }
 });
 
+pruefe("Einladen in der Partie und die Einladung beim Eingeladenen (v0.13.0)", () => {
+    const einsammeln = (element, passt, treffer) => {
+        for (const kind of element.kinder || []) {
+            if (passt(kind)) {
+                treffer.push(kind);
+            }
+            einsammeln(kind, passt, treffer);
+        }
+        return treffer;
+    };
+    const knopfMitText = (text) => einsammeln(TEAM_SCHACH.wurzelEl, (kind) =>
+        kind.tagName === "button"
+        && String(kind.textContent || "") === text, [])[0] || null;
+
+    const standVorher = ANMELDUNG.abgleich.daten;
+    const tafelVorher = TEAM_SCHACH.abgleich.daten;
+    const echtePerson = umgebung.ICH.person;
+
+    try {
+        /* Cem ist Annas Freund, spielt aber nirgends mit — also einladbar
+           (F16d: wer in einer laufenden Partie steckt, waere es nicht). */
+        let spielerNeu = SPIELER.spielerHinzufuegen(standVorher, "Cem", "id-cem", 8000);
+        spielerNeu = SPIELER.freundHinzufuegen(spielerNeu, "id-anna", "id-cem", 8000);
+        spielerNeu = SPIELER.freundHinzufuegen(spielerNeu, "id-cem", "id-anna", 8000);
+        ANMELDUNG.abgleich.daten = spielerNeu;
+
+        const partieId = kennungen[SCHACH_VARIANTEN.liste[0].id];
+        TEAM_SCHACH.partieOeffnen(partieId);
+
+        if (!knopfMitText("Einladen")) {
+            throw new Error("kein Einladen-Knopf fuer den freien Freund");
+        }
+
+        /* Die Einladung liegt in der PARTIE (kein neuer Pfad) — der
+           Eingeladene findet sie auf dem Zwischenbildschirm. */
+        let partie = SCHACH_TAFEL.partie(TEAM_SCHACH.abgleich.daten, partieId);
+        partie = SCHACH_RUNDE.einladen(partie, "id-cem", 9000);
+        TEAM_SCHACH.abgleich.daten = SCHACH_TAFEL.partieEinsetzen(
+            TEAM_SCHACH.abgleich.daten, partie, 9000);
+
+        umgebung.ICH.person = () => ({ id: "id-cem", name: "Cem" });
+        TEAM_SCHACH.uebersichtOeffnen();
+
+        const ansehen = knopfMitText("Ansehen");
+        if (!ansehen) {
+            throw new Error("die Einladung erscheint nicht unter Runde beitreten");
+        }
+        ansehen.ausloesen("click");
+        if (TEAM_SCHACH.offeneId !== partieId) {
+            throw new Error("Ansehen oeffnet die eingeladene Runde nicht");
+        }
+    } finally {
+        umgebung.ICH.person = echtePerson;
+        ANMELDUNG.abgleich.daten = standVorher;
+        TEAM_SCHACH.abgleich.daten = tafelVorher;
+        TEAM_SCHACH.uebersichtOeffnen();
+    }
+});
+
 /* ------------------------------------------------------------------ *
  * Das Anmelde-Vollbild (v0.8.0, Buendel A Schritt 3)
  * ------------------------------------------------------------------ */

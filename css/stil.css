@@ -4386,6 +4386,54 @@ body.dialog-offen {
     color: var(--schrift-leise);
 }
 
+/* ------------------------------------------------------------------ *
+ * DAS EINLADUNGS-BANNER (seit v0.13.0, Bündel A Schritt 7)
+ *
+ * Fährt oben herein, sobald das Gerät eine Einladung sieht, und geht
+ * nach zehn Sekunden von selbst (team-schach.js, `_bannerZeigen`). Es
+ * liegt über der App, aber unter dem Dialog.
+ * ------------------------------------------------------------------ */
+
+.einladung-banner {
+    position: fixed;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: var(--ebene-vollbild);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    max-width: min(92vw, 480px);
+    padding: 10px 14px;
+    background: var(--karte);
+    border: 1px solid var(--rahmen);
+    border-radius: 10px;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
+    animation: banner-herein 0.25s ease-out;
+}
+
+.einladung-text {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@keyframes banner-herein {
+    from {
+        transform: translateX(-50%) translateY(-120%);
+    }
+    to {
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .einladung-banner {
+        animation: none;
+    }
+}
+
 /* Auswahlliste (Bist du schon dabei?) */
 .dialog-liste {
     display: flex;

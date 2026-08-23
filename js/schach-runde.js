@@ -156,6 +156,13 @@ const SCHACH_RUNDE = {
             ergebnis: "",
             teams: { weiss: [], schwarz: [] },
             bereit: { weiss: false, schwarz: false },
+
+            /* Wer in diese Runde eingeladen ist (seit v0.13.0, Bündel A
+               Schritt 7) — Kennungen aus der Spielerliste. Das Feld liegt
+               IN der Partie, damit es keinen neuen Datenbank-Pfad und
+               keinen zweiten Abgleich braucht (Entwurf, Abschnitt 3.3);
+               alte Partien ohne das Feld gelten als „niemand eingeladen". */
+            eingeladen: [],
             faehigkeiten: { weiss: [], schwarz: [] },
             bonusGesammelt: [],
 
@@ -1033,6 +1040,13 @@ const SCHACH_RUNDE = {
             Object.assign({}, roh.stand, { variante: varianteId })
         );
         runde.laeuft = (roh.laeuft === true);
+
+        /* Die Einladungen (seit v0.13.0) — additiv nachgerüstet, fremder
+           Müll fliegt raus. */
+        if (Array.isArray(roh.eingeladen)) {
+            runde.eingeladen = roh.eingeladen.filter(
+                (eintrag) => typeof eintrag === "string" && eintrag !== "");
+        }
 
         if (["weiss", "schwarz", "remis"].indexOf(roh.ergebnis) !== -1) {
             runde.ergebnis = roh.ergebnis;
@@ -3956,6 +3970,30 @@ const SCHACH_RUNDE = {
         neu.teams.schwarz = neu.teams.schwarz.filter((id) => id !== spielerId);
         neu.geaendertAm = (zeitpunkt === undefined) ? Date.now() : zeitpunkt;
         return neu;
+    },
+
+    /*
+     * Jemanden in diese Runde einladen (seit v0.13.0, Bündel A Schritt 7).
+     * Doppelt einladen ist erlaubt und wirkungslos (F16c: Erneut-Einladen
+     * bleibt möglich, weil die Einladung nie „verbraucht" wird — sie liegt,
+     * bis die Runde vorbei ist, F16a).
+     */
+    einladen(runde, spielerId, zeitpunkt) {
+        const neu = SCHACH_RUNDE.kopieren(runde);
+        if (spielerId && neu.eingeladen.indexOf(spielerId) === -1) {
+            neu.eingeladen.push(spielerId);
+        }
+        neu.geaendertAm = (zeitpunkt === undefined) ? Date.now() : zeitpunkt;
+        return neu;
+    },
+
+    /* Wartet auf diese Person eine Einladung? Nur solange die Runde nicht
+       vorbei ist und die Person nicht längst mitspielt. */
+    istEingeladen(runde, spielerId) {
+        const stand = SCHACH_RUNDE.normalisieren(runde);
+        return !stand.ergebnis
+            && stand.eingeladen.indexOf(spielerId) !== -1
+            && !SCHACH_RUNDE.teamVon(stand, spielerId);
     },
 
     bereitSetzen(runde, farbe, bereit, zeitpunkt) {

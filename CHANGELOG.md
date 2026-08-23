@@ -3,6 +3,24 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.13.0 — 24.08.2026
+
+**Freunde einladen — und Bündel A ist damit komplett.** (Schritt 7, der
+letzte)
+
+- **In einer Runde kannst du jetzt deine Freunde einladen:** Bei den Teams
+  steht „Freunde einladen" mit allen Freunden, die frei sind — wer gerade
+  selbst in einer laufenden Partie steckt, taucht dort nicht auf. Wer
+  schon eingeladen ist, steht unter „Eingeladen", damit niemand doppelt
+  fragt.
+- **Der Eingeladene bekommt ein Banner von oben**, sobald seine App die
+  Einladung sieht — mit „Ansehen" direkt in die Runde. Das Banner
+  verschwindet nach zehn Sekunden von selbst; die Einladung bleibt unter
+  „Runde beitreten" liegen, bis die Runde vorbei ist.
+- Einladungen brauchen keine neue Datenbank-Regel: Sie stehen in der
+  Partie selbst. Erneut einladen ist erlaubt; wer die App geschlossen
+  hatte, findet die Einladung beim nächsten Öffnen.
+
 ## v0.12.0 — 24.08.2026
 
 **Die Fähigkeiten auf einen Blick: das Icon-Raster.** (Bündel A, Schritt 8)

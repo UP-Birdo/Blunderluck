@@ -1027,9 +1027,28 @@ Object.assign(TEAM_SCHACH, {
         kopf.appendChild(TEAM_SCHACH._grundlagenKnopfBauen());
         wurzel.appendChild(kopf);
 
-        /* ---- Runde beitreten: das Code-Feld (F14/F17). ---- */
+        /* ---- Runde beitreten: Einladungen und Code-Feld (F14/F17). ---- */
         const beitreten = TEAM_SCHACH._element("section", "karte");
         beitreten.appendChild(TEAM_SCHACH._element("h3", "", "Runde beitreten"));
+
+        /* Die Einladungen an mich (seit v0.13.0): Sie liegen hier, bis die
+           Runde vorbei ist (F16a) — das Banner ist nur der Hinweis. */
+        const einladungen = offene.filter((partie) =>
+            SCHACH_RUNDE.istEingeladen(partie, person.id));
+        if (einladungen.length > 0) {
+            beitreten.appendChild(TEAM_SCHACH._element("p", "erklaerung",
+                "Du bist eingeladen:"));
+            for (const partie of einladungen) {
+                const zeile = TEAM_SCHACH._element("div", "freunde-zeile");
+                zeile.appendChild(TEAM_SCHACH._element("span", "freunde-name",
+                    partie.titel + " (" + SCHACH_RUNDE.varianteVon(partie).titel + ")"));
+                zeile.appendChild(TEAM_SCHACH._knopf("Ansehen",
+                    "knopf-still knopf-klein",
+                    () => TEAM_SCHACH.partieOeffnen(partie.id)));
+                beitreten.appendChild(zeile);
+            }
+        }
+
         beitreten.appendChild(TEAM_SCHACH._element("p", "erklaerung",
             "Gib den Beitritts-Code ein, den dir der Ersteller der Runde "
             + "gegeben hat — " + SCHACH_RUNDE.CODE_LAENGE + " Zeichen, ohne "

@@ -405,5 +405,51 @@ pruefe("partieZuCode findet offene Partien grosszuegig, beendete nicht", () => {
         "beendet heisst: der Code fuehrt nicht mehr hinein");
 });
 
+/* ------------------------------------------------------------------ *
+ * Einladungen (v0.13.0, Buendel A Schritt 7)
+ * ------------------------------------------------------------------ */
+
+pruefe("einladen ist additiv, doppelt wirkungslos, und ueberlebt das Nachruesten", () => {
+    let runde = SCHACH_RUNDE.leereRunde(1000, "standard", "p-1", "Runde");
+
+    runde = SCHACH_RUNDE.einladen(runde, "id-cem", 2000);
+    runde = SCHACH_RUNDE.einladen(runde, "id-cem", 2100);
+    gleich(runde.eingeladen.join(","), "id-cem", "einmal eingeladen, nicht doppelt");
+
+    /* Der additive Datenvertrag: Das Feld uebersteht normalisieren … */
+    const nachgeruestet = SCHACH_RUNDE.normalisieren(
+        JSON.parse(JSON.stringify(runde)));
+    gleich(nachgeruestet.eingeladen.join(","), "id-cem",
+        "eingeladen uebersteht das Nachruesten");
+
+    /* … und eine alte Partie ohne das Feld heisst: niemand eingeladen. */
+    const alt = JSON.parse(JSON.stringify(runde));
+    delete alt.eingeladen;
+    gleich(SCHACH_RUNDE.normalisieren(alt).eingeladen.length, 0,
+        "alte Partien gelten als ohne Einladungen");
+});
+
+pruefe("istEingeladen erlischt mit Beitritt und Partie-Ende", () => {
+    let runde = SCHACH_RUNDE.leereRunde(1000, "standard", "p-1", "Runde");
+    runde = SCHACH_RUNDE.einladen(runde, "id-cem", 2000);
+
+    wahr(SCHACH_RUNDE.istEingeladen(runde, "id-cem"), "die Einladung wartet");
+    wahr(!SCHACH_RUNDE.istEingeladen(runde, "id-dora"), "niemand sonst");
+
+    /* Wer beigetreten ist, wartet nicht mehr. */
+    const beigetreten = SCHACH_RUNDE.teamBeitreten(runde, "id-cem", "schwarz", 2100);
+    wahr(!SCHACH_RUNDE.istEingeladen(beigetreten, "id-cem"),
+        "nach dem Beitritt keine offene Einladung mehr");
+
+    /* Mit dem Ergebnis erlischt jede Einladung (F16a). */
+    let vorbei = SCHACH_RUNDE.teamBeitreten(runde, "id-anna", "weiss", 2100);
+    vorbei = SCHACH_RUNDE.teamBeitreten(vorbei, "id-bert", "schwarz", 2100);
+    vorbei = SCHACH_RUNDE.bereitSetzen(vorbei, "weiss", true, 2100);
+    vorbei = SCHACH_RUNDE.bereitSetzen(vorbei, "schwarz", true, 2100);
+    vorbei = SCHACH_RUNDE.aufgeben(vorbei, "schwarz", 2200);
+    wahr(!SCHACH_RUNDE.istEingeladen(vorbei, "id-cem"),
+        "eine beendete Runde laedt niemanden mehr ein");
+});
+
 console.log(anzahlOk + " ok, " + anzahlFehler + " Fehler");
 process.exit(anzahlFehler === 0 ? 0 : 1);
