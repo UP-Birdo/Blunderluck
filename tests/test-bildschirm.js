@@ -264,6 +264,10 @@ const umgebung = {
            keine Rolle — geprüft wird, dass der Code durchläuft. */
         createElementNS(namensraum, tag) { return neuesElement(tag); },
         addEventListener() { /* wird beim Zeichnen nicht gebraucht */ },
+
+        /* Seit Wunsch 4 (v0.17.0) setzt EINSTELLUNGEN.laden die Klasse
+           `design-3d` fest an den body — dafuer muss es einen geben. */
+        body: neuesElement("body"),
         hidden: false
     },
     window: {
@@ -3902,13 +3906,33 @@ pruefe("Konfetti regnet zum Sieg genau einmal je Partie (v0.116)", () => {
 });
 
 /* ------------------------------------------------------------------ *
- * Der Einstellungen-Tab (v0.119)
+ * Der Einstellungen-Tab (v0.119, seit Wunsch 4 ohne Design-Schalter)
  * ------------------------------------------------------------------ */
 
-pruefe("Der Einstellungen-Tab schaltet das Brett-Design um (v0.119)", () => {
+pruefe("Der 3D-Look ist fest an, ohne Schalter (Wunsch 4, v0.17.0)", () => {
+    /*
+     * DER GEMELDETE WUNSCH: „2D/3D-Schalter entfernen — die App bleibt
+     * dauerhaft im 3D-Look."
+     *
+     * Bis v0.16.0 stand hier ein Test, der den Kipp-Schalter hin und her
+     * schaltete. An seine Stelle tritt die neue Zusage: Die Klasse
+     * `design-3d` haengt fest am body, und in den Einstellungen gibt es
+     * keinen Schalter mehr.
+     */
     const EINSTELLUNGEN = umgebung.EINSTELLUNGEN;
     if (!EINSTELLUNGEN || EINSTELLUNGEN.id !== "einstellungen") {
         throw new Error("der Einstellungen-Baustein fehlt");
+    }
+
+    EINSTELLUNGEN.laden();
+    if (!umgebung.document.body.classList.contains("design-3d")) {
+        throw new Error("der 3D-Look wird beim Start nicht gesetzt");
+    }
+
+    /* Zweimal laden darf die Klasse nicht wieder abschalten. */
+    EINSTELLUNGEN.laden();
+    if (!umgebung.document.body.classList.contains("design-3d")) {
+        throw new Error("ein zweites Laden nimmt den 3D-Look zurueck");
     }
 
     EINSTELLUNGEN.aufbauen(neuesElement("div"));
@@ -3926,27 +3950,11 @@ pruefe("Der Einstellungen-Tab schaltet das Brett-Design um (v0.119)", () => {
         return null;
     };
 
-    const kasten = suchen(EINSTELLUNGEN.wurzelEl, "schalter-kasten");
-    if (!kasten) {
-        throw new Error("kein Kipp-Schalter im Einstellungen-Tab");
+    if (suchen(EINSTELLUNGEN.wurzelEl, "schalter-kasten")) {
+        throw new Error("der Design-Schalter haengt noch in den Einstellungen");
     }
-
-    kasten.checked = true;
-    kasten.ausloesen("change");
-    if (EINSTELLUNGEN.design !== "3d") {
-        throw new Error("an muesste 3D-Look heissen, ist: " + EINSTELLUNGEN.design);
-    }
-
-    kasten.checked = false;
-    kasten.ausloesen("change");
-    if (EINSTELLUNGEN.design !== "klassisch") {
-        throw new Error("aus muesste klassisch heissen, ist: " + EINSTELLUNGEN.design);
-    }
-
-    /* Nur gueltige Werte — Unsinn faellt auf die Vorgabe zurueck. */
-    EINSTELLUNGEN.designSetzen("unsinn");
-    if (EINSTELLUNGEN.design !== "klassisch") {
-        throw new Error("Unsinn wird nicht abgefangen: " + EINSTELLUNGEN.design);
+    if (EINSTELLUNGEN.designSetzen) {
+        throw new Error("designSetzen gibt es noch — die Wahl ist entfallen");
     }
 });
 

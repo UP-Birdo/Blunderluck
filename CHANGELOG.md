@@ -3,6 +3,16 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.17.0 — 24.08.2026
+
+**Der 3D-Look ist jetzt einfach an.**
+
+- Der Schalter „3D-Look (Vorschau)" in den Einstellungen ist weg, und mit
+  ihm die ganze Karte „Darstellung": Die App zeigt das Brett dauerhaft im
+  3D-Look. Wer bisher auf dem klassischen Brett stand, bekommt beim
+  nächsten Öffnen den neuen Look — umstellen muss man nichts.
+- In den Einstellungen bleiben Account, Spieler und Verbindung.
+
 ## v0.16.0 — 24.08.2026
 
 **Der Schriftzug oben ist weg.**

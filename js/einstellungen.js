@@ -1,23 +1,23 @@
 /*
  * einstellungen.js — der Tab Einstellungen.
  *
- * Vier Karten:
+ * Drei Karten:
  *
- *   1. DARSTELLUNG (Geräte-Einstellung, kein gemeinsamer Stand): der Wechsel
- *      zwischen dem klassischen Brett und dem 3D-Look. Alles hängt an EINER
- *      Klasse am body (`design-3d`) — neue Stufen docken dort an, ohne
- *      diesen Tab zu ändern.
- *   2. ACCOUNT (seit v0.6.0, Bündel A Schritt 1): Abmelden (Gerät vergisst
+ *   1. ACCOUNT (seit v0.6.0, Bündel A Schritt 1): Abmelden (Gerät vergisst
  *      die Anmeldung, Konto bleibt) und Konto löschen (Eintrag verschwindet
  *      aus Spielerliste und Rangliste) — bewusst klar getrennt, die
  *      Verwechslung wäre teuer.
- *   3. SPIELER: der Zugang zu Profil (Name/Passwort ändern) und Verwaltung —
+ *   2. SPIELER: der Zugang zu Profil (Name/Passwort ändern) und Verwaltung —
  *      die Abläufe selbst stehen in anmeldung.js, dieser Tab zeigt nur die
  *      Knöpfe. Mit aktiver Verwaltung erscheint zusätzlich die Liste der
  *      Mitspieler mit einem Entfernen-Knopf je Person.
- *   4. VERBINDUNG (seit v0.15.0, Wunsch 2): der Stand des Abgleichs —
+ *   3. VERBINDUNG (seit v0.15.0, Wunsch 2): der Stand des Abgleichs —
  *      grüner Punkt und Text. Bis v0.14.0 stand er dauerhaft im Kopf der
  *      Seite; gehalten wird er weiterhin in app.js (`APP.status`).
+ *
+ * Die Karte DARSTELLUNG (Umschalter klassisch/3D) gab es bis v0.16.0. Seit
+ * v0.17.0 ist der 3D-Look dauerhaft an (Wunsch 4) — was davon bleibt,
+ * steht bei `laden`.
  */
 
 const EINSTELLUNGEN = {
@@ -30,43 +30,28 @@ const EINSTELLUNGEN = {
        ohne Tab-Leiste, der Zurück-Knopf führt zum Start. */
     inLeiste: false,
 
-    /* Die gewählte Darstellung: "klassisch" oder "3d". */
-    SCHLUESSEL_DESIGN: "blunderluck-design",
-    design: "klassisch",
-
     wurzelEl: null,
 
-    /* Beim Start (app.js), VOR dem ersten Zeichnen — sonst blitzt kurz das
-       falsche Design auf. */
+    /*
+     * DER 3D-LOOK IST SEIT v0.17.0 DAUERHAFT AN (Wunsch 4: „2D/3D-Schalter
+     * entfernen — die App bleibt dauerhaft im 3D-Look").
+     *
+     * Bis v0.16.0 war er eine Geräte-Einstellung (`blunderluck-design` im
+     * Gerätespeicher, Vorgabe „klassisch"). Beides ist weg: Der Schalter
+     * aus dieser Karte und die Wahl selbst. Die Klasse `design-3d` am body
+     * BLEIBT — an ihr hängen rund dreissig Regeln in `css\stil.css`, und
+     * sie herauszuschneiden wäre viel Risiko für nichts. Sie wird jetzt
+     * einmal beim Start gesetzt und nie wieder angefasst.
+     *
+     * Ein alter Eintrag „klassisch" im Gerätespeicher wird schlicht nicht
+     * mehr gelesen — niemand bleibt auf dem alten Brett hängen.
+     */
     laden() {
-        try {
-            const wert = window.localStorage.getItem(EINSTELLUNGEN.SCHLUESSEL_DESIGN);
-            if (wert === "3d" || wert === "klassisch") {
-                EINSTELLUNGEN.design = wert;
-            }
-        } catch (fehler) {
-            /* Ohne Gerätespeicher (Privatmodus) bleibt die Vorgabe. */
-        }
-        EINSTELLUNGEN._anwenden();
-    },
-
-    designSetzen(wert) {
-        EINSTELLUNGEN.design = (wert === "3d") ? "3d" : "klassisch";
-        try {
-            window.localStorage.setItem(
-                EINSTELLUNGEN.SCHLUESSEL_DESIGN, EINSTELLUNGEN.design);
-        } catch (fehler) {
-            /* Dann gilt die Wahl eben nur bis zum Neuladen. */
-        }
-        EINSTELLUNGEN._anwenden();
-    },
-
-    _anwenden() {
         if (typeof document === "undefined" || !document.body
             || !document.body.classList) {
             return;
         }
-        document.body.classList.toggle("design-3d", EINSTELLUNGEN.design === "3d");
+        document.body.classList.add("design-3d");
     },
 
     aufbauen(behaelter) {
@@ -102,55 +87,9 @@ const EINSTELLUNGEN = {
         kopfzeile.appendChild(kopfTitel);
         wurzel.appendChild(kopfzeile);
 
-        const karte = document.createElement("section");
-        karte.className = "karte";
-
-        const kopf = document.createElement("h2");
-        kopf.textContent = "Darstellung";
-        karte.appendChild(kopf);
-
-        /* Derselbe Kipp-Schalter wie im Anlege-Bildschirm — EIN Muster für
-           die ganze App. Die ganze Zeile ist ein label und schaltet um; das
-           i steht daneben (siehe die v0.105-Regel: Erklärtexte hinters i). */
-        const zeile = document.createElement("label");
-        zeile.className = "schalter-zeile";
-
-        const kasten = document.createElement("input");
-        kasten.type = "checkbox";
-        kasten.className = "schalter-kasten";
-        kasten.checked = (EINSTELLUNGEN.design === "3d");
-        kasten.addEventListener("change", () => {
-            EINSTELLUNGEN.designSetzen(kasten.checked ? "3d" : "klassisch");
-        });
-        zeile.appendChild(kasten);
-
-        const text = document.createElement("span");
-        text.className = "schalter-text";
-        const titel = document.createElement("span");
-        titel.className = "schalter-titel";
-        titel.textContent = "3D-Look (Vorschau)";
-        text.appendChild(titel);
-        zeile.appendChild(text);
-
-        const halter = document.createElement("div");
-        halter.className = "schalter-halter";
-        halter.appendChild(zeile);
-
-        const info = document.createElement("button");
-        info.type = "button";
-        info.className = "info-knopf";
-        info.textContent = "i";
-        info.setAttribute("aria-label", "Was ist der 3D-Look?");
-        info.addEventListener("click", () => DIALOG.hinweis("3D-Look (Vorschau)",
-            "Das Schachbrett wird zu Pastell-Kacheln mit Tiefe, wie in einem "
-            + "3D-Spiel. Das ist die erste Ausbaustufe — Spielzeug-Figuren und "
-            + "eine leichte Schräg-Ansicht folgen nach und nach.\n\n"
-            + "Aus bleibt das gewohnte Brett. Die Wahl gilt nur für dieses "
-            + "Gerät."));
-        halter.appendChild(info);
-
-        karte.appendChild(halter);
-        wurzel.appendChild(karte);
+        /* DIE KARTE „DARSTELLUNG" IST SEIT v0.17.0 WEG (Wunsch 4): Es gibt
+           nichts mehr zu wählen, der 3D-Look ist dauerhaft an (siehe
+           `laden`). Es bleiben Account, Spieler und Verbindung. */
 
         wurzel.appendChild(EINSTELLUNGEN._accountKarteBauen());
         wurzel.appendChild(EINSTELLUNGEN._spielerKarteBauen());
