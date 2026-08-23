@@ -1,5 +1,28 @@
 # Blunderluck - Entscheidungen / Entschieden - und warum
 
+## Bündel A: Konto, Startbildschirm, Code, Freunde, Einladungen (23./24.08.2026)
+
+Nutzer-Vorgabe, in mehreren Gesprächsrunden entstanden und in **acht
+Auslieferungen** gebaut (v0.6.0 bis v0.13.0). Die vollständige Bauvorlage
+samt aller 19 Fragen UND ihrer Antworten ist
+[../entwurf-konto-und-startbildschirm.md](../entwurf-konto-und-startbildschirm.md)
+— sie bleibt das Nachschlagewerk für jedes Warum dieses Umbaus. Kurzfassung
+der Nutzer-Entscheidungen:
+
+- **Anmeldung als Vollbild** mit Benutzername und Passwort (4–8 Zeichen,
+  alte 4-stellige PINs gelten weiter); wer angemeldet ist, fliegt nie raus.
+- **Drei Seiten** (Fähigkeiten / Start / Rangliste), Einstellungen als
+  Zahnrad oben rechts; das Vorschaubild zeigt die eingestellte Spielart.
+- **Die Anmeldung führt direkt in die eigene laufende Partie** — und
+  während sie läuft, zeigt die App NUR das Brett (bewusst gegen den
+  offenen Zurück-Weg entschieden). **Eine laufende Partie je Person.**
+- **Keine öffentliche Partienliste mehr:** Hinein kommt man über den
+  gerechneten **Beitritts-Code** (gilt bis Partie-Ende, Nachzügler
+  erlaubt) oder — unter Freunden — über **Einladungen** (Banner in der
+  offenen App, verschwindet nach 10 s; kein Push, F15).
+- **Freundes-System „gross gedacht"**: jeder schreibt nur die eigene
+  Sicht, die Beziehung wird gelesen; niemand wird blossgestellt.
+
 ## Die Ausgliederung aus dem Quizz (23.08.2026)
 
 Nutzer-Entscheidung: Das Team Schach zieht als eigene App **Blunderluck**

@@ -16,6 +16,9 @@ wird. Die Liste dessen, was noch kommt, steht in [../ROADMAP.md](../ROADMAP.md).
 
 ## entschieden.md - Blunderluck-Eintraege
 
+- Buendel A: Konto, Startbildschirm, Code, Freunde, Einladungen
+  (23./24.08.2026, v0.6.0 bis v0.13.0 — Bauvorlage und alle 19 Antworten:
+  docs\entwurf-konto-und-startbildschirm.md)
 - Die Ausgliederung aus dem Quizz (23.08.2026)
 
 ## offen-und-abgelehnt.md - Blunderluck-Eintraege
