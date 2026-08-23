@@ -319,6 +319,9 @@ umgebung.DIALOG = {
     eingabe: async () => null,
     liste: async () => null,
 
+    /* Die Passwort-Eingabe (v0.7.0) sagt wie die anderen Eingaben ab. */
+    passwort: async () => null,
+
     /* Die Kurzmeldung (v0.114) ist reine Anzeige — im Test ein Nichtstuer. */
     kurzmeldung() { },
 

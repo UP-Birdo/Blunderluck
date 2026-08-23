@@ -121,6 +121,34 @@ pruefe("hatPin verlangt Prüfwert UND Salz", () => {
 });
 
 /* ------------------------------------------------------------------ *
+ * Passwort-Regel (v0.7.0, Bündel A Schritt 2)
+ * ------------------------------------------------------------------ */
+
+pruefe("passwortPruefen: 4 bis 8 Zeichen sind gültig", () => {
+    gleich(SPIELER.passwortPruefen("abcd"), "", "vier Buchstaben");
+    gleich(SPIELER.passwortPruefen("Abc4!xY?"), "", "acht gemischte Zeichen");
+    gleich(SPIELER.passwortPruefen("1234"), "",
+        "eine alte 4-stellige PIN bleibt ein gültiges Passwort");
+});
+
+pruefe("passwortPruefen weist zu kurz, zu lang und Leerraum ab", () => {
+    wahr(SPIELER.passwortPruefen("abc") !== "", "drei Zeichen sind zu kurz");
+    wahr(SPIELER.passwortPruefen("abcdefghi") !== "", "neun Zeichen sind zu lang");
+    wahr(SPIELER.passwortPruefen("ab cd") !== "", "Leerzeichen mittendrin");
+    wahr(SPIELER.passwortPruefen(" abcd") !== "", "Leerzeichen am Rand");
+    wahr(SPIELER.passwortPruefen("") !== "", "leer");
+    wahr(SPIELER.passwortPruefen(null) !== "", "null");
+    wahr(SPIELER.passwortPruefen(undefined) !== "", "undefined");
+});
+
+pruefe("passwortPruefen unterscheidet Gross- und Kleinschreibung nicht selbst", () => {
+    /* Die Empfindlichkeit steckt in der Prüfsumme (versiegelung.js) — die
+       Regel hier muss beide Schreibungen nur GELTEN lassen. */
+    gleich(SPIELER.passwortPruefen("PASS"), "", "gross");
+    gleich(SPIELER.passwortPruefen("pass"), "", "klein");
+});
+
+/* ------------------------------------------------------------------ *
  * Ändern
  * ------------------------------------------------------------------ */
 

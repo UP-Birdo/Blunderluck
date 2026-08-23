@@ -139,9 +139,42 @@ const SPIELER = {
     },
 
     /* Hat der Spieler eine PIN hinterlegt? Nur dann ist er von einem fremden
-       Gerät aus prüfbar erreichbar. */
+       Gerät aus prüfbar erreichbar. (Seit v0.7.0 ist die „PIN" ein Passwort —
+       die Feldnamen bleiben, der Datenvertrag ist additiv.) */
     hatPin(spieler) {
         return !!(spieler && spieler.pinPruefwert && spieler.pinSalz);
+    },
+
+    /* ---------------------------------------------------------------- *
+     * Passwort-Regel (seit v0.7.0, Bündel A Schritt 2)
+     *
+     * Aus der 4-stelligen PIN wird ein Passwort: 4 bis 8 Zeichen, erlaubt
+     * sind Buchstaben (Gross-/Kleinschreibung zählt), Ziffern und
+     * Sonderzeichen. Nur Leerraum ist verboten — er ist unsichtbar und beim
+     * Abtippen nicht zu treffen. Alte 4-stellige PINs bleiben gültig: Sie
+     * sind eine erlaubte 4-Zeichen-Eingabe, und die Prüfsummen-Zutat in
+     * versiegelung.js blieb unangetastet.
+     *
+     * Die Regel wohnt hier im Modell, nicht im Dialog und nicht in
+     * konfig.js — Bildschirm-Code fragt sie ab, statt selbst zu rechnen.
+     * ---------------------------------------------------------------- */
+
+    PASSWORT_MIN: 4,
+    PASSWORT_MAX: 8,
+
+    /* Liefert "" bei gültigem Passwort, sonst die Begründung als Satz. */
+    passwortPruefen(text) {
+        const wert = (text === undefined || text === null) ? "" : String(text);
+
+        if (/\s/.test(wert)) {
+            return "Leerzeichen sind im Passwort nicht erlaubt.";
+        }
+        if (wert.length < SPIELER.PASSWORT_MIN
+                || wert.length > SPIELER.PASSWORT_MAX) {
+            return "Das Passwort braucht " + SPIELER.PASSWORT_MIN + " bis "
+                + SPIELER.PASSWORT_MAX + " Zeichen.";
+        }
+        return "";
     },
 
     /* ---------------------------------------------------------------- *

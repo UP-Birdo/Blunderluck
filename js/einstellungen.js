@@ -11,7 +11,7 @@
  *      die Anmeldung, Konto bleibt) und Konto löschen (Eintrag verschwindet
  *      aus Spielerliste und Rangliste) — bewusst klar getrennt, die
  *      Verwechslung wäre teuer.
- *   3. SPIELER: der Zugang zu Profil (Name/PIN ändern) und Verwaltung —
+ *   3. SPIELER: der Zugang zu Profil (Name/Passwort ändern) und Verwaltung —
  *      die Abläufe selbst stehen in anmeldung.js, dieser Tab zeigt nur die
  *      Knöpfe. Mit aktiver Verwaltung erscheint zusätzlich die Liste der
  *      Mitspieler mit einem Entfernen-Knopf je Person.

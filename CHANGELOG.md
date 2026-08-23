@@ -3,6 +3,22 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.7.0 — 23.08.2026
+
+**Aus der PIN wird ein Passwort.** (Bündel A, Schritt 2)
+
+- Beim Anmelden und im Profil gilt jetzt ein **Passwort mit 4 bis 8
+  Zeichen** statt der 4-stelligen Ziffern-PIN. Erlaubt sind Buchstaben
+  (Gross- und Kleinschreibung zählt!), Ziffern und Sonderzeichen — nur
+  Leerzeichen nicht.
+- Das Eingabefeld ist **verdeckt**, mit einem Zeigen-Knopf daneben zum
+  kurzen Aufdecken gegen Vertipper. Weiter geht es erst, wenn die Eingabe
+  den Regeln entspricht; beim Festlegen wird wie bisher zweimal eingegeben.
+- **Wer schon eine 4-stellige PIN hat, muss nichts tun:** Sie gilt weiter
+  (vier Ziffern sind ein erlaubtes Passwort). Wer möchte, hebt sie unter
+  Profil → „Passwort ändern" auf ein richtiges Passwort.
+- Das 6-stellige Verwaltungs-Passwort bleibt unverändert.
+
 ## v0.6.0 — 23.08.2026
 
 **Neuer Abschnitt „Account" in den Einstellungen — Abmelden und Konto

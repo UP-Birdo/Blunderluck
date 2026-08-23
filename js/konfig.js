@@ -16,7 +16,7 @@ const KONFIG = {
     /* Version der App (SemVer: 0.MINOR.PATCH — die 0 vorne heisst "noch in
        Entwicklung", 1.0.0 erst bei erfuellten Fertig-Kriterien der ROADMAP).
        Wird im Kopf angezeigt und muss zu CHANGELOG.md passen. */
-    APP_VERSION: "0.6.0",
+    APP_VERSION: "0.7.0",
 
     speicher: {
 
@@ -84,10 +84,9 @@ const KONFIG = {
         pruefwert: "da9675146c86f5988647847c5062a24eea0cdb36d7a309325a82027ef88f6703",
 
         /* Wie viele Ziffern das Verwaltungs-Passwort hat. Muss zur Prüfsumme
-           oben passen, sonst lässt sich der Dialog nicht bestätigen. */
-        passwortStellen: 6,
-
-        /* Wie viele Ziffern eine Spieler-PIN hat. */
-        pinStellen: 4
+           oben passen, sonst lässt sich der Dialog nicht bestätigen.
+           (Das SPIELER-Passwort ist keine Ziffernfolge mehr: Seine Regel —
+           4 bis 8 Zeichen — wohnt seit v0.7.0 im Modell, js\spieler.js.) */
+        passwortStellen: 6
     }
 };

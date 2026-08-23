@@ -169,7 +169,9 @@ const DIALOG = {
     },
 
     /*
-     * Eingabe einer Zahlenfolge (PIN). Liefert die Ziffern als Zeichenkette
+     * Eingabe einer Zahlenfolge (heute nur noch das Verwaltungs-Passwort —
+     * die Spieler-PIN ist seit v0.7.0 ein Passwort, siehe `passwort` unten).
+     * Liefert die Ziffern als Zeichenkette
      * oder null bei Abbruch. Bestätigen geht erst, wenn genau `stellen`
      * Ziffern eingegeben sind.
      */
@@ -182,6 +184,33 @@ const DIALOG = {
                 platzhalter: "".padStart(stellen, "0"),
                 nurZiffern: true,
                 stellen: stellen
+            },
+            knoepfe: (abbrechbar === false)
+                ? [{ beschriftung: bestaetigenText || "Weiter", wert: true, stil: "knopf-haupt" }]
+                : [
+                    { beschriftung: "Abbrechen", wert: false, stil: "knopf-still" },
+                    { beschriftung: bestaetigenText || "Weiter", wert: true, stil: "knopf-haupt" }
+                ]
+        });
+    },
+
+    /*
+     * Eingabe eines Passworts (seit v0.7.0, Bündel A Schritt 2). Das Feld
+     * ist VERDECKT und hat einen Zeigen-Knopf zum Aufdecken; aufgedeckt
+     * wird nur für den Moment, gemerkt wird nichts (Haus-Entscheidung aus
+     * dem Quizz: das Auge ist standardmässig zu). Bestätigen geht erst,
+     * wenn das Modell die Eingabe gelten lässt (SPIELER.passwortPruefen);
+     * Leerraum kommt gar nicht erst ins Feld.
+     * Liefert das Passwort als Zeichenkette oder null bei Abbruch.
+     */
+    passwort(titel, text, bestaetigenText, abbrechbar) {
+        return DIALOG._zeigen({
+            titel: titel,
+            text: text,
+            eingabe: {
+                wert: "",
+                platzhalter: "",
+                passwort: true
             },
             knoepfe: (abbrechbar === false)
                 ? [{ beschriftung: bestaetigenText || "Weiter", wert: true, stil: "knopf-haupt" }]
@@ -306,6 +335,20 @@ const DIALOG = {
                             feld.value = nurZiffern;
                         }
                     });
+                } else if (vorgabe.eingabe.passwort) {
+                    /* Verdeckt; Leerraum fliegt schon bei der Eingabe raus —
+                       er ist ohnehin verboten (SPIELER.passwortPruefen), und
+                       stillschweigend beim Speichern gekürzt würde er später
+                       aussperren. */
+                    feld.type = "password";
+                    feld.autocomplete = "off";
+                    feld.maxLength = SPIELER.PASSWORT_MAX;
+                    feld.addEventListener("input", () => {
+                        const ohneLeerraum = feld.value.replace(/\s/g, "");
+                        if (feld.value !== ohneLeerraum) {
+                            feld.value = ohneLeerraum;
+                        }
+                    });
                 } else {
                     feld.type = "text";
                 }
@@ -338,6 +381,27 @@ const DIALOG = {
 
                     halter.appendChild(feld);
                     halter.appendChild(marke);
+                    kasten.appendChild(halter);
+                } else if (vorgabe.eingabe.passwort) {
+                    /* Feld und Zeigen-Knopf nebeneinander. Der Knopf deckt
+                       nur auf, solange man es will — beim nächsten Dialog
+                       ist das Feld wieder zu. */
+                    const halter = document.createElement("div");
+                    halter.className = "dialog-passwort-halter";
+                    halter.appendChild(feld);
+
+                    const zeigen = document.createElement("button");
+                    zeigen.type = "button";
+                    zeigen.className = "knopf knopf-still dialog-passwort-zeigen";
+                    zeigen.textContent = "Zeigen";
+                    zeigen.setAttribute("aria-label", "Passwort anzeigen");
+                    zeigen.addEventListener("click", () => {
+                        const offen = (feld.type === "text");
+                        feld.type = offen ? "password" : "text";
+                        zeigen.textContent = offen ? "Zeigen" : "Verbergen";
+                        feld.focus();
+                    });
+                    halter.appendChild(zeigen);
                     kasten.appendChild(halter);
                 } else {
                     kasten.appendChild(feld);
@@ -425,6 +489,11 @@ const DIALOG = {
                     const wert = feld.value.trim();
                     if (vorgabe.eingabe.nurZiffern) {
                         return wert.length === vorgabe.eingabe.stellen;
+                    }
+                    if (vorgabe.eingabe.passwort) {
+                        /* Die Regel kommt aus dem Modell — der Dialog rechnet
+                           nicht selbst (4 bis 8 Zeichen, kein Leerraum). */
+                        return SPIELER.passwortPruefen(feld.value) === "";
                     }
                     return wert !== "";
                 };
