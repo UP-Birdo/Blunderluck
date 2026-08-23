@@ -67,6 +67,17 @@ const TEAM_SCHACH = {
     /* Ist die Auswahl der Spielart offen? Sie liegt VOR der Übersicht. */
     auswahlOffen: false,
 
+    /*
+     * WELCHER TEIL DER AUSWAHL (seit v0.21.0, Wunsch 8). Bis v0.20.0 stand
+     * alles auf einem Bildschirm: Figurenzahl, Regler, Brettform und die
+     * Grössen-Kacheln. Der Nutzer hat ihn geteilt — auf dem Start führt die
+     * VORSCHAU zur Brettform und der PFEIL zu den Grundeinstellungen:
+     *
+     *   "brett"   Brettform und Grösse (die Kacheln)
+     *   "regeln"  Figurenzahl, Haken, Lootbox-Menge, Item-Vorrat
+     */
+    auswahlTeil: "brett",
+
     /* Ist die Fähigkeiten-Übersicht offen (hinter dem i)? */
     infoOffen: false,
 
@@ -1740,18 +1751,37 @@ const TEAM_SCHACH = {
     },
 
     /*
-     * Der Pfeil neben „Spielen" führt in die Auswahl der Spielart.
+     * Der Pfeil neben „Spielen" führt zu den Grundeinstellungen (Wunsch 8,
+     * v0.21.0). Bis v0.20.0 öffnete er den ganzen Auswahl-Bildschirm samt
+     * Brettform und Kacheln; die wohnen jetzt hinter der Vorschau
+     * (`brettformOeffnen`).
      *
      * SEIT WUNSCH 1 (24.08.2026) LEGT DIE AUSWAHL NICHTS MEHR AN: Sie zeigt,
      * was zuletzt eingestellt war, und schreibt jede Wahl in die
-     * Geräte-Erinnerung des Starts zurück (siehe `spielartGewaehlt`).
-     * Angelegt wird die Runde erst mit „Spielen" (`rundeStarten`).
+     * Geräte-Erinnerung des Starts zurück (`spielartGewaehlt`,
+     * `auswahlSchliessen`). Angelegt wird erst mit „Spielen"
+     * (`rundeStarten`).
      */
     partieAnlegen() {
+        TEAM_SCHACH._auswahlOeffnen("regeln");
+    },
+
+    /* Der Weg über die Vorschau (Wunsch 7/8): Form und Grösse. */
+    brettformOeffnen() {
+        TEAM_SCHACH._auswahlOeffnen("brett");
+    },
+
+    /*
+     * Beide Wege in die Auswahl. Sie unterscheiden sich nur darin, WELCHER
+     * Teil gezeigt wird — geholt und gemerkt wird in beiden Fällen dasselbe
+     * (seit Wunsch 8).
+     */
+    _auswahlOeffnen(teil) {
         if (!TEAM_SCHACH._ich()) {
             return;
         }
         TEAM_SCHACH.auswahlOffen = true;
+        TEAM_SCHACH.auswahlTeil = (teil === "regeln") ? "regeln" : "brett";
         TEAM_SCHACH.offeneId = "";
 
         /* Die zuletzt gemerkten Einstellungen, sonst die Vorgaben. */
@@ -1770,10 +1800,19 @@ const TEAM_SCHACH = {
         TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
     },
 
-    /* „Zurück" aus der Auswahl. Seit Wunsch 1 kommt man hier vom
-       Startbildschirm herein — also geht es auch dorthin zurück, und nicht
-       mehr in den Zwischenbildschirm. */
+    /*
+     * „Zurück" aus der Auswahl. Seit Wunsch 1 kommt man vom Startbildschirm
+     * herein — also geht es auch dorthin zurück, und nicht mehr in den
+     * Zwischenbildschirm.
+     *
+     * GEMERKT WIRD HIER (seit Wunsch 8): Auf dem Regler-Bildschirm gibt es
+     * keine Kachel, die es tun könnte — wer nur die Figurenzahl ändert und
+     * zurückgeht, hätte sie sonst verloren.
+     */
     auswahlSchliessen() {
+        if (typeof START !== "undefined") {
+            START.regelnMerken(TEAM_SCHACH.neueRegeln);
+        }
         TEAM_SCHACH.auswahlOffen = false;
         TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
         TABS.wechseln("start");

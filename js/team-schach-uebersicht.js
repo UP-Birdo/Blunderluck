@@ -18,21 +18,30 @@ Object.assign(TEAM_SCHACH, {
      * Dialog mit fünf Zeilen.
      * ---------------------------------------------------------------- */
 
+    /*
+     * ZWEI BILDSCHIRME STATT EINEM (seit v0.21.0, Wunsch 8). Bis v0.20.0
+     * stand hier alles untereinander: Figurenzahl, Regler, Brettform und die
+     * Grössen-Kacheln. Der Nutzer hat es geteilt — auf dem Startbildschirm
+     * führt die VORSCHAU hierher zur Brettform, der PFEIL zu den
+     * Grundeinstellungen. Welcher Teil gemeint ist, sagt
+     * `TEAM_SCHACH.auswahlTeil`.
+     *
+     * Angelegt wird auf keinem von beiden: Beide merken nur (Wunsch 1).
+     */
     _auswahlZeichnen(wurzel) {
+        if (TEAM_SCHACH.auswahlTeil === "regeln") {
+            TEAM_SCHACH._regelnZeichnen(wurzel);
+            return;
+        }
+        TEAM_SCHACH._brettformZeichnen(wurzel);
+    },
+
+    /* Der Weg über die Vorschau: Form und Grösse — sonst nichts. */
+    _brettformZeichnen(wurzel) {
         const kopf = TEAM_SCHACH._element("div", "partie-kopf");
         kopf.appendChild(TEAM_SCHACH._knopf("Zurück", "knopf-still knopf-klein",
             () => TEAM_SCHACH.auswahlSchliessen()));
-        /*
-         * „RUNDE EINSTELLEN" STATT „NEUE PARTIE" (seit Wunsch 1, 24.08.2026).
-         *
-         * Bis v0.13.0 legte die Kachel die Partie sofort an — die Überschrift
-         * „Neue Partie" stimmte deshalb. Jetzt merkt sie die Wahl nur; angelegt
-         * wird auf dem Startbildschirm mit „Spielen". Eine Überschrift, die
-         * etwas ankündigt, das hier gar nicht mehr passiert, führt in die Irre.
-         * (Davor hiess sie seit v0.44 „Welche Spielart?" und wurde in v0.94
-         * ersetzt, als die Einstellungen vor die Kacheln rückten.)
-         */
-        kopf.appendChild(TEAM_SCHACH._element("h2", "partie-titel", "Runde einstellen"));
+        kopf.appendChild(TEAM_SCHACH._element("h2", "partie-titel", "Brettform"));
 
         /*
          * DER ERKLÄRSATZ STEHT HINTER DEM i (seit v0.52). Er sagt etwas, das man
@@ -42,24 +51,15 @@ Object.assign(TEAM_SCHACH, {
          * Fähigkeiten-Fenster in v3.5.
          */
         kopf.appendChild(TEAM_SCHACH._infoZeichenBauen(
-            "Was gilt beim Einstellen?",
+            "Was gilt hier?",
             "Hier wird noch nichts angelegt: Deine Wahl wird gemerkt, und der "
             + "Startbildschirm zeigt sie als Vorschau. Erst \"Spielen\" macht "
-            + "daraus eine Runde — und dann stehen Spielart und Einstellungen "
-            + "fest. Das Bild auf der Kachel zeigt die Startaufstellung."));
+            + "daraus eine Runde. Das Bild auf der Kachel zeigt die "
+            + "Startaufstellung — mit der Figurenzahl, die unter dem Pfeil "
+            + "neben \"Spielen\" eingestellt ist."));
 
         wurzel.appendChild(kopf);
 
-        /*
-         * DIE FIGURENZAHL STEHT GANZ OBEN (seit v0.86, Wunsch V1: „die Anzahl
-         * der Figuren auch eine Knopf-Funktion, immer bei der Auswahl ganz
-         * oben"). Vor Brettform und Kacheln — wer die Stärke ändert, sieht die
-         * Zahl unter JEDER Kachel sofort mitgehen, weil die Kachel dasselbe
-         * `armeeAufstellen` rechnet wie die echte Partie.
-         */
-        wurzel.appendChild(TEAM_SCHACH._armeeStaerkeLeisteBauen());
-
-        wurzel.appendChild(TEAM_SCHACH._regelSchalterBauen());
         wurzel.appendChild(TEAM_SCHACH._formLeisteBauen());
 
         const feld = TEAM_SCHACH._element("div", "spielart-feld");
@@ -69,6 +69,34 @@ Object.assign(TEAM_SCHACH, {
         }
 
         wurzel.appendChild(feld);
+    },
+
+    /* Der Weg über den Pfeil: die Regler und Haken der nächsten Runde. */
+    _regelnZeichnen(wurzel) {
+        const kopf = TEAM_SCHACH._element("div", "partie-kopf");
+        kopf.appendChild(TEAM_SCHACH._knopf("Zurück", "knopf-still knopf-klein",
+            () => TEAM_SCHACH.auswahlSchliessen()));
+        kopf.appendChild(TEAM_SCHACH._element("h2", "partie-titel",
+            "Grundeinstellungen"));
+
+        kopf.appendChild(TEAM_SCHACH._infoZeichenBauen(
+            "Was gilt hier?",
+            "Diese Einstellungen gelten für die nächste Runde, die du mit "
+            + "\"Spielen\" anlegst — dein Gerät merkt sie sich. Welches Brett "
+            + "gespielt wird, wählst du über die Vorschau darüber."));
+
+        wurzel.appendChild(kopf);
+
+        /*
+         * DIE FIGURENZAHL STEHT GANZ OBEN (seit v0.86, Wunsch V1: „die Anzahl
+         * der Figuren auch eine Knopf-Funktion, immer bei der Auswahl ganz
+         * oben"). Sie war bis v0.20.0 die Leiste über den Kacheln, damit die
+         * Zahl unter jeder Kachel mitging; seit Wunsch 8 ist sie ein Regler
+         * unter anderen — die Kachel rechnet sie weiterhin mit.
+         */
+        wurzel.appendChild(TEAM_SCHACH._armeeStaerkeLeisteBauen());
+
+        wurzel.appendChild(TEAM_SCHACH._regelSchalterBauen());
     },
 
     /*

@@ -3,6 +3,21 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.21.0 — 24.08.2026
+
+**Zwei Bildschirme statt einem langen: Brett hier, Regler dort.**
+
+- **Der Pfeil neben „Spielen"** zeigt jetzt nur noch die
+  **Grundeinstellungen** der nächsten Runde: Figurenzahl, die Haken,
+  Lootbox-Menge und Item-Vorrat. Brettform und Grössen-Kacheln sind dort
+  verschwunden.
+- **Ein Tipp auf die Vorschau** führt zur **Brettform** — Quadratisch,
+  Rechteckig oder Kreuz, und darunter die Grössen. Nichts sonst.
+- Beide merken sich, was du einstellst: Auch wer nur die Figurenzahl
+  ändert und zurückgeht, findet sie beim nächsten Mal wieder.
+- Der lange Bildschirm mit allem untereinander ist damit weg. Was du
+  einstellst, gilt weiterhin erst mit „Spielen".
+
 ## v0.20.0 — 24.08.2026
 
 **Das Brett über „Spielen" ist drückbar.**

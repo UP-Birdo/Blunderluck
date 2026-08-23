@@ -8,10 +8,11 @@
  *     seit v0.9.0 kein Tab mehr sind (F8: oben rechts);
  *   - obere Hälfte: das Vorschaubild der eingestellten Spielart, gerechnet
  *     über dieselben Wege wie die echte Partie (F2 — die Kachel-Vorschau
- *     aus team-schach-uebersicht.js, deshalb kann sie nicht veralten);
+ *     aus team-schach-uebersicht.js, deshalb kann sie nicht veralten). Seit
+ *     v0.20.0 ist es ein KNOPF und führt zur Brettform (Wunsch 7/8);
  *   - untere Hälfte: der Spielen-Knopf (zwei Drittel breit, für den
- *     Daumen) und daneben ein Quadrat mit Pfeil, das die
- *     Match-Einstellungen öffnet (die Spielart-Auswahl);
+ *     Daumen), daneben ein Quadrat mit Pfeil, das die
+ *     Grundeinstellungen der Runde öffnet (Regler und Haken);
  *   - darunter still „Runde beitreten" — der Weg zum Zwischenbildschirm.
  *
  * DER WIEDEREINSTIEG (Entwurf, Abschnitt 3.2) wohnt ebenfalls hier: Nach
@@ -151,8 +152,8 @@ const START = {
         const match = document.createElement("button");
         match.type = "button";
         match.className = "knopf knopf-still start-match";
-        match.setAttribute("aria-label", "Match-Einstellungen");
-        match.title = "Match-Einstellungen";
+        match.setAttribute("aria-label", "Grundeinstellungen");
+        match.title = "Grundeinstellungen";
         match.appendChild(START._pfeilBauen());
         match.addEventListener("click", () => START.matchEinstellungen());
         zeile.appendChild(match);
@@ -246,22 +247,17 @@ const START = {
         TABS.wechseln("team-schach");
     },
 
-    /* Das Pfeil-Quadrat: die Match-Einstellungen — heute die
-       Spielart-Auswahl mit allen Reglern (team-schach-uebersicht.js). */
+    /* Das Pfeil-Quadrat: die Grundeinstellungen der nächsten Runde
+       (Regler und Haken) — seit Wunsch 8 ohne Brettform und Kacheln. */
     matchEinstellungen() {
         TABS.wechseln("team-schach");
         TEAM_SCHACH.partieAnlegen();
     },
 
-    /*
-     * Ein Tipp auf die Vorschau (Wunsch 7, v0.20.0): die Wahl der
-     * Brettform. Heute führt sie auf denselben Bildschirm wie der Pfeil —
-     * dort stehen Brettform und Grössen ja beieinander. Wunsch 8 teilt ihn
-     * auf: Der Pfeil behält die Regler, hier bleiben Form und Grösse.
-     */
+    /* Ein Tipp auf die Vorschau (Wunsch 7/8): Brettform und Grösse. */
     brettformWaehlen() {
         TABS.wechseln("team-schach");
-        TEAM_SCHACH.partieAnlegen();
+        TEAM_SCHACH.brettformOeffnen();
     },
 
     /* ---------------------------------------------------------------- *

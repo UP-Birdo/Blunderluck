@@ -521,7 +521,9 @@ pruefe("Das Brett hat so viele Felder wie die Spielart Stellen", () => {
 });
 
 pruefe("Die Auswahl der Spielart zeigt je eine Kachel mit Vorschaubild", () => {
-    TEAM_SCHACH.partieAnlegen();
+    /* Seit Wunsch 8 (v0.21.0) liegen die Kacheln hinter der Vorschau,
+       nicht mehr hinter dem Pfeil. */
+    TEAM_SCHACH.brettformOeffnen();
 
     if (!TEAM_SCHACH.auswahlOffen) {
         throw new Error("Auswahl nicht geoeffnet");
@@ -1472,16 +1474,31 @@ pruefe("Das i beim Wuerfel-Haken fuehrt in die Bibliothek (v0.55)", () => {
         throw new Error("kein Kopf gezeichnet");
     }
 
-    /* Und zurueck landet man wieder bei der Auswahl. */
+    /*
+     * Und zurueck landet man wieder bei den Grundeinstellungen — dort steht
+     * der Wuerfel-Haken, von dem aus man gekommen ist. Bis v0.20.0 waren
+     * das die Spielart-Kacheln; seit Wunsch 8 sind die Bildschirme geteilt.
+     */
     TEAM_SCHACH.infoSchliessen();
     if (TEAM_SCHACH.infoOffen) {
         throw new Error("die Bibliothek ist nicht zugegangen");
     }
 
-    const feld = TEAM_SCHACH.wurzelEl.kinder
-        .find((kind) => kind.className === "spielart-feld");
-    if (!feld) {
-        throw new Error("nach dem Zurueck fehlt die Spielart-Auswahl");
+    const suchen = (element, klasse) => {
+        for (const kind of element.kinder || []) {
+            if (String(kind.className || "").indexOf(klasse) !== -1) {
+                return kind;
+            }
+            const tiefer = suchen(kind, klasse);
+            if (tiefer) {
+                return tiefer;
+            }
+        }
+        return null;
+    };
+
+    if (!suchen(TEAM_SCHACH.wurzelEl, "schalter-kasten")) {
+        throw new Error("nach dem Zurueck fehlen die Grundeinstellungen");
     }
 
     TEAM_SCHACH.auswahlSchliessen();
@@ -4024,8 +4041,8 @@ pruefe("Der Startbildschirm zeigt Vorschau, Spielen und Zahnrad (v0.9.0)", () =>
     }
 
     if (!knoepfe.some((knopf) => knopf.attribute
-            && knopf.attribute["aria-label"] === "Match-Einstellungen")) {
-        throw new Error("kein Quadrat fuer die Match-Einstellungen");
+            && knopf.attribute["aria-label"] === "Grundeinstellungen")) {
+        throw new Error("kein Quadrat fuer die Grundeinstellungen");
     }
     if (!knoepfe.some((knopf) => knopf.attribute
             && knopf.attribute["aria-label"] === "Einstellungen")) {
@@ -4098,6 +4115,65 @@ pruefe("Ein Tipp auf die Vorschau oeffnet die Brettform (Wunsch 7)", () => {
     }
     if (!TEAM_SCHACH.auswahlOffen) {
         throw new Error("die Vorschau oeffnet die Brettform-Wahl nicht");
+    }
+
+    TEAM_SCHACH.auswahlSchliessen();
+    umgebung.TABS.gewechseltZu = "";
+});
+
+pruefe("Pfeil und Vorschau fuehren auf getrennte Bildschirme (Wunsch 8)", () => {
+    /*
+     * DER GEMELDETE WUNSCH: „Unter dem Pfeil neben Spielen verschwindet die
+     * Spielart-Auswahl: Dort werden nur noch die Grundeinstellungen der
+     * Runde festgelegt (Regler/Haken). Die Brettform waehlt man ueber die
+     * Vorschau."
+     */
+    const einsammeln = (element, passt, treffer) => {
+        for (const kind of element.kinder || []) {
+            if (passt(kind)) {
+                treffer.push(kind);
+            }
+            einsammeln(kind, passt, treffer);
+        }
+        return treffer;
+    };
+    const kacheln = () => einsammeln(TEAM_SCHACH.wurzelEl, (kind) =>
+        String(kind.className || "").indexOf("spielart-kachel") !== -1, []);
+    const formKnoepfe = () => einsammeln(TEAM_SCHACH.wurzelEl, (kind) =>
+        String(kind.className || "").indexOf("form-knopf") !== -1, []);
+    const schalter = () => einsammeln(TEAM_SCHACH.wurzelEl, (kind) =>
+        String(kind.className || "").indexOf("schalter-kasten") !== -1, []);
+
+    /* Der Pfeil: Regler ja, Brettform und Kacheln nein. */
+    TEAM_SCHACH.partieAnlegen();
+    if (TEAM_SCHACH.auswahlTeil !== "regeln") {
+        throw new Error("der Pfeil oeffnet nicht die Grundeinstellungen");
+    }
+    if (schalter().length === 0) {
+        throw new Error("auf den Grundeinstellungen fehlen die Haken");
+    }
+    if (kacheln().length !== 0 || formKnoepfe().length !== 0) {
+        throw new Error("die Brettform haengt noch unter dem Pfeil");
+    }
+
+    /* Was hier eingestellt wird, ueberlebt das Zurueck (es gibt hier keine
+       Kachel, die es merken koennte). */
+    TEAM_SCHACH.neueRegeln.armeeStaerke = "viel";
+    TEAM_SCHACH.auswahlSchliessen();
+    if (umgebung.START.regeln().armeeStaerke !== "viel") {
+        throw new Error("Zurueck vergisst die Regler");
+    }
+
+    /* Die Vorschau: Brettform und Kacheln ja, Regler nein. */
+    TEAM_SCHACH.brettformOeffnen();
+    if (TEAM_SCHACH.auswahlTeil !== "brett") {
+        throw new Error("die Vorschau oeffnet nicht die Brettform");
+    }
+    if (kacheln().length === 0 || formKnoepfe().length === 0) {
+        throw new Error("auf der Brettform fehlen Form oder Groessen");
+    }
+    if (schalter().length !== 0) {
+        throw new Error("die Regler haengen noch bei der Brettform");
     }
 
     TEAM_SCHACH.auswahlSchliessen();
