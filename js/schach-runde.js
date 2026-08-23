@@ -1731,6 +1731,36 @@ const SCHACH_RUNDE = {
         return (wert >>> 0) / 4294967296;
     },
 
+    /* ---------------------------------------------------------------- *
+     * Der Beitritts-Code (seit v0.10.0, Bündel A Schritt 5)
+     *
+     * GERECHNET aus der Partie-Kennung, nie gespeichert: Jedes Gerät kommt
+     * auf denselben Code, ohne dass er je geschrieben oder abgeglichen
+     * wird (Entwurf, Abschnitt 3.3). Verwechselbare Zeichen fehlen im
+     * Zeichensatz (kein 0/O, kein 1/I/L) — der Code wird vorgelesen und
+     * abgetippt. Je Stelle eine eigene Saat, die Stellen-Nummer VORN
+     * (siehe die Regel bei _zufallsWert).
+     * ---------------------------------------------------------------- */
+
+    CODE_ZEICHEN: "ABCDEFGHJKMNPQRSTUVWXYZ23456789",
+    CODE_LAENGE: 6,
+
+    beitrittsCode(partieOderId) {
+        const id = (partieOderId && typeof partieOderId === "object")
+            ? partieOderId.id : partieOderId;
+        if (!id) {
+            return "";
+        }
+
+        let code = "";
+        for (let stelle = 0; stelle < SCHACH_RUNDE.CODE_LAENGE; stelle++) {
+            const wert = SCHACH_RUNDE._zufallsWert(stelle + "|code|" + id);
+            code += SCHACH_RUNDE.CODE_ZEICHEN[Math.floor(
+                wert * SCHACH_RUNDE.CODE_ZEICHEN.length)];
+        }
+        return code;
+    },
+
     /*
      * Lässt bei Bedarf einen neuen Würfel erscheinen. Wird nach jedem Zug
      * gerufen und ändert die übergebene Runde.

@@ -3990,6 +3990,76 @@ pruefe("Der Faehigkeiten-Tab zeichnet die Bibliothek ohne Zurueck (v0.9.0)", () 
     }
 });
 
+pruefe("Der Zwischenbildschirm laesst per Code beitreten (v0.10.0)", () => {
+    /*
+     * Schritt 5 des Entwurfs: Die Uebersicht ist der Zwischenbildschirm
+     * „Runde beitreten / Runde erstellen". Der Code fuehrt zur Partie —
+     * gross oder klein getippt, der Knopf wird erst mit voller Laenge frei.
+     */
+
+    /* Was fruehere Tests offen liessen, wuerde hier statt der Uebersicht
+       gezeichnet — deshalb erst aufraeumen. */
+    TEAM_SCHACH.abschluss = null;
+    TEAM_SCHACH.auswahlOffen = false;
+    TEAM_SCHACH.infoOffen = false;
+    TEAM_SCHACH.grundlagenOffen = false;
+    for (const partie of SCHACH_TAFEL.liste(TEAM_SCHACH.abgleich.daten)) {
+        if (partie.ergebnis) {
+            umgebung.ICH.abschlussMerken(partie.id);
+        }
+    }
+
+    TEAM_SCHACH.uebersichtOeffnen();
+
+    const einsammeln = (element, passt, treffer) => {
+        for (const kind of element.kinder || []) {
+            if (passt(kind)) {
+                treffer.push(kind);
+            }
+            einsammeln(kind, passt, treffer);
+        }
+        return treffer;
+    };
+
+    const feld = einsammeln(TEAM_SCHACH.wurzelEl, (kind) =>
+        String(kind.className || "").indexOf("code-feld") !== -1, [])[0];
+    if (!feld) {
+        throw new Error("kein Code-Feld auf dem Zwischenbildschirm");
+    }
+
+    const knoepfe = einsammeln(TEAM_SCHACH.wurzelEl, (kind) =>
+        kind.tagName === "button", []);
+    const beitreten = knoepfe.find(
+        (knopf) => String(knopf.textContent || "") === "Beitreten");
+    if (!beitreten) {
+        throw new Error("kein Beitreten-Knopf");
+    }
+    if (beitreten.disabled !== true) {
+        throw new Error("Beitreten ist ohne Code schon frei");
+    }
+    if (!knoepfe.some(
+            (knopf) => String(knopf.textContent || "") === "Runde erstellen")) {
+        throw new Error("kein Knopf Runde erstellen");
+    }
+
+    /* Der echte Code einer laufenden Partie, klein getippt. */
+    const partieId = kennungen[SCHACH_VARIANTEN.liste[0].id];
+    feld.value = SCHACH_RUNDE.beitrittsCode(partieId).toLowerCase();
+    feld.ausloesen("input");
+
+    if (beitreten.disabled !== false) {
+        throw new Error("ein vollstaendiger Code gibt Beitreten nicht frei");
+    }
+
+    beitreten.ausloesen("click");
+    if (TEAM_SCHACH.offeneId !== partieId) {
+        throw new Error("der Code fuehrt nicht in die Partie");
+    }
+
+    /* Aufraeumen fuer die folgenden Tests. */
+    TEAM_SCHACH.uebersichtOeffnen();
+});
+
 /* ------------------------------------------------------------------ *
  * Das Anmelde-Vollbild (v0.8.0, Buendel A Schritt 3)
  * ------------------------------------------------------------------ */

@@ -982,29 +982,30 @@ Object.assign(TEAM_SCHACH, {
      * Übersicht: alle Partien
      * ---------------------------------------------------------------- */
 
+    /*
+     * SEIT v0.10.0 IST DIE ÜBERSICHT DER ZWISCHENBILDSCHIRM des Entwurfs
+     * (Bündel A, Schritt 5): „Runde beitreten" (Code-Feld; die Einladungen
+     * kommen mit Schritt 7 dazu) und „Runde erstellen". Eine ÖFFENTLICHE
+     * Liste aller Partien gibt es nicht mehr (Entwurf, Abschnitt 3.3) —
+     * man kommt über den Code hinein. Sichtbar bleiben:
+     *
+     *   - die EIGENEN offenen Partien (wartend oder laufend) — dort setzt
+     *     man Bereitschaft und findet den Code zum Weitergeben;
+     *   - die eigenen beendeten (zugeklappt, wie seit v0.59);
+     *   - mit aktiver Verwaltung ALLE offenen — sonst könnte sie
+     *     verwaiste Partien nicht mehr löschen.
+     */
     _uebersichtZeichnen(wurzel, tafel, person) {
         const alle = SCHACH_TAFEL.liste(tafel);
-
-        /*
-         * Beendete Partien stehen nicht mehr zwischen den offenen: Sie sind
-         * gespielt, ihre Punkte sind festgeschrieben. Weggeworfen werden sie
-         * trotzdem nicht — sie liegen zugeklappt darunter, falls jemand noch
-         * einmal nachsehen will.
-         */
         const offene = alle.filter((partie) => !partie.ergebnis);
+        const eigene = offene.filter((partie) =>
+            SCHACH_RUNDE.teamVon(partie, person.id));
 
         /*
-         * NUR DIE EIGENE HISTORIE (seit v0.59, Wunsch #8).
-         *
-         * Offene Partien sieht weiterhin jeder — man muss ja beitreten können.
-         * Beendete sind dagegen abgeschlossen: Wer nicht mitgespielt hat, kann
-         * dort nichts mehr tun, und die Liste wuchs mit jeder fremden Partie.
-         * Gefiltert wird über `SCHACH_RUNDE.teamVon` — dieselbe Frage, die auch
-         * über den Knopf „Ergebnis ansehen" entscheidet.
-         *
-         * Die Partien selbst bleiben unangetastet: Sie stehen weiter im
-         * gemeinsamen Stand, und ihre Punkte stehen in der Chronik. Hier wird
-         * nur ANGEZEIGT — die Rangliste zählt unverändert alles.
+         * NUR DIE EIGENE HISTORIE (seit v0.59, Wunsch #8): Beendete sind
+         * abgeschlossen; wer nicht mitgespielt hat, kann dort nichts mehr
+         * tun. Die Partien selbst bleiben im gemeinsamen Stand, die
+         * Rangliste zählt unverändert alles.
          */
         const beendete = alle.filter((partie) => partie.ergebnis
             && SCHACH_RUNDE.teamVon(partie, person.id));
@@ -1017,29 +1018,89 @@ Object.assign(TEAM_SCHACH, {
         kopf.appendChild(TEAM_SCHACH._knopf("Zurück", "knopf-still knopf-klein",
             () => TABS.wechseln("start")));
 
-        kopf.appendChild(TEAM_SCHACH._element("span", "phasen-text",
-            "Offene Partien: " + offene.length));
+        kopf.appendChild(TEAM_SCHACH._element("span", "phasen-text", "Spielen"));
 
         /*
-         * DER WEG ZU DEN SCHACHREGELN (seit v0.96).
-         *
-         * Er steht in der ÜBERSICHT und nicht erst in einer laufenden Partie:
-         * Wer Schach nicht kann, soll nachlesen können, BEVOR er einem Team
-         * beitritt. Die Fähigkeiten-Bibliothek erreicht man weiterhin über das
-         * i beim Anlegen und über den Vorrat — sie beantwortet die zweite
-         * Frage, nicht die erste.
+         * DER WEG ZU DEN SCHACHREGELN (seit v0.96): Wer Schach nicht kann,
+         * soll nachlesen können, BEVOR er einem Team beitritt.
          */
         kopf.appendChild(TEAM_SCHACH._grundlagenKnopfBauen());
         wurzel.appendChild(kopf);
 
-        if (offene.length === 0) {
+        /* ---- Runde beitreten: das Code-Feld (F14/F17). ---- */
+        const beitreten = TEAM_SCHACH._element("section", "karte");
+        beitreten.appendChild(TEAM_SCHACH._element("h3", "", "Runde beitreten"));
+        beitreten.appendChild(TEAM_SCHACH._element("p", "erklaerung",
+            "Gib den Beitritts-Code ein, den dir der Ersteller der Runde "
+            + "gegeben hat — " + SCHACH_RUNDE.CODE_LAENGE + " Zeichen, ohne "
+            + "0, O, 1, I und L."));
+
+        const codeZeile = TEAM_SCHACH._element("div", "code-zeile");
+
+        const codeFeld = document.createElement("input");
+        codeFeld.className = "code-feld";
+        codeFeld.type = "text";
+        codeFeld.value = "";
+        codeFeld.autocomplete = "off";
+        codeFeld.maxLength = SCHACH_RUNDE.CODE_LAENGE;
+        codeFeld.setAttribute("aria-label", "Beitritts-Code");
+        codeZeile.appendChild(codeFeld);
+
+        const codeKnopf = TEAM_SCHACH._knopf("Beitreten", "knopf-haupt",
+            () => TEAM_SCHACH.codeBeitreten(codeFeld.value));
+        codeKnopf.disabled = true;
+        codeZeile.appendChild(codeKnopf);
+
+        /* Nur Zeichen aus dem Code-Zeichensatz, gleich grossgeschrieben —
+           und der Knopf wird erst mit voller Länge frei. */
+        codeFeld.addEventListener("input", () => {
+            const sauber = codeFeld.value.toUpperCase().split("")
+                .filter((zeichen) =>
+                    SCHACH_RUNDE.CODE_ZEICHEN.indexOf(zeichen) !== -1)
+                .join("");
+            if (codeFeld.value !== sauber) {
+                codeFeld.value = sauber;
+            }
+            codeKnopf.disabled =
+                (sauber.length !== SCHACH_RUNDE.CODE_LAENGE);
+        });
+
+        beitreten.appendChild(codeZeile);
+        wurzel.appendChild(beitreten);
+
+        /* ---- Runde erstellen. ---- */
+        const erstellen = TEAM_SCHACH._element("section", "karte");
+        erstellen.appendChild(TEAM_SCHACH._element("h3", "", "Runde erstellen"));
+        erstellen.appendChild(TEAM_SCHACH._element("p", "erklaerung",
+            "Wähle Spielart und Regeln. Den Beitritts-Code deiner Runde "
+            + "bekommst du danach zum Weitergeben."));
+
+        const erstellenFuss = TEAM_SCHACH._element("div", "karte-fuss");
+        erstellenFuss.appendChild(TEAM_SCHACH._knopf("Runde erstellen",
+            "knopf-still", () => TEAM_SCHACH.partieAnlegen()));
+        erstellen.appendChild(erstellenFuss);
+        wurzel.appendChild(erstellen);
+
+        /* ---- Die eigenen offenen Partien. ---- */
+        if (eigene.length > 0) {
             wurzel.appendChild(TEAM_SCHACH._element("p", "erklaerung",
-                "Es läuft keine Partie. Leg eine an, wähle deine Spielart "
-                + "und tritt einem Team bei."));
+                "Deine offenen Partien:"));
+        }
+        for (const partie of eigene) {
+            wurzel.appendChild(TEAM_SCHACH._partieKarteBauen(partie, person));
         }
 
-        for (const partie of offene) {
-            wurzel.appendChild(TEAM_SCHACH._partieKarteBauen(partie, person));
+        /* ---- Verwaltung: alle übrigen offenen, sonst unlöschbar. ---- */
+        if (ICH.verwaltungAktiv()) {
+            const fremde = offene.filter((partie) =>
+                !SCHACH_RUNDE.teamVon(partie, person.id));
+            if (fremde.length > 0) {
+                wurzel.appendChild(TEAM_SCHACH._element("p", "erklaerung",
+                    "Alle offenen Partien (Verwaltung):"));
+            }
+            for (const partie of fremde) {
+                wurzel.appendChild(TEAM_SCHACH._partieKarteBauen(partie, person));
+            }
         }
 
         if (beendete.length > 0) {
@@ -1069,11 +1130,6 @@ Object.assign(TEAM_SCHACH, {
 
             wurzel.appendChild(kasten);
         }
-
-        const fuss = TEAM_SCHACH._element("div", "fussleiste");
-        fuss.appendChild(TEAM_SCHACH._knopf("Neue Partie", "knopf-haupt",
-            () => TEAM_SCHACH.partieAnlegen()));
-        wurzel.appendChild(fuss);
     },
 
     _partieKarteBauen(partie, person) {

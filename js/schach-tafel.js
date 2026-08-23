@@ -223,6 +223,23 @@ const SCHACH_TAFEL = {
     },
 
     /*
+     * Sucht die Partie zu einem Beitritts-Code (seit v0.10.0, Bündel A
+     * Schritt 5). Die Eingabe wird grosszügig gelesen: Gross-/
+     * Kleinschreibung und Leerraum sind egal. Beendete Partien haben
+     * keinen gültigen Code mehr; laufende schon — Nachzügler dürfen
+     * einsteigen (Nutzer-Entscheidung F19, 24.08.2026).
+     */
+    partieZuCode(tafel, code) {
+        const gesucht = String(code || "").replace(/\s/g, "").toUpperCase();
+        if (gesucht.length !== SCHACH_RUNDE.CODE_LAENGE) {
+            return null;
+        }
+        return SCHACH_TAFEL.liste(tafel).find((partie) =>
+            !partie.ergebnis
+            && SCHACH_RUNDE.beitrittsCode(partie.id) === gesucht) || null;
+    },
+
+    /*
      * Alle Partien als Liste, sortiert für die Übersicht:
      * erst die laufenden, dann die noch nicht gestarteten, zuletzt die
      * beendeten — innerhalb jeder Gruppe die zuletzt geänderte zuerst.

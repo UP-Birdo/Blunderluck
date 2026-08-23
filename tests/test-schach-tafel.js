@@ -345,5 +345,65 @@ pruefe("eigeneLaufende laesst beendete Partien aus", () => {
         "eine beendete Partie zaehlt nicht");
 });
 
+/* ------------------------------------------------------------------ *
+ * Der Beitritts-Code (v0.10.0, Buendel A Schritt 5)
+ * ------------------------------------------------------------------ */
+
+pruefe("Der Beitritts-Code ist gerechnet, fest und ohne verwechselbare Zeichen", () => {
+    const eins = SCHACH_RUNDE.beitrittsCode("p-abc");
+
+    gleich(eins.length, SCHACH_RUNDE.CODE_LAENGE, "Laenge");
+    gleich(eins, SCHACH_RUNDE.beitrittsCode("p-abc"),
+        "derselbe Code bei jedem Aufruf — er wird nie gespeichert");
+    wahr(eins !== SCHACH_RUNDE.beitrittsCode("p-abd"),
+        "eine andere Kennung bekommt einen anderen Code");
+
+    for (const zeichen of eins) {
+        wahr(SCHACH_RUNDE.CODE_ZEICHEN.indexOf(zeichen) !== -1,
+            "nur Zeichen aus dem Satz (" + zeichen + ")");
+    }
+
+    /* Der Code wird vorgelesen und abgetippt — Verwechselbares fehlt. */
+    for (const verboten of ["0", "O", "1", "I", "L"]) {
+        wahr(SCHACH_RUNDE.CODE_ZEICHEN.indexOf(verboten) === -1,
+            verboten + " darf nicht im Zeichensatz stehen");
+    }
+
+    gleich(SCHACH_RUNDE.beitrittsCode(""), "", "ohne Kennung kein Code");
+    gleich(SCHACH_RUNDE.beitrittsCode({ id: "p-abc" }), eins,
+        "eine ganze Partie liefert denselben Code wie ihre Kennung");
+});
+
+pruefe("partieZuCode findet offene Partien grosszuegig, beendete nicht", () => {
+    let tafel = SCHACH_TAFEL.leereTafel(1000);
+    const angelegt = SCHACH_TAFEL.partieAnlegen(tafel, "standard", "Runde", 2000);
+    tafel = angelegt.tafel;
+    const partieId = angelegt.partie.id;
+
+    const code = SCHACH_RUNDE.beitrittsCode(partieId);
+
+    /* Gross-/Kleinschreibung und Leerraum sind egal — der Code wird
+       diktiert und abgetippt. */
+    const klein = SCHACH_TAFEL.partieZuCode(tafel, " " + code.toLowerCase() + " ");
+    wahr(klein !== null && klein.id === partieId, "kleingeschrieben mit Raendern");
+
+    gleich(SCHACH_TAFEL.partieZuCode(tafel, "AAAAAA"), null,
+        "ein falscher Code findet nichts");
+    gleich(SCHACH_TAFEL.partieZuCode(tafel, code.slice(0, 3)), null,
+        "ein halber Code findet nichts");
+
+    /* Eine beendete Partie hat keinen gueltigen Code mehr. */
+    let partie = SCHACH_TAFEL.partie(tafel, partieId);
+    partie = SCHACH_RUNDE.teamBeitreten(partie, "id-anna", "weiss", 2100);
+    partie = SCHACH_RUNDE.teamBeitreten(partie, "id-bert", "schwarz", 2100);
+    partie = SCHACH_RUNDE.bereitSetzen(partie, "weiss", true, 2100);
+    partie = SCHACH_RUNDE.bereitSetzen(partie, "schwarz", true, 2100);
+    partie = SCHACH_RUNDE.aufgeben(partie, "schwarz", 2200);
+    tafel = SCHACH_TAFEL.partieEinsetzen(tafel, partie, 2200);
+
+    gleich(SCHACH_TAFEL.partieZuCode(tafel, code), null,
+        "beendet heisst: der Code fuehrt nicht mehr hinein");
+});
+
 console.log(anzahlOk + " ok, " + anzahlFehler + " Fehler");
 process.exit(anzahlFehler === 0 ? 0 : 1);

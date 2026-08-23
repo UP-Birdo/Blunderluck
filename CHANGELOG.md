@@ -3,6 +3,25 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.10.0 — 24.08.2026
+
+**Der Beitritts-Code: Runden teilen ohne Freundesliste.** (Bündel A,
+Schritt 5)
+
+- **Spielen führt jetzt auf „Runde beitreten / Runde erstellen".** Die
+  öffentliche Liste aller offenen Partien ist weg — in eine fremde Runde
+  kommt man nur noch mit deren Code.
+- **Jede Runde hat einen 6-stelligen Beitritts-Code.** Er steht bei den
+  Teams der Partie und wird einfach weitergesagt; wer ihn unter „Runde
+  beitreten" eintippt, landet in der Runde und wählt dort sein Team.
+  Gross-/Kleinschreibung ist egal, und verwechselbare Zeichen (0/O, 1/I/L)
+  kommen im Code nie vor.
+- **Der Code gilt, solange die Runde nicht beendet ist** — auch Nachzügler
+  können also mitten in eine laufende Partie noch einsteigen (wer selbst
+  schon woanders spielt, bleibt gesperrt).
+- Deine eigenen offenen und beendeten Partien siehst du weiterhin auf dem
+  Spielen-Bildschirm; die Verwaltung sieht zum Aufräumen alle.
+
 ## v0.9.0 — 24.08.2026
 
 **Der neue Startbildschirm — drei Seiten, und die Anmeldung führt direkt

@@ -4265,6 +4265,45 @@ body.dialog-offen {
     justify-content: center;
 }
 
+/* ------------------------------------------------------------------ *
+ * DER ZWISCHENBILDSCHIRM „Runde beitreten / Runde erstellen" und der
+ * Beitritts-Code (seit v0.10.0, Bündel A Schritt 5)
+ * ------------------------------------------------------------------ */
+
+.code-zeile {
+    display: flex;
+    align-items: stretch;
+    gap: 8px;
+}
+
+.code-feld {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 10px;
+    font: inherit;
+    font-size: 1.2rem;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    font-family: "Consolas", "Courier New", monospace;
+    color: var(--schrift);
+    background: var(--karte);
+    border: 1px solid var(--rahmen);
+    border-radius: 6px;
+}
+
+.code-feld:focus {
+    outline: 2px solid var(--haupt);
+    outline-offset: 1px;
+}
+
+/* Der Code zum Weitergeben, bei den Teams der Partie. */
+.beitritts-code-wert {
+    font-family: "Consolas", "Courier New", monospace;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    color: var(--schrift);
+}
+
 /* Auswahlliste (Bist du schon dabei?) */
 .dialog-liste {
     display: flex;

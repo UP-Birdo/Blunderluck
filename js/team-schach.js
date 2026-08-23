@@ -897,6 +897,23 @@ const TEAM_SCHACH = {
             bereich.appendChild(zufall);
         }
 
+        /*
+         * Der Beitritts-Code zum Weitergeben (seit v0.10.0): Er steht bei
+         * den Teams, weil man ihn genau dann braucht, wenn noch jemand
+         * fehlt. Er gilt, solange die Partie nicht beendet ist — auch
+         * Nachzügler dürfen herein (F19).
+         */
+        if (!partie.ergebnis) {
+            const codeZeile = TEAM_SCHACH._element("p",
+                "erklaerung beitritts-code", "Beitritts-Code: ");
+            codeZeile.appendChild(TEAM_SCHACH._element("span",
+                "beitritts-code-wert",
+                SCHACH_RUNDE.beitrittsCode(partie.id)));
+            codeZeile.appendChild(TEAM_SCHACH._element("span", "",
+                " — wer ihn unter Spielen eintippt, kommt in diese Runde."));
+            bereich.appendChild(codeZeile);
+        }
+
         return bereich;
     },
 
@@ -1014,6 +1031,34 @@ const TEAM_SCHACH = {
         TEAM_SCHACH.offeneId = "";
         TEAM_SCHACH._auswahlAufheben();
         TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
+    },
+
+    /*
+     * Beitritt über den Beitritts-Code (seit v0.10.0, Bündel A Schritt 5).
+     * Der Code führt ZUR Partie — das Team wählt man dort wie gehabt
+     * („Mitspielen"), und dort greift auch die F11-Sperre. Laufende
+     * Partien lassen Nachzügler herein (F19), beendete nicht.
+     */
+    async codeBeitreten(code) {
+        const person = TEAM_SCHACH._ich();
+        if (!person) {
+            return;
+        }
+
+        const partie = SCHACH_TAFEL.partieZuCode(
+            TEAM_SCHACH.abgleich.daten, code);
+
+        if (!partie) {
+            await DIALOG.hinweis(
+                "Kein Treffer",
+                "Zu diesem Code läuft keine offene Runde. Vertippt? Der "
+                    + "Code hat " + SCHACH_RUNDE.CODE_LAENGE + " Zeichen — "
+                    + "0, O, 1, I und L kommen darin nie vor."
+            );
+            return;
+        }
+
+        TEAM_SCHACH.partieOeffnen(partie.id);
     },
 
     feldAngetippt(partie, person, feld) {
