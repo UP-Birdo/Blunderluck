@@ -3,6 +3,18 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.35.0 — 24.08.2026
+
+**„Runde beitreten" ist jetzt nur noch das: der Weg in fremde Runden.**
+
+- Die Liste „Deine offenen Partien" ist dort verschwunden. Sie war seit der
+  Ein-Runden-Regel höchstens einen Eintrag lang und beantwortete nur die
+  Frage, wie du zurück in deine Runde kommst.
+- Diese Frage beantwortet seit v0.34.0 der Startbildschirm — dort, wo du
+  ohnehin stehst.
+- **Für die Verwaltung ändert sich nichts:** Die Liste aller offenen Runden
+  bleibt, sonst liessen sich stehengebliebene Runden nicht mehr aufräumen.
+
 ## v0.34.0 — 24.08.2026
 
 **Der Startbildschirm bringt dich zurück in deine Runde.**

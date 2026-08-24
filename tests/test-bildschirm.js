@@ -1566,6 +1566,39 @@ pruefe("Der Abschluss schluesselt die Punkte auf (v0.53)", () => {
     }
 });
 
+pruefe("Der Zwischenbildschirm listet die eigenen offenen Partien nicht mehr (v0.35.0)", () => {
+    /*
+     * „deine offenen partien es soll dort eigentlich ja keine mehr geben"
+     * (Nutzer, 24.08.2026). Der Weg zurueck in die eigene Runde fuehrt seit
+     * v0.34.0 ueber den Startbildschirm.
+     *
+     * WICHTIG AN DIESEM TEST: Er prueft NICHT nur, dass die Ueberschrift
+     * fehlt, sondern auch, dass der Code-Kasten steht — sonst wuerde er auch
+     * dann gruen bleiben, wenn der ganze Bildschirm kaputt ist.
+     */
+    TEAM_SCHACH.offeneId = "";
+    TEAM_SCHACH.abschluss = null;
+    TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
+
+    const textSammeln = (element) => {
+        let text = String(element.textContent || "");
+        for (const kind of element.kinder || []) {
+            text += " " + textSammeln(kind);
+        }
+        return text;
+    };
+
+    const text = textSammeln(TEAM_SCHACH.wurzelEl);
+
+    if (text.indexOf("Deine offenen Partien") !== -1) {
+        throw new Error("die Liste steht noch da");
+    }
+    if (text.indexOf("Beitritts-Code") === -1) {
+        throw new Error("der Code-Kasten fehlt — der Bildschirm ist kaputt,"
+            + " nicht aufgeraeumt");
+    }
+});
+
 pruefe("Die Regler bleiben, egal wie man die Auswahl verlaesst (v0.33.0)", () => {
     /*
      * „im menü wenn man was auswählt unter dem pfeil soll das so bleiben bis

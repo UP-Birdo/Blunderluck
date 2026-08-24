@@ -1102,8 +1102,10 @@ Object.assign(TEAM_SCHACH, {
     _uebersichtZeichnen(wurzel, tafel, person) {
         const alle = SCHACH_TAFEL.liste(tafel);
         const offene = alle.filter((partie) => !partie.ergebnis);
-        const eigene = offene.filter((partie) =>
-            SCHACH_RUNDE.teamVon(partie, person.id));
+
+        /* Die eigenen offenen wurden bis v0.34.0 hier gefiltert und darunter
+           aufgelistet. Seit v0.35.0 führt der Startbildschirm zurück in die
+           eigene Runde — die Filterung ist mit der Liste entfallen. */
 
         /*
          * NUR DIE EIGENE HISTORIE (seit v0.59, Wunsch #8): Beendete sind
@@ -1206,14 +1208,25 @@ Object.assign(TEAM_SCHACH, {
            Startbildschirms (`START.freundeOeffnen`) — hierher kommt man
            seit Wunsch 1 nur noch zum Beitreten. ---- */
 
-        /* ---- Die eigenen offenen Partien. ---- */
-        if (eigene.length > 0) {
-            wurzel.appendChild(TEAM_SCHACH._element("p", "erklaerung",
-                "Deine offenen Partien:"));
-        }
-        for (const partie of eigene) {
-            wurzel.appendChild(TEAM_SCHACH._partieKarteBauen(partie, person));
-        }
+        /*
+         * ---- „DEINE OFFENEN PARTIEN" IST WEG (v0.35.0). ----
+         *
+         * Nutzer-Ansage 24.08.2026: „deine offenen partien es soll dort
+         * eigentlich ja keine mehr geben, da man nur eine gleichzeitig offen
+         * haben kann pro benutzer und beim verlassen soll sie sich
+         * schliessen."
+         *
+         * Die Liste war seit F11 höchstens einen Eintrag lang und
+         * beantwortete nur noch eine Frage: „wie komme ich in meine Runde
+         * zurück?" Diese Frage beantwortet seit v0.34.0 der Startbildschirm
+         * („Zurück in deine Runde", `START._eigeneOffene`) — dort, wo man
+         * ohnehin steht. Dieser Bildschirm ist damit nur noch das, was sein
+         * Name sagt: der Weg HINEIN in fremde Runden.
+         *
+         * WER DIE LISTE WIEDER EINBAUEN WILL, prüft zuerst, ob der Weg über
+         * den Start weggefallen ist — sonst gibt es zwei Türen zur selben
+         * Runde, und eine davon veraltet.
+         */
 
         /* ---- Verwaltung: alle übrigen offenen, sonst unlöschbar. ---- */
         if (ICH.verwaltungAktiv()) {
