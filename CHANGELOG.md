@@ -3,6 +3,18 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.47.0 — 24.08.2026
+
+**Der Beitritts-Code steht jetzt neben der Zugnummer — und läuft beim
+Rollen mit.**
+
+- Er sass bisher ganz oben im Kopf der Partie und rollte weg, sobald man
+  zum Brett hinunterschaute. Jetzt steht er rechts in der Leiste mit
+  „Zug N", und die klebt oben fest.
+- Ist die Partie vorbei, steht er nicht mehr da: Ihr Code führt nirgends
+  mehr hin.
+- Der Kopf darüber verschwindet ganz, wenn er nichts mehr zu zeigen hat.
+
 ## v0.46.0 — 24.08.2026
 
 **Die Rückschau sagt jetzt gleich oben, wie es ausging.**

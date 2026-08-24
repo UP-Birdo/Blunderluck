@@ -1566,6 +1566,38 @@ pruefe("Der Abschluss schluesselt die Punkte auf (v0.53)", () => {
     }
 });
 
+pruefe("Der Beitritts-Code steht in der mitlaufenden Leiste (v0.47.0)", () => {
+    /*
+     * „Dort, wo die Runden-Anzahl steht, dort rechts hin soll der Code"
+     * (Nutzer, 24.08.2026). Die Stand-Leiste ist die, die beim Rollen oben
+     * klebt — der Code laeuft im Spiel also immer mit.
+     *
+     * Geprueft wird beides: dass er DORT steht und dass er im Kopf NICHT
+     * mehr steht. Sonst stuende er wie in v0.40.0 zweimal da.
+     */
+    const person = umgebung.ICH.person();
+    const partie = SCHACH_TAFEL.partie(TEAM_SCHACH.abgleich.daten, kennungen.klein);
+    const code = SCHACH_RUNDE.beitrittsCode(partie.id);
+
+    const textVon = (element) => {
+        let text = String(element.textContent || "");
+        for (const kind of element.kinder || []) {
+            text += " " + textVon(kind);
+        }
+        return text;
+    };
+
+    const leiste = TEAM_SCHACH._standLeisteBauen(partie, person);
+    if (textVon(leiste).indexOf(code) === -1) {
+        throw new Error("der Code fehlt in der Stand-Leiste");
+    }
+
+    const kopf = TEAM_SCHACH._partieKopfBauen(partie);
+    if (textVon(kopf).indexOf(code) !== -1) {
+        throw new Error("der Code steht immer noch auch im Kopf");
+    }
+});
+
 pruefe("Die Rueckschau nennt den Ausgang, farbig (v0.46.0)", () => {
     /*
      * „Schachmatt in rot fuer verloren, gruen fuer gewonnen, und Patt in

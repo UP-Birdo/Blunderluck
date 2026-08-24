@@ -3942,7 +3942,19 @@ body.design-3d .werte-figur {
 }
 
 /*
- * DER BEITRITTS-CODE IM KOPF DER RUNDE (seit v0.40.0): blass in der Ecke,
+ * EIN LEERER KOPF IST KEINE ZEILE (seit v0.47.0). Seit der Code in die
+ * Stand-Leiste gezogen ist, bleibt der Partie-Kopf leer, wenn die Partie
+ * keinen festen Item-Vorrat hat — ohne diese Regel stünde dort eine leere
+ * Zeile mit Trennlinie. Das Element bleibt trotzdem im Baum: Die
+ * Bildschirm-Tests zählen die Bereiche der Partie.
+ */
+.partie-kopf:empty {
+    display: none;
+}
+
+/*
+ * DER BEITRITTS-CODE (seit v0.40.0, seit v0.47.0 in der Stand-Leiste):
+ * blass in der Ecke,
  * ohne Beschriftung. Er soll da sein, wenn man ihn weitergeben will, und
  * sonst nicht auffallen — deshalb `margin-left: auto` (rechte Ecke), leise
  * Farbe und Schreibmaschinenschrift, damit sich die sechs Zeichen sauber

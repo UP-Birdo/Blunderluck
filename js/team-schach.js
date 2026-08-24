@@ -616,6 +616,15 @@ const TEAM_SCHACH = {
          */
         TEAM_SCHACH.vorratVorstellen(partie);
 
+        /*
+         * Der Kopf trägt seit v0.47.0 nur noch das Item-Zeichen. Gibt es in
+         * dieser Partie keinen festen Item-Vorrat, bleibt er LEER — er wird
+         * trotzdem eingehängt und von der Stildatei ausgeblendet
+         * (`.partie-kopf:empty`). Ihn hier wegzulassen wäre naheliegender,
+         * würde aber die Reihenfolge der Bereiche verschieben, und genau
+         * darauf prüfen die Bildschirm-Tests seit v1.2: Ein ganzer Bereich,
+         * der fehlt, war schon einmal ein Fehler, den niemand bemerkt hat.
+         */
         wurzel.appendChild(TEAM_SCHACH._partieKopfBauen(partie));
         wurzel.appendChild(TEAM_SCHACH._standLeisteBauen(partie, person));
 
@@ -753,14 +762,11 @@ const TEAM_SCHACH = {
          *     dasselbe („Kleines Brett"), und beide standen über dem Brett,
          *     das es zeigt.
          *
-         * DER CODE STEHT NUR AN OFFENEN PARTIEN: Eine beendete hat keinen
-         * gültigen mehr (`SCHACH_TAFEL.partieZuCode` findet sie nicht), und
-         * eine Zahl, die nirgends hinführt, ist schlimmer als keine.
+         * SEIT v0.47.0 STEHT DER CODE EINE ZEILE TIEFER — in der Leiste, die
+         * beim Rollen oben klebt, rechts neben „Zug N" (Nutzer-Ansage
+         * 24.08.2026: „dort, wo die Runden-Anzahl steht, dort rechts hin
+         * soll der Code"). Gebaut wird er deshalb in `_standLeisteBauen`.
          */
-        if (!partie.ergebnis) {
-            kopf.appendChild(TEAM_SCHACH._element("span", "partie-code",
-                SCHACH_RUNDE.beitrittsCode(partie.id)));
-        }
 
         /*
          * WELCHE ITEMS IN DIESER PARTIE VORKOMMEN (seit v0.87, Wunsch R6:
@@ -889,6 +895,23 @@ const TEAM_SCHACH = {
 
         leiste.appendChild(TEAM_SCHACH._element("span", "phasen-text",
             "Zug " + partie.stand.zugNummer));
+
+        /*
+         * DER BEITRITTS-CODE RECHTS NEBEN DER ZUGNUMMER (seit v0.47.0).
+         *
+         * Nutzer-Ansage 24.08.2026: „Dort, wo die Runden-Anzahl steht, dort
+         * rechts hin soll der Code." Diese Leiste ist genau die, die er
+         * meinte — sie klebt beim Rollen oben fest (`.stand-leiste`,
+         * `position: sticky`), also läuft der Code im Spiel immer mit.
+         *
+         * NUR AN OFFENEN PARTIEN: Eine beendete hat keinen gültigen Code
+         * mehr (`SCHACH_TAFEL.partieZuCode` findet sie nicht) — eine Zahl,
+         * die nirgends hinführt, ist schlimmer als keine.
+         */
+        if (!partie.ergebnis) {
+            leiste.appendChild(TEAM_SCHACH._element("span", "partie-code",
+                SCHACH_RUNDE.beitrittsCode(partie.id)));
+        }
 
         return leiste;
     },
