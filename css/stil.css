@@ -1200,6 +1200,112 @@ body.partie-fest .phasen-leiste {
     }
 }
 
+/* ------------------------------------------------------------------ *
+ * DIE SPIELERZEILEN AM BRETT (seit v0.53.0)
+ *
+ * Nutzer-Ansage 25.08.2026: „Die zwei grossen Felder nehmen zu viel Platz
+ * ein." An ihre Stelle treten zwei Zeilen — der Gegner über dem Brett, man
+ * selbst darunter, wie am echten Tisch. Statt zweier Karten von je rund
+ * 120 Pixeln kostet das zusammen etwa 70.
+ *
+ * WER DRAN IST, LEUCHTET. Das ist der eigentliche Gewinn: Bis v0.52.0 stand
+ * „Weiss ist am Zug" als Wort oben in der Leiste und „Warte, bis dein Team
+ * wieder am Zug ist" als Satz unter dem Brett. Beides sagt jetzt die Zeile
+ * selbst, ohne ein Wort und ohne die Höhe zu ändern.
+ * ------------------------------------------------------------------ */
+
+.spieler-zeile {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    padding: 6px 10px;
+    border: 1px solid var(--rahmen);
+    border-radius: 8px;
+    background: var(--karte);
+    font-size: 0.92rem;
+}
+
+/* Der Farbpunkt sagt, mit welchen Steinen diese Seite spielt — dieselben
+   zwei Farben wie die Beitritts-Knöpfe (`--figur-weiss`/`--figur-schwarz`),
+   damit Knopf und Zeile dasselbe meinen. */
+.spieler-punkt {
+    flex: 0 0 auto;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 1px solid var(--rahmen);
+}
+
+.spieler-zeile-weiss .spieler-punkt {
+    background: var(--figur-weiss);
+}
+
+.spieler-zeile-schwarz .spieler-punkt {
+    background: var(--figur-schwarz);
+    border-color: var(--figur-schwarz);
+}
+
+.spieler-farbe {
+    flex: 0 0 auto;
+    font-weight: 600;
+}
+
+/* Der Name darf als Einziges schrumpfen: Bei vier Mitspielenden in einem
+   Team wird die Liste lang, und abgeschnitten ist sie immer noch besser
+   als eine Zeile, die umbricht und das Brett schiebt. */
+.spieler-name {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--schrift-leise);
+}
+
+.spieler-lage {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.spieler-amzug {
+    font-weight: 600;
+    color: var(--haupt);
+    white-space: nowrap;
+}
+
+/* Die eigene Seite trägt einen kräftigeren Rahmen — dasselbe Mittel wie
+   früher an der eigenen Team-Karte (`team-karte-meine`). */
+.spieler-zeile-meine {
+    border-color: var(--haupt);
+}
+
+/* WER DRAN IST, LEUCHTET. */
+.spieler-zeile-amzug {
+    border-color: var(--haupt);
+    box-shadow: inset 0 0 0 1px var(--haupt);
+    background: var(--karte-leise);
+}
+
+/*
+ * Der Beitritts-Knopf sitzt jetzt IN der Zeile und darf sie nicht sprengen:
+ * `.team-knopf` ist auf voller Breite gebaut (v0.41.0, als er noch im Fuss
+ * einer Karte stand). Die Form bleibt, nur die Breite richtet sich nach der
+ * Beschriftung.
+ */
+.spieler-zeile .team-knopf {
+    flex: 0 0 auto;
+    width: auto;
+    min-height: 34px;
+    padding: 0 14px;
+    font-size: 0.85rem;
+}
+
+.spieler-zeile .knopf {
+    flex: 0 0 auto;
+}
 .team-reihe {
     display: flex;
     flex-wrap: wrap;
@@ -5100,26 +5206,17 @@ body.dialog-offen {
         padding: 0 12px;
     }
 
-    /* Beide Teams nebeneinander statt untereinander: So bleibt das Brett
-       ohne Scrollen sichtbar. */
+    /* Die Team-KARTEN sind mit v0.53.0 entfallen — an ihrer Stelle stehen
+       die zwei Spielerzeilen am Brett. Auf dem Handy wird darin nur enger
+       gerückt; schrumpfen darf allein der Name (`.spieler-name`). */
     .schach .team-reihe {
         gap: 8px;
     }
 
-    .schach .team-karte {
-        flex: 1 1 0;
-        min-width: 0;
-        padding: 10px;
-    }
-
-    .schach .team-karte .karte-fuss {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .schach .team-namen {
+    .schach .spieler-zeile {
+        gap: 6px;
+        padding: 5px 8px;
         font-size: 0.85rem;
-        overflow-wrap: anywhere;
     }
 
     .partie-titel {

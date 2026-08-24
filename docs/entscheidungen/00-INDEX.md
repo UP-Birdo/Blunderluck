@@ -168,6 +168,22 @@ wird. Die Liste dessen, was noch kommt, steht in [../ROADMAP.md](../ROADMAP.md).
       Ein Renderskript kann man nicht lesen, nur ansehen — nach jeder
       Änderung EIN Bild öffnen. Nebenbefund: Der Test-DOM brauchte
       `setAttributeNS`
+    - **Ein Test hinter `process.exit` läuft nie** (v0.52.0) — ans Ende von
+      `test-syntax.js` gehängte Prüfungen sind toter Text; die Kette meldet
+      weiter „0 Fehler". **Nach jedem Ergänzen die ZAHL der Prüfungen
+      vergleichen**, nicht nur das Fazit lesen
+    - **`letter-spacing` steht auch hinter dem LETZTEN Zeichen** (v0.51.0) —
+      ein Feld, das genau N Zellen breit ist, verschiebt beim letzten
+      Tastendruck seinen ganzen Inhalt; das Code-Feld ist deshalb um die
+      halbe Zellenluft breiter, als die Kästchen zeigen
+    - **Zwei CSS-Regeln mit gleichem Gewicht — es entscheidet die
+      Reihenfolge** (v0.52.0) — `.schach > *` und `.brett-halter` wiegen
+      gleich; wo eine Regel eine andere absichtlich überstimmt, wird sie
+      SCHWERER gemacht, nicht tiefer gelegt
+    - **Ein Kommentar behauptete, ein Stil sei tot — er war es nicht**
+      (v0.50.0) — `.verlauf-kasten` galt seit v0.37.0 als ohne Nutzer und
+      war es nie. „Wird das noch benutzt?" beantwortet die Suche, nicht das
+      Gedächtnis
 
 ## entschieden.md - Entschieden - und warum
 

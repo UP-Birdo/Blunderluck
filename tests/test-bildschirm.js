@@ -1709,8 +1709,10 @@ pruefe("Wer bereit ist, sieht die andere Seite nicht mehr als Angebot (v0.44.0)"
      */
     const person = umgebung.ICH.person();
 
+    /* Seit v0.53.0 steht der Knopf in der SPIELERZEILE der anderen Seite,
+       nicht mehr im Fuss einer Team-Karte. Gesucht wird deshalb in beiden
+       Zeilen — welche davon oben am Brett steht, ist fuer diese Frage egal. */
     const mitspielenDa = (partie) => {
-        const bereich = TEAM_SCHACH._teamsBauen(partie, person);
         let gefunden = false;
         const suchen = (element) => {
             if (String(element.textContent || "").trim() === "Mitspielen") {
@@ -1720,7 +1722,9 @@ pruefe("Wer bereit ist, sieht die andere Seite nicht mehr als Angebot (v0.44.0)"
                 suchen(kind);
             }
         };
-        suchen(bereich);
+        for (const farbe of ["weiss", "schwarz"]) {
+            suchen(TEAM_SCHACH._spielerZeileBauen(partie, person, farbe));
+        }
         return gefunden;
     };
 
@@ -3308,6 +3312,99 @@ pruefe("Der Friedhof steckt in einem Aufklapp-Knopf (v0.49.0)", () => {
     }
     if (!hatKlasse(karte.kinder[0], "fach-reihe")) {
         throw new Error("das erste Stueck der Karte ist keine Fach-Reihe");
+    }
+});
+pruefe("Die Spieler stehen als Zeilen am Brett, richtig herum (v0.53.0)", () => {
+    /*
+     * NUTZER-ANSAGE 25.08.2026: „Die zwei grossen Felder nehmen zu viel
+     * Platz ein." Entschieden: zwei schmale Zeilen, Gegner oben, man selbst
+     * unten.
+     *
+     * DIE EIGENTLICHE GEFAHR IST DIE ZUORDNUNG. Das Brett dreht sich zur
+     * eigenen Seite; steht die obere Zeile dann fuer die falsche Farbe, sitzt
+     * der Gegner auf dem Schirm bei den eigenen Figuren — und das faellt beim
+     * Bauen nicht auf, weil beide Zeilen gleich aussehen. Geprueft wird
+     * deshalb genau das: WELCHE Farbe oben steht, aus Sicht eines Spielers
+     * mit Team und aus Sicht eines Zuschauers.
+     */
+    const person = umgebung.ICH.person();
+    const angelegt = SCHACH_TAFEL.partieAnlegen(
+        SCHACH_TAFEL.leereTafel(9100), "standard", "Zeilen", 9110);
+
+    /* Ohne Team sieht man das Brett wie Weiss — also steht Schwarz oben. */
+    if (TEAM_SCHACH._farbeObenAmBrett(angelegt.partie, person) !== "schwarz") {
+        throw new Error("fuer Zuschauer muesste Schwarz oben stehen");
+    }
+
+    /* Wer Schwarz spielt, sieht das Brett gedreht — dann steht Weiss oben. */
+    const alsSchwarz = SCHACH_RUNDE.teamBeitreten(
+        angelegt.partie, person.id, "schwarz", 9120);
+    if (TEAM_SCHACH._farbeObenAmBrett(alsSchwarz, person) !== "weiss") {
+        throw new Error("als Schwarz muesste Weiss oben stehen");
+    }
+
+    /* Und die Zeile selbst traegt, was vorher die Karte trug. */
+    const zeile = TEAM_SCHACH._spielerZeileBauen(alsSchwarz, person, "schwarz");
+    if (String(zeile.className || "").indexOf("spieler-zeile-meine") === -1) {
+        throw new Error("die eigene Seite ist nicht als solche erkennbar");
+    }
+    if (!klasseSuchen(zeile, "spieler-punkt")) {
+        throw new Error("der Zeile fehlt der Farbpunkt");
+    }
+
+    const namen = klasseSuchen(zeile, "spieler-name");
+    if (!namen || String(namen.textContent || "") !== person.name) {
+        throw new Error("der Name steht nicht in der Zeile: "
+            + (namen ? namen.textContent : "gar nicht"));
+    }
+});
+
+pruefe("Wer am Zug ist, leuchtet — und die Leiste sagt es nicht mehr (v0.53.0)", () => {
+    /*
+     * Der Grund, warum diese beiden Dinge in EINEM Test stehen: Sie sind
+     * zwei Haelften derselben Entscheidung. „Am Zug" und „Schach" sind aus
+     * der Standleiste in die Spielerzeile gezogen; bliebe eines von beiden
+     * oben stehen, stuende dieselbe Auskunft zweimal auf einem Bildschirm —
+     * genau der Fehler, der bei v0.40.0 schon einmal passiert ist (der Code
+     * stand doppelt) und mit v0.40.1 nachgebessert werden musste.
+     */
+    const partie = SCHACH_TAFEL.partie(TEAM_SCHACH.abgleich.daten, kennungen.standard);
+    const person = umgebung.ICH.person();
+
+    const amZug = partie.stand.amZug;
+    const wartet = (amZug === "weiss") ? "schwarz" : "weiss";
+
+    const dranZeile = TEAM_SCHACH._spielerZeileBauen(partie, person, amZug);
+    if (String(dranZeile.className || "").indexOf("spieler-zeile-amzug") === -1) {
+        throw new Error("die Zeile des Spielers am Zug leuchtet nicht");
+    }
+
+    const warteZeile = TEAM_SCHACH._spielerZeileBauen(partie, person, wartet);
+    if (String(warteZeile.className || "").indexOf("spieler-zeile-amzug") !== -1) {
+        throw new Error("auch die wartende Seite leuchtet");
+    }
+
+    /* Und oben steht es nicht mehr. */
+    const leiste = TEAM_SCHACH._standLeisteBauen(partie, person);
+    const textSammeln = (element) => {
+        let text = String(element.textContent || "");
+        for (const kind of element.kinder || []) {
+            text += " " + textSammeln(kind);
+        }
+        return text;
+    };
+    const oben = textSammeln(leiste);
+
+    if (oben.indexOf("am Zug") !== -1) {
+        throw new Error("die Standleiste sagt weiter, wer am Zug ist: " + oben);
+    }
+    if (oben.indexOf("Schach") !== -1) {
+        throw new Error("die Standleiste traegt weiter die Schach-Marke");
+    }
+
+    /* Was sie weiter tragen MUSS: Zugnummer und Code. */
+    if (oben.indexOf("Zug ") === -1) {
+        throw new Error("die Zugnummer ist mit weggeraeumt worden");
     }
 });
 

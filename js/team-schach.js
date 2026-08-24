@@ -678,10 +678,26 @@ const TEAM_SCHACH = {
             wurzel.appendChild(unglueck);
         }
 
-        wurzel.appendChild(TEAM_SCHACH._teamsBauen(partie, person));
+        /*
+         * DIE SPIELER STEHEN AM BRETT (seit v0.53.0), einer darüber, einer
+         * darunter. Die Reihenfolge hier IST die Anordnung auf dem Schirm,
+         * und `_farbeObenAmBrett` sorgt dafür, dass die obere Zeile zu der
+         * Seite gehört, die auch oben auf dem Brett spielt.
+         *
+         * Die Unglücksmeldung bleibt vor beiden — sie steht seit jeher direkt
+         * unter der Standleiste, und ein Bildschirm-Test prüft genau diese
+         * Stelle.
+         */
+        const obenFarbe = TEAM_SCHACH._farbeObenAmBrett(partie, person);
+        const untenFarbe = (obenFarbe === "weiss") ? "schwarz" : "weiss";
+
+        wurzel.appendChild(TEAM_SCHACH._spielerZeileBauen(partie, person, obenFarbe));
 
         const halter = TEAM_SCHACH._brettBauen(partie, person);
         wurzel.appendChild(halter);
+
+        wurzel.appendChild(TEAM_SCHACH._spielerZeileBauen(partie, person, untenFarbe));
+        wurzel.appendChild(TEAM_SCHACH._teamExtrasBauen(partie, person));
 
         const koennen = TEAM_SCHACH._faehigkeitenBauen(partie, person);
         if (koennen) {
@@ -912,22 +928,25 @@ const TEAM_SCHACH = {
                 ? "Unentschieden"
                 : ((partie.ergebnis === "weiss") ? "Weiss gewinnt" : "Schwarz gewinnt");
             leiste.appendChild(TEAM_SCHACH._element("span", "chip chip-fertig", text));
-        } else if (partie.laeuft) {
-            const amZug = (partie.stand.amZug === "weiss") ? "Weiss" : "Schwarz";
-            const dran = (meinTeam === partie.stand.amZug);
-            leiste.appendChild(TEAM_SCHACH._element(
-                "span",
-                "chip " + (dran ? "chip-fertig" : "chip-laeuft"),
-                dran ? "Dein Team ist am Zug" : amZug + " ist am Zug"
-            ));
-        } else {
+        } else if (!partie.laeuft) {
             leiste.appendChild(TEAM_SCHACH._element("span", "chip chip-offen",
                 "Noch nicht gestartet"));
         }
 
-        if (partie.laeuft && SCHACH.imSchach(partie.stand, partie.stand.amZug)) {
-            leiste.appendChild(TEAM_SCHACH._element("span", "chip chip-fehler", "Schach"));
-        }
+        /*
+         * „AM ZUG" UND „SCHACH" STEHEN SEIT v0.53.0 IN DER SPIELERZEILE,
+         * nicht mehr hier.
+         *
+         * Beide sagten etwas über EINE Seite, standen aber an einem Ort, der
+         * für die ganze Partie gilt — man musste den Namen der Farbe lesen
+         * und ihn selbst der richtigen Karte zuordnen. Jetzt leuchtet die
+         * Zeile dessen, der dran ist, und „Schach" steht bei dem, den es
+         * trifft. Zwei Marken weniger in einer Leiste, die davon sieben
+         * tragen konnte.
+         *
+         * Der Zweig für die laufende Partie ist damit leer geworden — die
+         * Leiste sagt bei laufendem Spiel nur noch, was NICHT normal ist.
+         */
 
         /*
          * WENN NIEMAND ZIEHEN KANN, STEHT ES DA (seit v0.94).
@@ -1026,7 +1045,121 @@ const TEAM_SCHACH = {
      * Teams
      * ---------------------------------------------------------------- */
 
-    _teamsBauen(partie, person) {
+    /*
+     * EINE SEITE ALS SCHMALE ZEILE AM BRETT (seit v0.53.0).
+     *
+     * Nutzer-Ansage 25.08.2026: „Überlege dir einen anderen Ort, wo du die
+     * Spieler hinschreibst — die zwei grossen Felder nehmen zu viel Platz
+     * ein." Entschieden hat der Nutzer am selben Tag: zwei schmale Zeilen,
+     * der Gegner über dem Brett, man selbst darunter.
+     *
+     * WARUM OBEN UND UNTEN und nicht nebeneinander: Am echten Tisch sitzt
+     * der Gegner gegenüber, und genau so steht das Brett auch auf dem
+     * Schirm — es dreht sich zur eigenen Seite (`_drehungVon`). Die Zeile
+     * über dem Brett gehört deshalb der Farbe, die dort auch spielt. Zwei
+     * Karten nebeneinander sagten das nie; man musste die Zuordnung jedes
+     * Mal neu lesen.
+     *
+     * DIESE ZEILE TRÄGT DREI SACHEN, DIE VORHER WOANDERS STANDEN:
+     *
+     *   „am Zug"   stand als Marke oben in der Standleiste. Dort war es eine
+     *              Aussage ÜBER jemanden; hier ist es eine Eigenschaft DES
+     *              Spielers, und die Zeile leuchtet dazu.
+     *   „Schach"   ebenso — und hier steht endlich dabei, WEN es trifft.
+     *   „bereit"   stand im Kopf der Team-Karte.
+     *
+     * Genau deshalb ist diese Zeile die Voraussetzung dafür, dass der
+     * wechselnde Erklärsatz unter dem Brett wegfallen kann (v0.54.0): Was er
+     * sagte, sagt jetzt die leuchtende Zeile — ohne die Höhe zu verändern.
+     */
+    _spielerZeileBauen(partie, person, farbe) {
+        const meinTeam = SCHACH_RUNDE.teamVon(partie, person.id);
+        const laeuft = partie.laeuft && !partie.ergebnis;
+        const amZug = laeuft && (partie.stand.amZug === farbe);
+
+        const zeile = TEAM_SCHACH._element("div",
+            "spieler-zeile spieler-zeile-" + farbe
+            + ((meinTeam === farbe) ? " spieler-zeile-meine" : "")
+            + (amZug ? " spieler-zeile-amzug" : ""));
+
+        /* Der Farbpunkt sagt, mit welchen Steinen diese Seite spielt. Das
+           Wort daneben bleibt trotzdem stehen: Ein schwarzer Punkt auf
+           dunklem Grund ist eine Zumutung, und Vorleseprogramme sehen gar
+           keine Farbe. */
+        zeile.appendChild(TEAM_SCHACH._element("span", "spieler-punkt"));
+        zeile.appendChild(TEAM_SCHACH._element("span", "spieler-farbe",
+            (farbe === "weiss") ? "Weiss" : "Schwarz"));
+
+        const namen = partie.teams[farbe].map((id) => TEAM_SCHACH._nameVon(id));
+        zeile.appendChild(TEAM_SCHACH._element("span", "spieler-name",
+            (namen.length > 0) ? namen.join(", ") : "noch niemand"));
+
+        const lage = TEAM_SCHACH._element("span", "spieler-lage");
+
+        if (amZug && SCHACH.imSchach(partie.stand, farbe)) {
+            lage.appendChild(TEAM_SCHACH._element("span", "chip chip-fehler", "Schach"));
+        }
+        if (amZug) {
+            lage.appendChild(TEAM_SCHACH._element("span", "spieler-amzug", "am Zug"));
+        } else if (!laeuft && !partie.ergebnis && partie.bereit[farbe]) {
+            lage.appendChild(TEAM_SCHACH._element("span", "chip chip-fertig", "bereit"));
+        }
+        zeile.appendChild(lage);
+
+        /*
+         * DER KNOPF DIESER SEITE — unverändert in seiner Bedeutung, nur an
+         * einem anderen Ort. Beide Zweige standen bis v0.52.0 im Fuss der
+         * Team-Karte; die Regeln dahinter sind dieselben geblieben:
+         *
+         *   - Die eigene Seite trägt „Bereit" bzw. „Doch nicht bereit".
+         *   - Die andere Seite bietet „Mitspielen" an, ABER nur, solange man
+         *     nicht selbst schon bereit gedrückt hat (v0.44.0,
+         *     Nutzer-Entscheidung: „soll erst kommen, wenn man 1 drückt").
+         *   - Die drei Beitritts-Knöpfe sehen gleich aus (v0.41.0) und
+         *     behalten ihre Klassen.
+         */
+        if (!partie.laeuft && !partie.ergebnis) {
+            if (meinTeam === farbe) {
+                zeile.appendChild(TEAM_SCHACH._knopf(
+                    partie.bereit[farbe] ? "Doch nicht bereit" : "Bereit",
+                    partie.bereit[farbe] ? "knopf-still knopf-klein" : "knopf-haupt knopf-klein",
+                    () => TEAM_SCHACH.bereitUmschalten(partie, farbe, !partie.bereit[farbe])
+                ));
+            } else if (!(meinTeam && partie.bereit[meinTeam])) {
+                zeile.appendChild(TEAM_SCHACH._knopf("Mitspielen",
+                    "team-knopf team-knopf-" + farbe,
+                    () => TEAM_SCHACH.teamBeitreten(partie, farbe)));
+            }
+        }
+
+        return zeile;
+    },
+
+    /*
+     * WELCHE FARBE OBEN AM BRETT STEHT.
+     *
+     * Das Brett dreht sich zur eigenen Seite (`_drehungVon`), also steht die
+     * eigene Farbe unten und die andere oben. Wer nur zuschaut, sieht das
+     * Brett wie Weiss — dann steht Schwarz oben. Eine Stelle, damit die
+     * beiden Zeilen und das Brett nie auseinanderlaufen.
+     */
+    _farbeObenAmBrett(partie, person) {
+        const meinTeam = SCHACH_RUNDE.teamVon(partie, person.id);
+        const unten = meinTeam || "weiss";
+        return (unten === "weiss") ? "schwarz" : "weiss";
+    },
+
+    /*
+     * WAS VON DEN TEAM-KARTEN ÜBRIG BLIEB (seit v0.53.0): alles, was zu
+     * KEINER der beiden Seiten gehört — der Hinweis auf den Computer, der
+     * Zufalls-Knopf und die Einladungen. Es steht unter der unteren
+     * Spielerzeile und verschwindet, sobald die Partie läuft.
+     *
+     * Die Funktion hiess bis v0.52.0 `_teamsBauen` und baute die zwei
+     * grossen Karten. Umbenannt, weil ein Name, der etwas anderes verspricht
+     * als er tut, beim nächsten Lesen Zeit kostet.
+     */
+    _teamExtrasBauen(partie, person) {
         const bereich = TEAM_SCHACH._element("div", "team-reihe");
         const meinTeam = SCHACH_RUNDE.teamVon(partie, person.id);
 
@@ -1046,75 +1179,9 @@ const TEAM_SCHACH = {
                         + "andere, sobald du bereit bist."));
         }
 
-        for (const farbe of ["weiss", "schwarz"]) {
-            const karte = TEAM_SCHACH._element("section",
-                "karte team-karte" + (meinTeam === farbe ? " team-karte-meine" : ""));
-
-            const kopf = TEAM_SCHACH._element("div", "karte-kopf");
-            kopf.appendChild(TEAM_SCHACH._element("h3", "",
-                (farbe === "weiss") ? "Weiss" : "Schwarz"));
-
-            if (partie.bereit[farbe]) {
-                kopf.appendChild(TEAM_SCHACH._element("span", "chip chip-fertig", "bereit"));
-            }
-            karte.appendChild(kopf);
-
-            /* Namen der Mitspieler — aufgelöst über die Runde des Würfel-Quizz,
-               weil dort die Namen stehen. */
-            const namen = partie.teams[farbe].map((id) => TEAM_SCHACH._nameVon(id));
-            karte.appendChild(TEAM_SCHACH._element("p", "team-namen",
-                namen.length > 0 ? namen.join(", ") : "noch niemand"));
-
-            const leiste = TEAM_SCHACH._element("div", "karte-fuss");
-
-            if (meinTeam === farbe) {
-                /* „Team verlassen" stand hier bis v0.25.0. Seit v0.26.0
-                   sammelt die Fussleiste alle Runden-Aktionen an EINER
-                   Stelle (`_fussleisteBauen`) — hier bleibt nur, was das
-                   Team selbst betrifft. */
-                if (!partie.laeuft && !partie.ergebnis) {
-                    leiste.appendChild(TEAM_SCHACH._knopf(
-                        partie.bereit[farbe] ? "Doch nicht bereit" : "Bereit",
-                        partie.bereit[farbe] ? "knopf-still knopf-klein" : "knopf-haupt",
-                        () => TEAM_SCHACH.bereitUmschalten(partie, farbe, !partie.bereit[farbe])
-                    ));
-                }
-            } else if (!(meinTeam && partie.bereit[meinTeam])) {
-                /*
-                 * WER BEREIT IST, SIEHT DIE ANDERE SEITE NICHT MEHR ALS
-                 * ANGEBOT (seit v0.44.0).
-                 *
-                 * Nutzer-Entscheidung 24.08.2026 zu Punkt 7: „2. kann raus,
-                 * du bist schon beigetreten — soll erst kommen, wenn man 1
-                 * drückt." Gemeint ist „Doch nicht bereit": Erst wer seine
-                 * Bereitschaft zurücknimmt, bekommt die Wahl wieder.
-                 *
-                 * Die Bedingung fragt `partie.bereit[meinTeam]` und nicht
-                 * „läuft die Partie" — genau darum geht es: Der Knopf soll
-                 * schon im Warten verschwinden, nicht erst beim Anpfiff.
-                 *
-                 * DIE DREI BEITRITTS-KNÖPFE SEHEN GLEICH AUS (seit v0.41.0,
-                 * Nutzer-Ansage 24.08.2026): „Die Knöpfe weiss, schwarz und
-                 * Zufall sollen alle drei gleich aussehen und die
-                 * entsprechenden Farben bekommen."
-                 *
-                 * Sie tragen deshalb dieselbe Grundklasse `team-knopf` und
-                 * unterscheiden sich nur in der Farbe. Der dritte steht
-                 * weiter unten, ausserhalb der Karten — er gehört zu keiner
-                 * Seite.
-                 */
-                leiste.appendChild(TEAM_SCHACH._knopf("Mitspielen",
-                    "team-knopf team-knopf-" + farbe,
-                    () => TEAM_SCHACH.teamBeitreten(partie, farbe)));
-            }
-
-            karte.appendChild(leiste);
-            bereich.appendChild(karte);
-        }
-
         /* Wer noch in keinem Team ist, kann sich auch würfeln lassen. Der
            Knopf trägt seit v0.41.0 dieselbe Form wie die beiden in den
-           Karten, nur diagonal geteilt — er gehört zu keiner Seite. */
+           Spielerzeilen, nur diagonal geteilt — er gehört zu keiner Seite. */
         if (!meinTeam && !partie.ergebnis) {
             const zufall = TEAM_SCHACH._element("div", "team-zufall-zeile");
             zufall.appendChild(TEAM_SCHACH._knopf("Zufall",

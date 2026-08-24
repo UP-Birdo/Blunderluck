@@ -1457,3 +1457,87 @@ Bild öffnen — alle drei Fehler oben standen nach dem Lauf als grüne
 für die alte `xlink:href`-Schreibweise braucht. Fünf Tests fielen mit
 „is not a function" aus. Der Stellvertreter wurde ergänzt, nicht der Code
 vereinfacht: Der Nachbau soll dem echten DOM folgen, nicht umgekehrt.
+
+## Ein Test hinter `process.exit` läuft nie (v0.52.0, beim Bauen gefunden)
+
+Ein neuer Wächter wurde ans ENDE von `tests\test-syntax.js` gehängt. Die
+Testkette blieb danach bei derselben Zahl Prüfungen — nicht, weil der Test
+durchfiel, sondern weil er gar nicht lief: Die letzten beiden Zeilen der
+Datei sind
+
+    console.log(anzahlOk + " ok, " + anzahlFehler + " Fehler");
+    process.exit(anzahlFehler === 0 ? 0 : 1);
+
+und alles dahinter ist toter Text.
+
+**Warum das gefährlich ist:** Ein Test, der still nicht läuft, ist schlimmer
+als kein Test — er steht in der Datei, er sieht nach Absicherung aus, und
+niemand prüft je nach. Aufgefallen ist es nur, weil die Zahl der Prüfungen
+nach dem Ergänzen gleich blieb.
+
+**Die Lehre, und sie gilt für alle elf Testdateien:** Neue Prüfungen kommen
+VOR den Fazit-Block. Und nach jedem Ergänzen wird die ZAHL verglichen, nicht
+nur „0 Fehler" gelesen — „0 Fehler" sagt ein Test auch, den es nicht gibt.
+
+## `letter-spacing` steht auch hinter dem LETZTEN Zeichen (v0.51.0, beim Bauen gerechnet)
+
+Das Code-Feld sollte genau sechs Kästchen breit sein: Zellenbreite mal sechs,
+die Zeichen mit `letter-spacing` auf Zellenbreite auseinandergezogen. Die
+Rechnung geht nicht auf, und zwar aus einem Grund, den man nicht sieht,
+sondern nur nachrechnet: **`letter-spacing` setzt den Abstand HINTER jedes
+Zeichen, auch hinter das letzte.** Der Textvorschub ist damit nicht
+`5 mal Zelle + 1 Zeichen`, sondern volle `6 mal Zelle` — plus dem linken
+Polster, das die Zeichen in ihren Zellen mittig hält.
+
+**Was daraus im Browser geworden wäre:** Sobald das sechste Zeichen getippt
+ist, steht der Schreibstrich um eine halbe Zellenluft ausserhalb des Feldes.
+Der Browser schiebt dann den ganzen Inhalt nach links, damit man ihn sieht —
+und alle sechs Zeichen stehen plötzlich schief in ihren Kästchen, genau im
+Moment des letzten Tastendrucks. Ein Fehler, der erst beim vollständig
+ausgefüllten Feld auftritt und deshalb beim Ausprobieren gern überlebt.
+
+**Gebaut ist es deshalb so:** Das Feld ist um die halbe Luft breiter als
+sechs Zellen, und die Kästchen sind ein Hintergrundbild von genau sechs
+Zellen Breite (`background-size`, `no-repeat`). Was rechts übrig bleibt, ist
+durchsichtig — die Zeichen sitzen mittig, der Schreibstrich passt, und die
+zusätzliche Luft sieht niemand. Die ganze Herleitung steht bei `.code-feld`.
+
+## Zwei CSS-Regeln mit gleichem Gewicht — es entscheidet die Reihenfolge (v0.52.0, beim Bauen bemerkt)
+
+Auf der festen Seite behalten alle Kinder ihre Höhe, nur der Brett-Halter
+darf wachsen:
+
+    body.partie-fest .schach > *      /* flex: 0 0 auto */
+    body.partie-fest .brett-halter    /* flex: 1 1 auto */
+
+Beide Wähler wiegen gleich viel (ein Element, zwei Klassen — das `*` zählt
+nichts). Es entschied allein, dass die zweite Regel weiter unten steht. Wer
+die Datei einmal umsortiert oder die Regeln in verschiedene Abschnitte legt,
+bekommt ein Brett, das nicht mehr wächst — und der Fehler sieht nicht nach
+einem CSS-Problem aus, sondern nach einem winzigen Brett.
+
+**Gebaut ist es jetzt als `body.partie-fest .schach > .brett-halter`** — eine
+Klasse mehr, und die Frage stellt sich nicht mehr. **Die Lehre allgemein:**
+Wo eine Regel eine andere absichtlich überstimmt, wird sie schwerer gemacht,
+nicht tiefer gelegt.
+
+## Ein Kommentar behauptete, ein Stil sei tot — er war es nicht (v0.50.0, beim Bauen gefunden)
+
+Über `.verlauf-kasten` und `.verlauf-titel` stand seit v0.37.0 in der
+Stildatei: „NOCH IN BENUTZUNG? Nein — … seit v0.37.0 ohne Nutzer. Sie stehen
+beim Aufräum-Punkt der ROADMAP (‚tote Stile')." Benutzt wurden sie die ganze
+Zeit, nämlich vom Zugverlauf unter dem Brett.
+
+**Wie es dazu kam:** v0.37.0 hat die vergangenen Matches auf eine eigene
+Seite geholt und dabei EINEN der beiden Nutzer der Klassen entfernt. Der
+Kommentar wurde für den entfernten geschrieben und übersah den anderen.
+
+**Warum das teuer werden kann:** Der nächste Aufräum-Durchgang hätte die
+Regeln gestrichen — auf Zuruf des Kommentars, ohne zu suchen — und der
+Zugverlauf hätte seinen Griff verloren. Ein falscher Kommentar ist
+gefährlicher als gar keiner, weil er das Nachsehen ersetzt.
+
+**Die Lehre:** „Wird das noch benutzt?" beantwortet die Suche, nicht das
+Gedächtnis. Wer einen solchen Kommentar schreibt, schreibt dazu, WO er
+gesucht hat. (Mit v0.50.0 sind die Klassen wirklich ohne Nutzer und deshalb
+gestrichen.)

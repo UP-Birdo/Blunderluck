@@ -3,6 +3,20 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.53.0 — 25.08.2026
+
+**Die Spieler stehen jetzt am Brett, nicht mehr in zwei grossen Kästen.**
+
+- Der Gegner steht in einer schmalen Zeile **über** dem Brett, du in einer
+  **darunter** — wie am echten Tisch. Die zwei grossen Karten sind weg; das
+  spart rund 170 Pixel, und die gehören jetzt dem Brett.
+- **Wer am Zug ist, leuchtet.** Dafür braucht es kein Wort mehr: Oben in der
+  Leiste stand bisher „Weiss ist am Zug", jetzt sagt es die Zeile selbst.
+- **„Schach" steht bei dem, den es trifft** — vorher stand es oben in der
+  Leiste, und man musste selbst zuordnen, wer gemeint war.
+- In jeder Zeile steht, mit welcher Farbe diese Seite spielt, wer mitspielt
+  und ob sie bereit ist. „Bereit" und „Mitspielen" sitzen dort, wo sie
+  hingehören — an der Seite, um die es geht.
 ## v0.52.0 — 25.08.2026
 
 **Das Match passt jetzt auf eine Seite — es rollt nicht mehr.**
