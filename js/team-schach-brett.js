@@ -660,36 +660,56 @@ Object.assign(TEAM_SCHACH, {
         TEAM_SCHACH.brettSpalten = zeigeSpalten;
         TEAM_SCHACH.brettReihen = quer ? breite : hoehe;
 
-        if (!partie.laeuft && !partie.ergebnis) {
-            halter.appendChild(TEAM_SCHACH._element("p", "erklaerung",
-                "Die Partie beginnt, sobald in beiden Teams jemand steht und beide "
-                + "Seiten bereit gedrückt haben."));
-        } else if (partie.laeuft && !darfZiehen) {
-            halter.appendChild(TEAM_SCHACH._element("p", "erklaerung",
-                meinTeam
-                    ? "Warte, bis dein Team wieder am Zug ist."
-                    : "Tritt einem Team bei, um mitzuspielen."));
-        } else if (darfZiehen && !TEAM_SCHACH.zielFaehigkeit) {
-            /* Wartet eine Fähigkeit auf ihr Ziel, erklärt die Platzier-Leiste
-               weiter unten, was zu tun ist — zwei Anleitungen gleichzeitig
-               widersprächen sich. */
-            halter.appendChild(TEAM_SCHACH._element("p", "erklaerung",
-                "Figur antippen, dann ein Feld mit Punkt. Wer aus deinem Team "
-                + "zuerst zieht, hat gezogen."));
-        }
-
-        if (glas) {
-            halter.appendChild(TEAM_SCHACH._element("p", "erklaerung erklaerung-rochade",
-                "Halluzination: Du siehst die gegnerischen Figuren gerade falsch. "
-                + "Sie ziehen wie immer — verlass dich lieber auf die "
-                + "hervorgehobenen Felder. Noch "
-                + (partie.stand.glasBis - partie.zugZaehler) + " Halbzüge."));
-        }
-
-        const rochade = TEAM_SCHACH._rochadeHinweis(partie);
-        if (rochade) {
-            halter.appendChild(TEAM_SCHACH._element("p", "erklaerung erklaerung-rochade", rochade));
-        }
+        /*
+         * UNTER DEM BRETT STEHT KEIN ERKLÄRTEXT MEHR (seit v0.54.0).
+         *
+         * Nutzer-Ansage 25.08.2026: „Der Infotext, wo umschaltet, unter dem
+         * Brett weg — der drückt das Feld hoch, runter, wenn ich eine Figur
+         * andrücke, sobald der Gegenzug fertig ist."
+         *
+         * ER HATTE RECHT, UND SEIT v0.52.0 IST ES SCHLIMMER GEWORDEN. Auf der
+         * festen Seite rechnet `_brettEinpassen` die Brettbreite aus der
+         * Höhe, die im Halter übrig bleibt — alles, was hier zusätzlich
+         * eingehängt wird, geht dem Brett direkt ab. Vier Texte wechselten
+         * sich hier ab, und drei davon wechselten MITTEN IM SPIEL:
+         *
+         *   „Warte, bis dein Team wieder am Zug ist"     eine Zeile
+         *   „Figur antippen, dann ein Feld mit Punkt …"  zwei bis drei
+         *   der Rochade-Hinweis                          eine bis drei
+         *
+         * Der erste und der zweite tauschten sich, sobald der Gegenzug
+         * eintraf; der dritte erschien beim Antippen des Königs. Das Brett
+         * änderte dabei jedes Mal seine Grösse — bei einem gedrückten Finger
+         * auf einer Figur ist das die schlechteste Zeit dafür.
+         *
+         * WAS VERLOREN GEHT, UND WARUM ES ZU VERSCHMERZEN IST:
+         *
+         *   Startbedingung   sagt jetzt die Standleiste („Noch nicht
+         *                    gestartet") zusammen mit den zwei Spielerzeilen
+         *                    („noch niemand" / „bereit").
+         *   Wer dran ist     sagt seit v0.53.0 die leuchtende Spielerzeile.
+         *   Wie man zieht    zeigt das Brett selbst: Die möglichen Felder
+         *                    tragen einen Punkt, sobald eine Figur gewählt
+         *                    ist. Ein Satz, der das jede Sekunde wiederholt,
+         *                    ist beim ersten Zug hilfreich und ab dem zweiten
+         *                    nur noch im Weg.
+         *   Halluzination    stand hier ZWEIMAL: Die Standleiste trägt
+         *                    dieselbe Auskunft samt Restzählung als Marke
+         *                    („Sicht getrübt: noch N Halbzüge").
+         *   Rochade          ist das Einzige, das ersatzlos entfällt. Die
+         *                    möglichen Ziele zeigt das Brett auch hier als
+         *                    Punkte; was fehlt, ist die BEGRÜNDUNG, warum
+         *                    sie gerade nicht geht. `_rochadeHinweis` bleibt
+         *                    darum stehen und wird nicht gelöscht — sie ist
+         *                    fertig, falls dafür ein fester Platz gefunden
+         *                    wird (Punkt in der ROADMAP).
+         *
+         * WAS HIER BLEIBEN DARF: nur, was eine AKTION trägt — die
+         * Platzier-Leiste und das laufende Zugmuster. Beide erscheinen nicht
+         * von selbst, sondern weil man sie ausgelöst hat, und beide haben
+         * einen Knopf. Eine Grössenänderung, die auf den eigenen Fingerdruck
+         * folgt, ist etwas anderes als eine, die der Gegner auslöst.
+         */
 
         const platzieren = TEAM_SCHACH._platzierenBauen(partie, person);
         if (platzieren) {
@@ -1007,6 +1027,21 @@ Object.assign(TEAM_SCHACH, {
      * König an, es erscheint kein Feld, und niemand sagt warum. Die Gründe
      * kommen aus dem Regelwerk (SCHACH.rochadeLage) — der Bildschirm rechnet
      * nichts selbst nach.
+     */
+    /*
+     * OHNE AUFRUFER SEIT v0.54.0 — und das ist Absicht, kein Vergessen.
+     *
+     * Der Satz stand bis dahin unter dem Brett und erschien, sobald man den
+     * König antippte. Genau das war der gemeldete Fehler: Das Brett änderte
+     * beim Fingerdruck seine Grösse. Die Funktion selbst ist aber fertig und
+     * richtig — sie beantwortet als Einzige die Frage „warum geht die
+     * Rochade gerade nicht". Sie bleibt deshalb stehen, bis dafür ein Platz
+     * gefunden ist, der die Höhe nicht verändert (ROADMAP, „Später").
+     *
+     * Wer hier aufräumt: Es gibt heute KEINEN Aufrufer — nachgesehen am
+     * 25.08.2026 mit einer Suche über `js\` und `tests\`. Wer sie streicht,
+     * streicht mit ihr die Begründung; das ist eine Entscheidung, keine
+     * Aufräumarbeit.
      */
     _rochadeHinweis(partie) {
         if (TEAM_SCHACH.gewaehltesFeld === -1) {

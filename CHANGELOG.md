@@ -3,6 +3,25 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.54.0 — 25.08.2026
+
+**Unter dem Brett steht kein Erklärtext mehr — das Brett bleibt beim Spielen
+stehen, wo es ist.**
+
+- Bisher wechselten sich dort vier Sätze ab, und drei davon **mitten im
+  Spiel**: „Warte, bis dein Team wieder am Zug ist" wurde zu „Figur antippen,
+  dann ein Feld mit Punkt …", sobald der Gegenzug ankam — und die beiden sind
+  unterschiedlich hoch. Beim Antippen des Königs kam noch ein Rochade-Hinweis
+  dazu. Das Brett rutschte dabei jedes Mal.
+- Verloren geht nichts Wichtiges: **Wer dran ist**, sagt seit v0.53.0 die
+  leuchtende Spielerzeile. **Wie man zieht**, zeigt das Brett selbst mit den
+  Punkten auf den möglichen Feldern. Die **Halluzination** stand ohnehin
+  zweimal da — die Marke oben zählt weiter mit.
+- Stehen bleibt nur, was einen Knopf hat: die Platzier-Leiste und das
+  laufende Zugmuster. Die erscheinen, weil **du** etwas angetippt hast, nicht
+  weil der Gegner gezogen hat.
+- **Was ersatzlos entfällt:** die Begründung, warum eine Rochade gerade nicht
+  geht. Die möglichen Ziele zeigt das Brett weiter als Punkte.
 ## v0.53.0 — 25.08.2026
 
 **Die Spieler stehen jetzt am Brett, nicht mehr in zwei grossen Kästen.**
