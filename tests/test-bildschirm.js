@@ -393,7 +393,7 @@ umgebung.TABS = {
  * sehr wohl. Am Ende werden die Bausteine global bereitgestellt, damit dieser
  * Test sie greifen kann.
  */
-const bausteinNamen = ["SPIELER", "ANMELDUNG", "SCHACH_VARIANTEN", "SCHACH", "SCHACH_RUNDE",
+const bausteinNamen = ["KONFIG", "SPIELER", "ANMELDUNG", "SCHACH_VARIANTEN", "SCHACH", "SCHACH_RUNDE",
     "SCHACH_TAFEL", "SCHACH_VORSCHAU", "SCHACH_GRUNDLAGEN", "TEAM_SCHACH",
     "RANGLISTE", "START", "FAEHIGKEITEN", "FREUNDE", "EINSTELLUNGEN",
     "SpeicherGemeinsam",
@@ -3986,6 +3986,47 @@ pruefe("Der Stand des Abgleichs steht in den Einstellungen (Wunsch 2)", () => {
         }
     } finally {
         delete umgebung.APP;
+    }
+});
+
+pruefe("Version und Wunsch-Knopf stehen in den Einstellungen (v0.25.0)", () => {
+    /*
+     * DIE GEMELDETE ANSAGE: „die version und der wunsch knopf oben raus und
+     * auch in die einstellungen verschieben damit mehr plaz fuer das
+     * wichtige ist."
+     *
+     * wunsch.js laeuft in diesem Test nicht mit (es haengt am echten
+     * Dokument) — geprueft wird deshalb die Karte samt Versionszeile und
+     * dem Platz, in den der Knopf sich einhaengt.
+     */
+    const EINSTELLUNGEN = umgebung.EINSTELLUNGEN;
+    EINSTELLUNGEN.aufbauen(neuesElement("div"));
+
+    const einsammeln = (element, passt, treffer) => {
+        for (const kind of element.kinder || []) {
+            if (passt(kind)) {
+                treffer.push(kind);
+            }
+            einsammeln(kind, passt, treffer);
+        }
+        return treffer;
+    };
+
+    const zeile = einsammeln(EINSTELLUNGEN.wurzelEl, (kind) =>
+        String(kind.className || "").indexOf("version") !== -1, [])[0];
+    if (!zeile) {
+        throw new Error("keine Versionszeile in den Einstellungen");
+    }
+    if (String(zeile.textContent).indexOf(umgebung.KONFIG.APP_VERSION) === -1) {
+        throw new Error("die Versionszeile nennt die Version nicht: "
+            + zeile.textContent);
+    }
+
+    const ueberschriften = einsammeln(EINSTELLUNGEN.wurzelEl, (kind) =>
+        kind.tagName === "h2", []).map((kind) => String(kind.textContent));
+    if (ueberschriften.indexOf("Über die App") === -1) {
+        throw new Error("keine Karte Über die App, nur: "
+            + ueberschriften.join(", "));
     }
 });
 

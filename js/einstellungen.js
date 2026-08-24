@@ -94,6 +94,48 @@ const EINSTELLUNGEN = {
         wurzel.appendChild(EINSTELLUNGEN._accountKarteBauen());
         wurzel.appendChild(EINSTELLUNGEN._spielerKarteBauen());
         wurzel.appendChild(EINSTELLUNGEN._statusKarteBauen());
+        wurzel.appendChild(EINSTELLUNGEN._ueberKarteBauen());
+    },
+
+    /* ---------------------------------------------------------------- *
+     * Die Karte „Über die App" (seit v0.25.0)
+     *
+     * Nutzer-Ansage 24.08.: „die version und der wunsch knopf oben raus
+     * und auch in die einstellungen verschieben, damit mehr Platz für das
+     * Wichtige ist." Damit ist der Kopfbalken der Seite ganz entfallen —
+     * seine drei Bewohner sitzen jetzt alle hier unten.
+     * ---------------------------------------------------------------- */
+
+    _ueberKarteBauen() {
+        const karte = document.createElement("section");
+        karte.className = "karte";
+
+        const kopf = document.createElement("h2");
+        kopf.textContent = "Über die App";
+        karte.appendChild(kopf);
+
+        const zeile = document.createElement("p");
+        zeile.className = "version";
+        zeile.textContent = "Blunderluck "
+            + (typeof KONFIG !== "undefined" ? "v" + KONFIG.APP_VERSION : "");
+        karte.appendChild(zeile);
+
+        const erklaerung = document.createElement("p");
+        erklaerung.className = "erklaerung";
+        erklaerung.textContent = "Fehlt dir etwas oder stört dich etwas? "
+            + "Schreib es auf — der Text landet in der Aufgabenliste.";
+        karte.appendChild(erklaerung);
+
+        /* Den Knopf baut wunsch.js selbst; er hing bis v0.24.0 im Kopf der
+           Seite. Im Bildschirm-Test läuft wunsch.js nicht mit. */
+        const fuss = document.createElement("div");
+        fuss.className = "karte-fuss";
+        if (typeof WUNSCH !== "undefined") {
+            WUNSCH.aufbauen(fuss);
+        }
+        karte.appendChild(fuss);
+
+        return karte;
     },
 
     /* ---------------------------------------------------------------- *

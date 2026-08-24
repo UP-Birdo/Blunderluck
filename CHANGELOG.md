@@ -3,6 +3,17 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.25.0 — 24.08.2026
+
+**Der Balken oben ist ganz weg — mehr Platz fürs Spiel.**
+
+- Versionsnummer und Wunsch-Knopf, die letzten zwei Bewohner der Kopfzeile,
+  sind in die Einstellungen gezogen: neue Karte **„Über die App"** ganz
+  unten, mit der Version und dem Knopf zum Wünschen und Fehlermelden.
+- Damit fällt der Balken selbst weg. Auf dem Handy gewinnt jeder Bildschirm
+  rund vierzig Bildpunkte Höhe.
+- Am Wunsch-Weg ändert sich nichts: Knopf drücken, schreiben, absenden.
+
 ## v0.24.0 — 24.08.2026
 
 **Die Lootbox ist jetzt ein Würfel — mit eingraviertem Fragezeichen.**

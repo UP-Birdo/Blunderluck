@@ -39,8 +39,6 @@ const APP = {
     starten() {
         DIALOG.aufbauen(document.getElementById("dialog"));
 
-        document.getElementById("app-version").textContent = "v" + KONFIG.APP_VERSION;
-
         /* ---- Spielerliste (Anmeldung) ---- */
         const spielerSpeicher = speicherErzeugen(
             KONFIG,
@@ -133,9 +131,9 @@ const APP = {
             "start"
         );
 
-        /* Der Wunsch-Knopf im Kopf — nach den Tabs, weil er den offenen Tab
-           als Herkunft mitschickt. */
-        WUNSCH.aufbauen(document.getElementById("wunsch-platz"));
+        /* Den Wunsch-Knopf hängt seit v0.25.0 die Karte „Über die App" in
+           den Einstellungen selbst ein (js\einstellungen.js) — der
+           Kopfbalken, in dem er hing, gibt es nicht mehr. */
 
         /* Nach jeder Anmeldung entscheidet der Wiedereinstieg (start.js),
            ob es auf den Start geht oder direkt in die eigene laufende

@@ -22,26 +22,18 @@
 </head>
 <body>
 
-    <header class="kopf">
-        <div class="kopf-titel">
-            <!-- DER SCHRIFTZUG IST SEIT v0.16.0 UNSICHTBAR (Wunsch 3:
-                 „Der Schriftzug Blunderluck oben soll überall
-                 verschwinden"). Die Überschrift selbst BLEIBT stehen —
-                 Vorleseprogramme brauchen eine Seiten-Überschrift, und
-                 der sichtbare Name der App wird an dieser Stelle geprüft
-                 (tests\test-syntax.js). Sichtbar bleibt nur noch die
-                 Versionsnummer. -->
-            <h1 class="nur-vorlesen">Blunderluck</h1>
-            <span class="version" id="app-version"></span>
-        </div>
-        <div class="kopf-rechts">
-            <!-- Der Stand des Abgleichs (grüner Punkt) hing bis v0.14.0
-                 hier; seit v0.15.0 steht er in den Einstellungen
-                 (Karte „Verbindung", js/einstellungen.js). -->
-            <!-- Der Wunsch-Knopf hängt sich hier ein (js/wunsch.js). -->
-            <div id="wunsch-platz"></div>
-        </div>
-    </header>
+    <!--
+        DER KOPFBALKEN IST SEIT v0.25.0 GANZ WEG (Nutzer-Ansage 24.08.:
+        „die version und der wunsch knopf oben raus und auch in die
+        einstellungen verschieben, damit mehr Platz für das Wichtige ist").
+        Vorher zogen dort schon der Stand des Abgleichs (v0.15.0) und der
+        Schriftzug (v0.16.0) aus.
+
+        Die Überschrift BLEIBT — unsichtbar: Vorleseprogramme brauchen eine
+        Seiten-Überschrift, und der Name der App wird an dieser Stelle
+        geprüft (tests\test-syntax.js).
+    -->
+    <h1 class="nur-vorlesen">Blunderluck</h1>
 
     <p class="hinweis" id="hinweis" hidden></p>
 

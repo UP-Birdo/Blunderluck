@@ -179,47 +179,22 @@ body {
 }
 
 /* ------------------------------------------------------------------ *
- * Kopf
+ * Kopf — es gibt keinen mehr
+ *
+ * Bis v0.24.0 stand oben ein Balken. Nacheinander sind seine Bewohner
+ * ausgezogen: der Stand des Abgleichs (v0.15.0), der Schriftzug (v0.16.0),
+ * zuletzt Version und Wunsch-Knopf (v0.25.0, Nutzer-Ansage „damit mehr
+ * Platz für das Wichtige ist"). Damit ist auch der Balken selbst weg, und
+ * mit ihm die Klassen `.kopf`, `.kopf-titel`, `.kopf-rechts` und `.kopf h1`.
+ *
+ * `.version` bleibt: Sie trägt jetzt die Zeile in der Einstellungen-Karte
+ * „Über die App".
  * ------------------------------------------------------------------ */
 
-/*
- * SEIT v0.16.0 (Wunsch 3) TRÄGT DER KOPF NUR NOCH DIE VERSIONSNUMMER
- * und den Wunsch-Knopf — der Schriftzug ist unsichtbar, der Stand des
- * Abgleichs zog in die Einstellungen (v0.15.0). Ein Balken in voller
- * Höhe wäre jetzt fast leer, deshalb ein knapperer Innenabstand.
- */
-.kopf {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    padding: 8px var(--abstand);
-    background: var(--karte);
-    border-bottom: 1px solid var(--rahmen);
-}
-
-.kopf-titel {
-    display: flex;
-    align-items: baseline;
-    gap: 8px;
-}
-
-.kopf h1 {
-    margin: 0;
-    font-size: 1.35rem;
-}
-
 .version {
+    margin: 0 0 8px;
     color: var(--schrift-leise);
     font-size: 0.85rem;
-}
-
-.kopf-rechts {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex-wrap: wrap;
 }
 
 .status {
@@ -4655,18 +4630,12 @@ body.dialog-offen {
         bottom: calc(16px + env(safe-area-inset-bottom, 0px));
     }
 
-    /* Im Runden-Fenster gibt es kein Dock und keinen Kopf — der ganze
-       Schirm gehört dem laufenden Spiel. */
-    body.runde-offen .kopf {
-        display: none;
-    }
+    /* Die zwei Regeln zum Kopfbalken sind mit ihm entfallen (v0.25.0):
+       Er wurde im Runden-Fenster ausgeblendet und bekam auf schmalen
+       Schirmen weniger Innenabstand. */
 
     body.runde-offen .tab-inhalt {
         padding-bottom: 12px;
-    }
-
-    .kopf {
-        padding: 12px;
     }
 
     .wuerfel-feld-halter {
