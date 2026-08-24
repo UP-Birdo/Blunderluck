@@ -1123,6 +1123,66 @@ body.runde-offen .tab-leiste {
     border-width: 2px;
 }
 
+/* ------------------------------------------------------------------ *
+ * DIE DREI BEITRITTS-KNÖPFE (seit v0.41.0)
+ *
+ * Nutzer-Ansage 24.08.2026: „Die Knöpfe weiss, schwarz und Zufall sollen
+ * alle drei gleich aussehen und die entsprechenden Farben bekommen. Zufall
+ * von unten links nach oben rechts trennen — den Knopf eine Seite weiss,
+ * eine schwarz."
+ *
+ * GLEICHE FORM, unterschiedliche Farbe. Die Farben sind die der FIGUREN
+ * (`--figur-weiss` / `--figur-schwarz`), nicht die der Felder — der Knopf
+ * sagt, mit welchen Steinen man spielt.
+ * ------------------------------------------------------------------ */
+
+.team-knopf {
+    width: 100%;
+    min-height: 44px;
+    border-radius: 10px;
+    border: 1px solid var(--rahmen);
+    font-weight: 600;
+}
+
+.team-knopf-weiss {
+    background: var(--figur-weiss);
+    color: var(--figur-schwarz);
+}
+
+.team-knopf-schwarz {
+    background: var(--figur-schwarz);
+    color: var(--figur-weiss);
+    border-color: var(--figur-schwarz);
+}
+
+/*
+ * DIE TRENNLINIE LÄUFT VON UNTEN LINKS NACH OBEN RECHTS. Der Verlauf zeigt
+ * senkrecht dazu (135deg = nach unten rechts), sonst stünde die Kante
+ * andersherum. Oben links weiss wie der erste Knopf, unten rechts schwarz.
+ */
+.team-knopf-zufall {
+    background: linear-gradient(135deg,
+        var(--figur-weiss) 0 calc(50% - 1px),
+        var(--rahmen) calc(50% - 1px) calc(50% + 1px),
+        var(--figur-schwarz) calc(50% + 1px) 100%);
+
+    /* Die Schrift steht auf BEIDEN Hälften — dunkel mit hellem Schein
+       ringsum, damit sie sich auch von der schwarzen Hälfte abhebt. */
+    color: var(--figur-schwarz);
+    text-shadow:
+        0 0 3px var(--figur-weiss),
+        0 0 6px var(--figur-weiss),
+        0 0 9px var(--figur-weiss);
+}
+
+/* Der dritte Knopf steht unter den beiden Karten und ist genauso breit
+   wie eine von ihnen — nicht so breit wie beide zusammen. */
+.team-zufall-zeile {
+    display: flex;
+    flex: 1 1 100%;
+    margin-top: 12px;
+}
+
 .team-namen {
     margin: 0;
     color: var(--schrift-leise);

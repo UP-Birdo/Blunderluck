@@ -448,5 +448,38 @@ pruefe("Die Kreuz-Ecken tragen feld-ausserhalb (v0.31.0)", () => {
     }
 });
 
+/*
+ * DIE DREI BEITRITTS-KNÖPFE HABEN DIESELBE FORM (seit v0.41.0).
+ *
+ * Sie sollen gleich aussehen und nur die Farbe unterscheiden. Das haelt
+ * kein Test „am Bild" fest — was sich pruefen laesst, ist der Vertrag
+ * dahinter: EINE gemeinsame Klasse plus drei Farbklassen, im Code vergeben
+ * und in der Stildatei definiert. Wer eine davon streicht, bekommt einen
+ * Knopf ohne Farbe oder eine Farbe ohne Knopf.
+ */
+pruefe("Die drei Beitritts-Knoepfe teilen sich eine Klasse (v0.41.0)", () => {
+    const quelle = dateisystem.readFileSync(
+        pfad.join(jsOrdner, "team-schach.js"), "utf8");
+    const stil = dateisystem.readFileSync(
+        pfad.join(projekt, "css", "stil.css"), "utf8");
+
+    for (const klasse of ["team-knopf", "team-knopf-zufall"]) {
+        if (quelle.indexOf(klasse) === -1) {
+            throw new Error("team-schach.js vergibt " + klasse + " nicht mehr");
+        }
+        if (stil.indexOf("." + klasse) === -1) {
+            throw new Error("stil.css hat keine Regel fuer ." + klasse);
+        }
+    }
+
+    /* Die beiden Seitenfarben entstehen im Code aus der Farbe der Seite
+       ("team-knopf-" + farbe) — geprueft wird deshalb die Stildatei. */
+    for (const farbe of ["weiss", "schwarz"]) {
+        if (stil.indexOf(".team-knopf-" + farbe) === -1) {
+            throw new Error("stil.css hat keine Regel fuer .team-knopf-" + farbe);
+        }
+    }
+});
+
 console.log(anzahlOk + " ok, " + anzahlFehler + " Fehler");
 process.exit(anzahlFehler === 0 ? 0 : 1);

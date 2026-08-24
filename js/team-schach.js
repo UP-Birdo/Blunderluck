@@ -932,7 +932,19 @@ const TEAM_SCHACH = {
                     ));
                 }
             } else {
-                leiste.appendChild(TEAM_SCHACH._knopf("Mitspielen", "knopf-still knopf-klein",
+                /*
+                 * DIE DREI BEITRITTS-KNÖPFE SEHEN GLEICH AUS (seit v0.41.0,
+                 * Nutzer-Ansage 24.08.2026): „Die Knöpfe weiss, schwarz und
+                 * Zufall sollen alle drei gleich aussehen und die
+                 * entsprechenden Farben bekommen."
+                 *
+                 * Sie tragen deshalb dieselbe Grundklasse `team-knopf` und
+                 * unterscheiden sich nur in der Farbe. Der dritte steht
+                 * weiter unten, ausserhalb der Karten — er gehört zu keiner
+                 * Seite.
+                 */
+                leiste.appendChild(TEAM_SCHACH._knopf("Mitspielen",
+                    "team-knopf team-knopf-" + farbe,
                     () => TEAM_SCHACH.teamBeitreten(partie, farbe)));
             }
 
@@ -940,11 +952,13 @@ const TEAM_SCHACH = {
             bereich.appendChild(karte);
         }
 
-        /* Wer noch in keinem Team ist, kann sich auch würfeln lassen. */
+        /* Wer noch in keinem Team ist, kann sich auch würfeln lassen. Der
+           Knopf trägt seit v0.41.0 dieselbe Form wie die beiden in den
+           Karten, nur diagonal geteilt — er gehört zu keiner Seite. */
         if (!meinTeam && !partie.ergebnis) {
-            const zufall = TEAM_SCHACH._element("div", "fussleiste");
-            zufall.appendChild(TEAM_SCHACH._knopf("Zufällig zuteilen",
-                "knopf-still knopf-klein",
+            const zufall = TEAM_SCHACH._element("div", "team-zufall-zeile");
+            zufall.appendChild(TEAM_SCHACH._knopf("Zufall",
+                "team-knopf team-knopf-zufall",
                 () => TEAM_SCHACH.zufaelligBeitreten(partie)));
             bereich.appendChild(zufall);
         }

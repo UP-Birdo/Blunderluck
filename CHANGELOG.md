@@ -3,6 +3,18 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.41.0 — 24.08.2026
+
+**Die drei Knöpfe zum Beitreten sehen jetzt gleich aus — und tragen ihre
+Farbe.**
+
+- „Mitspielen" bei Weiss ist weiss, bei Schwarz ist es schwarz. Beide sind
+  gleich gross und gleich geformt.
+- Der dritte heisst nur noch **„Zufall"** und ist diagonal geteilt: von
+  unten links nach oben rechts, oben links weiss, unten rechts schwarz.
+- Die Farben sind die der Figuren, nicht die der Felder — der Knopf sagt,
+  mit welchen Steinen du spielst.
+
 ## v0.40.1 — 24.08.2026
 
 **Nachbesserung zu v0.40.0:** Der Beitritts-Code stand zweimal auf dem
