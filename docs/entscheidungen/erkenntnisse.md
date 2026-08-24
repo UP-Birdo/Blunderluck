@@ -2,6 +2,29 @@
 
 ## Teuer erkaufte Erkenntnisse
 
+### Ein leerer Bereich darf nicht verschwinden (v0.47.0)
+
+**Der Fehlschlag:** Mit v0.47.0 zog der Beitritts-Code aus dem Partie-Kopf in
+die Stand-Leiste. Der Kopf war danach leer — also habe ich ihn beim Zeichnen
+weggelassen, damit dort keine leere Zeile mit Trennlinie steht. Prompt fielen
+DREIZEHN Bildschirm-Tests um: „nur 5 Bereiche gezeichnet".
+
+**Warum:** Die Bildschirm-Tests zaehlen seit v1.2 die BEREICHE der Partie —
+Kopf, Stand-Leiste, Brett, Teams, Fussleiste. Das ist der Waechter gegen den
+Fehler von damals („Der Tab Team Schach blieb leer", weiter unten): ein ganzer
+Bereich, der fehlt, ohne dass jemand es merkt. Ein absichtlich weggelassener
+Bereich sieht fuer diesen Waechter genauso aus wie ein kaputter.
+
+**Die Loesung:** Das Element BLEIBT im Baum, die Stildatei blendet es aus:
+
+    .partie-kopf:empty { display: none; }
+
+**Die Regel daraus:** Wer einen Bereich der Partie loswerden will, entfernt
+ihn nicht aus dem Baum, sondern macht ihn unsichtbar — oder er passt die
+Zaehlung in `tests\test-bildschirm.js` bewusst an und schreibt dazu, warum es
+jetzt einer weniger ist. Beides ist richtig; stillschweigend weglassen ist es
+nicht.
+
 ### Ein Waechter, der eine handgeschriebene Liste prueft, wacht nicht (v0.28.0)
 
 **Dieselbe Falle zum DRITTEN Mal.** `SCHACH_TAFEL.partieAnlegen` kopiert jede

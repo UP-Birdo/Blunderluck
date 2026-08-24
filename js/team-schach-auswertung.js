@@ -1602,9 +1602,55 @@ Object.assign(TEAM_SCHACH, {
         return zeile;
     },
 
+    /*
+     * DER FRIEDHOF FÄHRT AUS EINEM KNOPF AUS (seit v0.49.0).
+     *
+     * Nutzer-Ansage 24.08.2026: „Der Friedhof soll in einem knopf
+     * verschwinden der ausfahren kann mit der Liste." Bis dahin stand die
+     * Bilanz dauerhaft unter dem Brett und kostete auf dem Handy vier bis
+     * fünf Zeilen — Platz, den der Partie-Bildschirm braucht, um ohne Rollen
+     * auf eine Seite zu passen (ROADMAP-Punkt 4).
+     *
+     * DIE BILANZ SELBST BLEIBT UNVERÄNDERT. Gebaut wird sie weiter in
+     * `_bilanzBauen`; hier kommt nur die Klappe darum. Das ist Absicht: Die
+     * Rechnung dahinter (nur die führende Seite bekommt eine Zahl, gerechnet
+     * aus der Stellung) ist seit v0.76 geprüft, und ein Umbau an dieser
+     * Stelle hätte damit nichts zu tun.
+     *
+     * DER GRIFF IST EIN ECHTER HAUS-KNOPF (`knopf knopf-still knopf-klein`),
+     * kein eigener Stil. Stellt Punkt 11 die Knöpfe später auf 3D um, zieht
+     * dieser ohne Zutun mit — ein zweiter, handgemachter Knopf-Stil wäre
+     * genau die Sorte Doppelpflege, die im Haus schon zweimal
+     * auseinandergelaufen ist.
+     *
+     * ZUR NAMENSGLEICHHEIT: „Friedhof" heisst auch eine Fähigkeit (sie holt
+     * gefallene Gegner zurück). Gemeint ist hier trotzdem das Wort des
+     * Nutzers für die gefallenen Figuren — beide stehen nie nebeneinander,
+     * die Fähigkeit sitzt in ihrer eigenen Karte.
+     */
+    _friedhofBauen(partie) {
+        const fach = document.createElement("details");
+        fach.className = "fach";
+
+        /* Wie viele Figuren liegen überhaupt darin? Steht die Zahl im Griff,
+           muss man für die häufigste Frage gar nicht erst aufklappen. */
+        const gefallen = SCHACH_RUNDE.bilanz(partie, "weiss").geschlagen.length
+            + SCHACH_RUNDE.bilanz(partie, "schwarz").geschlagen.length;
+
+        const griff = document.createElement("summary");
+        griff.className = "knopf knopf-still knopf-klein fach-griff";
+        griff.textContent = "Friedhof (" + gefallen + ")";
+        fach.appendChild(griff);
+
+        const inhalt = TEAM_SCHACH._element("div", "fach-inhalt");
+        inhalt.appendChild(TEAM_SCHACH._bilanzBauen(partie));
+        fach.appendChild(inhalt);
+
+        return fach;
+    },
     _verlaufBauen(partie) {
         const karte = TEAM_SCHACH._element("section", "karte");
-        karte.appendChild(TEAM_SCHACH._bilanzBauen(partie));
+        karte.appendChild(TEAM_SCHACH._friedhofBauen(partie));
 
         /* Auf dem Handy soll der Verlauf nicht die halbe Seite füllen —
            deshalb eingeklappt, mit der Anzahl in der Überschrift. */

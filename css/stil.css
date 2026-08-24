@@ -1790,6 +1790,47 @@ body.runde-offen .tab-leiste {
     color: var(--gut);
 }
 
+/* ------------------------------------------------------------------ *
+ * Aufklapp-Fächer unter dem Brett (seit v0.49.0)
+ *
+ * Nutzer-Ansage 24.08.2026: Der Friedhof soll „in einem knopf verschwinden
+ * der ausfahren kann mit der Liste". Der Griff ist deshalb ein normaler
+ * Haus-Knopf und trägt seine Klassen (`knopf knopf-still knopf-klein`) —
+ * hier steht nur, was ein `summary` zusätzlich braucht.
+ *
+ * DAS EINGEBAUTE DREIECK BLEIBT STEHEN: `summary` ist von sich aus ein
+ * `list-item`, und genau das Dreieck sagt „hier fährt etwas aus". Ein
+ * eigenes Zeichen dafür wäre Arbeit für nichts — und im Haus sind keine
+ * Emojis erlaubt.
+ * ------------------------------------------------------------------ */
+
+.fach {
+    margin: 0;
+    min-width: 0;
+}
+
+.fach-griff {
+    /* Nur so breit wie die Beschriftung — ein Knopf, keine Leiste. */
+    width: fit-content;
+    font-weight: 600;
+}
+
+.fach-griff:focus-visible {
+    outline: 2px solid var(--haupt);
+    outline-offset: 1px;
+}
+
+.fach-inhalt {
+    padding-top: 10px;
+}
+
+/* Im Fach braucht die Bilanz keinen Trennstrich mehr — die Klappe trennt
+   bereits, und zugeklappt hinge der Strich in der Luft. */
+.fach .bilanz-reihe {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
 .feld {
     appearance: none;
     border: none;

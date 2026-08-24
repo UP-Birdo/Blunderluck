@@ -3,6 +3,17 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.49.0 — 25.08.2026
+
+**Der Friedhof fährt jetzt aus einem Knopf aus, statt dauerhaft dazustehen.**
+
+- Unter dem Brett steht nur noch ein kleiner Knopf **„Friedhof (N)"** — die
+  Zahl sagt sofort, wie viele Figuren insgesamt gefallen sind.
+- Ein Tipp darauf fährt die gewohnte Bilanz aus: welche Figuren jede Seite
+  geschlagen hat und wer nach Figurenwert vorn liegt. Gerechnet wird
+  unverändert.
+- Was du davon hast: Auf dem Handy waren das bisher vier bis fünf Zeilen,
+  die immer dastanden. Der Platz gehört jetzt dem Brett.
 ## v0.48.0 — 25.08.2026
 
 **Aufgeben sitzt jetzt hinter einem Zahnrad — den Einstellungen dieser

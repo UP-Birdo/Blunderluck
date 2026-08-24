@@ -3226,6 +3226,48 @@ pruefe("Nur die fuehrende Seite bekommt ein Plus (v0.76)", () => {
     }
 });
 
+pruefe("Der Friedhof steckt in einem Aufklapp-Knopf (v0.49.0)", () => {
+    /*
+     * NUTZER-ANSAGE 24.08.2026: „Der Friedhof soll in einem knopf
+     * verschwinden der ausfahren kann mit der Liste."
+     *
+     * Geprueft wird die BAUART, nicht der Text: ein `details` mit einem
+     * `summary`, der die Haus-Knopf-Klassen traegt, und die Bilanz darin.
+     * Die Klassen sind wichtig, weil der Knopf sonst beim naechsten
+     * Stil-Umbau nicht mitzieht.
+     */
+    const partie = SCHACH_TAFEL.partie(TEAM_SCHACH.abgleich.daten, kennungen.standard);
+    const fach = TEAM_SCHACH._friedhofBauen(partie);
+
+    if (fach.tagName !== "details") {
+        throw new Error("der Friedhof ist kein Aufklapper, sondern " + fach.tagName);
+    }
+
+    const griff = fach.kinder[0];
+    if (!griff || griff.tagName !== "summary") {
+        throw new Error("dem Friedhof fehlt der Griff");
+    }
+    if (String(griff.className || "").indexOf("knopf") === -1) {
+        throw new Error("der Griff ist kein Haus-Knopf: " + griff.className);
+    }
+    if (String(griff.textContent || "").indexOf("Friedhof") !== 0) {
+        throw new Error("der Griff heisst nicht Friedhof, sondern " + griff.textContent);
+    }
+
+    if (!klasseSuchen(fach, "bilanz-reihe")) {
+        throw new Error("die Bilanz liegt nicht im Fach");
+    }
+
+    /* Und sie liegt NUR dort — nicht zusaetzlich offen in der Karte. */
+    const karte = TEAM_SCHACH._verlaufBauen(partie);
+    if (klasseZaehlen(karte, "bilanz-reihe") !== 1) {
+        throw new Error("die Bilanz steht "
+            + klasseZaehlen(karte, "bilanz-reihe") + "-mal in der Karte");
+    }
+    if (!hatKlasse(karte.kinder[0], "fach")) {
+        throw new Error("das erste Stueck der Karte ist kein Fach");
+    }
+});
 pruefe("Einigkeit ist die Vorgabe, der Haken fragt das Gegenteil (v0.76)", () => {
     /*
      * DER GEMELDETE PUNKT: „Team muss einig sein soll andersrum da stehen, also
