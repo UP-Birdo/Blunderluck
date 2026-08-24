@@ -35,6 +35,23 @@ Object.assign(TEAM_SCHACH, {
            `TEAM_SCHACH.reglerMerken` in team-schach.js. */
         TEAM_SCHACH.reglerMerken();
 
+        /*
+         * DIE AUSWAHL IST EIN FENSTER, KEIN TAB (seit v0.39.0).
+         *
+         * Nutzer-Ansage 24.08.2026: „Grundeinstellungen für eine Runde soll
+         * unten das Menü Band weg so das man nur oben zurück hat um auf den
+         * Home Screen zu kommen." Dasselbe Muster wie die offene Partie
+         * (v0.113), die Einstellungen und die Freundesliste: Wer hier steht,
+         * hat genau einen Weg hinaus, und der steht oben links.
+         *
+         * `zeichnen` hat die Leiste ein paar Zeilen vorher wieder
+         * eingeschaltet (der Zweig für „alle anderen Ansichten") — deshalb
+         * steht das hier und nicht dort.
+         */
+        if (typeof TABS !== "undefined" && TABS.rundeSetzen) {
+            TABS.rundeSetzen("team-schach", true);
+        }
+
         if (TEAM_SCHACH.auswahlTeil === "regeln") {
             TEAM_SCHACH._regelnZeichnen(wurzel);
             return;

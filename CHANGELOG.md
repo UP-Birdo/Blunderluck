@@ -3,6 +3,16 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.39.0 — 24.08.2026
+
+**Die Grundeinstellungen sind jetzt ein eigenes Fenster.**
+
+- Die Leiste unten (Fähigkeiten / Start / Rangliste) verschwindet, solange
+  du dort bist. Hinaus geht es über den „Zurück"-Knopf oben links — und der
+  bringt dich auf den Startbildschirm.
+- Dasselbe Verhalten haben die laufende Partie, die Einstellungen und die
+  Freundesliste schon länger.
+
 ## v0.38.0 — 24.08.2026
 
 **Unter dem Brett auf dem Startbildschirm steht kein Name mehr.**

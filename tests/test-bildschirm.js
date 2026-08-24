@@ -1566,6 +1566,28 @@ pruefe("Der Abschluss schluesselt die Punkte auf (v0.53)", () => {
     }
 });
 
+pruefe("Die Grundeinstellungen sind ein Fenster ohne Tab-Leiste (v0.39.0)", () => {
+    /*
+     * „Grundeinstellungen für eine Runde soll unten das Menü Band weg so
+     * das man nur oben zurück hat" (Nutzer, 24.08.2026).
+     *
+     * `TABS.rundeSetzen(tab, offen)` heisst: offen === true → Fenster ohne
+     * Leiste. Der Nachbau schreibt den letzten Aufruf nach `TABS.zuletzt`.
+     */
+    try {
+        TEAM_SCHACH.partieAnlegen();
+        TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
+
+        if (!umgebung.TABS.zuletzt || umgebung.TABS.zuletzt.offen !== true) {
+            throw new Error("die Tab-Leiste steht noch: "
+                + JSON.stringify(umgebung.TABS.zuletzt));
+        }
+    } finally {
+        TEAM_SCHACH.auswahlSchliessen();
+        umgebung.TABS.gewechseltZu = "";
+    }
+});
+
 pruefe("Nach der Runde landet man auf dem Start, nicht im Code-Feld (v0.36.0)", () => {
     /*
      * „Zurück zur Übersicht nach einer Runde soll nicht zu Runde beitreten
