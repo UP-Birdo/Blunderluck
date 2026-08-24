@@ -223,6 +223,26 @@ const SCHACH_TAFEL = {
     },
 
     /*
+     * DIE EIGENEN OFFENEN PARTIEN (seit v0.34.0) — laufende UND solche, die
+     * noch auf jemanden warten.
+     *
+     * UNTERSCHIED ZU `eigeneLaufende`: Dort ist `laeuft === true` Bedingung.
+     * Das ist für die Ein-Runden-Regel (F11) und den Wiedereinstieg nach der
+     * Anmeldung richtig — nicht aber für die Frage „komme ich in meine Runde
+     * zurück?". Wer eine Runde anlegt, betritt und wieder verlässt, während
+     * sie noch auf den zweiten Spieler wartet, hätte sonst keinen Weg zurück
+     * ausser dem Beitritts-Code. Genau das fiel beim Aufräumen des
+     * Zwischenbildschirms auf (Nutzer-Entscheidung 24.08.2026).
+     *
+     * Die Sortierung von `liste` gilt auch hier: laufende zuerst.
+     */
+    eigeneOffene(tafel, spielerId) {
+        return SCHACH_TAFEL.liste(tafel).filter((partie) =>
+            !partie.ergebnis
+            && !!SCHACH_RUNDE.teamVon(partie, spielerId));
+    },
+
+    /*
      * Sucht die Partie zu einem Beitritts-Code (seit v0.10.0, Bündel A
      * Schritt 5). Die Eingabe wird grosszügig gelesen: Gross-/
      * Kleinschreibung und Leerraum sind egal. Beendete Partien haben

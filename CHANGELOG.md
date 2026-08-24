@@ -3,6 +3,19 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.34.0 — 24.08.2026
+
+**Der Startbildschirm bringt dich zurück in deine Runde.**
+
+- Steckst du in einer Runde, steht auf dem Start jetzt „Zurück in deine
+  Runde" — mit der Spielart und dem Hinweis, ob sie läuft oder noch auf
+  einen Mitspieler wartet. Ein Tipp darauf, und du bist drin.
+- **Das schliesst eine Lücke:** Der automatische Wiedereinstieg nach dem
+  Anmelden fand nur Runden, die schon laufen. Eine Runde, die noch auf
+  jemanden wartet, war nur über die Liste im Zwischenbildschirm erreichbar —
+  oder über den Beitritts-Code.
+- Der Knopf erscheint nur, wenn es wirklich etwas zu betreten gibt.
+
 ## v0.33.0 — 24.08.2026
 
 **Deine Einstellungen bleiben jetzt wirklich stehen — egal, wie du den

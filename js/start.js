@@ -161,6 +161,46 @@ const START = {
         seite.appendChild(zeile);
 
         /*
+         * ZURÜCK IN DIE EIGENE RUNDE (seit v0.34.0).
+         *
+         * WOZU: Bis v0.33.0 führte der einzige Weg zurück über die Liste
+         * „Deine offenen Partien" im Zwischenbildschirm. Der automatische
+         * Wiedereinstieg (`START.wiedereinstieg`) hilft nur nach der
+         * Anmeldung und nur bei LAUFENDEN Partien — wer seine noch wartende
+         * Runde verliess, kam ohne die Liste nur über den Beitritts-Code
+         * zurück. Seit der Start die Schaltzentrale ist, gehört diese Tür
+         * hierher (Nutzer-Entscheidung 24.08.2026).
+         *
+         * Gezeigt wird sie nur, wenn es wirklich etwas zu betreten gibt —
+         * sonst steht hier nichts im Weg.
+         */
+        const eigeneOffene = START._eigeneOffene();
+        if (eigeneOffene) {
+            const zurueck = document.createElement("button");
+            zurueck.type = "button";
+            zurueck.className = "knopf knopf-still start-zurueck";
+
+            const titel = document.createElement("span");
+            titel.className = "start-zurueck-titel";
+            titel.textContent = "Zurück in deine Runde";
+            zurueck.appendChild(titel);
+
+            const lage = document.createElement("span");
+            lage.className = "start-zurueck-lage";
+            lage.textContent = eigeneOffene.titel + " — "
+                + (eigeneOffene.laeuft
+                    ? "läuft"
+                    : "wartet auf einen Mitspieler");
+            zurueck.appendChild(lage);
+
+            zurueck.addEventListener("click", () => {
+                TABS.wechseln("team-schach");
+                TEAM_SCHACH.partieOeffnen(eigeneOffene.id);
+            });
+            seite.appendChild(zurueck);
+        }
+
+        /*
          * Der Weg zum Zwischenbildschirm (seit Wunsch 1): Seit „Spielen"
          * die Runde selbst anlegt, führt nichts anderes mehr dorthin —
          * dort liegen aber die Einladungen, das Code-Feld und die eigenen
@@ -266,6 +306,27 @@ const START = {
      * Gerufen über ANMELDUNG.beiAngemeldet (verdrahtet in app.js), wenn
      * Spielerliste UND Schach-Tafel geladen sind.
      * ---------------------------------------------------------------- */
+
+    /*
+     * Die eine eigene offene Runde, oder nichts (seit v0.34.0). Gefragt beim
+     * Zeichnen des Starts — deshalb still: Fehlt die Person oder der
+     * Abgleich (ganz am Anfang, vor der Anmeldung), gibt es eben keine.
+     *
+     * Gibt es mehrere, gewinnt die zuletzt geänderte (`liste` sortiert
+     * so). Mehrere sind kein gültiger Zustand, aber der Startbildschirm ist
+     * nicht der Ort, das zu klären — das tut `wiedereinstieg`.
+     */
+    _eigeneOffene() {
+        if (typeof TEAM_SCHACH === "undefined" || typeof ICH === "undefined") {
+            return null;
+        }
+        const person = ICH.person();
+        const abgleich = TEAM_SCHACH.abgleich;
+        if (!person || !abgleich || !abgleich.daten) {
+            return null;
+        }
+        return SCHACH_TAFEL.eigeneOffene(abgleich.daten, person.id)[0] || null;
+    },
 
     async wiedereinstieg() {
         const person = ICH.person();

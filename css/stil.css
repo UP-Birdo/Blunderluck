@@ -4406,6 +4406,29 @@ body.dialog-offen {
  * Innenabstand der Zeile wandert deshalb hierher, sonst klaffte zwischen
  * beiden eine Lücke.
  */
+/*
+ * „Zurück in deine Runde" (seit v0.34.0): zwei Zeilen — oben die Ansage,
+ * darunter kleiner, um welche Runde es geht und wie sie steht. Still
+ * gehalten wie „Runde beitreten": Die Hauptaktion bleibt „Spielen".
+ */
+.start-zurueck {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    width: 100%;
+    margin-top: 10px;
+}
+
+.start-zurueck-titel {
+    font-weight: 600;
+}
+
+.start-zurueck-lage {
+    font-size: 0.85em;
+    opacity: 0.8;
+}
+
 .start-beitreten {
     align-self: center;
     padding: 10px 18px;

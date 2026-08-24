@@ -362,6 +362,48 @@ pruefe("eigeneLaufende findet nur laufende Partien mit eigener Beteiligung", () 
         "Unbeteiligte bekommen nichts");
 });
 
+pruefe("eigeneOffene findet auch die noch wartende Runde (v0.34.0)", () => {
+    /*
+     * DER UNTERSCHIED ZU `eigeneLaufende`, UND WARUM ES IHN BRAUCHT:
+     * Der Startbildschirm bietet seit v0.34.0 den Weg zurueck in die eigene
+     * Runde an. Wer eine Runde anlegt, betritt und wieder verlaesst, waehrend
+     * sie noch auf den zweiten Spieler wartet, haette sonst KEINEN Weg
+     * zurueck — die Liste im Zwischenbildschirm faellt weg, und
+     * `eigeneLaufende` verlangt `laeuft === true`.
+     */
+    let tafel = SCHACH_TAFEL.leereTafel(1000);
+
+    /* Eine wartende Runde mit Anna. */
+    const wartet = SCHACH_TAFEL.partieAnlegen(tafel, "standard", "Wartet", 2000);
+    const partieWartet = SCHACH_RUNDE.teamBeitreten(wartet.partie, "id-anna", "weiss", 2000);
+    tafel = SCHACH_TAFEL.partieEinsetzen(wartet.tafel, partieWartet, 2000);
+
+    /* Eine beendete Runde mit Anna — die zaehlt NICHT. */
+    const vorbei = SCHACH_TAFEL.partieAnlegen(tafel, "standard", "Vorbei", 3000);
+    let partieVorbei = SCHACH_RUNDE.teamBeitreten(vorbei.partie, "id-anna", "weiss", 3000);
+    partieVorbei = SCHACH_RUNDE.teamBeitreten(partieVorbei, "id-bert", "schwarz", 3000);
+    partieVorbei = SCHACH_RUNDE.bereitSetzen(partieVorbei, "weiss", true, 3000);
+    partieVorbei = SCHACH_RUNDE.bereitSetzen(partieVorbei, "schwarz", true, 3000);
+    partieVorbei = SCHACH_RUNDE.aufgeben(partieVorbei, "weiss", 3100);
+    tafel = SCHACH_TAFEL.partieEinsetzen(vorbei.tafel, partieVorbei, 3100);
+
+    /* Eine fremde wartende Runde — zieht niemanden hinein. */
+    const fremd = SCHACH_TAFEL.partieAnlegen(tafel, "standard", "Fremd", 4000);
+    const partieFremd = SCHACH_RUNDE.teamBeitreten(fremd.partie, "id-cem", "weiss", 4000);
+    tafel = SCHACH_TAFEL.partieEinsetzen(fremd.tafel, partieFremd, 4000);
+
+    const anna = SCHACH_TAFEL.eigeneOffene(tafel, "id-anna");
+    gleich(anna.length, 1, "genau eine eigene offene Runde");
+    gleich(anna[0].titel, "Wartet", "die wartende Runde");
+
+    /* Genau hier unterscheiden sich die beiden Abfragen. */
+    gleich(SCHACH_TAFEL.eigeneLaufende(tafel, "id-anna").length, 0,
+        "eigeneLaufende findet sie NICHT — das ist der Grund fuer eigeneOffene");
+
+    gleich(SCHACH_TAFEL.eigeneOffene(tafel, "id-nix").length, 0,
+        "Unbeteiligte bekommen nichts");
+});
+
 pruefe("eigeneLaufende laesst beendete Partien aus", () => {
     let tafel = SCHACH_TAFEL.leereTafel(1000);
 
