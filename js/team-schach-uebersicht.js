@@ -29,6 +29,12 @@ Object.assign(TEAM_SCHACH, {
      * Angelegt wird auf keinem von beiden: Beide merken nur (Wunsch 1).
      */
     _auswahlZeichnen(wurzel) {
+        /* Jede Änderung eines Reglers zeichnet neu — also führt jede
+           Änderung hier vorbei und wird gemerkt (seit v0.33.0). Warum das
+           nötig war und warum es zusätzlich an den Ausgängen steht:
+           `TEAM_SCHACH.reglerMerken` in team-schach.js. */
+        TEAM_SCHACH.reglerMerken();
+
         if (TEAM_SCHACH.auswahlTeil === "regeln") {
             TEAM_SCHACH._regelnZeichnen(wurzel);
             return;

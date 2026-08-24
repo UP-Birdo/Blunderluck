@@ -1328,6 +1328,34 @@ const TEAM_SCHACH = {
             .filter((ziel, stelle, alle) => alle.indexOf(ziel) === stelle);
     },
 
+    /*
+     * DIE EINGESTELLTEN REGLER IN DIE GERÄTE-ERINNERUNG (seit v0.33.0).
+     *
+     * DER FEHLER, DEN DAS BEHEBT: Bis v0.32.0 schrieb nur der
+     * „Zurück"-Knopf und die Spielart-Kachel. Wer den Auswahl-Bildschirm
+     * anders verliess — über die Leiste, über das Zahnrad, über
+     * `partieOeffnen` —, verlor jede Reglerstellung: Beim nächsten Öffnen
+     * holt `_auswahlOeffnen` die Werte aus dem Gerätespeicher und
+     * überschreibt damit die ungesicherten. Gemeldet als „die Einstellungen
+     * sollen bleiben, bis man sie ändert".
+     *
+     * GERUFEN WIRD SIE AN ZWEI ARTEN VON STELLEN, und beide braucht es:
+     *   - beim ZEICHNEN der Auswahl (`_auswahlZeichnen`) — jede Änderung
+     *     eines Reglers zeichnet neu, also führt jede Änderung hier vorbei,
+     *     auch die von Reglern, die es noch gar nicht gibt;
+     *   - an den beiden Ausgängen, die eine Änderung OHNE Neuzeichnen
+     *     hinterlassen können.
+     *
+     * `neueRegeln` ist ausserhalb des Auswahl-Bildschirms nichts wert
+     * (gesetzt wird es nur in `_auswahlOeffnen`) — hier kann also nichts
+     * Falsches gemerkt werden.
+     */
+    reglerMerken() {
+        if (typeof START !== "undefined") {
+            START.regelnMerken(TEAM_SCHACH.neueRegeln);
+        }
+    },
+
     _auswahlAufheben() {
         TEAM_SCHACH.gewaehltesFeld = -1;
         TEAM_SCHACH.moeglicheZiele = [];
@@ -2062,14 +2090,12 @@ const TEAM_SCHACH = {
      * herein — also geht es auch dorthin zurück, und nicht mehr in den
      * Zwischenbildschirm.
      *
-     * GEMERKT WIRD HIER (seit Wunsch 8): Auf dem Regler-Bildschirm gibt es
-     * keine Kachel, die es tun könnte — wer nur die Figurenzahl ändert und
-     * zurückgeht, hätte sie sonst verloren.
+     * GEMERKT WIRD HIER UND BEIM ZEICHNEN (seit v0.33.0, `reglerMerken`):
+     * beim Zeichnen, damit kein Weg hinaus etwas verliert — und hier, weil
+     * ein Regler auch ohne Neuzeichnen geändert worden sein kann.
      */
     auswahlSchliessen() {
-        if (typeof START !== "undefined") {
-            START.regelnMerken(TEAM_SCHACH.neueRegeln);
-        }
+        TEAM_SCHACH.reglerMerken();
         TEAM_SCHACH.auswahlOffen = false;
         TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
         TABS.wechseln("start");
@@ -2112,9 +2138,9 @@ const TEAM_SCHACH = {
             return;
         }
 
+        TEAM_SCHACH.reglerMerken();
         if (typeof START !== "undefined") {
             START.spielartMerken(varianteId);
-            START.regelnMerken(TEAM_SCHACH.neueRegeln);
         }
 
         TEAM_SCHACH.auswahlOffen = false;

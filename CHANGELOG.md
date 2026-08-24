@@ -3,6 +3,20 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.33.0 — 24.08.2026
+
+**Deine Einstellungen bleiben jetzt wirklich stehen — egal, wie du den
+Bildschirm verlässt.**
+
+- Bisher wurden Bot-Stufe, Lootbox-Menge, Item-Vorrat und die Haken nur dann
+  gemerkt, wenn du „Zurück" gedrückt oder eine Brettform gewählt hast. Wer
+  über die Leiste oder das Zahnrad hinausging, fand beim nächsten Öffnen
+  wieder die alten Werte vor.
+- Jetzt wird jede Änderung sofort gemerkt. Sie gilt so lange, bis du sie
+  selbst änderst — auch nach dem Schliessen der Seite.
+- Gespeichert wird weiterhin nur auf **diesem Gerät**; ein anderes Handy hat
+  seine eigenen Einstellungen.
+
 ## v0.32.0 — 24.08.2026
 
 **Nach einer Partie gegen den Computer kommt kein Punkte-Schirm mehr.**

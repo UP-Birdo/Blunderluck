@@ -1566,6 +1566,61 @@ pruefe("Der Abschluss schluesselt die Punkte auf (v0.53)", () => {
     }
 });
 
+pruefe("Die Regler bleiben, egal wie man die Auswahl verlaesst (v0.33.0)", () => {
+    /*
+     * „im menü wenn man was auswählt unter dem pfeil soll das so bleiben bis
+     * man etwas ändert sprich wenn ich raus gehe soll die einstellungen im
+     * hinter grunmd bleiben" (Nutzer, 24.08.2026).
+     *
+     * Bis v0.32.0 schrieb nur der „Zurueck"-Knopf in die Geraete-Erinnerung.
+     * Geprueft wird deshalb der Weg, der frueher alles verlor: Regler
+     * aendern und den Bildschirm OHNE „Zurueck" verlassen.
+     */
+    const START = umgebung.START;
+    const echteDaten = TEAM_SCHACH.abgleich.daten;
+
+    try {
+        START.regelnMerken(TEAM_SCHACH._regelnVorgabe());
+
+        TEAM_SCHACH.partieAnlegen();
+        if (!TEAM_SCHACH.auswahlOffen) {
+            throw new Error("die Auswahl ist gar nicht offen");
+        }
+
+        /* Eine Aenderung wie durch einen Knopfdruck: Wert setzen, neu
+           zeichnen. Genau das tun die Regler (`weichZeichnen`). */
+        const hoechste = SCHACH_BOT.STUFEN[SCHACH_BOT.STUFEN.length - 1];
+        TEAM_SCHACH.neueRegeln.botStufe = hoechste.id;
+        TEAM_SCHACH.neueRegeln.lootboxMenge = "viele";
+        TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
+
+        /* HINAUS OHNE „ZURUECK" — der Weg, der frueher alles verlor. */
+        TEAM_SCHACH.auswahlOffen = false;
+        TEAM_SCHACH._auswahlAufheben();
+
+        const gemerkt = START.regeln();
+        if (gemerkt.botStufe !== hoechste.id) {
+            throw new Error("die Bot-Stufe ist verloren gegangen: <"
+                + gemerkt.botStufe + ">");
+        }
+        if (gemerkt.lootboxMenge !== "viele") {
+            throw new Error("die Lootbox-Menge ist verloren gegangen: <"
+                + gemerkt.lootboxMenge + ">");
+        }
+
+        /* Und beim naechsten Oeffnen stehen sie wieder da. */
+        TEAM_SCHACH.partieAnlegen();
+        if (TEAM_SCHACH.neueRegeln.botStufe !== hoechste.id) {
+            throw new Error("beim erneuten Oeffnen steht die alte Stufe da");
+        }
+        TEAM_SCHACH.auswahlSchliessen();
+    } finally {
+        TEAM_SCHACH.abgleich.daten = echteDaten;
+        TEAM_SCHACH.auswahlOffen = false;
+        START.regelnMerken(TEAM_SCHACH._regelnVorgabe());
+    }
+});
+
 pruefe("Nach einer Bot-Partie kommt kein Punkte-Schirm (v0.32.0)", () => {
     /*
      * „nach bot spieln braucht nicht die rangliste angezigt zu werden gibt ja
