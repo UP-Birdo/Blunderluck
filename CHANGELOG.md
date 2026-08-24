@@ -3,6 +3,23 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.55.0 — 25.08.2026
+
+**Beim Aussuchen der Seite rollt die Runde wieder — und Weiss, Schwarz und
+Zufall stehen wieder beisammen.**
+
+- **Die feste Seite gilt erst, wenn das Match läuft.** Vorher ist sie eher im
+  Weg: Beim Aussuchen der Seite ist nicht das Brett die Hauptsache, sondern
+  die Wahl — und die wurde von einem möglichst grossen Brett an den Rand
+  gedrückt. Solange gewählt wird, rollt die Seite wie jede andere.
+- **Die drei Knöpfe stehen wieder nebeneinander**, gleich breit, und
+  unterscheiden sich nur in der Farbe. Seit v0.53.0 sassen Weiss und Schwarz
+  je in der Zeile ihrer Seite — und dazwischen lag das Brett.
+- Sie heissen jetzt schlicht **Weiss**, **Schwarz** und **Zufall**. „Mitspielen"
+  ergab Sinn, solange der Knopf in einer Karte mit der Überschrift „Weiss"
+  sass; nebeneinander stünde dreimal fast dasselbe Wort.
+- Wer schon in einem Team ist, sieht nur noch die andere Seite — den Wechsel.
+  Wer bereit gedrückt hat, sieht wie bisher gar keine Wahl mehr.
 ## v0.54.0 — 25.08.2026
 
 **Unter dem Brett steht kein Erklärtext mehr — das Brett bleibt beim Spielen

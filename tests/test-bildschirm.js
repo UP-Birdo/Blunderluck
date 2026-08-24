@@ -1709,23 +1709,24 @@ pruefe("Wer bereit ist, sieht die andere Seite nicht mehr als Angebot (v0.44.0)"
      */
     const person = umgebung.ICH.person();
 
-    /* Seit v0.53.0 steht der Knopf in der SPIELERZEILE der anderen Seite,
-       nicht mehr im Fuss einer Team-Karte. Gesucht wird deshalb in beiden
-       Zeilen — welche davon oben am Brett steht, ist fuer diese Frage egal. */
+    /*
+     * WO DER KNOPF WOHNT, HAT SICH ZWEIMAL GEAENDERT — die Frage nicht.
+     * Bis v0.52.0 sass er im Fuss der Team-Karte, mit v0.53.0 kurz in der
+     * Spielerzeile der anderen Seite, seit v0.55.0 steht er mit den anderen
+     * beiden zusammen in der Beitritts-Reihe.
+     *
+     * Gesucht wird deshalb nach der KLASSE und nicht nach der Beschriftung:
+     * Die hiess erst „Mitspielen" und heisst jetzt schlicht „Weiss" bzw.
+     * „Schwarz". Die Klasse traegt die Bedeutung, das Wort nur den Anlass.
+     */
     const mitspielenDa = (partie) => {
-        let gefunden = false;
-        const suchen = (element) => {
-            if (String(element.textContent || "").trim() === "Mitspielen") {
-                gefunden = true;
-            }
-            for (const kind of element.kinder || []) {
-                suchen(kind);
-            }
-        };
-        for (const farbe of ["weiss", "schwarz"]) {
-            suchen(TEAM_SCHACH._spielerZeileBauen(partie, person, farbe));
+        const reihe = TEAM_SCHACH._beitrittReiheBauen(partie, person);
+        if (!reihe) {
+            return false;
         }
-        return gefunden;
+        return (reihe.kinder || []).some((knopf) =>
+            String(knopf.className || "").indexOf("team-knopf-weiss") !== -1
+            || String(knopf.className || "").indexOf("team-knopf-schwarz") !== -1);
     };
 
     const angelegt = SCHACH_TAFEL.partieAnlegen(
@@ -3356,6 +3357,77 @@ pruefe("Die Spieler stehen als Zeilen am Brett, richtig herum (v0.53.0)", () => 
     if (!namen || String(namen.textContent || "") !== person.name) {
         throw new Error("der Name steht nicht in der Zeile: "
             + (namen ? namen.textContent : "gar nicht"));
+    }
+});
+pruefe("Die drei Beitritts-Knoepfe stehen beisammen (v0.55.0)", () => {
+    /*
+     * NUTZER-ANSAGE 25.08.2026: „Besser an dem Punkt wie zuvor machen, dass
+     * Schwarz, Weiss und Zufall beisammen stehen."
+     *
+     * Mit v0.53.0 sassen Weiss und Schwarz je in der Zeile IHRER Seite — und
+     * zwischen den beiden Zeilen liegt das Brett. Geprueft wird deshalb
+     * genau das, was schiefging: dass alle drei in EINEM Element haengen und
+     * KEINER mehr in einer Spielerzeile steht.
+     */
+    const person = umgebung.ICH.person();
+    const angelegt = SCHACH_TAFEL.partieAnlegen(
+        SCHACH_TAFEL.leereTafel(9200), "standard", "Beisammen", 9210);
+
+    /* Ohne Team: alle drei. */
+    const reihe = TEAM_SCHACH._beitrittReiheBauen(angelegt.partie, person);
+    if (!reihe || reihe.kinder.length !== 3) {
+        throw new Error("es stehen " + (reihe ? reihe.kinder.length : 0)
+            + " Knoepfe beisammen statt drei");
+    }
+    for (const klasse of ["team-knopf-weiss", "team-knopf-schwarz", "team-knopf-zufall"]) {
+        if (!reihe.kinder.some((knopf) =>
+                String(knopf.className || "").indexOf(klasse) !== -1)) {
+            throw new Error(klasse + " fehlt in der Reihe");
+        }
+    }
+
+    /* Und in den Spielerzeilen steht keiner mehr. */
+    for (const farbe of ["weiss", "schwarz"]) {
+        const zeile = TEAM_SCHACH._spielerZeileBauen(angelegt.partie, person, farbe);
+        if (klasseSuchen(zeile, "team-knopf")) {
+            throw new Error("die Spielerzeile " + farbe
+                + " traegt wieder einen Beitritts-Knopf");
+        }
+    }
+
+    /* Mit eigenem Team: nur noch der Wechsel auf die andere Seite. */
+    const alsWeiss = SCHACH_RUNDE.teamBeitreten(
+        angelegt.partie, person.id, "weiss", 9220);
+    const zwei = TEAM_SCHACH._beitrittReiheBauen(alsWeiss, person);
+    if (!zwei || zwei.kinder.length !== 1) {
+        throw new Error("mit eigenem Team muesste genau der Wechsel dastehen, da sind "
+            + (zwei ? zwei.kinder.length : 0));
+    }
+    if (String(zwei.kinder[0].className || "").indexOf("team-knopf-schwarz") === -1) {
+        throw new Error("der uebrige Knopf ist nicht die andere Seite");
+    }
+});
+
+pruefe("Die feste Seite gilt erst, wenn das Match laeuft (v0.55.0)", () => {
+    /*
+     * NUTZER-ANSAGE 25.08.2026: „Das mit dem fixen Spiel soll beim
+     * Entscheiden, welches Team man ist, noch nicht sein — da ist es eher
+     * verwirrend."
+     *
+     * Geprueft wird am QUELLTEXT, nicht am Verhalten: Die Klasse setzt eine
+     * Koerper-Klasse im echten Browser, und der Bildschirm-Test hat keinen.
+     * Was sich hier festhalten laesst, ist der Vertrag — der dritte Wert von
+     * `rundeSetzen` haengt an `laeuft` und ist keine feste Zusage mehr.
+     */
+    const quelle = dateisystem.readFileSync(
+        pfad.join(jsOrdner, "team-schach.js"), "utf8");
+
+    if (quelle.indexOf("rundeSetzen(\"team-schach\", true, true)") !== -1) {
+        throw new Error("die feste Seite gilt wieder ausnahmslos —"
+            + " dann ist sie auch beim Team-Aussuchen an");
+    }
+    if (quelle.indexOf("rundeSetzen(\"team-schach\", true, offene.laeuft === true)") === -1) {
+        throw new Error("der dritte Wert haengt nicht mehr an laeuft");
     }
 });
 

@@ -623,8 +623,21 @@ const TEAM_SCHACH = {
              * EINE Seite (der dritte Wert). Das ist der EINZIGE Bildschirm
              * der App, der das tut; alle anderen rufen `rundeSetzen` ohne
              * ihn und nehmen die Klasse damit wieder zurück.
+             *
+             * ERST WENN DAS MATCH LÄUFT (seit v0.55.0). Nutzer-Ansage
+             * 25.08.2026: „Das mit dem fixen Spiel soll beim Entscheiden,
+             * welches Team man ist, noch nicht sein — da ist es eher
+             * verwirrend."
+             *
+             * Er hat recht, und der Grund liegt in der Sache: Die feste
+             * Seite ist dafür gebaut, dass das BRETT den ganzen übrigen
+             * Platz bekommt. Vor dem Anpfiff ist das Brett aber gar nicht
+             * die Hauptsache — da sucht man sich eine Seite aus, wartet auf
+             * Mitspieler und lädt jemanden ein. Alles, was dazu nötig ist,
+             * wurde von einem möglichst grossen Brett an den Rand gedrückt.
+             * Solange gewählt wird, rollt die Seite also wie jede andere.
              */
-            TABS.rundeSetzen("team-schach", true, true);
+            TABS.rundeSetzen("team-schach", true, offene.laeuft === true);
 
             /* Die stille Zeitmessung läuft nur, solange eine Partie offen ist
                (v0.93) — siehe `_zeitMessungStarten`. */
@@ -1107,29 +1120,24 @@ const TEAM_SCHACH = {
         zeile.appendChild(lage);
 
         /*
-         * DER KNOPF DIESER SEITE — unverändert in seiner Bedeutung, nur an
-         * einem anderen Ort. Beide Zweige standen bis v0.52.0 im Fuss der
-         * Team-Karte; die Regeln dahinter sind dieselben geblieben:
+         * NUR DIE EIGENE SEITE TRÄGT EINEN KNOPF — „Bereit" bzw. „Doch nicht
+         * bereit". Er stand bis v0.52.0 im Fuss der eigenen Team-Karte und
+         * bedeutet unverändert dasselbe.
          *
-         *   - Die eigene Seite trägt „Bereit" bzw. „Doch nicht bereit".
-         *   - Die andere Seite bietet „Mitspielen" an, ABER nur, solange man
-         *     nicht selbst schon bereit gedrückt hat (v0.44.0,
-         *     Nutzer-Entscheidung: „soll erst kommen, wenn man 1 drückt").
-         *   - Die drei Beitritts-Knöpfe sehen gleich aus (v0.41.0) und
-         *     behalten ihre Klassen.
+         * DIE SEITENWAHL STEHT SEIT v0.55.0 NICHT MEHR HIER (siehe
+         * `_beitrittReiheBauen`). Mit v0.53.0 sass sie kurzzeitig in der
+         * Zeile der ANDEREN Seite — und weil die eine Zeile über und die
+         * andere unter dem Brett steht, lagen Weiss und Schwarz plötzlich
+         * einen halben Bildschirm auseinander. Nutzer-Ansage 25.08.2026:
+         * „Besser an dem Punkt wie zuvor machen, dass Schwarz, Weiss und
+         * Zufall beisammen stehen."
          */
-        if (!partie.laeuft && !partie.ergebnis) {
-            if (meinTeam === farbe) {
-                zeile.appendChild(TEAM_SCHACH._knopf(
-                    partie.bereit[farbe] ? "Doch nicht bereit" : "Bereit",
-                    partie.bereit[farbe] ? "knopf-still knopf-klein" : "knopf-haupt knopf-klein",
-                    () => TEAM_SCHACH.bereitUmschalten(partie, farbe, !partie.bereit[farbe])
-                ));
-            } else if (!(meinTeam && partie.bereit[meinTeam])) {
-                zeile.appendChild(TEAM_SCHACH._knopf("Mitspielen",
-                    "team-knopf team-knopf-" + farbe,
-                    () => TEAM_SCHACH.teamBeitreten(partie, farbe)));
-            }
+        if (!partie.laeuft && !partie.ergebnis && meinTeam === farbe) {
+            zeile.appendChild(TEAM_SCHACH._knopf(
+                partie.bereit[farbe] ? "Doch nicht bereit" : "Bereit",
+                partie.bereit[farbe] ? "knopf-still knopf-klein" : "knopf-haupt knopf-klein",
+                () => TEAM_SCHACH.bereitUmschalten(partie, farbe, !partie.bereit[farbe])
+            ));
         }
 
         return zeile;
@@ -1159,6 +1167,70 @@ const TEAM_SCHACH = {
      * grossen Karten. Umbenannt, weil ein Name, der etwas anderes verspricht
      * als er tut, beim nächsten Lesen Zeit kostet.
      */
+    /*
+     * DIE DREI BEITRITTS-KNÖPFE STEHEN BEISAMMEN (wieder, seit v0.55.0).
+     *
+     * Nutzer-Ansage 25.08.2026: „Besser an dem Punkt wie zuvor machen, dass
+     * Schwarz, Weiss und Zufall beisammen stehen." Mit v0.53.0 waren sie
+     * auseinandergerissen — Weiss und Schwarz sassen je in der Zeile IHRER
+     * Seite, und zwischen den beiden Zeilen liegt das Brett. Man musste
+     * daran vorbeischauen, um zu vergleichen, was man wählen kann.
+     *
+     * SIE SEHEN GLEICH AUS UND UNTERSCHEIDEN SICH NUR IN DER FARBE — das ist
+     * die Nutzer-Entscheidung vom 24.08.2026 (v0.41.0), und beisammen
+     * stehend ist sie erst wirklich zu sehen.
+     *
+     * DIE BESCHRIFTUNG IST DIE FARBE, nicht mehr „Mitspielen". Bis v0.52.0
+     * stand der Knopf IN einer Karte mit der Überschrift „Weiss" — dort war
+     * „Mitspielen" der fehlende Satzteil. Nebeneinander stünde dreimal fast
+     * dasselbe Wort, und die Farbe wäre der einzige Unterschied. Was der
+     * Knopf tut, sagt weiterhin sein `aria-label`, damit Vorleseprogramme
+     * nicht nur „Weiss" hören.
+     *
+     * WER SCHON BEREIT IST, BEKOMMT KEINE WAHL MEHR (v0.44.0, unverändert):
+     * Erst wer seine Bereitschaft zurücknimmt, darf die Seite wechseln.
+     */
+    _beitrittReiheBauen(partie, person) {
+        if (partie.laeuft || partie.ergebnis) {
+            return null;
+        }
+
+        const meinTeam = SCHACH_RUNDE.teamVon(partie, person.id);
+        if (meinTeam && partie.bereit[meinTeam]) {
+            return null;
+        }
+
+        const reihe = TEAM_SCHACH._element("div", "beitritt-reihe");
+        let knoepfe = 0;
+
+        for (const farbe of ["weiss", "schwarz"]) {
+            if (meinTeam === farbe) {
+                continue;
+            }
+            const knopf = TEAM_SCHACH._knopf(
+                (farbe === "weiss") ? "Weiss" : "Schwarz",
+                "team-knopf team-knopf-" + farbe,
+                () => TEAM_SCHACH.teamBeitreten(partie, farbe));
+            knopf.setAttribute("aria-label",
+                ((farbe === "weiss") ? "Bei Weiss" : "Bei Schwarz") + " mitspielen");
+            reihe.appendChild(knopf);
+            knoepfe++;
+        }
+
+        /* Würfeln lassen kann sich nur, wer noch gar keine Seite hat — sonst
+           wäre es kein Zufall, sondern ein Wechsel. */
+        if (!meinTeam) {
+            const zufall = TEAM_SCHACH._knopf("Zufall",
+                "team-knopf team-knopf-zufall",
+                () => TEAM_SCHACH.zufaelligBeitreten(partie));
+            zufall.setAttribute("aria-label", "Zufällig einer Seite zuteilen");
+            reihe.appendChild(zufall);
+            knoepfe++;
+        }
+
+        return (knoepfe > 0) ? reihe : null;
+    },
+
     _teamExtrasBauen(partie, person) {
         const bereich = TEAM_SCHACH._element("div", "team-reihe");
         const meinTeam = SCHACH_RUNDE.teamVon(partie, person.id);
@@ -1179,15 +1251,9 @@ const TEAM_SCHACH = {
                         + "andere, sobald du bereit bist."));
         }
 
-        /* Wer noch in keinem Team ist, kann sich auch würfeln lassen. Der
-           Knopf trägt seit v0.41.0 dieselbe Form wie die beiden in den
-           Spielerzeilen, nur diagonal geteilt — er gehört zu keiner Seite. */
-        if (!meinTeam && !partie.ergebnis) {
-            const zufall = TEAM_SCHACH._element("div", "team-zufall-zeile");
-            zufall.appendChild(TEAM_SCHACH._knopf("Zufall",
-                "team-knopf team-knopf-zufall",
-                () => TEAM_SCHACH.zufaelligBeitreten(partie)));
-            bereich.appendChild(zufall);
+        const beitritt = TEAM_SCHACH._beitrittReiheBauen(partie, person);
+        if (beitritt) {
+            bereich.appendChild(beitritt);
         }
 
         /*

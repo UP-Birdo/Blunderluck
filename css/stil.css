@@ -1374,13 +1374,34 @@ body.partie-fest .phasen-leiste {
         0 0 9px var(--figur-weiss);
 }
 
-/* Der dritte Knopf steht unter den beiden Karten und ist genauso breit
-   wie eine von ihnen — nicht so breit wie beide zusammen. */
-.team-zufall-zeile {
+/*
+ * ALLE DREI IN EINER REIHE (seit v0.55.0)
+ *
+ * Nutzer-Ansage 25.08.2026: „Besser an dem Punkt wie zuvor machen, dass
+ * Schwarz, Weiss und Zufall beisammen stehen." Gleiche Breite für alle drei
+ * (`flex: 1 1 0`), damit keiner wichtiger aussieht als die anderen — die
+ * Entscheidung von v0.41.0 („alle drei gleich, nur die Farbe unterscheidet")
+ * ist erst nebeneinander wirklich zu sehen.
+ *
+ * Es sind nicht immer drei: Wer schon in einem Team sitzt, sieht nur die
+ * andere Seite (der Wechsel), und „Zufall" fällt weg. Zwei gleich breite
+ * Knöpfe sehen genauso richtig aus wie drei.
+ */
+.beitritt-reihe {
     display: flex;
-    flex: 1 1 100%;
+    gap: 8px;
     margin-top: 12px;
 }
+
+.beitritt-reihe .team-knopf {
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+/* `.team-zufall-zeile` ist mit v0.55.0 ohne Nutzer geworden — der Zufall
+   steht jetzt in `.beitritt-reihe` neben den beiden anderen. Nachgesehen am
+   25.08.2026 mit einer Suche über `js\`, `css\` und `tests\`: keine
+   Fundstelle mehr. Deshalb hier gestrichen und nicht auskommentiert. */
 
 .team-namen {
     margin: 0;
