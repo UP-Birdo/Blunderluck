@@ -1566,6 +1566,38 @@ pruefe("Der Abschluss schluesselt die Punkte auf (v0.53)", () => {
     }
 });
 
+pruefe("Nach der Runde landet man auf dem Start, nicht im Code-Feld (v0.36.0)", () => {
+    /*
+     * „Zurück zur Übersicht nach einer Runde soll nicht zu Runde beitreten
+     * führen sondern zum Start Screen" (Nutzer, 24.08.2026).
+     *
+     * Geprueft werden BEIDE Wege hinaus: der Abschluss („Zurueck zur
+     * Uebersicht") und `uebersichtOeffnen` (Fussleiste, Kopf der Partie).
+     */
+    const echteDaten = TEAM_SCHACH.abgleich.daten;
+
+    try {
+        umgebung.TABS.gewechseltZu = "";
+        TEAM_SCHACH.abschlussSchliessen("gibt-es-nicht");
+        if (umgebung.TABS.gewechseltZu !== "start") {
+            throw new Error("der Abschluss fuehrt nach <"
+                + umgebung.TABS.gewechseltZu + "> statt zum Start");
+        }
+
+        umgebung.TABS.gewechseltZu = "";
+        TEAM_SCHACH.uebersichtOeffnen();
+        if (umgebung.TABS.gewechseltZu !== "start") {
+            throw new Error("uebersichtOeffnen fuehrt nach <"
+                + umgebung.TABS.gewechseltZu + "> statt zum Start");
+        }
+    } finally {
+        TEAM_SCHACH.abgleich.daten = echteDaten;
+        TEAM_SCHACH.abschluss = null;
+        TEAM_SCHACH.offeneId = "";
+        umgebung.TABS.gewechseltZu = "";
+    }
+});
+
 pruefe("Der Zwischenbildschirm listet die eigenen offenen Partien nicht mehr (v0.35.0)", () => {
     /*
      * „deine offenen partien es soll dort eigentlich ja keine mehr geben"

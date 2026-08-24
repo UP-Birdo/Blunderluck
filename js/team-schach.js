@@ -1206,10 +1206,33 @@ const TEAM_SCHACH = {
 
         if (wegwerfen) {
             await TEAM_SCHACH._verwaisteRundeSchliessen(offene);
+            TEAM_SCHACH._zumStart();
             return;
         }
 
         TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
+        TEAM_SCHACH._zumStart();
+    },
+
+    /*
+     * RAUS AUS EINER RUNDE HEISST: AUF DEN STARTBILDSCHIRM (seit v0.36.0).
+     *
+     * Nutzer-Ansage 24.08.2026: „Zurück zur Übersicht nach einer Runde soll
+     * nicht zu Runde beitreten führen sondern zum Start Screen."
+     *
+     * WARUM ES VORHER ANDERS WAR: Bis v0.13.0 war der Zwischenbildschirm die
+     * Schaltzentrale — dort lagen Erstellen, Beitreten und die eigenen
+     * Partien. Seit Wunsch 1 legt der Start die Runde an, seit v0.35.0 ist
+     * der Zwischenbildschirm nur noch das Code-Feld. Wer aus einer Runde
+     * kommt, stand also vor einem leeren Formular für fremde Runden.
+     *
+     * Der Name `uebersichtOeffnen` bleibt: An ihm hängen Kommentare, Tests
+     * und die Fussleiste. Was er tut, steht hier.
+     */
+    _zumStart() {
+        if (typeof TABS !== "undefined") {
+            TABS.wechseln("start");
+        }
     },
 
     /*

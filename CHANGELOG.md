@@ -3,6 +3,17 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.36.0 — 24.08.2026
+
+**Nach einer Runde landest du wieder auf dem Startbildschirm.**
+
+- Bisher führte „Zurück zur Übersicht" — und auch das Schliessen des
+  Ergebnisses — in den Beitritts-Bildschirm. Dort steht seit v0.35.0 nur
+  noch das Code-Feld für FREMDE Runden; man stand also vor einem leeren
+  Formular.
+- Jetzt geht es dorthin zurück, wo es losging: zum Start, mit Vorschau,
+  „Spielen" und deinen Einstellungen.
+
 ## v0.35.0 — 24.08.2026
 
 **„Runde beitreten" ist jetzt nur noch das: der Weg in fremde Runden.**

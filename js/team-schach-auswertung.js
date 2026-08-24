@@ -468,6 +468,11 @@ Object.assign(TEAM_SCHACH, {
         TEAM_SCHACH.offeneId = "";
         TEAM_SCHACH._auswahlAufheben();
         TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
+
+        /* Nach der Partie geht es auf den Startbildschirm, nicht in das
+           Code-Feld für fremde Runden (seit v0.36.0) — Begründung bei
+           `TEAM_SCHACH._zumStart`. */
+        TEAM_SCHACH._zumStart();
     },
 
 
