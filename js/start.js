@@ -149,10 +149,18 @@ const START = {
         vorschau.appendChild(TEAM_SCHACH._vorschauBauen(
             variante, TEAM_SCHACH._vorschauBrett(variante)));
 
-        const name = document.createElement("p");
-        name.className = "start-spielart";
-        name.textContent = variante.titel;
-        vorschau.appendChild(name);
+        /*
+         * DER NAME UNTER DEM BRETT IST WEG (v0.38.0, Nutzer-Ansage
+         * 24.08.2026: „Die Beschreibung auf dem Haupt Tab soll unter dem
+         * Brett weg"). Das Bild sagt bereits, welche Spielart eingestellt
+         * ist; die Zeile darunter wiederholte es nur und schob den
+         * Spielen-Knopf nach unten.
+         *
+         * FÜR VORLESEPROGRAMME BLEIBT ER: Er steht in der Beschriftung des
+         * Vorschau-Knopfes („Brettform wählen — eingestellt ist …"). Wer
+         * die Zeile hier je wieder einbaut, prüft zuerst, ob sie dort noch
+         * steht — sonst gibt es den Namen zweimal.
+         */
 
         seite.appendChild(vorschau);
 

@@ -3,6 +3,16 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.38.0 — 24.08.2026
+
+**Unter dem Brett auf dem Startbildschirm steht kein Name mehr.**
+
+- Das Vorschaubild zeigt ohnehin, welche Spielart eingestellt ist — die
+  Zeile darunter hat es nur wiederholt und den Spielen-Knopf nach unten
+  geschoben.
+- Für Vorleseprogramme ist der Name weiterhin da: Er steht in der
+  Beschriftung des Vorschau-Knopfes.
+
 ## v0.37.0 — 24.08.2026
 
 **Deine vergangenen Matches haben jetzt ein eigenes Zeichen oben auf dem
