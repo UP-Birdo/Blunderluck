@@ -1117,9 +1117,26 @@ const TEAM_SCHACH = {
             leiste.appendChild(TEAM_SCHACH._knopf("Neu aufstellen", "knopf-haupt",
                 () => TEAM_SCHACH.neuAufstellen(partie)));
         } else if (laeuftMit) {
+            /*
+             * IM LAUFENDEN MATCH GIBT ES NUR „AUFGEBEN" (seit v0.43.0).
+             *
+             * Nutzer-Ansage 24.08.2026: „Sobald Match startet soll nur ein
+             * aufgeben Knopf geben, wo das Match schliesst und man
+             * verliert." Weggefallen sind hier deshalb „Neu aufstellen"
+             * (eine laufende Partie zurückzusetzen ist kein Zug, sondern
+             * ein Rückgängig) und „Runde verlassen" (dasselbe Ergebnis wie
+             * Aufgeben, nur ohne es so zu nennen).
+             *
+             * Das ist die konsequente Fassung von F10 (v0.9.0): Solange die
+             * eigene Runde läuft, zeigt die App nur sie — und es gibt genau
+             * einen Weg hinaus, der ehrlich heisst, was er tut. Die zwei
+             * Schritte bleiben: Aufgeben ist nichts, was ein Daumen
+             * versehentlich erledigen darf.
+             */
             leiste.appendChild(DIALOG.zweiSchritt(
                 TEAM_SCHACH._knopf("Aufgeben", "knopf-gefahr knopf-klein", null),
                 () => TEAM_SCHACH.aufgeben(partie, meinTeam)));
+            return leiste;
         }
 
         /*

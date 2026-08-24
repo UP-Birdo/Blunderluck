@@ -1566,6 +1566,56 @@ pruefe("Der Abschluss schluesselt die Punkte auf (v0.53)", () => {
     }
 });
 
+pruefe("Im laufenden Match steht nur Aufgeben (v0.43.0)", () => {
+    /*
+     * „Sobald Match startet soll nur ein aufgeben Knopf geben wo das Match
+     * schliesst und man verliert" (Nutzer, 24.08.2026).
+     *
+     * Geprueft wird die Fussleiste einer LAUFENDEN eigenen Partie: genau
+     * ein Knopf, und der heisst Aufgeben. Zum Vergleich dieselbe Partie vor
+     * dem Start — dort muss mehr stehen, sonst prueft der Test nur, dass
+     * die Leiste kaputt ist.
+     */
+    const person = umgebung.ICH.person();
+
+    const beschriftungen = (partie) => {
+        const leiste = TEAM_SCHACH._fussleisteBauen(partie, person);
+        const texte = [];
+        const suchen = (element) => {
+            const text = String(element.textContent || "").trim();
+            if (text && (element.tagName === "button")) {
+                texte.push(text);
+            }
+            for (const kind of element.kinder || []) {
+                suchen(kind);
+            }
+        };
+        suchen(leiste);
+        return texte;
+    };
+
+    const angelegt = SCHACH_TAFEL.partieAnlegen(
+        SCHACH_TAFEL.leereTafel(8600), "standard", "Laufend", 8610);
+    let partie = SCHACH_RUNDE.teamBeitreten(angelegt.partie, person.id, "weiss", 8620);
+    partie = SCHACH_RUNDE.teamBeitreten(partie, "id-bert", "schwarz", 8620);
+
+    const vorher = beschriftungen(partie);
+    if (vorher.length < 2) {
+        throw new Error("vor dem Start steht schon fast nichts da: " + vorher.join(", "));
+    }
+
+    partie = SCHACH_RUNDE.bereitSetzen(partie, "weiss", true, 8630);
+    partie = SCHACH_RUNDE.bereitSetzen(partie, "schwarz", true, 8630);
+    if (partie.laeuft !== true) {
+        throw new Error("die Testpartie laeuft gar nicht");
+    }
+
+    const jetzt = beschriftungen(partie);
+    if (jetzt.length !== 1 || jetzt[0] !== "Aufgeben") {
+        throw new Error("erwartet genau <Aufgeben>, war: " + jetzt.join(", "));
+    }
+});
+
 pruefe("Neu aufstellen gibt es nur bei Zufallsarmee (v0.42.0)", () => {
     /*
      * Nutzer-Ansage 24.08.2026, Lesart bestaetigt: Der Knopf ist zum NEU

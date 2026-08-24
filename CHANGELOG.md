@@ -3,6 +3,18 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.43.0 — 24.08.2026
+
+**Läuft das Match, steht unten nur noch „Aufgeben".**
+
+- „Neu aufstellen" und „Runde verlassen" sind aus der laufenden Partie
+  verschwunden. Das eine war ein Rückgängig mitten im Spiel, das andere tat
+  dasselbe wie Aufgeben, ohne es so zu nennen.
+- **Aufgeben beendet das Match, und du verlierst** — mit Rückfrage, damit
+  es niemand aus Versehen tut.
+- Vor dem Start ändert sich nichts: Dort stehen weiterhin die Knöpfe, die
+  du zum Einrichten brauchst.
+
 ## v0.42.0 — 24.08.2026
 
 **„Neu aufstellen" gibt es nur noch, wenn die Zufallsarmee an ist.**
