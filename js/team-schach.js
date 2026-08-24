@@ -718,24 +718,30 @@ const TEAM_SCHACH = {
         const kopf = TEAM_SCHACH._element("div", "partie-kopf");
 
         /*
-         * WÄHREND DER EIGENEN LAUFENDEN PARTIE GIBT ES KEIN ZURÜCK (seit
-         * v0.9.0 — Nutzer-Entscheidung F10, Entwurf Bündel A): Die App
-         * zeigt nur das Brett, bis die Partie vorbei ist oder man sie
-         * WIRKLICH verlässt (Aufgeben / Team verlassen). Zuschauer und
-         * Betrachter beendeter Partien dürfen weiterhin zurück.
+         * DER KOPF IST LEER BIS AUF DEN BEITRITTS-CODE (seit v0.40.0).
+         *
+         * Nutzer-Ansage 24.08.2026: „Wenn man eine Runde mit Spielen betritt
+         * soll oben das Zurück Knopf weg, dann beide kleines-Brett-
+         * Beschreibungen ganz oben auch überall weg, dafür soll in eine Ecke
+         * oben blass der Beitritts Code stehen ohne Zusatz Text."
+         *
+         * WAS WEGGEFALLEN IST UND WOHIN ES GING:
+         *   - „Zurück" — F10 hatte ihn während der eigenen laufenden Partie
+         *     ohnehin verborgen; jetzt fehlt er immer. Hinaus kommt man über
+         *     die Fussleiste (`_fussleisteBauen`), die seit v0.26.0 ALLE
+         *     Runden-Aktionen trägt.
+         *   - Der Partie-Titel und der Spielart-Chip — beide sagten
+         *     dasselbe („Kleines Brett"), und beide standen über dem Brett,
+         *     das es zeigt.
+         *
+         * DER CODE STEHT NUR AN OFFENEN PARTIEN: Eine beendete hat keinen
+         * gültigen mehr (`SCHACH_TAFEL.partieZuCode` findet sie nicht), und
+         * eine Zahl, die nirgends hinführt, ist schlimmer als keine.
          */
-        const person = TEAM_SCHACH._ich();
-        const eingesperrt = partie.laeuft === true
-            && !partie.ergebnis
-            && !!(person && SCHACH_RUNDE.teamVon(partie, person.id));
-
-        if (!eingesperrt) {
-            kopf.appendChild(TEAM_SCHACH._knopf("Zurück", "knopf-still knopf-klein",
-                () => TEAM_SCHACH.uebersichtOeffnen()));
+        if (!partie.ergebnis) {
+            kopf.appendChild(TEAM_SCHACH._element("span", "partie-code",
+                SCHACH_RUNDE.beitrittsCode(partie.id)));
         }
-        kopf.appendChild(TEAM_SCHACH._element("h2", "partie-titel", partie.titel));
-        kopf.appendChild(TEAM_SCHACH._element("span", "chip chip-offen",
-            SCHACH_RUNDE.varianteVon(partie).titel));
 
         /*
          * WELCHE ITEMS IN DIESER PARTIE VORKOMMEN (seit v0.87, Wunsch R6:

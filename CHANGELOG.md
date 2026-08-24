@@ -3,6 +3,17 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.40.0 — 24.08.2026
+
+**Über dem Brett steht nichts mehr ausser dem Beitritts-Code.**
+
+- Der „Zurück"-Knopf oben ist weg, ebenso der Name der Runde und der
+  Spielart-Chip daneben. Beide sagten dasselbe wie das Brett darunter.
+- Stattdessen steht rechts oben blass der **Beitritts-Code** — sechs
+  Zeichen, ohne Beschriftung. Zum Weitergeben markieren und kopieren.
+- Beendete Partien zeigen ihn nicht: Ihr Code führt nirgends mehr hin.
+- Hinaus kommst du wie bisher über die Knöpfe unten.
+
 ## v0.39.0 — 24.08.2026
 
 **Die Grundeinstellungen sind jetzt ein eigenes Fenster.**

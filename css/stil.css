@@ -3864,6 +3864,23 @@ body.design-3d .werte-figur {
 }
 
 /*
+ * DER BEITRITTS-CODE IM KOPF DER RUNDE (seit v0.40.0): blass in der Ecke,
+ * ohne Beschriftung. Er soll da sein, wenn man ihn weitergeben will, und
+ * sonst nicht auffallen — deshalb `margin-left: auto` (rechte Ecke), leise
+ * Farbe und Schreibmaschinenschrift, damit sich die sechs Zeichen sauber
+ * abschreiben lassen. `user-select` bleibt an: Markieren und Kopieren ist
+ * genau das, wofür er dasteht.
+ */
+.partie-code {
+    margin-left: auto;
+    color: var(--schrift-leise);
+    font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+    font-size: 0.85rem;
+    letter-spacing: 0.12em;
+    opacity: 0.65;
+}
+
+/*
  * IN LANGEN ANSICHTEN KLEBT DIE KOPFZEILE (seit v0.110): Bibliothek und
  * „Schach lernen" tragen diese Klasse, damit der EINE Zurück-Knopf beim
  * Rollen erreichbar bleibt — er ersetzt den schwebenden Zweitknopf von
