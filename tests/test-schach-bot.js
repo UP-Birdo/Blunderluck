@@ -131,6 +131,79 @@ pruefe("nurNochBot: ein einsamer Computer haelt keine Runde am Leben", () => {
     wahr(SCHACH_BOT.nurNochBot(SCHACH_RUNDE.leereRunde(1000)), "leere Runde");
 });
 
+pruefe("botVorgesehen trennt die Absicht von der Tatsache (v0.29.0)", () => {
+    /*
+     * Zwischen „Spielen" und „Bereit" gibt es eine Computer-Runde OHNE
+     * Computer — der Mensch sucht sich in dieser Zeit seine Seite aus. Die
+     * beiden Fragen duerfen deshalb nicht dieselbe sein.
+     */
+    let runde = SCHACH_RUNDE.leereRunde(1000, "", "p-test", "Test");
+    runde = SCHACH_RUNDE.kopieren(runde);
+    runde.regeln.botStufe = "mittel";
+
+    wahr(SCHACH_BOT.botVorgesehen(runde), "die Runde will einen Computer");
+    wahr(!SCHACH_BOT.istBotPartie(runde), "es sitzt aber noch keiner drin");
+
+    const mitBot = SCHACH_BOT.inRundeSetzen(runde, "schwarz", 1000);
+    wahr(SCHACH_BOT.botVorgesehen(mitBot), "die Absicht bleibt");
+    wahr(SCHACH_BOT.istBotPartie(mitBot), "und jetzt ist sie wahr");
+
+    /* Eine Partie unter Menschen traegt keine Stufe und will keinen. */
+    wahr(!SCHACH_BOT.botVorgesehen(SCHACH_RUNDE.leereRunde(1000)), "ohne Stufe");
+    wahr(!SCHACH_BOT.botVorgesehen(null), "null");
+});
+
+pruefe("Der Computer steigt beim Bereit GEGENUEBER ein (v0.29.0)", () => {
+    /*
+     * NUTZER-ANSAGE: „sobald ich auf bereit klicke soll der Bot in die
+     * andere Gruppe joinen." Beide Seiten werden geprueft — der Mensch darf
+     * sich Weiss ODER Schwarz aussuchen.
+     */
+    for (const meine of ["weiss", "schwarz"]) {
+        const gegenueber = (meine === "weiss") ? "schwarz" : "weiss";
+
+        let runde = SCHACH_RUNDE.leereRunde(1000, "", "p-test", "Test");
+        runde = SCHACH_RUNDE.kopieren(runde);
+        runde.regeln.botStufe = "mittel";
+        runde = SCHACH_RUNDE.teamBeitreten(runde, "id-anna", meine, 1000);
+        runde = SCHACH_RUNDE.bereitSetzen(runde, meine, true, 1000);
+
+        gleich(runde.laeuft, false, meine + ": allein laeuft nichts");
+
+        const danach = SCHACH_BOT.beiBereitDazuholen(runde, "id-anna", 1100);
+
+        gleich(SCHACH_RUNDE.teamVon(danach, SCHACH_BOT.KENNUNG), gegenueber,
+            "Mensch in " + meine + " -> Computer in " + gegenueber);
+        gleich(danach.bereit[gegenueber], true, meine + ": der Computer ist bereit");
+        gleich(danach.laeuft, true, meine + ": und die Partie beginnt");
+    }
+});
+
+pruefe("beiBereitDazuholen laesst alles andere in Ruhe", () => {
+    /* Eine Partie unter Menschen bekommt keinen Computer angehaengt. */
+    let ohne = SCHACH_RUNDE.teamBeitreten(
+        SCHACH_RUNDE.leereRunde(1000), "id-anna", "weiss", 1000);
+    ohne = SCHACH_RUNDE.bereitSetzen(ohne, "weiss", true, 1000);
+
+    wahr(!SCHACH_BOT.istBotPartie(SCHACH_BOT.beiBereitDazuholen(ohne, "id-anna", 1100)),
+        "ohne Stufe kommt kein Computer");
+
+    /* Wer noch keine Seite gewaehlt hat, holt auch niemanden dazu. */
+    let ohneSeite = SCHACH_RUNDE.kopieren(SCHACH_RUNDE.leereRunde(1000));
+    ohneSeite.regeln.botStufe = "mittel";
+
+    wahr(!SCHACH_BOT.istBotPartie(
+        SCHACH_BOT.beiBereitDazuholen(ohneSeite, "id-anna", 1100)),
+        "ohne eigene Seite kommt kein Computer");
+
+    /* Und zweimal Druecken holt keinen zweiten. */
+    const einmal = botPartie();
+    const zweimal = SCHACH_BOT.beiBereitDazuholen(einmal, "id-anna", 1200);
+
+    gleich(zweimal.teams.schwarz.filter((id) => SCHACH_BOT.istBot(id)).length, 1,
+        "es bleibt bei EINEM Computer");
+});
+
 pruefe("inRundeSetzen meldet die Seite des Computers sofort bereit", () => {
     const runde = botPartie();
     gleich(runde.bereit.schwarz, true, "Schwarz bereit");

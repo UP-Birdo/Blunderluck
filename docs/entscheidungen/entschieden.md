@@ -1,5 +1,33 @@
 # Blunderluck - Entscheidungen / Entschieden - und warum
 
+## Die Seitenwahl gegen den Computer (24.08.2026, v0.29.0)
+
+Nutzer-Ansage: „Wenn ich bot ja mach und die Schwierigkeit einstelle und dann
+nach auf Start soll ich mir meine seite auswählen können und sobald ich auf
+bereit klicke soll der Bot in die andere Gruppe joinen."
+
+- **Bei Computer-Runden trägt `rundeStarten` NIEMANDEN mehr ein** — weder
+  den Menschen noch den Computer. Der naheliegende Weg (den Menschen wie
+  bisher nach Weiss setzen und ihn dann wechseln lassen) ist versperrt:
+  `SCHACH_RUNDE.teamBeitreten` verbietet den Teamwechsel, und zwar aus einem
+  guten Grund — bei Partien über mehrere Tage hiesse er, erst für die eine
+  und dann für die andere Seite zu ziehen. **Wer die Wahl haben soll, darf
+  gar nicht erst gesetzt werden.**
+- **Daraus folgt eine neue Unterscheidung im Modell:** `botVorgesehen` (die
+  Runde WILL einen Computer) gegen `istBotPartie` (es sitzt einer drin).
+  Zwischen „Spielen" und „Bereit" gibt es eine Computer-Runde ohne Computer.
+  Erkannt wird die Absicht an `regeln.botStufe` — ein eigenes Feld daneben
+  wäre eine zweite Quelle für dieselbe Aussage.
+- **Partien unter Menschen bleiben unverändert:** Wer anlegt, kommt gleich
+  ins weisse Team. Dort gibt es nichts zu wählen — die Seite ist frei, bis
+  jemand sie nimmt, und der Anlegende soll sich um nichts kümmern müssen.
+- **Eine angelegte, nie betretene Runde räumt sich beim Verlassen weg**
+  (`TEAM_SCHACH.selbstAngelegt`). Diese Lücke ist mit der Seitenwahl erst
+  entstanden: Ohne Team gibt es nichts zu verlassen, also griff der
+  Aufräum-Weg von v0.26.0 nicht. Drei Bedingungen müssen zusammenkommen —
+  DIESES Gerät hat sie angelegt, es sitzt kein Mensch darin, sie hat nie
+  begonnen —, sonst löschte ein Besucher die frische Runde eines anderen.
+
 ## Vier Schwierigkeitsstufen für den Computer (24.08.2026, v0.28.0)
 
 Nutzer-Ansage: „recherchire wie ein schach bot funktioniert und baue

@@ -3,6 +3,26 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.29.0 — 24.08.2026
+
+**Gegen den Computer suchst du dir jetzt selbst aus, ob du Weiss oder
+Schwarz spielst.**
+
+- Bisher warst du in einer Computer-Runde immer Weiss, und der Computer sass
+  schon da, bevor du überhaupt hingesehen hattest. Jetzt öffnet „Spielen"
+  eine **leere Runde mit beiden Team-Karten** — du tippst auf „Mitspielen"
+  bei der Seite, die du willst.
+- **Der Computer steigt erst ein, wenn du auf „Bereit" drückst**, und zwar
+  auf der Seite gegenüber. Danach geht es sofort los. Wählst du Schwarz,
+  macht er den ersten Zug.
+- Ein Satz über den Karten sagt dir, was zu tun ist, solange du noch keine
+  Seite hast.
+- **Aufräumen nebenbei:** Wer „Spielen" drückt und ohne Seitenwahl zurück
+  zur Übersicht geht, lässt keine leere Runde mehr stehen — sie schliesst
+  sich von selbst.
+- An Partien unter Menschen ändert sich nichts: Wer anlegt, kommt wie bisher
+  gleich ins weisse Team.
+
 ## v0.28.0 — 24.08.2026
 
 **Vier Schwierigkeitsstufen für den Computer — und er denkt jetzt wirklich

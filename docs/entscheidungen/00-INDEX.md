@@ -16,6 +16,10 @@ wird. Die Liste dessen, was noch kommt, steht in [../ROADMAP.md](../ROADMAP.md).
 
 ## entschieden.md - Blunderluck-Eintraege
 
+- Die Seitenwahl gegen den Computer (24.08.2026, v0.29.0 — Bot-Runden
+  starten LEER, weil ein Teamwechsel im Modell verboten ist; daraus die
+  Trennung `botVorgesehen` gegen `istBotPartie` und das Wegraeumen einer nie
+  betretenen Runde)
 - Vier Schwierigkeitsstufen fuer den Computer (24.08.2026, v0.28.0 —
   Stufen ueber Suchtiefe statt ueber eine Fehlerquote, zwei verschiedene
   Vorgaben fuer neue und alte Runden, Arbeitsbudget statt Zeitmessung,

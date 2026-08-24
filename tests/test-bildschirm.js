@@ -3735,8 +3735,17 @@ async function zeitlimitPruefen() {
      * Gegen den Computer (v0.27.0)
      * ---------------------------------------------------------------- */
 
-    await pruefeMitWarten("Der Haken Gegen-den-Computer setzt den Bot in die Runde",
+    await pruefeMitWarten("Gegen den Computer waehlt der Mensch seine Seite selbst",
         async () => {
+            /*
+             * NUTZER-ANSAGE (24.08.2026): „soll ich mir meine seite
+             * auswaehlen koennen und sobald ich auf bereit klicke soll der
+             * Bot in die andere Gruppe joinen."
+             *
+             * Geprueft wird die ganze Kette in drei Schritten: Spielen legt
+             * eine LEERE Runde an, der Mensch waehlt Schwarz, und erst
+             * „Bereit" holt den Computer nach Weiss.
+             */
             const START = umgebung.START;
             const echteDaten = TEAM_SCHACH.abgleich.daten;
 
@@ -3751,18 +3760,23 @@ async function zeitlimitPruefen() {
 
                 await START.spielen();
 
-                const partie = SCHACH_TAFEL.liste(TEAM_SCHACH.abgleich.daten)[0];
+                const hole = () => SCHACH_TAFEL.partie(
+                    TEAM_SCHACH.abgleich.daten, TEAM_SCHACH.offeneId);
+
+                /* 1) Angelegt, aber noch NIEMAND drin — auch der Computer nicht. */
+                let partie = hole();
                 if (!partie) {
                     throw new Error("Spielen hat keine Runde angelegt");
                 }
-                if (SCHACH_RUNDE.teamVon(partie, "id-anna") !== "weiss") {
-                    throw new Error("der Mensch spielt nicht Weiss");
+                if (SCHACH_RUNDE.teamVon(partie, "id-anna")) {
+                    throw new Error("der Mensch wurde ungefragt einsortiert");
                 }
-                if (SCHACH_RUNDE.teamVon(partie, SCHACH_BOT.KENNUNG) !== "schwarz") {
-                    throw new Error("der Computer sitzt nicht in Schwarz");
+                if (SCHACH_BOT.istBotPartie(partie)) {
+                    throw new Error("der Computer sitzt schon drin, vor der Seitenwahl");
                 }
-                if (partie.bereit.schwarz !== true) {
-                    throw new Error("der Computer ist nicht sofort bereit");
+                if (!SCHACH_BOT.botVorgesehen(partie)) {
+                    throw new Error("der Runde sieht man nicht an, dass ein"
+                        + " Computer kommen soll");
                 }
 
                 /*
@@ -3774,6 +3788,34 @@ async function zeitlimitPruefen() {
                     throw new Error("die Abstimmung ist in der Bot-Runde noch an");
                 }
 
+                /* 2) Der Mensch waehlt SCHWARZ — nicht die Vorgabe von frueher. */
+                await TEAM_SCHACH.teamBeitreten(hole(), "schwarz");
+
+                partie = hole();
+                if (SCHACH_RUNDE.teamVon(partie, "id-anna") !== "schwarz") {
+                    throw new Error("die gewaehlte Seite kam nicht an");
+                }
+                if (SCHACH_BOT.istBotPartie(partie)) {
+                    throw new Error("der Computer steigt schon beim Beitreten ein");
+                }
+                if (partie.laeuft) {
+                    throw new Error("die Partie laeuft, bevor jemand bereit ist");
+                }
+
+                /* 3) „Bereit" holt den Computer auf die ANDERE Seite. */
+                await TEAM_SCHACH.bereitUmschalten(hole(), "schwarz", true);
+
+                partie = hole();
+                if (SCHACH_RUNDE.teamVon(partie, SCHACH_BOT.KENNUNG) !== "weiss") {
+                    throw new Error("der Computer sitzt nicht gegenueber");
+                }
+                if (partie.bereit.weiss !== true) {
+                    throw new Error("der Computer meldet sich nicht bereit");
+                }
+                if (!partie.laeuft) {
+                    throw new Error("die Partie beginnt nicht, obwohl beide bereit sind");
+                }
+
                 /* Und der Computer heisst am Bildschirm nicht Unbekannt. */
                 if (TEAM_SCHACH._nameVon(SCHACH_BOT.KENNUNG) !== SCHACH_BOT.NAME) {
                     throw new Error("der Computer hat keinen Namen");
@@ -3781,6 +3823,61 @@ async function zeitlimitPruefen() {
             } finally {
                 TEAM_SCHACH.abgleich.daten = echteDaten;
                 TEAM_SCHACH.offeneId = "";
+                TEAM_SCHACH.selbstAngelegt = "";
+                umgebung.TABS.gewechseltZu = "";
+                START.regelnMerken(TEAM_SCHACH._regelnVorgabe());
+            }
+        });
+
+    await pruefeMitWarten("Eine angelegte, nie betretene Runde raeumt sich weg",
+        async () => {
+            /*
+             * DIE LUECKE, DIE MIT DER SEITENWAHL ENTSTAND (v0.29.0): Wer
+             * „Spielen" drueckt und ohne Seitenwahl zurueckgeht, liesse eine
+             * menschenleere Runde im gemeinsamen Stand stehen.
+             */
+            const START = umgebung.START;
+            const echteDaten = TEAM_SCHACH.abgleich.daten;
+
+            TEAM_SCHACH.abgleich.daten = SCHACH_TAFEL.leereTafel(9720);
+
+            try {
+                START.spielartMerken(SCHACH_VARIANTEN.liste[0].id);
+                START.regelnMerken(Object.assign(TEAM_SCHACH._regelnVorgabe(),
+                    { gegenComputer: true }));
+
+                await START.spielen();
+
+                const id = TEAM_SCHACH.offeneId;
+                if (!id || !SCHACH_TAFEL.partie(TEAM_SCHACH.abgleich.daten, id)) {
+                    throw new Error("Spielen hat keine Runde angelegt");
+                }
+
+                await TEAM_SCHACH.uebersichtOeffnen();
+                await Promise.resolve();
+                await Promise.resolve();
+
+                if (SCHACH_TAFEL.partie(TEAM_SCHACH.abgleich.daten, id)) {
+                    throw new Error("die leere Runde steht noch da");
+                }
+
+                /* Die Gegenprobe: Eine Runde, der man BEIGETRETEN ist,
+                   bleibt selbstverstaendlich stehen. */
+                await START.spielen();
+                const zweite = TEAM_SCHACH.offeneId;
+                await TEAM_SCHACH.teamBeitreten(
+                    SCHACH_TAFEL.partie(TEAM_SCHACH.abgleich.daten, zweite), "weiss");
+
+                await TEAM_SCHACH.uebersichtOeffnen();
+                await Promise.resolve();
+
+                if (!SCHACH_TAFEL.partie(TEAM_SCHACH.abgleich.daten, zweite)) {
+                    throw new Error("eine betretene Runde wurde weggeraeumt");
+                }
+            } finally {
+                TEAM_SCHACH.abgleich.daten = echteDaten;
+                TEAM_SCHACH.offeneId = "";
+                TEAM_SCHACH.selbstAngelegt = "";
                 umgebung.TABS.gewechseltZu = "";
                 START.regelnMerken(TEAM_SCHACH._regelnVorgabe());
             }

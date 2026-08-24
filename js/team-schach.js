@@ -876,6 +876,22 @@ const TEAM_SCHACH = {
         const bereich = TEAM_SCHACH._element("div", "team-reihe");
         const meinTeam = SCHACH_RUNDE.teamVon(partie, person.id);
 
+        /*
+         * IN EINER COMPUTER-RUNDE VOR DER SEITENWAHL sagt ein Satz, was zu
+         * tun ist (seit v0.29.0). Ohne ihn stünden dort zwei leere Karten
+         * und der Computer nirgends — man müsste raten, ob überhaupt einer
+         * kommt. Er verschwindet, sobald er wahr geworden ist.
+         */
+        if (SCHACH_BOT.botVorgesehen(partie) && !SCHACH_BOT.istBotPartie(partie)
+                && !partie.ergebnis) {
+            bereich.appendChild(TEAM_SCHACH._element("p", "erklaerung",
+                meinTeam
+                    ? "Der Computer setzt sich auf die andere Seite, sobald "
+                        + "du auf „Bereit“ drückst."
+                    : "Such dir eine Seite aus — der Computer nimmt die "
+                        + "andere, sobald du bereit bist."));
+        }
+
         for (const farbe of ["weiss", "schwarz"]) {
             const karte = TEAM_SCHACH._element("section",
                 "karte team-karte" + (meinTeam === farbe ? " team-karte-meine" : ""));
@@ -1141,9 +1157,58 @@ const TEAM_SCHACH = {
         TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
     },
 
-    uebersichtOeffnen() {
+    /*
+     * Die Runde, die DIESES Gerät gerade angelegt hat und der noch niemand
+     * beigetreten ist (seit v0.29.0). Nur hier im Bildschirm, nie im
+     * gemeinsamen Stand — siehe `uebersichtOeffnen`.
+     */
+    selbstAngelegt: "",
+
+    /*
+     * `async`, obwohl der Knopf nicht darauf wartet: Nur so lässt sich das
+     * Wegräumen unten überhaupt PRÜFEN — ein Test muss abwarten können, bis
+     * geschrieben wurde. Für die Knöpfe ändert sich nichts.
+     */
+    async uebersichtOeffnen() {
+        /*
+         * EINE SELBST ANGELEGTE, NIE BETRETENE RUNDE WIRD BEIM VERLASSEN
+         * GESCHLOSSEN (seit v0.29.0).
+         *
+         * Diese Lücke ist mit der Seitenwahl entstanden: Seit v0.29.0 trägt
+         * `rundeStarten` bei Computer-Runden niemanden mehr ein. Wer dann
+         * „Spielen" drückt und ohne Seitenwahl zurückgeht, liesse eine
+         * menschenleere Runde im gemeinsamen Stand stehen — für niemanden
+         * auffindbar, aber für immer da. Genau dasselbe Problem hat v0.26.0
+         * für verlassene Runden gelöst; hier fehlte der Auslöser, weil man
+         * ohne Team gar nichts zu verlassen hat.
+         *
+         * DREI BEDINGUNGEN, und alle drei sind nötig:
+         *   - Es ist die Runde, die DIESES Gerät eben angelegt hat. Sonst
+         *     löschte ein Besucher die frische Runde eines anderen, der
+         *     seine Seite noch sucht.
+         *   - Es sitzt kein Mensch darin (der Computer zählt nicht).
+         *   - Sie hat nie begonnen und hat kein Ergebnis.
+         */
+        const offene = TEAM_SCHACH.offeneId
+            ? SCHACH_TAFEL.partie(TEAM_SCHACH.abgleich.daten, TEAM_SCHACH.offeneId)
+            : null;
+
+        const wegwerfen = !!offene
+            && offene.id === TEAM_SCHACH.selbstAngelegt
+            && !offene.laeuft
+            && !offene.ergebnis
+            && SCHACH_BOT.nurNochBot(offene);
+
         TEAM_SCHACH.offeneId = "";
+        TEAM_SCHACH.selbstAngelegt = "";
         TEAM_SCHACH._auswahlAufheben();
+        TEAM_SCHACH._botAbbrechen();
+
+        if (wegwerfen) {
+            await TEAM_SCHACH._verwaisteRundeSchliessen(offene);
+            return;
+        }
+
         TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
     },
 
@@ -2135,16 +2200,30 @@ const TEAM_SCHACH = {
          * direkt in der Partie. Vorher musste man erst zurück in die Übersicht,
          * die eigene Partie suchen und dort beitreten.
          */
-        let partie = SCHACH_RUNDE.teamBeitreten(ergebnis.partie, person.id, "weiss");
-
         /*
-         * Der Computer sitzt in SCHWARZ und ist sofort bereit (v0.27.0) —
-         * er ist ein Team-Mitglied wie jedes andere. Der Mensch spielt
-         * damit Weiss und hat den ersten Zug; angepfiffen wird, sobald er
-         * selbst auf „Bereit" drückt.
+         * GEGEN DEN COMPUTER WÄHLT DER MENSCH SEINE SEITE SELBST (seit
+         * v0.29.0, Nutzer-Ansage: „soll ich mir meine seite auswählen
+         * können und sobald ich auf bereit klicke soll der Bot in die
+         * andere Gruppe joinen").
+         *
+         * Deshalb wird hier NIEMAND eingetragen — weder der Mensch noch der
+         * Computer. Die Runde öffnet mit zwei leeren Team-Karten; ein Tipp
+         * auf „Mitspielen" entscheidet, und `bereitUmschalten` holt danach
+         * den Computer auf die andere Seite.
+         *
+         * WARUM NICHT EINTRAGEN UND WECHSELN LASSEN: Ein Teamwechsel ist im
+         * Modell verboten (`SCHACH_RUNDE.teamBeitreten`) — bei Partien über
+         * mehrere Tage hiesse er, erst für die eine und dann für die andere
+         * Seite zu ziehen. Wer die Wahl haben soll, darf also gar nicht
+         * erst gesetzt werden.
+         *
+         * Partien unter Menschen bleiben, wie sie waren: Wer anlegt, kommt
+         * gleich ins weisse Team und muss sich um nichts kümmern.
          */
-        if (gegenComputer) {
-            partie = SCHACH_BOT.inRundeSetzen(partie, "schwarz");
+        let partie = ergebnis.partie;
+
+        if (!gegenComputer) {
+            partie = SCHACH_RUNDE.teamBeitreten(partie, person.id, "weiss");
         }
 
         ergebnis.tafel = SCHACH_TAFEL.partieEinsetzen(ergebnis.tafel, partie);
@@ -2173,6 +2252,11 @@ const TEAM_SCHACH = {
         try {
             await abgleich.speicher.speichern(ergebnis.tafel);
             abgleich.daten = ergebnis.tafel;
+
+            /* Merken, dass DIESES Gerät sie angelegt hat — solange ihr
+               niemand beigetreten ist, räumt `uebersichtOeffnen` sie beim
+               Verlassen wieder weg (seit v0.29.0). */
+            TEAM_SCHACH.selbstAngelegt = ergebnis.partie.id;
 
             /* Gestartet wird jetzt vom Startbildschirm aus — der Tab muss
                also erst gewechselt werden (Wunsch 1). */
@@ -2365,10 +2449,23 @@ const TEAM_SCHACH = {
     },
 
     async bereitUmschalten(partie, farbe, bereit) {
-        await TEAM_SCHACH._sendenMitPruefung(
-            SCHACH_RUNDE.bereitSetzen(partie, farbe, bereit),
-            partie.zugZaehler
-        );
+        const person = TEAM_SCHACH._ich();
+        let neu = SCHACH_RUNDE.bereitSetzen(partie, farbe, bereit);
+
+        /*
+         * JETZT STEIGT DER COMPUTER EIN (seit v0.29.0) — auf der Seite
+         * gegenüber. Er wartete darauf, dass der Mensch sich eine Seite
+         * ausgesucht hat; deshalb steht dieser Aufruf hier und nicht beim
+         * Anlegen. Wer „Doch nicht bereit" drückt, holt niemanden dazu.
+         *
+         * Das Modell entscheidet, ob überhaupt etwas zu tun ist — hier wird
+         * nichts geprüft.
+         */
+        if (bereit && person) {
+            neu = SCHACH_BOT.beiBereitDazuholen(neu, person.id);
+        }
+
+        await TEAM_SCHACH._sendenMitPruefung(neu, partie.zugZaehler);
     },
 
     /* Einen Freund in die Runde einladen (seit v0.13.0, Schritt 7). */

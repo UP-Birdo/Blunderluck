@@ -362,6 +362,26 @@ const SCHACH_BOT = {
     },
 
     /*
+     * IST DIESE RUNDE ALS COMPUTER-RUNDE ANGELEGT WORDEN?
+     *
+     * Nicht dasselbe wie `istBotPartie`, und der Unterschied ist seit
+     * v0.29.0 wichtig: Der Computer steigt erst ein, wenn der Mensch auf
+     * „Bereit" drückt (vorher soll dieser sich in Ruhe eine Seite aussuchen
+     * können). Zwischen „Spielen" und „Bereit" gibt es also eine
+     * Computer-Runde OHNE Computer.
+     *
+     *   botVorgesehen  — die Runde WILL einen Computer (Absicht)
+     *   istBotPartie   — es sitzt einer drin (Tatsache)
+     *
+     * Erkannt wird die Absicht an der Stufe: `regeln.botStufe` wird beim
+     * Anlegen nur für Computer-Runden gesetzt (`TEAM_SCHACH.rundeStarten`).
+     * Ein eigenes Feld daneben wäre eine zweite Quelle für dieselbe Aussage.
+     */
+    botVorgesehen(runde) {
+        return !!(runde && runde.regeln && runde.regeln.botStufe);
+    },
+
+    /*
      * Den Computer in eine Runde setzen und seine Seite sofort bereit
      * melden. Er wartet auf nichts — angepfiffen wird, sobald der Mensch
      * bereit ist (`SCHACH_RUNDE.kannStarten` verlangt beide Seiten).
@@ -371,6 +391,29 @@ const SCHACH_BOT = {
             runde, SCHACH_BOT.KENNUNG, farbe, zeitpunkt);
 
         return SCHACH_RUNDE.bereitSetzen(mitBot, farbe, true, zeitpunkt);
+    },
+
+    /*
+     * DER COMPUTER STEIGT EIN, WENN DER MENSCH BEREIT IST (seit v0.29.0).
+     *
+     * Er setzt sich dem Spieler GEGENÜBER — welche Seite das ist, hat der
+     * Mensch vorher selbst gewählt. Liefert die Runde unverändert zurück,
+     * wenn es nichts zu tun gibt; der Aufrufer muss also nichts prüfen.
+     *
+     * Warum das hier steht und nicht im Bildschirm: Wer wo sitzt, ist eine
+     * Regel der Partie. Der Bildschirm weiss nur, WER gedrückt hat.
+     */
+    beiBereitDazuholen(runde, spielerId, zeitpunkt) {
+        if (!SCHACH_BOT.botVorgesehen(runde) || SCHACH_BOT.istBotPartie(runde)) {
+            return runde;
+        }
+
+        const meine = SCHACH_RUNDE.teamVon(runde, spielerId);
+        if (!meine) {
+            return runde;
+        }
+
+        return SCHACH_BOT.inRundeSetzen(runde, SCHACH.gegner(meine), zeitpunkt);
     },
 
     /* ---------------------------------------------------------------- *
