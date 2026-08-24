@@ -1,4 +1,4 @@
-# Quizz — Architektur / Team Schach: Regeln, Spielarten, Faehigkeiten, Bildschirm
+# Blunderluck — Architektur / Team Schach: Regeln, Spielarten, Faehigkeiten, Bildschirm
 
 ## Team Schach
 
@@ -76,7 +76,7 @@ einen **Zugzähler**:
 Schritt 3 ist die zweite Hälfte derselben Regel: **Geschrieben wird nie die
 eigene Tafel als Ganzes.** Sonst verschwänden Partien, die inzwischen woanders
 angelegt oder gezogen wurden — genau der Fehler, der im Würfel-Quizz einmal
-Mitspieler gelöscht hat (siehe DECISIONS.md).
+Mitspieler gelöscht hat (siehe `entscheidungen\00-INDEX.md`).
 
 **Die Anmeldung in Schritt 0 allein reicht nicht** (seit v0.76). Sie hält die
 regelmässige Abfrage nur an, solange sie noch nicht losgelaufen ist:
@@ -94,7 +94,7 @@ nicht. Alles Schreiben läuft über `TEAM_SCHACH._sendenMitPruefung`.
 
 **Schritt 0 ändert an den Schritten 1 bis 3 nichts.** Wer zuerst drückt, hat
 weiterhin gezogen — nur wird das Ergebnis früher gezeigt. Die Begründung steht
-in `DECISIONS.md`, „Erst anzeigen, dann senden".
+in `entscheidungen\00-INDEX.md`, „Erst anzeigen, dann senden".
 
 ### Brett und Felder
 
@@ -367,7 +367,7 @@ nur noch das Ausweichen — die Regel bleibt trotzdem, sie gilt für jedes Muste
 
 `imGegenzug` hat bisher genau eine Fähigkeit (Ausweichen). Was dabei zu beachten
 war — das Rennen um den Zugzähler und die entfallende Abstimmung — steht in
-`DECISIONS.md`. Geprüft wird beides in `SCHACH_RUNDE.darfEinsetzen`; wer eine
+`entscheidungen\00-INDEX.md`. Geprüft wird beides in `SCHACH_RUNDE.darfEinsetzen`; wer eine
 Fähigkeit einsetzt, fragt nie mehr `darfZiehen`.
 
 **Was eine Fähigkeit anrichten darf, steht in `SCHACH_RUNDE._wirkungVerboten`**
@@ -929,7 +929,7 @@ die Diagonale, beim Turm die Linie; Start und Ziel etwas kräftiger
 (`feld-spur-wirkung`), neu erschienene Würfel bewusst nichts.
 
 Von v1.9 bis v3.5 war das ein gezeichneter **Pfeil**. Warum er weg ist, steht in
-`DECISIONS.md` („Warum der Zugpfeil verschwunden ist"): Er konnte eine Bewegung
+`entscheidungen\00-INDEX.md` („Warum der Zugpfeil verschwunden ist"): Er konnte eine Bewegung
 um ein einziges Feld gar nicht darstellen, und das waren drei der gemeldeten
 Fehler.
 
@@ -1005,7 +1005,7 @@ können.
 
 `--figur-groesse` setzt `TEAM_SCHACH._figurGroesseSetzen` aus der gemessenen
 Feldbreite, nachdem das Brett im Bildschirm steht. Die Rechnung in der Stildatei
-ist nur der Rückfall. Warum das nötig war, steht in `DECISIONS.md` („Warum die
+ist nur der Rückfall. Warum das nötig war, steht in `entscheidungen\00-INDEX.md` („Warum die
 Figurengröße gemessen und nicht gerechnet wird"): `88vw` ist die Breite des
 Fensters, nicht die des Bretts.
 
@@ -1128,7 +1128,7 @@ Regel.
 beantwortet, ob Würfel erscheinen. Der Schalter der Partie geht der Spielart vor.
 **Auch der Bildschirm fragt sie** — wer stattdessen die Spielart abfragt, baut
 den Fehler aus v3.3 nach (Fähigkeiten-Karte fehlte bei zugeschalteten Würfeln,
-siehe `docs\DECISIONS.md`).
+siehe `docs\entscheidungen\00-INDEX.md`).
 
 ### Abstimmung im Team
 

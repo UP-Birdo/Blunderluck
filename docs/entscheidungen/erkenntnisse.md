@@ -1,4 +1,4 @@
-# Quizz - Entscheidungen / Teuer erkaufte Erkenntnisse
+# Blunderluck - Entscheidungen / Teuer erkaufte Erkenntnisse
 
 ## Teuer erkaufte Erkenntnisse
 

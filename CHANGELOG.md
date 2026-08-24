@@ -3,6 +3,18 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.30.0 — 24.08.2026
+
+**Die Zugspur färbt jetzt die ganze Kachel, nicht nur ihre Oberseite.**
+
+- Nach einem Zug leuchten die beiden beteiligten Felder grün. Bisher galt
+  das nur für die Oberfläche — die schräge Kante darunter blieb grau stehen,
+  und das Feld sah aus wie ein grünes Blatt auf einem grauen Klotz.
+- Jetzt färbt sich die **ganze Platte**: Oberseite und Kante. Dasselbe gilt
+  für das Zielfeld des letzten Zuges (etwas kräftiger) und für die Spur
+  eines Unglückswürfels (gelb statt grün).
+- Rein optisch — an den Regeln ändert sich nichts.
+
 ## v0.29.0 — 24.08.2026
 
 **Gegen den Computer suchst du dir jetzt selbst aus, ob du Weiss oder

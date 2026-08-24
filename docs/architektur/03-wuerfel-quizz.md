@@ -1,4 +1,4 @@
-# Quizz — Architektur / Wuerfel Quizz: Punkte, Bildschirm-Regeln, PIN-Anmeldung, Verwaltung
+# Blunderluck — Architektur / Geerbtes aus dem Wuerfel Quizz: Punkte, Bildschirm-Regeln, PIN-Anmeldung, Verwaltung
 
 ## Punkte
 
@@ -62,7 +62,7 @@ Prüfsumme und Salz. Das Salz muss offen in der Datenbank stehen — sonst könn
 ein fremdes Gerät die PIN gar nicht prüfen. Es sorgt dafür, dass zwei Spieler
 mit derselben PIN unterschiedliche Prüfwerte haben.
 
-Was die PIN NICHT leistet, steht in [DECISIONS.md](DECISIONS.md).
+Was die PIN NICHT leistet, steht in [entscheidungen\00-INDEX.md](../entscheidungen/00-INDEX.md).
 
 ### Profil
 

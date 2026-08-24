@@ -1045,6 +1045,13 @@ body.runde-offen .tab-leiste {
     --spur: #cfe3b8;
     --spur-ende: #a8ce85;
 
+    /* Die Kanten der Zugspur im 3D-Look (seit v0.30.0) — abgedunkelte
+       Geschwister der drei Spurfarben, damit sich die GANZE Kachel
+       umfärbt und nicht nur ihre Oberseite. */
+    --spur-kante: #a7c489;
+    --spur-ende-kante: #85ab63;
+    --pech-spur-kante: #cbb965;
+
     /* Was ein Unglückswürfel bewegt hat. */
     --pech: #e8c000;
     --pech-spur: #f2e08a;
@@ -1088,8 +1095,11 @@ body.runde-offen .tab-leiste {
 
         --spur: #6f8f5c;
         --spur-ende: #8fb877;
+        --spur-kante: #556e46;
+        --spur-ende-kante: #6f9459;
         --pech: #ffe14d;
         --pech-spur: #8a7a2a;
+        --pech-spur-kante: #6a5e20;
 
         --wirkung-gut: #4a8fd6;
         --wirkung-schlecht: #e8544a;
@@ -1798,6 +1808,37 @@ body.design-3d .feld-hell {
 
 body.design-3d .feld-dunkel {
     --kachel-schatten: 0 5px 0 var(--feld-kante-dunkel),
+        0 8px 8px rgba(20, 35, 55, 0.28);
+    box-shadow: var(--kachel-schatten);
+}
+
+/*
+ * DIE ZUGSPUR FÄRBT DIE GANZE KACHEL (Nutzer-Ansage 24.08.2026, v0.30.0).
+ *
+ * SO SAH ES VORHER AUS: `.feld-spur` setzt nur den `background` — also die
+ * Oberseite der Kachel. Ihre Kante entsteht aber aus `--kachel-schatten`
+ * und blieb in der Feldfarbe stehen. Ergebnis: ein grünes Blatt auf einem
+ * grauen Klotz, und zwar genau dort, wo der Blick nach einem Zug hinfällt.
+ *
+ * Weil die Kante eine Variable ist, genügt es, sie neu zu setzen — der
+ * weiche Schatten darunter bleibt unverändert. Diese Regeln stehen VOR
+ * Ziel und Schlag: Ist ein Feld beides, gewinnt deren Ring (sie kommen
+ * später), rechnet dabei aber mit der GRÜNEN Kante von hier.
+ */
+body.design-3d .feld-spur {
+    --kachel-schatten: 0 5px 0 var(--spur-kante),
+        0 8px 8px rgba(20, 35, 55, 0.28);
+    box-shadow: var(--kachel-schatten);
+}
+
+body.design-3d .feld-spur-ende {
+    --kachel-schatten: 0 5px 0 var(--spur-ende-kante),
+        0 8px 8px rgba(20, 35, 55, 0.28);
+    box-shadow: var(--kachel-schatten);
+}
+
+body.design-3d .feld-spur-pech {
+    --kachel-schatten: 0 5px 0 var(--pech-spur-kante),
         0 8px 8px rgba(20, 35, 55, 0.28);
     box-shadow: var(--kachel-schatten);
 }

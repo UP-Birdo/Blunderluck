@@ -1,4 +1,4 @@
-# Die 3D-Figuren für das Quizz-Schach — Vorgabe für den Blender-Bau
+# Die 3D-Figuren für Blunderluck — Vorgabe für den Blender-Bau
 
 Diese Datei ist die **Übergabe an den Chat (oder Menschen), der beim Bauen
 der Figuren in Blender hilft.** Sie beschreibt, wie die Figuren AUSSEHEN

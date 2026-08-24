@@ -1,4 +1,4 @@
-# Quizz — Architektur / Wunsch-Weg, Wortbibliothek, Tab-Register, Konventionen, Sicherheit/Datenschutz
+# Blunderluck — Architektur / Wunsch-Weg, Wortbibliothek, Tab-Register, Konventionen, Sicherheit/Datenschutz
 
 ## Der Weg eines Wunsches
 
@@ -82,7 +82,7 @@ fremden Zug.
 - Interne Hilfsfunktionen beginnen mit `_` (`_ichKarteBauen`, `_fokusMerken`).
 - Einzug 4 Leerzeichen, doppelte Anführungszeichen in JavaScript.
 - **Keine typografischen Anführungszeichen in JavaScript-Zeichenketten** — sie
-  sind eine bekannte Fehlerquelle (siehe [DECISIONS.md](DECISIONS.md)).
+  sind eine bekannte Fehlerquelle (siehe [entscheidungen\00-INDEX.md](../entscheidungen/00-INDEX.md)).
 - Keine Emojis, nirgends.
 
 ## Sicherheit und Datenschutz

@@ -11,6 +11,15 @@ weiter; Wuerfel-Quizz-Spiel- und Imposter-Eintraege sind Vergangenheit und
 bleiben nur als Begruendungs-Archiv stehen. Der erste eigene Eintrag ist
 „Die Ausgliederung aus dem Quizz" in [entschieden.md](entschieden.md).
 
+
+> **Zwei Zaehlungen in einer Doku.** Was aus dem Quizz geerbt ist, nennt
+> QUIZZ-Nummern: `v1.0` bis `v3.8` und, ab der SemVer-Zeit, `v0.41.0` bis
+> `v0.122.0`. Blunderluck begann am 23.08.2026 neu bei `v0.1.0`. Faustregel
+> bis auf Weiteres: **unter `v0.30.0` ist Blunderluck, ab `v0.41` oder mit
+> `v1`/`v2`/`v3` ist Quizz.** Sobald Blunderluck die `v0.41.0` erreicht,
+> traegt diese Regel nicht mehr - dann gehoert in geerbte Eintraege das Wort
+> Quizz vor die Nummer.
+
 Warum das Projekt so aussieht, wie es aussieht — und was bewusst NICHT gebaut
 wird. Die Liste dessen, was noch kommt, steht in [../ROADMAP.md](../ROADMAP.md).
 

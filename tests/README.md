@@ -11,6 +11,7 @@ das es so nicht mehr gibt.
 | `test-schach.js` | Schachregeln, auch auf den anderen Brettgrößen |
 | `test-schach-runde.js` | eine Partie: Teams, Spielarten, Fähigkeiten |
 | `test-schach-tafel.js` | Sammlung der Partien und der **Umstieg** von früher |
+| `test-schach-bot.js` | Computer-Gegner: wann er zieht, was er wählt, dass er nicht spickt |
 | `test-schach-vorschau.js` | Bildanleitung: jede Fähigkeit hat ein Beispiel, und es geht auf |
 | `test-schach-grundlagen.js` | Schachregel-Anleitung: jedes Kapitel ist mit den echten Regeln gerechnet |
 | `test-rangliste.js` | Wertung und Spielerprofil |
@@ -40,7 +41,12 @@ Umgebungsvariable `ELECTRON_RUN_AS_NODE` gesetzt ist. Genau das macht
 Einzeln geht es auch von Hand:
 
     $env:ELECTRON_RUN_AS_NODE = "1"
-    & "$env:LOCALAPPDATA\Programs\Microsoft VS Code\Code.exe" "tests\test-modell.js"
+    & "$env:LOCALAPPDATA\Programs\Microsoft VS Code\Code.exe" "tests\test-schach.js"
+
+Ein einzelnes Mess- oder Wegwerf-Skript (nicht im Projekt!) läuft über das
+Haus-Werkzeug, das dieselbe Suche macht:
+
+    powershell -ExecutionPolicy Bypass -File "..\..\..\tools\Node-Ausfuehren.ps1" -Skript "<Pfad zur .js>"
 
 ## Was wird geprüft (`test-schach.js`)
 
@@ -119,24 +125,7 @@ Klammern und typografische Anführungszeichen sofort ab.
 | Übersetzbarkeit | jede Datei in `js\` wird kompiliert |
 | Einbindung | jede Datei aus `js\` und `css\stil.css` ist in `index.html` verlinkt |
 | Aufrufe | jedes `SPIELER.xyz`, `SCHACH.xyz`, `SCHACH_RUNDE.xyz` und `VERSIEGELUNG.xyz` im gesamten Programm gibt es wirklich — fängt umbenannte Funktionen, die anderswo unter dem alten Namen weiterleben. Das Suchmuster braucht eine Wortgrenze, sonst trifft `SCHACH` auch mitten in `TEAM_SCHACH`. |
-| Version | `APP_VERSION` aus `js\konfig.js` kommt in `CHANGELOG.md` vor |
-
-## Was wird geprüft (`test-modell.js`)
-
-| Bereich | Inhalt |
-|---|---|
-| Werte | fünf Würfel, Auswahl 1 bis 5 und Stern, gültig/ungültig, Sortierung, Vollständigkeit |
-| Grundstrukturen | leere Runde, neuer Spieler, eindeutige Kennungen |
-| `normalisieren()` | Unsinn-Eingaben, Übernahme eines Standes der Fassung 1, **Würfel erscheinen nur bei aufgedeckten Spielern**, Tipps bereinigen, fehlende Kennung |
-| Spieler | hinzufügen, suchen (Kennung und Name), austreten samt Tipps auf ihn, umbenennen |
-| PIN | wird nur als Prüfsumme mit Salz hinterlegt, nie als Ziffern; unvollständige Angaben gelten als keine PIN; eine neue Runde löscht sie NICHT |
-| Festlegen | Siegel wird veröffentlicht, Würfel nicht; erneutes Festlegen wird gezählt und macht ein früheres Aufdecken ungültig |
-| Tipps | landen beim Rater, nicht beim Ziel; ungültige Werte, Spalten, Selbst-Tipps und Tipps auf Unbekannte werden abgewiesen; **wer aufgedeckt hat, kann nicht mehr betippt werden** |
-| Aufdecken | schreibt Würfel und Siegel-Ergebnis; neue Runde behält die Spieler |
-| Auswertung | Trefferzählung als Multimenge, Reihenfolge egal, doppelte Werte, leere Felder, Ergebnis nur gegen Aufgedeckte, Sortierung |
-| Punkte | genau/knapp/zu weit daneben, beste Paarung der Restwerte, Stern nur exakt, doppelte Werte, Bonus für den besten Tipp (auch bei Gleichstand, nicht bei null Punkten), Erklärungstext nennt die geltenden Zahlen |
-| Zusammenführen | fremde Spieler bleiben erhalten, der eigene Eintrag gewinnt, ein frisch angelegter eigener Eintrag wird angehängt, fremde Änderungen werden übernommen — der Schutz gegen den v0.8-Fehler |
-| Vergleich | `inhaltGleich()` ignoriert den Zeitstempel, erkennt jede echte Änderung |
+| Version | `APP_VERSION` aus `js\konfig.js` kommt in `CHANGELOG.md` UND in der Versionszeile der `STATUS.md` vor |
 
 ## Was wird geprüft (`test-versiegelung.js`)
 
@@ -197,7 +186,7 @@ nicht.
 ## Eine neue Testdatei anlegen
 
 Datei `tests\test-<thema>.js` — sie wird automatisch mitgelaufen (Muster
-`test-*.js`). Aufbau wie `test-modell.js`: `pruefe(...)`-Aufrufe, am Ende
+`test-*.js`). Aufbau wie `test-spieler.js`: `pruefe(...)`-Aufrufe, am Ende
 `console.log(anzahlOk + " ok, " + anzahlFehler + " Fehler")` und
 `process.exit(anzahlFehler === 0 ? 0 : 1)`.
 

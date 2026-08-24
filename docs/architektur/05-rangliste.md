@@ -1,4 +1,4 @@
-# Quizz — Architektur / Rangliste und Spielerprofil
+# Blunderluck — Architektur / Rangliste und Spielerprofil
 
 ## Rangliste
 

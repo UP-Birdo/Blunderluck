@@ -1,4 +1,4 @@
-# Quizz — Architektur / Datenmodell, Siegel, Auge, Speicher-Schicht, Abgleich
+# Blunderluck — Architektur / Datenmodell, Siegel, Auge, Speicher-Schicht, Abgleich
 
 ## Datenmodell
 
@@ -146,7 +146,7 @@ wirklich machen wollte.
 **Das ist keine Feinheit, sondern die Bedingung dafür, dass die Bedienung nicht
 einfriert.** `fetch` gibt von sich aus NIE auf; ein hängender Aufruf blockierte
 das ganze Brett (`ziehtGerade`) und die Abfrage gleich mit. Die ganze
-Fehlerkette steht in `DECISIONS.md`, „Die Seite fror ein, bis der Gegner zog".
+Fehlerkette steht in `entscheidungen\00-INDEX.md`, „Die Seite fror ein, bis der Gegner zog".
 
 **Wer eine dritte Rückwand baut, gibt ihr ebenfalls ein Zeitlimit.**
 
@@ -170,7 +170,7 @@ zurück und zeigt oben einen Hinweisbalken.
   hinein. Regel: **Jeder ist Herr über seinen eigenen Eintrag, alles andere
   kommt vom Server.** Ohne das löschte ein Gerät mit veraltetem Stand die
   Mitspieler weg, die sich inzwischen angemeldet hatten — der Fehler aus v0.8,
-  nachzulesen in [DECISIONS.md](DECISIONS.md).
+  nachzulesen in [entscheidungen\00-INDEX.md](../entscheidungen/00-INDEX.md).
 - Ausgenommen sind Aktionen, die absichtlich fremde Einträge ändern (neue Runde,
   Spieler entfernen). Sie rufen `aendern(daten, neuZeichnen, true)` und
   schreiben den Stand unverändert.

@@ -1,4 +1,4 @@
-# Quizz - Entscheidungen / Versions-Historie (Warum je Version)
+# Blunderluck - Entscheidungen / Versions-Historie des QUIZZ (Archiv, Warum je Version)
 
 ## Versions-Historie
 

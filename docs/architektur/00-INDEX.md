@@ -6,6 +6,15 @@ Aenderungen an der Architektur: in der passenden Datei UND hier eintragen.
 
 **Herkunft:** Diese Doku ist bei der Ausgliederung 08/2026 aus dem Quizz
 (v0.122.0) uebernommen; Kapitel 01 wurde fuer Blunderluck neu geschrieben.
+
+> **Zwei Zaehlungen in einer Doku.** Was aus dem Quizz geerbt ist, nennt
+> QUIZZ-Nummern: `v1.0` bis `v3.8` und, ab der SemVer-Zeit, `v0.41.0` bis
+> `v0.122.0`. Blunderluck begann am 23.08.2026 neu bei `v0.1.0`. Faustregel
+> bis auf Weiteres: **unter `v0.30.0` ist Blunderluck, ab `v0.41` oder mit
+> `v1`/`v2`/`v3` ist Quizz.** Sobald Blunderluck die `v0.41.0` erreicht,
+> traegt diese Regel nicht mehr - dann gehoert in geerbte Eintraege das Wort
+> Quizz vor die Nummer.
+
 Den Imposter gibt es in Blunderluck nicht mehr (Kapitel 06 wurde nicht
 uebernommen), und seit v0.2.0 gibt es auch keinen Wuerfel-Code mehr — die
 Spielerverwaltung heisst jetzt `spieler.js`/`anmeldung.js`.
@@ -92,3 +101,23 @@ Bildschirm-Abschnitte sind Vergangenheit.
 - Tab-Register
 - Code-Konventionen
 - Sicherheit und Datenschutz
+
+## 08-start-leiste-und-oberflaeche.md — Startbildschirm, Leiste, Fussleiste, Zugang
+
+BLUNDERLUCK-EIGEN, am 24.08.2026 aus der `CLAUDE.md` hierher gezogen.
+
+- Die Leiste — Faehigkeiten / Start / Rangliste (seit v0.9.0)
+- Der Start ist die Schaltzentrale (v0.14.0 bis v0.21.0)
+- Die Fussleiste sammelt alle Runden-Aktionen (seit v0.26.0)
+- In eine Runde kommt man nur ueber Code oder Einladung (v0.10.0/v0.13.0)
+- Der 3D-Look ist dauerhaft an (seit v0.17.0)
+
+## 09-computer-gegner.md — Der Bot: wie er eingehaengt ist
+
+BLUNDERLUCK-EIGEN, am 24.08.2026 aus der `CLAUDE.md` hierher gezogen. Die
+Herleitung mit allen Messwerten steht weiterhin in `..\entwurf-bot.md`.
+
+- Wie er eingehaengt ist
+- Er steigt erst beim „Bereit" ein (seit v0.29.0)
+- Vier Dinge nie aufweichen
+- Wer eine Zahl dreht, spielt sie aus

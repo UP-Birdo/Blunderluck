@@ -147,7 +147,7 @@ schätzen.
 **Bewusst in Kauf genommen** (geerbte Quizz-Entscheidung): Wer die Seite
 aufruft, kann die Ablage lesen und ändern — ohne Anmeldung. Deshalb: nur Vor-
 oder Spitznamen eintragen, nichts Vertrauliches. Siehe
-[DECISIONS.md](DECISIONS.md).
+[entscheidungen\00-INDEX.md](entscheidungen/00-INDEX.md).
 
 ## 2b. Verwaltungs-Passwort setzen (einmalig)
 

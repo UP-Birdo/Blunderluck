@@ -384,5 +384,39 @@ pruefe("_figurKlasse vergibt Marker- und Art-Klasse (v0.121, erweitert v0.122)",
         throw new Error("stil.css hat keine Regel fuer .figur-bild");
     }
 });
+/*
+ * JEDE BENUTZTE FARB-VARIABLE MUSS ES AUCH GEBEN (seit v0.30.0).
+ *
+ * ANLASS: v0.30.0 faerbt die Zugspur ueber drei NEUE Variablen
+ * (`--spur-kante` und Geschwister). Ein Tippfehler im Namen faellt in CSS
+ * nicht auf — der Browser wirft die ganze Eigenschaft still weg. Die Kachel
+ * haette dann einfach keine Kante mehr, und niemand wuesste, warum.
+ *
+ * Geprueft wird nur, was OHNE Ausweichwert benutzt wird: `var(--x, 12px)`
+ * traegt seinen Ersatz selbst und darf von aussen kommen (das JS setzt ein
+ * paar Werte zur Laufzeit, etwa `--wirkung-dauer`).
+ */
+pruefe("Jede benutzte CSS-Variable ohne Ausweichwert ist auch definiert", () => {
+    const stil = dateisystem.readFileSync(
+        pfad.join(projekt, "css", "stil.css"), "utf8");
+
+    const definiert = new Set();
+    for (const treffer of stil.matchAll(/(--[a-z0-9-]+)\s*:/g)) {
+        definiert.add(treffer[1]);
+    }
+
+    const fehlend = new Set();
+    for (const treffer of stil.matchAll(/var\(\s*(--[a-z0-9-]+)\s*([,)])/g)) {
+        if (treffer[2] === ")" && !definiert.has(treffer[1])) {
+            fehlend.add(treffer[1]);
+        }
+    }
+
+    if (fehlend.size > 0) {
+        throw new Error("stil.css benutzt Variablen, die es nicht gibt: "
+            + [...fehlend].join(", "));
+    }
+});
+
 console.log(anzahlOk + " ok, " + anzahlFehler + " Fehler");
 process.exit(anzahlFehler === 0 ? 0 : 1);
