@@ -3089,6 +3089,24 @@ body.design-3d .werte-figur {
     color: var(--gefahr);
 }
 
+/*
+ * DER AUSGANG ALS ÜBERSCHRIFT DER RÜCKSCHAU (seit v0.46.0): „Schachmatt"
+ * grün oder rot, „Patt" grau. Die Farbe hängt hier NICHT an der Fläche
+ * (`.abschluss-sieg` und Geschwister gibt es auf der Rückschau nicht),
+ * sondern kommt als eigene Klasse mit — deshalb die drei Regeln.
+ */
+.abschluss-ausgang-sieg {
+    color: var(--gut);
+}
+
+.abschluss-ausgang-niederlage {
+    color: var(--gefahr);
+}
+
+.abschluss-ausgang-remis {
+    color: var(--schrift-leise);
+}
+
 .abschluss-text {
     margin: 0;
     font-size: 1.05rem;

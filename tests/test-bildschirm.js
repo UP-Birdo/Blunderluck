@@ -1566,6 +1566,67 @@ pruefe("Der Abschluss schluesselt die Punkte auf (v0.53)", () => {
     }
 });
 
+pruefe("Die Rueckschau nennt den Ausgang, farbig (v0.46.0)", () => {
+    /*
+     * „Schachmatt in rot fuer verloren, gruen fuer gewonnen, und Patt in
+     * grau soll statt ‚wie es dazu kam‘ stehen" (Nutzer, 24.08.2026).
+     *
+     * Geprueft wird der aufgegebene Fall — er ist der einzige, der sich
+     * ohne echte Mattstellung herstellen laesst — und dass die alte
+     * Ueberschrift verschwunden ist. Das WORT kommt aus `SCHACH.lage`,
+     * also aus dem Modell; hier zaehlt, dass es oben steht und eine
+     * Farbklasse traegt.
+     */
+    const echteDaten = TEAM_SCHACH.abgleich.daten;
+    const echterAbschluss = TEAM_SCHACH.abschluss;
+    const person = umgebung.ICH.person();
+
+    try {
+        const angelegt = SCHACH_TAFEL.partieAnlegen(
+            SCHACH_TAFEL.leereTafel(8000), "standard", "Ausgang", 8010);
+        let partie = SCHACH_RUNDE.teamBeitreten(angelegt.partie, person.id, "weiss", 8020);
+        partie = SCHACH_RUNDE.teamBeitreten(partie, "id-bert", "schwarz", 8020);
+        partie = SCHACH_RUNDE.bereitSetzen(partie, "weiss", true, 8030);
+        partie = SCHACH_RUNDE.bereitSetzen(partie, "schwarz", true, 8030);
+        partie = SCHACH_RUNDE.aufgeben(partie, "weiss", 8040);
+
+        TEAM_SCHACH.abgleich.daten = SCHACH_TAFEL.partieEinsetzen(
+            angelegt.tafel, partie, 8040);
+        TEAM_SCHACH.abschluss = { id: partie.id, schritt: 0 };
+        TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
+
+        const suchen = (element, klasse) => {
+            for (const kind of element.kinder || []) {
+                if (String(kind.className || "").indexOf(klasse) !== -1) {
+                    return kind;
+                }
+                const tiefer = suchen(kind, klasse);
+                if (tiefer) {
+                    return tiefer;
+                }
+            }
+            return null;
+        };
+
+        const titel = suchen(TEAM_SCHACH.wurzelEl, "abschluss-ausgang");
+        if (!titel) {
+            throw new Error("die Rueckschau nennt den Ausgang nicht");
+        }
+        if (String(titel.textContent || "") === "Wie es dazu kam") {
+            throw new Error("die alte Ueberschrift steht noch da");
+        }
+        /* Anna hat aufgegeben — also verloren, also die Niederlagen-Farbe. */
+        if (String(titel.className).indexOf("abschluss-ausgang-niederlage") === -1) {
+            throw new Error("falsche Farbklasse: " + titel.className);
+        }
+    } finally {
+        TEAM_SCHACH.abgleich.daten = echteDaten;
+        TEAM_SCHACH.abschluss = echterAbschluss;
+        TEAM_SCHACH.offeneId = "";
+        umgebung.TABS.gewechseltZu = "";
+    }
+});
+
 pruefe("Der Abschluss ist ein Fenster ohne Tab-Leiste (v0.45.0)", () => {
     /*
      * „Wie es dazu kam und so sollen unten die Menü-Leiste verschwinden —

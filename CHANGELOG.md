@@ -3,6 +3,15 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.46.0 — 24.08.2026
+
+**Die Rückschau sagt jetzt gleich oben, wie es ausging.**
+
+- Statt „Wie es dazu kam" steht dort **Schachmatt** — grün, wenn du
+  gewonnen hast, rot, wenn du verloren hast.
+- **Patt** steht in grau; niemand hat gewonnen.
+- Wer aufgibt, liest **Aufgegeben** in der Verlierer-Farbe.
+
 ## v0.45.0 — 24.08.2026
 
 **Der Abschluss einer Partie ist jetzt ein eigenes Fenster.**

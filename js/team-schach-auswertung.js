@@ -202,8 +202,40 @@ Object.assign(TEAM_SCHACH, {
 
         const flaeche = TEAM_SCHACH._element("div", "abschluss abschluss-rueckschau");
 
+        /*
+         * DIE ÜBERSCHRIFT SAGT, WIE ES AUSGING (seit v0.46.0).
+         *
+         * Nutzer-Ansage 24.08.2026: „Schachmatt in rot für verloren, grün für
+         * gewonnen, und Patt in grau soll statt ‚wie es dazu kam‘ stehen."
+         *
+         * Das Wort kommt aus dem MODELL (`SCHACH.lage`), nicht aus dem
+         * Bildschirm: Ob eine Partie matt, patt oder aufgegeben endete, weiss
+         * nur das Regelwerk. Die FARBE kommt aus dem Ergebnis der Partie —
+         * dieselbe Unterscheidung, die einen Satz weiter unten „Gewonnen"
+         * oder „Verloren" schreibt.
+         *
+         * DER DRITTE FALL, den die Ansage nicht nennt: Wer aufgibt, endet
+         * weder matt noch patt. Dann steht dort „Aufgegeben", in derselben
+         * Farbe wie ein verlorenes Matt — verloren ist verloren.
+         */
+        const lage = SCHACH.lage(partie.stand);
+        const gewonnen = (partie.ergebnis === meinTeam);
+        const unentschieden = (partie.ergebnis === "remis" || lage.art === "patt");
+
+        let wort = "Aufgegeben";
+        if (lage.art === "matt") {
+            wort = "Schachmatt";
+        } else if (lage.art === "patt") {
+            wort = "Patt";
+        }
+
+        const farbklasse = unentschieden
+            ? "abschluss-ausgang-remis"
+            : (gewonnen ? "abschluss-ausgang-sieg" : "abschluss-ausgang-niederlage");
+
         flaeche.appendChild(TEAM_SCHACH._element("p", "abschluss-marke", partie.titel));
-        flaeche.appendChild(TEAM_SCHACH._element("h2", "abschluss-titel", "Wie es dazu kam"));
+        flaeche.appendChild(TEAM_SCHACH._element("h2",
+            "abschluss-titel abschluss-ausgang " + farbklasse, wort));
 
         /*
          * ZWEI SPALTEN (seit v0.64): links die SCHLUSSSTELLUNG, rechts der
