@@ -489,6 +489,21 @@ Object.assign(TEAM_SCHACH, {
                    Form des Bretts. Gezeichnet gleich, benannt anders. */
                 const kreuzEcke = !!SCHACH_VARIANTEN.holen(stand.variante).kreuz;
 
+                /*
+                 * EINE ECKE IST KEINE KACHEL (Nutzer-Ansage 24.08.2026).
+                 *
+                 * Bis v0.30.0 trug sie dieselbe Klasse wie ein Riss — und im
+                 * 3D-Look gewann die Kachel-Regel (`body.design-3d
+                 * .feld-hell`) gegen den durchsichtigen Hintergrund des
+                 * Risses: Man sah die Plattenränder an Feldern, die gar nicht
+                 * zum Brett gehören. Ein Riss IST eine kaputte Kachel und
+                 * behält sein Aussehen; die Ecke ist Luft und bekommt
+                 * deshalb ihre eigene Klasse.
+                 */
+                if (kreuzEcke) {
+                    zelle.classList.add("feld-ausserhalb");
+                }
+
                 zelle.title = kreuzEcke
                     ? "Gehört nicht zum Brett"
                     : "Riss im Boden: dauerhaft gesperrt, nur Springer setzen darüber";

@@ -1854,6 +1854,18 @@ body.design-3d .feld-schlag {
     box-shadow: var(--kachel-schatten), inset 0 0 0 3px #e05a52;
 }
 
+/*
+ * DIE ECKEN EINES KREUZ-BRETTS SIND KEINE KACHELN (v0.31.0). Diese Regel
+ * steht bewusst als LETZTE der Kachel-Regeln: Sie hat dieselbe Stärke wie
+ * `.feld-hell` und `.feld-dunkel` und gewinnt nur, weil sie später kommt.
+ * Wer hier etwas einfügt, fügt es DAVOR ein.
+ */
+body.design-3d .feld-ausserhalb {
+    --kachel-schatten: none;
+    background: transparent;
+    box-shadow: none;
+}
+
 /* Auch die Beispielbretter der Anleitungen tragen den Look. */
 body.design-3d .vorschau {
     gap: 4px;
@@ -3255,6 +3267,18 @@ body.design-3d .werte-figur {
 .feld-riss::before,
 .feld-riss::after {
     content: none !important;
+}
+
+/*
+ * AUSSERHALB DES BRETTS (seit v0.31.0): die vier Ecken eines Kreuz-Bretts.
+ * Sie sehen aus wie ein Riss, sind aber keiner — ein Riss ist eine kaputte
+ * Kachel, die Ecke ist gar keine. Deshalb faellt hier auch die letzte Spur
+ * einer Kachel weg; im 3D-Look erledigt das die Regel im design-3d-Block,
+ * die spaeter steht und die Kachel-Kante mit abraeumt.
+ */
+.feld-ausserhalb {
+    box-shadow: none;
+    cursor: default;
 }
 
 /*

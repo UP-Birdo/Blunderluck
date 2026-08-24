@@ -418,5 +418,35 @@ pruefe("Jede benutzte CSS-Variable ohne Ausweichwert ist auch definiert", () => 
     }
 });
 
+/*
+ * DIE ECKEN DES KREUZ-BRETTS TRAGEN IHRE EIGENE KLASSE (seit v0.31.0).
+ *
+ * Sie sehen aus wie ein Riss, sind aber keiner: Ein Riss ist eine kaputte
+ * Kachel, die Ecke gehoert gar nicht zum Brett. Wer `feld-ausserhalb` in
+ * einer der beiden Zeichen-Dateien streicht oder in der Stildatei vergisst,
+ * bekommt im 3D-Look wieder Plattenraender um nichts — genau der gemeldete
+ * Fehler. Geprueft wird deshalb an allen drei Stellen zugleich.
+ */
+pruefe("Die Kreuz-Ecken tragen feld-ausserhalb (v0.31.0)", () => {
+    const stil = dateisystem.readFileSync(
+        pfad.join(projekt, "css", "stil.css"), "utf8");
+
+    for (const datei of ["team-schach-brett.js", "team-schach-uebersicht.js"]) {
+        const quelle = dateisystem.readFileSync(pfad.join(jsOrdner, datei), "utf8");
+        if (quelle.indexOf("feld-ausserhalb") === -1) {
+            throw new Error(datei + " vergibt die Klasse feld-ausserhalb nicht"
+                + " mehr — die Kreuz-Ecken saehen wieder wie Kacheln aus");
+        }
+    }
+
+    if (stil.indexOf(".feld-ausserhalb") === -1) {
+        throw new Error("stil.css hat keine Regel fuer .feld-ausserhalb");
+    }
+    if (stil.indexOf("body.design-3d .feld-ausserhalb") === -1) {
+        throw new Error("stil.css nimmt der Ecke im 3D-Look die Kachel nicht"
+            + " — ohne body.design-3d .feld-ausserhalb bleibt die Kante stehen");
+    }
+});
+
 console.log(anzahlOk + " ok, " + anzahlFehler + " Fehler");
 process.exit(anzahlFehler === 0 ? 0 : 1);

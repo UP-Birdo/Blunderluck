@@ -3,6 +3,20 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.31.0 — 24.08.2026
+
+**Auf den Kreuz-Brettern sind die vier Ecken jetzt wirklich leer.**
+
+- Die Ecken gehören nicht zum Brett — dort kann keine Figur hin. Trotzdem
+  sah man dort bisher noch die Ränder und Kanten der 3D-Platten, als läge
+  da eine Kachel.
+- Jetzt ist dort nichts mehr: kein Rand, keine Kante, kein Schatten. Das
+  Brett hat damit auch im Kleinen die Kreuzform, die es haben soll — auch
+  im Vorschaubild bei der Brettwahl.
+- **Echte Risse im Boden sehen unverändert aus.** Sie sind eine kaputte
+  Kachel und sollen als solche zu erkennen bleiben; die Ecke dagegen ist
+  gar keine Kachel.
+
 ## v0.30.0 — 24.08.2026
 
 **Die Zugspur färbt jetzt die ganze Kachel, nicht nur ihre Oberseite.**

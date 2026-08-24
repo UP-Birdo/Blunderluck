@@ -1046,7 +1046,11 @@ Object.assign(TEAM_SCHACH, {
                 "vorschau-feld " + (((reihe + spalte) % 2 === 0) ? "feld-hell" : "feld-dunkel"));
 
             if (ecken.indexOf(feld) !== -1) {
+                /* Dieselben zwei Klassen wie am echten Brett (v0.31.0):
+                   `feld-ausserhalb` nimmt der Ecke die 3D-Kachel, sonst
+                   stünden im Vorschaubild Plattenränder um nichts. */
                 zelle.classList.add("feld-riss");
+                zelle.classList.add("feld-ausserhalb");
             }
 
             const figur = stellung[feld];
