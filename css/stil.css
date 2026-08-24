@@ -3942,6 +3942,28 @@ body.design-3d .werte-figur {
 }
 
 /*
+ * DIE EINSTELLUNGEN DIESER PARTIE (seit v0.48.0): Das Zahnrad in der
+ * Fussleiste bekommt das Zeichen in Textgrösse, und das Aufgeben steht in
+ * seinem Fenster ganz unten — gross und rot, wie angesagt.
+ */
+.spiel-zahnrad .start-zeichen {
+    width: 1.2em;
+    height: 1.2em;
+    display: block;
+}
+
+.spiel-einstellungen-fuss {
+    margin-top: calc(var(--abstand) * 2);
+}
+
+.aufgeben-gross {
+    width: 100%;
+    min-height: 52px;
+    font-size: 1.05rem;
+    font-weight: 600;
+}
+
+/*
  * EIN LEERER KOPF IST KEINE ZEILE (seit v0.47.0). Seit der Code in die
  * Stand-Leiste gezogen ist, bleibt der Partie-Kopf leer, wenn die Partie
  * keinen festen Item-Vorrat hat — ohne diese Regel stünde dort eine leere

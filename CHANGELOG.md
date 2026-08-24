@@ -3,6 +3,19 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.48.0 — 25.08.2026
+
+**Aufgeben sitzt jetzt hinter einem Zahnrad — den Einstellungen dieser
+Partie.**
+
+- Unten in der laufenden Partie steht statt „Aufgeben" ein Zahnrad. Dahinter
+  liegen die Einstellungen, die **nur für diese Partie** gelten.
+- Darin steht heute genau eine Sache: **Aufgeben, ganz unten, gross und
+  rot** — mit Rückfrage wie bisher.
+- Der Platz ist bewusst schon da: Lautstärke und was sonst nur im Match
+  zählt, kommt später dorthin. Alles, was dein Gerät betrifft, bleibt beim
+  Zahnrad auf dem Startbildschirm.
+
 ## v0.47.0 — 24.08.2026
 
 **Der Beitritts-Code steht jetzt neben der Zugnummer — und läuft beim

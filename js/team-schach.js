@@ -85,6 +85,20 @@ const TEAM_SCHACH = {
        Wie die Bibliothek hängt sie an keinem Spielstand — `grundlagenGezeichnet`
        hält die regelmässige Abfrage davon ab, sie ständig neu zu bauen und
        dabei jeden aufgeklappten Eintrag wieder zuzuklappen. */
+    /*
+     * DIE EINSTELLUNGEN DIESER PARTIE (seit v0.48.0).
+     *
+     * Nutzer-Ansage 24.08.2026: „Aufgeben soll hinter ein Zahnrad, welches
+     * Spiel-Einstellungen beinhaltet — wie später Lautstärke und andere
+     * Einstellungen, die nur im Match wichtig sind; Aufgeben ganz unten,
+     * grosser Knopf in Rot."
+     *
+     * Heute steht dort nur das Aufgeben. Der Ort ist trotzdem jetzt schon
+     * richtig: Alles, was NUR während einer Partie gilt, gehört hierher und
+     * nicht in den Einstellungen-Tab, der dem Gerät gehört.
+     */
+    spielEinstellungenOffen: false,
+
     grundlagenOffen: false,
     grundlagenGezeichnet: false,
 
@@ -454,6 +468,24 @@ const TEAM_SCHACH = {
             return;
         }
 
+        /*
+         * Die Einstellungen dieser Partie stehen GANZ vorn (seit v0.48.0):
+         * Sie sind ein Fenster über der Partie, und der einzige Weg hinaus
+         * ist ihr eigener Zurück-Knopf. Stünden sie weiter unten, gewänne
+         * die offene Partie und man käme nie hin.
+         */
+        if (TEAM_SCHACH.spielEinstellungenOffen && TEAM_SCHACH.offeneId) {
+            const laufende = SCHACH_TAFEL.partie(tafel, TEAM_SCHACH.offeneId);
+            if (laufende) {
+                if (typeof TABS !== "undefined" && TABS.rundeSetzen) {
+                    TABS.rundeSetzen("team-schach", true);
+                }
+                TEAM_SCHACH._spielEinstellungenZeichnen(wurzel, laufende, person);
+                return;
+            }
+            TEAM_SCHACH.spielEinstellungenOffen = false;
+        }
+
         if (TEAM_SCHACH.infoOffen) {
             TEAM_SCHACH._infoZeichnen(wurzel);
             TEAM_SCHACH.infoGezeichnet = true;
@@ -740,6 +772,64 @@ const TEAM_SCHACH = {
         streifen.appendChild(TEAM_SCHACH._element("span", "unglueck-text", letzter.text));
 
         return streifen;
+    },
+
+    /* ---------------------------------------------------------------- *
+     * DIE EINSTELLUNGEN DIESER PARTIE (seit v0.48.0)
+     *
+     * Hinter dem Zahnrad in der Fussleiste. Heute steht darin genau eine
+     * Sache — das Aufgeben —, und das ist Absicht: Der Ort ist angelegt,
+     * damit Lautstärke und die übrigen Match-Einstellungen später dort
+     * landen, wo sie hingehören, statt im Einstellungen-Tab des Geräts.
+     *
+     * Ein Fenster, kein Tab: Leiste weg, oben links der eine Zurück-Knopf
+     * (Haus-Muster seit v0.110).
+     * ---------------------------------------------------------------- */
+
+    spielEinstellungenOeffnen() {
+        TEAM_SCHACH.spielEinstellungenOffen = true;
+        TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
+    },
+
+    spielEinstellungenSchliessen() {
+        TEAM_SCHACH.spielEinstellungenOffen = false;
+        TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
+    },
+
+    _spielEinstellungenZeichnen(wurzel, partie, person) {
+        const kopf = TEAM_SCHACH._element("div", "partie-kopf partie-kopf-klebt");
+        kopf.appendChild(TEAM_SCHACH._knopf("Zurück", "knopf-still knopf-klein",
+            () => TEAM_SCHACH.spielEinstellungenSchliessen()));
+        kopf.appendChild(TEAM_SCHACH._element("h2", "partie-titel",
+            "Einstellungen für diese Partie"));
+        wurzel.appendChild(kopf);
+
+        wurzel.appendChild(TEAM_SCHACH._element("p", "erklaerung",
+            "Hier stehen die Einstellungen, die nur für diese Partie gelten. "
+            + "Alles, was dein Gerät betrifft, findest du wie gewohnt unter "
+            + "dem Zahnrad auf dem Startbildschirm."));
+
+        /*
+         * AUFGEBEN GANZ UNTEN, GROSS UND ROT (Nutzer-Ansage). Die zwei
+         * Schritte bleiben: Es beendet die Partie und man verliert — das
+         * darf kein Daumen versehentlich erledigen.
+         *
+         * Nur für Mitspielende einer laufenden Partie: Wer zuschaut oder
+         * eine beendete ansieht, hat nichts aufzugeben.
+         */
+        const meinTeam = SCHACH_RUNDE.teamVon(partie, person.id);
+        const laeuftMit = !partie.ergebnis && partie.laeuft === true && !!meinTeam;
+
+        if (laeuftMit) {
+            const fuss = TEAM_SCHACH._element("div", "spiel-einstellungen-fuss");
+            fuss.appendChild(DIALOG.zweiSchritt(
+                TEAM_SCHACH._knopf("Aufgeben", "knopf-gefahr aufgeben-gross", null),
+                () => {
+                    TEAM_SCHACH.spielEinstellungenOffen = false;
+                    TEAM_SCHACH.aufgeben(partie, meinTeam);
+                }));
+            wurzel.appendChild(fuss);
+        }
     },
 
     _partieKopfBauen(partie) {
@@ -1187,9 +1277,32 @@ const TEAM_SCHACH = {
              * Schritte bleiben: Aufgeben ist nichts, was ein Daumen
              * versehentlich erledigen darf.
              */
-            leiste.appendChild(DIALOG.zweiSchritt(
-                TEAM_SCHACH._knopf("Aufgeben", "knopf-gefahr knopf-klein", null),
-                () => TEAM_SCHACH.aufgeben(partie, meinTeam)));
+            /*
+             * SEIT v0.48.0 STEHT HIER DAS ZAHNRAD, nicht mehr das Aufgeben
+             * (Nutzer-Ansage 24.08.2026). Dahinter liegen die Einstellungen
+             * dieser Partie — heute nur das Aufgeben, später Lautstärke und
+             * was sonst nur im Match gilt.
+             */
+            const zahnrad = document.createElement("button");
+            zahnrad.type = "button";
+            zahnrad.className = "knopf knopf-still knopf-klein spiel-zahnrad";
+            zahnrad.setAttribute("aria-label", "Einstellungen für diese Partie");
+            zahnrad.title = "Einstellungen für diese Partie";
+
+            /* Gezeichnet statt als Bilddatei — dasselbe Zahnrad wie auf dem
+               Startbildschirm. Es wohnt dort, weil es dort zuerst gebraucht
+               wurde; zwei Fassungen liefen früher oder später auseinander.
+               Fehlt START (Testumgebung ohne Startbildschirm), steht ein
+               Wort da statt eines Bildes. */
+            if (typeof START !== "undefined" && START._zahnradBauen) {
+                zahnrad.appendChild(START._zahnradBauen());
+            } else {
+                zahnrad.textContent = "Einstellungen";
+            }
+
+            zahnrad.addEventListener("click",
+                () => TEAM_SCHACH.spielEinstellungenOeffnen());
+            leiste.appendChild(zahnrad);
             return leiste;
         }
 

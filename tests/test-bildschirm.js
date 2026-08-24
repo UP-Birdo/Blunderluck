@@ -1743,7 +1743,7 @@ pruefe("Wer bereit ist, sieht die andere Seite nicht mehr als Angebot (v0.44.0)"
     }
 });
 
-pruefe("Im laufenden Match steht nur Aufgeben (v0.43.0)", () => {
+pruefe("Im laufenden Match steht nur das Zahnrad (v0.43.0, v0.48.0)", () => {
     /*
      * „Sobald Match startet soll nur ein aufgeben Knopf geben wo das Match
      * schliesst und man verliert" (Nutzer, 24.08.2026).
@@ -1797,9 +1797,30 @@ pruefe("Im laufenden Match steht nur Aufgeben (v0.43.0)", () => {
         throw new Error("die Testpartie laeuft gar nicht");
     }
 
-    const jetzt = beschriftungen(partie);
-    if (jetzt.length !== 1 || jetzt[0] !== "Aufgeben") {
-        throw new Error("erwartet genau <Aufgeben>, war: " + jetzt.join(", "));
+    /*
+     * SEIT v0.48.0 steht dort genau EIN Knopf, und es ist das Zahnrad —
+     * das Aufgeben ist dahinter gezogen. Gezaehlt wird deshalb ueber die
+     * Knoepfe selbst, nicht ueber ihre Beschriftung: Das Zahnrad traegt
+     * ein Zeichen, keinen Text.
+     */
+    const leiste = TEAM_SCHACH._fussleisteBauen(partie, person);
+    const knoepfe = [];
+    const sammeln = (element) => {
+        for (const kind of element.kinder || []) {
+            if (kind.tagName === "button") {
+                knoepfe.push(kind);
+            }
+            sammeln(kind);
+        }
+    };
+    sammeln(leiste);
+
+    if (knoepfe.length !== 1) {
+        throw new Error("erwartet genau einen Knopf, waren " + knoepfe.length);
+    }
+    if (String(knoepfe[0].className || "").indexOf("spiel-zahnrad") === -1) {
+        throw new Error("der eine Knopf ist nicht das Zahnrad: "
+            + knoepfe[0].className);
     }
 });
 
@@ -5506,10 +5527,32 @@ pruefe("In der eigenen laufenden Partie fuehrt nichts an ihr vorbei (F10)", () =
         throw new Error("die laufende eigene Partie bietet einen Ausgang an: "
             + texte.join(", "));
     }
-    if (texte.indexOf("Aufgeben") === -1) {
-        throw new Error("kein Aufgeben in der laufenden Partie");
+
+    /*
+     * SEIT v0.48.0 STEHT DAS AUFGEBEN HINTER DEM ZAHNRAD (Nutzer-Ansage):
+     * in der Fussleiste das Zeichen, dahinter die Einstellungen dieser
+     * Partie mit dem grossen roten Knopf. Geprueft wird beides — sonst
+     * bliebe der Test gruen, wenn das Aufgeben ganz verschwaende.
+     */
+    const zahnrad = einsammeln(leiste, (kind) =>
+        String(kind.className || "").indexOf("spiel-zahnrad") !== -1, [])[0];
+    if (!zahnrad) {
+        throw new Error("kein Zahnrad in der laufenden Partie");
     }
 
+    zahnrad.ausloesen("click");
+    if (!TEAM_SCHACH.spielEinstellungenOffen) {
+        throw new Error("das Zahnrad oeffnet nichts");
+    }
+
+    const dahinter = einsammeln(TEAM_SCHACH.wurzelEl, (kind) =>
+        kind.tagName === "button", []).map((k) => String(k.textContent || ""));
+    if (dahinter.indexOf("Aufgeben") === -1) {
+        throw new Error("hinter dem Zahnrad fehlt das Aufgeben: "
+            + dahinter.join(", "));
+    }
+
+    TEAM_SCHACH.spielEinstellungenSchliessen();
     TEAM_SCHACH.uebersichtOeffnen();
 });
 
