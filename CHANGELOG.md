@@ -3,6 +3,19 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.44.0 — 24.08.2026
+
+**Wenn du bereit bist, wird es ruhig auf dem Bildschirm.**
+
+- Die andere Seite wird dir nicht mehr als „Mitspielen" angeboten — du
+  bist ja schon beigetreten. Nimmst du deine Bereitschaft zurück
+  („Doch nicht bereit"), ist die Wahl wieder da.
+- **„Doch nicht bereit" bleibt** — sonst könntest du nicht mehr heraus,
+  solange der zweite Spieler auf sich warten lässt.
+- **„Zur Übersicht" ist weg**, solange du in einem Team sitzt: „Runde
+  verlassen" sagt ehrlicher, was passiert. Für Zuschauer ohne Team und für
+  beendete Partien bleibt er — dort ist er der einzige Ausgang.
+
 ## v0.43.0 — 24.08.2026
 
 **Läuft das Match, steht unten nur noch „Aufgeben".**

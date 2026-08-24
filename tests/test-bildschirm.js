@@ -1566,6 +1566,51 @@ pruefe("Der Abschluss schluesselt die Punkte auf (v0.53)", () => {
     }
 });
 
+pruefe("Wer bereit ist, sieht die andere Seite nicht mehr als Angebot (v0.44.0)", () => {
+    /*
+     * Nutzer-Entscheidung 24.08.2026 zu Punkt 7: „2. kann raus, du bist
+     * schon beigetreten — soll erst kommen, wenn man 1 drueckt."
+     *
+     * Geprueft wird der Weg hin UND zurueck: Nach dem Bereit-Drücken ist
+     * „Mitspielen" weg, nach der Ruecknahme wieder da. Nur die Hinrichtung
+     * zu pruefen wuerde einen Knopf durchgehen lassen, der nie wiederkommt.
+     */
+    const person = umgebung.ICH.person();
+
+    const mitspielenDa = (partie) => {
+        const bereich = TEAM_SCHACH._teamsBauen(partie, person);
+        let gefunden = false;
+        const suchen = (element) => {
+            if (String(element.textContent || "").trim() === "Mitspielen") {
+                gefunden = true;
+            }
+            for (const kind of element.kinder || []) {
+                suchen(kind);
+            }
+        };
+        suchen(bereich);
+        return gefunden;
+    };
+
+    const angelegt = SCHACH_TAFEL.partieAnlegen(
+        SCHACH_TAFEL.leereTafel(8400), "standard", "Bereit", 8410);
+    let partie = SCHACH_RUNDE.teamBeitreten(angelegt.partie, person.id, "weiss", 8420);
+
+    if (!mitspielenDa(partie)) {
+        throw new Error("vor dem Bereit fehlt die andere Seite als Angebot");
+    }
+
+    partie = SCHACH_RUNDE.bereitSetzen(partie, "weiss", true, 8430);
+    if (mitspielenDa(partie)) {
+        throw new Error("nach dem Bereit steht die andere Seite noch da");
+    }
+
+    partie = SCHACH_RUNDE.bereitSetzen(partie, "weiss", false, 8440);
+    if (!mitspielenDa(partie)) {
+        throw new Error("nach der Ruecknahme kommt die andere Seite nicht zurueck");
+    }
+});
+
 pruefe("Im laufenden Match steht nur Aufgeben (v0.43.0)", () => {
     /*
      * „Sobald Match startet soll nur ein aufgeben Knopf geben wo das Match
@@ -1599,9 +1644,19 @@ pruefe("Im laufenden Match steht nur Aufgeben (v0.43.0)", () => {
     let partie = SCHACH_RUNDE.teamBeitreten(angelegt.partie, person.id, "weiss", 8620);
     partie = SCHACH_RUNDE.teamBeitreten(partie, "id-bert", "schwarz", 8620);
 
+    /*
+     * Vor dem Start steht der Ausgang da, aber noch kein Aufgeben. (Bis
+     * v0.43.0 hiess die Probe hier „mindestens zwei Knoepfe"; seit v0.44.0
+     * ist „Zur Uebersicht" fuer Team-Mitglieder weg, und ohne Zufallsarmee
+     * bleibt genau einer uebrig. Die Zahl war nie der Punkt — der Punkt
+     * ist, dass sich VOR und NACH dem Start etwas unterscheidet.)
+     */
     const vorher = beschriftungen(partie);
-    if (vorher.length < 2) {
-        throw new Error("vor dem Start steht schon fast nichts da: " + vorher.join(", "));
+    if (vorher.indexOf("Runde verlassen") === -1) {
+        throw new Error("vor dem Start fehlt der Ausgang: " + vorher.join(", "));
+    }
+    if (vorher.indexOf("Aufgeben") !== -1) {
+        throw new Error("Aufgeben steht schon vor dem Start da");
     }
 
     partie = SCHACH_RUNDE.bereitSetzen(partie, "weiss", true, 8630);

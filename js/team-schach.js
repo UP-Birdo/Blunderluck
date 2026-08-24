@@ -931,8 +931,20 @@ const TEAM_SCHACH = {
                         () => TEAM_SCHACH.bereitUmschalten(partie, farbe, !partie.bereit[farbe])
                     ));
                 }
-            } else {
+            } else if (!(meinTeam && partie.bereit[meinTeam])) {
                 /*
+                 * WER BEREIT IST, SIEHT DIE ANDERE SEITE NICHT MEHR ALS
+                 * ANGEBOT (seit v0.44.0).
+                 *
+                 * Nutzer-Entscheidung 24.08.2026 zu Punkt 7: „2. kann raus,
+                 * du bist schon beigetreten — soll erst kommen, wenn man 1
+                 * drückt." Gemeint ist „Doch nicht bereit": Erst wer seine
+                 * Bereitschaft zurücknimmt, bekommt die Wahl wieder.
+                 *
+                 * Die Bedingung fragt `partie.bereit[meinTeam]` und nicht
+                 * „läuft die Partie" — genau darum geht es: Der Knopf soll
+                 * schon im Warten verschwinden, nicht erst beim Anpfiff.
+                 *
                  * DIE DREI BEITRITTS-KNÖPFE SEHEN GLEICH AUS (seit v0.41.0,
                  * Nutzer-Ansage 24.08.2026): „Die Knöpfe weiss, schwarz und
                  * Zufall sollen alle drei gleich aussehen und die
@@ -1179,7 +1191,29 @@ const TEAM_SCHACH = {
                 () => TEAM_SCHACH.teamVerlassen(partie)));
         }
 
-        if (!laeuftMit) {
+        /*
+         * „ZUR ÜBERSICHT" GIBT ES NUR NOCH OHNE EIGENES TEAM (seit v0.44.0).
+         *
+         * Nutzer-Entscheidung 24.08.2026 zu Punkt 7: „Zur Übersicht kann
+         * raus." Wer in einem Team sitzt, hat mit „Runde verlassen" den
+         * ehrlicheren Weg — er sagt, was er tut.
+         *
+         * WARUM ER FÜR ZUSCHAUER STEHEN BLEIBT, obwohl die Ansage ihn
+         * ausnahmslos strich: Eine offene Partie ist ein Fenster OHNE
+         * Tab-Leiste (v0.113). Wer sie über einen Beitritts-Code betreten,
+         * aber noch keine Seite gewählt hat, hat kein Team — also auch kein
+         * „Runde verlassen". Ohne diesen Knopf wäre er eingesperrt, und
+         * zwar in einer Runde, die er nicht einmal spielt. Fällt die
+         * Tab-Leiste dort je wieder an, kann der Knopf ersatzlos weg.
+         */
+        if (!meinTeam && !partie.ergebnis) {
+            leiste.appendChild(TEAM_SCHACH._knopf("Zur Übersicht", "knopf-still knopf-klein",
+                () => TEAM_SCHACH.uebersichtOeffnen()));
+        }
+
+        /* Die beendete Partie behält ihren Ausgang: Von dort führt sonst
+           nichts zurück, und „Runde verlassen" gibt es dort nicht. */
+        if (partie.ergebnis) {
             leiste.appendChild(TEAM_SCHACH._knopf("Zur Übersicht", "knopf-still knopf-klein",
                 () => TEAM_SCHACH.uebersichtOeffnen()));
         }
