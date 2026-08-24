@@ -1824,6 +1824,26 @@ body.runde-offen .tab-leiste {
     padding-top: 10px;
 }
 
+/*
+ * ZWEI FÄCHER IN EINER ZEILE (seit v0.50.0) — Friedhof und Züge stehen
+ * zugeklappt nebeneinander, damit unter dem Brett EINE Zeile genügt.
+ *
+ * Sobald eines aufgeht, nimmt es die ganze Breite: Eine Zugliste in einer
+ * halben Spalte wäre unlesbar, und der Aufklapp-Zustand steht dem Browser
+ * hier ohnehin schon zur Verfügung (`[open]`) — dafür braucht es keine
+ * Zeile JavaScript.
+ */
+.fach-reihe {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.fach-reihe > .fach[open] {
+    flex: 1 1 100%;
+}
+
 /* Im Fach braucht die Bilanz keinen Trennstrich mehr — die Klappe trennt
    bereits, und zugeklappt hinge der Strich in der Luft. */
 .fach .bilanz-reihe {
@@ -3051,23 +3071,6 @@ body.design-3d .werte-figur {
     gap: 10px;
 }
 
-/* NOCH IN BENUTZUNG? Nein — `.verlauf-kasten` und `.verlauf-titel` gehörten
-   zum eingeklappten Kasten im Zwischenbildschirm und sind seit v0.37.0 ohne
-   Nutzer. Sie stehen beim Aufräum-Punkt der ROADMAP („tote Stile"). */
-.verlauf-kasten {
-    margin: 0;
-}
-
-.verlauf-titel {
-    cursor: pointer;
-    font-weight: 600;
-    padding: 2px 0;
-}
-
-.verlauf-titel:focus-visible {
-    outline: 2px solid var(--haupt);
-    outline-offset: 1px;
-}
 
 /* ------------------------------------------------------------------ *
  * Abschluss einer Partie (Sieg, Niederlage, Punktestand)
@@ -5064,10 +5067,9 @@ body.dialog-offen {
         width: 12px;
     }
 
-    /* Der Kasten mit den beendeten Partien und der Zugverlauf: mehr
-       Platz für den Finger an der Aufklapp-Zeile. */
-    .verlauf-titel {
-        padding: 10px 0;
+    /* Friedhof und Züge: mehr Platz für den Finger am Aufklapp-Knopf. */
+    .fach-griff {
+        padding: 10px 14px;
     }
 }
 

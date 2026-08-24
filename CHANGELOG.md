@@ -3,6 +3,17 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.50.0 — 25.08.2026
+
+**Auch die Züge stecken jetzt in einem Knopf — und beide stehen
+nebeneinander in einer Zeile.**
+
+- Der Zugverlauf sieht aus wie der Friedhof und fährt genauso aus: ein
+  kleiner Knopf **„Züge (N)"**.
+- Zugeklappt stehen **Friedhof und Züge nebeneinander**. Unter dem Brett
+  bleibt damit eine einzige Zeile übrig statt der bisherigen fünf bis acht.
+- Tippst du eines der beiden an, nimmt es die volle Breite — die Zugliste
+  bleibt so lesbar wie vorher.
 ## v0.49.0 — 25.08.2026
 
 **Der Friedhof fährt jetzt aus einem Knopf aus, statt dauerhaft dazustehen.**

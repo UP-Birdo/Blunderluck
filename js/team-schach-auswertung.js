@@ -1648,24 +1648,35 @@ Object.assign(TEAM_SCHACH, {
 
         return fach;
     },
-    _verlaufBauen(partie) {
-        const karte = TEAM_SCHACH._element("section", "karte");
-        karte.appendChild(TEAM_SCHACH._friedhofBauen(partie));
+    /*
+     * DIE ZÜGE FAHREN AUS DEMSELBEN KNOPF AUS (seit v0.50.0).
+     *
+     * Nutzer-Ansage 24.08.2026: „Züge soll genauso in einem ausfahrt baren
+     * Knopf sein." Aufgeklappt war die Liste schon vorher nicht — sie hatte
+     * aber ihren eigenen Griff-Stil (`verlauf-titel`, eine fette Zeile).
+     * „Genauso" heisst: derselbe Haus-Knopf wie der Friedhof, gebaut aus
+     * denselben Klassen. Die alten Klassen sind damit ohne Nutzer und in
+     * dieser Version aus der Stildatei geflogen.
+     *
+     * Der Kasten für die leere Liste bleibt: Ein Griff „Züge (0)", der sich
+     * öffnen lässt und dann sagt „Noch kein Zug", ist ehrlicher als ein
+     * Griff, der gar nichts tut.
+     */
+    _zuegeBauen(partie) {
+        const fach = document.createElement("details");
+        fach.className = "fach";
 
-        /* Auf dem Handy soll der Verlauf nicht die halbe Seite füllen —
-           deshalb eingeklappt, mit der Anzahl in der Überschrift. */
-        const kasten = document.createElement("details");
-        kasten.className = "verlauf-kasten";
+        const griff = document.createElement("summary");
+        griff.className = "knopf knopf-still knopf-klein fach-griff";
+        griff.textContent = "Züge (" + partie.verlauf.length + ")";
+        fach.appendChild(griff);
 
-        const titel = document.createElement("summary");
-        titel.className = "verlauf-titel";
-        titel.textContent = "Züge (" + partie.verlauf.length + ")";
-        kasten.appendChild(titel);
+        const inhalt = TEAM_SCHACH._element("div", "fach-inhalt");
+        fach.appendChild(inhalt);
 
         if (partie.verlauf.length === 0) {
-            kasten.appendChild(TEAM_SCHACH._element("p", "erklaerung", "Noch kein Zug."));
-            karte.appendChild(kasten);
-            return karte;
+            inhalt.appendChild(TEAM_SCHACH._element("p", "erklaerung", "Noch kein Zug."));
+            return fach;
         }
 
         const liste = TEAM_SCHACH._element("div", "zug-liste");
@@ -1688,8 +1699,26 @@ Object.assign(TEAM_SCHACH, {
             liste.appendChild(zeile);
         }
 
-        kasten.appendChild(liste);
-        karte.appendChild(kasten);
+        inhalt.appendChild(liste);
+        return fach;
+    },
+
+    /*
+     * ZUGEKLAPPT STEHEN DIE BEIDEN FÄCHER NEBENEINANDER (seit v0.50.0), und
+     * damit kostet das, was vorher fünf bis acht Zeilen einnahm, noch eine.
+     * Sobald eines aufgeht, nimmt es die ganze Breite — das macht die
+     * Stildatei über `.fach-reihe > .fach[open]`, nicht dieser Code: Es ist
+     * eine Frage der Darstellung, und der Aufklapp-Zustand lebt im Browser,
+     * nicht im Spielstand.
+     */
+    _verlaufBauen(partie) {
+        const karte = TEAM_SCHACH._element("section", "karte");
+        const reihe = TEAM_SCHACH._element("div", "fach-reihe");
+
+        reihe.appendChild(TEAM_SCHACH._friedhofBauen(partie));
+        reihe.appendChild(TEAM_SCHACH._zuegeBauen(partie));
+
+        karte.appendChild(reihe);
         return karte;
     },
 });

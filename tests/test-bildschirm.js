@@ -3264,8 +3264,58 @@ pruefe("Der Friedhof steckt in einem Aufklapp-Knopf (v0.49.0)", () => {
         throw new Error("die Bilanz steht "
             + klasseZaehlen(karte, "bilanz-reihe") + "-mal in der Karte");
     }
-    if (!hatKlasse(karte.kinder[0], "fach")) {
-        throw new Error("das erste Stueck der Karte ist kein Fach");
+    if (!hatKlasse(karte.kinder[0], "fach-reihe")) {
+        throw new Error("das erste Stueck der Karte ist keine Fach-Reihe");
+    }
+});
+
+pruefe("Friedhof und Zuege sind derselbe Knopf in einer Reihe (v0.50.0)", () => {
+    /*
+     * NUTZER-ANSAGE 24.08.2026: „Zuege soll genauso in einem ausfahrt baren
+     * Knopf sein." — „genauso" heisst: dieselbe Bauart, derselbe Stil.
+     *
+     * Geprueft wird deshalb der VERGLEICH der beiden Griffe, nicht ihr
+     * Aussehen: gleiche Klassen, gleicher Aufbau, beide in derselben Reihe.
+     * Genau das laeuft sonst beim naechsten Umbau auseinander.
+     */
+    const partie = SCHACH_TAFEL.partie(TEAM_SCHACH.abgleich.daten, kennungen.standard);
+    const reihe = TEAM_SCHACH._verlaufBauen(partie).kinder[0];
+
+    if (reihe.kinder.length !== 2) {
+        throw new Error("die Reihe haelt " + reihe.kinder.length + " Faecher statt zwei");
+    }
+
+    const griffe = reihe.kinder.map((fach) => fach.kinder[0]);
+    for (const fach of reihe.kinder) {
+        if (fach.tagName !== "details") {
+            throw new Error("kein Aufklapper, sondern " + fach.tagName);
+        }
+    }
+    if (griffe[0].className !== griffe[1].className) {
+        throw new Error("die Griffe sehen verschieden aus: "
+            + griffe[0].className + " / " + griffe[1].className);
+    }
+    if (String(griffe[1].textContent || "").indexOf("Züge") !== 0) {
+        throw new Error("der zweite Griff heisst nicht Zuege, sondern " + griffe[1].textContent);
+    }
+
+    /* Die Zugliste haengt im Fach, nicht mehr offen in der Karte. */
+    if (!klasseSuchen(reihe.kinder[1], "zug-liste")) {
+        throw new Error("die Zugliste liegt nicht im Fach");
+    }
+});
+
+pruefe("Ein leeres Zuege-Fach laesst sich trotzdem oeffnen (v0.50.0)", () => {
+    const partie = SCHACH_RUNDE.kopieren(
+        SCHACH_TAFEL.partie(TEAM_SCHACH.abgleich.daten, kennungen.standard));
+    partie.verlauf = [];
+
+    const fach = TEAM_SCHACH._zuegeBauen(partie);
+    if (String(fach.kinder[0].textContent || "") !== "Züge (0)") {
+        throw new Error("der Griff zaehlt falsch: " + fach.kinder[0].textContent);
+    }
+    if (!klasseSuchen(fach, "erklaerung")) {
+        throw new Error("dem leeren Fach fehlt der Satz -Noch kein Zug-");
     }
 });
 pruefe("Einigkeit ist die Vorgabe, der Haken fragt das Gegenteil (v0.76)", () => {
