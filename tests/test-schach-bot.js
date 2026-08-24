@@ -47,12 +47,24 @@ function wahr(bedingung, was) {
     }
 }
 
-/* Eine laufende Partie: Anna spielt Weiss, der Computer Schwarz. */
-function botPartie(varianteId) {
+/*
+ * Eine laufende Partie: Anna spielt Weiss, der Computer Schwarz.
+ *
+ * OHNE ANGABE AUF DER STUFE „LEICHT" — das ist genau das Verhalten einer
+ * Runde aus v0.27.0, als es nur eine Spielstaerke gab. Die Tests unten
+ * rechnen mit einem Halbzug Weitsicht; wer eine hoehere Stufe braucht,
+ * setzt sie ausdruecklich.
+ */
+function botPartie(varianteId, stufeId) {
     let runde = SCHACH_RUNDE.leereRunde(1000, varianteId, "p-test", "Test");
     runde = SCHACH_RUNDE.teamBeitreten(runde, "id-anna", "weiss", 1000);
     runde = SCHACH_BOT.inRundeSetzen(runde, "schwarz", 1000);
     runde = SCHACH_RUNDE.bereitSetzen(runde, "weiss", true, 1000);
+
+    if (stufeId) {
+        runde = SCHACH_RUNDE.kopieren(runde);
+        runde.regeln.botStufe = stufeId;
+    }
     return runde;
 }
 
@@ -432,6 +444,207 @@ pruefe("Boxen auf dem WEG zaehlen mit, nicht nur die auf dem Zielfeld", () => {
     gleich(SCHACH.feldName(wahl.von), "d5", "der Turm zieht");
     wahr(SCHACH.reiheVon(wahl.nach, 8) >= SCHACH.reiheVon(SCHACH.feldNummer("d3"), 8),
         "und faehrt ueber beide Boxen nach unten");
+});
+
+/* ------------------------------------------------------------------ *
+ * Die vier Schwierigkeitsstufen (seit v0.28.0)
+ * ------------------------------------------------------------------ */
+
+pruefe("Es gibt genau vier Stufen, und jede kann mehr als die davor", () => {
+    gleich(SCHACH_BOT.STUFEN.length, 4, "Zahl der Stufen");
+
+    for (const stufe of SCHACH_BOT.STUFEN) {
+        wahr(!!stufe.id, "jede Stufe hat eine Kennung");
+        wahr(!!stufe.titel, "jede Stufe hat einen Titel");
+        wahr(!!stufe.hinweis, "jede Stufe erklaert sich (fuer das i am Regler)");
+    }
+
+    /*
+     * DIE LEITER MUSS ECHT SEIN — und „staerker" heisst NICHT nur „tiefer".
+     *
+     * Beim Bauen stand hier zuerst „jede Stufe rechnet tiefer als die
+     * davor". Das war zu eng: „Meister" holt seine Staerke aus der
+     * Ruhesuche und der Stellungsbewertung, nicht aus einem vierten
+     * Halbzug — gemessen war Tiefe 4 nicht besser, aber deutlich teurer.
+     *
+     * Geprueft wird deshalb: In KEINER der drei Stellschrauben faellt eine
+     * Stufe hinter ihre Vorgaengerin zurueck, und in MINDESTENS EINER ist
+     * sie besser. Das laesst offen, WORAUS die Staerke kommt, und schliesst
+     * trotzdem aus, dass zwei Stufen dasselbe tun.
+     */
+    for (let stelle = 1; stelle < SCHACH_BOT.STUFEN.length; stelle++) {
+        const davor = SCHACH_BOT.STUFEN[stelle - 1];
+        const jetzt = SCHACH_BOT.STUFEN[stelle];
+        const wie = jetzt.id + " gegen " + davor.id;
+
+        wahr(jetzt.tiefe >= davor.tiefe, wie + ": die Tiefe faellt nicht");
+        wahr(jetzt.ruhe >= davor.ruhe, wie + ": die Ruhesuche faellt nicht");
+        wahr(!davor.positionell || jetzt.positionell,
+            wie + ": die Stellungsbewertung faellt nicht weg");
+
+        wahr(jetzt.tiefe > davor.tiefe
+                || jetzt.ruhe > davor.ruhe
+                || (jetzt.positionell && !davor.positionell),
+            wie + ": irgendetwas muss besser sein, sonst sind es zwei"
+                + " Stufen mit demselben Inhalt");
+    }
+
+    /* Die unterste Stufe darf nicht suchen — sonst waere sie nicht mehr
+       das Verhalten von v0.27.0. */
+    gleich(SCHACH_BOT.STUFEN[0].tiefe, 1, "die unterste Stufe schaut einen Halbzug");
+    gleich(SCHACH_BOT.STUFEN[0].ruhe, 0, "und sie rechnet keinen Abtausch zu Ende");
+});
+
+pruefe("Unbekannte und fehlende Stufen werden zum Altbestand", () => {
+    /*
+     * DER WICHTIGSTE TEST DIESES ABSCHNITTS: Eine Runde aus v0.27.0 hat
+     * kein Feld `botStufe`. Sie muss weiterspielen wie bisher — also mit
+     * einem Halbzug Weitsicht, nicht ploetzlich als Meister.
+     */
+    gleich(SCHACH_BOT.stufe("").id, SCHACH_BOT.STUFE_ALTBESTAND, "leer");
+    gleich(SCHACH_BOT.stufe("gibtesnicht").id, SCHACH_BOT.STUFE_ALTBESTAND, "Unsinn");
+    gleich(SCHACH_BOT.stufe(undefined).id, SCHACH_BOT.STUFE_ALTBESTAND, "fehlt");
+
+    const alt = SCHACH_RUNDE.normalisieren({ teams: { weiss: ["id-anna"], schwarz: ["bot"] } });
+    gleich(alt.regeln.botStufe, "", "eine Runde ohne Angabe traegt leeren Text");
+    gleich(SCHACH_BOT.stufeVon(alt).id, SCHACH_BOT.STUFE_ALTBESTAND,
+        "und spielt auf der Altbestands-Stufe");
+
+    /* Und die Vorgabe fuer NEUE Runden ist eine andere. */
+    wahr(SCHACH_BOT.STUFE_VORGABE !== SCHACH_BOT.STUFE_ALTBESTAND,
+        "neue Runden starten nicht auf der Altbestands-Stufe");
+    wahr(SCHACH_BOT.gibtEsStufe(SCHACH_BOT.STUFE_VORGABE), "die Vorgabe gibt es");
+    wahr(!SCHACH_BOT.gibtEsStufe("gibtesnicht"), "Unsinn gibt es nicht");
+});
+
+pruefe("Die Stufe reist in der Partie mit (additiver Datenvertrag)", () => {
+    const roh = {
+        teams: { weiss: ["id-anna"], schwarz: ["bot"] },
+        regeln: { botStufe: "meister" }
+    };
+
+    gleich(SCHACH_RUNDE.normalisieren(roh).regeln.botStufe, "meister", "uebernommen");
+    gleich(SCHACH_BOT.stufeVon(roh).id, "meister", "und gedeutet");
+
+    /* Was kein Text ist, wird leer — und die Laenge ist gedeckelt, damit
+       ueber den offenen Datenpfad kein Roman in der Partie landet. */
+    gleich(SCHACH_RUNDE.normalisieren({ regeln: { botStufe: 42 } }).regeln.botStufe,
+        "", "eine Zahl wird verworfen");
+    gleich(SCHACH_RUNDE.normalisieren(
+        { regeln: { botStufe: "x".repeat(500) } }).regeln.botStufe.length,
+        20, "die Laenge ist gedeckelt");
+});
+
+pruefe("Jede Stufe liefert in derselben Stellung einen gueltigen Zug", () => {
+    for (const stufe of SCHACH_BOT.STUFEN) {
+        const runde = mitStellung(botPartie("", stufe.id), [
+            "....k...",
+            "...t....",
+            "......b.",
+            "........",
+            "........",
+            ".....B..",
+            "..T.....",
+            "....K..."
+        ]);
+
+        const wahl = SCHACH_BOT.zugWaehlen(runde);
+        wahr(wahl !== null, "Stufe " + stufe.id + " waehlt einen Zug");
+
+        const neu = SCHACH_BOT.ziehen(runde, 3000);
+        wahr(neu !== null, "Stufe " + stufe.id + " kann ihn ausfuehren");
+        gleich(neu.stand.amZug, "weiss", "Stufe " + stufe.id + ": Weiss ist wieder dran");
+    }
+});
+
+pruefe("Ab Stufe Mittel verschenkt der Computer keine Figur mehr", () => {
+    /*
+     * DER UNTERSCHIED, DEN DER NUTZER MERKT.
+     *
+     * Schwarz kann mit dem Turm d5 den ungedeckten Bauern auf d3 nehmen —
+     * oder den auf a5, der von der Dame a1 GEDECKT ist. „Leicht" sieht nur
+     * den eigenen Zug und nimmt irgendeinen Bauern; ab „Mittel" rechnet der
+     * Bot die Antwort mit und laesst den gedeckten stehen.
+     */
+    const zeilen = [
+        "....k...",
+        "........",
+        "........",
+        "B..t....",
+        "........",
+        "...B....",
+        "........",
+        "D...K..."
+    ];
+
+    const gedeckt = SCHACH.feldNummer("a5");
+
+    for (const stufe of SCHACH_BOT.STUFEN) {
+        const wahl = SCHACH_BOT.zugWaehlen(mitStellung(botPartie("", stufe.id), zeilen));
+        wahr(wahl !== null, "Stufe " + stufe.id + " waehlt");
+
+        if (stufe.tiefe >= 2) {
+            wahr(wahl.nach !== gedeckt,
+                "Stufe " + stufe.id + " faellt nicht auf den gedeckten Bauern herein");
+        }
+    }
+
+    /* Und die unterste Stufe greift wirklich zu — sonst prueft der Test
+       oben nichts, weil der Zug ohnehin niemand machen wuerde. */
+    const leicht = SCHACH_BOT.zugWaehlen(mitStellung(botPartie("", "leicht"), zeilen));
+    wahr(leicht.nach === gedeckt || SCHACH.feldName(leicht.nach) === "d3",
+        "Leicht schlaegt einen der beiden Bauern");
+});
+
+pruefe("Auch die tiefen Stufen bleiben vorhersagbar", () => {
+    /* Gerechnet statt gewuerfelt gilt auf JEDER Stufe (eiserne Regel) —
+       sonst saehe jedes Geraet ein anderes Brett. */
+    const runde = mitStellung(botPartie("", "meister"), [
+        "....k...",
+        "...t....",
+        "........",
+        "........",
+        "........",
+        "........",
+        "..T.....",
+        "....K..."
+    ]);
+
+    const erste = SCHACH_BOT.zugWaehlen(runde);
+    wahr(erste !== null, "es gibt einen Zug");
+
+    for (let lauf = 0; lauf < 5; lauf++) {
+        const wieder = SCHACH_BOT.zugWaehlen(runde);
+        gleich(wieder.von, erste.von, "Startfeld im Lauf " + lauf);
+        gleich(wieder.nach, erste.nach, "Zielfeld im Lauf " + lauf);
+    }
+});
+
+pruefe("Das Arbeitsbudget wird je Zug frisch gesetzt", () => {
+    /*
+     * Ohne das Zuruecksetzen waere der erste Zug einer Partie stark und
+     * jeder weitere schwaecher, bis der Bot nur noch ueberschlaegt — ein
+     * Fehler, den man beim Spielen nie als solchen erkennen wuerde.
+     */
+    const runde = mitStellung(botPartie("", "schwer"), [
+        "....k...",
+        "...t....",
+        "........",
+        "........",
+        "........",
+        "........",
+        "..T.....",
+        "....K..."
+    ]);
+
+    SCHACH_BOT.zugWaehlen(runde);
+    const nachErstem = SCHACH_BOT._rest;
+
+    SCHACH_BOT.zugWaehlen(runde);
+    gleich(SCHACH_BOT._rest, nachErstem,
+        "derselbe Zug verbraucht zweimal dasselbe Budget");
+
+    wahr(SCHACH_BOT.stufe("schwer").budget > 0, "die Stufe hat ueberhaupt ein Budget");
 });
 
 /* ------------------------------------------------------------------ *

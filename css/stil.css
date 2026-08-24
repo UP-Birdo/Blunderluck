@@ -1491,6 +1491,7 @@ body.runde-offen .tab-leiste {
  * Wahl des Item-Vorrats steht deshalb als eigener Knopf darunter (v0.105).
  */
 .mengen-leiste,
+.bot-leiste,
 .vorrat-leiste,
 .armee-leiste,
 .form-leiste {
@@ -1503,6 +1504,7 @@ body.runde-offen .tab-leiste {
 }
 
 .mengen-knopf,
+.bot-knopf,
 .vorrat-knopf,
 .armee-knopf,
 .form-knopf {
@@ -1516,6 +1518,7 @@ body.runde-offen .tab-leiste {
 /* Segmente tragen keinen eigenen Rahmen und keine eigene Fläche — die
    Auswahl zeigt allein die Pille. */
 .mengen-leiste .knopf,
+.bot-leiste .knopf,
 .vorrat-leiste .knopf,
 .armee-leiste .knopf,
 .form-leiste .knopf {
@@ -1526,6 +1529,7 @@ body.runde-offen .tab-leiste {
 /* Im Gruppen-Kasten (selbst schon leise hinterlegt) heben sich die
    Segment-Kästen hell ab. */
 .schalter-gruppe .mengen-leiste,
+.schalter-gruppe .bot-leiste,
 .schalter-gruppe .vorrat-leiste {
     background: var(--karte);
 }
@@ -1543,6 +1547,7 @@ body.runde-offen .tab-leiste {
  * verschmierte. Der Knopf selbst wird durchsichtig.
  */
 .mengen-knopf-aktiv,
+.bot-knopf-aktiv,
 .vorrat-knopf-aktiv,
 .armee-knopf-aktiv,
 .form-knopf-aktiv {
@@ -1552,6 +1557,7 @@ body.runde-offen .tab-leiste {
 }
 
 .mengen-knopf,
+.bot-knopf,
 .vorrat-knopf,
 .armee-knopf,
 .form-knopf,
@@ -1589,6 +1595,11 @@ body.runde-offen .tab-leiste {
 
 .reihen-pille-form {
     view-transition-name: form-aktiv;
+}
+
+/* Die Schwierigkeitsstufen des Computers (seit v0.28.0). */
+.reihen-pille-bot {
+    view-transition-name: bot-aktiv;
 }
 
 /*

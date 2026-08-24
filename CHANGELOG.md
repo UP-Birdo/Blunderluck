@@ -3,6 +3,34 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.28.0 — 24.08.2026
+
+**Vier Schwierigkeitsstufen für den Computer — und er denkt jetzt wirklich
+nach.**
+
+- Unter dem Haken „Gegen den Computer" (Pfeil neben „Spielen") steht eine
+  neue Reihe: **Leicht — Mittel — Schwer — Meister.** Umgestellt wird sie
+  vor der Runde; eine laufende Partie behält die Stufe, mit der sie
+  angelegt wurde. Was jede Stufe kann, sagt das **i** daneben.
+- **Leicht** ist der Computer von v0.27.0: Er sieht nur den eigenen Zug und
+  verschenkt Figuren.
+- **Mittel** rechnet deine Antwort mit. Geschenke gibt es damit keine mehr —
+  was du zurückholen könntest, lässt er stehen.
+- **Schwer** schaut drei Halbzüge weit und stellt dir selbst Fallen.
+- **Meister** rechnet zusätzlich jeden Abtausch zu Ende (ein gedeckter Bauer
+  lockt ihn nicht mehr) und achtet darauf, WO seine Figuren stehen, nicht
+  nur wie viele es sind.
+- **Die Stufen sind gegeneinander ausgespielt worden**, nicht geschätzt: Je
+  16 Partien, und jede Stufe schlägt die darunter deutlich (16:0, 14:1,
+  14:2). Ein Entwurf, bei dem „Meister" schwächer war als „Schwer", wurde
+  dabei gefunden und verworfen.
+- **Auf grossen Brettern rechnet er etwas flacher.** Das Kreuzbrett hat
+  dreimal so viele Felder wie das Standardbrett; ohne Bremse stünde die App
+  sekundenlang still. Der Computer bricht dann lieber eine Stufe früher ab —
+  spürbar wird das nur bei „Meister".
+- **An den Punkten ändert sich nichts:** Partien gegen den Computer zählen
+  weiterhin für niemanden — weder für dich noch für ihn.
+
 ## v0.27.0 — 24.08.2026
 
 **Du kannst jetzt allein spielen: gegen den Computer.**

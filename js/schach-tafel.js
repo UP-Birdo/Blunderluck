@@ -400,6 +400,21 @@ const SCHACH_TAFEL = {
                 ? regeln.itemAuswahl.slice() : [];
 
             partie.regeln.einigkeit = (regeln.einigkeit === true);
+
+            /*
+             * DIE STUFE DES COMPUTERS (seit v0.28.0) — und prompt DIESELBE
+             * FALLE wie v0.86/v0.87: Beim Bauen fehlte diese Zeile, der
+             * Regler liess sich bedienen, die Reihe zeigte die gewählte
+             * Stufe, und die angelegte Partie trug leeren Text. Der Bot
+             * spielte damit auf der Altbestands-Stufe, egal was dastand.
+             * Gefunden hat es der Bildschirm-Test, nicht das Spielen.
+             *
+             * Nur TEXT wird durchgereicht: Was eine gültige Stufe ist, weiss
+             * `SCHACH_BOT` — und der lädt später als diese Datei.
+             */
+            partie.regeln.botStufe = (typeof regeln.botStufe === "string")
+                ? regeln.botStufe.slice(0, 20)
+                : "";
         }
 
         /*

@@ -253,9 +253,19 @@ pruefe("JEDE Einstellung aus der Auswahl kommt in der Partie an (v0.91)", () => 
      * liest: Das Bild stimmte, das Spiel nicht.
      *
      * Dieser Test vergleicht deshalb nicht einzelne Felder, sondern geht die
-     * uebergebenen Regeln DURCH: Was hineingeht, muss auch ankommen. Wer eine
-     * neue Einstellung ergaenzt, faellt hier auf, sobald er sie in
-     * `partieAnlegen` vergisst — ohne dass jemand den Test anfassen muesste.
+     * uebergebenen Regeln DURCH: Was hineingeht, muss auch ankommen.
+     *
+     * DAS REICHTE NICHT — DERSELBE FEHLER KAM v0.28.0 EIN DRITTES MAL
+     * (`botStufe`, die Schwierigkeitsstufe des Computers). Der Grund: Die
+     * Liste unten ist von Hand geschrieben. Wer eine Einstellung ergaenzt
+     * und sie hier NICHT eintraegt, wird auch nicht geprueft — der Test
+     * schweigt genau bei dem Fehler, gegen den er gebaut wurde.
+     *
+     * Seit v0.28.0 steht deshalb die Vollstaendigkeits-Pruefung darunter:
+     * Sie liest die Felder aus dem DATENVERTRAG (`leereRunde().regeln`) und
+     * verlangt, dass jedes entweder hier steht oder ausdruecklich als
+     * abgeleitet vermerkt ist. Vergessen ist damit kein Schweigen mehr,
+     * sondern ein roter Test.
      */
     const regeln = {
         faehigkeiten: true,
@@ -266,8 +276,30 @@ pruefe("JEDE Einstellung aus der Auswahl kommt in der Partie an (v0.91)", () => 
         armeeUnterschiedlich: true,
         armeeStaerke: "wenig",
         itemVorrat: "viele",
-        einigkeit: false
+        einigkeit: false,
+        botStufe: "meister"
     };
+
+    /*
+     * Felder des Datenvertrags, die NICHT durchgereicht werden — jedes mit
+     * seinem Grund. Wer hier etwas eintraegt, sollte es begruenden koennen.
+     */
+    const abgeleitet = {
+        regen: "wird aus lootboxMenge gerechnet",
+        regenStufe: "wird aus lootboxMenge gerechnet",
+        itemPool: "wird beim Anlegen ausgelost, nicht uebergeben",
+        itemAuswahl: "die Eingabe zum Pool, eigener Test weiter unten",
+        armeeFassung: "keine Einstellung, sondern die Fassung der Rechnung"
+    };
+
+    for (const feld of Object.keys(SCHACH_RUNDE.leereRunde().regeln)) {
+        wahr(Object.prototype.hasOwnProperty.call(regeln, feld)
+                || Object.prototype.hasOwnProperty.call(abgeleitet, feld),
+            "die Einstellung \"" + feld + "\" wird von diesem Test geprueft"
+                + " (neu dazugekommen? dann oben in `regeln` eintragen —"
+                + " sonst kann sie in partieAnlegen fehlen, ohne dass es"
+                + " auffaellt)");
+    }
 
     const angelegt = SCHACH_TAFEL.partieAnlegen(
         SCHACH_TAFEL.leereTafel(), "faehigkeiten", "Naht", 5000, regeln);

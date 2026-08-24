@@ -3786,6 +3786,115 @@ async function zeitlimitPruefen() {
             }
         });
 
+    await pruefeMitWarten("Die gewaehlte Schwierigkeitsstufe landet in der Runde",
+        async () => {
+            /*
+             * NUTZER-ANSAGE (24.08.2026): „und auch vier schwirichkeitsstufen
+             * wo man umstellen kann." Geprueft wird die ganze Kette: Reihe am
+             * Bildschirm -> Geraete-Erinnerung -> angelegte Partie.
+             */
+            const START = umgebung.START;
+            const echteDaten = TEAM_SCHACH.abgleich.daten;
+
+            /* Wie in den Nachbar-Tests: alles einsammeln, was zu einer
+               Klasse passt (das nachgebaute DOM kann kein querySelector). */
+            const einsammeln = (element, passt, treffer) => {
+                for (const kind of element.kinder || []) {
+                    if (passt(kind)) {
+                        treffer.push(kind);
+                    }
+                    einsammeln(kind, passt, treffer);
+                }
+                return treffer;
+            };
+
+            TEAM_SCHACH.abgleich.daten = SCHACH_TAFEL.leereTafel(9750);
+
+            try {
+                /* 1) Die Reihe erscheint erst MIT dem Computer-Haken. */
+                START.regelnMerken(Object.assign(TEAM_SCHACH._regelnVorgabe(),
+                    { gegenComputer: false }));
+                TEAM_SCHACH.partieAnlegen();
+
+                const reihen = () => einsammeln(TEAM_SCHACH.wurzelEl, (kind) =>
+                    String(kind.className || "").indexOf("bot-leiste") !== -1, []);
+
+                if (reihen().length !== 0) {
+                    throw new Error("die Stufen stehen da, obwohl kein Computer mitspielt");
+                }
+
+                TEAM_SCHACH.neueRegeln.gegenComputer = true;
+                TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
+
+                if (reihen().length !== 1) {
+                    throw new Error("mit dem Computer-Haken fehlt die Stufen-Reihe");
+                }
+
+                const knoepfe = einsammeln(reihen()[0], (kind) =>
+                    String(kind.className || "").indexOf("bot-knopf") !== -1, []);
+
+                if (knoepfe.length !== SCHACH_BOT.STUFEN.length) {
+                    throw new Error("erwartet " + SCHACH_BOT.STUFEN.length
+                        + " Stufen-Knoepfe, gezaehlt: " + knoepfe.length);
+                }
+
+                /* 2) Die hoechste Stufe antippen setzt sie. */
+                const hoechste = SCHACH_BOT.STUFEN[SCHACH_BOT.STUFEN.length - 1];
+                knoepfe[knoepfe.length - 1].ausloesen("click");
+
+                if (TEAM_SCHACH.neueRegeln.botStufe !== hoechste.id) {
+                    throw new Error("der Stufen-Knopf wurde nicht uebernommen");
+                }
+
+                /* 3) Und sie reist mit der angelegten Runde mit. */
+                TEAM_SCHACH.auswahlSchliessen();
+                await START.spielen();
+
+                /* Ueber `offeneId` gesucht, nicht ueber die erste Partie der
+                   Liste: `rundeStarten` legt auf dem Stand VOM SERVER an, und
+                   der Stellvertreter liefert dort seine eigene Tafel. */
+                const partie = SCHACH_TAFEL.partie(
+                    TEAM_SCHACH.abgleich.daten, TEAM_SCHACH.offeneId);
+
+                if (!partie) {
+                    throw new Error("Spielen hat keine Runde angelegt");
+                }
+                if (partie.regeln.botStufe !== hoechste.id) {
+                    throw new Error("die Stufe steht nicht in der Partie: <"
+                        + partie.regeln.botStufe + "> — kopiert"
+                        + " SCHACH_TAFEL.partieAnlegen sie mit?");
+                }
+                if (SCHACH_BOT.stufeVon(partie).id !== hoechste.id) {
+                    throw new Error("das Modell deutet die Stufe anders");
+                }
+
+                /* 4) Ohne Computer bleibt das Feld leer — ein Regler ohne
+                      Bedeutung gehoert nicht in den Datenvertrag. */
+                TEAM_SCHACH.abgleich.daten = SCHACH_TAFEL.leereTafel(9760);
+                TEAM_SCHACH.offeneId = "";
+                START.regelnMerken(Object.assign(TEAM_SCHACH._regelnVorgabe(),
+                    { gegenComputer: false, botStufe: hoechste.id }));
+
+                await START.spielen();
+
+                const ohne = SCHACH_TAFEL.partie(
+                    TEAM_SCHACH.abgleich.daten, TEAM_SCHACH.offeneId);
+
+                if (!ohne) {
+                    throw new Error("die zweite Runde wurde nicht angelegt");
+                }
+                if (ohne.regeln.botStufe !== "") {
+                    throw new Error("ohne Computer traegt die Runde trotzdem eine Stufe");
+                }
+            } finally {
+                TEAM_SCHACH.abgleich.daten = echteDaten;
+                TEAM_SCHACH.offeneId = "";
+                umgebung.TABS.gewechseltZu = "";
+                TEAM_SCHACH.auswahlOffen = false;
+                START.regelnMerken(TEAM_SCHACH._regelnVorgabe());
+            }
+        });
+
     await pruefeMitWarten("Eine Bot-Runde schliesst sich, wenn der Mensch geht",
         async () => {
             /*

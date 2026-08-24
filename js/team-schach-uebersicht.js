@@ -174,10 +174,9 @@ Object.assign(TEAM_SCHACH, {
                 schluessel: "gegenComputer",
                 titel: "Gegen den Computer",
                 hinweis: "An sitzt der Computer in Schwarz und zieht von "
-                    + "selbst — du brauchst niemanden dazu. Er schlägt, was "
-                    + "er kriegen kann, und sammelt Lootboxen ein, schaut "
-                    + "aber noch nicht voraus. Solche Runden zählen nicht "
-                    + "für die Rangliste."
+                    + "selbst — du brauchst niemanden dazu. Wie stark er "
+                    + "spielt, stellst du darunter ein. Solche Runden zählen "
+                    + "nicht für die Rangliste."
             },
             {
                 schluessel: "faehigkeiten",
@@ -368,6 +367,14 @@ Object.assign(TEAM_SCHACH, {
 
             ablegen(halter, oben);
 
+            /* Wie stark der Computer spielt, steht direkt unter seinem
+               Haken (seit v0.28.0) — dieselbe Stelle und dieselbe Bauart
+               wie die Lootbox-Menge unter ihrem. */
+            if (eintrag.schluessel === "gegenComputer"
+                && TEAM_SCHACH.neueRegeln.gegenComputer) {
+                ablegen(TEAM_SCHACH._botStufenLeisteBauen(), "gegenComputer");
+            }
+
             /* Wie viele Lootboxen es sein sollen, steht direkt unter ihrem
                Haken — es ist die erste Frage, die man danach hat. Beide
                Reihen liegen im Gruppen-Kasten des Lootbox-Hakens. */
@@ -396,6 +403,51 @@ Object.assign(TEAM_SCHACH, {
      * (`SCHACH_VARIANTEN.LOOTBOX_MENGEN`), samt dem Satz darunter: Der
      * Bildschirm zeigt hier nur an, was das Modell sagt.
      */
+    /*
+     * DIE VIER SCHWIERIGKEITSSTUFEN DES COMPUTERS (seit v0.28.0).
+     *
+     * Dieselbe Knopfreihe wie die Lootbox-Menge und die Figurenzahl — wer
+     * die eine bedienen kann, kann auch diese. Eigene Klassen (`bot-*`) aus
+     * demselben Grund wie bei Armee und Vorrat: Gleich aussehende Reihen auf
+     * einem Bildschirm müssen im Test und in der Stildatei unterscheidbar
+     * bleiben.
+     *
+     * Was jede Stufe bedeutet, steht im MODELL (`SCHACH_BOT.STUFEN`) und
+     * kommt über das i daneben — der Bildschirm zeigt hier nur an.
+     */
+    _botStufenLeisteBauen() {
+        const zeile = TEAM_SCHACH._element("div", "mengen-zeile");
+
+        zeile.appendChild(TEAM_SCHACH._leistenKopfBauen(
+            "Wie stark spielt der Computer?", SCHACH_BOT.STUFEN,
+            "Umstellen geht vor jeder Runde. Eine laufende Partie behält die "
+                + "Stufe, mit der sie angelegt wurde."));
+
+        const leiste = TEAM_SCHACH._element("div", "bot-leiste");
+
+        for (const stufe of SCHACH_BOT.STUFEN) {
+            const aktiv = (stufe.id === TEAM_SCHACH.neueRegeln.botStufe);
+
+            const knopf = TEAM_SCHACH._knopf(stufe.titel,
+                "knopf-klein bot-knopf" + (aktiv ? " bot-knopf-aktiv" : " knopf-still"),
+                () => {
+                    TEAM_SCHACH.neueRegeln.botStufe = stufe.id;
+                    TEAM_SCHACH.weichZeichnen();
+                });
+
+            knopf.setAttribute("aria-pressed", aktiv ? "true" : "false");
+
+            if (aktiv) {
+                knopf.appendChild(TEAM_SCHACH._aktivPille("bot"));
+            }
+            leiste.appendChild(knopf);
+        }
+
+        zeile.appendChild(leiste);
+
+        return zeile;
+    },
+
     _mengenLeisteBauen() {
         const zeile = TEAM_SCHACH._element("div", "mengen-zeile");
 

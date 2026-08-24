@@ -1,19 +1,110 @@
 /*
- * schach-bot.js — der Computer-Gegner (seit v0.27.0, Stufe 1).
+ * schach-bot.js — der Computer-Gegner (seit v0.27.0, vier Stufen seit v0.28.0).
  *
  * Er ist ein ganz gewöhnliches Team-Mitglied: eine feste Spieler-Kennung
  * ("bot") in `teams.schwarz`. Alles, was ein Mensch darf, darf er auch —
  * und nichts darüber hinaus. Deshalb steht hier KEINE einzige Schachregel:
- * Die möglichen Züge liefert `SCHACH.alleZuege`, ausgeführt wird über
- * `SCHACH_RUNDE.ziehen`, gesendet über `TEAM_SCHACH._sendenMitPruefung`.
- * Diese Datei entscheidet nur, WELCHEN der angebotenen Züge er nimmt.
+ * Die möglichen Züge liefert `SCHACH.alleZuege`, den Zug rechnet
+ * `SCHACH._ausfuehren`, ausgeführt wird über `SCHACH_RUNDE.ziehen`, gesendet
+ * über `TEAM_SCHACH._sendenMitPruefung`. Diese Datei entscheidet nur, WELCHEN
+ * der angebotenen Züge er nimmt.
  *
- * DREI FESTLEGUNGEN, DIE MAN KENNEN MUSS:
+ * ------------------------------------------------------------------
+ * WIE DER BOT DENKT — das Verfahren in vier Begriffen
  *
- *   1. KEIN `Math.random()` (eiserne Regel). Die Wahl wird aus Partie-Kennung
- *      und Zugzähler GERECHNET (`SCHACH_RUNDE._zufallsWert`). Jedes Gerät
- *      käme damit auf denselben Zug — und die Tests können nachrechnen, was
- *      der Bot tun wird.
+ * Es ist das übliche Verfahren jeder Schach-Engine, in der kleinsten Form,
+ * die hier tragfähig ist (Quellen: chessprogramming.org/Alpha-Beta und die
+ * Schritt-für-Schritt-Anleitung von freeCodeCamp; nachgemessen wurde alles
+ * am ECHTEN Modell dieses Projekts, siehe „Was gemessen wurde" unten).
+ *
+ *   1. BEWERTUNG (`_bewerten`). Eine Stellung wird zu EINER Zahl: Wie viel
+ *      Material steht für mich auf dem Brett, wie viel für den Gegner?
+ *      Positiv heisst gut für die Seite, die am Zug ist.
+ *
+ *   2. NEGAMAX (`_suchen`). Statt nur die eigenen Züge zu bewerten, spielt
+ *      der Bot sie im Kopf durch und fragt: Was macht der Gegner DANN? Und
+ *      was mache ich darauf? Weil beide Seiten dasselbe wollen, genügt EINE
+ *      Funktion, die abwechselnd das Vorzeichen dreht — daher der Name.
+ *      Wie tief er schaut, ist der eigentliche Schwierigkeitsgrad.
+ *
+ *   3. ALPHA-BETA. Der Trick, der das bezahlbar macht: Sobald ein Zug für
+ *      den Gegner schon schlecht genug ist, muss man gar nicht mehr wissen,
+ *      WIE schlecht — er wird ihn ohnehin nicht zulassen. Der ganze Ast
+ *      fällt weg. **Am Ergebnis ändert das nichts**, nur an der Rechenzeit.
+ *
+ *   4. ZUGSORTIERUNG (`_sortieren`). Alpha-Beta schneidet nur dann viel weg,
+ *      wenn der beste Zug zuerst dran ist. Deshalb werden Schlagzüge nach
+ *      Beutewert vorsortiert. Das ist keine Feinheit, sondern der Unterschied
+ *      zwischen spielbar und unbenutzbar: Auf dem grossen Kreuzbrett hat die
+ *      Sortierung Tiefe 4 von 99 Sekunden auf 6,6 Sekunden gebracht.
+ *
+ * Dazu bei der höchsten Stufe:
+ *
+ *   5. RUHESUCHE (`_ruhesuche`). Wer mitten im Abtausch aufhört zu rechnen,
+ *      sieht seinen eigenen Schlagzug, aber nicht den Rückschlag — und
+ *      schlägt fröhlich mit der Dame einen gedeckten Bauern. Am Ende der
+ *      Suche werden deshalb NUR NOCH SCHLAGZÜGE weiterverfolgt, bis es
+ *      ruhig ist.
+ *
+ *   6. STELLUNGSBEWERTUNG. Nicht nur WAS steht, sondern WO: Ein Springer in
+ *      der Mitte ist mehr wert als einer am Rand. Die üblichen
+ *      Feldertabellen (piece-square tables) sind auf 8x8 zugeschnitten und
+ *      hier deshalb nicht brauchbar — die Bretter reichen von 8x8 bis zum
+ *      Kreuz mit 196 Feldern. An ihrer Stelle steht ein Mass, das auf JEDER
+ *      Brettform funktioniert: der Abstand zur Brettmitte (`_mitteWert`).
+ *
+ *   7. ITERATIVE VERTIEFUNG (`zugWaehlen`). Gerechnet wird erst Tiefe 1,
+ *      dann 2, dann 3 — nicht gleich die Zieltiefe. Das klingt nach
+ *      Verschwendung, ist aber die Bedingung dafür, dass das Budget unten
+ *      überhaupt sicher ist: Eine Tiefe wird GANZ gerechnet oder gar nicht,
+ *      und es gilt das Ergebnis der letzten vollständigen. Ein
+ *      abgebrochener Durchgang wäre schlimmer als keiner (siehe dort).
+ *
+ * ------------------------------------------------------------------
+ * WAS GEMESSEN WURDE (24.08.2026, echtes Modell, Wegwerf-Skripte)
+ *
+ * Nichts an den Stufen ist geraten. Gemessen wurde am echten Modell, und
+ * zwei Entwürfe sind dabei durchgefallen.
+ *
+ * ZEIT JE ZUG (Bürorechner, Mittelspiel; ein Handy ist ein Mehrfaches
+ * langsamer — Mittel/Höchstwert in Millisekunden):
+ *
+ *              Standard    Doppelbrett   Kreuz gross
+ *   Leicht        2/3           2/2           3/5
+ *   Mittel        7/9          27/44         52/74
+ *   Schwer       36/77        453/1149      364/668
+ *   Meister     213/520       829/1441      627/900
+ *
+ * SPIELSTÄRKE (je 16 Partien, acht Stellungen in beiden Farben):
+ *
+ *   Mittel gegen Leicht    16:0
+ *   Schwer gegen Mittel    14:1
+ *   Meister gegen Schwer   14:2
+ *
+ * ZWEI ENTWÜRFE, DIE GEMESSEN UND VERWORFEN WURDEN:
+ *
+ *   - **Tiefe 4 für die höchste Stufe.** Erreichbar ist sie (mit iterativer
+ *     Vertiefung und Budget), aber sie ist NICHT besser: gegen Tiefe 3 mit
+ *     Ruhesuche stand es 3:5 bei acht Remis — und sie kostete 28 Prozent
+ *     mehr Rechenzeit. Auf einem Handy ist das der Ausschlag.
+ *   - **Ein gemeinsames Budget für Haupt- und Ruhesuche.** Die Ruhesuche
+ *     ist gierig und war zuerst dran; sie ass der Hauptsuche die Tiefe weg,
+ *     und „Meister" spielte dadurch SCHWÄCHER als „Schwer" (6:7). Seither
+ *     zwei getrennte Töpfe.
+ *
+ * Der teuerste Posten ist überall die Zugerzeugung: `SCHACH.alleZuege`
+ * prüft jeden Zug voll auf Legalität (Zug ausführen, Schach prüfen) und
+ * kennt dazu Risse, Mauern, Fesseln und Kreuzbretter. Alles läuft im selben
+ * Faden wie die Anzeige — eine Sekunde Rechnen ist eine Sekunde, in der die
+ * App steht. Genau dagegen stehen Budget und iterative Vertiefung.
+ *
+ * ------------------------------------------------------------------
+ * DREI FESTLEGUNGEN, DIE MAN KENNEN MUSS
+ *
+ *   1. KEIN `Math.random()` (eiserne Regel). Unter gleich guten Zügen wird
+ *      aus Partie-Kennung und Zugzähler GERECHNET
+ *      (`SCHACH_RUNDE._zufallsWert`). Jedes Gerät käme damit auf denselben
+ *      Zug — und die Tests können nachrechnen, was der Bot tun wird.
  *
  *   2. DER BOT SPICKT NICHT. Er liest von einer liegenden Lootbox nur, DASS
  *      sie daliegt (`eintrag.feld`) — nie `art`, `stufe` oder `pech`. Der
@@ -26,10 +117,12 @@
  *      würden zwei Geräte gleichzeitig für den Bot ziehen, fängt das die
  *      Zugzähler-Prüfung ab — aber gar nicht erst hinzukommen ist billiger.
  *
- * STUFE 1 SCHAUT NICHT VORAUS. Er nimmt den Zug, der SOFORT am meisten
- * einbringt: schlagen vor einsammeln vor ziehen. Was der Gegner darauf
- * antwortet, interessiert ihn nicht — er stellt seine Dame also durchaus
- * ein. Das ist bewusst so; Stufe 2 steht in docs\entwurf-bot.md.
+ * WAS DIE SUCHE NICHT SIEHT: Lootboxen und Fähigkeiten. Sie rechnet mit
+ * `SCHACH._ausfuehren`, und das ist der reine Zug — das Einsammeln steckt in
+ * `SCHACH_RUNDE.ziehen`. Der Lootbox-Anreiz wird deshalb NUR an der Wurzel
+ * draufgerechnet (`_wurzelZugabe`), also für den Zug, der wirklich gemacht
+ * wird. Eigene Fähigkeiten setzt der Bot bis heute gar nicht ein; sie liegen
+ * ungenutzt in seinem Vorrat (docs\entwurf-bot.md, Stufe 3).
  */
 
 const SCHACH_BOT = {
@@ -50,27 +143,180 @@ const SCHACH_BOT = {
      * Wie lange er nachdenkt, bevor sein Zug erscheint (Millisekunden).
      * Ohne die Pause stünde der Gegenzug im selben Augenblick auf dem Brett
      * wie der eigene, und man sähe nicht, was passiert ist.
+     *
+     * ES IST EINE MINDESTPAUSE, KEINE HÖCHSTZEIT: Rechnet die höchste Stufe
+     * länger, dauert es eben länger. Die Zahl ist geschätzt und am Gerät
+     * nachzujustieren.
      */
     BEDENKZEIT_MS: 700,
 
     /* ---------------------------------------------------------------- *
-     * Die Bewertung eines Zuges
+     * DIE VIER SCHWIERIGKEITSSTUFEN (seit v0.28.0)
      *
-     * Die Zahlen sind Gewichte, keine Punkte des Spiels — sie stehen zu
-     * NICHTS ausser zueinander in Beziehung. Massgeblich ist ihr Abstand:
-     * Ein geschlagener Bauer (100) wiegt schwerer als vier Lootboxen (vier
-     * mal 20), eine Umwandlung zur Dame (acht mal 12) schwerer als ein
-     * geschlagener Springer.
+     * Sie unterscheiden sich in genau drei Zahlen, und jede davon ist
+     * gemessen (siehe Kopf). Reihenfolge ist die Reihenfolge am Bildschirm.
+     *
+     *   tiefe        Wie viele Halbzüge weit er rechnet. 1 = er sieht nur
+     *                den eigenen Zug (und verschenkt darum Figuren).
+     *   ruhe         Wie viele Halbzüge die Ruhesuche noch dranhängt,
+     *                solange geschlagen wird. 0 = keine Ruhesuche.
+     *   positionell  Zählt die Lage der Figuren mit, nicht nur ihr Wert.
+     *
+     * Dazu zwei Obergrenzen, `budget` und `ruheBudget`. Sie sind die
+     * NOTBREMSE für die grossen Bretter — ohne sie rechnet die höchste Stufe
+     * auf dem Kreuz mit 196 Feldern sekundenlang, und die App steht so lange
+     * still. Ist eine Grenze erreicht, hört die betroffene Suche auf, tiefer
+     * zu gehen, und bewertet die Stellung, wie sie ist: Das Ergebnis ist dann
+     * schwächer, aber immer gültig und immer da.
+     *
+     * GEZÄHLT WIRD IN ANGESEHENEN FELDERN, nicht in Stellungen. Jede
+     * betrachtete Stellung kostet so viel, wie das Brett Felder hat — denn
+     * genau das tun `_bewerten` und `SCHACH.alleZuege`: Sie gehen das Brett
+     * ab. Eine Stellung auf dem Kreuz (196 Felder) kostet damit von selbst
+     * das Dreifache einer auf dem Standardbrett, und EINE Zahl passt für
+     * alle Brettformen. Mit „Stellungen" als Einheit bräuchte es dafür eine
+     * Umrechnung, die nie ganz stimmt.
+     *
+     * ZWEI GETRENNTE TÖPFE, und das ist der Kern: Bis zur ersten Messung
+     * teilten sich Haupt- und Ruhesuche EIN Budget. Die Ruhesuche ist gierig
+     * und war zuerst dran — sie ass der Hauptsuche die Tiefe weg, und
+     * „Meister" spielte dadurch SCHWÄCHER als „Schwer" (nachgemessen im
+     * Duell: 20 Figurenwerte Rückstand). Getrennte Töpfe können das nicht.
      * ---------------------------------------------------------------- */
 
-    /* Je Punkt Figurenwert der geschlagenen Figur (Bauer 1 bis Dame 9). */
-    PUNKTE_JE_BEUTEWERT: 100,
+    STUFEN: [
+        {
+            id: "leicht",
+            titel: "Leicht",
+            hinweis: "Er schaut nur auf den eigenen Zug: Er schlägt, was er "
+                + "kriegen kann, und sammelt Lootboxen ein. Dass du "
+                + "zurückschlagen könntest, sieht er nicht — er verschenkt "
+                + "Figuren. Zum Ausprobieren und für den Anfang.",
+            tiefe: 1,
+            ruhe: 0,
+            positionell: false,
+            budget: 0,
+            ruheBudget: 0
+        },
+        {
+            id: "mittel",
+            titel: "Mittel",
+            hinweis: "Er rechnet deine Antwort mit. Geschenke gibt es damit "
+                + "keine mehr: Was du im nächsten Zug zurückholen könntest, "
+                + "lässt er stehen. Ein ordentlicher Gegner für zwischendurch.",
+            tiefe: 2,
+            ruhe: 0,
+            positionell: false,
+            budget: 800000,
+            ruheBudget: 0
+        },
+        {
+            id: "schwer",
+            titel: "Schwer",
+            hinweis: "Drei Halbzüge weit — er sieht kurze Kombinationen "
+                + "kommen und stellt dir selbst welche. Wer nicht aufpasst, "
+                + "verliert hier Material.",
+            tiefe: 3,
+            ruhe: 0,
+            positionell: false,
+            budget: 3000000,
+            ruheBudget: 0
+        },
+        {
+            id: "meister",
+            titel: "Meister",
+            hinweis: "Wie Schwer, dazu zwei Dinge: Er rechnet einen Abtausch "
+                + "zu Ende, statt mitten darin aufzuhören — ein gedeckter "
+                + "Bauer lockt ihn also nicht —, und er achtet auf die "
+                + "Stellung seiner Figuren, nicht nur auf ihre Zahl. Er "
+                + "braucht dafür spürbar länger.",
+            tiefe: 3,
+            ruhe: 2,
+            positionell: true,
+            budget: 1500000,
+            ruheBudget: 1500000
+        }
+    ],
 
-    /* Je Lootbox, die auf dem Weg liegt und damit eingesammelt wird. */
-    PUNKTE_LOOTBOX: 20,
+    /*
+     * Die Stufe einer NEUEN Runde. „Mittel", weil „Leicht" seine Figuren
+     * verschenkt — als erster Eindruck vom Computer wäre das der falsche.
+     */
+    STUFE_VORGABE: "mittel",
 
-    /* Je Punkt Wertgewinn einer Umwandlung (Bauer 1 wird Dame 9 = 8 Punkte). */
-    PUNKTE_JE_UMWANDLUNG: 12,
+    /*
+     * ZWEI VORGABEN, UND DAS IST ABSICHT.
+     *
+     * Eine Runde OHNE Angabe stammt aus v0.27.0, wo es nur eine Spielstärke
+     * gab: „nur der eigene Zug zählt" — das ist heute „Leicht". Sie muss
+     * weiterspielen wie bisher (eiserne Regel: „Laufende Partien müssen
+     * laufen bleiben"), deshalb ist die Vorgabe für den Altbestand eine
+     * andere als die für neue Runden.
+     *
+     * Feinheit: Ganz deckungsgleich mit v0.27.0 ist „Leicht" nicht — dort
+     * war der Zugwert eine eigene Punktetabelle, heute ist es das Material
+     * auf dem Brett. Beides sieht genau einen Halbzug weit; was sich ändert,
+     * ist die Gewichtung (eine Umwandlung zur Dame wiegt jetzt richtig
+     * schwer). Die RUNDE bricht davon nicht, nur der Geschmack des Zuges.
+     */
+    STUFE_ALTBESTAND: "leicht",
+
+    /* Gibt es diese Stufe? Gebraucht beim Anlegen, wo Unbekanntes zur
+       Vorgabe für NEUE Runden werden muss und nicht zum Altbestand. */
+    gibtEsStufe(id) {
+        return SCHACH_BOT.STUFEN.some((stufe) => stufe.id === id);
+    },
+
+    /* Die Stufe zu einer Kennung; alles Unbekannte wird zum Altbestand. */
+    stufe(id) {
+        return SCHACH_BOT.STUFEN.find((stufe) => stufe.id === id)
+            || SCHACH_BOT.STUFEN.find((stufe) => stufe.id === SCHACH_BOT.STUFE_ALTBESTAND);
+    },
+
+    /* Auf welcher Stufe spielt der Computer in DIESER Runde? */
+    stufeVon(runde) {
+        return SCHACH_BOT.stufe(
+            (runde && runde.regeln) ? runde.regeln.botStufe : "");
+    },
+
+    /* ---------------------------------------------------------------- *
+     * Die Gewichte der Bewertung
+     *
+     * Hundertstel eines Bauern (Zentibauer) — die Einheit jeder
+     * Schach-Engine. Sie stehen zu NICHTS ausser zueinander in Beziehung.
+     * ---------------------------------------------------------------- */
+
+    /*
+     * Was eine Figur wert ist. Die üblichen Werte, mit zwei Abweichungen,
+     * die dieses Spiel nötig macht:
+     *
+     *   - Der Läufer steht knapp über dem Springer (320 zu 300) — das ist
+     *     die gängige Feinheit, die den Bot zwischen zwei sonst gleichen
+     *     Zügen entscheiden lässt.
+     *   - DER KÖNIG HAT EINEN WERT (350). In normalem Schach hat er keinen,
+     *     weil er nie fällt. Hier kann eine Seite ZWEI Könige haben (zwei
+     *     Leben, Zufallsarmee), und dann ist der zweite eine schlagbare
+     *     Figur wie jede andere. Mit 0 würde der Bot ein geschenktes Leben
+     *     stehen lassen. Bei je einem König heben sich die Werte auf, die
+     *     Zahl ändert dort also nichts.
+     *
+     * NICHT ZU VERWECHSELN mit `SCHACH_RUNDE.FIGUR_WERT`: Das ist die
+     * Rechnung des SPIELS (Beute, Bilanz, Rangliste) und muss so bleiben,
+     * wie sie ist. Das hier ist die Meinung des Bots.
+     */
+    WERT: { B: 100, S: 300, L: 320, T: 500, D: 900, K: 350 },
+
+    /*
+     * Wie viel Zuschlag eine Figur in der Brettmitte bekommt (nur Stufe
+     * „Meister"). Springer und Läufer gewinnen dort am meisten an
+     * Reichweite; der König gehört im Mittelspiel gerade NICHT in die Mitte,
+     * deshalb steht dort ein Abschlag.
+     */
+    MITTE: { B: 0, S: 30, L: 20, T: 5, D: 10, K: -20 },
+
+    /* Der Zuschlag an der Wurzel für eine Lootbox auf dem Weg — in
+       derselben Einheit, also gut ein Fünftel Bauer je Box. */
+    PUNKTE_LOOTBOX: 25,
 
     /* ---------------------------------------------------------------- *
      * Wer ist der Bot?
@@ -157,33 +403,73 @@ const SCHACH_BOT = {
             return null;
         }
 
-        const zuege = SCHACH.alleZuege(stand.stand);
+        const brett = stand.stand;
+        const zuege = SCHACH.alleZuege(brett);
         if (zuege.length === 0) {
             return null;
         }
 
+        const stufe = SCHACH_BOT.stufeVon(stand);
+
         /*
          * Die Lootbox-Felder EINMAL vorab einsammeln, nicht je Zug erneut:
-         * Auf dem vollen Kreuzbrett liegen schnell dreissig Boxen, und
-         * daneben stehen sechzig mögliche Züge.
-         *
-         * NUR DIE FELDNUMMER (siehe Kopf, Festlegung 2) — was in der Box
-         * steckt, geht den Bot nichts an.
+         * Auf dem vollen Kreuzbrett liegen schnell dreissig Boxen.
+         * NUR DIE FELDNUMMER (siehe Kopf, Festlegung 2).
          */
         const boxFelder = stand.bonus.map((eintrag) => eintrag.feld);
 
-        let beste = [];
-        let bestwert = -Infinity;
+        /*
+         * DAS BUDGET WIRD JE ZUG FRISCH GESETZT und in `_rest` heruntergezählt.
+         * Es steht am Objekt und nicht als Parameter, weil sonst jede der drei
+         * Suchfunktionen es durchreichen müsste — und es geht ja gerade darum,
+         * dass ALLE zusammen an derselben Grenze hängen.
+         */
+        SCHACH_BOT._rest = stufe.budget;
+        SCHACH_BOT._ruheRest = stufe.ruheBudget;
 
-        for (const zug of zuege) {
-            const wert = SCHACH_BOT._bewerten(stand.stand, zug, boxFelder);
+        const sortiert = SCHACH_BOT._sortieren(brett, zuege);
 
-            if (wert > bestwert) {
-                bestwert = wert;
-                beste = [zug];
-            } else if (wert === bestwert) {
-                beste.push(zug);
+        /*
+         * ITERATIVE VERTIEFUNG: erst Tiefe 1, dann 2, dann 3 …
+         *
+         * Warum nicht gleich die Zieltiefe? Weil das Budget mittendrin
+         * ausgehen kann. Ein ABGEBROCHENER Durchgang ist wertlos und sogar
+         * schädlich: Die zuerst betrachteten Züge wären tief gerechnet, die
+         * späteren nur noch überschlagen — der Bot vergliche Äpfel mit
+         * Birnen und nähme systematisch den, der zufällig vorn stand.
+         *
+         * Also wird jede Tiefe GANZ gerechnet oder gar nicht: Reicht das
+         * Budget nicht, gilt das Ergebnis der letzten vollständigen Tiefe.
+         * Der Bot wird auf grossen Brettern dadurch flacher, aber nie wirr.
+         */
+        let beste = SCHACH_BOT._wurzelDurchgang(brett, sortiert, boxFelder, 1, stufe);
+        let letzterVerbrauch = 0;
+
+        for (let tiefe = 2; tiefe <= stufe.tiefe; tiefe++) {
+            /*
+             * LOHNT SICH DER NÄCHSTE DURCHGANG ÜBERHAUPT NOCH?
+             *
+             * Eine Tiefe mehr kostet gemessen das Drei- bis Fünffache der
+             * vorigen (`_SCHAETZFAKTOR`). Wer das nicht vorher abschätzt,
+             * verheizt sein halbes Budget in einem Durchgang, den er
+             * hinterher wegwerfen muss — auf dem Doppelbrett war das fast
+             * eine Sekunde für nichts.
+             */
+            if (letzterVerbrauch * SCHACH_BOT._SCHAETZFAKTOR > SCHACH_BOT._rest) {
+                break;
             }
+
+            const vorrat = SCHACH_BOT._rest;
+            const durchgang = SCHACH_BOT._wurzelDurchgang(
+                brett, sortiert, boxFelder, tiefe, stufe);
+
+            /* Budget mittendrin aufgebraucht: Durchgang verwerfen. */
+            if (SCHACH_BOT._rest <= 0) {
+                break;
+            }
+
+            beste = durchgang;
+            letzterVerbrauch = vorrat - SCHACH_BOT._rest;
         }
 
         /*
@@ -231,59 +517,312 @@ const SCHACH_BOT = {
     },
 
     /* ---------------------------------------------------------------- *
-     * Innereien
+     * Die Suche
      * ---------------------------------------------------------------- */
 
     /*
-     * Was bringt dieser Zug SOFORT ein? Höher ist besser; 0 ist ein Zug,
-     * der nichts einbringt — der Normalfall.
+     * Um wie viel teurer ist eine Tiefe mehr?
      *
-     * Bewusst NICHT enthalten, weil Stufe 1 nicht vorausschaut: ob das
-     * Zielfeld angegriffen ist, ob der Zug Schach gibt, ob die eigene Figur
-     * danach frei steht. Das ist Stufe 2 (docs\entwurf-bot.md).
+     * Gemessen am echten Modell liegt der Sprung in der ZAHL der Stellungen
+     * zwischen dem Drei- und dem Fünffachen (Standardbrett 4,5; Doppelbrett
+     * 2,9; Kreuz 3,7). Hier steht trotzdem ACHT, und zwar mit Absicht: Mit
+     * fünf wurde auf dem Doppelbrett ein Durchgang begonnen, der drei
+     * Sekunden lief und dann am Budget scheiterte — die Zeit war weg, das
+     * Ergebnis auch. Lieber einen Durchgang zu wenig beginnen als einen halb
+     * bezahlen und wegwerfen; die Stufe wird dadurch auf grossen Brettern
+     * flacher, aber nie langsamer als versprochen.
      */
-    _bewerten(stand, zug, boxFelder) {
-        let punkte = 0;
+    _SCHAETZFAKTOR: 8,
 
-        /*
-         * 1. Schlagen — der mit Abstand grösste Posten.
-         *
-         * Was auf dem Zielfeld steht, wird VOR dem Zug abgelesen; beim
-         * en passant steht dort nichts, es fällt trotzdem ein Bauer.
-         */
-        const beute = SCHACH.artVon(SCHACH.figurAuf(stand, zug.nach));
+    /*
+     * EIN vollständiger Durchgang über alle Wurzelzüge mit fester Tiefe.
+     * Liefert die Liste der gleich guten besten Züge.
+     */
+    _wurzelDurchgang(brett, zuege, boxFelder, tiefe, stufe) {
+        let beste = [];
+        let bestwert = -Infinity;
 
-        if (beute) {
-            punkte += SCHACH_BOT.PUNKTE_JE_BEUTEWERT
-                * (SCHACH_RUNDE.FIGUR_WERT[beute] || 0);
-        } else if (zug.enPassant) {
-            punkte += SCHACH_BOT.PUNKTE_JE_BEUTEWERT * SCHACH_RUNDE.FIGUR_WERT.B;
-        }
+        for (const zug of zuege) {
+            /*
+             * DER LOOTBOX-ZUSCHLAG GEHÖRT AN DIE WURZEL und nirgendwo
+             * sonst: Tiefer in der Suche wäre er falsch, weil dort niemand
+             * mehr weiss, welche Boxen noch liegen (die Suche rechnet mit
+             * `SCHACH._ausfuehren`, das keine Boxen einsammelt).
+             */
+            const zugabe = SCHACH_BOT._wurzelZugabe(brett, zug, boxFelder);
+            const danach = SCHACH._ausfuehren(brett, zug);
 
-        /*
-         * 2. Lootboxen — sie werden auf dem GANZEN WEG eingesammelt, nicht
-         * nur auf dem Zielfeld (`SCHACH_RUNDE._bonusEinsammeln`). Ein Turm,
-         * der über drei Boxen fährt, holt drei.
-         *
-         * Das Startfeld zählt nicht mit: Dort stand die Figur schon, eine
-         * Box läge da nicht mehr.
-         */
-        if (boxFelder.length > 0) {
-            const weg = SCHACH.wegFelder(stand, zug.von, zug.nach, !!zug.ohneWeg);
+            /*
+             * DIE SCHRANKE AN DER WURZEL LIEGT UM EINS TIEFER als der beste
+             * bisherige Wert — und dieses eine Zählerchen ist der ganze
+             * Kniff.
+             *
+             * Das Problem: Die Gleichstands-Liste unten sammelt Züge, die
+             * GENAU so gut sind wie der beste. Alpha-Beta liefert aber für
+             * jeden Zug, der die Schranke nicht überschreitet, nur noch eine
+             * SCHRANKE statt des echten Werts („fail soft"). Mit
+             * `alpha = bestwert` käme ein in Wahrheit schlechterer Zug mit
+             * genau `bestwert` heraus und landete fälschlich in der Liste.
+             *
+             * Beim Bauen stand hier deshalb erst ein OFFENES Fenster
+             * (`-Infinity, Infinity`). Das war korrekt, aber teuer: Ohne
+             * obere Schranke schneidet Alpha-Beta überhaupt nichts mehr weg,
+             * und auf dem grossen Kreuzbrett fiel „Mittel" dadurch auf Tiefe
+             * 1 zurück — also auf „Leicht". Gemessen und verworfen.
+             *
+             * Mit `bestwert - 1` gilt beides: Alles, was mindestens so gut
+             * ist wie der beste Zug, liegt IM Fenster und kommt exakt
+             * heraus; alles Schlechtere fällt heraus und wird ohnehin
+             * verworfen. Möglich ist das nur, weil die Bewertung in ganzen
+             * Zahlen rechnet.
+             *
+             * Umgerechnet auf die Sicht des Gegners (Vorzeichen drehen) und
+             * um die Wurzel-Zugabe versetzt ergibt das die Schranke unten.
+             */
+            const wert = zugabe + ((tiefe <= 1)
+                ? -SCHACH_BOT._bewerten(danach, stufe)
+                : -SCHACH_BOT._suchen(danach, tiefe - 1,
+                    -Infinity, zugabe - bestwert + 1, stufe));
 
-            for (const feld of weg) {
-                if (feld !== zug.von && boxFelder.indexOf(feld) !== -1) {
-                    punkte += SCHACH_BOT.PUNKTE_LOOTBOX;
-                }
+            if (wert > bestwert) {
+                bestwert = wert;
+                beste = [zug];
+            } else if (wert === bestwert) {
+                beste.push(zug);
             }
         }
 
-        /* 3. Umwandlung — gezählt wird der GEWINN, nicht der Endwert. */
-        if (zug.umwandlung) {
-            const gewinn = (SCHACH_RUNDE.FIGUR_WERT[zug.umwandlung] || 0)
-                - SCHACH_RUNDE.FIGUR_WERT.B;
+        return beste;
+    },
 
-            punkte += SCHACH_BOT.PUNKTE_JE_UMWANDLUNG * Math.max(0, gewinn);
+    /*
+     * Wie viel Arbeit die Suche noch tun darf — in ANGESEHENEN FELDERN
+     * (siehe die Erklärung bei den Stufen). Zwei getrennte Töpfe, damit die
+     * gierige Ruhesuche der Hauptsuche nicht die Tiefe wegfrisst.
+     *
+     * Sie stehen hier nur, damit die Eigenschaften von Anfang an existieren;
+     * gesetzt werden sie je Zug in `zugWaehlen`.
+     */
+    _rest: 0,
+    _ruheRest: 0,
+
+    /*
+     * Negamax mit Alpha-Beta. Liefert den Wert der Stellung AUS SICHT DER
+     * SEITE, DIE AM ZUG IST.
+     *
+     * Warum eine Funktion für beide Seiten genügt: Was für mich gut ist, ist
+     * für den Gegner genau so schlecht. Man dreht deshalb bei jedem Halbzug
+     * das Vorzeichen um (`-SCHACH_BOT._suchen(...)`) und tauscht die
+     * Schranken (`-beta, -alpha`) — dann sucht immer dieselbe Funktion nach
+     * ihrem eigenen Vorteil.
+     *
+     * `alpha` ist das Beste, was ICH mir bis hier schon sichern kann.
+     * `beta` ist das Beste, was der GEGNER sich sichern kann.
+     * Ist `alpha >= beta`, ist dieser Ast für den Gegner schon so schlecht,
+     * dass er ihn nie zulässt — der Rest muss nicht mehr angesehen werden.
+     * DAS ÄNDERT DAS ERGEBNIS NICHT, nur die Rechenzeit.
+     */
+    _suchen(brett, tiefe, alpha, beta, stufe) {
+        /*
+         * GEZÄHLT WIRD JEDE BETRACHTUNG, auch die, die nur bewertet und
+         * nicht weiter aufgeklappt wird.
+         *
+         * BEIM BAUEN GENAU HIER FALSCH GEWESEN: Zuerst stand der Zähler
+         * hinter der Abfrage darunter, wurde also nur beim AUFKLAPPEN
+         * heruntergezählt. Die Blätter — und die sind so zahlreich wie die
+         * Züge einer Stellung — kosteten damit nichts, und das Budget hielt
+         * um den Faktor der Verzweigung zu wenig zurück: gemessen 6151 statt
+         * der erwarteten rund 300 Millisekunden je Zug auf dem Doppelbrett.
+         */
+        SCHACH_BOT._rest -= SCHACH.felderVon(brett);
+
+        /* Die Notbremse: kein Blatt mehr aufklappen, nur noch bewerten. */
+        if (tiefe <= 0 || SCHACH_BOT._rest <= 0) {
+            return (stufe.ruhe > 0 && SCHACH_BOT._ruheRest > 0)
+                ? SCHACH_BOT._ruhesuche(brett, alpha, beta, stufe.ruhe, stufe)
+                : SCHACH_BOT._bewerten(brett, stufe);
+        }
+
+        const zuege = SCHACH.alleZuege(brett);
+
+        /*
+         * Keine Züge mehr heisst matt oder patt — das entscheidet das
+         * Modell, nicht der Bot. Hier zählt nur, dass die Stellung dann
+         * nicht weiter aufgeklappt wird; wie schlimm sie ist, sagt die
+         * Bewertung (bei Matt fehlt dem Verlierer sein König nicht, also
+         * ist der Wert schlicht der der Stellung).
+         */
+        if (zuege.length === 0) {
+            return SCHACH_BOT._bewerten(brett, stufe);
+        }
+
+        let beste = -Infinity;
+
+        for (const zug of SCHACH_BOT._sortieren(brett, zuege)) {
+            const wert = -SCHACH_BOT._suchen(SCHACH._ausfuehren(brett, zug),
+                tiefe - 1, -beta, -alpha, stufe);
+
+            if (wert > beste) {
+                beste = wert;
+            }
+            if (beste > alpha) {
+                alpha = beste;
+            }
+            if (alpha >= beta) {
+                /* Der Gegner lässt diesen Ast nicht zu — abbrechen. */
+                break;
+            }
+        }
+
+        return beste;
+    },
+
+    /*
+     * DIE RUHESUCHE (nur Stufe „Meister").
+     *
+     * Sie hängt sich ans Ende der Suche und verfolgt NUR NOCH SCHLAGZÜGE.
+     * Grund ist der sogenannte Horizont: Eine Suche mit ungerader Tiefe hört
+     * auf, nachdem der Bot geschlagen hat — den Rückschlag sieht sie nicht
+     * mehr. Ohne Ruhesuche schlägt die Dame vergnügt einen gedeckten Bauern
+     * und wundert sich im nächsten Zug.
+     *
+     * `stehen` ist der Wert, wenn man GAR NICHT weiterschlägt (im Englischen
+     * „stand pat"). Er ist die Untergrenze: Niemand ist gezwungen zu
+     * schlagen, also kann das Ergebnis nie schlechter sein als das.
+     */
+    _ruhesuche(brett, alpha, beta, rest, stufe) {
+        /* Auch hier zählt JEDE Betrachtung — aber aus dem EIGENEN Topf. */
+        SCHACH_BOT._ruheRest -= SCHACH.felderVon(brett);
+
+        const stehen = SCHACH_BOT._bewerten(brett, stufe);
+
+        if (rest <= 0 || SCHACH_BOT._ruheRest <= 0 || stehen >= beta) {
+            return stehen;
+        }
+        if (stehen > alpha) {
+            alpha = stehen;
+        }
+
+        const schlaege = SCHACH.alleZuege(brett).filter(
+            (zug) => !!SCHACH.figurAuf(brett, zug.nach));
+
+        for (const zug of SCHACH_BOT._sortieren(brett, schlaege)) {
+            const wert = -SCHACH_BOT._ruhesuche(SCHACH._ausfuehren(brett, zug),
+                -beta, -alpha, rest - 1, stufe);
+
+            if (wert >= beta) {
+                return beta;
+            }
+            if (wert > alpha) {
+                alpha = wert;
+            }
+        }
+
+        return alpha;
+    },
+
+    /*
+     * ZUGSORTIERUNG: Schlagzüge zuerst, die wertvollste Beute vorn.
+     *
+     * Das ist die wichtigste einzelne Zeile für die Rechenzeit — Alpha-Beta
+     * schneidet nur weg, wenn der beste Zug früh kommt (gemessen: auf dem
+     * grossen Kreuzbrett Tiefe 4 von 99 auf 6,6 Sekunden).
+     *
+     * `slice()` ist Pflicht: `sort` arbeitet an Ort und Stelle, und die
+     * Liste kommt frisch aus dem Modell — dort darf nichts umgeräumt werden.
+     * Bei gleichem Beutewert bleibt die Reihenfolge des Modells stehen
+     * (`sort` ist in JavaScript stabil); der Bot bleibt damit vorhersagbar.
+     */
+    _sortieren(brett, zuege) {
+        return zuege.slice().sort((einer, anderer) =>
+            SCHACH_BOT._beuteWert(brett, anderer) - SCHACH_BOT._beuteWert(brett, einer));
+    },
+
+    _beuteWert(brett, zug) {
+        return SCHACH_BOT.WERT[SCHACH.artVon(SCHACH.figurAuf(brett, zug.nach))] || 0;
+    },
+
+    /* ---------------------------------------------------------------- *
+     * Bewerten
+     * ---------------------------------------------------------------- */
+
+    /*
+     * Was ist diese Stellung wert — aus Sicht der Seite, die am Zug ist?
+     *
+     * Positiv heisst gut für sie. Gezählt wird das Material auf dem ganzen
+     * Brett; bei der Stufe „Meister" zusätzlich, WO die Figuren stehen.
+     */
+    _bewerten(brett, stufe) {
+        const farbe = brett.amZug;
+        const breite = SCHACH.breiteVon(brett);
+        const hoehe = SCHACH.hoeheVon(brett);
+        const felder = SCHACH.felderVon(brett);
+
+        let summe = 0;
+
+        for (let feld = 0; feld < felder; feld++) {
+            const figur = SCHACH.figurAuf(brett, feld);
+            if (!figur) {
+                continue;
+            }
+
+            const art = SCHACH.artVon(figur);
+            let wert = SCHACH_BOT.WERT[art] || 0;
+
+            if (stufe.positionell) {
+                wert += (SCHACH_BOT.MITTE[art] || 0)
+                    * SCHACH_BOT._mitteWert(feld, breite, hoehe);
+            }
+
+            summe += (SCHACH.farbeVon(figur) === farbe) ? wert : -wert;
+        }
+
+        return summe;
+    },
+
+    /*
+     * Wie nah ist dieses Feld der Brettmitte? 1 = genau in der Mitte,
+     * 0 = ganz aussen.
+     *
+     * DER ERSATZ FÜR DIE FELDERTABELLEN (piece-square tables) der üblichen
+     * Engines: Die sind 64 Zahlen für ein 8x8-Brett und lassen sich auf ein
+     * Kreuz mit 196 Feldern nicht übertragen. Der Abstand zur Mitte ist
+     * gröber, aber er stimmt auf JEDER Brettform — und er trifft den Kern
+     * dessen, was die Tabellen sagen: In der Mitte hat eine Figur mehr Wege.
+     */
+    _mitteWert(feld, breite, hoehe) {
+        const mitteReihe = (hoehe - 1) / 2;
+        const mitteSpalte = (breite - 1) / 2;
+
+        const abstand = (Math.abs(SCHACH.reiheVon(feld, breite) - mitteReihe)
+                / (mitteReihe || 1)
+            + Math.abs(SCHACH.spalteVon(feld, breite) - mitteSpalte)
+                / (mitteSpalte || 1)) / 2;
+
+        return 1 - abstand;
+    },
+
+    /*
+     * Was dieser Zug NEBEN dem Schach einbringt — nur an der Wurzel.
+     *
+     * Heute ist das genau eines: die Lootboxen, die auf dem Weg liegen. Sie
+     * werden auf dem GANZEN WEG eingesammelt, nicht nur auf dem Zielfeld
+     * (`SCHACH_RUNDE._bonusEinsammeln`); ein Turm, der über drei Boxen
+     * fährt, holt drei. Das Startfeld zählt nicht mit: Dort stand die Figur
+     * schon, eine Box läge da nicht mehr.
+     */
+    _wurzelZugabe(brett, zug, boxFelder) {
+        if (boxFelder.length === 0) {
+            return 0;
+        }
+
+        const weg = SCHACH.wegFelder(brett, zug.von, zug.nach, !!zug.ohneWeg);
+        let punkte = 0;
+
+        for (const feld of weg) {
+            if (feld !== zug.von && boxFelder.indexOf(feld) !== -1) {
+                punkte += SCHACH_BOT.PUNKTE_LOOTBOX;
+            }
         }
 
         return punkte;

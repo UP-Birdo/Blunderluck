@@ -1916,6 +1916,14 @@ const TEAM_SCHACH = {
              */
             gegenComputer: false,
 
+            /*
+             * Wie stark der Computer spielt (seit v0.28.0). Anders als
+             * `gegenComputer` reist diese Angabe MIT DER PARTIE
+             * (`regeln.botStufe`): Es gibt keine zweite Quelle, aus der man
+             * sie ableiten könnte, und das rechnende Gerät muss sie kennen.
+             */
+            botStufe: SCHACH_BOT.STUFE_VORGABE,
+
             faehigkeiten: false,
             seltenheitZeigen: false,
             pechZeigen: false,
@@ -2107,7 +2115,16 @@ const TEAM_SCHACH = {
             armeeStaerke: wunsch.armeeStaerke,
             itemVorrat: wunsch.itemVorrat,
             itemAuswahl: wunsch.itemAuswahl,
-            einigkeit: gegenComputer ? false : wunsch.einigkeit
+            einigkeit: gegenComputer ? false : wunsch.einigkeit,
+
+            /*
+             * Die Stufe wandert nur in Bot-Runden mit (v0.28.0) — in einer
+             * Partie unter Menschen wäre sie ein Feld ohne Bedeutung.
+             * Unbekanntes wird zur Vorgabe, nicht durchgereicht.
+             */
+            botStufe: (gegenComputer && SCHACH_BOT.gibtEsStufe(wunsch.botStufe))
+                ? wunsch.botStufe
+                : (gegenComputer ? SCHACH_BOT.STUFE_VORGABE : "")
         };
 
         const ergebnis = SCHACH_TAFEL.partieAnlegen(

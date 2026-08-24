@@ -16,6 +16,11 @@ wird. Die Liste dessen, was noch kommt, steht in [../ROADMAP.md](../ROADMAP.md).
 
 ## entschieden.md - Blunderluck-Eintraege
 
+- Vier Schwierigkeitsstufen fuer den Computer (24.08.2026, v0.28.0 —
+  Stufen ueber Suchtiefe statt ueber eine Fehlerquote, zwei verschiedene
+  Vorgaben fuer neue und alte Runden, Arbeitsbudget statt Zeitmessung,
+  keine Punkte gegen den Bot bekraeftigt. Verfahren und Messwerte:
+  docs\entwurf-bot.md)
 - Der Computer-Gegner, Stufe 1 (24.08.2026, v0.27.0 — Bot als
   Team-Mitglied, kein neues Feld im Datenvertrag; ZWEI Entscheidungen ohne
   Rueckfrage: Bot-Partien zaehlen nicht fuer die Rangliste, und der Bot
@@ -35,6 +40,16 @@ wird. Die Liste dessen, was noch kommt, steht in [../ROADMAP.md](../ROADMAP.md).
 ## erkenntnisse.md - Teuer erkaufte Erkenntnisse
 
 - Teuer erkaufte Erkenntnisse
+    - **Ein Waechter, der eine handgeschriebene Liste prueft, wacht nicht**
+      (v0.28.0) — `partieAnlegen` vergass `botStufe`, die DRITTE Wiederholung
+      von „eine Einstellung, die nichts tut". Der Test von v0.91 schwieg, weil
+      seine Pruefliste im Test selbst stand. Merksatz: Ein Waechter zieht seine
+      Liste aus der Quelle, die sich ohnehin aendert — sonst beruhigt er nur
+    - **Die Ruhesuche ass der Hauptsuche die Tiefe weg** (v0.28.0) — ein
+      gemeinsames Budget machte die hoechste Bot-Stufe SCHWAECHER als die
+      darunter. Merksatz: Zwei Verbraucher an einer Grenze heisst, der zuerst
+      laufende bekommt alles; und „staerker" ist eine Behauptung, die ein
+      Turnier belegen muss, kein Einzelspiel
     - Mitspieler verschwanden wieder aus der Runde (v0.8)
     - Der Tab Team Schach blieb leer (v1.2)
     - Die Fähigkeiten-Karte fehlte bei zugeschalteten Würfeln (v3.3, gefunden v3.4)

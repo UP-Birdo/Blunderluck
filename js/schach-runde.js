@@ -330,7 +330,28 @@ const SCHACH_RUNDE = {
                 itemAuswahl: [],
 
                 /* Muss sich das Team über einen Zug einig werden? */
-                einigkeit: false
+                einigkeit: false,
+
+                /*
+                 * AUF WELCHER STUFE SPIELT DER COMPUTER? (seit v0.28.0)
+                 *
+                 * Leer heisst: keine Angabe. Was daraus wird, entscheidet
+                 * ALLEIN `SCHACH_BOT.stufeVon` — hier steht bewusst keine
+                 * Liste gültiger Stufen und kein Rückfall.
+                 *
+                 * WARUM DIE PRÜFUNG NICHT HIER STEHT: `schach-bot.js` lädt
+                 * NACH dieser Datei (es rechnet mit SCHACH und SCHACH_RUNDE).
+                 * Würde `normalisieren` die Stufen-Tabelle des Bots
+                 * abfragen, hinge die untere Schicht an der oberen, und
+                 * jeder Test, der nur die Runde lädt, bräuchte plötzlich den
+                 * Bot dazu. Der Datenvertrag trägt deshalb nur den Text; die
+                 * Bedeutung gehört dem, der sie kennt.
+                 *
+                 * Ob überhaupt ein Computer mitspielt, steht NICHT hier,
+                 * sondern in den Teams (Kennung `bot`) — eine Aussage, eine
+                 * Quelle.
+                 */
+                botStufe: ""
             },
 
             /*
@@ -1172,6 +1193,17 @@ const SCHACH_RUNDE = {
                 : [];
 
             runde.regeln.einigkeit = (roh.regeln.einigkeit === true);
+
+            /*
+             * Die Stufe des Computers (seit v0.28.0) — nur als Text
+             * übernommen, gedeutet wird sie in `SCHACH_BOT.stufeVon` (siehe
+             * die Begründung bei den Vorgaben). Die Länge ist gedeckelt,
+             * damit über den offenen Datenpfad kein Roman in der Partie
+             * landet.
+             */
+            runde.regeln.botStufe = (typeof roh.regeln.botStufe === "string")
+                ? roh.regeln.botStufe.slice(0, 20)
+                : "";
         }
 
         if (roh.vorschlag && typeof roh.vorschlag === "object") {

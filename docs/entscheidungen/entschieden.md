@@ -1,5 +1,49 @@
 # Blunderluck - Entscheidungen / Entschieden - und warum
 
+## Vier Schwierigkeitsstufen für den Computer (24.08.2026, v0.28.0)
+
+Nutzer-Ansage: „recherchire wie ein schach bot funktioniert und baue
+verschiedene schwirigkeits grade ein … und auch vier schwirichkeitsstufen wo
+man umstellen kann." Dazu bekräftigt: keine Punkte gegen den Bot, auch nicht
+für den Bot. Verfahren, Messwerte und die verworfenen Entwürfe stehen
+vollständig in [../entwurf-bot.md](../entwurf-bot.md); hier nur, was
+entschieden wurde.
+
+- **Die Stufen unterscheiden sich in drei Stellschrauben** — Suchtiefe,
+  Ruhesuche, Stellungsbewertung —, nicht über eine künstliche Fehlerquote.
+  In der Literatur ist eine „Blunder-Rate" üblich (der Bot spielt mit einer
+  gewissen Wahrscheinlichkeit absichtlich einen zufälligen Zug). Hier
+  abgelehnt: Ein Bot, der ohne Grund etwas Sinnloses tut, wirkt kaputt, nicht
+  schwach. „Leicht" ist stattdessen ein Bot, der EHRLICH nur einen Halbzug
+  weit sieht — er verschenkt Figuren, aber jeder seiner Züge hat einen Grund.
+- **Umgestellt wird VOR der Runde**, nicht mittendrin. Die Stufe gehört zur
+  Partie (`regeln.botStufe`), wie jede andere Einstellung auch; die Reihe
+  steht unter dem Computer-Haken in den Grundeinstellungen. Ein Umschalten in
+  der laufenden Partie wäre ein Schreibvorgang in den gemeinsamen Stand und
+  ein Knopf mehr in der ohnehin vollen Fussleiste — falls es gewünscht ist,
+  ist es ein eigener Punkt.
+- **Zwei verschiedene Vorgaben, mit Absicht.** Neue Runden starten auf
+  „Mittel" (`STUFE_VORGABE`); eine Runde OHNE Angabe — also aus v0.27.0 —
+  spielt auf „Leicht" (`STUFE_ALTBESTAND`). Die eiserne Regel „laufende
+  Partien müssen laufen bleiben" verlangt das: In v0.27.0 gab es nur eine
+  Spielstärke, und das war die von „Leicht".
+- **Die Stufe steht im Datenvertrag, das OB nicht.** Ob ein Computer
+  mitspielt, steht in den Teams; wie stark er spielt, hat keine zweite Quelle
+  und muss dem rechnenden Gerät bekannt sein. GEDEUTET wird der Text nur in
+  `SCHACH_BOT` — `schach-runde.js` lädt vorher und darf dessen Tabelle nicht
+  abfragen.
+- **Ein Arbeitsbudget je Stufe statt einer Zeitmessung.** Eine Grenze über
+  `Date.now()` wäre einfacher, machte den Bot aber von der Geschwindigkeit
+  des Geräts abhängig — dasselbe Brett ergäbe auf zwei Geräten verschiedene
+  Züge, und die Tests könnten nichts mehr nachrechnen. Gezählt werden
+  deshalb ANGESEHENE FELDER: eine Zahl, die nur von der Stellung abhängt.
+- **Keine Punkte gegen den Computer — bestätigt und jetzt festgenagelt.** Die
+  Regel galt schon seit v0.27.0; der Nutzer hat sie am 24.08. ausdrücklich
+  bekräftigt („auch der bot soll keine punkte bekommen"). Seither prüfen
+  drei Tests in `test-rangliste.js` beide Hälften: Der Mensch bekommt nichts,
+  der Computer taucht gar nicht erst als Zeile auf, und Partien unter
+  Menschen zählen unverändert weiter.
+
 ## Der Computer-Gegner, Stufe 1 (24.08.2026, v0.27.0)
 
 Auftrag des Nutzers: den Bot einordnen und bauen. Die Bauvorlage mit allen

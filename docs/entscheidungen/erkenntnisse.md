@@ -2,6 +2,65 @@
 
 ## Teuer erkaufte Erkenntnisse
 
+### Ein Waechter, der eine handgeschriebene Liste prueft, wacht nicht (v0.28.0)
+
+**Dieselbe Falle zum DRITTEN Mal.** `SCHACH_TAFEL.partieAnlegen` kopiert jede
+Einstellung EINZELN aus dem uebergebenen Objekt. Vergessen wurde die Zeile bei
+`armeeStaerke` (v0.86), bei `itemVorrat` (v0.87) — und jetzt bei `botStufe`,
+der Schwierigkeitsstufe des Computers. Jedes Mal dasselbe Bild: Der Regler
+laesst sich bedienen, die Anzeige stimmt (sie liest `TEAM_SCHACH.neueRegeln`
+direkt), und die angelegte Partie traegt den Vorgabewert.
+
+**Warum der Test von v0.91 es nicht gefangen hat.** Es GAB einen Waechter,
+extra dafuer gebaut, und sein Kommentar versprach sogar: „Wer eine neue
+Einstellung ergaenzt, faellt hier auf — ohne dass jemand den Test anfassen
+muesste." Das stimmte nicht. Er ging eine LITERAL im Test stehende Liste
+durch:
+
+    const regeln = { faehigkeiten: true, …, einigkeit: false };
+    for (const schluessel of Object.keys(regeln)) { … }
+
+Wer eine Einstellung ergaenzt und sie dort nicht eintraegt, wird auch nicht
+geprueft. Der Waechter schwieg also genau bei dem Fehler, gegen den er gebaut
+worden war — und schlimmer: Sein Vorhandensein hat beruhigt.
+
+**Die Lehre:** Ein Test, der gegen eine Liste prueft, die derselbe Mensch
+pflegen muesste wie den Code, ist kein Waechter, sondern eine Verdopplung. Er
+muss seine Liste aus der QUELLE ziehen, die sich ohnehin aendert — hier der
+Datenvertrag (`SCHACH_RUNDE.leereRunde().regeln`). Seit v0.28.0 verlangt der
+Test, dass JEDES Feld des Vertrags entweder geprueft wird oder ausdruecklich
+als abgeleitet vermerkt ist. Vergessen ist damit ein roter Test, kein
+Schweigen mehr.
+
+**Merksatz:** Ein Waechter, der am falschen Ort sucht, ist schlimmer als
+keiner — er beruht. (Zweite Anwendung desselben Satzes; die erste war die
+Versions-Pruefung in der STATUS.md, v0.90.) **Und: Wenn ein Kommentar
+behauptet, ein Test brauche keine Pflege, ist das eine Behauptung, die man
+nachrechnen muss.**
+
+### Die Ruhesuche ass der Hauptsuche die Tiefe weg (v0.28.0)
+
+**Was zu sehen war:** Die hoechste Bot-Stufe „Meister" spielte SCHWAECHER als
+die Stufe darunter — im Duell 6:7, im Turnier ueber 16 Partien 6 zu 7 Siege.
+Eine Stufe, die mehr kann und schlechter spielt.
+
+**Die Ursache:** Haupt- und Ruhesuche teilten sich EIN Arbeitsbudget. Die
+Ruhesuche verfolgt Schlagzuege und ist gierig; sie war bei jedem Blatt zuerst
+dran und verbrauchte das Budget, bevor die Hauptsuche ihre Tiefe erreicht
+hatte. „Meister" rechnete dadurch auf dem Doppelbrett nur noch zwei Halbzuege
+weit — flacher als „Schwer" mit dreien.
+
+**Die Lehre:** Wer zwei Verbraucher an EINE Grenze haengt, gibt dem
+zuerst laufenden alles. Getrennte Toepfe (`_rest` und `_ruheRest`) kosten ein
+Feld mehr und machen die Sache erst steuerbar.
+
+**Zweite Lehre, teurer als die erste:** Dass eine Stufe staerker ist, ist eine
+BEHAUPTUNG und gehoert gemessen. Ein einzelnes Duell reicht nicht — der Bot
+ist deterministisch, es gibt je Paarung genau eine Partie. Erst ein Turnier
+ueber acht Stellungen in beiden Farben hat gezeigt, was wirklich los war.
+Seither prueft ein Test, dass jede Stufe in mindestens einer Stellschraube
+mehr kann als die davor.
+
 ### Mitspieler verschwanden wieder aus der Runde (v0.8)
 
 **Was zu sehen war:** Beim Betreten der Seite kam der Anmelde-Dialog mehrfach

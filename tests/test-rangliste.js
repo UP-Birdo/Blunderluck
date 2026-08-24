@@ -371,5 +371,76 @@ pruefe("Die Dauer wird lesbar ausgegeben", () => {
     gleich(RANGLISTE._dauerText(48 * 60 * 60000), "2 Tage", "volle Tage");
 });
 
+/* ------------------------------------------------------------------ *
+ * Partien gegen den Computer (v0.27.0, Nutzer-Ansage bekraeftigt 24.08.)
+ * ------------------------------------------------------------------ */
+
+/* Dieselbe beendete Partie, aber Schwarz ist der Computer. */
+function beendeteBotPartie(tafel, titel, ergebnis, zeitpunkt) {
+    const angelegt = SCHACH_TAFEL.partieAnlegen(tafel, "standard", titel, zeitpunkt);
+
+    let partie = SCHACH_RUNDE.teamBeitreten(angelegt.partie, "id-anna", "weiss", zeitpunkt);
+    partie = SCHACH_RUNDE.teamBeitreten(partie, globalThis.SCHACH_BOT.KENNUNG,
+        "schwarz", zeitpunkt);
+    partie.ergebnis = ergebnis;
+    partie.laeuft = false;
+
+    return SCHACH_TAFEL.partieEinsetzen(angelegt.tafel, partie, zeitpunkt);
+}
+
+pruefe("Gegen den Computer gibt es KEINE Punkte — fuer niemanden", () => {
+    /*
+     * NUTZER-ANSAGE (24.08.2026): „es sollen keine punkte geben wenn man
+     * gegen den bot spielt auch der bot soll keine punkte bekommen."
+     *
+     * Zwei Haelften, und beide muessen stimmen:
+     *   - Der MENSCH bekommt nichts. Gegen einen Computer waeren die Punkte
+     *     geschenkt, und die gemeinsame Tabelle saegte nichts mehr aus.
+     *   - Der COMPUTER bekommt nichts. Er taucht auch gar nicht erst als
+     *     Zeile auf, weil die Tabelle sich aus der Spielerliste baut und er
+     *     dort keinen Eintrag hat.
+     */
+    const tafel = beendeteBotPartie(
+        SCHACH_TAFEL.leereTafel(1000), "Gegen den Computer", "weiss", 2000);
+
+    const punkte = RANGLISTE.schachPunkte(tafel);
+
+    wahr(!punkte["id-anna"], "Anna bekommt fuer den Sieg gegen den Computer nichts");
+    wahr(!punkte[globalThis.SCHACH_BOT.KENNUNG], "und der Computer erst recht nicht");
+    gleich(Object.keys(punkte).length, 0, "die Partie taucht in der Wertung gar nicht auf");
+
+    /* Auch nicht ueber die Gesamttabelle — dort steht der Computer nie. */
+    const liste = RANGLISTE.gesamt(spielerMitDrei(), tafel);
+    const anna = liste.find((eintrag) => eintrag.id === "id-anna");
+
+    gleich(anna.gesamt, 0, "Annas Gesamtpunktzahl bleibt bei null");
+    gleich(anna.partien, 0, "und die Partie wird nicht mitgezaehlt");
+    wahr(!liste.some((eintrag) => eintrag.id === globalThis.SCHACH_BOT.KENNUNG),
+        "der Computer steht nicht in der Tabelle");
+});
+
+pruefe("Eine Bot-Partie steht auch nicht im Spielerprofil", () => {
+    /* Das Profil erklaert, wie die Summe zustande kommt — es darf deshalb
+       keine Partie zeigen, die gar nicht mitgezaehlt wurde. */
+    let tafel = beendeteBotPartie(
+        SCHACH_TAFEL.leereTafel(1000), "Gegen den Computer", "weiss", 2000);
+    tafel = beendetePartie(tafel, "Gegen Bert", "weiss", 2100);
+
+    const verlauf = RANGLISTE.verlauf("id-anna", tafel);
+
+    gleich(verlauf.length, 1, "nur die Partie gegen einen Menschen");
+    gleich(verlauf[0].titel, "Gegen Bert", "und zwar die richtige");
+});
+
+pruefe("Partien unter Menschen zaehlen unveraendert weiter", () => {
+    /* Die Gegenprobe: Die Ausnahme darf NUR den Computer treffen. */
+    const tafel = beendetePartie(SCHACH_TAFEL.leereTafel(1000), "Normal", "weiss", 2000);
+    const punkte = RANGLISTE.schachPunkte(tafel);
+
+    gleich(punkte["id-anna"].punkte, RANGLISTE.PUNKTE_SIEG + RANGLISTE.PUNKTE_TEILNAHME,
+        "Siegerin bekommt ihre Punkte");
+    gleich(punkte["id-bert"].punkte, RANGLISTE.PUNKTE_TEILNAHME, "Verlierer auch");
+});
+
 console.log(anzahlOk + " ok, " + anzahlFehler + " Fehler");
 process.exit(anzahlFehler === 0 ? 0 : 1);
