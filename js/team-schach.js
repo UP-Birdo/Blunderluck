@@ -955,16 +955,13 @@ const TEAM_SCHACH = {
          * fehlt. Er gilt, solange die Partie nicht beendet ist — auch
          * Nachzügler dürfen herein (F19).
          */
-        if (!partie.ergebnis) {
-            const codeZeile = TEAM_SCHACH._element("p",
-                "erklaerung beitritts-code", "Beitritts-Code: ");
-            codeZeile.appendChild(TEAM_SCHACH._element("span",
-                "beitritts-code-wert",
-                SCHACH_RUNDE.beitrittsCode(partie.id)));
-            codeZeile.appendChild(TEAM_SCHACH._element("span", "",
-                " — wer ihn unter Spielen eintippt, kommt in diese Runde."));
-            bereich.appendChild(codeZeile);
-        }
+        /* ---- DIE CODE-ZEILE IST WEG (v0.40.1). ----
+         *
+         * Sie stand hier seit v0.10.0 mit Beschriftung und Erklärsatz. Seit
+         * v0.40.0 steht der Code blass oben in der Ecke des Kopfes
+         * (`partie-code`) — und damit stand er ZWEIMAL auf demselben
+         * Bildschirm. Die Nutzer-Ansage war „ohne Zusatz Text"; also bleibt
+         * die knappe Fassung oben, und diese hier geht. */
 
         /*
          * FREUNDE EINLADEN (seit v0.13.0, Schritt 7): nur Freunde („erst

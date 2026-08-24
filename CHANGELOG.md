@@ -3,6 +3,13 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.40.1 — 24.08.2026
+
+**Nachbesserung zu v0.40.0:** Der Beitritts-Code stand zweimal auf dem
+Bildschirm — blass oben in der Ecke und darunter noch einmal bei den Teams,
+mit Beschriftung und Erklärsatz. Die untere Zeile ist weg; oben bleibt er,
+wie gewünscht ohne Zusatztext.
+
 ## v0.40.0 — 24.08.2026
 
 **Über dem Brett steht nichts mehr ausser dem Beitritts-Code.**

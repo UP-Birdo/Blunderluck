@@ -4496,13 +4496,10 @@ body.dialog-offen {
     outline-offset: 1px;
 }
 
-/* Der Code zum Weitergeben, bei den Teams der Partie. */
-.beitritts-code-wert {
-    font-family: "Consolas", "Courier New", monospace;
-    font-weight: 700;
-    letter-spacing: 0.2em;
-    color: var(--schrift);
-}
+/* `.beitritts-code-wert` (der Code bei den Teams) ist mit v0.40.1
+   entfallen — seit v0.40.0 steht er blass oben im Kopf (`.partie-code`),
+   und zweimal derselbe Code auf einem Bildschirm war der Fehler. Die Regel
+   gleich mit weg, damit kein toter Stil liegen bleibt. */
 
 /* ------------------------------------------------------------------ *
  * DIE FREUNDESLISTE (seit v0.11.0, Bündel A Schritt 6)
