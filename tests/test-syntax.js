@@ -289,6 +289,54 @@ pruefe("Die zwoelf Figuren-Bilder des 3D-Looks liegen alle da (v0.121)", () => {
 });
 
 /*
+ * DIE FUENF LOOTBOX-BILDER (seit v0.23.0, Wunsch 10).
+ *
+ * Anders als die Figuren haengen sie NICHT in der Stildatei, sondern werden
+ * im Bildschirm-Code zusammengesetzt (`TEAM_SCHACH._lootboxBild`). Fehlt eine
+ * Datei, bleibt auf dem Brett ein Feld mit blossem Fragezeichen stehen — das
+ * faellt beim Spielen kaum auf und waere trotzdem falsch. Dieser Test prueft
+ * beides: dass es zu JEDER Stufe ein Bild gibt und dass der Code dieselben
+ * Namen bildet wie das Blender-Skript sie schreibt.
+ */
+pruefe("Die fuenf Lootbox-Bilder liegen alle da (v0.23.0)", () => {
+    const quelle = dateisystem.readFileSync(
+        pfad.join(jsOrdner, "team-schach-brett.js"), "utf8");
+
+    const treffer = quelle.match(/LOOTBOX_ORDNER:\s*"([^"]+)"/);
+    if (!treffer) {
+        throw new Error("team-schach-brett.js nennt keinen LOOTBOX_ORDNER");
+    }
+    const ordner = treffer[1];
+
+    /* Die Stufen aus dem Modell, dazu die verborgene Box. */
+    const varianten = dateisystem.readFileSync(
+        pfad.join(jsOrdner, "schach-varianten.js"), "utf8");
+    const stufen = (varianten.match(/\{\s*id:\s*"(gruen|blau|lila|gelb)"/g) || [])
+        .map((zeile) => zeile.match(/"([a-z]+)"/)[1]);
+
+    if (stufen.length !== 4) {
+        throw new Error("erwartet 4 Stufen in schach-varianten.js, gefunden: "
+            + stufen.length);
+    }
+
+    for (const stufe of stufen.concat(["unbekannt"])) {
+        const datei = ordner + "lootbox-" + stufe + ".png";
+        if (!dateisystem.existsSync(pfad.join(projekt, datei))) {
+            throw new Error(datei + " fehlt — neu erzeugen mit"
+                + " tools\Lootboxen rendern.cmd");
+        }
+    }
+
+    /* Und das Blender-Skript schreibt wirklich dorthin. */
+    const bauplan = dateisystem.readFileSync(
+        pfad.join(projekt, "tools", "Lootbox-Blender.py"), "utf8");
+    if (bauplan.indexOf("lootbox-{}.png") === -1) {
+        throw new Error("Lootbox-Blender.py schreibt andere Dateinamen als"
+            + " der Bildschirm-Code erwartet");
+    }
+});
+
+/*
  * Und die Gegenrichtung: Jede Art braucht ihre Klasse, sonst greift die
  * Stildatei nicht. `_figurKlasse` ist die einzige Stelle, die sie vergibt.
  */

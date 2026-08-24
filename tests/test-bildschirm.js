@@ -171,6 +171,11 @@ function neuesElement(tag) {
 
         setAttribute(name, wert) { this.attribute[name] = wert; },
 
+        /* Seit v0.23.0: Die Lootbox setzt ihr Bild zusaetzlich ueber die alte
+           xlink-Schreibweise. Der Namensraum spielt hier keine Rolle —
+           gemerkt wird unter demselben Namen wie bei setAttribute. */
+        setAttributeNS(namensraum, name, wert) { this.attribute[name] = wert; },
+
         /* Versteht genau zwei Sucharten: nach data-feld und nach einer Klasse. */
         querySelector(wahl) {
             const feld = wahl.match(/data-feld="(\d+)"/);
@@ -1767,9 +1772,21 @@ pruefe("Ein Wuerfel auf dem Brett wird gezeichnet", () => {
     if (!wuerfel) {
         throw new Error("kein Wuerfel auf dem Feld");
     }
-    /* Drei Seitenflächen und das Fragezeichen. */
-    if (wuerfel.kinder.length !== 4) {
-        throw new Error("Wuerfel hat " + wuerfel.kinder.length + " Teile statt 4");
+    /*
+     * Seit v0.23.0 (Wunsch 10) sind es ZWEI Teile: das gerenderte Bild und
+     * das Fragezeichen darueber. Bis v0.22.0 waren es vier — drei gezeichnete
+     * Seitenflaechen plus Zeichen.
+     */
+    if (wuerfel.kinder.length !== 2) {
+        throw new Error("Wuerfel hat " + wuerfel.kinder.length + " Teile statt 2");
+    }
+
+    const bild = wuerfel.kinder[0];
+    if (bild.tagName !== "image") {
+        throw new Error("das erste Teil ist kein Bild, sondern: " + bild.tagName);
+    }
+    if (String(bild.attribute["href"] || "").indexOf("lootbox-") === -1) {
+        throw new Error("das Bild zeigt keine Lootbox: " + bild.attribute["href"]);
     }
 });
 

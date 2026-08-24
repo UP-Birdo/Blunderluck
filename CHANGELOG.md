@@ -3,6 +3,23 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.23.0 — 24.08.2026
+
+**Die Lootboxen sind jetzt echte 3D-Truhen.**
+
+- Auf dem Brett schwebt keine gezeichnete Würfel-Skizze mehr, sondern eine
+  **gerenderte Truhe** — Korpus, Deckel, zwei Bänder und ein Schloss, im
+  selben weichen Stil wie die Figuren und mit demselben Licht. Es gibt sie
+  in allen vier Seltenheitsfarben; die verborgene Box schillert weiter im
+  Regenbogen.
+- Das Fragezeichen sitzt jetzt oben auf dem Deckel und hat einen dunklen
+  Rand bekommen — auf der gelben Truhe war es vorher kaum zu sehen. Beim
+  Unglückswürfel steht es weiterhin auf dem Kopf.
+- **Neues Werkzeug:** `tools\Lootboxen rendern.cmd` (Doppelklick) baut die
+  fünf Bilder in Blender neu — dasselbe Muster wie „Figuren rendern.cmd".
+  Wer an Form oder Farbe schrauben will, findet alle Zahlen oben in
+  `tools\Lootbox-Blender.py`.
+
 ## v0.22.0 — 24.08.2026
 
 **Die Figuren passen jetzt auf ihre Platten.**

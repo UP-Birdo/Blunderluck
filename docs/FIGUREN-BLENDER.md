@@ -201,3 +201,34 @@ Hinsehen — und Nachmessen — kamen drei Dinge heraus:
 - [x] Zusammen **723 KB** — deutlich unter der 1-MB-Grenze
 - [x] Am Brett gemessen: kein waagerechter Überlauf, nichts abgeschnitten,
       klassische Ansicht unverändert
+
+## Die Lootboxen — dieselbe Werkstatt, eigenes Skript (seit v0.23.0)
+
+Wunsch 10 vom 24.08.2026: „Die Glückswürfel (Lootboxen) sollen auch in 3D
+über den Feldern fliegen — dafür wird wie bei den Figuren eine
+Blender-cmd-Datei zum Erstellen gebraucht."
+
+- **Werkzeug:** `tools\Lootbox-Blender.py`, gefahren über
+  `tools\Lootboxen rendern.cmd` (bzw. `tools\Lootbox-Rendern.ps1`) — Aufbau
+  Zeile für Zeile wie beim Figuren-Trio.
+- **Ergebnis:** fünf PNGs in `img\lootboxen\`, eines je Seltenheitsstufe
+  (`lootbox-gruen/blau/lila/gelb.png`) plus `lootbox-unbekannt.png` mit dem
+  Regenbogen der verborgenen Box. Zusammen rund 220 KB bei 256 Pixeln Kante.
+- **Motiv:** eine Truhe — Korpus, überstehender Deckel, zwei senkrechte
+  Bänder und ein Schloss vorn. Kanten gebrochen statt voxel-verschmolzen:
+  Eine Truhe darf gerade Flächen behalten, sie soll nur nicht scharfkantig
+  aussehen.
+- **Licht, Kamera, Bildeinstellungen sind IDENTISCH zu den Figuren** (50 Grad
+  Neigung, dieselben drei Lampen, `view_transform = "Standard"`). Das ist
+  keine Bequemlichkeit: Nur so sehen Figur und Box auf demselben Brett nach
+  derselben Welt aus. Wer dort dreht, dreht hier mit.
+- **Das Fragezeichen wird NICHT mitgerendert.** Es bleibt ein Zeichen im
+  Bildschirm-Code (`TEAM_SCHACH._wuerfelBauen`), weil es beim Unglückswürfel
+  auf dem Kopf steht — sonst wären es zehn fast gleiche Bilder statt fünf.
+- **Farbvertrag:** Die fünf Hexwerte in `Lootbox-Blender.py` (Liste `STUFEN`)
+  sind dieselben wie in `js\schach-varianten.js`. Wer eine Stufenfarbe
+  ändert, ändert beide und rendert neu.
+- **Ein Test wacht darüber:** `tests\test-syntax.js`, „Die fünf
+  Lootbox-Bilder liegen alle da" — er prüft, dass es zu jeder Stufe eine
+  Datei gibt und dass das Blender-Skript dieselben Namen schreibt, die der
+  Bildschirm-Code erwartet.

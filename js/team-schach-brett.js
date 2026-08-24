@@ -1334,133 +1334,82 @@ Object.assign(TEAM_SCHACH, {
     },
 
     /*
-     * Der Würfel, der eine Fähigkeit auf dem Brett anzeigt.
+     * Die Lootbox auf dem Brett — seit v0.23.0 (Wunsch 10) ein gerendertes
+     * 3D-Bild statt dreier gezeichneter Flächen.
      *
-     * Gezeichnet als SVG statt als Bilddatei: Er hat damit von Haus aus keinen
-     * Hintergrund, bleibt auf jeder Feldgröße scharf (von 6 mal 6 bis zum
-     * Doppelbrett auf dem Handy) — und er kann seine FARBE aus der
-     * Seltenheitsstufe nehmen. Man sieht einem Würfel also schon von weitem an,
-     * was er wert ist. Eine Bilddatei je Stufe wäre fünfmal dasselbe Bild in
-     * fünf Farben, das jemand pflegen müsste.
+     * VORHER (bis v0.22.0): ein SVG-Würfel aus drei Polygonen, gefärbt aus
+     * der Stufenfarbe, für die verborgene Box mit einem Regenbogen-Verlauf
+     * (v0.69). Das war scharf auf jeder Feldgrösse und brauchte keine Datei —
+     * passte aber nicht mehr zu den Figuren, seit die aus Blender kommen.
      *
-     * Die drei Seitenflächen entstehen aus einer Grundfarbe in drei
-     * Helligkeiten — deckend, damit auf hellen Feldern nichts durchscheint.
+     * JETZT: fünf PNGs aus `tools\Lootbox-Blender.py`, gebaut mit demselben
+     * Licht und derselben Kameraneigung wie die Figuren
+     * (`img\lootboxen\lootbox-<stufe>.png`, eines je Stufe plus
+     * „unbekannt"). Die Datei nennt die Stufe — die Farbe steckt also im
+     * Bild, nicht mehr im Code.
+     *
+     * DAS FRAGEZEICHEN BLEIBT GEZEICHNET. Es steht beim Unglückswürfel auf
+     * dem Kopf; mitgerendert wären es zehn fast gleiche Bilder statt fünf,
+     * und auf kleinen Feldern bliebe es unschärfer als ein Zeichen.
      */
-    /*
-     * Zähler für die Kennungen der Farbverläufe (seit v0.69). Ein `<svg>` kann
-     * seinen Verlauf nur über eine Kennung ansprechen, und die muss in der
-     * ganzen Seite eindeutig sein — auf dem Brett liegen schnell ein Dutzend
-     * Lootboxen nebeneinander.
-     */
-    _verlaufZaehler: 0,
 
-    /* Legt einen Regenbogen-Verlauf in dieses SVG und liefert seine Kennung. */
-    _regenbogenVerlauf(svg) {
-        TEAM_SCHACH._verlaufZaehler++;
-        const kennung = "lootbox-regenbogen-" + TEAM_SCHACH._verlaufZaehler;
+    /* Die Stufen, für die es ein Bild gibt. Alles andere fällt auf die
+       verborgene Box zurück — lieber die falsche Farbe als ein leeres Feld. */
+    LOOTBOX_ORDNER: "img/lootboxen/",
 
-        const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
-        const verlauf = document.createElementNS(
-            "http://www.w3.org/2000/svg", "linearGradient");
+    _lootboxBild(stufe) {
+        const id = (stufe && stufe.id) ? String(stufe.id) : "";
+        const bekannt = SCHACH_VARIANTEN.STUFEN.some(
+            (eintrag) => eintrag.id === id) || id === "unbekannt";
 
-        verlauf.setAttribute("id", kennung);
-        /* Schräg über den Würfel, damit alle drei Seiten etwas abbekommen. */
-        verlauf.setAttribute("x1", "0");
-        verlauf.setAttribute("y1", "0");
-        verlauf.setAttribute("x2", "1");
-        verlauf.setAttribute("y2", "1");
-
-        const farben = SCHACH_VARIANTEN.STUFE_UNBEKANNT.regenbogen;
-
-        for (let stelle = 0; stelle < farben.length; stelle++) {
-            const halt = document.createElementNS("http://www.w3.org/2000/svg", "stop");
-            halt.setAttribute("offset",
-                Math.round(stelle / (farben.length - 1) * 100) + "%");
-            halt.setAttribute("stop-color", farben[stelle]);
-            verlauf.appendChild(halt);
-        }
-
-        defs.appendChild(verlauf);
-        svg.appendChild(defs);
-        return kennung;
+        return TEAM_SCHACH.LOOTBOX_ORDNER + "lootbox-"
+            + (bekannt ? id : "unbekannt") + ".png";
     },
 
     _wuerfelBauen(stufe, pech) {
-        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        const ns = "http://www.w3.org/2000/svg";
+        const svg = document.createElementNS(ns, "svg");
         svg.setAttribute("class", "wuerfel");
         svg.setAttribute("viewBox", "0 0 100 100");
         svg.setAttribute("aria-hidden", "true");
 
-        const flaechen = [
-            /* Oberseite, hell. */
-            { punkte: "50,6 92,30 50,54 8,30", ton: 1.35 },
-            /* Linke Seite, dunkel. */
-            { punkte: "8,30 50,54 50,96 8,72", ton: 0.7 },
-            /* Rechte Seite, mittel. */
-            { punkte: "92,30 50,54 50,96 92,72", ton: 1 }
-        ];
+        const bild = document.createElementNS(ns, "image");
+        bild.setAttribute("x", "0");
+        bild.setAttribute("y", "0");
+        bild.setAttribute("width", "100");
+        bild.setAttribute("height", "100");
+
+        /* Beide Schreibweisen: `href` ist die heutige, `xlink:href` die alte —
+           ohne sie zeigen ältere Browser gar nichts an. */
+        const quelle = TEAM_SCHACH._lootboxBild(stufe);
+        bild.setAttribute("href", quelle);
+        bild.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", quelle);
+        svg.appendChild(bild);
 
         /*
-         * DIE VERBORGENE LOOTBOX SCHILLERT (seit v0.69, Wunsch #26).
-         *
-         * Wer die Seltenheit nicht anzeigen lässt, bekam bis v0.68 ein
-         * unauffälliges Grau — und damit sah die Lootbox nach gar nichts aus.
-         * Jetzt läuft ein Regenbogen über alle drei Flächen.
-         *
-         * ES IST FÜR JEDE VERBORGENE LOOTBOX DERSELBE VERLAUF. Ein Zufall je
-         * Box oder eine Farbe je Stufe würde genau das verraten, was der Haken
-         * verbergen soll (eiserne Regel: Die Oberfläche verrät nie, was drin
-         * steckt). Die Helligkeitsstufen der drei Seiten bleiben trotzdem —
-         * sonst sähe der Würfel flach aus statt körperlich.
+         * Das Fragezeichen sitzt mittig auf dem DECKEL — von schräg oben ist
+         * er die grösste sichtbare Fläche, und zwischen den beiden Bändern
+         * ist genau dort Platz. Beim Unglückswürfel steht es auf dem Kopf:
+         * ein eigenes Zeichen statt einer anderen Farbe, denn die Farbe trägt
+         * schon die Seltenheit, und ein umgedrehtes Fragezeichen erkennt man
+         * auch auf einem winzigen Feld.
          */
-        const verlauf = stufe.regenbogen
-            ? TEAM_SCHACH._regenbogenVerlauf(svg)
-            : null;
-
-        for (const flaeche of flaechen) {
-            const teil = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
-            teil.setAttribute("points", flaeche.punkte);
-
-            if (verlauf) {
-                teil.setAttribute("fill", "url(#" + verlauf + ")");
-                /* Die Fläche wird über die Deckkraft heller oder dunkler —
-                   den Verlauf selbst je Seite umzufärben hiesse drei
-                   Farbverläufe statt einem. */
-                teil.setAttribute("fill-opacity", String(Math.min(1, flaeche.ton * 0.75)));
-                teil.setAttribute("stroke", "#2b2f36");
-            } else {
-                teil.setAttribute("fill", TEAM_SCHACH._tonAendern(stufe.farbe, flaeche.ton));
-                teil.setAttribute("stroke", TEAM_SCHACH._tonAendern(stufe.farbe, 0.45));
-            }
-
-            teil.setAttribute("stroke-width", "3");
-            teil.setAttribute("stroke-linejoin", "round");
-            svg.appendChild(teil);
-        }
-
-        /*
-         * Das Fragezeichen auf der rechten Seitenfläche — beim Unglückswürfel
-         * steht es auf dem Kopf. Ein eigenes Zeichen statt einer anderen Farbe:
-         * Die Farbe trägt schon die Seltenheit, und ein umgedrehtes
-         * Fragezeichen erkennt man auch auf einem winzigen Feld.
-         */
-        const zeichen = document.createElementNS("http://www.w3.org/2000/svg", "text");
-        zeichen.setAttribute("x", "70");
-        zeichen.setAttribute("y", "80");
+        const zeichen = document.createElementNS(ns, "text");
+        zeichen.setAttribute("x", "50");
+        zeichen.setAttribute("y", "47");
         zeichen.setAttribute("text-anchor", "middle");
         zeichen.setAttribute("class", "wuerfel-zeichen");
         zeichen.textContent = "?";
 
         if (pech) {
             /*
-             * Gedreht wird um die OPTISCHE Mitte des Zeichens, nicht um einen
-             * Punkt darunter: Die Grundlinie liegt bei y=80, das Zeichen reicht
-             * bei Schriftgröße 34 bis etwa y=56 hinauf — Mitte also y=68. Mit
-             * der alten Achse (y=72) rutschte das gespiegelte Fragezeichen um
-             * acht Einheiten nach unten und hing aus der Würfelfläche heraus
-             * (Meldung T1/T2 vom 18.08.).
+             * Gedreht wird um die OPTISCHE Mitte des Zeichens, nicht um seine
+             * Grundlinie: Die liegt bei y=47, das Zeichen reicht bei
+             * Schriftgrösse 30 bis etwa y=26 hinauf — Mitte also y=37. Mit
+             * einer Achse auf der Grundlinie rutschte das gespiegelte
+             * Fragezeichen aus dem Deckel heraus (Meldung T1/T2 vom 18.08.).
              */
-            zeichen.setAttribute("transform", "rotate(180 70 68)");
+            zeichen.setAttribute("transform", "rotate(180 50 37)");
         }
         svg.appendChild(zeichen);
 
@@ -1468,21 +1417,12 @@ Object.assign(TEAM_SCHACH, {
     },
 
     /*
-     * Hellt eine Farbe auf oder dunkelt sie ab (Faktor über oder unter 1).
-     * Gerechnet statt fünfmal drei Farbwerte von Hand zu pflegen — eine neue
-     * Stufe braucht so nur eine einzige Farbe.
+     * HIER STAND BIS v0.22.0 `_tonAendern` — es rechnete die drei
+     * Helligkeiten der gezeichneten Würfelflächen aus der Stufenfarbe. Mit
+     * dem gerenderten Bild (Wunsch 10) steckt diese Rechnung in
+     * `tools\Lootbox-Blender.py` (`ton_aendern`, derselbe Faktor 0.55 für
+     * den Beschlag). Der alte Code steht im Backup `Backup\Blunderluck\v0.20.0`.
      */
-    _tonAendern(farbe, faktor) {
-        const zahl = parseInt(String(farbe).replace("#", ""), 16);
-
-        const teile = [
-            (zahl >> 16) & 255,
-            (zahl >> 8) & 255,
-            zahl & 255
-        ].map((wert) => Math.max(0, Math.min(255, Math.round(wert * faktor))));
-
-        return "rgb(" + teile.join(",") + ")";
-    },
 
     /*
      * Wirkt das volle Glas für diese Seite gerade?
