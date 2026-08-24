@@ -125,6 +125,14 @@ wird. Die Liste dessen, was noch kommt, steht in [../ROADMAP.md](../ROADMAP.md).
       Flex drückt den Figurenkasten klein (`flex: 0 0 auto`), das Raster-Feld
       zieht am Brett (`min-width: 0`), und der Deploy lud den Ordner `img`
       gar nicht hoch; alles drei nur durch Messen im Browser gefunden
+    - **Vier Fallen beim Bau der Lootbox in Blender** (v0.23.0/v0.24.0) —
+      Text liegt schon flach (Drehen stellt ihn auf), `shade_smooth`
+      verschmiert eine Gravur (`shade_auto_smooth` nehmen), ein zur Seite
+      gestelltes Objekt rendert LEER, und eine Gravur verdoppelt die Zahl
+      der Bilder, weil sie sich nicht mehr im Code drehen lässt. Merksatz:
+      Ein Renderskript kann man nicht lesen, nur ansehen — nach jeder
+      Änderung EIN Bild öffnen. Nebenbefund: Der Test-DOM brauchte
+      `setAttributeNS`
 
 ## entschieden.md - Entschieden - und warum
 

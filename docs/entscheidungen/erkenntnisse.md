@@ -1332,3 +1332,46 @@ findet man nur durch MESSEN im Browser, nicht durch Hinsehen: Die Zahlen im
 Stylesheet stimmten die ganze Zeit. Gemessen wurde mit einer Wegwerf-Seite und
 Edge im Kopflos-Betrieb (`--headless=new --screenshot`), die Feld-, Kasten-
 und Seitenbreiten ausgibt — dasselbe Vorgehen wie bei v0.86/v0.94.
+
+## Vier Fallen beim Bau der Lootbox in Blender (v0.23.0/v0.24.0)
+
+Der Würfel mit der Gravur brauchte **drei Renderläufe, bis er stimmte** —
+und keiner der drei Fehler war am Code zu sehen, nur am Bild. Wer die
+Lootboxen (oder die Figuren) neu baut, spart sich die Runden mit dieser
+Liste. Werkzeug: `tools\Lootbox-Blender.py`, Lauf über
+`tools\Lootboxen rendern.cmd` (rund 12 Sekunden für zehn Bilder — man kann
+also ruhig ausprobieren und HINSEHEN).
+
+1. **Blender-Text liegt schon flach.** Ein Textobjekt entsteht in der
+   xy-Ebene und wird nach oben dick. Die naheliegende Drehung um 90 Grad
+   um x STELLT ES AUF: Im ersten Bild ragte das Fragezeichen wie ein Segel
+   aus dem Würfel. Richtig ist: gar nicht drehen; für den
+   Unglückswürfel nur 180 Grad um **z**.
+2. **`shade_smooth` verschmiert eine Gravur.** Nach dem Boolean-Schnitt zog
+   die weiche Schattierung fahle Dreiecke von der Rille bis zum Rand der
+   Oberseite — es sah aus wie ein Fehler im Mesh, war aber nur die
+   Schattierung. Heilmittel: `shade_auto_smooth` (ab Blender 4.1, hier in
+   `glatt_schattieren` gekapselt): Es glättet nur, wo der Winkel klein ist,
+   also die Kantenrundung — ebene Flächen und Rillenwand bleiben scharf.
+3. **Ein Objekt, das man „zum Vergleichen" zur Seite stellt, ist beim
+   Rendern nicht mehr im Bild.** Der Unglückswürfel stand auf `x = 2.0`,
+   der Bildausschnitt war auf den anderen gerechnet — die fünf
+   `-pech`-Bilder kamen LEER heraus, ohne Fehlermeldung. Beide stehen jetzt
+   ineinander und werden nur sichtbar geschaltet; auseinander rücken sie
+   erst NACH der Render-Schleife.
+4. **Eine Gravur lässt sich nicht im Bildschirm-Code drehen.** Solange das
+   Fragezeichen ein `text` im SVG war, genügten fünf Bilder und eine
+   Drehung per `transform`. Sobald es Teil des Meshes ist, verdoppelt sich
+   die Zahl der Bilder. Das ist kein Fehler, sondern der Preis — er gehört
+   in die Rechnung, BEVOR man sich für eine Gravur entscheidet.
+
+**Die Lehre:** Ein Renderskript ist Code, den man nicht lesen, sondern nur
+ANSEHEN kann. Nach jeder Änderung an Form, Drehung oder Schattierung EIN
+Bild öffnen — alle drei Fehler oben standen nach dem Lauf als grüne
+„Fertig"-Meldung da.
+
+**Nebenbefund im Bildschirm-Test:** Der nachgebaute DOM in
+`tests\test-bildschirm.js` kannte `setAttributeNS` nicht, das die Lootbox
+für die alte `xlink:href`-Schreibweise braucht. Fünf Tests fielen mit
+„is not a function" aus. Der Stellvertreter wurde ergänzt, nicht der Code
+vereinfacht: Der Nachbau soll dem echten DOM folgen, nicht umgekehrt.
