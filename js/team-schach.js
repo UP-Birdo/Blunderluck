@@ -877,9 +877,10 @@ const TEAM_SCHACH = {
             const leiste = TEAM_SCHACH._element("div", "karte-fuss");
 
             if (meinTeam === farbe) {
-                leiste.appendChild(TEAM_SCHACH._knopf("Team verlassen", "knopf-still knopf-klein",
-                    () => TEAM_SCHACH.teamVerlassen(partie)));
-
+                /* „Team verlassen" stand hier bis v0.25.0. Seit v0.26.0
+                   sammelt die Fussleiste alle Runden-Aktionen an EINER
+                   Stelle (`_fussleisteBauen`) — hier bleibt nur, was das
+                   Team selbst betrifft. */
                 if (!partie.laeuft && !partie.ergebnis) {
                     leiste.appendChild(TEAM_SCHACH._knopf(
                         partie.bereit[farbe] ? "Doch nicht bereit" : "Bereit",
@@ -1007,14 +1008,41 @@ const TEAM_SCHACH = {
      * Fussleiste der Partie
      * ---------------------------------------------------------------- */
 
+    /*
+     * DIE FUSSLEISTE IST DIE EINE STELLE FÜR ALLE RUNDEN-AKTIONEN
+     * (seit v0.26.0, Nutzer-Ansage 24.08.: „wenn ich ein spiel starte gibt
+     * es noch die knöpfe zurück und so ganz unten, die sollen alle zsm
+     * gefasst werden").
+     *
+     * Vorher lagen sie an drei Orten: „Zurück" oben im Kopf, „Team
+     * verlassen" an der eigenen Team-Karte, und hier unten Aufgeben,
+     * Umbenennen, Neu aufstellen und Zur Übersicht. Jetzt steht alles hier —
+     * und zwar nur noch das, was in der jeweiligen Lage überhaupt geht:
+     *
+     *     beendet          Neu aufstellen (Hauptaktion), Zur Übersicht
+     *     läuft, ich spiele mit   Aufgeben, Neu aufstellen, Runde verlassen
+     *     wartet, ich spiele mit  Neu aufstellen, Runde verlassen,
+     *                             Zur Übersicht
+     *     ich schaue nur zu       Zur Übersicht
+     *
+     * „ZUR ÜBERSICHT" FEHLT IN DER LAUFENDEN EIGENEN PARTIE — dieselbe
+     * Entscheidung wie beim Zurück-Knopf im Kopf (F10, v0.9.0): Solange die
+     * eigene Runde läuft, zeigt die App nur sie. Wer wirklich raus will,
+     * gibt auf oder verlässt die Runde.
+     *
+     * „UMBENENNEN" IST GANZ ENTFALLEN: Seit v0.14.0 haben Runden keinen
+     * eigenen Namen mehr, nur den Titel ihrer Spielart. Der Knopf hätte
+     * etwas geändert, das es nicht mehr gibt.
+     */
     _fussleisteBauen(partie, person) {
         const leiste = TEAM_SCHACH._element("div", "fussleiste");
         const meinTeam = SCHACH_RUNDE.teamVon(partie, person.id);
+        const laeuftMit = !partie.ergebnis && partie.laeuft === true && !!meinTeam;
 
         /*
          * EIN WORT FÜR EINE SACHE (seit v0.94).
          *
-         * Beide Knöpfe rufen `neuAufstellen` — bis v0.93 hiess derselbe
+         * Beide Zweige rufen `neuAufstellen` — bis v0.93 hiess derselbe
          * Vorgang bei beendeter Partie „Neu aufstellen" und bei laufender
          * „Partie zurücksetzen". Sie stehen nie gleichzeitig da, deshalb fiel
          * es nicht auf; wer aber beides einmal gesehen hat, sucht danach zwei
@@ -1025,22 +1053,30 @@ const TEAM_SCHACH = {
         if (partie.ergebnis) {
             leiste.appendChild(TEAM_SCHACH._knopf("Neu aufstellen", "knopf-haupt",
                 () => TEAM_SCHACH.neuAufstellen(partie)));
-        } else if (partie.laeuft && meinTeam) {
+        } else if (laeuftMit) {
             leiste.appendChild(DIALOG.zweiSchritt(
                 TEAM_SCHACH._knopf("Aufgeben", "knopf-gefahr knopf-klein", null),
                 () => TEAM_SCHACH.aufgeben(partie, meinTeam)));
         }
-
-        leiste.appendChild(TEAM_SCHACH._knopf("Umbenennen", "knopf-still knopf-klein",
-            () => TEAM_SCHACH.umbenennen(partie)));
 
         if (!partie.ergebnis) {
             leiste.appendChild(TEAM_SCHACH._knopf("Neu aufstellen", "knopf-still knopf-klein",
                 () => TEAM_SCHACH.neuAufstellen(partie)));
         }
 
-        leiste.appendChild(TEAM_SCHACH._knopf("Zur Übersicht", "knopf-still knopf-klein",
-            () => TEAM_SCHACH.uebersichtOeffnen()));
+        /* Der Weg aus der Runde heraus — bis v0.25.0 stand er als „Team
+           verlassen" an der eigenen Team-Karte. Zwei Schritte, weil er die
+           Runde für Alleinspielende zugleich schliesst. */
+        if (meinTeam && !partie.ergebnis) {
+            leiste.appendChild(DIALOG.zweiSchritt(
+                TEAM_SCHACH._knopf("Runde verlassen", "knopf-still knopf-klein", null),
+                () => TEAM_SCHACH.teamVerlassen(partie)));
+        }
+
+        if (!laeuftMit) {
+            leiste.appendChild(TEAM_SCHACH._knopf("Zur Übersicht", "knopf-still knopf-klein",
+                () => TEAM_SCHACH.uebersichtOeffnen()));
+        }
 
         return leiste;
     },
@@ -2022,22 +2058,17 @@ const TEAM_SCHACH = {
         }
     },
 
-    async umbenennen(partie) {
-        const titel = await DIALOG.eingabe(
-            "Partie umbenennen",
-            "Wie soll die Partie in der Übersicht heißen?",
-            partie.titel,
-            "Übernehmen",
-            true
-        );
-        if (titel === null || titel.trim() === "") {
-            return;
-        }
-        await TEAM_SCHACH._sendenMitPruefung(
-            SCHACH_RUNDE.umbenennen(partie, titel),
-            partie.zugZaehler
-        );
-    },
+    /*
+     * HIER STAND BIS v0.25.0 `umbenennen` — der Knopf „Umbenennen" in der
+     * Fussleiste fragte nach einem neuen Partie-Namen. Seit v0.14.0 haben
+     * Runden gar keinen eigenen Namen mehr, nur den Titel ihrer Spielart;
+     * der Knopf änderte also etwas, das es nicht mehr gibt, und ist mit
+     * v0.26.0 entfallen.
+     *
+     * `SCHACH_RUNDE.umbenennen` BLEIBT im Modell: Es gehört zum additiven
+     * Datenvertrag (das Feld `titel` gibt es weiter), und die Tests der
+     * Tafel rechnen damit.
+     */
 
     async teamBeitreten(partie, farbe) {
         const person = TEAM_SCHACH._ich();
@@ -2060,16 +2091,86 @@ const TEAM_SCHACH = {
         );
     },
 
+    /*
+     * Die Runde verlassen.
+     *
+     * WER ALLEIN WAR, SCHLIESST SIE DAMIT (seit v0.26.0, Nutzer-Ansage
+     * 24.08.: „und einmalig den raum beim verlassen auch schliessen,
+     * solange man alleine in der runde war"). Sonst bliebe für jede
+     * angelegte und wieder verlassene Runde eine leere Partie im
+     * gemeinsamen Stand stehen — sichtbar für niemanden, aber für immer.
+     *
+     * ALLEIN heisst: In BEIDEN Teams steht danach niemand mehr. Ist noch
+     * jemand da, bleibt die Runde selbstverständlich stehen — es ist ja
+     * seine.
+     *
+     * Beendete Runden werden NIE entfernt: An ihnen hängt das Ergebnis,
+     * das die Rangliste zeigt.
+     */
     async teamVerlassen(partie) {
         const person = TEAM_SCHACH._ich();
         if (!person) {
             return;
         }
         TEAM_SCHACH._auswahlAufheben();
-        await TEAM_SCHACH._sendenMitPruefung(
-            SCHACH_RUNDE.teamVerlassen(partie, person.id),
-            partie.zugZaehler
-        );
+
+        const danach = SCHACH_RUNDE.teamVerlassen(partie, person.id);
+
+        if (!partie.ergebnis && TEAM_SCHACH._istVerwaist(danach)) {
+            await TEAM_SCHACH._verwaisteRundeSchliessen(danach);
+            return;
+        }
+
+        await TEAM_SCHACH._sendenMitPruefung(danach, partie.zugZaehler);
+    },
+
+    /* Steht in beiden Teams niemand mehr? */
+    _istVerwaist(partie) {
+        return ["weiss", "schwarz"].every(
+            (farbe) => (partie.teams[farbe] || []).length === 0);
+    },
+
+    /*
+     * Die verwaiste Runde aus dem gemeinsamen Stand nehmen.
+     *
+     * NICHT über `_sendenMitPruefung`: Das setzt eine geänderte Partie
+     * ein, hier soll sie verschwinden. Der Ablauf ist deshalb derselbe wie
+     * bei `partieLoeschen` — Stand vom Server holen, Partie entfernen,
+     * schreiben — nur ohne Passwort-Schranke: Wer allein in seiner eigenen
+     * Runde sass, löscht niemandem etwas weg.
+     *
+     * ANMELDEN NICHT VERGESSEN (`eigenerVorgangBeginnt`, eiserne Regel):
+     * Hier wird am Abgleich vorbei geschrieben, und seine regelmässige
+     * Abfrage holte die eben entfernte Runde sonst zurück (v0.52).
+     */
+    async _verwaisteRundeSchliessen(partie) {
+        const abgleich = TEAM_SCHACH.abgleich;
+        abgleich.eigenerVorgangBeginnt();
+
+        try {
+            let tafel = abgleich.daten;
+            if (abgleich.speicher.art === "gemeinsam") {
+                tafel = SCHACH_TAFEL.normalisieren(await abgleich.speicher.laden());
+            }
+
+            const neueTafel = SCHACH_TAFEL.partieEntfernen(tafel, partie.id);
+            await abgleich.speicher.speichern(neueTafel);
+            abgleich.daten = neueTafel;
+
+            if (TEAM_SCHACH.offeneId === partie.id) {
+                TEAM_SCHACH.offeneId = "";
+            }
+            TEAM_SCHACH.zeichnen(neueTafel);
+            DIALOG.kurzmeldung("Runde geschlossen");
+
+        } catch (fehler) {
+            await DIALOG.hinweis("Nicht geschlossen",
+                "Die Runde konnte nicht geschlossen werden: " + fehler.message
+                    + "\n\nDu bist trotzdem nicht mehr dabei, sobald es "
+                    + "wieder geht.");
+        } finally {
+            abgleich.eigenerVorgangEndet();
+        }
     },
 
     async bereitUmschalten(partie, farbe, bereit) {

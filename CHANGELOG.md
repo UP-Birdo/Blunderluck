@@ -3,6 +3,24 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.26.0 — 24.08.2026
+
+**Alle Knöpfe einer Runde an einer Stelle — und leere Runden räumen sich
+selbst weg.**
+
+- Die Aktionen einer Runde lagen an drei Orten verteilt: „Zurück" oben,
+  „Team verlassen" an der Team-Karte, unten Aufgeben, Umbenennen, Neu
+  aufstellen und Zur Übersicht. Jetzt stehen sie **alle unten in einer
+  Leiste** — und dort nur das, was gerade überhaupt geht.
+- **„Umbenennen" ist weg:** Runden haben seit v0.14.0 keinen eigenen Namen
+  mehr, der Knopf änderte etwas, das es nicht gibt.
+- **„Runde verlassen" schliesst die Runde**, wenn danach niemand mehr drin
+  ist. Bisher blieb für jede angelegte und wieder verlassene Runde eine
+  leere Partie stehen. Sitzt noch jemand drin, bleibt sie natürlich — und
+  beendete Runden bleiben immer, an ihnen hängen die Punkte.
+- In der eigenen **laufenden** Runde gibt es weiterhin keinen Ausgang:
+  Wer raus will, gibt auf oder verlässt sie.
+
 ## v0.25.0 — 24.08.2026
 
 **Der Balken oben ist ganz weg — mehr Platz fürs Spiel.**

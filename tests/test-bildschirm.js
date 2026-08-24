@@ -3644,6 +3644,74 @@ async function zeitlimitPruefen() {
             }
         });
 
+    /* ---------------------------------------------------------------- *
+     * Wer allein war, schliesst die Runde beim Verlassen (v0.26.0)
+     * ---------------------------------------------------------------- */
+
+    await pruefeMitWarten("Allein verlassen schliesst die Runde (v0.26.0)",
+        async () => {
+            /*
+             * DIE GEMELDETE ANSAGE: „und einmalig den raum beim verlassen
+             * auch schliessen, solange man alleine in der runde war."
+             *
+             * Zwei Faelle in einem Test, weil sie sich nur in einer Zeile
+             * unterscheiden: allein -> Runde weg, zu zweit -> Runde bleibt.
+             */
+            const echteDaten = TEAM_SCHACH.abgleich.daten;
+
+            try {
+                /* 1) Anna ganz allein in einer wartenden Runde. */
+                let tafel = SCHACH_TAFEL.leereTafel(9500);
+                let angelegt = SCHACH_TAFEL.partieAnlegen(
+                    tafel, SCHACH_VARIANTEN.liste[0].id, "Allein", 9510);
+                let partie = SCHACH_RUNDE.teamBeitreten(
+                    angelegt.partie, "id-anna", "weiss", 9510);
+
+                TEAM_SCHACH.abgleich.daten = SCHACH_TAFEL.partieEinsetzen(
+                    angelegt.tafel, partie, 9510);
+                TEAM_SCHACH.offeneId = partie.id;
+
+                await TEAM_SCHACH.teamVerlassen(partie);
+
+                if (SCHACH_TAFEL.partie(TEAM_SCHACH.abgleich.daten, partie.id)) {
+                    throw new Error("die verwaiste Runde steht noch da");
+                }
+                if (TEAM_SCHACH.offeneId === partie.id) {
+                    throw new Error("die geschlossene Runde bleibt geoeffnet");
+                }
+
+                /* 2) Dieselbe Lage, aber Bert sitzt noch drin. */
+                tafel = SCHACH_TAFEL.leereTafel(9600);
+                angelegt = SCHACH_TAFEL.partieAnlegen(
+                    tafel, SCHACH_VARIANTEN.liste[0].id, "Zu zweit", 9610);
+                partie = SCHACH_RUNDE.teamBeitreten(
+                    angelegt.partie, "id-anna", "weiss", 9610);
+                partie = SCHACH_RUNDE.teamBeitreten(partie, "id-bert", "schwarz", 9610);
+
+                TEAM_SCHACH.abgleich.daten = SCHACH_TAFEL.partieEinsetzen(
+                    angelegt.tafel, partie, 9610);
+                TEAM_SCHACH.offeneId = partie.id;
+
+                await TEAM_SCHACH.teamVerlassen(partie);
+
+                const geblieben = SCHACH_TAFEL.partie(
+                    TEAM_SCHACH.abgleich.daten, partie.id);
+                if (!geblieben) {
+                    throw new Error("die Runde wurde geschlossen, obwohl Bert"
+                        + " noch drin sass");
+                }
+                if (SCHACH_RUNDE.teamVon(geblieben, "id-anna")) {
+                    throw new Error("Anna steckt noch im Team");
+                }
+                if (!SCHACH_RUNDE.teamVon(geblieben, "id-bert")) {
+                    throw new Error("Bert wurde mit hinausgeworfen");
+                }
+            } finally {
+                TEAM_SCHACH.abgleich.daten = echteDaten;
+                TEAM_SCHACH.offeneId = "";
+            }
+        });
+
     console.log(anzahlOk + " ok, " + anzahlFehler + " Fehler");
     process.exit(anzahlFehler === 0 ? 0 : 1);
 }
@@ -4430,6 +4498,114 @@ pruefe("Das Icon-Raster zeigt jede Faehigkeit mit Stufenrahmen (v0.12.0)", () =>
             throw new Error("eine Kachel ist nicht antippbar");
         }
     }
+});
+
+/* ------------------------------------------------------------------ *
+ * Die Fussleiste sammelt die Runden-Aktionen (v0.26.0)
+ * ------------------------------------------------------------------ */
+
+pruefe("Alle Runden-Aktionen stehen in der Fussleiste (v0.26.0)", () => {
+    /*
+     * DIE GEMELDETE ANSAGE: „wenn ich ein spiel starte gibt es noch die
+     * knoepfe zurueck und so ganz unten, die sollen alle zsm gefasst
+     * werden."
+     *
+     * Geprueft wird an einer WARTENDEN Partie (dort gibt es am meisten zu
+     * sehen): „Runde verlassen" ist von der Team-Karte in die Fussleiste
+     * gezogen, und „Umbenennen" ist ganz weg — Runden haben seit v0.14.0
+     * keinen eigenen Namen mehr.
+     */
+    let partie = SCHACH_TAFEL.partie(TEAM_SCHACH.abgleich.daten,
+        kennungen[SCHACH_VARIANTEN.liste[0].id]);
+    partie = SCHACH_RUNDE.kopieren(partie);
+    partie.laeuft = false;
+    partie.ergebnis = null;
+
+    const vorher = TEAM_SCHACH.abgleich.daten;
+
+    try {
+        TEAM_SCHACH.abgleich.daten = SCHACH_TAFEL.partieEinsetzen(
+            vorher, partie, 9100);
+        TEAM_SCHACH.partieOeffnen(partie.id);
+
+        const einsammeln = (element, passt, treffer) => {
+            for (const kind of element.kinder || []) {
+                if (passt(kind)) {
+                    treffer.push(kind);
+                }
+                einsammeln(kind, passt, treffer);
+            }
+            return treffer;
+        };
+
+        const leiste = einsammeln(TEAM_SCHACH.wurzelEl, (kind) =>
+            String(kind.className || "").indexOf("fussleiste") !== -1, [])[0];
+        if (!leiste) {
+            throw new Error("keine Fussleiste in der Partie");
+        }
+
+        const texte = einsammeln(leiste, (kind) => kind.tagName === "button", [])
+            .map((knopf) => String(knopf.textContent || ""));
+
+        if (texte.indexOf("Runde verlassen") === -1) {
+            throw new Error("Runde verlassen fehlt in der Fussleiste, da ist: "
+                + texte.join(", "));
+        }
+        if (texte.indexOf("Umbenennen") !== -1) {
+            throw new Error("Umbenennen ist zurueck - Runden haben keinen Namen");
+        }
+
+        /* Und an der Team-Karte haengt es nicht mehr. */
+        const karten = einsammeln(TEAM_SCHACH.wurzelEl, (kind) =>
+            String(kind.className || "").indexOf("team-karte") !== -1, []);
+        for (const karte of karten) {
+            const inKarte = einsammeln(karte, (kind) =>
+                kind.tagName === "button", [])
+                .map((knopf) => String(knopf.textContent || ""));
+            if (inKarte.indexOf("Team verlassen") !== -1) {
+                throw new Error("Team verlassen haengt noch an der Team-Karte");
+            }
+        }
+    } finally {
+        TEAM_SCHACH.abgleich.daten = vorher;
+        TEAM_SCHACH.uebersichtOeffnen();
+    }
+});
+
+pruefe("In der eigenen laufenden Partie fuehrt nichts an ihr vorbei (F10)", () => {
+    /*
+     * F10 galt bisher nur fuer den Zurueck-Knopf im Kopf. Seit v0.26.0
+     * zieht die Fussleiste mit: Solange die eigene Runde laeuft, gibt es
+     * dort kein „Zur Uebersicht" — wer raus will, gibt auf oder verlaesst.
+     */
+    const partie = SCHACH_TAFEL.partie(TEAM_SCHACH.abgleich.daten,
+        kennungen[SCHACH_VARIANTEN.liste[0].id]);
+    TEAM_SCHACH.partieOeffnen(partie.id);
+
+    const einsammeln = (element, passt, treffer) => {
+        for (const kind of element.kinder || []) {
+            if (passt(kind)) {
+                treffer.push(kind);
+            }
+            einsammeln(kind, passt, treffer);
+        }
+        return treffer;
+    };
+
+    const leiste = einsammeln(TEAM_SCHACH.wurzelEl, (kind) =>
+        String(kind.className || "").indexOf("fussleiste") !== -1, [])[0];
+    const texte = einsammeln(leiste, (kind) => kind.tagName === "button", [])
+        .map((knopf) => String(knopf.textContent || ""));
+
+    if (texte.indexOf("Zur Übersicht") !== -1) {
+        throw new Error("die laufende eigene Partie bietet einen Ausgang an: "
+            + texte.join(", "));
+    }
+    if (texte.indexOf("Aufgeben") === -1) {
+        throw new Error("kein Aufgeben in der laufenden Partie");
+    }
+
+    TEAM_SCHACH.uebersichtOeffnen();
 });
 
 pruefe("Der Zwischenbildschirm laesst per Code beitreten (v0.10.0)", () => {
