@@ -3,6 +3,18 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.37.0 — 24.08.2026
+
+**Deine vergangenen Matches haben jetzt ein eigenes Zeichen oben auf dem
+Startbildschirm.**
+
+- Eine kleine Uhr, links neben den Freunden und dem Zahnrad. Ein Tipp
+  darauf öffnet die Liste deiner beendeten Partien — mit „Ergebnis
+  ansehen" wie gehabt.
+- Im Beitritts-Bildschirm stehen sie dafür nicht mehr. Der ist damit
+  endgültig nur noch das, was sein Name sagt.
+- Hast du noch nichts gespielt, sagt die Seite das, statt leer zu sein.
+
 ## v0.36.0 — 24.08.2026
 
 **Nach einer Runde landest du wieder auf dem Startbildschirm.**

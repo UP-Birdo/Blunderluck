@@ -98,3 +98,33 @@ Anmeldung mitspielen können. Daraus folgt:
   der Auflösung; wer die Datenbank-Adresse aus dem JavaScript liest, könnte sie
   vorher sehen. Für das Spiel ist das unschädlich — Spicken bei den echten
   Würfeln wäre es nicht, und genau das verhindert das Siegel.
+
+## Was an ZWEI Stellen steht (Stand 24.08.2026)
+
+Am 24.08.2026 aus der `STATUS.md` hierher gezogen: Diese Punkte gelten
+dauerhaft und gehören deshalb in die Architektur-Doku, nicht in einen Stand.
+
+**Drei Sachen stehen an zwei Stellen — wer eine ändert, ändert beide:**
+
+- **Die Stufenfarben:** `STUFEN` in `js\schach-varianten.js` UND in
+  `tools\Lootbox-Blender.py` — danach die Lootboxen neu rendern.
+- **Das App-Zeichen:** `icon.svg` und dieselben Koordinaten in
+  `tools\Icons-Erzeugen.ps1` — danach in 32 Pixeln ansehen.
+- **Licht und Kamera der beiden Blender-Werkstätten:**
+  `tools\Figuren-Blender.py` und `tools\Lootbox-Blender.py`. Laufen sie
+  auseinander, sehen Figur und Würfel nach zwei Welten aus. Vertrag:
+  [../FIGUREN-BLENDER.md](../FIGUREN-BLENDER.md), letzter Abschnitt.
+
+**Beide Blender-Skripte tragen einen FESTEN absoluten Pfad**
+(`AUSGABE_ORDNER`). Sie laufen nur an genau diesem Ort unter genau dieser
+Anmeldung — ein verschobener Ordner, ein zweites Windows-Konto oder ein
+neuer Rechner macht sie unbrauchbar, und zwar LAUTLOS: Blender legt den
+Pfad einfach an. Aufräum-Punkt in der `ROADMAP.md`; dringend erst beim
+Umzug.
+
+**Aufräum-Reste, alle in der `ROADMAP.md` eingeordnet:** tote
+Würfel-/Imposter-Stile in `css\stil.css` samt der rund dreissig Regeln unter
+`body.design-3d` (die Klasse ist seit v0.17.0 immer gesetzt), dazu
+Quizz-Begriffe in `..\WORTLISTE.md`. Die Datei
+[03-wuerfel-quizz.md](03-wuerfel-quizz.md) bleibt bewusst stehen — der dort
+beschriebene Anmelde-Ablauf gilt weiter.

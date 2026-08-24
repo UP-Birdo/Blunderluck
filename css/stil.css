@@ -2939,7 +2939,20 @@ body.design-3d .werte-figur {
     color: var(--schrift-leise);
 }
 
-/* Der Verlauf ist eingeklappt — auf dem Handy soll das Brett den Platz haben. */
+/*
+ * Die vergangenen Matches (seit v0.37.0 eine eigene Seite hinter dem
+ * Verlauf-Zeichen des Starts). Sie brauchen dort keinen Aufklapp-Kasten
+ * mehr — die Seite gehört ihnen allein.
+ */
+.verlauf-liste {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* NOCH IN BENUTZUNG? Nein — `.verlauf-kasten` und `.verlauf-titel` gehörten
+   zum eingeklappten Kasten im Zwischenbildschirm und sind seit v0.37.0 ohne
+   Nutzer. Sie stehen beim Aufräum-Punkt der ROADMAP („tote Stile"). */
 .verlauf-kasten {
     margin: 0;
 }

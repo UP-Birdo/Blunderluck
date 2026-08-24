@@ -1857,17 +1857,24 @@ pruefe("Wer verliert, bekommt den Abschluss-Bildschirm", () => {
     TEAM_SCHACH.offeneId = "";
 });
 
-pruefe("Beendete Partien stehen nicht mehr zwischen den offenen", () => {
+pruefe("Beendete Partien stehen nicht im Zwischenbildschirm — sie sind umgezogen (v0.37.0)", () => {
+    /*
+     * Bis v0.36.0 hingen sie als zugeklappter Kasten unter den offenen
+     * Partien. Seit v0.37.0 wohnen sie hinter dem Verlauf-Zeichen des
+     * Starts (Nutzer-Ansage 24.08.2026) — hier darf davon nichts mehr
+     * stehen, und der Kasten muss anderswo zu bauen sein.
+     */
     TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
 
-    /* Kopf, dann die offenen Karten, dann der zugeklappte Kasten. */
     const kasten = TEAM_SCHACH.wurzelEl.kinder.find((kind) => kind.tagName === "details");
-    if (!kasten) {
-        throw new Error("kein Kasten fuer beendete Partien");
+    if (kasten) {
+        throw new Error("die beendeten Partien haengen noch im Zwischenbildschirm");
     }
-    const beschriftung = String(kasten.kinder[0].textContent || "");
-    if (beschriftung.indexOf("beendeten Partien") === -1) {
-        throw new Error("Kasten falsch beschriftet: " + beschriftung);
+
+    const person = umgebung.ICH.person();
+    if (!TEAM_SCHACH.verlaufKastenBauen(TEAM_SCHACH.abgleich.daten, person)) {
+        throw new Error("verlaufKastenBauen liefert nichts — die Partien sind"
+            + " nicht umgezogen, sondern verschwunden");
     }
 });
 
@@ -1882,8 +1889,10 @@ pruefe("Beendete Partien stehen nicht mehr zwischen den offenen", () => {
 pruefe("Die Historie zeigt nur eigene Partien, mit Sieger und Verlierer (v0.59)", () => {
     TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
 
-    const kastenSuchen = () => TEAM_SCHACH.wurzelEl.kinder
-        .find((kind) => kind.tagName === "details");
+    /* Seit v0.37.0 wohnt die Historie hinter dem Verlauf-Zeichen des
+       Starts; gebaut wird sie weiterhin hier. */
+    const kastenSuchen = () => TEAM_SCHACH.verlaufKastenBauen(
+        TEAM_SCHACH.abgleich.daten, umgebung.ICH.person());
 
     const kasten = kastenSuchen();
     if (!kasten) {

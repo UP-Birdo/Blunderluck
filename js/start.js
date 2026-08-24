@@ -71,6 +71,12 @@ const START = {
             return;
         }
 
+        /* Die vergangenen Matches, nach demselben Muster (seit v0.37.0). */
+        if (START.verlaufOffen) {
+            START._verlaufZeichnen(wurzel);
+            return;
+        }
+
         /* Der Start ist nie ein Fenster — die Tab-Leiste gehört dazu. Wer
            aus einem Fenster (Einstellungen, Partie) hierher zurückkommt,
            bekommt sie so wieder. */
@@ -89,6 +95,18 @@ const START = {
          */
         const kopf = document.createElement("div");
         kopf.className = "start-kopf";
+
+        /* Das Verlauf-Zeichen steht VOR den Freunden — die Reihenfolge von
+           links nach rechts ist: was war, wer mitspielt, wie es eingestellt
+           ist. Das Zahnrad bleibt ganz aussen, wo es seit v0.9.0 sitzt. */
+        const verlauf = document.createElement("button");
+        verlauf.type = "button";
+        verlauf.className = "start-zahnrad start-verlauf";
+        verlauf.setAttribute("aria-label", "Vergangene Matches");
+        verlauf.title = "Vergangene Matches";
+        verlauf.appendChild(START._verlaufZeichenBauen());
+        verlauf.addEventListener("click", () => START.verlaufOeffnen());
+        kopf.appendChild(verlauf);
 
         const freunde = document.createElement("button");
         freunde.type = "button";
@@ -256,6 +274,70 @@ const START = {
         wurzel.appendChild(kopfzeile);
 
         wurzel.appendChild(FREUNDE.karteBauen(ICH.person()));
+    },
+
+    /* ---------------------------------------------------------------- *
+     * Die vergangenen Matches als Seite (seit v0.37.0)
+     *
+     * Nutzer-Ansage 24.08.2026: „Die vergangenen Matches sollen auch nicht
+     * bei Runde beitreten stehen sondern oben neben Freunde und
+     * Einstellungen ein eigenes Icon." Dasselbe Muster wie die
+     * Freundesliste: ein Fenster mit Zurück-Knopf, kein eigener Tab.
+     *
+     * Gebaut wird die Liste in `TEAM_SCHACH.verlaufKastenBauen` — dort, wo
+     * auch die anderen Partie-Karten entstehen.
+     * ---------------------------------------------------------------- */
+
+    verlaufOffen: false,
+
+    _verlaufZeichnen(wurzel) {
+        TABS.rundeSetzen("start", true);
+        wurzel.innerHTML = "";
+
+        const kopfzeile = document.createElement("div");
+        kopfzeile.className = "partie-kopf";
+
+        const zurueck = document.createElement("button");
+        zurueck.type = "button";
+        zurueck.className = "knopf knopf-still knopf-klein";
+        zurueck.textContent = "Zurück";
+        zurueck.addEventListener("click", () => START.verlaufSchliessen());
+        kopfzeile.appendChild(zurueck);
+
+        const titel = document.createElement("h2");
+        titel.className = "partie-titel";
+        titel.textContent = "Vergangene Matches";
+        kopfzeile.appendChild(titel);
+        wurzel.appendChild(kopfzeile);
+
+        const person = ICH.person();
+        const abgleich = (typeof TEAM_SCHACH !== "undefined")
+            ? TEAM_SCHACH.abgleich : null;
+
+        const kasten = (person && abgleich && abgleich.daten)
+            ? TEAM_SCHACH.verlaufKastenBauen(abgleich.daten, person)
+            : null;
+
+        if (kasten) {
+            wurzel.appendChild(kasten);
+            return;
+        }
+
+        const leer = document.createElement("p");
+        leer.className = "erklaerung";
+        leer.textContent = "Noch keine beendete Partie. Was du spielst, "
+            + "landet hier, sobald es vorbei ist.";
+        wurzel.appendChild(leer);
+    },
+
+    verlaufOeffnen() {
+        START.verlaufOffen = true;
+        START._zeichnen();
+    },
+
+    verlaufSchliessen() {
+        START.verlaufOffen = false;
+        START._zeichnen();
     },
 
     freundeOeffnen() {
@@ -478,6 +560,46 @@ const START = {
             linie.setAttribute("stroke-linecap", "round");
             svg.appendChild(linie);
         }
+
+        return svg;
+    },
+
+    /*
+     * Das Verlauf-Zeichen (seit v0.37.0): eine Uhr — Ring, Zeiger auf zehn
+     * nach zwei. Wie die anderen beiden gezeichnet statt als Bilddatei und
+     * über currentColor gefärbt (kein Emoji, Haus-Regel).
+     */
+    _verlaufZeichenBauen() {
+        const ns = "http://www.w3.org/2000/svg";
+        const svg = document.createElementNS(ns, "svg");
+        svg.setAttribute("viewBox", "0 0 24 24");
+        svg.setAttribute("class", "start-zeichen");
+        svg.setAttribute("aria-hidden", "true");
+
+        const ring = document.createElementNS(ns, "circle");
+        ring.setAttribute("cx", "12");
+        ring.setAttribute("cy", "12");
+        ring.setAttribute("r", "8.6");
+        ring.setAttribute("fill", "none");
+        ring.setAttribute("stroke", "currentColor");
+        ring.setAttribute("stroke-width", "2.2");
+        svg.appendChild(ring);
+
+        /* Zwei Zeiger: der lange nach oben, der kurze nach rechts. */
+        const zeiger = (x2, y2, breite) => {
+            const linie = document.createElementNS(ns, "line");
+            linie.setAttribute("x1", "12");
+            linie.setAttribute("y1", "12");
+            linie.setAttribute("x2", String(x2));
+            linie.setAttribute("y2", String(y2));
+            linie.setAttribute("stroke", "currentColor");
+            linie.setAttribute("stroke-width", String(breite));
+            linie.setAttribute("stroke-linecap", "round");
+            svg.appendChild(linie);
+        };
+
+        zeiger(12, 6.4, 2.2);
+        zeiger(16, 13.4, 2.2);
 
         return svg;
     },

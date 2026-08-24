@@ -1107,14 +1107,8 @@ Object.assign(TEAM_SCHACH, {
            aufgelistet. Seit v0.35.0 führt der Startbildschirm zurück in die
            eigene Runde — die Filterung ist mit der Liste entfallen. */
 
-        /*
-         * NUR DIE EIGENE HISTORIE (seit v0.59, Wunsch #8): Beendete sind
-         * abgeschlossen; wer nicht mitgespielt hat, kann dort nichts mehr
-         * tun. Die Partien selbst bleiben im gemeinsamen Stand, die
-         * Rangliste zählt unverändert alles.
-         */
-        const beendete = alle.filter((partie) => partie.ergebnis
-            && SCHACH_RUNDE.teamVon(partie, person.id));
+        /* Die beendeten Partien wohnen seit v0.37.0 hinter dem
+           Verlauf-Zeichen des Starts — gebaut in `verlaufKastenBauen`. */
 
         const kopf = TEAM_SCHACH._element("div", "phasen-leiste");
 
@@ -1241,33 +1235,61 @@ Object.assign(TEAM_SCHACH, {
             }
         }
 
-        if (beendete.length > 0) {
-            const kasten = document.createElement("details");
-            kasten.className = "verlauf-kasten";
+        /* ---- DIE BEENDETEN PARTIEN SIND UMGEZOGEN (v0.37.0). ----
+         *
+         * Nutzer-Ansage 24.08.2026: „Die vergangenen Matches sollen auch
+         * nicht bei Runde beitreten stehen sondern oben neben Freunde und
+         * Einstellungen ein eigenes Icon." Sie wohnen jetzt hinter dem
+         * Verlauf-Zeichen des Startbildschirms; gebaut werden sie weiterhin
+         * hier (`verlaufKastenBauen`), damit die Karten überall gleich
+         * aussehen. */
+    },
 
-            const titel = document.createElement("summary");
-            titel.className = "verlauf-titel";
-            titel.textContent = "Deine beendeten Partien (" + beendete.length + ")";
-            kasten.appendChild(titel);
+    /*
+     * DIE EIGENEN BEENDETEN PARTIEN als fertiger Kasten (seit v0.37.0
+     * eigenständig, vorher Teil der Übersicht).
+     *
+     * Gerufen wird das vom Startbildschirm (`START._verlaufZeichnen`). Die
+     * Funktion steht trotzdem HIER, bei den anderen Partie-Karten: Sie baut
+     * dieselben Karten wie die Übersicht, und zwei Fassungen liefen früher
+     * oder später auseinander.
+     *
+     * NUR DIE EIGENE HISTORIE (seit v0.59, Wunsch #8): Beendete sind
+     * abgeschlossen; wer nicht mitgespielt hat, kann dort nichts mehr tun.
+     * Die Partien selbst bleiben im gemeinsamen Stand, die Rangliste zählt
+     * unverändert alles.
+     *
+     * Liefert null, wenn es nichts zu zeigen gibt.
+     */
+    verlaufKastenBauen(tafel, person) {
+        const beendete = SCHACH_TAFEL.liste(tafel).filter((partie) =>
+            partie.ergebnis && SCHACH_RUNDE.teamVon(partie, person.id));
 
-            for (const partie of beendete) {
-                const karte = TEAM_SCHACH._partieKarteBauen(partie, person);
-
-                /* Wer mitgespielt hat, kann sein Ergebnis jederzeit wieder
-                   ansehen — auch nachdem er den Abschluss weggeklickt hat. */
-                if (SCHACH_RUNDE.teamVon(partie, person.id)) {
-                    const leiste = TEAM_SCHACH._element("div", "karte-fuss");
-                    leiste.appendChild(TEAM_SCHACH._knopf("Ergebnis ansehen",
-                        "knopf-still knopf-klein",
-                        () => TEAM_SCHACH.abschlussZeigen(partie.id)));
-                    karte.appendChild(leiste);
-                }
-
-                kasten.appendChild(karte);
-            }
-
-            wurzel.appendChild(kasten);
+        if (beendete.length === 0) {
+            return null;
         }
+
+        const kasten = TEAM_SCHACH._element("div", "verlauf-liste");
+
+        for (const partie of beendete) {
+            const karte = TEAM_SCHACH._partieKarteBauen(partie, person);
+
+            /* Wer mitgespielt hat, kann sein Ergebnis jederzeit wieder
+               ansehen — auch nachdem er den Abschluss weggeklickt hat. Der
+               Abschluss wird im Schach-Tab gezeichnet, also erst dorthin. */
+            const leiste = TEAM_SCHACH._element("div", "karte-fuss");
+            leiste.appendChild(TEAM_SCHACH._knopf("Ergebnis ansehen",
+                "knopf-still knopf-klein",
+                () => {
+                    TABS.wechseln("team-schach");
+                    TEAM_SCHACH.abschlussZeigen(partie.id);
+                }));
+            karte.appendChild(leiste);
+
+            kasten.appendChild(karte);
+        }
+
+        return kasten;
     },
 
     _partieKarteBauen(partie, person) {
