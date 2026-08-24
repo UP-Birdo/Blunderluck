@@ -132,6 +132,36 @@ Object.assign(TEAM_SCHACH, {
          * Funktion, die auch die Chronik füllt — sonst stünde die Umrechnung
          * zweimal im Programm und liefe auseinander.
          */
+        /*
+         * GEGEN DEN COMPUTER ENDET ES HIER (Nutzer-Ansage 24.08.2026,
+         * v0.32.0).
+         *
+         * Punkte gibt es in einer Bot-Partie für NIEMANDEN — das ist seit
+         * v0.27.0 so und in `test-rangliste.js` dreifach festgenagelt. Bis
+         * v0.31.0 kam trotzdem der ganze Apparat: eine grosse „+0", eine
+         * Aufschlüsselung, aus der nichts folgt, und ein Knopf in eine
+         * Rangliste, in der sich nichts geändert hat. Der Weg dorthin bleibt
+         * offen — über den Tab, wann immer man will.
+         *
+         * Der Satz darunter ist Absicht: Ohne ihn sucht man die Punkte.
+         */
+        const gegenComputer = (typeof SCHACH_BOT !== "undefined")
+            && SCHACH_BOT.istBotPartie(partie);
+
+        if (gegenComputer) {
+            flaeche.appendChild(TEAM_SCHACH._element("p", "erklaerung",
+                "Gegen den Computer gibt es keine Punkte — die Rangliste "
+                + "bleibt, wie sie war."));
+
+            const nurZurueck = TEAM_SCHACH._element("div", "abschluss-leiste");
+            nurZurueck.appendChild(TEAM_SCHACH._knopf("Zurück zur Übersicht",
+                "knopf-haupt", () => TEAM_SCHACH.abschlussSchliessen(partie.id)));
+            flaeche.appendChild(nurZurueck);
+
+            wurzel.appendChild(flaeche);
+            return;
+        }
+
         const teil = RANGLISTE.schachPunkteJePartie(
             SCHACH_TAFEL._chronikEintrag(partie), meinTeam);
 

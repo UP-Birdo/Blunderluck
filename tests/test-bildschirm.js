@@ -1566,6 +1566,92 @@ pruefe("Der Abschluss schluesselt die Punkte auf (v0.53)", () => {
     }
 });
 
+pruefe("Nach einer Bot-Partie kommt kein Punkte-Schirm (v0.32.0)", () => {
+    /*
+     * „nach bot spieln braucht nicht die rangliste angezigt zu werden gibt ja
+     * eh keine punkte" (Nutzer, 24.08.2026).
+     *
+     * Geprueft wird der ERGEBNIS-Schritt (1) einer beendeten Partie gegen den
+     * Computer: keine grosse Zahl, keine Aufschluesselung, kein Knopf in die
+     * Rangliste. Die Rueckschau davor bleibt unberuehrt — sie zeigt den
+     * Verlauf, nicht die Punkte.
+     */
+    const echteDaten = TEAM_SCHACH.abgleich.daten;
+    const echterAbschluss = TEAM_SCHACH.abschluss;
+
+    try {
+        const angelegt = SCHACH_TAFEL.partieAnlegen(
+            SCHACH_TAFEL.leereTafel(9600),
+            SCHACH_VARIANTEN.liste[0].id, "Gegen den Computer", 9610);
+
+        let partie = SCHACH_RUNDE.teamBeitreten(
+            angelegt.partie, "id-anna", "weiss", 9610);
+        partie = SCHACH_BOT.inRundeSetzen(partie, "schwarz", 9610);
+
+        /* Erst wenn BEIDE Seiten bereit sind, laeuft die Partie — und nur
+           eine laufende laesst sich aufgeben. Ohne diesen Schritt bleibt
+           `ergebnis` leer, und `zeichnen` zeigt die Uebersicht statt des
+           Abschlusses (beim Schreiben des Tests genau so passiert). */
+        partie = SCHACH_RUNDE.bereitSetzen(partie, "weiss", true, 9615);
+        partie = SCHACH_RUNDE.aufgeben(partie, "weiss", 9620);
+
+        if (!SCHACH_BOT.istBotPartie(partie)) {
+            throw new Error("die Testpartie ist gar keine Bot-Partie");
+        }
+        if (!partie.ergebnis) {
+            throw new Error("die Testpartie ist gar nicht beendet");
+        }
+
+        TEAM_SCHACH.abgleich.daten = SCHACH_TAFEL.partieEinsetzen(
+            angelegt.tafel, partie, 9620);
+        TEAM_SCHACH.abschluss = { id: partie.id, schritt: 1 };
+        TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
+
+        const suchen = (element, klasse) => {
+            for (const kind of element.kinder || []) {
+                if (String(kind.className || "").indexOf(klasse) !== -1) {
+                    return kind;
+                }
+                const tiefer = suchen(kind, klasse);
+                if (tiefer) {
+                    return tiefer;
+                }
+            }
+            return null;
+        };
+
+        if (suchen(TEAM_SCHACH.wurzelEl, "abschluss-punkte")) {
+            throw new Error("die grosse Punktzahl steht noch da");
+        }
+        if (suchen(TEAM_SCHACH.wurzelEl, "abschluss-aufschluesselung")) {
+            throw new Error("die Aufschluesselung steht noch da");
+        }
+
+        /* Der DOM-Nachbau reicht `textContent` NICHT an die Eltern durch —
+           der Text muss also selbst eingesammelt werden. */
+        const textSammeln = (element) => {
+            let text = String(element.textContent || "");
+            for (const kind of element.kinder || []) {
+                text += " " + textSammeln(kind);
+            }
+            return text;
+        };
+
+        const text = textSammeln(TEAM_SCHACH.wurzelEl);
+        if (text.indexOf("Punktestand ansehen") !== -1) {
+            throw new Error("der Weg in die Rangliste ist noch offen");
+        }
+        if (text.indexOf("Gegen den Computer gibt es keine Punkte") === -1) {
+            throw new Error("der erklaerende Satz fehlt — sonst sucht man die Punkte"
+                + " (gezeichnet wurde: " + text.slice(0, 200) + ")");
+        }
+    } finally {
+        TEAM_SCHACH.abgleich.daten = echteDaten;
+        TEAM_SCHACH.abschluss = echterAbschluss;
+        TEAM_SCHACH.offeneId = "";
+    }
+});
+
 pruefe("Wer verliert, bekommt den Abschluss-Bildschirm", () => {
     let partie = SCHACH_TAFEL.partie(TEAM_SCHACH.abgleich.daten, kennungen.klein);
     partie = SCHACH_RUNDE.aufgeben(partie, "weiss", 3200);

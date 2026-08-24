@@ -3,6 +3,18 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.32.0 — 24.08.2026
+
+**Nach einer Partie gegen den Computer kommt kein Punkte-Schirm mehr.**
+
+- Gegen den Computer gibt es keine Punkte — trotzdem stand am Ende bisher
+  eine grosse „+0", eine Aufschlüsselung, aus der nichts folgt, und ein
+  Knopf in die Rangliste, in der sich nichts geändert hatte.
+- Jetzt endet die Bot-Partie nach dem Ergebnis: Gewonnen oder Verloren, ein
+  Satz dazu, warum es keine Punkte gibt, und zurück zur Übersicht.
+- **Die Rückschau davor bleibt** — sie zeigt den Verlauf, nicht die Punkte.
+- Die Rangliste selbst erreichst du weiterhin jederzeit über ihren Tab.
+
 ## v0.31.0 — 24.08.2026
 
 **Auf den Kreuz-Brettern sind die vier Ecken jetzt wirklich leer.**
