@@ -3,6 +3,19 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.42.0 — 24.08.2026
+
+**„Neu aufstellen" gibt es nur noch, wenn die Zufallsarmee an ist.**
+
+- Der Knopf ist zum Neu-Würfeln da. Ohne Zufallsarmee stellte er nur
+  dieselbe feste Aufstellung wieder hin — dafür braucht es keinen Knopf.
+- Bekommen **beide Seiten dieselbe** gewürfelte Armee, kannst du auch
+  schon vor der Team-Wahl neu würfeln.
+- Würfelt **jede Seite für sich**, geht es erst, wenn du in einem Team
+  bist — vorher wäre nicht klar, wessen Armee neu gewürfelt wird.
+- **Nach einer beendeten Partie bleibt alles wie bisher:** Dort startet
+  derselbe Knopf die Revanche.
+
 ## v0.41.0 — 24.08.2026
 
 **Die drei Knöpfe zum Beitreten sehen jetzt gleich aus — und tragen ihre

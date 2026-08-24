@@ -1566,6 +1566,56 @@ pruefe("Der Abschluss schluesselt die Punkte auf (v0.53)", () => {
     }
 });
 
+pruefe("Neu aufstellen gibt es nur bei Zufallsarmee (v0.42.0)", () => {
+    /*
+     * Nutzer-Ansage 24.08.2026, Lesart bestaetigt: Der Knopf ist zum NEU
+     * WUERFELN da. Drei Faelle, und alle drei muessen stimmen:
+     *   ohne Zufallsarmee            -> nie
+     *   gleiche Armee fuer beide     -> auch ohne eigenes Team
+     *   jede Seite fuer sich         -> erst mit eigenem Team
+     */
+    const person = umgebung.ICH.person();
+
+    const knopfDa = (partie) => {
+        const leiste = TEAM_SCHACH._fussleisteBauen(partie, person);
+        let gefunden = false;
+        const suchen = (element) => {
+            if (String(element.textContent || "") === "Neu aufstellen") {
+                gefunden = true;
+            }
+            for (const kind of element.kinder || []) {
+                suchen(kind);
+            }
+        };
+        suchen(leiste);
+        return gefunden;
+    };
+
+    const bauen = (regeln, mitTeam) => {
+        const angelegt = SCHACH_TAFEL.partieAnlegen(
+            SCHACH_TAFEL.leereTafel(8800), "standard", "Probe", 8810);
+        let partie = angelegt.partie;
+        partie.regeln = Object.assign({}, partie.regeln, regeln);
+        if (mitTeam) {
+            partie = SCHACH_RUNDE.teamBeitreten(partie, person.id, "weiss", 8820);
+        }
+        return partie;
+    };
+
+    if (knopfDa(bauen({ zufallsArmee: false }, true))) {
+        throw new Error("ohne Zufallsarmee steht der Knopf da");
+    }
+    if (!knopfDa(bauen({ zufallsArmee: true, armeeUnterschiedlich: false }, false))) {
+        throw new Error("bei gleicher Armee fehlt er vor der Team-Wahl");
+    }
+    if (knopfDa(bauen({ zufallsArmee: true, armeeUnterschiedlich: true }, false))) {
+        throw new Error("bei getrennten Armeen steht er schon ohne Team da");
+    }
+    if (!knopfDa(bauen({ zufallsArmee: true, armeeUnterschiedlich: true }, true))) {
+        throw new Error("bei getrennten Armeen fehlt er trotz eigenem Team");
+    }
+});
+
 pruefe("Die Grundeinstellungen sind ein Fenster ohne Tab-Leiste (v0.39.0)", () => {
     /*
      * „Grundeinstellungen für eine Runde soll unten das Menü Band weg so

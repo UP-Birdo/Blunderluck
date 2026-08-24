@@ -1122,7 +1122,33 @@ const TEAM_SCHACH = {
                 () => TEAM_SCHACH.aufgeben(partie, meinTeam)));
         }
 
-        if (!partie.ergebnis) {
+        /*
+         * „NEU AUFSTELLEN" GIBT ES NUR BEI ZUFALLSARMEE (seit v0.42.0).
+         *
+         * Nutzer-Ansage 24.08.2026, Lesart am selben Tag bestätigt: Der
+         * Knopf ist zum NEU WÜRFELN da. Ohne Zufallsarmee würfelt er nichts
+         * — er stellte nur dieselbe feste Aufstellung wieder hin, und dafür
+         * braucht es keinen Knopf.
+         *
+         * ZWEI FÄLLE, UND SIE UNTERSCHEIDEN SICH:
+         *   - Beide Seiten bekommen DIESELBE Armee (`armeeUnterschiedlich`
+         *     aus, die Vorgabe): Es wird einmal für alle gewürfelt, also
+         *     darf man auch VOR der Team-Wahl neu würfeln.
+         *   - Jede Seite würfelt für sich (`armeeUnterschiedlich` an): erst
+         *     NACH dem Beitritt — vorher wüsste der Knopf nicht, wessen
+         *     Armee er neu würfelt.
+         *
+         * DIE BEENDETE PARTIE IST NICHT GEMEINT: Dort heisst derselbe Knopf
+         * zwar auch „Neu aufstellen" (der Zweig weiter oben), tut aber etwas
+         * anderes — er startet die Revanche. Der bleibt, wie er war.
+         */
+        const armeeGewuerfelt = SCHACH_RUNDE.armeeAn(partie);
+        const jedeSeiteFuerSich =
+            SCHACH_RUNDE.normalisieren(partie).regeln.armeeUnterschiedlich === true;
+        const darfNeuWuerfeln = armeeGewuerfelt
+            && (jedeSeiteFuerSich ? !!meinTeam : true);
+
+        if (!partie.ergebnis && darfNeuWuerfeln) {
             leiste.appendChild(TEAM_SCHACH._knopf("Neu aufstellen", "knopf-still knopf-klein",
                 () => TEAM_SCHACH.neuAufstellen(partie)));
         }
