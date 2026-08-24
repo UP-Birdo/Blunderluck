@@ -110,6 +110,7 @@ const TABS = {
 
     /* Merkt sich, ob gerade eine Runde als eigenes Fenster läuft. */
     _rundeOffen: false,
+    _rundeFest: false,
 
     /*
      * EINE OFFENE RUNDE IST EIN EIGENES FENSTER (seit v0.113, Nutzer-Ansage
@@ -122,13 +123,32 @@ const TABS = {
      * Die Klasse sitzt am body, das Ausblenden macht die Stildatei
      * (`body.runde-offen .tab-leiste`).
      */
-    rundeSetzen(tabId, offen) {
+    /*
+     * DER DRITTE WERT `fest` (seit v0.52.0): Dieser Bildschirm passt auf EINE
+     * Seite und rollt nicht.
+     *
+     * Er hängt hier und nicht an einer eigenen Stelle, weil `rundeSetzen`
+     * ohnehin von JEDEM Bildschirm beim Zeichnen gerufen wird — und wer
+     * nichts angibt, sagt damit „meiner rollt wie immer". Ein eigener
+     * Schalter müsste an jedem dieser Bildschirme einzeln zurückgenommen
+     * werden, und genau das vergisst man; die Klasse bliebe stehen, und der
+     * nächste Bildschirm wäre abgeschnitten.
+     */
+    rundeSetzen(tabId, offen, fest) {
         if (TABS.aktiveId !== tabId) {
             return;
         }
         if (typeof document === "undefined" || !document.body
                 || !document.body.classList) {
             return;
+        }
+
+        /* Vor dem Ausstieg unten: Auch wenn sich am „offen" nichts ändert,
+           kann sich das „fest" geändert haben (Übersicht → Partie). */
+        const sollFest = (fest === true);
+        if (TABS._rundeFest !== sollFest) {
+            TABS._rundeFest = sollFest;
+            document.body.classList.toggle("partie-fest", sollFest);
         }
 
         const soll = (offen === true);

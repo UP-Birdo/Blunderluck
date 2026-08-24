@@ -3,6 +3,22 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.52.0 — 25.08.2026
+
+**Das Match passt jetzt auf eine Seite — es rollt nicht mehr.**
+
+- Der ganze Partie-Bildschirm — Standleiste, Teams, Brett, Friedhof und
+  Züge, Fussleiste — steht **gleichzeitig da**. Kein Wischen mehr, um zu
+  sehen, wer am Zug ist oder wo das Zahnrad sitzt.
+- Das **Brett passt sich an**: Es nimmt genau die Höhe, die übrig bleibt, und
+  ist auf jedem Gerät so gross, wie es dort sein kann. Auf einem hohen Handy
+  wird es grösser als vorher, auf einem flachen Fenster kleiner.
+- Gemessen statt geschätzt: Die App rechnet die Brettgrösse aus dem, was
+  wirklich auf dem Schirm steht — beim Öffnen und jedes Mal, wenn du das
+  Gerät drehst oder das Fenster ziehst.
+- **Nur wenn es beim besten Willen nicht passt** (ein sehr flaches Fenster,
+  etwa ein quer gehaltenes Handy), bleibt das Brett benutzbar gross und die
+  Seite rollt doch — ein winziges Brett wäre die schlechtere Antwort.
 ## v0.51.0 — 25.08.2026
 
 **Das Code-Feld bei „Runde beitreten" sind jetzt sechs Kästchen — und der

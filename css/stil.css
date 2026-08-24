@@ -317,6 +317,99 @@ body.runde-offen .tab-leiste {
 }
 
 /* ------------------------------------------------------------------ *
+ * DIE FESTE SEITE: DAS MATCH ROLLT NICHT (seit v0.52.0)
+ *
+ * Nutzer-Ansage 24.08.2026: „Das Match an sich soll nicht mehr scrollbar
+ * sein, also fix eine Seite, angepasst für das Handy oder PC, Tablet und
+ * Co." Die Klasse setzt `TABS.rundeSetzen` mit ihrem dritten Wert, und zwar
+ * nur für die offene Partie — jeder andere Bildschirm nimmt sie beim
+ * Zeichnen wieder zurück.
+ *
+ * DER AUFBAU IN EINEM SATZ: Der Bildschirm ist eine Spalte über die volle
+ * Fensterhöhe, in der ALLES seine natürliche Höhe behält — ausser dem
+ * Brett-Halter. Der eine bekommt, was übrig ist, und das Brett rechnet sich
+ * daraus seine Breite (`TEAM_SCHACH._brettEinpassen`).
+ *
+ * WARUM `dvh` UND NICHT `vh`: Auf dem Handy wächst und schrumpft die
+ * Adressleiste beim Rollen. `vh` rechnet mit dem GRÖSSTEN Fenster — die
+ * Seite wäre also genau so viel zu hoch, wie die Leiste breit ist, und
+ * damit doch wieder rollbar. `dvh` ist die Höhe, die gerade wirklich da
+ * ist. Die `vh`-Zeile davor ist der Rückfall für alte Browser.
+ *
+ * WARUM DAS ROLLEN NICHT GANZ VERBOTEN IST (`overflow-y: auto` unten): Wenn
+ * das Fenster so flach ist, dass selbst das kleinste sinnvolle Brett nicht
+ * mehr hineinpasst (ein quer gedrehtes Handy), ist ein Rollbalken die
+ * bessere Antwort als eine abgeschnittene Fussleiste. Im Alltag kommt er
+ * nie vor — das Brett schrumpft vorher.
+ * ------------------------------------------------------------------ */
+
+body.partie-fest {
+    height: 100vh;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+body.partie-fest .tab-inhalt {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    padding-top: 0;
+    padding-bottom: 0;
+    width: 100%;
+}
+
+body.partie-fest .schach {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+
+    /* Der iPhone-Balken unten hält sich seinen Streifen selbst frei. */
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    overflow-y: auto;
+}
+
+/* Alles behält seine Höhe … */
+body.partie-fest .schach > * {
+    flex: 0 0 auto;
+}
+
+/* … ausser dem Brett: Es bekommt, was übrig ist. Die Untergrenze verhindert,
+   dass es im flachen Fenster auf null zusammenfällt — dann rollt die Seite
+   lieber (siehe oben).
+
+   `.schach >` steht hier nicht zur Zierde: Ohne das eine Wort wäre diese
+   Regel genau so gewichtig wie die davor, und es entschiede allein die
+   Reihenfolge in der Datei, ob das Brett wachsen darf. Wer die Datei einmal
+   umsortiert, hätte den Fehler — und er sähe aus wie ein winziges Brett. */
+body.partie-fest .schach > .brett-halter {
+    flex: 1 1 auto;
+    min-height: 200px;
+    margin: 10px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Auf der festen Seite ist jeder Zwischenraum Brettgrösse. Gestrichen wird
+   deshalb, was nur Luft ist — nicht, was etwas sagt. */
+body.partie-fest .fussleiste {
+    margin-top: 10px;
+    padding-top: 10px;
+}
+
+body.partie-fest .karte {
+    margin-bottom: 10px;
+}
+
+body.partie-fest .phasen-leiste {
+    margin-bottom: 10px;
+}
+/* ------------------------------------------------------------------ *
  * Phasenleiste
  * ------------------------------------------------------------------ */
 

@@ -371,6 +371,13 @@ const TEAM_SCHACH = {
     brettEl: null,
     feldEl: null,
 
+    /* Fürs Einpassen auf die feste Seite (v0.52.0) — gesetzt in
+       `_brettBauen`, gelesen in `_brettEinpassen`. */
+    brettHalterEl: null,
+    brettRahmenEl: null,
+    brettSpalten: 8,
+    brettReihen: 8,
+
     verbinden(abgleich) {
         TEAM_SCHACH.abgleich = abgleich;
     },
@@ -610,8 +617,14 @@ const TEAM_SCHACH = {
             : null;
 
         if (offene) {
-            /* Die offene Partie ist ein Fenster: Tab-Leiste weg (v0.113). */
-            TABS.rundeSetzen("team-schach", true);
+            /*
+             * Die offene Partie ist ein Fenster: Tab-Leiste weg (v0.113) —
+             * und seit v0.52.0 rollt sie auch nicht mehr, sondern passt auf
+             * EINE Seite (der dritte Wert). Das ist der EINZIGE Bildschirm
+             * der App, der das tut; alle anderen rufen `rundeSetzen` ohne
+             * ihn und nehmen die Klasse damit wieder zurück.
+             */
+            TABS.rundeSetzen("team-schach", true, true);
 
             /* Die stille Zeitmessung läuft nur, solange eine Partie offen ist
                (v0.93) — siehe `_zeitMessungStarten`. */
@@ -679,7 +692,10 @@ const TEAM_SCHACH = {
         wurzel.appendChild(TEAM_SCHACH._fussleisteBauen(partie, person));
 
         /* Erst wenn das Brett im Bildschirm steht, lässt sich die Feldgröße
-           messen — deshalb stehen Größe und Bewegung ganz am Ende. */
+           messen — deshalb stehen Größe und Bewegung ganz am Ende. Seit
+           v0.52.0 wird zuvor die BREITE des Bretts aus der übrigen Höhe
+           gerechnet; die Feldgröße hängt daran und kommt danach. */
+        TEAM_SCHACH._brettEinpassen();
         TEAM_SCHACH._figurGroesseSetzen();
         TEAM_SCHACH._groessenWaechterStarten();
         TEAM_SCHACH._zugAnimieren(halter, partie, person);

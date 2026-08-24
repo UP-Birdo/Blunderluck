@@ -481,5 +481,65 @@ pruefe("Die drei Beitritts-Knoepfe teilen sich eine Klasse (v0.41.0)", () => {
     }
 });
 
+/*
+ * DIE FESTE SEITE HAENGT AN GENAU EINER STELLE (seit v0.52.0).
+ *
+ * Nutzer-Ansage 24.08.2026: „Das Match an sich soll nicht mehr scrollbar
+ * sein." Gebaut ist das als Koerper-Klasse `partie-fest`, gesetzt vom
+ * DRITTEN Wert von `TABS.rundeSetzen` — und zwar nur dort, wo die offene
+ * Partie gezeichnet wird.
+ *
+ * WAS SCHIEFGEHEN KANN, und wogegen dieser Waechter steht:
+ *
+ *   - Ein zweiter Bildschirm ruft `rundeSetzen(..., true, true)`. Dann bleibt
+ *     die feste Seite an, wo sie nicht hingehoert, und alles unterhalb des
+ *     Fensterrands ist weg — ohne Rollbalken, der es verriete.
+ *   - Die Klasse verschwindet aus der Stildatei oder aus `tabs.js`. Dann
+ *     rollt das Match wieder, und `_brettEinpassen` steigt still aus (es
+ *     prueft genau diese Klasse) — es faellt also niemandem auf.
+ */
+pruefe("Die feste Seite haengt an genau einer Stelle (v0.52.0)", () => {
+    const stil = dateisystem.readFileSync(
+        pfad.join(projekt, "css", "stil.css"), "utf8");
+    const tabs = dateisystem.readFileSync(pfad.join(jsOrdner, "tabs.js"), "utf8");
+
+    if (tabs.indexOf("classList.toggle(\"partie-fest\"") === -1) {
+        throw new Error("tabs.js setzt die Klasse partie-fest nicht mehr");
+    }
+    if (stil.indexOf("body.partie-fest") === -1) {
+        throw new Error("stil.css hat keine Regel fuer body.partie-fest —"
+            + " das Match rollt wieder");
+    }
+
+    /* Wer ruft mit drittem Wert? Ueber ALLE Programmdateien gesucht, nicht
+       nur in der einen, in der er heute steht. Nur `tabs.js` bleibt aussen
+       vor: Dort steht die Vereinbarung selbst (`rundeSetzen(tabId, offen,
+       fest)`), und die sieht fuer jedes Muster aus wie ein Aufruf. Bildschirme
+       zeichnet diese Datei keine. */
+    let stellen = 0;
+    for (const name of dateisystem.readdirSync(jsOrdner)) {
+        if (!name.endsWith(".js") || name === "tabs.js") {
+            continue;
+        }
+        const quelle = dateisystem.readFileSync(pfad.join(jsOrdner, name), "utf8");
+        const treffer = quelle.match(/rundeSetzen\([^)]*,[^,)]*,[^)]*\)/g) || [];
+        stellen += treffer.length;
+    }
+
+    if (stellen !== 1) {
+        throw new Error("rundeSetzen wird an " + stellen + " Stellen mit"
+            + " drittem Wert gerufen, erwartet ist genau eine (die offene"
+            + " Partie) — die Definition in tabs.js zaehlt nicht mit");
+    }
+
+    /* Und das Brett muss sich einpassen, sonst nuetzt die feste Seite nichts. */
+    const brettDatei = dateisystem.readFileSync(
+        pfad.join(jsOrdner, "team-schach-brett.js"), "utf8");
+    if (brettDatei.indexOf("partie-fest") === -1) {
+        throw new Error("_brettEinpassen prueft die Klasse partie-fest nicht"
+            + " mehr — es wuerde auch auf rollenden Bildschirmen rechnen");
+    }
+});
+
 console.log(anzahlOk + " ok, " + anzahlFehler + " Fehler");
 process.exit(anzahlFehler === 0 ? 0 : 1);

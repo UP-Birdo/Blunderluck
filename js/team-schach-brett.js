@@ -652,6 +652,14 @@ Object.assign(TEAM_SCHACH, {
 
         halter.appendChild(rahmen);
 
+        /* Gemerkt für `_brettEinpassen` (v0.52.0): Es rechnet aus der
+           zugeteilten Höhe zurück auf die Breite und braucht dafür beide
+           Elemente und beide Seitenlängen der ANSICHT. */
+        TEAM_SCHACH.brettHalterEl = halter;
+        TEAM_SCHACH.brettRahmenEl = rahmen;
+        TEAM_SCHACH.brettSpalten = zeigeSpalten;
+        TEAM_SCHACH.brettReihen = quer ? breite : hoehe;
+
         if (!partie.laeuft && !partie.ergebnis) {
             halter.appendChild(TEAM_SCHACH._element("p", "erklaerung",
                 "Die Partie beginnt, sobald in beiden Teams jemand steht und beide "
@@ -1550,6 +1558,98 @@ Object.assign(TEAM_SCHACH, {
      * Der Rückfall in der Stildatei bleibt für den Augenblick vor der ersten
      * Messung stehen.
      */
+    /*
+     * DAS BRETT IN DIE ÜBRIGE HÖHE EINPASSEN (seit v0.52.0).
+     *
+     * Nutzer-Ansage 24.08.2026: „Das Match an sich soll nicht mehr scrollbar
+     * sein, also fix eine Seite, angepasst für das Handy oder PC, Tablet und
+     * Co."
+     *
+     * DIE STILDATEI ALLEIN KANN DAS NICHT. Sie kennt die Breite (`100%`) und
+     * die Höchstbreite der Spielart, aber nicht, wie viel Höhe nach Leiste,
+     * Teams, Fächern und Fussleiste übrig bleibt — das hängt daran, wie viele
+     * Teams mitspielen, ob eine Unglücksmeldung dasteht und ob die Zeilen auf
+     * diesem Gerät umbrechen. Eine geschätzte Zahl („rechne mit 320 px
+     * Beiwerk") wäre auf dem nächsten Gerät falsch.
+     *
+     * GEMESSEN GEHT ES: Die feste Seite ist eine Flexbox-Spalte, in der genau
+     * EIN Kind wachsen und schrumpfen darf — der Brett-Halter. Der Browser
+     * teilt ihm damit von sich aus zu, was übrig ist. Diese Zahl steht in
+     * `clientHeight`; von ihr geht ab, was neben dem Rahmen noch im Halter
+     * steht (der Hinweissatz vor dem Anpfiff), dazu die Spaltenbeschriftung
+     * unter dem Brett und die Fugen. Was bleibt, ist die Höhe fürs Brett —
+     * und aus ihr rechnet das Seitenverhältnis die Breite.
+     *
+     * NUR AUF DER FESTEN SEITE. Auf allen anderen Bildschirmen ist der Halter
+     * so hoch wie sein Inhalt; würde hier gerechnet, ergäbe das Brett seine
+     * eigene Höhe als Obergrenze — und schrumpfte bei jedem Zeichnen ein
+     * Stück weiter.
+     *
+     * DIE UNTERGRENZE ist Absicht: Passt es beim besten Willen nicht (ein
+     * sehr flaches Fenster am Rechner), bleibt das Brett benutzbar und die
+     * Seite rollt eben doch. Ein Brett von 40 Pixeln wäre die schlechtere
+     * Antwort als ein Rollbalken.
+     */
+    BRETT_MINDESTBREITE: 200,
+
+    _brettEinpassen() {
+        const halter = TEAM_SCHACH.brettHalterEl;
+        const rahmen = TEAM_SCHACH.brettRahmenEl;
+        const brett = TEAM_SCHACH.brettEl;
+
+        if (!halter || !rahmen || !brett) {
+            return;
+        }
+
+        /* Ohne echten Browser gibt es nichts zu messen — so läuft der
+           Bildschirm-Test gegen sein nachgebautes DOM. */
+        if (typeof document === "undefined" || !document.body
+                || !document.body.classList
+                || typeof document.body.classList.contains !== "function") {
+            return;
+        }
+        if (!document.body.classList.contains("partie-fest")) {
+            return;
+        }
+        if (typeof halter.clientHeight !== "number"
+                || typeof halter.querySelector !== "function") {
+            return;
+        }
+
+        const spalten = TEAM_SCHACH.brettSpalten || 8;
+        const reihen = TEAM_SCHACH.brettReihen || 8;
+        const obergrenze = Math.min(64 * spalten, 900);
+
+        const platz = halter.clientHeight;
+        if (!platz) {
+            return;
+        }
+
+        /* Alles im Halter, was nicht der Rahmen ist. */
+        let daneben = 0;
+        for (const kind of halter.children || []) {
+            if (kind !== rahmen) {
+                daneben += kind.offsetHeight || 0;
+            }
+        }
+
+        /* Im Rahmen steht unter dem Brett die Spaltenbeschriftung; das
+           Raster des Rahmens hat 2 Pixel Fuge dazwischen. */
+        const randEl = halter.querySelector(".brett-rand-spalten");
+        const rand = (randEl && randEl.offsetHeight) ? randEl.offsetHeight : 0;
+
+        /* Und das Brett selbst hat oben und unten je 2 Pixel Rahmenlinie,
+           die nicht zu den Feldern gehören. */
+        const fuersBrett = platz - daneben - rand - 2 - 4;
+        const ausDerHoehe = Math.floor(fuersBrett * spalten / reihen) + 4;
+
+        const breite = Math.max(TEAM_SCHACH.BRETT_MINDESTBREITE,
+            Math.min(obergrenze, ausDerHoehe));
+
+        brett.style.setProperty("--brett-max", breite + "px");
+        rahmen.style.setProperty("--brett-max", breite + "px");
+    },
+
     _figurGroesseSetzen() {
         const brett = TEAM_SCHACH.brettEl;
         const zelle = TEAM_SCHACH.feldEl;
@@ -1603,11 +1703,18 @@ Object.assign(TEAM_SCHACH, {
 
         TEAM_SCHACH._groessenWaechterLaeuft = true;
 
+        /* Reihenfolge zählt: Erst die Breite des Bretts festlegen, dann die
+           Figuren daraus messen — andersherum stünde die alte Feldbreite in
+           der neuen Zelle. */
         const nachmessen = () => {
-            if (typeof requestAnimationFrame === "function") {
-                requestAnimationFrame(() => TEAM_SCHACH._figurGroesseSetzen());
-            } else {
+            const messen = () => {
+                TEAM_SCHACH._brettEinpassen();
                 TEAM_SCHACH._figurGroesseSetzen();
+            };
+            if (typeof requestAnimationFrame === "function") {
+                requestAnimationFrame(messen);
+            } else {
+                messen();
             }
         };
 
