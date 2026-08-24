@@ -1566,6 +1566,45 @@ pruefe("Der Abschluss schluesselt die Punkte auf (v0.53)", () => {
     }
 });
 
+pruefe("Der Abschluss ist ein Fenster ohne Tab-Leiste (v0.45.0)", () => {
+    /*
+     * „Wie es dazu kam und so sollen unten die Menü-Leiste verschwinden —
+     * man muss durch klicken, um dorthin zu kommen" (Nutzer, 24.08.2026).
+     *
+     * Geprueft an der Rueckschau (Schritt 0). Die Ausgangslage wird
+     * danach wiederhergestellt, weil die folgenden Tests damit rechnen.
+     */
+    const echteDaten = TEAM_SCHACH.abgleich.daten;
+    const echterAbschluss = TEAM_SCHACH.abschluss;
+    const person = umgebung.ICH.person();
+
+    try {
+        const angelegt = SCHACH_TAFEL.partieAnlegen(
+            SCHACH_TAFEL.leereTafel(8200), "standard", "Vorbei", 8210);
+        let partie = SCHACH_RUNDE.teamBeitreten(angelegt.partie, person.id, "weiss", 8220);
+        partie = SCHACH_RUNDE.teamBeitreten(partie, "id-bert", "schwarz", 8220);
+        partie = SCHACH_RUNDE.bereitSetzen(partie, "weiss", true, 8230);
+        partie = SCHACH_RUNDE.bereitSetzen(partie, "schwarz", true, 8230);
+        partie = SCHACH_RUNDE.aufgeben(partie, "weiss", 8240);
+
+        TEAM_SCHACH.abgleich.daten = SCHACH_TAFEL.partieEinsetzen(
+            angelegt.tafel, partie, 8240);
+        TEAM_SCHACH.abschluss = { id: partie.id, schritt: 0 };
+        umgebung.TABS.zuletzt = null;
+        TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
+
+        if (!umgebung.TABS.zuletzt || umgebung.TABS.zuletzt.offen !== true) {
+            throw new Error("die Tab-Leiste steht noch: "
+                + JSON.stringify(umgebung.TABS.zuletzt));
+        }
+    } finally {
+        TEAM_SCHACH.abgleich.daten = echteDaten;
+        TEAM_SCHACH.abschluss = echterAbschluss;
+        TEAM_SCHACH.offeneId = "";
+        umgebung.TABS.gewechseltZu = "";
+    }
+});
+
 pruefe("Wer bereit ist, sieht die andere Seite nicht mehr als Angebot (v0.44.0)", () => {
     /*
      * Nutzer-Entscheidung 24.08.2026 zu Punkt 7: „2. kann raus, du bist

@@ -548,6 +548,25 @@ const TEAM_SCHACH = {
             const partie = SCHACH_TAFEL.partie(tafel, TEAM_SCHACH.abschluss.id);
 
             if (partie && partie.ergebnis) {
+                /*
+                 * DER ABSCHLUSS IST EIN FENSTER (seit v0.45.0).
+                 *
+                 * Nutzer-Ansage 24.08.2026: „Wie es dazu kam und so sollen
+                 * unten die Menü-Leiste verschwinden — man muss durch
+                 * klicken, um dorthin zu kommen." Genau das ist der
+                 * Unterschied zu einem Tab: Rückschau, Ergebnis und
+                 * Punktestand sind drei Schritte eines Weges, den man
+                 * angetreten hat. Wer dazwischen auf einen Tab tippt,
+                 * verliert die Stelle, an der er war.
+                 *
+                 * Hinaus führt der Knopf am Ende jedes Schritts; er ruft
+                 * `abschlussSchliessen`, und das geht seit v0.36.0 auf den
+                 * Startbildschirm, der die Leiste selbst wieder einschaltet.
+                 */
+                if (typeof TABS !== "undefined" && TABS.rundeSetzen) {
+                    TABS.rundeSetzen("team-schach", true);
+                }
+
                 TEAM_SCHACH._abschlussZeichnen(wurzel, partie, person);
                 return;
             }

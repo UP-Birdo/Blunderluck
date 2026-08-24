@@ -3,6 +3,17 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.45.0 — 24.08.2026
+
+**Der Abschluss einer Partie ist jetzt ein eigenes Fenster.**
+
+- Rückschau („wie es dazu kam"), Ergebnis und Punktestand sind drei
+  Schritte eines Weges. Die Leiste unten verschwindet dabei — wer
+  zwischendurch auf einen Tab tippt, verliert sonst die Stelle, an der er
+  gerade war.
+- Hinaus geht es über den Knopf am Ende des jeweiligen Schritts; er bringt
+  dich auf den Startbildschirm, und dort ist die Leiste wieder da.
+
 ## v0.44.0 — 24.08.2026
 
 **Wenn du bereit bist, wird es ruhig auf dem Bildschirm.**
