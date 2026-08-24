@@ -1955,9 +1955,51 @@ pruefe("Der Zwischenbildschirm listet die eigenen offenen Partien nicht mehr (v0
     if (text.indexOf("Deine offenen Partien") !== -1) {
         throw new Error("die Liste steht noch da");
     }
-    if (text.indexOf("Beitritts-Code") === -1) {
+    /* Der Kasten wird an seiner KLASSE erkannt, nicht am Text: Seit v0.51.0
+       steht dort kein Erklaersatz mit dem Wort „Beitritts-Code" mehr, sondern
+       das Kaestchen-Feld und ein kurzer Hinweis darunter. */
+    if (!klasseSuchen(TEAM_SCHACH.wurzelEl, "code-feld")) {
         throw new Error("der Code-Kasten fehlt — der Bildschirm ist kaputt,"
             + " nicht aufgeraeumt");
+    }
+});
+
+pruefe("Das Code-Feld traegt den Hinweis darunter, nicht darin (v0.51.0)", () => {
+    /*
+     * NUTZER-ANSAGE 24.08.2026, aufgeloest am 25.08.2026: sechs Kaestchen,
+     * der Satz „rechts oben in einer Runde steht der Code" DARUNTER. Im Feld
+     * waere er nach zwei Woertern abgeschnitten gewesen.
+     *
+     * Geprueft wird dreierlei: der alte, lange Erklaersatz ist weg, der neue
+     * kurze steht da, und das Feld nimmt weiter genau CODE_LAENGE Zeichen.
+     */
+    TEAM_SCHACH.uebersichtOeffnen();
+
+    const textSammeln = (element) => {
+        let text = String(element.textContent || "");
+        for (const kind of element.kinder || []) {
+            text += " " + textSammeln(kind);
+        }
+        return text;
+    };
+    const text = textSammeln(TEAM_SCHACH.wurzelEl);
+
+    if (text.indexOf("Gib den Beitritts-Code ein") !== -1) {
+        throw new Error("der alte Erklaersatz steht noch da");
+    }
+    if (text.indexOf("Rechts oben in einer Runde steht der Code") === -1) {
+        throw new Error("der neue Hinweis fehlt");
+    }
+
+    const hinweis = klasseSuchen(TEAM_SCHACH.wurzelEl, "code-hinweis");
+    if (!hinweis) {
+        throw new Error("der Hinweis traegt seine Klasse nicht");
+    }
+
+    const feld = klasseSuchen(TEAM_SCHACH.wurzelEl, "code-feld");
+    if (feld.maxLength !== SCHACH_RUNDE.CODE_LAENGE) {
+        throw new Error("das Feld nimmt " + feld.maxLength
+            + " Zeichen statt " + SCHACH_RUNDE.CODE_LAENGE);
     }
 });
 

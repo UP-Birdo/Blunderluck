@@ -4632,25 +4632,78 @@ body.dialog-offen {
     gap: 8px;
 }
 
+/*
+ * SECHS KÄSTCHEN AUS EINEM EINZIGEN FELD (seit v0.51.0)
+ *
+ * Nutzer-Entscheidung 25.08.2026: Das Feld ist genau so breit, wie der Code
+ * lang ist — sechs Kästchen, wie man sie von Bestätigungscodes kennt. Der
+ * Hinweissatz steht darunter (`.code-hinweis`), nicht im Feld.
+ *
+ * DIE KÄSTCHEN SIND EIN HINTERGRUNDBILD, kein zweites Element und schon gar
+ * nicht sechs Eingabefelder. Alles, was der Browser bei EINEM Feld von sich
+ * aus kann — Einfügen eines kopierten Codes, Zurücklöschen, die Tastatur des
+ * Handys —, bliebe sonst zum Nachbauen übrig.
+ *
+ * DIE RECHNUNG DAHINTER, in einem Satz je Zeile:
+ *
+ *   --code-zelle   Die Breite EINER Zelle, Lücke eingerechnet.
+ *   --code-luft    Was in der Zelle neben dem Zeichen frei bleibt. `1ch` ist
+ *                  die Vorschubbreite der Schrift; weil sie fest ist
+ *                  (`monospace`), ist die Zahl für jedes Zeichen dieselbe.
+ *   letter-spacing Genau diese Luft hinter jedes Zeichen — damit rückt jedes
+ *                  Zeichen um volle Zellenbreite weiter.
+ *   padding-left   Die halbe Luft, damit jedes Zeichen in der MITTE seiner
+ *                  Zelle sitzt und nicht am linken Rand.
+ *   width          Sechs Zellen plus die halbe Luft. Die halbe Luft ist
+ *                  nicht Zierde, sondern Pflicht: `letter-spacing` setzt
+ *                  den Abstand auch hinter das SECHSTE Zeichen, und stünde
+ *                  der Schreibstrich danach ausserhalb des Feldes, würde
+ *                  der Browser den Inhalt verschieben — die Zeichen
+ *                  stünden beim letzten Buchstaben plötzlich schief in
+ *                  ihren Kästchen.
+ *   background     Sechs gefüllte Kästchen mit `--code-luecke` Abstand, das
+ *                  Bild genau sechs Zellen breit und einmalig. Was rechts
+ *                  übrig bleibt, ist durchsichtig — die halbe Luft von oben
+ *                  fällt dadurch niemandem auf.
+ *
+ * Ändert sich je die Code-Länge (`SCHACH_RUNDE.CODE_LAENGE`), stehen hier
+ * zwei Sechsen: in `width` und in `background-size`.
+ */
 .code-feld {
-    flex: 1 1 auto;
-    min-width: 0;
-    padding: 10px;
+    --code-zelle: 32px;
+    --code-luecke: 5px;
+    --code-luft: calc(var(--code-zelle) - 1ch);
+
+    flex: 0 0 auto;
+    width: calc(var(--code-zelle) * 6 + var(--code-luft) / 2);
+    padding: 10px 0 10px calc(var(--code-luft) / 2);
     font: inherit;
-    font-size: 1.2rem;
-    letter-spacing: 0.35em;
-    text-transform: uppercase;
+    font-size: 1.4rem;
     font-family: "Consolas", "Courier New", monospace;
+    letter-spacing: var(--code-luft);
+    text-transform: uppercase;
     color: var(--schrift);
-    background: var(--karte);
-    border: 1px solid var(--rahmen);
+    background-color: transparent;
+    background-image: repeating-linear-gradient(to right,
+        transparent 0 calc(var(--code-luecke) / 2),
+        var(--karte-leise) calc(var(--code-luecke) / 2)
+            calc(var(--code-zelle) - var(--code-luecke) / 2),
+        transparent calc(var(--code-zelle) - var(--code-luecke) / 2) var(--code-zelle));
+    background-size: calc(var(--code-zelle) * 6) 100%;
+    background-repeat: no-repeat;
+    border: none;
     border-radius: 6px;
 }
 
 .code-feld:focus {
     outline: 2px solid var(--haupt);
-    outline-offset: 1px;
+    outline-offset: 2px;
 }
+
+.code-hinweis {
+    margin-top: 8px;
+}
+
 
 /* `.beitritts-code-wert` (der Code bei den Teams) ist mit v0.40.1
    entfallen — seit v0.40.0 steht er blass oben im Kopf (`.partie-code`),

@@ -3,6 +3,20 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.51.0 — 25.08.2026
+
+**Das Code-Feld bei „Runde beitreten" sind jetzt sechs Kästchen — und der
+lange Erklärsatz ist weg.**
+
+- Statt eines breiten Textfelds stehen dort **sechs Kästchen**, eines je
+  Zeichen. Man sieht auf einen Blick, wie lang der Code ist, und wie weit
+  man beim Tippen ist.
+- Darüber stand bisher ein dreizeiliger Satz („Gib den Beitritts-Code ein,
+  den dir der Ersteller … 6 Zeichen, ohne 0, O, 1, I und L"). Er ist ersetzt
+  durch eine kurze Zeile **unter** dem Feld: „Rechts oben in einer Runde
+  steht der Code."
+- Die Länge muss nicht mehr danebenstehen — das sagen die Kästchen. Und die
+  verwechselbaren Zeichen nimmt das Feld ohnehin nicht an.
 ## v0.50.0 — 25.08.2026
 
 **Auch die Züge stecken jetzt in einem Knopf — und beide stehen

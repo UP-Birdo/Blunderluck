@@ -1166,11 +1166,34 @@ Object.assign(TEAM_SCHACH, {
             }
         }
 
-        beitreten.appendChild(TEAM_SCHACH._element("p", "erklaerung",
-            "Gib den Beitritts-Code ein, den dir der Ersteller der Runde "
-            + "gegeben hat — " + SCHACH_RUNDE.CODE_LAENGE + " Zeichen, ohne "
-            + "0, O, 1, I und L."));
-
+        /*
+         * DAS CODE-FELD IST EIN KÄSTCHEN-FELD (seit v0.51.0).
+         *
+         * Nutzer-Ansage 24.08.2026: „Den Text anpassen bei Runde beitreten —
+         * es reicht ‚rechts oben in einer Runde steht der Code' oder so, und
+         * das am besten ins Suchfeld selbst, und das Suchfeld soll nur
+         * 6 Felder haben."
+         *
+         * BEIDES ZUSAMMEN GEHT NICHT, und der Nutzer hat am 25.08.2026
+         * entschieden, wie es aufgelöst wird: sechs Kästchen (das Feld ist
+         * dann genau so breit, wie der Code lang ist), der Hinweissatz blass
+         * DARUNTER statt im Feld. Im Feld wäre er nach zwei Wörtern
+         * abgeschnitten gewesen.
+         *
+         * GEBAUT IST ES MIT EINEM EINZIGEN `input`, nicht mit sechs. Die
+         * Kästchen zeichnet die Stildatei als Trennstriche im Hintergrund.
+         * Sechs echte Felder müssten den Sprung von Kästchen zu Kästchen,
+         * das Zurücklöschen und das Einfügen eines kopierten Codes von Hand
+         * nachbauen — dreimal Gelegenheit für einen Fehler, und der
+         * Zwischenspeicher des Handys fällt dabei erfahrungsgemäss als
+         * Erstes durch. Mit einem Feld bleibt alles, was der Browser schon
+         * kann, und die Prüfung darunter ist unverändert dieselbe.
+         *
+         * DER SATZ NENNT DIE LÄNGE NICHT MEHR: Die sechs Kästchen sagen sie.
+         * Auch die Ausnahme-Zeichen (0, O, 1, I, L) stehen nicht mehr da —
+         * das Feld nimmt sie ohnehin nicht an, und wer sie nie tippen kann,
+         * muss auch nicht darüber lesen.
+         */
         const codeZeile = TEAM_SCHACH._element("div", "code-zeile");
 
         const codeFeld = document.createElement("input");
@@ -1202,6 +1225,13 @@ Object.assign(TEAM_SCHACH, {
         });
 
         beitreten.appendChild(codeZeile);
+
+        /* Der Hinweis steht UNTER dem Feld — kurz genug, um ihn im Vorbeigehen
+           zu lesen, und er sagt genau das eine, was man wissen muss: wo der
+           Code steht. Seit v0.47.0 ist das die mitlaufende Leiste oben rechts. */
+        beitreten.appendChild(TEAM_SCHACH._element("p", "erklaerung code-hinweis",
+            "Rechts oben in einer Runde steht der Code."));
+
         wurzel.appendChild(beitreten);
 
         /*
