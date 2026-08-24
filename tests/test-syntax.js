@@ -76,6 +76,7 @@ globalThis.SCHACH_VARIANTEN = require(pfad.join(jsOrdner, "schach-varianten.js")
 globalThis.SCHACH = require(pfad.join(jsOrdner, "schach.js"));
 globalThis.SCHACH_RUNDE = require(pfad.join(jsOrdner, "schach-runde.js"));
 globalThis.SCHACH_TAFEL = require(pfad.join(jsOrdner, "schach-tafel.js"));
+globalThis.SCHACH_BOT = require(pfad.join(jsOrdner, "schach-bot.js"));
 
 const bausteine = {
     SPIELER: globalThis.SPIELER,
@@ -83,6 +84,7 @@ const bausteine = {
     SCHACH_VARIANTEN: globalThis.SCHACH_VARIANTEN,
     SCHACH_RUNDE: globalThis.SCHACH_RUNDE,
     SCHACH_TAFEL: globalThis.SCHACH_TAFEL,
+    SCHACH_BOT: globalThis.SCHACH_BOT,
     RANGLISTE: require(pfad.join(jsOrdner, "rangliste.js")),
     VERSIEGELUNG: require(pfad.join(jsOrdner, "versiegelung.js"))
 };

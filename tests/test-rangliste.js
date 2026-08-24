@@ -15,6 +15,8 @@ globalThis.SCHACH_VARIANTEN = require(pfad.join(__dirname, "..", "js", "schach-v
 globalThis.SCHACH = require(pfad.join(__dirname, "..", "js", "schach.js"));
 globalThis.SCHACH_RUNDE = require(pfad.join(__dirname, "..", "js", "schach-runde.js"));
 globalThis.SCHACH_TAFEL = require(pfad.join(__dirname, "..", "js", "schach-tafel.js"));
+/* Seit v0.27.0 fragt die Rangliste, ob ein Computer mitgespielt hat. */
+globalThis.SCHACH_BOT = require(pfad.join(__dirname, "..", "js", "schach-bot.js"));
 const RANGLISTE = require(pfad.join(__dirname, "..", "js", "rangliste.js"));
 
 const SPIELER = globalThis.SPIELER;

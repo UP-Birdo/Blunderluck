@@ -16,6 +16,11 @@ wird. Die Liste dessen, was noch kommt, steht in [../ROADMAP.md](../ROADMAP.md).
 
 ## entschieden.md - Blunderluck-Eintraege
 
+- Der Computer-Gegner, Stufe 1 (24.08.2026, v0.27.0 — Bot als
+  Team-Mitglied, kein neues Feld im Datenvertrag; ZWEI Entscheidungen ohne
+  Rueckfrage: Bot-Partien zaehlen nicht fuer die Rangliste, und der Bot
+  liest von einer Lootbox nur die Feldnummer. Bauvorlage aller drei Stufen:
+  docs\entwurf-bot.md)
 - Buendel A: Konto, Startbildschirm, Code, Freunde, Einladungen
   (23./24.08.2026, v0.6.0 bis v0.13.0 — Bauvorlage und alle 19 Antworten:
   docs\entwurf-konto-und-startbildschirm.md)

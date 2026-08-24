@@ -74,7 +74,8 @@ $gesperrteDateien    = @("TODO.md", "TODO-Archiv.md", "ROADMAP.md", "ROADMAP-Arc
                          # Interne Planung - liegt in docs\, gehoert aber nicht
                          # ins oeffentliche Repo.
                          "uebergabe-schach-app.md",
-                         "entwurf-konto-und-startbildschirm.md")
+                         "entwurf-konto-und-startbildschirm.md",
+                         "entwurf-bot.md")
 
 # Diese Endungen sind KEIN Text. Sie muessen als eigener Datenklumpen (Blob)
 # hochgeladen werden - wuerde man sie als Text lesen und senden, kaeme auf der

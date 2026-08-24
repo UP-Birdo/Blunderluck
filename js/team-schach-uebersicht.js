@@ -164,6 +164,21 @@ Object.assign(TEAM_SCHACH, {
          * der gesetzt ist — ohne Würfel gäbe es nichts anzuzeigen.
          */
         const schalter = [
+            /*
+             * GEGEN DEN COMPUTER STEHT GANZ OBEN (seit v0.27.0). Der Haken
+             * beantwortet nicht die Frage „wie wird gespielt", sondern
+             * „gegen wen" — und das entscheidet man zuerst. Alle weiteren
+             * Einstellungen gelten danach unverändert.
+             */
+            {
+                schluessel: "gegenComputer",
+                titel: "Gegen den Computer",
+                hinweis: "An sitzt der Computer in Schwarz und zieht von "
+                    + "selbst — du brauchst niemanden dazu. Er schlägt, was "
+                    + "er kriegen kann, und sammelt Lootboxen ein, schaut "
+                    + "aber noch nicht voraus. Solche Runden zählen nicht "
+                    + "für die Rangliste."
+            },
             {
                 schluessel: "faehigkeiten",
                 titel: "Lootboxen",

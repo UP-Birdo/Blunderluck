@@ -75,6 +75,25 @@ const RANGLISTE = {
         };
 
         for (const partie of SCHACH_TAFEL.normalisieren(tafel).chronik) {
+            /*
+             * PARTIEN GEGEN DEN COMPUTER ZÄHLEN NICHT (seit v0.27.0).
+             *
+             * Die gemeinsame Tabelle vergleicht Menschen miteinander. Ein
+             * Bot der Stufe 1 schaut nicht voraus und ist leichte Beute —
+             * wer gegen ihn spielt, sammelte sonst Punkte, für die niemand
+             * etwas riskiert hat, und die Tabelle sagte nichts mehr aus.
+             * Die Partie bleibt vollständig in der Chronik stehen; nur die
+             * Wertung lässt sie aus.
+             *
+             * Zurücknehmen ist eine Zeile: diese Prüfung entfernen. Dann
+             * zählen Bot-Partien wie jede andere — der Bot selbst taucht in
+             * der Tabelle trotzdem nicht auf, weil sie ihre Zeilen aus der
+             * Spielerliste baut und er dort keinen Eintrag hat.
+             */
+            if (SCHACH_BOT.istBotPartie(partie)) {
+                continue;
+            }
+
             for (const farbe of ["weiss", "schwarz"]) {
                 const teil = RANGLISTE.schachPunkteJePartie(partie, farbe);
 
@@ -196,6 +215,13 @@ const RANGLISTE = {
         const liste = [];
 
         for (const partie of SCHACH_TAFEL.normalisieren(schachTafel).chronik) {
+            /* Dieselbe Ausnahme wie in `schachPunkte` (v0.27.0): Das Profil
+               erklärt, wie die Summe zustande kommt — es darf deshalb keine
+               Partie zeigen, die gar nicht mitgezählt wurde. */
+            if (SCHACH_BOT.istBotPartie(partie)) {
+                continue;
+            }
+
             const farbe = (partie.teams.weiss.indexOf(spielerId) !== -1)
                 ? "weiss"
                 : ((partie.teams.schwarz.indexOf(spielerId) !== -1) ? "schwarz" : "");
@@ -240,7 +266,8 @@ const RANGLISTE = {
             + "Beute: " + RANGLISTE.PUNKTE_JE_FIGURENWERT + " je Figurenwert "
             + "(Bauer 1, Springer und Läufer 3, Turm 5, Dame 9), höchstens "
             + RANGLISTE.PUNKTE_BEUTE_HOECHSTENS + " je Partie.\n\n"
-            + "Laufende Partien zählen nicht. Im Team bekommen alle dasselbe — "
+            + "Laufende Partien und Partien gegen den Computer zählen nicht. "
+            + "Im Team bekommen alle dasselbe — "
             + "wer wie viel gezogen hat, zählt nicht. Bei Gleichstand "
             + "entscheidet der Name.";
     },

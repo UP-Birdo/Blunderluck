@@ -1,5 +1,55 @@
 # Blunderluck - Entscheidungen / Entschieden - und warum
 
+## Der Computer-Gegner, Stufe 1 (24.08.2026, v0.27.0)
+
+Auftrag des Nutzers: den Bot einordnen und bauen. Die Bauvorlage mit allen
+Stufen steht in [../entwurf-bot.md](../entwurf-bot.md); hier nur, was
+entschieden wurde und warum.
+
+**Vier Entscheidungen, die den Umbau klein gehalten haben:**
+
+- **Der Bot ist ein Team-Mitglied, keine neue Art von Spieler.** Seine
+  Kennung `bot` steht in `teams.schwarz` wie jede andere. Damit gilt für ihn
+  ohne eine Zeile Sonderfall alles, was schon da war: Zugrecht, Zugzähler,
+  Verlauf, Bilanz, Beute.
+- **Kein neues Feld im Datenvertrag.** Ob ein Computer mitspielt, steht
+  schon in den Teams (`SCHACH_BOT.istBotPartie`). Ein zusätzliches
+  `regeln.gegenComputer` wäre eine zweite Quelle für dieselbe Aussage — und
+  zwei Quellen laufen auseinander (dieselbe Lehre wie „eine Regel steht
+  genau einmal"). Der Haken lebt nur in der Geräte-Erinnerung des Starts.
+- **`istBotPartie` liest die Teams DIREKT, ohne `normalisieren`.** Die Frage
+  wird auch an Chronik-Einträge gestellt (Rangliste), und die haben keinen
+  Spielstand. Über `normalisieren` würde für jede beendete Partie ein Brett
+  aufgebaut — bei jedem Zeichnen, also alle drei Sekunden.
+- **Abstimmung aus in Bot-Runden.** `einigkeit` wird beim Anlegen still auf
+  `false` gesetzt: Man ist allein in seinem Team, und der Computer stimmt
+  über nichts ab. Die Geräte-Erinnerung bleibt unberührt — für die nächste
+  Runde gegen Menschen gilt der Haken wieder.
+
+**Zwei Entscheidungen OHNE Rückfrage getroffen** (beide sind
+Spielgefühl-Fragen; wenn der Nutzer sie anders will, ist es je eine Zeile):
+
+- **Partien gegen den Computer zählen nicht für die Rangliste.** Die
+  gemeinsame Tabelle vergleicht Menschen. Ein Bot der Stufe 1 schaut nicht
+  voraus und ist leichte Beute; wer gegen ihn spielt, sammelte Punkte, für
+  die niemand etwas riskiert hat. Die Partie bleibt vollständig in der
+  Chronik stehen, nur `RANGLISTE.schachPunkte` und `RANGLISTE.verlauf`
+  lassen sie aus. **Zurücknehmen:** die beiden `istBotPartie`-Prüfungen in
+  `rangliste.js` entfernen. Der Bot selbst taucht in der Tabelle auch dann
+  nicht auf — sie baut ihre Zeilen aus der Spielerliste, und dort hat er
+  keinen Eintrag.
+- **Der Bot spickt nicht.** Von einer liegenden Lootbox liest er nur, DASS
+  sie daliegt — nie `art`, `stufe` oder `pech`. Technisch käme er heran, der
+  Stand liegt offen in der Datenbank. Genau deshalb steht die Regel im Kopf
+  von `schach-bot.js` und wird geprüft: Dieselbe Stellung mit einer guten
+  und mit einer Unglücks-Box muss denselben Zug ergeben. Ein Bot, der
+  Unglückskisten meidet, während der Mensch sie nicht sieht, gewinnt mit
+  Wissen, das im Spiel gar nicht vorgesehen ist.
+
+**Was Stufe 1 bewusst NICHT kann:** vorausschauen (Stufe 2) und Fähigkeiten
+einsetzen (Stufe 3). Beides steht mit Vorgehen und Kostenfalle in der
+Bauvorlage und ist in der `ROADMAP.md` eingeordnet.
+
 ## Bündel A: Konto, Startbildschirm, Code, Freunde, Einladungen (23./24.08.2026)
 
 Nutzer-Vorgabe, in mehreren Gesprächsrunden entstanden und in **acht

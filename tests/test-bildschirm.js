@@ -394,7 +394,7 @@ umgebung.TABS = {
  * Test sie greifen kann.
  */
 const bausteinNamen = ["KONFIG", "SPIELER", "ANMELDUNG", "SCHACH_VARIANTEN", "SCHACH", "SCHACH_RUNDE",
-    "SCHACH_TAFEL", "SCHACH_VORSCHAU", "SCHACH_GRUNDLAGEN", "TEAM_SCHACH",
+    "SCHACH_TAFEL", "SCHACH_BOT", "SCHACH_VORSCHAU", "SCHACH_GRUNDLAGEN", "TEAM_SCHACH",
     "RANGLISTE", "START", "FAEHIGKEITEN", "FREUNDE", "EINSTELLUNGEN",
     "SpeicherGemeinsam",
     /* Seit v0.76 auch der Abgleich: Sein Rennen mit der regelmaessigen Abfrage
@@ -406,7 +406,8 @@ const bausteinNamen = ["KONFIG", "SPIELER", "ANMELDUNG", "SCHACH_VARIANTEN", "SC
 const dateien = ["konfig.js", "spieler.js", "speicher.js", "abgleich.js",
     "anmeldung.js",
     "schach-varianten.js",
-    "schach.js", "schach-runde.js", "schach-tafel.js", "schach-vorschau.js",
+    "schach.js", "schach-runde.js", "schach-tafel.js", "schach-bot.js",
+    "schach-vorschau.js",
     "schach-grundlagen.js",
     "team-schach.js",
     "team-schach-uebersicht.js", "team-schach-brett.js", "team-schach-auswertung.js",
@@ -427,6 +428,7 @@ const SCHACH = umgebung.SCHACH;
 const SCHACH_VARIANTEN = umgebung.SCHACH_VARIANTEN;
 const SCHACH_RUNDE = umgebung.SCHACH_RUNDE;
 const SCHACH_TAFEL = umgebung.SCHACH_TAFEL;
+const SCHACH_BOT = umgebung.SCHACH_BOT;
 const SCHACH_GRUNDLAGEN = umgebung.SCHACH_GRUNDLAGEN;
 const TEAM_SCHACH = umgebung.TEAM_SCHACH;
 const RANGLISTE = umgebung.RANGLISTE;
@@ -767,7 +769,24 @@ pruefe("Ein Haken zeigt seine Unterpunkte SOFORT (v0.71)", () => {
         throw new Error("die Stufen stehen da, bevor Lootboxen angehakt sind");
     }
 
-    const kasten = suchen("schalter-kasten")[0];
+    /*
+     * DER HAKEN WIRD UEBER SEINEN TITEL GESUCHT, NICHT UEBER SEINE STELLE
+     * (seit v0.27.0). Bis dahin stand hier `suchen("schalter-kasten")[0]` —
+     * das war so lange richtig, wie „Lootboxen" der erste Haken war. Mit
+     * „Gegen den Computer" darueber prueft der Test sonst lautlos den
+     * falschen Schalter und meldet „der Haken kam nicht an".
+     */
+    const zeileMitTitel = (text) => suchen("schalter-zeile").find((zeile) => {
+        const titel = klasseSuchen(zeile, "schalter-titel");
+        return titel && String(titel.textContent || "") === text;
+    });
+
+    const lootboxZeile = zeileMitTitel("Lootboxen");
+    if (!lootboxZeile) {
+        throw new Error("der Haken Lootboxen fehlt");
+    }
+
+    const kasten = lootboxZeile.kinder.find((kind) => kind.tagName === "input");
     if (!kasten) {
         throw new Error("kein Haken gezeichnet");
     }
@@ -3709,6 +3728,162 @@ async function zeitlimitPruefen() {
             } finally {
                 TEAM_SCHACH.abgleich.daten = echteDaten;
                 TEAM_SCHACH.offeneId = "";
+            }
+        });
+
+    /* ---------------------------------------------------------------- *
+     * Gegen den Computer (v0.27.0)
+     * ---------------------------------------------------------------- */
+
+    await pruefeMitWarten("Der Haken Gegen-den-Computer setzt den Bot in die Runde",
+        async () => {
+            const START = umgebung.START;
+            const echteDaten = TEAM_SCHACH.abgleich.daten;
+
+            /* Leeres Brett, sonst greift die Sperre gegen die zweite
+               Partie (F11) — Anna steckt in allen Partien der Testtafel. */
+            TEAM_SCHACH.abgleich.daten = SCHACH_TAFEL.leereTafel(9700);
+
+            try {
+                START.spielartMerken(SCHACH_VARIANTEN.liste[0].id);
+                START.regelnMerken(Object.assign(TEAM_SCHACH._regelnVorgabe(),
+                    { gegenComputer: true }));
+
+                await START.spielen();
+
+                const partie = SCHACH_TAFEL.liste(TEAM_SCHACH.abgleich.daten)[0];
+                if (!partie) {
+                    throw new Error("Spielen hat keine Runde angelegt");
+                }
+                if (SCHACH_RUNDE.teamVon(partie, "id-anna") !== "weiss") {
+                    throw new Error("der Mensch spielt nicht Weiss");
+                }
+                if (SCHACH_RUNDE.teamVon(partie, SCHACH_BOT.KENNUNG) !== "schwarz") {
+                    throw new Error("der Computer sitzt nicht in Schwarz");
+                }
+                if (partie.bereit.schwarz !== true) {
+                    throw new Error("der Computer ist nicht sofort bereit");
+                }
+
+                /*
+                 * Die Abstimmung im Team passt nicht zum Solo-Spiel und wird
+                 * fuer diese Runde still ausgeschaltet — die Vorgabe des
+                 * Reglers ist `einigkeit: true`, hier muss sie weg sein.
+                 */
+                if (partie.regeln.einigkeit !== false) {
+                    throw new Error("die Abstimmung ist in der Bot-Runde noch an");
+                }
+
+                /* Und der Computer heisst am Bildschirm nicht Unbekannt. */
+                if (TEAM_SCHACH._nameVon(SCHACH_BOT.KENNUNG) !== SCHACH_BOT.NAME) {
+                    throw new Error("der Computer hat keinen Namen");
+                }
+            } finally {
+                TEAM_SCHACH.abgleich.daten = echteDaten;
+                TEAM_SCHACH.offeneId = "";
+                umgebung.TABS.gewechseltZu = "";
+                START.regelnMerken(TEAM_SCHACH._regelnVorgabe());
+            }
+        });
+
+    await pruefeMitWarten("Eine Bot-Runde schliesst sich, wenn der Mensch geht",
+        async () => {
+            /*
+             * OHNE DIESE AUSNAHME BLIEBE JEDE BOT-RUNDE STEHEN: `_istVerwaist`
+             * verlangte bis v0.26.0 ZWEI leere Teams, und in Schwarz sitzt
+             * der Computer. Fuer jede angelegte und wieder verlassene Partie
+             * gegen den Computer bliebe eine Runde im gemeinsamen Stand.
+             */
+            const echteDaten = TEAM_SCHACH.abgleich.daten;
+
+            try {
+                const angelegt = SCHACH_TAFEL.partieAnlegen(
+                    SCHACH_TAFEL.leereTafel(9800),
+                    SCHACH_VARIANTEN.liste[0].id, "Gegen den Computer", 9810);
+
+                let partie = SCHACH_RUNDE.teamBeitreten(
+                    angelegt.partie, "id-anna", "weiss", 9810);
+                partie = SCHACH_BOT.inRundeSetzen(partie, "schwarz", 9810);
+
+                TEAM_SCHACH.abgleich.daten = SCHACH_TAFEL.partieEinsetzen(
+                    angelegt.tafel, partie, 9810);
+                TEAM_SCHACH.offeneId = partie.id;
+
+                await TEAM_SCHACH.teamVerlassen(partie);
+
+                if (SCHACH_TAFEL.partie(TEAM_SCHACH.abgleich.daten, partie.id)) {
+                    throw new Error("die Runde mit dem einsamen Computer steht noch da");
+                }
+            } finally {
+                TEAM_SCHACH.abgleich.daten = echteDaten;
+                TEAM_SCHACH.offeneId = "";
+            }
+        });
+
+    await pruefeMitWarten("Der Computer zieht erst, wenn er wirklich dran ist",
+        async () => {
+            /*
+             * Geprueft wird der ANSTOSS, nicht die Zugwahl (die steht in
+             * test-schach-bot.js): Der Zeitgeber der Testumgebung feuert nur
+             * bei `netz.sofort` — damit laesst sich der Bedenk-Augenblick
+             * hier auf Knopfdruck ausloesen.
+             */
+            const echteDaten = TEAM_SCHACH.abgleich.daten;
+            const echteOffene = TEAM_SCHACH.offeneId;
+            const vorherSofort = netz.sofort;
+
+            try {
+                const angelegt = SCHACH_TAFEL.partieAnlegen(
+                    SCHACH_TAFEL.leereTafel(9900),
+                    SCHACH_VARIANTEN.liste[0].id, "Gegen den Computer", 9910);
+
+                let partie = SCHACH_RUNDE.teamBeitreten(
+                    angelegt.partie, "id-anna", "weiss", 9910);
+                partie = SCHACH_BOT.inRundeSetzen(partie, "schwarz", 9910);
+                partie = SCHACH_RUNDE.bereitSetzen(partie, "weiss", true, 9910);
+
+                TEAM_SCHACH.abgleich.daten = SCHACH_TAFEL.partieEinsetzen(
+                    angelegt.tafel, partie, 9910);
+                TEAM_SCHACH.offeneId = partie.id;
+
+                netz.sofort = true;
+                TEAM_SCHACH._botAbbrechen();
+
+                /* Weiss ist am Zug: Der Computer haelt still. */
+                TEAM_SCHACH._botAnstossen(partie, { id: "id-anna", name: "Anna" });
+                await Promise.resolve();
+
+                const unveraendert = SCHACH_TAFEL.partie(
+                    TEAM_SCHACH.abgleich.daten, partie.id);
+                if (unveraendert.zugZaehler !== 0) {
+                    throw new Error("der Computer zieht, obwohl Weiss dran ist");
+                }
+
+                /* Anna zieht — jetzt ist Schwarz dran. */
+                const nachAnna = SCHACH_RUNDE.ziehen(partie, "id-anna",
+                    SCHACH.feldNummer("e2"), SCHACH.feldNummer("e4"), "D", "Anna", 9920);
+
+                TEAM_SCHACH.abgleich.daten = SCHACH_TAFEL.partieEinsetzen(
+                    TEAM_SCHACH.abgleich.daten, nachAnna, 9920);
+
+                TEAM_SCHACH._botAbbrechen();
+                TEAM_SCHACH._botAnstossen(nachAnna, { id: "id-anna", name: "Anna" });
+                await Promise.resolve();
+                await Promise.resolve();
+
+                const gezogen = SCHACH_TAFEL.partie(
+                    TEAM_SCHACH.abgleich.daten, partie.id);
+                if (gezogen.zugZaehler !== nachAnna.zugZaehler + 1) {
+                    throw new Error("der Computer hat nicht gezogen");
+                }
+                if (gezogen.stand.amZug !== "weiss") {
+                    throw new Error("nach dem Computer ist nicht wieder Weiss dran");
+                }
+            } finally {
+                netz.sofort = vorherSofort;
+                TEAM_SCHACH._botAbbrechen();
+                TEAM_SCHACH.abgleich.daten = echteDaten;
+                TEAM_SCHACH.offeneId = echteOffene;
             }
         });
 

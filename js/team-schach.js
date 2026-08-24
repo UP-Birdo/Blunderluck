@@ -283,6 +283,22 @@ const TEAM_SCHACH = {
     ziehtGerade: false,
 
     /*
+     * Der Computer denkt gerade nach (seit v0.27.0) — die Sperre gegen
+     * doppeltes Anstossen. Die Abfrage zeichnet alle drei Sekunden neu, und
+     * jedes Zeichnen käme sonst an `_botAnstossen` vorbei, während der
+     * erste Bedenk-Augenblick noch läuft.
+     *
+     * ZWEI FELDER FÜR EINE SACHE, und das ist Absicht: Der Zeitgeber wird
+     * NUR zum Abbrechen gebraucht, die Sperre wird VOR dem Aufruf von
+     * `setTimeout` gesetzt. Stünde die Sperre in der Zeitgeber-Nummer,
+     * bliebe der Bot in jeder Umgebung hängen, in der ein Zeitgeber sofort
+     * feuert (die Testumgebung tut das): Der Rückruf räumte das Feld auf,
+     * bevor die Zuweisung es gesetzt hätte.
+     */
+    botWartet: false,
+    botZeitgeber: null,
+
+    /*
      * Bis zu welchem Zugzähler eine Partie schon animiert wurde, je Kennung.
      * Ohne diesen Merker liefe die Bewegung bei jedem Neuzeichnen erneut —
      * und die Abfrage zeichnet oft.
@@ -550,8 +566,13 @@ const TEAM_SCHACH = {
                (v0.93) — siehe `_zeitMessungStarten`. */
             TEAM_SCHACH._zeitMessungStarten(offene.id);
             TEAM_SCHACH._partieZeichnen(wurzel, offene, person);
+
+            /* Ist der Computer dran, zieht er gleich (v0.27.0) — erst nach
+               dem Zeichnen, damit das eigene Brett schon dasteht. */
+            TEAM_SCHACH._botAnstossen(offene, person);
         } else {
             TEAM_SCHACH._zeitMessungStoppen();
+            TEAM_SCHACH._botAbbrechen();
 
             /* Die Partie kann inzwischen gelöscht worden sein. */
             TEAM_SCHACH.offeneId = "";
@@ -991,6 +1012,15 @@ const TEAM_SCHACH = {
 
     /* Name eines Spielers aus der Spielerliste; Kennung als Rückfall. */
     _nameVon(spielerId) {
+        /*
+         * Der Computer steht in KEINER Spielerliste (seit v0.27.0) — er hat
+         * kein Konto. Ohne diesen Zweig hiesse er an der Team-Karte und im
+         * Verlauf „Unbekannt".
+         */
+        if (SCHACH_BOT.istBot(spielerId)) {
+            return SCHACH_BOT.NAME;
+        }
+
         const spielerDaten = (ANMELDUNG.abgleich && ANMELDUNG.abgleich.daten)
             ? ANMELDUNG.abgleich.daten
             : null;
@@ -1521,6 +1551,112 @@ const TEAM_SCHACH = {
         }
     },
 
+    /* ---------------------------------------------------------------- *
+     * Der Computer-Gegner (seit v0.27.0, Stufe 1)
+     *
+     * Die Zugwahl steht im Modell (`js\schach-bot.js`); hier steht nur,
+     * WANN sie angestossen wird und WER sie anstösst.
+     *
+     * WER RECHNET? Das Gerät eines MITSPIELERS, der die Partie gerade
+     * offen hat. Die Partie liegt gemeinsam in Firebase — zwei Geräte, die
+     * gleichzeitig für den Bot ziehen, wären ein Doppelzug. Beim Spiel
+     * allein gegen den Computer gibt es ohnehin nur ein Gerät; kommt über
+     * den Beitritts-Code doch ein zweiter Mensch dazu, fängt die
+     * Zugzähler-Prüfung in `_sendenMitPruefung` den zweiten Zug ab, genau
+     * wie bei zwei Menschen aus einem Team.
+     * ---------------------------------------------------------------- */
+
+    /*
+     * Gerufen am Ende jedes Zeichnens einer offenen Partie. Prüft, ob der
+     * Computer dran ist, und lässt ihn nach kurzer Bedenkzeit ziehen.
+     *
+     * Alle Bedingungen werden hier NUR abgefragt, nicht gerechnet: Ob der
+     * Bot ziehen darf, weiss das Modell (`SCHACH_BOT.istAmZug`).
+     */
+    _botAnstossen(partie, person) {
+        if (TEAM_SCHACH.botWartet || TEAM_SCHACH.ziehtGerade) {
+            return;
+        }
+        if (!SCHACH_BOT.istBotPartie(partie) || !SCHACH_BOT.istAmZug(partie)) {
+            return;
+        }
+
+        /* Nur wer selbst mitspielt, zieht für den Computer — ein Zuschauer
+           mischt sich nicht in eine fremde Partie ein. */
+        if (!person || !SCHACH_RUNDE.teamVon(partie, person.id)) {
+            return;
+        }
+
+        /*
+         * Eine Abstimmung passt nicht zum Computer: Er würde einen Vorschlag
+         * einbringen, über den niemand abstimmt. Bot-Runden werden deshalb
+         * ohne Einigkeit angelegt (`rundeStarten`) — kommt trotzdem eine
+         * daher (alte Runde, zweiter Mensch im Bot-Team), zieht er lieber
+         * gar nicht, als die Abstimmung zu umgehen.
+         */
+        if (SCHACH_RUNDE.brauchtEinigkeit(partie)) {
+            return;
+        }
+
+        const id = partie.id;
+
+        /* Erst anmelden, dann den Zeitgeber setzen — siehe `botWartet`. */
+        TEAM_SCHACH.botWartet = true;
+
+        TEAM_SCHACH.botZeitgeber = window.setTimeout(() => {
+            TEAM_SCHACH.botWartet = false;
+            TEAM_SCHACH.botZeitgeber = null;
+
+            /*
+             * Der Stand wird NEU geholt, nicht mitgeschleppt: In der
+             * Bedenkzeit kann alles passiert sein — ein Zug des Gegners,
+             * eine Fähigkeit im Gegenzug, das Ende der Partie.
+             */
+            const jetzt = SCHACH_TAFEL.partie(TEAM_SCHACH.abgleich.daten, id);
+            if (!jetzt) {
+                return;
+            }
+            TEAM_SCHACH.botZiehen(jetzt);
+        }, SCHACH_BOT.BEDENKZEIT_MS);
+    },
+
+    /*
+     * Den Zug des Computers rechnen und senden — über denselben Weg wie
+     * jeden Menschenzug, samt Zugzähler-Prüfung.
+     */
+    async botZiehen(partie) {
+        if (TEAM_SCHACH.ziehtGerade) {
+            return;
+        }
+
+        const neu = SCHACH_BOT.ziehen(partie);
+        if (!neu) {
+            return;
+        }
+
+        TEAM_SCHACH.ziehtGerade = true;
+
+        try {
+            await TEAM_SCHACH._sendenMitPruefung(neu, partie.zugZaehler);
+        } finally {
+            TEAM_SCHACH.ziehtGerade = false;
+        }
+    },
+
+    /*
+     * Einen wartenden Bot-Zug fallen lassen — beim Verlassen der Partie
+     * und beim Schliessen der Runde. Ohne das feuerte der Zeitgeber noch
+     * in eine Partie hinein, die dieses Gerät gar nicht mehr zeigt.
+     */
+    _botAbbrechen() {
+        TEAM_SCHACH.botWartet = false;
+
+        if (TEAM_SCHACH.botZeitgeber !== null) {
+            window.clearTimeout(TEAM_SCHACH.botZeitgeber);
+            TEAM_SCHACH.botZeitgeber = null;
+        }
+    },
+
     /*
      * Schreibt EINE Partie in die Tafel, aber nur wenn ihr Zugzähler auf dem
      * Server noch der erwartete ist. So gewinnt bei zwei gleichzeitigen Zügen
@@ -1768,6 +1904,18 @@ const TEAM_SCHACH = {
        (START.regeln) — sonst laufen sie auseinander. */
     _regelnVorgabe() {
         return {
+            /*
+             * Gegen den Computer (seit v0.27.0). Steht bewusst ganz oben:
+             * Der Haken entscheidet nicht über eine Regel, sondern darüber,
+             * GEGEN WEN gespielt wird — alles Weitere gilt danach genauso.
+             *
+             * Er wandert NICHT in `regeln` der Partie: Ob ein Computer
+             * mitspielt, steht schon in den Teams (`SCHACH_BOT.istBotPartie`).
+             * Zwei Quellen für dieselbe Aussage laufen auseinander, und der
+             * Datenvertrag bleibt so unangetastet.
+             */
+            gegenComputer: false,
+
             faehigkeiten: false,
             seltenheitZeigen: false,
             pechZeigen: false,
@@ -1938,6 +2086,15 @@ const TEAM_SCHACH = {
             return;
         }
 
+        /*
+         * GEGEN DEN COMPUTER (seit v0.27.0): Die Abstimmung im Team passt
+         * nicht dazu — man ist allein in seinem Team, und der Computer
+         * stimmt über nichts ab. Der Haken wird für diese Runde deshalb
+         * still ausgeschaltet; die Geräte-Erinnerung des Starts bleibt
+         * unberührt, für die nächste Runde gegen Menschen gilt sie wieder.
+         */
+        const gegenComputer = (wunsch.gegenComputer === true);
+
         /* Die Spielart „Fähigkeiten sammeln“ hat sie ohnehin an; für alle
            anderen entscheidet der Schalter. */
         const regeln = {
@@ -1950,7 +2107,7 @@ const TEAM_SCHACH = {
             armeeStaerke: wunsch.armeeStaerke,
             itemVorrat: wunsch.itemVorrat,
             itemAuswahl: wunsch.itemAuswahl,
-            einigkeit: wunsch.einigkeit
+            einigkeit: gegenComputer ? false : wunsch.einigkeit
         };
 
         const ergebnis = SCHACH_TAFEL.partieAnlegen(
@@ -1961,9 +2118,19 @@ const TEAM_SCHACH = {
          * direkt in der Partie. Vorher musste man erst zurück in die Übersicht,
          * die eigene Partie suchen und dort beitreten.
          */
-        ergebnis.tafel = SCHACH_TAFEL.partieEinsetzen(
-            ergebnis.tafel,
-            SCHACH_RUNDE.teamBeitreten(ergebnis.partie, person.id, "weiss"));
+        let partie = SCHACH_RUNDE.teamBeitreten(ergebnis.partie, person.id, "weiss");
+
+        /*
+         * Der Computer sitzt in SCHWARZ und ist sofort bereit (v0.27.0) —
+         * er ist ein Team-Mitglied wie jedes andere. Der Mensch spielt
+         * damit Weiss und hat den ersten Zug; angepfiffen wird, sobald er
+         * selbst auf „Bereit" drückt.
+         */
+        if (gegenComputer) {
+            partie = SCHACH_BOT.inRundeSetzen(partie, "schwarz");
+        }
+
+        ergebnis.tafel = SCHACH_TAFEL.partieEinsetzen(ergebnis.tafel, partie);
 
         /*
          * ANMELDEN, BEVOR AM ABGLEICH VORBEI GESCHRIEBEN WIRD (seit v0.52).
@@ -2113,6 +2280,7 @@ const TEAM_SCHACH = {
             return;
         }
         TEAM_SCHACH._auswahlAufheben();
+        TEAM_SCHACH._botAbbrechen();
 
         const danach = SCHACH_RUNDE.teamVerlassen(partie, person.id);
 
@@ -2124,10 +2292,16 @@ const TEAM_SCHACH = {
         await TEAM_SCHACH._sendenMitPruefung(danach, partie.zugZaehler);
     },
 
-    /* Steht in beiden Teams niemand mehr? */
+    /*
+     * Steht in beiden Teams kein MENSCH mehr?
+     *
+     * Der Computer zählt seit v0.27.0 nicht mit: Er hält keine Runde am
+     * Leben. Ohne diese Ausnahme bliebe für jede Partie gegen den Computer,
+     * die man verlässt, eine Runde mit einem einsamen Bot im gemeinsamen
+     * Stand stehen — sichtbar für niemanden, aber für immer.
+     */
     _istVerwaist(partie) {
-        return ["weiss", "schwarz"].every(
-            (farbe) => (partie.teams[farbe] || []).length === 0);
+        return SCHACH_BOT.nurNochBot(partie);
     },
 
     /*

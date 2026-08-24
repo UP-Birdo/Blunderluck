@@ -3,6 +3,31 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.27.0 — 24.08.2026
+
+**Du kannst jetzt allein spielen: gegen den Computer.**
+
+- Unter dem Pfeil neben „Spielen" steht ganz oben der neue Haken **„Gegen
+  den Computer"**. Ist er gesetzt, legt „Spielen" eine Runde an, in der der
+  Computer Schwarz spielt — du brauchst niemanden dazu und musst auf
+  niemanden warten.
+- Du spielst Weiss und hast den ersten Zug. Sobald du auf „Bereit" drückst,
+  geht es los; der Computer ist immer schon bereit. Nach jedem deiner Züge
+  überlegt er kurz und zieht dann.
+- **Wie gut ist er?** Er schlägt, was er kriegen kann — immer die
+  wertvollste Figur —, sammelt Lootboxen ein, wenn nichts zu holen ist, und
+  wandelt seine Bauern zur Dame um. Was er noch NICHT kann: vorausdenken.
+  Er stellt Figuren ein und übersieht Drohungen. Das ist der nächste
+  Ausbauschritt.
+- Fähigkeiten aus den Lootboxen setzt er noch nicht ein — sie liegen bei
+  ihm im Vorrat. Auch das kommt später.
+- **Solche Runden zählen nicht für die Rangliste.** Die Tabelle vergleicht
+  Menschen miteinander; gegen einen Computer, der nicht vorausdenkt, wären
+  die Punkte geschenkt. In deinem Profil taucht die Partie aus demselben
+  Grund nicht auf.
+- Verlässt du eine Runde gegen den Computer, schliesst sie sich — es bleibt
+  keine leere Runde mit einem einsamen Computer stehen.
+
 ## v0.26.0 — 24.08.2026
 
 **Alle Knöpfe einer Runde an einer Stelle — und leere Runden räumen sich
