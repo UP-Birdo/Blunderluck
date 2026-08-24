@@ -2369,8 +2369,8 @@ body.design-3d .werte-figur {
 
 /*
  * Feld mit einer Fähigkeit darauf: Die Lootbox liegt als SVG darin (siehe
- * TEAM_SCHACH._wuerfelBauen — seit v0.23.0 ein gerendertes Bild aus
- * tools\Lootbox-Blender.py mit dem Fragezeichen darüber). Sie schwebt
+ * TEAM_SCHACH._wuerfelBauen — seit v0.24.0 ein gerendertes Bild aus
+ * tools\Lootbox-Blender.py, Fragezeichen eingraviert). Sie schwebt
  * leicht, damit man sie zwischen den Figuren bemerkt.
  */
 .wuerfel {
@@ -2384,18 +2384,11 @@ body.design-3d .werte-figur {
 }
 
 /*
- * Das Fragezeichen auf dem Deckel. Der dunkle Rand ist seit v0.23.0 nötig:
- * Auf der legendären (gelben) Box verschwand das weisse Zeichen sonst fast.
+ * HIER STAND BIS v0.23.0 `.wuerfel-zeichen` — das aufgemalte Fragezeichen
+ * auf der Lootbox. Seit v0.24.0 ist es in den Würfel GRAVIERT und damit
+ * Teil des Bildes (`tools\Lootbox-Blender.py`); im Bildschirm-Code gibt es
+ * kein Zeichen mehr zu färben.
  */
-.wuerfel-zeichen {
-    fill: #ffffff;
-    stroke: rgba(0, 0, 0, 0.45);
-    stroke-width: 1.2;
-    paint-order: stroke;
-    font-size: 30px;
-    font-weight: 700;
-    font-family: "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
-}
 
 @keyframes wuerfel-schweben {
     0%, 100% { transform: translateY(-3%); }

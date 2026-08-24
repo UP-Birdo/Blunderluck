@@ -1,10 +1,12 @@
 # ---------------------------------------------------------------------------
-# Lootbox-Blender.py — erzeugt die fuenf Lootbox-Bilder fuer Blunderluck
+# Lootbox-Blender.py — erzeugt die zehn Lootbox-Bilder fuer Blunderluck
 #
 # WAS ES TUT
-#   Baut in Blender eine Truhe (Korpus, Deckel, zwei Baender, Schloss) und
-#   rendert sie einmal je Seltenheitsstufe nach img\lootboxen\. Aufbau,
-#   Licht, Kamera und Bildeinstellungen sind bewusst DIESELBEN wie in
+#   Baut in Blender einen weichen Wuerfel mit stark gebrochenen Kanten und
+#   einem EINGRAVIERTEN Fragezeichen auf der Oberseite, und rendert ihn je
+#   Seltenheitsstufe zweimal nach img\lootboxen\ — einmal normal, einmal mit
+#   dem Zeichen auf dem Kopf (das ist der Unglueckswuerfel). Aufbau, Licht,
+#   Kamera und Bildeinstellungen sind bewusst DIESELBEN wie in
 #   Figuren-Blender.py — nur so passen Figuren und Lootboxen auf demselben
 #   Brett zueinander.
 #
@@ -22,16 +24,24 @@
 #   ACHTUNG: Das Skript loescht alles, was gerade in der Blender-Datei ist.
 #
 # WO MAN SCHRAUBT
-#   Alles Einstellbare steht im Block "STELLSCHRAUBEN". Die Form der Truhe
-#   steht in bau_truhe(); dort sind die Zahlen Kantenlaengen und Hoehen in
-#   Blender-Einheiten, z = 0 ist die Standflaeche.
+#   Alles Einstellbare steht im Block "STELLSCHRAUBEN". Die Form steht in
+#   bau_wuerfel(); dort sind die Zahlen Kantenlaengen und Tiefen in
+#   Blender-Einheiten, der Mittelpunkt liegt bei z = 0.
 #
-# WARUM FUENF BILDER UND NICHT ZEHN
-#   Die Farbe traegt die Seltenheit — vier Stufen plus die verborgene Box
-#   mit dem Regenbogen. Das Fragezeichen wird NICHT mitgerendert: Es bleibt
-#   als Zeichen im Bildschirm-Code (TEAM_SCHACH._wuerfelBauen), weil es beim
-#   Unglueckswuerfel auf dem Kopf steht. Sonst waeren es zehn fast gleiche
-#   Bilder — und das Zeichen bliebe auf kleinen Feldern unscharf.
+# WARUM ZEHN BILDER UND NICHT FUENF
+#   Die Farbe traegt die Seltenheit (vier Stufen plus die verborgene Box mit
+#   dem Regenbogen), und das Fragezeichen steckt seit v0.24.0 IM MESH — beim
+#   Unglueckswuerfel steht es auf dem Kopf. Solange es ein aufgemaltes
+#   Zeichen im Bildschirm-Code war, genuegten fuenf Bilder; eine Gravur laesst
+#   sich dort nicht drehen. Zehn Bilder zu 256 Pixeln bleiben zusammen unter
+#   einem halben Megabyte.
+#
+#   Vorgaenger (v0.23.0) war eine Truhe mit Deckel, Baendern und Schloss. Der
+#   Nutzer hat sie am 24.08. zurueckgewiesen: „die item kisten sehen nicht
+#   nach dem selben stil wie die figuren aus — am besten einen wuerfel der
+#   schwebt mit abgerundeten ecken und einem eingravierten fragezeichen."
+#   Sie steht im Backup Backup\Blunderluck\v0.20.0 nicht drin (sie ist
+#   juenger); wer sie braucht, holt sie aus dem Git-Stand von v0.23.0.
 # ---------------------------------------------------------------------------
 
 import bpy
@@ -71,10 +81,10 @@ STUFEN = [
                               "#2f7fd0", "#8b46c8"]),
 ]
 
-# Wie viel dunkler Baender und Schloss gegenueber dem Korpus sind
-# (0.55 = knapp die halbe Helligkeit). Dieselbe Rechnung wie
-# TEAM_SCHACH._tonAendern im Bildschirm-Code.
-BESCHLAG_TON = 0.55
+# Wie viel dunkler die Einlage im gravierten Fragezeichen gegenueber dem
+# Wuerfel ist (0.55 = knapp die halbe Helligkeit). Dieselbe Rechnung, die
+# bis v0.22.0 TEAM_SCHACH._tonAendern im Bildschirm-Code machte.
+EINLAGE_TON = 0.55
 
 # Mattigkeit der Oberflaeche: 0 = Spiegel, 1 = voellig stumpf.
 RAUHEIT = 0.60
@@ -95,31 +105,40 @@ KAMERA_NEIGUNG = 50.0
 # Schlagschatten des Bildschirms (drop-shadow) nicht am Rand abschneidet.
 RAND_ANTEIL = 0.90
 
-# Wie stark die Kanten gebrochen werden — das macht aus dem Kasten eine
-# weiche Truhe im Stil der Figuren.
-KANTEN_RUNDUNG = 0.055
-KANTEN_STUFEN = 3
+# Wie stark die Kanten gebrochen werden. Grosszuegig — genau das macht aus
+# dem Wuerfel ein weiches Spielzeug im Stil der Figuren (Nutzer-Ansage
+# 24.08.: „am besten einen Wuerfel der schwebt mit abgerundeten Ecken").
+KANTEN_RUNDUNG = 0.14
+KANTEN_STUFEN = 6
 
 
 # ===========================================================================
-# FESTE WERTE — die Form der Truhe
+# FESTE WERTE — die Form des Wuerfels
 # ===========================================================================
 
-KORPUS_BREITE = 1.00        # x
-KORPUS_TIEFE = 0.82         # y
-KORPUS_HOEHE = 0.62         # z, ab Standflaeche
+WUERFEL_KANTE = 1.00        # x, y und z gleich lang
 
-DECKEL_UEBERSTAND = 0.05    # der Deckel ragt ringsum ueber den Korpus
-DECKEL_HOEHE = 0.22
+# Wie weit der Wuerfel um die Hochachse gedreht steht.
+#
+# WOZU: Die Kamera schaut mit 50 Grad recht steil von oben. Steht der Wuerfel
+# achsparallel, sieht man fast nur seine Oberseite — im Bild wirkt er dann wie
+# eine abgerundete Platte, nicht wie ein Wuerfel. Gedreht zeigt er Oberseite
+# UND zwei Seitenflaechen, und das liest sich auf einen Blick als Koerper.
+#
+# Die GRAVUR wird NICHT mitgedreht: Sie liegt in derselben waagerechten Ebene,
+# egal wie der Wuerfel darunter steht, und bleibt so im Bild aufrecht lesbar.
+WUERFEL_DREHUNG = 30.0
 
-BAND_BREITE = 0.13          # die zwei senkrechten Baender
-BAND_ABSTAND = 0.30         # ihr Abstand von der Mitte
-BAND_UEBERSTAND = 0.012     # wie weit sie aus dem Korpus herausstehen
-
-SCHLOSS_BREITE = 0.22
-SCHLOSS_HOEHE = 0.20
-SCHLOSS_TIEFE = 0.06
-
+# Das eingravierte Fragezeichen auf der Oberseite.
+#
+# GRAVUR HEISST WIRKLICH GRAVUR: Das Zeichen wird aus dem Wuerfel
+# HERAUSGESCHNITTEN (Boolean), und in die Rille kommt ein dunkles Zeichen als
+# Einlage. Nur die Rille allein waere auf einem 30-Pixel-Feld kaum zu sehen —
+# der dunkle Grund macht sie lesbar, ohne dass ein aufgemaltes Zeichen
+# daraufsitzt.
+GRAVUR_HOEHE = 0.62         # Schriftgroesse in Blender-Einheiten
+GRAVUR_TIEFE = 0.10         # wie tief die Rille in die Oberseite geht
+GRAVUR_EINLAGE = 0.055      # wie hoch die dunkle Einlage darin steht
 
 # ===========================================================================
 # KLEINE HELFER
@@ -195,6 +214,27 @@ def modifikatoren_anwenden(obj):
     return bpy.context.view_layer.objects.active
 
 
+def glatt_schattieren(obj):
+    """Weich schattieren, ABER nur die gerundeten Kanten.
+
+    `shade_smooth` allein verschmiert die Schattierung ueber ALLE Flaechen —
+    nach dem Gravur-Schnitt zogen daraufhin fahle Dreiecke von der Rille bis
+    zum Rand der Oberseite. `shade_auto_smooth` glaettet nur, wo der Winkel
+    zwischen zwei Flaechen klein ist: die Kantenrundung wird weich, die
+    ebene Oberseite und die Rillenwand bleiben scharf.
+
+    Den Aufruf gibt es erst ab Blender 4.1; darunter bleibt es beim alten
+    Verhalten (dann sieht die Gravur eben nicht so sauber aus).
+    """
+    nur_diese_auswaehlen([obj], obj)
+    if hasattr(bpy.ops.object, "shade_auto_smooth"):
+        bpy.ops.object.shade_auto_smooth(angle=math.radians(35.0))
+    else:
+        bpy.ops.object.shade_smooth()
+    return obj
+
+
+
 def verbinden_und_runden(teile, name):
     """Verbindet die Teile zu EINEM Koerper und bricht seine Kanten.
 
@@ -215,55 +255,106 @@ def verbinden_und_runden(teile, name):
     kante.angle_limit = math.radians(40.0)
     obj = modifikatoren_anwenden(obj)
 
-    nur_diese_auswaehlen([obj], obj)
-    bpy.ops.object.shade_smooth()
-    return obj
+    return glatt_schattieren(obj)
 
 
 # ===========================================================================
-# DIE TRUHE
-# Alle Zahlen sind Blender-Einheiten, z = 0 ist die Standflaeche.
+# DER WUERFEL
+# Alle Zahlen sind Blender-Einheiten, der Mittelpunkt liegt bei z = 0.
 # ===========================================================================
 
-def bau_truhe():
-    """Baut Korpus und Beschlag als ZWEI Objekte.
+def gravur_zeichen(kopfueber, dicke, mitte_z, schrumpfen=1.0):
+    """Baut das Fragezeichen als flache Scheibe ueber der Wuerfel-Oberseite.
 
-    Zwei und nicht eines, weil sie verschiedene Farben tragen: der Korpus
-    die Stufenfarbe, der Beschlag ihre dunkle Fassung. Ein einziges Objekt
-    mit zwei Materialien waere hier der umstaendlichere Weg — es muesste
-    Flaechen zuordnen, und das haelt keiner Aenderung an der Form stand.
+    BLENDER-TEXT LIEGT SCHON FLACH in der xy-Ebene und wird nach OBEN
+    dick — gedreht werden muss also gar nichts. (Der erste Versuch drehte
+    ihn um 90 Grad und stellte ihn damit senkrecht auf die Kante; im Bild
+    ragte ein Zeichen wie ein Segel aus dem Wuerfel.)
+
+      kopfueber    dreht das Zeichen um 180 Grad in der Ebene — das ist der
+                   Unglueckswuerfel.
+      dicke        Gesamtdicke in z. `extrude` waechst nach BEIDEN Seiten,
+                   deshalb ist es die halbe Dicke.
+      mitte_z      wohin die Mitte der Scheibe kommt.
+      schrumpfen   verkleinert das Zeichen leicht. Nur fuer die Einlage
+                   noetig: Genau gleich gross laege sie Flaeche auf Flaeche
+                   mit der Rillenwand, und der Renderer weiss dann nicht,
+                   welche vorn liegt (Flimmern).
     """
-    korpus = neu_kasten(KORPUS_BREITE, KORPUS_TIEFE, KORPUS_HOEHE,
-                        (0.0, 0.0, KORPUS_HOEHE / 2))
+    bpy.ops.object.text_add(location=(0.0, 0.0, 0.0))
+    text = bpy.context.active_object
+    text.data.body = "?"
+    text.data.size = GRAVUR_HOEHE
+    text.data.align_x = "CENTER"
+    text.data.align_y = "CENTER"
+    text.data.extrude = dicke / 2.0
 
-    deckel = neu_kasten(KORPUS_BREITE + 2 * DECKEL_UEBERSTAND,
-                        KORPUS_TIEFE + 2 * DECKEL_UEBERSTAND,
-                        DECKEL_HOEHE,
-                        (0.0, 0.0, KORPUS_HOEHE + DECKEL_HOEHE / 2))
+    zeichen = modifikatoren_anwenden(text)
 
-    koerper = verbinden_und_runden([korpus, deckel], "lootbox_koerper")
+    zeichen.rotation_euler = (0.0, 0.0,
+                              math.radians(180.0) if kopfueber else 0.0)
+    zeichen.scale = (schrumpfen, schrumpfen, 1.0)
+    zeichen.location = (0.0, 0.0, mitte_z)
+    nur_diese_auswaehlen([zeichen], zeichen)
+    bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+    return zeichen
 
-    # Die zwei Baender laufen senkrecht ueber Korpus UND Deckel. Sie stehen
-    # ein wenig heraus (BAND_UEBERSTAND), damit sie im Bild eine eigene
-    # Kante bekommen statt nur ein Farbstreifen zu sein.
-    gesamthoehe = KORPUS_HOEHE + DECKEL_HOEHE
-    beschlagteile = []
-    for seite in (-1, 1):
-        beschlagteile.append(neu_kasten(
-            BAND_BREITE,
-            KORPUS_TIEFE + 2 * DECKEL_UEBERSTAND + 2 * BAND_UEBERSTAND,
-            gesamthoehe + 2 * BAND_UEBERSTAND,
-            (seite * BAND_ABSTAND, 0.0, gesamthoehe / 2)))
 
-    # Das Schloss sitzt vorn mittig auf der Fuge zwischen Korpus und Deckel.
-    beschlagteile.append(neu_kasten(
-        SCHLOSS_BREITE, SCHLOSS_TIEFE, SCHLOSS_HOEHE,
-        (0.0,
-         -(KORPUS_TIEFE / 2 + DECKEL_UEBERSTAND + SCHLOSS_TIEFE / 2 - 0.02),
-         KORPUS_HOEHE)))
+def bau_wuerfel(kopfueber):
+    """Baut Wuerfel und Einlage als ZWEI Objekte.
 
-    beschlag = verbinden_und_runden(beschlagteile, "lootbox_beschlag")
-    return koerper, beschlag
+    Zwei und nicht eines, weil sie verschiedene Farben tragen: der Wuerfel
+    die Stufenfarbe, die Einlage im gravierten Fragezeichen ihre dunkle
+    Fassung.
+
+    Ablauf, in dieser Reihenfolge und nicht anders:
+      1. Wuerfel bauen und seine Kanten gross brechen — er soll weich wirken.
+      2. Das Fragezeichen ZWEIMAL bauen: dick als Schnittwerkzeug, duenn als
+         Einlage. Zwei Kopien deshalb, weil der Boolean sein Werkzeug
+         verbraucht — und die Einlage muss dieselbe Form haben.
+      3. Schneiden, dann glatt schattieren.
+
+    Die Hoehen, damit man sie nachrechnen kann (Oberseite liegt bei
+    WUERFEL_KANTE / 2 = 0.50):
+
+        Werkzeug   0.40 bis 0.80   schneidet 0.10 tief (GRAVUR_TIEFE)
+        Rillenboden          0.40
+        Einlage    0.40 bis 0.455  steht 0.055 hoch (GRAVUR_EINLAGE),
+                                   bleibt also 0.045 unter der Oberflaeche
+    """
+    oberseite = WUERFEL_KANTE / 2.0
+
+    wuerfel = neu_kasten(WUERFEL_KANTE, WUERFEL_KANTE, WUERFEL_KANTE,
+                         (0.0, 0.0, 0.0))
+    wuerfel = verbinden_und_runden([wuerfel], "lootbox_wuerfel")
+
+    # Drehen, BEVOR graviert wird: Der Boolean rechnet in Weltkoordinaten,
+    # und das Zeichen soll gerade im Bild stehen — nicht mitgedreht.
+    wuerfel.rotation_euler = (0.0, 0.0, math.radians(WUERFEL_DREHUNG))
+    nur_diese_auswaehlen([wuerfel], wuerfel)
+    bpy.ops.object.transform_apply(location=False, rotation=True, scale=False)
+
+    werkzeug = gravur_zeichen(kopfueber, GRAVUR_TIEFE * 4.0,
+                              oberseite + GRAVUR_TIEFE)
+
+    einlage = gravur_zeichen(kopfueber, GRAVUR_EINLAGE,
+                             oberseite - GRAVUR_TIEFE + GRAVUR_EINLAGE / 2.0,
+                             0.97)
+    einlage.name = "lootbox_einlage"
+
+    schnitt = wuerfel.modifiers.new("Gravur", "BOOLEAN")
+    schnitt.operation = "DIFFERENCE"
+    schnitt.object = werkzeug
+    try:
+        schnitt.solver = "EXACT"
+    except TypeError:
+        pass
+    wuerfel = modifikatoren_anwenden(wuerfel)
+    bpy.data.objects.remove(werkzeug, do_unlink=True)
+
+    glatt_schattieren(wuerfel)
+    glatt_schattieren(einlage)
+    return wuerfel, einlage
 
 
 # ===========================================================================
@@ -470,11 +561,22 @@ def main():
     licht_aufbauen()
     kamera = kamera_aufbauen()
 
-    print("  baue die Truhe ...")
-    koerper, beschlag = bau_truhe()
+    # ZWEI Wuerfel, nicht einer: Der Unglueckswuerfel traegt sein
+    # Fragezeichen auf dem Kopf, und die Gravur ist Teil des Meshes — anders
+    # als frueher, wo das Zeichen im Bildschirm-Code lag und sich dort drehen
+    # liess. Sie stehen ineinander und werden einzeln sichtbar geschaltet.
+    print("  baue den Wuerfel ...")
+    wuerfel, einlage = bau_wuerfel(False)
+
+    print("  baue den Unglueckswuerfel ...")
+    pech_wuerfel, pech_einlage = bau_wuerfel(True)
+    # BEIDE STEHEN AN DERSELBEN STELLE, ineinander. Das ist Absicht: Der
+    # Bildausschnitt wird einmal berechnet und gilt fuer alle zehn Bilder,
+    # und es ist immer nur einer von beiden sichtbar. Zum Ansehen im
+    # Blender-Fenster rueckt der Unglueckswuerfel ganz am Ende zur Seite.
 
     print("")
-    kamera_ausrichten(kamera, [koerper, beschlag])
+    kamera_ausrichten(kamera, [wuerfel, einlage])
 
     if not RENDERN:
         print("  RENDERN steht auf False — es wurden keine Bilder erzeugt.")
@@ -485,29 +587,48 @@ def main():
     print("")
     print("  Ziel: {}".format(AUSGABE_ORDNER))
 
+    faelle = [
+        ("", wuerfel, einlage, pech_wuerfel, pech_einlage),
+        ("-pech", pech_wuerfel, pech_einlage, wuerfel, einlage),
+    ]
+
     for stufe, farbe, regenbogen in STUFEN:
         if regenbogen:
             haut = material_regenbogen("Lootbox " + stufe, regenbogen)
         else:
             haut = material_einfarbig("Lootbox " + stufe, farbe)
-        beschlagfarbe = material_einfarbig(
-            "Beschlag " + stufe, ton_aendern(farbe, BESCHLAG_TON))
+        einlagenfarbe = material_einfarbig(
+            "Einlage " + stufe, ton_aendern(farbe, EINLAGE_TON))
 
-        koerper.data.materials.clear()
-        koerper.data.materials.append(haut)
-        beschlag.data.materials.clear()
-        beschlag.data.materials.append(beschlagfarbe)
+        for nachsatz, koerper, marke, aus1, aus2 in faelle:
+            for obj in (koerper, marke):
+                obj.hide_render = False
+            for obj in (aus1, aus2):
+                obj.hide_render = True
 
-        dateiname = "lootbox-{}.png".format(stufe)
-        szene.render.filepath = os.path.join(AUSGABE_ORDNER, dateiname)
-        print("  rendere {} ...".format(dateiname))
-        bpy.ops.render.render(write_still=True)
+            koerper.data.materials.clear()
+            koerper.data.materials.append(haut)
+            marke.data.materials.clear()
+            marke.data.materials.append(einlagenfarbe)
+
+            dateiname = "lootbox-{}{}.png".format(stufe, nachsatz)
+            szene.render.filepath = os.path.join(AUSGABE_ORDNER, dateiname)
+            print("  rendere {} ...".format(dateiname))
+            bpy.ops.render.render(write_still=True)
+
+    for obj in (wuerfel, einlage, pech_wuerfel, pech_einlage):
+        obj.hide_render = False
+
+    # Zum Ansehen im Blender-Fenster: die beiden auseinanderruecken. Fuers
+    # Rendern ist es zu spaet — genau das ist der Zweck.
+    for obj in (pech_wuerfel, pech_einlage):
+        obj.location.x = 1.8
 
     gesamt = sum(os.path.getsize(os.path.join(AUSGABE_ORDNER, d))
                  for d in os.listdir(AUSGABE_ORDNER) if d.endswith(".png"))
     print("")
     print("=== Fertig. {} Bilder, zusammen {:.0f} KB ===".format(
-        len(STUFEN), gesamt / 1024))
+        len(STUFEN) * 2, gesamt / 1024))
 
 
 main()

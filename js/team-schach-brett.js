@@ -1334,36 +1334,42 @@ Object.assign(TEAM_SCHACH, {
     },
 
     /*
-     * Die Lootbox auf dem Brett — seit v0.23.0 (Wunsch 10) ein gerendertes
-     * 3D-Bild statt dreier gezeichneter Flächen.
+     * Die Lootbox auf dem Brett — seit v0.24.0 ein gerendertes 3D-Bild.
      *
-     * VORHER (bis v0.22.0): ein SVG-Würfel aus drei Polygonen, gefärbt aus
-     * der Stufenfarbe, für die verborgene Box mit einem Regenbogen-Verlauf
-     * (v0.69). Das war scharf auf jeder Feldgrösse und brauchte keine Datei —
-     * passte aber nicht mehr zu den Figuren, seit die aus Blender kommen.
+     * BIS v0.22.0: ein SVG-Würfel aus drei Polygonen, gefärbt aus der
+     * Stufenfarbe, für die verborgene Box mit einem Regenbogen-Verlauf
+     * (v0.69). Scharf auf jeder Feldgrösse und ohne Datei — passte aber
+     * nicht mehr zu den Figuren, seit die aus Blender kommen.
      *
-     * JETZT: fünf PNGs aus `tools\Lootbox-Blender.py`, gebaut mit demselben
-     * Licht und derselben Kameraneigung wie die Figuren
-     * (`img\lootboxen\lootbox-<stufe>.png`, eines je Stufe plus
-     * „unbekannt"). Die Datei nennt die Stufe — die Farbe steckt also im
-     * Bild, nicht mehr im Code.
+     * v0.23.0 war ein Zwischenschritt (eine gerenderte Truhe mit
+     * aufgemaltem Fragezeichen). Der Nutzer hat sie noch am selben Tag
+     * zurückgewiesen: „am besten einen würfel der schwebt mit abgerundeten
+     * ecken und einem eingravierten fragezeichen."
      *
-     * DAS FRAGEZEICHEN BLEIBT GEZEICHNET. Es steht beim Unglückswürfel auf
-     * dem Kopf; mitgerendert wären es zehn fast gleiche Bilder statt fünf,
-     * und auf kleinen Feldern bliebe es unschärfer als ein Zeichen.
+     * JETZT: zehn PNGs aus `tools\Lootbox-Blender.py` — je Stufe eines mit
+     * aufrechtem und eines mit kopfüber stehendem Fragezeichen, und beide
+     * sind EINGRAVIERT, also Teil des Bildes. Deshalb steht hier kein
+     * Zeichen mehr im Code: Eine Gravur lässt sich nicht drehen.
+     *
+     * Das Schweben macht weiterhin die Stildatei (`wuerfel-schweben`).
      */
 
-    /* Die Stufen, für die es ein Bild gibt. Alles andere fällt auf die
-       verborgene Box zurück — lieber die falsche Farbe als ein leeres Feld. */
+    /* Wo die Bilder liegen. Der Name wird gebaut, nicht nachgeschlagen —
+       ein Test in `test-syntax.js` prüft, dass es zu jeder Stufe beide
+       Dateien gibt. */
     LOOTBOX_ORDNER: "img/lootboxen/",
 
-    _lootboxBild(stufe) {
+    _lootboxBild(stufe, pech) {
         const id = (stufe && stufe.id) ? String(stufe.id) : "";
+
+        /* Eine unbekannte Stufe fällt auf die verborgene Box zurück —
+           lieber die falsche Farbe als ein leeres Feld. */
         const bekannt = SCHACH_VARIANTEN.STUFEN.some(
             (eintrag) => eintrag.id === id) || id === "unbekannt";
 
-        return TEAM_SCHACH.LOOTBOX_ORDNER + "lootbox-"
-            + (bekannt ? id : "unbekannt") + ".png";
+        return TEAM_SCHACH.LOOTBOX_ORDNER
+            + "lootbox-" + (bekannt ? id : "unbekannt")
+            + (pech ? "-pech" : "") + ".png";
     },
 
     _wuerfelBauen(stufe, pech) {
@@ -1381,37 +1387,10 @@ Object.assign(TEAM_SCHACH, {
 
         /* Beide Schreibweisen: `href` ist die heutige, `xlink:href` die alte —
            ohne sie zeigen ältere Browser gar nichts an. */
-        const quelle = TEAM_SCHACH._lootboxBild(stufe);
+        const quelle = TEAM_SCHACH._lootboxBild(stufe, pech);
         bild.setAttribute("href", quelle);
         bild.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", quelle);
         svg.appendChild(bild);
-
-        /*
-         * Das Fragezeichen sitzt mittig auf dem DECKEL — von schräg oben ist
-         * er die grösste sichtbare Fläche, und zwischen den beiden Bändern
-         * ist genau dort Platz. Beim Unglückswürfel steht es auf dem Kopf:
-         * ein eigenes Zeichen statt einer anderen Farbe, denn die Farbe trägt
-         * schon die Seltenheit, und ein umgedrehtes Fragezeichen erkennt man
-         * auch auf einem winzigen Feld.
-         */
-        const zeichen = document.createElementNS(ns, "text");
-        zeichen.setAttribute("x", "50");
-        zeichen.setAttribute("y", "47");
-        zeichen.setAttribute("text-anchor", "middle");
-        zeichen.setAttribute("class", "wuerfel-zeichen");
-        zeichen.textContent = "?";
-
-        if (pech) {
-            /*
-             * Gedreht wird um die OPTISCHE Mitte des Zeichens, nicht um seine
-             * Grundlinie: Die liegt bei y=47, das Zeichen reicht bei
-             * Schriftgrösse 30 bis etwa y=26 hinauf — Mitte also y=37. Mit
-             * einer Achse auf der Grundlinie rutschte das gespiegelte
-             * Fragezeichen aus dem Deckel heraus (Meldung T1/T2 vom 18.08.).
-             */
-            zeichen.setAttribute("transform", "rotate(180 50 37)");
-        }
-        svg.appendChild(zeichen);
 
         return svg;
     },

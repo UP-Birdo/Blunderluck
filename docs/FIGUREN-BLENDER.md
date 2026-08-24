@@ -202,33 +202,60 @@ Hinsehen — und Nachmessen — kamen drei Dinge heraus:
 - [x] Am Brett gemessen: kein waagerechter Überlauf, nichts abgeschnitten,
       klassische Ansicht unverändert
 
-## Die Lootboxen — dieselbe Werkstatt, eigenes Skript (seit v0.23.0)
+## Die Lootboxen — dieselbe Werkstatt, eigenes Skript
 
 Wunsch 10 vom 24.08.2026: „Die Glückswürfel (Lootboxen) sollen auch in 3D
 über den Feldern fliegen — dafür wird wie bei den Figuren eine
-Blender-cmd-Datei zum Erstellen gebraucht."
+Blender-cmd-Datei zum Erstellen gebraucht." Gebaut in v0.23.0, **Motiv noch
+am selben Tag ersetzt** (v0.24.0): Die erste Fassung war eine Truhe mit
+Deckel, Bändern und Schloss; der Nutzer wies sie zurück („sehen nicht nach
+dem selben Stil wie die Figuren aus — am besten einen Würfel der schwebt
+mit abgerundeten Ecken und einem eingravierten Fragezeichen").
 
 - **Werkzeug:** `tools\Lootbox-Blender.py`, gefahren über
   `tools\Lootboxen rendern.cmd` (bzw. `tools\Lootbox-Rendern.ps1`) — Aufbau
-  Zeile für Zeile wie beim Figuren-Trio.
-- **Ergebnis:** fünf PNGs in `img\lootboxen\`, eines je Seltenheitsstufe
-  (`lootbox-gruen/blau/lila/gelb.png`) plus `lootbox-unbekannt.png` mit dem
-  Regenbogen der verborgenen Box. Zusammen rund 220 KB bei 256 Pixeln Kante.
-- **Motiv:** eine Truhe — Korpus, überstehender Deckel, zwei senkrechte
-  Bänder und ein Schloss vorn. Kanten gebrochen statt voxel-verschmolzen:
-  Eine Truhe darf gerade Flächen behalten, sie soll nur nicht scharfkantig
-  aussehen.
+  Zeile für Zeile wie beim Figuren-Trio. Ein Lauf dauert rund 12 Sekunden.
+- **Motiv:** ein Würfel mit stark gebrochenen Kanten (`KANTEN_RUNDUNG`
+  0.14 auf 1.0 Kantenlänge), um `WUERFEL_DREHUNG` = 30 Grad um die
+  Hochachse gedreht. Die Drehung ist kein Geschmack: Unter der steilen
+  50-Grad-Kamera zeigt ein achsparalleler Würfel fast nur seine Oberseite
+  und liest sich im Bild wie eine abgerundete Platte.
+- **Das Fragezeichen ist GRAVIERT**, nicht aufgemalt: Es wird per Boolean
+  aus der Oberseite geschnitten, und in die Rille kommt eine dunkle Einlage
+  (Stufenfarbe mal 0.55). Die Rille allein wäre auf 30 Bildpunkten kaum zu
+  sehen; die Einlage macht sie lesbar, ohne dass ein Zeichen obendrauf
+  klebt.
+- **Deshalb zehn Bilder statt fünf:** Weil die Gravur zum Mesh gehört,
+  lässt sie sich nicht mehr im Bildschirm-Code drehen. Der Unglückswürfel
+  bekommt sein eigenes Bild mit dem Zeichen kopfüber — je Stufe also
+  `lootbox-<stufe>.png` und `lootbox-<stufe>-pech.png`. Zusammen rund
+  400 KB bei 256 Pixeln Kante.
+- **Ergebnis-Ordner:** `img\lootboxen\`; die fünf Stufen sind `gruen`,
+  `blau`, `lila`, `gelb` und `unbekannt` (letztere mit dem Regenbogen der
+  verborgenen Box).
 - **Licht, Kamera, Bildeinstellungen sind IDENTISCH zu den Figuren** (50 Grad
   Neigung, dieselben drei Lampen, `view_transform = "Standard"`). Das ist
-  keine Bequemlichkeit: Nur so sehen Figur und Box auf demselben Brett nach
-  derselben Welt aus. Wer dort dreht, dreht hier mit.
-- **Das Fragezeichen wird NICHT mitgerendert.** Es bleibt ein Zeichen im
-  Bildschirm-Code (`TEAM_SCHACH._wuerfelBauen`), weil es beim Unglückswürfel
-  auf dem Kopf steht — sonst wären es zehn fast gleiche Bilder statt fünf.
+  keine Bequemlichkeit: Nur so sehen Figur und Würfel auf demselben Brett
+  nach derselben Welt aus. Wer dort dreht, dreht hier mit.
+- **Glätten nur an den Rundungen:** `glatt_schattieren` benutzt
+  `shade_auto_smooth`. Mit dem einfachen `shade_smooth` zogen nach dem
+  Gravur-Schnitt fahle Dreiecke von der Rille bis zum Rand der Oberseite.
 - **Farbvertrag:** Die fünf Hexwerte in `Lootbox-Blender.py` (Liste `STUFEN`)
   sind dieselben wie in `js\schach-varianten.js`. Wer eine Stufenfarbe
   ändert, ändert beide und rendert neu.
-- **Ein Test wacht darüber:** `tests\test-syntax.js`, „Die fünf
-  Lootbox-Bilder liegen alle da" — er prüft, dass es zu jeder Stufe eine
-  Datei gibt und dass das Blender-Skript dieselben Namen schreibt, die der
-  Bildschirm-Code erwartet.
+- **Ein Test wacht darüber:** `tests\test-syntax.js`, „Die zehn
+  Lootbox-Bilder liegen alle da" — er prüft, dass es zu jeder Stufe beide
+  Dateien gibt, dass das Blender-Skript dieselben Namen schreibt, und dass
+  kein aufgemaltes Fragezeichen in den Bildschirm-Code zurückkehrt.
+
+### Prüfliste — Stand nach dem Lauf vom 24.08.2026
+
+- [x] Alle 10 Dateien da, Namen nach dem Muster oben
+- [x] Hintergrund durchsichtig
+- [x] Als Würfel erkennbar (Oberseite plus zwei Seitenflächen)
+- [x] Gravur lesbar, beim Unglückswürfel kopfüber
+- [x] Keine Schattierungs-Artefakte um die Gravur
+- [x] Licht und Kamera gleich den Figuren
+- [x] Zusammen rund 400 KB
+- [ ] **Am Brett noch nicht beurteilt** — Grösse und Wirkung neben den
+      Figuren stehen aus

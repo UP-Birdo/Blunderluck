@@ -289,16 +289,17 @@ pruefe("Die zwoelf Figuren-Bilder des 3D-Looks liegen alle da (v0.121)", () => {
 });
 
 /*
- * DIE FUENF LOOTBOX-BILDER (seit v0.23.0, Wunsch 10).
+ * DIE ZEHN LOOTBOX-BILDER (seit v0.24.0, Wunsch 10 in zweiter Fassung).
  *
  * Anders als die Figuren haengen sie NICHT in der Stildatei, sondern werden
  * im Bildschirm-Code zusammengesetzt (`TEAM_SCHACH._lootboxBild`). Fehlt eine
- * Datei, bleibt auf dem Brett ein Feld mit blossem Fragezeichen stehen — das
- * faellt beim Spielen kaum auf und waere trotzdem falsch. Dieser Test prueft
- * beides: dass es zu JEDER Stufe ein Bild gibt und dass der Code dieselben
- * Namen bildet wie das Blender-Skript sie schreibt.
+ * Datei, bleibt auf dem Brett ein leeres Feld stehen — das Fragezeichen ist
+ * seit v0.24.0 EINGRAVIERT, es gibt also keine Rueckfallebene mehr im Code.
+ * Umso wichtiger dieser Test: Er prueft, dass es zu jeder Stufe BEIDE Bilder
+ * gibt (normal und Unglueck) und dass der Code dieselben Namen bildet, die
+ * das Blender-Skript schreibt.
  */
-pruefe("Die fuenf Lootbox-Bilder liegen alle da (v0.23.0)", () => {
+pruefe("Die zehn Lootbox-Bilder liegen alle da (v0.24.0)", () => {
     const quelle = dateisystem.readFileSync(
         pfad.join(jsOrdner, "team-schach-brett.js"), "utf8");
 
@@ -320,19 +321,31 @@ pruefe("Die fuenf Lootbox-Bilder liegen alle da (v0.23.0)", () => {
     }
 
     for (const stufe of stufen.concat(["unbekannt"])) {
-        const datei = ordner + "lootbox-" + stufe + ".png";
-        if (!dateisystem.existsSync(pfad.join(projekt, datei))) {
-            throw new Error(datei + " fehlt — neu erzeugen mit"
-                + " tools\Lootboxen rendern.cmd");
+        for (const nachsatz of ["", "-pech"]) {
+            const datei = ordner + "lootbox-" + stufe + nachsatz + ".png";
+            if (!dateisystem.existsSync(pfad.join(projekt, datei))) {
+                throw new Error(datei + " fehlt - neu erzeugen mit"
+                    + " tools\\Lootboxen rendern.cmd");
+            }
         }
     }
 
-    /* Und das Blender-Skript schreibt wirklich dorthin. */
+    /* Und das Blender-Skript schreibt wirklich diese Namen. */
     const bauplan = dateisystem.readFileSync(
         pfad.join(projekt, "tools", "Lootbox-Blender.py"), "utf8");
-    if (bauplan.indexOf("lootbox-{}.png") === -1) {
+    if (bauplan.indexOf("lootbox-{}{}.png") === -1) {
         throw new Error("Lootbox-Blender.py schreibt andere Dateinamen als"
             + " der Bildschirm-Code erwartet");
+    }
+    if (bauplan.indexOf("\"-pech\"") === -1) {
+        throw new Error("Lootbox-Blender.py kennt den Unglueckswuerfel nicht");
+    }
+
+    /* Das Fragezeichen darf NICHT wieder im Code auftauchen: Es steckt in
+       der Gravur, und zwei Zeichen uebereinander waeren doppelt. */
+    if (quelle.indexOf("wuerfel-zeichen") !== -1) {
+        throw new Error("das aufgemalte Fragezeichen ist zurueck - seit"
+            + " v0.24.0 ist es eingraviert");
     }
 });
 

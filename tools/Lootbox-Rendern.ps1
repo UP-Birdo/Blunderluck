@@ -1,5 +1,5 @@
 # ---------------------------------------------------------------------------
-# Lootbox-Rendern.ps1 — laesst Lootbox-Blender.py ohne Blender-Fenster laufen
+# Lootbox-Rendern.ps1 - laesst Lootbox-Blender.py ohne Blender-Fenster laufen
 #
 # WARUM OHNE FENSTER
 #   Im Blender-Fenster blockiert das Rendern die Oberflaeche: Blender meldet
@@ -8,7 +8,7 @@
 #   schreibt jeden Schritt in dieses Fenster.
 #
 # BENUTZUNG
-#   Doppelklick auf "Lootboxen rendern.cmd" — oder direkt:
+#   Doppelklick auf "Lootboxen rendern.cmd" - oder direkt:
 #       powershell -ExecutionPolicy Bypass -File "tools\Lootbox-Rendern.ps1"
 #
 # Das Schwesterskript fuer die Schachfiguren heisst Figuren-Rendern.ps1 und
@@ -74,6 +74,6 @@ $bilder = Get-ChildItem -LiteralPath $ordner -Filter "lootbox-*.png" -ErrorActio
 Write-Host ""
 Write-Host ("Fertig in {0:N0} Sekunden. {1} Bilder in {2}" -f `
     $dauer.TotalSeconds, $bilder.Count, $ordner) -ForegroundColor Green
-if ($bilder.Count -ne 5) {
-    Write-Host "ACHTUNG: Es sollten 5 Bilder sein." -ForegroundColor Yellow
+if ($bilder.Count -ne 10) {
+    Write-Host "ACHTUNG: Es sollten 10 Bilder sein (5 Stufen mal normal und Unglueck)." -ForegroundColor Yellow
 }

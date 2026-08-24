@@ -1773,12 +1773,12 @@ pruefe("Ein Wuerfel auf dem Brett wird gezeichnet", () => {
         throw new Error("kein Wuerfel auf dem Feld");
     }
     /*
-     * Seit v0.23.0 (Wunsch 10) sind es ZWEI Teile: das gerenderte Bild und
-     * das Fragezeichen darueber. Bis v0.22.0 waren es vier — drei gezeichnete
-     * Seitenflaechen plus Zeichen.
+     * Seit v0.24.0 ist es GENAU EIN Teil: das gerenderte Bild. Bis v0.23.0
+     * lag ein gezeichnetes Fragezeichen darueber, bis v0.22.0 waren es vier
+     * Teile — drei gezeichnete Seitenflaechen plus Zeichen.
      */
-    if (wuerfel.kinder.length !== 2) {
-        throw new Error("Wuerfel hat " + wuerfel.kinder.length + " Teile statt 2");
+    if (wuerfel.kinder.length !== 1) {
+        throw new Error("Wuerfel hat " + wuerfel.kinder.length + " Teile statt 1");
     }
 
     const bild = wuerfel.kinder[0];
@@ -2246,6 +2246,12 @@ function unglueckswuerfelZeichnen(pechZeigen, wann) {
 }
 
 pruefe("Mit Haken traegt ein Unglueckswuerfel ein umgedrehtes Fragezeichen", () => {
+    /*
+     * SEIT v0.24.0 IST DAS ZEICHEN EINGRAVIERT, also Teil des Bildes: Der
+     * Unglueckswuerfel ist nicht mehr an einem gedrehten `text` zu erkennen,
+     * sondern an seiner Bilddatei (`...-pech.png`). Geprueft wird dasselbe
+     * wie vorher, nur an der neuen Stelle.
+     */
     const zelle = unglueckswuerfelZeichnen(true, 5500);
     const wuerfel = zelle.kinder.find((kind) => kind.attribute
         && kind.attribute["class"] === "wuerfel");
@@ -2254,9 +2260,13 @@ pruefe("Mit Haken traegt ein Unglueckswuerfel ein umgedrehtes Fragezeichen", () 
         throw new Error("kein Wuerfel");
     }
 
-    const zeichen = wuerfel.kinder.find((kind) => kind.tagName === "text");
-    if (!zeichen || !zeichen.attribute.transform) {
-        throw new Error("das Fragezeichen steht nicht auf dem Kopf");
+    const bild = wuerfel.kinder.find((kind) => kind.tagName === "image");
+    if (!bild) {
+        throw new Error("kein Bild im Wuerfel");
+    }
+    if (String(bild.attribute["href"] || "").indexOf("-pech.png") === -1) {
+        throw new Error("das Fragezeichen steht nicht auf dem Kopf: "
+            + bild.attribute["href"]);
     }
 
     /* Und der Titel verraet weiterhin nicht, was drin ist. */
@@ -2279,12 +2289,12 @@ pruefe("Ohne Haken ist ein Unglueckswuerfel nicht zu erkennen (v0.49)", () => {
         throw new Error("kein Wuerfel");
     }
 
-    const zeichen = wuerfel.kinder.find((kind) => kind.tagName === "text");
-    if (!zeichen) {
-        throw new Error("kein Fragezeichen");
+    const bild = wuerfel.kinder.find((kind) => kind.tagName === "image");
+    if (!bild) {
+        throw new Error("kein Bild im Wuerfel");
     }
-    if (zeichen.attribute.transform) {
-        throw new Error("das Fragezeichen steht auf dem Kopf, obwohl der Haken aus ist");
+    if (String(bild.attribute["href"] || "").indexOf("-pech.png") !== -1) {
+        throw new Error("der Wuerfel zeigt sein Unglueck, obwohl der Haken aus ist");
     }
     if (String(zelle.title).indexOf("Unglück") !== -1) {
         throw new Error("der Titel verraet das Unglueck");

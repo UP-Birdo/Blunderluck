@@ -3,6 +3,20 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.24.0 — 24.08.2026
+
+**Die Lootbox ist jetzt ein Würfel — mit eingraviertem Fragezeichen.**
+
+- Die Truhe aus v0.23.0 passte nicht zu den Figuren. An ihrer Stelle steht
+  ein **weicher Würfel mit stark abgerundeten Ecken**, leicht gedreht, damit
+  man ihm ansieht, dass er ein Körper ist — und das **Fragezeichen ist in
+  den Deckel graviert** statt daraufgemalt.
+- Beim Unglückswürfel steht die Gravur wie bisher auf dem Kopf. Weil sie
+  jetzt zum Bild gehört, gibt es je Seltenheitsstufe zwei Bilder statt
+  einem — zusammen rund 400 KB.
+- `tools\Lootboxen rendern.cmd` baut sie neu; alle Zahlen (Rundung,
+  Drehung, Gravurtiefe) stehen oben in `tools\Lootbox-Blender.py`.
+
 ## v0.23.0 — 24.08.2026
 
 **Die Lootboxen sind jetzt echte 3D-Truhen.**
