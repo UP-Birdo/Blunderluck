@@ -663,6 +663,21 @@ Object.assign(TEAM_SCHACH, {
                 ? TEAM_SCHACH.faehigkeitEinsetzen(partie, art)
                 : TEAM_SCHACH.faehigkeitAnsehen(art, grund)));
 
+        /*
+         * DAS ZEICHEN STEHT VOR DEM WORT (seit v0.63.0), nicht an seiner
+         * Stelle: In der Kartenreihe am Brett liegen bis zu sechs Marken
+         * nebeneinander, und ein Bild allein müsste man erst lernen. Das
+         * Wort bleibt also — das Zeichen macht die Reihe auf einen Blick
+         * unterscheidbar. Es steht VORNE, weil man von links liest.
+         */
+        const bild = (typeof FAEHIGKEIT_ZEICHEN !== "undefined")
+            ? FAEHIGKEIT_ZEICHEN.bauen(art)
+            : null;
+
+        if (bild) {
+            marke.insertBefore(bild, marke.firstChild);
+        }
+
         if (SCHACH_VARIANTEN.zeigtPlus(art)) {
             const plus = TEAM_SCHACH._element("span", "faehigkeit-zeichen", "+");
             plus.title = "Danach bleibt der normale Zug — es kann noch gezogen "
@@ -925,9 +940,15 @@ Object.assign(TEAM_SCHACH, {
     },
 
     /*
-     * Eine Raster-Kachel: kein Text (Entwurf, Abschnitt 4.1) — nur der
-     * Lückenfüller-Buchstabe, der Stufen-Rahmen und für Vorleseprogramme
-     * der Titel. Unglücke tragen einen gestrichelten Rahmen.
+     * Eine Raster-Kachel: kein Text (Entwurf, Abschnitt 4.1) — nur das
+     * Zeichen, der Stufen-Rahmen und für Vorleseprogramme der Titel.
+     * Unglücke tragen einen gestrichelten Rahmen.
+     *
+     * SEIT v0.63.0 STEHT HIER DAS ECHTE ZEICHEN (`FAEHIGKEIT_ZEICHEN.bauen`)
+     * statt des Anfangsbuchstabens, der seit dem Entwurf der Lückenfüller war
+     * (F4). Der Buchstabe bleibt als RÜCKFALL stehen: Kommt später eine
+     * Fähigkeit dazu, deren Zeichen noch fehlt, sieht ihre Kachel aus wie
+     * vorher, statt leer zu sein.
      */
     _iconKachelBauen(art, titel, stufe, istPech) {
         const kachel = document.createElement("button");
@@ -937,8 +958,17 @@ Object.assign(TEAM_SCHACH, {
         kachel.title = titel + (istPech ? " (Unglück)" : "");
         kachel.setAttribute("aria-label", kachel.title);
 
-        kachel.appendChild(TEAM_SCHACH._element("span", "kachel-zeichen",
-            titel.charAt(0).toUpperCase()));
+        const zeichen = TEAM_SCHACH._element("span", "kachel-zeichen");
+        const bild = (typeof FAEHIGKEIT_ZEICHEN !== "undefined")
+            ? FAEHIGKEIT_ZEICHEN.bauen(art)
+            : null;
+
+        if (bild) {
+            zeichen.appendChild(bild);
+        } else {
+            zeichen.textContent = titel.charAt(0).toUpperCase();
+        }
+        kachel.appendChild(zeichen);
 
         kachel.addEventListener("click", () => {
             if (istPech) {

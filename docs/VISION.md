@@ -175,6 +175,20 @@ hier aus. Wer sie aufweicht, verliert diesen Vorteil.
 
 ## 6. Zielgruppe: sechs bis unendlich
 
+> **ENTSCHIEDEN AM 25.08.2026: KEIN BLUT.** Nutzer-Ansage im Wortlaut: „kein
+> blut". Damit ist die Frage unten beantwortet und war die erste der drei
+> Vision-Entscheidungen, die fielen. **Was daraus folgt und ab sofort gilt:**
+>
+> - Es gibt **keinen Schalter** für Blut, auch keinen versteckten. Ein
+>   zuschaltbares Blut hätte die Einstufung der ganzen App gehoben (siehe
+>   unten) — die Zielgruppe ab sechs bleibt damit erreichbar.
+> - Das Wegschlagen darf trotzdem **wuchtig** sein: Staubwolke, Sterne, ein
+>   Sprung im Stein, eine Figur, die vom Feld fliegt. Das ist die dritte
+>   Möglichkeit weiter unten, und sie ist jetzt der Weg.
+> - **Auch die Zeichen halten sich daran** (v0.63.0): Der Nekromant zeigt ein
+>   Aufstehen aus dem Boden statt eines Grabsteins, der Dieb eine Augenbinde.
+>   Wer neue Zeichen oder Animationen baut, prüft sie an dieser Zeile.
+
 Der Nutzer: *„Zielgruppe 6 bis unendlich drüber, also kein Blut — zumindest
 für die Jungen. Wenn man es einstellt, für die Alten eventuell schon, mit
 Flecken auf dem Spielfeld und so."*

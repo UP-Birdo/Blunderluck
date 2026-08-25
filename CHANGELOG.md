@@ -3,6 +3,24 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.63.0 — 25.08.2026
+
+**Jede Fähigkeit und jedes Unglück hat jetzt ihr eigenes Zeichen.**
+
+- In der Bibliothek stand bisher nur der Anfangsbuchstabe im Kästchen. Jetzt
+  siehst du dort **29 gezeichnete Zeichen** — ein querliegendes Nudelholz,
+  eine Schneeflocke beim Frost, einen Handspiegel beim Spiegel, eine
+  Bärenfalle bei der Fessel, ein Schild beim Schutzschild und so weiter.
+- **Auch am Brett** steht das Zeichen jetzt vor dem Namen jeder Fähigkeit, die
+  du gesammelt hast. Die Reihe ist damit auf einen Blick zu unterscheiden,
+  ohne dass du jedes Wort lesen musst.
+- Die Zeichen nehmen die **Farbe ihrer Seltenheitsstufe** an — grün, blau,
+  lila, gelb — und sind gezeichnet statt gemalt: Sie bleiben auf jedem
+  Bildschirm gestochen scharf.
+- **Nichts Blutiges, nichts Gruseliges** (deine Entscheidung vom 25.08.2026):
+  Der Nekromant zeigt ein Aufstehen aus dem Boden statt eines Grabsteins, der
+  Dieb eine Augenbinde.
+
 ## v0.62.0 — 25.08.2026
 
 **Vor dem Anpfiff siehst du jetzt deine Aufstellung — und darfst sie neu

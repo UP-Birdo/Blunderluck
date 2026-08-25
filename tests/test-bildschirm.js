@@ -131,6 +131,26 @@ function neuesElement(tag) {
             return kind;
         },
 
+        /*
+         * Seit v0.63.0: Das Zeichen einer Faehigkeit wird VOR den Text
+         * gehaengt (`_faehigkeitMarkeBauen`). `firstChild` ist dabei `null`,
+         * solange der Knopf nur `textContent` traegt — dann haengt
+         * `insertBefore` hinten an, genau wie der Browser es tut.
+         */
+        insertBefore(kind, vor) {
+            const stelle = this.kinder.indexOf(vor);
+            if (stelle === -1) {
+                this.kinder.push(kind);
+            } else {
+                this.kinder.splice(stelle, 0, kind);
+            }
+            return kind;
+        },
+
+        get firstChild() {
+            return this.kinder.length > 0 ? this.kinder[0] : null;
+        },
+
         /* Beide seit v0.44: Die Bildanleitung tauscht ihr Brett beim Weiter-
            schalten aus, und ein zugeklappter Bibliothekseintrag raeumt seinen
            Inhalt weg (damit sein Takt aufhoert). */
@@ -413,6 +433,7 @@ umgebung.TABS = {
 const bausteinNamen = ["KONFIG", "SPIELER", "ANMELDUNG", "SCHACH_VARIANTEN", "SCHACH", "SCHACH_RUNDE",
     "SCHACH_TAFEL", "SCHACH_BOT", "SCHACH_VORSCHAU", "SCHACH_GRUNDLAGEN", "TEAM_SCHACH",
     "RANGLISTE", "START", "FAEHIGKEITEN", "FREUNDE", "EINSTELLUNGEN",
+    "FAEHIGKEIT_ZEICHEN",
     "SpeicherGemeinsam",
     /* Seit v0.76 auch der Abgleich: Sein Rennen mit der regelmaessigen Abfrage
        war der „Doppelzug-Fehler", und ohne Test kaeme es unbemerkt zurueck. */
@@ -422,7 +443,7 @@ const bausteinNamen = ["KONFIG", "SPIELER", "ANMELDUNG", "SCHACH_VARIANTEN", "SC
    ergänzen das Objekt und müssen nach ihm kommen. */
 const dateien = ["konfig.js", "spieler.js", "speicher.js", "abgleich.js",
     "anmeldung.js",
-    "schach-varianten.js",
+    "faehigkeit-zeichen.js", "schach-varianten.js",
     "schach.js", "schach-runde.js", "schach-tafel.js", "schach-bot.js",
     "schach-vorschau.js",
     "schach-grundlagen.js",
@@ -451,6 +472,7 @@ const TEAM_SCHACH = umgebung.TEAM_SCHACH;
 const RANGLISTE = umgebung.RANGLISTE;
 const SpeicherGemeinsam = umgebung.SpeicherGemeinsam;
 const Abgleich = umgebung.Abgleich;
+const FAEHIGKEIT_ZEICHEN = umgebung.FAEHIGKEIT_ZEICHEN;
 
 /* ------------------------------------------------------------------ *
  * Ausgangslage: zwei Mitspieler, je eine laufende Partie pro Spielart
@@ -5813,6 +5835,116 @@ pruefe("Das Icon-Raster zeigt jede Faehigkeit mit Stufenrahmen (v0.12.0)", () =>
 /* ------------------------------------------------------------------ *
  * Die Fussleiste sammelt die Runden-Aktionen (v0.26.0)
  * ------------------------------------------------------------------ */
+
+/* ------------------------------------------------------------------ *
+ * Die Zeichen der Faehigkeiten (v0.63.0)
+ * ------------------------------------------------------------------ */
+
+pruefe("Jede Faehigkeit und jedes Unglueck hat ein Zeichen (v0.63.0)", () => {
+    /*
+     * Nutzer-Ansage 25.08.2026: „Die Icons kannst du mal selbst anhand
+     * dessen, was sie machen / wie sie heissen, erstellen."
+     *
+     * DIESER TEST IST DER WAECHTER GEGEN DIE HALBE ARBEIT. Der Buchstabe
+     * bleibt als Rueckfall im Code stehen (`_iconKachelBauen`), damit eine
+     * neue Faehigkeit ohne Zeichen nicht leer aussieht — genau das koennte
+     * aber unbemerkt bleiben. Er zieht seine Liste aus der Quelle, die sich
+     * ohnehin aendert (`SCHACH_VARIANTEN`), nicht aus einer Liste im Test:
+     * Wer eine Faehigkeit ergaenzt, faellt hier auf, ohne den Test
+     * anzufassen. (Die Lehre von v0.28.0, `erkenntnisse.md`.)
+     */
+    const ohneZeichen = [];
+
+    for (const art of Object.keys(SCHACH_VARIANTEN.FAEHIGKEITEN)) {
+        if (!FAEHIGKEIT_ZEICHEN.gibtEs(art)) {
+            ohneZeichen.push(art);
+        }
+    }
+    for (const art of Object.keys(SCHACH_VARIANTEN.PECH)) {
+        if (!FAEHIGKEIT_ZEICHEN.gibtEs(art)) {
+            ohneZeichen.push(art + " (Unglueck)");
+        }
+    }
+
+    if (ohneZeichen.length > 0) {
+        throw new Error("ohne Zeichen: " + ohneZeichen.join(", "));
+    }
+
+    /* Und nichts Ueberzaehliges: ein Zeichen ohne Faehigkeit waere ein
+       Tippfehler im Schluessel, der sonst nie auffiele. */
+    const bekannt = Object.keys(SCHACH_VARIANTEN.FAEHIGKEITEN)
+        .concat(Object.keys(SCHACH_VARIANTEN.PECH));
+    const verwaist = Object.keys(FAEHIGKEIT_ZEICHEN.ZEICHEN)
+        .concat(Object.keys(FAEHIGKEIT_ZEICHEN.ZEICHEN_PECH))
+        .filter((art) => bekannt.indexOf(art) === -1);
+
+    if (verwaist.length > 0) {
+        throw new Error("Zeichen ohne Faehigkeit: " + verwaist.join(", "));
+    }
+});
+
+pruefe("Ein Zeichen ist ein echtes SVG mit Formen darin (v0.63.0)", () => {
+    /*
+     * Geprueft an drei Zeichen, die der Nutzer namentlich gewuenscht hat.
+     * Ein leeres SVG waere die stille Art zu scheitern: Die Kachel saehe
+     * einfach leer aus, und der Rueckfall auf den Buchstaben griffe NICHT
+     * (es gibt ja ein Element).
+     */
+    for (const art of ["nudelholz", "frost", "spiegel", "fessel"]) {
+        const bild = FAEHIGKEIT_ZEICHEN.bauen(art);
+
+        if (!bild) {
+            throw new Error(art + ": kein Zeichen gebaut");
+        }
+        if (bild.tagName !== "svg") {
+            throw new Error(art + ": ist kein svg, sondern " + bild.tagName);
+        }
+        if ((bild.kinder || []).length === 0) {
+            throw new Error(art + ": das Zeichen ist leer");
+        }
+        if (String(bild.attribute.viewBox || "") !== "0 0 24 24") {
+            throw new Error(art + ": falsches Feld " + bild.attribute.viewBox);
+        }
+    }
+
+    /* Eine unbekannte Art gibt null — das ist der Rueckfall auf den
+       Buchstaben, kein Fehler. */
+    if (FAEHIGKEIT_ZEICHEN.bauen("gibtesnicht") !== null) {
+        throw new Error("eine unbekannte Art liefert ein Zeichen");
+    }
+});
+
+pruefe("Die Kachel der Bibliothek traegt das Zeichen statt des Buchstabens (v0.63.0)", () => {
+    const stufe = SCHACH_VARIANTEN.stufeVon("frost");
+    const kachel = TEAM_SCHACH._iconKachelBauen(
+        "frost", SCHACH_VARIANTEN.faehigkeitTitel("frost"), stufe, false);
+
+    const suchen = (element, treffer) => {
+        for (const kind of element.kinder || []) {
+            treffer.push(kind);
+            suchen(kind, treffer);
+        }
+        return treffer;
+    };
+    const alle = suchen(kachel, []);
+
+    if (!alle.some((kind) => kind.tagName === "svg")) {
+        throw new Error("kein Zeichen in der Kachel");
+    }
+
+    /* Der Buchstabe darf nicht zusaetzlich dastehen. */
+    const zeichen = alle.find((kind) =>
+        String(kind.className || "").indexOf("kachel-zeichen") !== -1);
+    if (String(zeichen.textContent || "") !== "") {
+        throw new Error("der Lueckenfueller-Buchstabe steht noch da: "
+            + zeichen.textContent);
+    }
+
+    /* Und der Titel steht weiter fuer Vorleseprogramme dabei. */
+    if (String(kachel.attribute["aria-label"] || "").indexOf("Frost") === -1) {
+        throw new Error("die Kachel sagt Vorleseprogrammen nicht, was sie ist");
+    }
+});
 
 pruefe("Die wartende Partie ist der Seitenwahl-Bildschirm (v0.61.0)", () => {
     /*

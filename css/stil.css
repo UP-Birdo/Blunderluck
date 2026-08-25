@@ -5193,6 +5193,37 @@ body.dialog-offen {
 }
 
 /* ------------------------------------------------------------------ *
+ * DIE ZEICHEN DER FÄHIGKEITEN (seit v0.63.0)
+ *
+ * 29 gezeichnete Zeichen aus `js\faehigkeit-zeichen.js`, an zwei Orten:
+ * gross in der Kachel der Bibliothek, klein vor dem Wort an der Marke am
+ * Brett. Beide erben ihre Farbe (`currentColor`) — im Raster ist das die
+ * Stufenfarbe, an der Marke die Schriftfarbe.
+ * ------------------------------------------------------------------ */
+
+/* In der Kachel füllt das Zeichen den Platz, den vorher der Buchstabe hatte.
+   Die Kachel ist quadratisch, also darf es gross sein. */
+.kachel-zeichen .faehigkeit-bild {
+    width: 2.2rem;
+    height: 2.2rem;
+    display: block;
+}
+
+/* Die Kachel färbt ihr Zeichen in der Stufenfarbe — beim Buchstaben war es
+   die leise Schriftfarbe, ein Bild verträgt mehr. */
+.faehigkeit-kachel .kachel-zeichen {
+    color: var(--stufe-farbe, var(--schrift-leise));
+}
+
+/* An der Marke steht es vor dem Wort und richtet sich nach der Schrifthöhe,
+   damit die Zeile nicht wächst. */
+.faehigkeit-knopf .faehigkeit-bild {
+    width: 1.15em;
+    height: 1.15em;
+    flex: 0 0 auto;
+}
+
+/* ------------------------------------------------------------------ *
  * DAS EINLADUNGS-BANNER (seit v0.13.0, Bündel A Schritt 7)
  *
  * Fährt oben herein, sobald das Gerät eine Einladung sieht, und geht
