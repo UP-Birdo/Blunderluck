@@ -1692,34 +1692,16 @@ Object.assign(TEAM_SCHACH, {
         return knopf;
     },
     /*
-     * DIE ZÜGE FAHREN AUS DEMSELBEN KNOPF AUS (seit v0.50.0).
+     * DER ZUGVERLAUF ALS LISTE (seit v0.59.0 nur noch die Liste).
      *
-     * Nutzer-Ansage 24.08.2026: „Züge soll genauso in einem ausfahrt baren
-     * Knopf sein." Aufgeklappt war die Liste schon vorher nicht — sie hatte
-     * aber ihren eigenen Griff-Stil (`verlauf-titel`, eine fette Zeile).
-     * „Genauso" heisst: derselbe Haus-Knopf wie der Friedhof, gebaut aus
-     * denselben Klassen. Die alten Klassen sind damit ohne Nutzer und in
-     * dieser Version aus der Stildatei geflogen.
-     *
-     * Der Kasten für die leere Liste bleibt: Ein Griff „Züge (0)", der sich
-     * öffnen lässt und dann sagt „Noch kein Zug", ist ehrlicher als ein
-     * Griff, der gar nichts tut.
+     * Bis v0.58 steckte die Liste in einem Fach unter dem Brett. Seit v0.59.0
+     * ist der Zugverlauf ein „Z"-Knopf am Spieler (`_zuegeKnopfBauen`), der
+     * ein Fenster öffnet — diese Funktion baut nur noch die Liste darin.
+     * Null, wenn noch kein Zug gefallen ist (das Fenster sagt es dann selbst).
      */
-    _zuegeBauen(partie) {
-        const fach = document.createElement("details");
-        fach.className = "fach";
-
-        const griff = document.createElement("summary");
-        griff.className = "knopf knopf-still knopf-klein fach-griff";
-        griff.textContent = "Züge (" + partie.verlauf.length + ")";
-        fach.appendChild(griff);
-
-        const inhalt = TEAM_SCHACH._element("div", "fach-inhalt");
-        fach.appendChild(inhalt);
-
+    _zugListeBauen(partie) {
         if (partie.verlauf.length === 0) {
-            inhalt.appendChild(TEAM_SCHACH._element("p", "erklaerung", "Noch kein Zug."));
-            return fach;
+            return null;
         }
 
         const liste = TEAM_SCHACH._element("div", "zug-liste");
@@ -1742,31 +1724,32 @@ Object.assign(TEAM_SCHACH, {
             liste.appendChild(zeile);
         }
 
-        inhalt.appendChild(liste);
-        return fach;
+        return liste;
     },
 
     /*
-     * ZUGEKLAPPT STEHEN DIE BEIDEN FÄCHER NEBENEINANDER (seit v0.50.0), und
-     * damit kostet das, was vorher fünf bis acht Zeilen einnahm, noch eine.
-     * Sobald eines aufgeht, nimmt es die ganze Breite — das macht die
-     * Stildatei über `.fach-reihe > .fach[open]`, nicht dieser Code: Es ist
-     * eine Frage der Darstellung, und der Aufklapp-Zustand lebt im Browser,
-     * nicht im Spielstand.
+     * DER ZÜGE-KNOPF AM SPIELER (seit v0.59.0, Nutzer-Skizze).
+     *
+     * Ein „Z" neben Friedhof und Einstellungen, das den Zugverlauf in einem
+     * FENSTER öffnet — wie der Friedhof, und aus demselben Grund: Eine Klappe
+     * an Ort und Stelle würde die Höhe ändern und auf der festen Seite (v0.52)
+     * das Brett verschieben. Bis v0.58 war der Zugverlauf ein Fach unter dem
+     * Brett; das Fach und die Verlauf-Karte darum sind damit weg.
      */
-    _verlaufBauen(partie) {
-        const karte = TEAM_SCHACH._element("section", "karte");
-        const reihe = TEAM_SCHACH._element("div", "fach-reihe");
+    _zuegeKnopfBauen(partie) {
+        const anzahl = partie.verlauf.length;
 
-        /*
-         * DER FRIEDHOF STEHT SEIT v0.58.0 BEI DEN SPIELERN, nicht mehr hier
-         * (`_friedhofKnopfBauen` je Seite in der Spielerzeile). In dieser
-         * Reihe bleibt vorerst nur der Zugverlauf; er wird mit dem nächsten
-         * Schritt ebenfalls zu einem Knopf am Spieler.
-         */
-        reihe.appendChild(TEAM_SCHACH._zuegeBauen(partie));
+        const knopf = TEAM_SCHACH._knopf("Z",
+            "knopf-still knopf-klein spiel-steuer-knopf",
+            () => {
+                const liste = TEAM_SCHACH._zugListeBauen(partie);
+                DIALOG.hinweis("Züge (" + anzahl + ")",
+                    liste ? "Neueste zuerst." : "Noch kein Zug.", liste);
+            });
 
-        karte.appendChild(reihe);
-        return karte;
+        const beschriftung = "Zugverlauf, " + anzahl + " Züge";
+        knopf.setAttribute("aria-label", beschriftung);
+        knopf.title = beschriftung;
+        return knopf;
     },
 });

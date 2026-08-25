@@ -725,8 +725,18 @@ const TEAM_SCHACH = {
         }
         wurzel.appendChild(TEAM_SCHACH._teamExtrasBauen(partie, person));
 
-        wurzel.appendChild(TEAM_SCHACH._verlaufBauen(partie));
-        wurzel.appendChild(TEAM_SCHACH._fussleisteBauen(partie, person));
+        /*
+         * DIE VERLAUF-KARTE IST WEG (seit v0.59.0): Der Zugverlauf sitzt jetzt
+         * als „Z"-Knopf am Spieler (`_zuegeKnopfBauen` in der Spielerzeile),
+         * genau wie der Friedhof seit v0.58.0.
+         *
+         * Die Fussleiste kann jetzt null sein — im laufenden Match ist sie
+         * leer, weil das Zahnrad ebenfalls zum Spieler gezogen ist.
+         */
+        const fuss = TEAM_SCHACH._fussleisteBauen(partie, person);
+        if (fuss) {
+            wurzel.appendChild(fuss);
+        }
 
         /* Erst wenn das Brett im Bildschirm steht, lässt sich die Feldgröße
            messen — deshalb stehen Größe und Bewegung ganz am Ende. Seit
@@ -1135,6 +1145,18 @@ const TEAM_SCHACH = {
          */
         if (laeuft) {
             zeile.appendChild(TEAM_SCHACH._friedhofKnopfBauen(partie, farbe));
+
+            /*
+             * MEINE SEITE TRÄGT ZUSÄTZLICH ZÜGE UND EINSTELLUNGEN (seit
+             * v0.59.0, Nutzer-Skizze): das „Z" für den Zugverlauf und das
+             * Zahnrad, das aus der Fussleiste hierher gezogen ist. Der Gegner
+             * braucht beide nicht — den Verlauf sieht man auf beiden Seiten
+             * gleich, und einstellen (samt Aufgeben) kann nur, wer mitspielt.
+             */
+            if (meinTeam === farbe) {
+                zeile.appendChild(TEAM_SCHACH._zuegeKnopfBauen(partie));
+                zeile.appendChild(TEAM_SCHACH._einstellungenKnopfBauen());
+            }
         }
 
         /*
@@ -1408,6 +1430,34 @@ const TEAM_SCHACH = {
      * eigenen Namen mehr, nur den Titel ihrer Spielart. Der Knopf hätte
      * etwas geändert, das es nicht mehr gibt.
      */
+    /*
+     * DAS ZAHNRAD FÜR DIE PARTIE-EINSTELLUNGEN (seit v0.59.0 hier).
+     *
+     * Bis v0.58 sass es allein in der Fussleiste einer laufenden Partie
+     * (v0.48.0). Mit der Nutzer-Skizze zieht es zu den Steuer-Knöpfen am
+     * Spieler. Dahinter liegen die Einstellungen dieser Partie — heute das
+     * Aufgeben, später mehr. Gezeichnet statt als Bilddatei, dasselbe Zahnrad
+     * wie auf dem Startbildschirm; fehlt START (Testumgebung), steht ein Wort.
+     */
+    _einstellungenKnopfBauen() {
+        const zahnrad = document.createElement("button");
+        zahnrad.type = "button";
+        zahnrad.className =
+            "knopf knopf-still knopf-klein spiel-steuer-knopf spiel-zahnrad";
+        zahnrad.setAttribute("aria-label", "Einstellungen für diese Partie");
+        zahnrad.title = "Einstellungen für diese Partie";
+
+        if (typeof START !== "undefined" && START._zahnradBauen) {
+            zahnrad.appendChild(START._zahnradBauen());
+        } else {
+            zahnrad.textContent = "Einstellungen";
+        }
+
+        zahnrad.addEventListener("click",
+            () => TEAM_SCHACH.spielEinstellungenOeffnen());
+        return zahnrad;
+    },
+
     _fussleisteBauen(partie, person) {
         const leiste = TEAM_SCHACH._element("div", "fussleiste");
         const meinTeam = SCHACH_RUNDE.teamVon(partie, person.id);
@@ -1445,32 +1495,15 @@ const TEAM_SCHACH = {
              * versehentlich erledigen darf.
              */
             /*
-             * SEIT v0.48.0 STEHT HIER DAS ZAHNRAD, nicht mehr das Aufgeben
-             * (Nutzer-Ansage 24.08.2026). Dahinter liegen die Einstellungen
-             * dieser Partie — heute nur das Aufgeben, später Lautstärke und
-             * was sonst nur im Match gilt.
+             * IM LAUFENDEN MATCH IST DIE FUSSLEISTE LEER (seit v0.59.0).
+             *
+             * Bis v0.58 stand hier das Zahnrad (v0.48.0). Mit der Nutzer-
+             * Skizze zieht es zu den Steuer-Knöpfen am Spieler
+             * (`_einstellungenKnopfBauen` in der eigenen Spielerzeile). Der
+             * laufende Spieler braucht die Fussleiste damit nicht mehr — F10
+             * bleibt: kein Ausgang, der an der Partie vorbeiführt.
              */
-            const zahnrad = document.createElement("button");
-            zahnrad.type = "button";
-            zahnrad.className = "knopf knopf-still knopf-klein spiel-zahnrad";
-            zahnrad.setAttribute("aria-label", "Einstellungen für diese Partie");
-            zahnrad.title = "Einstellungen für diese Partie";
-
-            /* Gezeichnet statt als Bilddatei — dasselbe Zahnrad wie auf dem
-               Startbildschirm. Es wohnt dort, weil es dort zuerst gebraucht
-               wurde; zwei Fassungen liefen früher oder später auseinander.
-               Fehlt START (Testumgebung ohne Startbildschirm), steht ein
-               Wort da statt eines Bildes. */
-            if (typeof START !== "undefined" && START._zahnradBauen) {
-                zahnrad.appendChild(START._zahnradBauen());
-            } else {
-                zahnrad.textContent = "Einstellungen";
-            }
-
-            zahnrad.addEventListener("click",
-                () => TEAM_SCHACH.spielEinstellungenOeffnen());
-            leiste.appendChild(zahnrad);
-            return leiste;
+            return null;
         }
 
         /*

@@ -3,6 +3,20 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.59.0 — 25.08.2026
+
+**Zugverlauf und Einstellungen sind jetzt Knöpfe direkt bei dir — neben dem
+Friedhof.**
+
+- Der Zugverlauf steckt nicht mehr in einem Fach unter dem Brett, sondern in
+  einem **„Z"-Knopf** in deiner Zeile; ein Tipp öffnet ihn in einem Fenster.
+- Das **Zahnrad** (Einstellungen dieser Partie, mit dem Aufgeben dahinter)
+  ist aus der unteren Leiste zu dir gezogen — es steht jetzt neben „Z" und „F".
+- Damit tragen du und der Gegner am Brett dieselben kleinen Knöpfe: jede Seite
+  ihr „F" (Friedhof), und bei dir zusätzlich „Z" und das Zahnrad. Unter dem
+  Brett ist nichts mehr — mehr Platz fürs Spielfeld.
+- Am Ablauf ändert sich nichts: Der Verlauf sieht auf beiden Seiten gleich
+  aus, und aufgeben (samt der Rückfrage) kann nur, wer mitspielt.
 ## v0.58.0 — 25.08.2026
 
 **Jede Seite hat jetzt ihren eigenen Friedhof — ein „F" beim Spieler, das die

@@ -1748,25 +1748,27 @@ pruefe("Wer bereit ist, sieht die andere Seite nicht mehr als Angebot (v0.44.0)"
     }
 });
 
-pruefe("Im laufenden Match steht nur das Zahnrad (v0.43.0, v0.48.0)", () => {
+pruefe("Im laufenden Match ist die Fussleiste leer, das Zahnrad sitzt am Spieler (v0.59.0)", () => {
     /*
-     * „Sobald Match startet soll nur ein aufgeben Knopf geben wo das Match
-     * schliesst und man verliert" (Nutzer, 24.08.2026).
-     *
-     * Geprueft wird die Fussleiste einer LAUFENDEN eigenen Partie: genau
-     * ein Knopf, und der heisst Aufgeben. Zum Vergleich dieselbe Partie vor
-     * dem Start — dort muss mehr stehen, sonst prueft der Test nur, dass
-     * die Leiste kaputt ist.
+     * Bis v0.58 stand im laufenden Match genau ein Knopf in der Fussleiste:
+     * das Zahnrad (v0.48.0). Seit v0.59.0 ist es zu den Steuer-Knöpfen am
+     * Spieler gezogen — die Fussleiste des laufenden Spielers ist damit LEER
+     * (null). Zum Vergleich dieselbe Partie vor dem Start, wo die Fussleiste
+     * noch den Ausgang traegt.
      */
     const person = umgebung.ICH.person();
 
-    const beschriftungen = (partie) => {
-        const leiste = TEAM_SCHACH._fussleisteBauen(partie, person);
+    const knopfTexte = (leiste) => {
         const texte = [];
         const suchen = (element) => {
-            const text = String(element.textContent || "").trim();
-            if (text && (element.tagName === "button")) {
-                texte.push(text);
+            if (!element) {
+                return;
+            }
+            if (element.tagName === "button") {
+                const text = String(element.textContent || "").trim();
+                if (text) {
+                    texte.push(text);
+                }
             }
             for (const kind of element.kinder || []) {
                 suchen(kind);
@@ -1781,14 +1783,8 @@ pruefe("Im laufenden Match steht nur das Zahnrad (v0.43.0, v0.48.0)", () => {
     let partie = SCHACH_RUNDE.teamBeitreten(angelegt.partie, person.id, "weiss", 8620);
     partie = SCHACH_RUNDE.teamBeitreten(partie, "id-bert", "schwarz", 8620);
 
-    /*
-     * Vor dem Start steht der Ausgang da, aber noch kein Aufgeben. (Bis
-     * v0.43.0 hiess die Probe hier „mindestens zwei Knoepfe"; seit v0.44.0
-     * ist „Zur Uebersicht" fuer Team-Mitglieder weg, und ohne Zufallsarmee
-     * bleibt genau einer uebrig. Die Zahl war nie der Punkt — der Punkt
-     * ist, dass sich VOR und NACH dem Start etwas unterscheidet.)
-     */
-    const vorher = beschriftungen(partie);
+    /* Vor dem Start: der Ausgang steht da, noch kein Aufgeben. */
+    const vorher = knopfTexte(TEAM_SCHACH._fussleisteBauen(partie, person));
     if (vorher.indexOf("Runde verlassen") === -1) {
         throw new Error("vor dem Start fehlt der Ausgang: " + vorher.join(", "));
     }
@@ -1802,30 +1798,20 @@ pruefe("Im laufenden Match steht nur das Zahnrad (v0.43.0, v0.48.0)", () => {
         throw new Error("die Testpartie laeuft gar nicht");
     }
 
-    /*
-     * SEIT v0.48.0 steht dort genau EIN Knopf, und es ist das Zahnrad —
-     * das Aufgeben ist dahinter gezogen. Gezaehlt wird deshalb ueber die
-     * Knoepfe selbst, nicht ueber ihre Beschriftung: Das Zahnrad traegt
-     * ein Zeichen, keinen Text.
-     */
-    const leiste = TEAM_SCHACH._fussleisteBauen(partie, person);
-    const knoepfe = [];
-    const sammeln = (element) => {
-        for (const kind of element.kinder || []) {
-            if (kind.tagName === "button") {
-                knoepfe.push(kind);
-            }
-            sammeln(kind);
-        }
-    };
-    sammeln(leiste);
-
-    if (knoepfe.length !== 1) {
-        throw new Error("erwartet genau einen Knopf, waren " + knoepfe.length);
+    /* Im Match: die Fussleiste ist leer. */
+    if (TEAM_SCHACH._fussleisteBauen(partie, person) !== null) {
+        throw new Error("die Fussleiste im laufenden Match ist nicht leer");
     }
-    if (String(knoepfe[0].className || "").indexOf("spiel-zahnrad") === -1) {
-        throw new Error("der eine Knopf ist nicht das Zahnrad: "
-            + knoepfe[0].className);
+
+    /* Das Zahnrad sitzt in der EIGENEN Spielerzeile (person spielt weiss),
+       nicht in der des Gegners — einstellen kann nur, wer mitspielt. */
+    const meine = TEAM_SCHACH._spielerZeileBauen(partie, person, "weiss");
+    if (!klasseSuchen(meine, "spiel-zahnrad")) {
+        throw new Error("das Zahnrad fehlt in der eigenen Spielerzeile");
+    }
+    const gegner = TEAM_SCHACH._spielerZeileBauen(partie, person, "schwarz");
+    if (klasseSuchen(gegner, "spiel-zahnrad")) {
+        throw new Error("die Gegnerzeile traegt ein Zahnrad");
     }
 });
 
@@ -3552,46 +3538,43 @@ pruefe("Wer am Zug ist, leuchtet — und die Leiste sagt es nicht mehr (v0.53.0)
     }
 });
 
-pruefe("Der Zugverlauf bleibt ein Fach; der Friedhof ist ausgezogen (v0.58.0)", () => {
+pruefe("Der Zugverlauf ist ein Z-Knopf am Spieler (v0.59.0)", () => {
     /*
-     * Mit v0.58.0 ist der Friedhof aus der Verlauf-Karte ausgezogen (er sitzt
-     * jetzt als „F" bei jedem Spieler). In der Fach-Reihe bleibt vorerst nur
-     * der Zugverlauf — er wird mit dem nächsten Schritt ebenfalls ein Knopf.
+     * Seit v0.59.0 ist der Zugverlauf kein Fach unter dem Brett mehr, sondern
+     * ein „Z"-Knopf am Spieler (`_zuegeKnopfBauen`), der ein Fenster öffnet.
+     * `_verlaufBauen` und den Fach gibt es nicht mehr.
      */
     const partie = SCHACH_TAFEL.partie(TEAM_SCHACH.abgleich.daten, kennungen.standard);
-    const karte = TEAM_SCHACH._verlaufBauen(partie);
-    const reihe = karte.kinder[0];
 
-    if (reihe.kinder.length !== 1) {
-        throw new Error("die Reihe haelt " + reihe.kinder.length
-            + " Faecher statt einem (nur Zuege)");
+    if (typeof TEAM_SCHACH._verlaufBauen === "function") {
+        throw new Error("_verlaufBauen gibt es noch — die Verlauf-Karte sollte weg sein");
     }
 
-    const fach = reihe.kinder[0];
-    if (fach.tagName !== "details") {
-        throw new Error("Zuege ist kein Aufklapper, sondern " + fach.tagName);
+    const knopf = TEAM_SCHACH._zuegeKnopfBauen(partie);
+    if (knopf.tagName !== "button") {
+        throw new Error("Zuege ist kein Knopf, sondern " + knopf.tagName);
     }
-    if (String(fach.kinder[0].textContent || "").indexOf("Züge") !== 0) {
-        throw new Error("das Fach heisst nicht Zuege, sondern " + fach.kinder[0].textContent);
+    if (String(knopf.textContent || "").indexOf("Z") !== 0) {
+        throw new Error("der Knopf zeigt kein Z, sondern " + knopf.textContent);
     }
-
-    /* Die alte Bilanz steht NICHT mehr in dieser Karte. */
-    if (klasseSuchen(karte, "bilanz-reihe")) {
-        throw new Error("die alte Bilanz steht noch in der Verlauf-Karte");
+    if (String(knopf.className || "").indexOf("spiel-steuer-knopf") === -1) {
+        throw new Error("dem Zuege-Knopf fehlt die Steuer-Klasse");
     }
 });
 
-pruefe("Ein leeres Zuege-Fach laesst sich trotzdem oeffnen (v0.50.0)", () => {
+pruefe("Eine leere Zugliste ist null, der Z-Knopf zaehlt trotzdem (v0.59.0)", () => {
     const partie = SCHACH_RUNDE.kopieren(
         SCHACH_TAFEL.partie(TEAM_SCHACH.abgleich.daten, kennungen.standard));
     partie.verlauf = [];
 
-    const fach = TEAM_SCHACH._zuegeBauen(partie);
-    if (String(fach.kinder[0].textContent || "") !== "Züge (0)") {
-        throw new Error("der Griff zaehlt falsch: " + fach.kinder[0].textContent);
+    if (TEAM_SCHACH._zugListeBauen(partie) !== null) {
+        throw new Error("die leere Zugliste ist nicht null");
     }
-    if (!klasseSuchen(fach, "erklaerung")) {
-        throw new Error("dem leeren Fach fehlt der Satz -Noch kein Zug-");
+
+    const knopf = TEAM_SCHACH._zuegeKnopfBauen(partie);
+    if (String(knopf.attribute["aria-label"] || "").indexOf("0 Züge") === -1) {
+        throw new Error("der Z-Knopf zaehlt die leere Liste falsch: "
+            + knopf.attribute["aria-label"]);
     }
 });
 pruefe("Einigkeit ist die Vorgabe, der Haken fragt das Gegenteil (v0.76)", () => {
@@ -5886,10 +5869,13 @@ pruefe("In der eigenen laufenden Partie fuehrt nichts an ihr vorbei (F10)", () =
         return treffer;
     };
 
-    const leiste = einsammeln(TEAM_SCHACH.wurzelEl, (kind) =>
-        String(kind.className || "").indexOf("fussleiste") !== -1, [])[0];
-    const texte = einsammeln(leiste, (kind) => kind.tagName === "button", [])
-        .map((knopf) => String(knopf.textContent || ""));
+    /*
+     * F10: KEIN AUSGANG, der an der laufenden eigenen Partie vorbeifuehrt —
+     * nirgends ein „Zur Uebersicht". Seit v0.59.0 ist die Fussleiste im Match
+     * leer, deshalb wird der ganze Bildschirm durchsucht, nicht mehr sie.
+     */
+    const texte = einsammeln(TEAM_SCHACH.wurzelEl, (kind) =>
+        kind.tagName === "button", []).map((knopf) => String(knopf.textContent || ""));
 
     if (texte.indexOf("Zur Übersicht") !== -1) {
         throw new Error("die laufende eigene Partie bietet einen Ausgang an: "
@@ -5897,12 +5883,11 @@ pruefe("In der eigenen laufenden Partie fuehrt nichts an ihr vorbei (F10)", () =
     }
 
     /*
-     * SEIT v0.48.0 STEHT DAS AUFGEBEN HINTER DEM ZAHNRAD (Nutzer-Ansage):
-     * in der Fussleiste das Zeichen, dahinter die Einstellungen dieser
-     * Partie mit dem grossen roten Knopf. Geprueft wird beides — sonst
-     * bliebe der Test gruen, wenn das Aufgeben ganz verschwaende.
+     * DAS AUFGEBEN STEHT HINTER DEM ZAHNRAD (v0.48.0), das seit v0.59.0 in der
+     * eigenen Spielerzeile sitzt statt in der Fussleiste. Geprueft wird beides
+     * — sonst bliebe der Test gruen, wenn das Aufgeben ganz verschwaende.
      */
-    const zahnrad = einsammeln(leiste, (kind) =>
+    const zahnrad = einsammeln(TEAM_SCHACH.wurzelEl, (kind) =>
         String(kind.className || "").indexOf("spiel-zahnrad") !== -1, [])[0];
     if (!zahnrad) {
         throw new Error("kein Zahnrad in der laufenden Partie");
