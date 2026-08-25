@@ -675,6 +675,22 @@ const TEAM_SCHACH = {
         TEAM_SCHACH.vorratVorstellen(partie);
 
         /*
+         * VOR DEM ANPFIFF IST DER BILDSCHIRM EIN ANDERER (seit v0.61.0).
+         *
+         * Nutzer-Ansage 25.08.2026: „Wenn ich eine Runde starte, soll erst
+         * ein Screen, welcher nur oben links wie überall Zurück hat, die
+         * Knöpfe Weiss, Schwarz und Zufall gross stehen — und du hast noch
+         * den Einladungs-Code sowie Freunde-einladen-Knopf."
+         *
+         * Alles darunter — Standleiste, Fähigkeitsreihen, Brett, Fussleiste —
+         * gehört ab hier dem LAUFENDEN Match und der beendeten Partie.
+         */
+        if (!partie.laeuft && !partie.ergebnis) {
+            TEAM_SCHACH._seitenwahlZeichnen(wurzel, partie, person);
+            return;
+        }
+
+        /*
          * Der Kopf trägt seit v0.47.0 nur noch das Item-Zeichen. Gibt es in
          * dieser Partie keinen festen Item-Vorrat, bleibt er LEER — er wird
          * trotzdem eingehängt und von der Stildatei ausgeblendet
@@ -748,6 +764,245 @@ const TEAM_SCHACH = {
         TEAM_SCHACH._zugAnimieren(halter, partie, person);
         TEAM_SCHACH._wirkungAnimieren(halter, partie);
 
+    },
+
+    /* ---------------------------------------------------------------- *
+     * Vor dem Anpfiff: der Seitenwahl-Bildschirm (seit v0.61.0)
+     * ---------------------------------------------------------------- */
+
+    /*
+     * DER ERSTE VON ZWEI START-BILDSCHIRMEN (Nutzer-Ansage 25.08.2026).
+     *
+     * Er zeigt genau vier Dinge: den Ausgang oben links, wer schon auf
+     * welcher Seite sitzt, die Wahl Weiss/Schwarz/Zufall — und unten den
+     * Beitritts-Code samt Einladen-Knopf.
+     *
+     * WARUM DAS BRETT HIER FEHLT: Vor dem Anpfiff war es nie zu gebrauchen.
+     * Ziehen kann niemand, und was man wirklich tut — eine Seite aussuchen,
+     * auf den zweiten Spieler warten, jemanden einladen — stand darunter
+     * gedrängt. Das Brett kommt mit dem ZWEITEN Start-Bildschirm zurück
+     * (noch nicht gebaut, `ROADMAP.md` Punkt 5); dort hat es dann eine
+     * Aufgabe: die Aufstellung ansehen und bei Zufallsarmee neu würfeln.
+     *
+     * WAS DAMIT VORÜBERGEHEND FEHLT: „Neu aufstellen". Der Knopf gehört auf
+     * den zweiten Bildschirm, und der Nutzer hat am 25.08.2026 ausdrücklich
+     * entschieden, ihn nicht übergangsweise hier stehen zu lassen. Bis Punkt
+     * 5 gebaut ist, lässt sich eine Zufallsarmee also nicht neu würfeln —
+     * die Regel dafür steht unberührt in `_darfNeuWuerfeln`.
+     *
+     * DIE REIHENFOLGE IST DIE DES BLICKS: erst wer da ist, dann die Wahl,
+     * dann die eine Hauptaktion, und ganz unten das Einladen — das braucht
+     * nur, wer noch auf jemanden wartet.
+     */
+    _seitenwahlZeichnen(wurzel, partie, person) {
+        const meinTeam = SCHACH_RUNDE.teamVon(partie, person.id);
+
+        const kopf = TEAM_SCHACH._partieKopfBauen(partie,
+            TEAM_SCHACH._knopf("Zurück", "knopf-still knopf-klein",
+                () => TEAM_SCHACH._seitenwahlVerlassen(partie, person)));
+        kopf.className += " partie-kopf-klebt";
+        wurzel.appendChild(kopf);
+
+        /*
+         * Gegner oben, ich unten — dieselbe Zuordnung wie am Brett
+         * (`_farbeObenAmBrett`), damit der Sprung ins Match nichts
+         * umsortiert. Die Zeilen sind dieselben wie dort; sie sagen hier
+         * schon, wer mitspielt und wer bereit ist.
+         */
+        const obenFarbe = TEAM_SCHACH._farbeObenAmBrett(partie, person);
+        const untenFarbe = (obenFarbe === "weiss") ? "schwarz" : "weiss";
+
+        const seiten = TEAM_SCHACH._element("div", "seitenwahl-seiten");
+        seiten.appendChild(TEAM_SCHACH._spielerZeileBauen(partie, person, obenFarbe));
+        seiten.appendChild(TEAM_SCHACH._spielerZeileBauen(partie, person, untenFarbe));
+        wurzel.appendChild(seiten);
+
+        /*
+         * IN EINER COMPUTER-RUNDE VOR DER SEITENWAHL sagt ein Satz, was zu
+         * tun ist (seit v0.29.0, mit v0.61.0 aus `_teamExtrasBauen` hierher
+         * gezogen). Ohne ihn stünde der Computer nirgends — man müsste
+         * raten, ob überhaupt einer kommt. Er verschwindet, sobald er wahr
+         * geworden ist.
+         */
+        if (SCHACH_BOT.botVorgesehen(partie) && !SCHACH_BOT.istBotPartie(partie)) {
+            wurzel.appendChild(TEAM_SCHACH._element("p", "erklaerung",
+                meinTeam
+                    ? "Der Computer setzt sich auf die andere Seite, sobald "
+                        + "du auf „Bereit“ drückst."
+                    : "Such dir eine Seite aus — der Computer nimmt die "
+                        + "andere, sobald du bereit bist."));
+        }
+
+        /* Die drei Knöpfe sind hier die Hauptsache und deshalb gross
+           (`beitritt-reihe-gross`); gebaut werden sie unverändert von
+           `_beitrittReiheBauen`, das auch entscheidet, welche davon in der
+           jeweiligen Lage überhaupt dastehen. */
+        const beitritt = TEAM_SCHACH._beitrittReiheBauen(partie, person);
+        if (beitritt) {
+            beitritt.className += " beitritt-reihe-gross";
+            wurzel.appendChild(beitritt);
+        }
+
+        /*
+         * „BEREIT" IST DIE HAUPTAKTION DIESES BILDSCHIRMS (seit v0.61.0).
+         *
+         * Bis v0.60.0 war es ein kleiner Knopf am Ende der eigenen
+         * Spielerzeile — dort war er richtig, solange die Zeile am Brett
+         * klebte und jeder Millimeter dem Brett gehörte. Hier gibt es kein
+         * Brett, und „Bereit" ist das Einzige, was die Runde weiterbringt.
+         */
+        if (meinTeam) {
+            wurzel.appendChild(TEAM_SCHACH._knopf(
+                partie.bereit[meinTeam] ? "Doch nicht bereit" : "Bereit",
+                (partie.bereit[meinTeam] ? "knopf-still" : "knopf-haupt")
+                    + " seitenwahl-bereit",
+                () => TEAM_SCHACH.bereitUmschalten(
+                    partie, meinTeam, !partie.bereit[meinTeam])));
+        }
+
+        wurzel.appendChild(TEAM_SCHACH._einladungBlockBauen(partie, person));
+    },
+
+    /*
+     * DER AUSGANG OBEN LINKS (seit v0.61.0).
+     *
+     * Nutzer-Entscheidung 25.08.2026: Das „Zurück" tut genau das, was bis
+     * v0.60.0 „Runde verlassen" in der Fussleiste tat — mit Rückfrage, denn
+     * sitzt danach niemand mehr in der Runde, wird sie geschlossen
+     * (`teamVerlassen` → `_istVerwaist`). Wer gar kein Team hat (Zuschauer,
+     * über den Code hereingekommen), verlässt nichts: Für ihn führt derselbe
+     * Knopf ohne Rückfrage zur Übersicht.
+     *
+     * WARUM `DIALOG.frage` UND NICHT `DIALOG.zweiSchritt`: Der zweite
+     * Schritt schreibt seine Frage IN den Knopf. Bei einem Knopf, der
+     * „Zurück" heisst und oben links steht wie überall in der App, wäre das
+     * eine Falle — man liest „Zurück", drückt, und dort steht plötzlich
+     * etwas anderes. Ein Fenster mit ganzem Satz sagt, was auf dem Spiel
+     * steht; das ist hier wichtiger als der schnellere Weg.
+     */
+    async _seitenwahlVerlassen(partie, person) {
+        const meinTeam = SCHACH_RUNDE.teamVon(partie, person.id);
+
+        if (!meinTeam) {
+            await TEAM_SCHACH.uebersichtOeffnen();
+            return;
+        }
+
+        const ja = await DIALOG.frage("Runde verlassen?",
+            "Du gehst aus dieser Runde heraus. Sitzt danach niemand mehr "
+            + "darin, wird sie geschlossen.",
+            "Verlassen", true);
+
+        if (ja) {
+            await TEAM_SCHACH.teamVerlassen(partie);
+        }
+    },
+
+    /*
+     * CODE UND EINLADEN STEHEN ZUSAMMEN (seit v0.61.0).
+     *
+     * Beides ist dieselbe Sache — jemanden dazuholen —, nur einmal für
+     * Fremde (der Code zum Weitergeben) und einmal für Freunde (der Knopf).
+     * Deshalb eine Zeile statt zwei Orte.
+     *
+     * DER CODE STEHT HIER GROSS, nicht blass wie im Match (`partie-code` in
+     * der Standleiste, v0.47.0). Im Spiel ist er eine Randnotiz; hier ist er
+     * der Grund, warum man auf diesem Bildschirm wartet — man will ihn
+     * vorlesen oder abtippen können.
+     */
+    _einladungBlockBauen(partie, person) {
+        const block = TEAM_SCHACH._element("div", "einladung-block");
+
+        block.appendChild(TEAM_SCHACH._element("span", "einladung-code",
+            SCHACH_RUNDE.beitrittsCode(partie.id)));
+
+        const einladen = TEAM_SCHACH._einladenKnopfBauen(partie, person);
+        if (einladen) {
+            block.appendChild(einladen);
+        }
+
+        return block;
+    },
+
+    /*
+     * FREUNDE EINLADEN IST EIN ZEICHEN-KNOPF (seit v0.61.0).
+     *
+     * Bis v0.60.0 stand darunter eine Liste: eine Zeile je Freund mit Namen
+     * und einem Knopf „Einladen", dahinter der Satz „Eingeladen: …". Bei
+     * fünf Freunden waren das fünf Zeilen — auf einem Bildschirm, der mit
+     * v0.52.0 gerade auf EINE Seite gebracht worden war. Jetzt ist es ein
+     * Knopf mit dem Freunde-Zeichen des Startbildschirms; die Liste steht in
+     * seinem Fenster (`DIALOG.liste`), und wer schon eingeladen ist, im Text
+     * darüber.
+     *
+     * NULL, wenn es nichts zu tun gibt: keine eigene Seite (F17 — erst
+     * mitspielen, dann einladen), beendete Partie, keine Spielerliste, oder
+     * weder einladbare Freunde noch jemand, der schon wartet. Ein Knopf, der
+     * ein leeres Fenster öffnet, ist schlimmer als kein Knopf.
+     *
+     * ER GILT AUCH IM LAUFENDEN MATCH (F19, Nachzügler dürfen herein) —
+     * deshalb steht er hier und nicht im Seitenwahl-Bildschirm selbst.
+     */
+    _einladenKnopfBauen(partie, person) {
+        if (partie.ergebnis || !SCHACH_RUNDE.teamVon(partie, person.id)) {
+            return null;
+        }
+        if (typeof ANMELDUNG === "undefined" || !ANMELDUNG.abgleich) {
+            return null;
+        }
+
+        /* Nur Freunde („erst befreunden, dann einladen", F17), die weder
+           mitspielen noch schon eingeladen sind noch in einer anderen
+           laufenden Partie stecken (F16d). */
+        const einladbare = SPIELER.freundeVon(
+            ANMELDUNG.abgleich.daten, person.id).freunde.filter((freund) =>
+                !SCHACH_RUNDE.teamVon(partie, freund.id)
+                && !SCHACH_RUNDE.istEingeladen(partie, freund.id)
+                && SCHACH_TAFEL.eigeneLaufende(
+                    TEAM_SCHACH.abgleich.daten, freund.id).length === 0);
+
+        const wartend = SCHACH_RUNDE.normalisieren(partie).eingeladen
+            .filter((id) => SCHACH_RUNDE.istEingeladen(partie, id));
+
+        if (einladbare.length === 0 && wartend.length === 0) {
+            return null;
+        }
+
+        const knopf = document.createElement("button");
+        knopf.type = "button";
+        knopf.className =
+            "knopf knopf-still knopf-klein spiel-steuer-knopf einladen-knopf";
+        knopf.setAttribute("aria-label", "Freunde einladen");
+        knopf.title = "Freunde einladen";
+
+        /* Dasselbe Zeichen wie oben rechts auf dem Startbildschirm; fehlt
+           START (Testumgebung), steht ein Wort. */
+        if (typeof START !== "undefined" && START._freundeZeichenBauen) {
+            knopf.appendChild(START._freundeZeichenBauen());
+        } else {
+            knopf.textContent = "Einladen";
+        }
+
+        knopf.addEventListener("click", () => {
+            const text = (wartend.length > 0)
+                ? "Eingeladen: " + wartend.map(
+                    (id) => TEAM_SCHACH._nameVon(id)).join(", ")
+                : "Der Eingeladene findet die Runde unter „Runde beitreten“.";
+
+            const eintraege = einladbare.map((freund) => ({
+                beschriftung: freund.name,
+                wert: freund.id
+            }));
+
+            DIALOG.liste("Freunde einladen", text, eintraege, "Schliessen")
+                .then((id) => {
+                    if (id) {
+                        TEAM_SCHACH.einladen(partie, id);
+                    }
+                });
+        });
+
+        return knopf;
     },
 
     /*
@@ -895,8 +1150,14 @@ const TEAM_SCHACH = {
         }
     },
 
-    _partieKopfBauen(partie) {
+    _partieKopfBauen(partie, ersterKnopf) {
         const kopf = TEAM_SCHACH._element("div", "partie-kopf");
+
+        /* Der Seitenwahl-Bildschirm hängt seinen Ausgang vorne ein (seit
+           v0.61.0) — das Match hat oben links weiterhin keinen (F10). */
+        if (ersterKnopf) {
+            kopf.appendChild(ersterKnopf);
+        }
 
         /*
          * DER KOPF IST LEER BIS AUF DEN BEITRITTS-CODE (seit v0.40.0).
@@ -1172,13 +1433,13 @@ const TEAM_SCHACH = {
          * „Besser an dem Punkt wie zuvor machen, dass Schwarz, Weiss und
          * Zufall beisammen stehen."
          */
-        if (!partie.laeuft && !partie.ergebnis && meinTeam === farbe) {
-            zeile.appendChild(TEAM_SCHACH._knopf(
-                partie.bereit[farbe] ? "Doch nicht bereit" : "Bereit",
-                partie.bereit[farbe] ? "knopf-still knopf-klein" : "knopf-haupt knopf-klein",
-                () => TEAM_SCHACH.bereitUmschalten(partie, farbe, !partie.bereit[farbe])
-            ));
-        }
+        /*
+         * „BEREIT" STEHT SEIT v0.61.0 NICHT MEHR HIER, sondern gross auf dem
+         * Seitenwahl-Bildschirm (`_seitenwahlZeichnen`). Diese Zeile wird vor
+         * dem Anpfiff nur noch DORT gezeichnet — sie sagt jetzt, wer auf
+         * welcher Seite sitzt und wer schon bereit ist, und trägt keinen
+         * Knopf mehr, der die Runde weiterbringt.
+         */
 
         return zeile;
     },
@@ -1197,16 +1458,6 @@ const TEAM_SCHACH = {
         return (unten === "weiss") ? "schwarz" : "weiss";
     },
 
-    /*
-     * WAS VON DEN TEAM-KARTEN ÜBRIG BLIEB (seit v0.53.0): alles, was zu
-     * KEINER der beiden Seiten gehört — der Hinweis auf den Computer, der
-     * Zufalls-Knopf und die Einladungen. Es steht unter der unteren
-     * Spielerzeile und verschwindet, sobald die Partie läuft.
-     *
-     * Die Funktion hiess bis v0.52.0 `_teamsBauen` und baute die zwei
-     * grossen Karten. Umbenannt, weil ein Name, der etwas anderes verspricht
-     * als er tut, beim nächsten Lesen Zeit kostet.
-     */
     /*
      * DIE DREI BEITRITTS-KNÖPFE STEHEN BEISAMMEN (wieder, seit v0.55.0).
      *
@@ -1271,83 +1522,31 @@ const TEAM_SCHACH = {
         return (knoepfe > 0) ? reihe : null;
     },
 
+    /*
+     * WAS IM MATCH VON DEN TEAM-KARTEN ÜBRIG IST (seit v0.61.0 nur noch das
+     * Einladen).
+     *
+     * Die Funktion hiess bis v0.52.0 `_teamsBauen` und baute die zwei
+     * grossen Karten; mit v0.53.0 blieb, was zu KEINER der beiden Seiten
+     * gehört — Computer-Hinweis, Beitritts-Knöpfe, Einladungen.
+     *
+     * SEIT v0.61.0 sind die ersten beiden auf dem Seitenwahl-Bildschirm
+     * (`_seitenwahlZeichnen`): Sie gehören zur Wahl der Seite, und die
+     * findet vor dem Anpfiff statt. Diese Funktion wird nur noch im
+     * laufenden Match und an der beendeten Partie gerufen — übrig bleibt
+     * das Einladen, denn Nachzügler dürfen auch in eine laufende Runde
+     * (F19).
+     *
+     * DER BEREICH BLEIBT AUCH LEER IM BAUM. Die Bildschirm-Tests zählen die
+     * Bereiche der Partie; ein ganzer Bereich, der fehlt, war schon einmal
+     * ein Fehler, den niemand bemerkt hat.
+     */
     _teamExtrasBauen(partie, person) {
         const bereich = TEAM_SCHACH._element("div", "team-reihe");
-        const meinTeam = SCHACH_RUNDE.teamVon(partie, person.id);
 
-        /*
-         * IN EINER COMPUTER-RUNDE VOR DER SEITENWAHL sagt ein Satz, was zu
-         * tun ist (seit v0.29.0). Ohne ihn stünden dort zwei leere Karten
-         * und der Computer nirgends — man müsste raten, ob überhaupt einer
-         * kommt. Er verschwindet, sobald er wahr geworden ist.
-         */
-        if (SCHACH_BOT.botVorgesehen(partie) && !SCHACH_BOT.istBotPartie(partie)
-                && !partie.ergebnis) {
-            bereich.appendChild(TEAM_SCHACH._element("p", "erklaerung",
-                meinTeam
-                    ? "Der Computer setzt sich auf die andere Seite, sobald "
-                        + "du auf „Bereit“ drückst."
-                    : "Such dir eine Seite aus — der Computer nimmt die "
-                        + "andere, sobald du bereit bist."));
-        }
-
-        const beitritt = TEAM_SCHACH._beitrittReiheBauen(partie, person);
-        if (beitritt) {
-            bereich.appendChild(beitritt);
-        }
-
-        /*
-         * Der Beitritts-Code zum Weitergeben (seit v0.10.0): Er steht bei
-         * den Teams, weil man ihn genau dann braucht, wenn noch jemand
-         * fehlt. Er gilt, solange die Partie nicht beendet ist — auch
-         * Nachzügler dürfen herein (F19).
-         */
-        /* ---- DIE CODE-ZEILE IST WEG (v0.40.1). ----
-         *
-         * Sie stand hier seit v0.10.0 mit Beschriftung und Erklärsatz. Seit
-         * v0.40.0 steht der Code blass oben in der Ecke des Kopfes
-         * (`partie-code`) — und damit stand er ZWEIMAL auf demselben
-         * Bildschirm. Die Nutzer-Ansage war „ohne Zusatz Text"; also bleibt
-         * die knappe Fassung oben, und diese hier geht. */
-
-        /*
-         * FREUNDE EINLADEN (seit v0.13.0, Schritt 7): nur Freunde („erst
-         * befreunden, dann einladen", F17), die weder mitspielen noch
-         * schon eingeladen sind noch in einer anderen laufenden Partie
-         * stecken (F16d). Der Eingeladene bekommt ein Banner und findet
-         * die Runde unter „Runde beitreten".
-         */
-        if (!partie.ergebnis && meinTeam
-                && typeof ANMELDUNG !== "undefined" && ANMELDUNG.abgleich) {
-            const einladbare = SPIELER.freundeVon(
-                ANMELDUNG.abgleich.daten, person.id).freunde.filter((freund) =>
-                    !SCHACH_RUNDE.teamVon(partie, freund.id)
-                    && !SCHACH_RUNDE.istEingeladen(partie, freund.id)
-                    && SCHACH_TAFEL.eigeneLaufende(
-                        TEAM_SCHACH.abgleich.daten, freund.id).length === 0);
-
-            if (einladbare.length > 0) {
-                bereich.appendChild(TEAM_SCHACH._element("p", "erklaerung",
-                    "Freunde einladen:"));
-                for (const freund of einladbare) {
-                    const zeile = TEAM_SCHACH._element("div", "freunde-zeile");
-                    zeile.appendChild(TEAM_SCHACH._element("span",
-                        "freunde-name", freund.name));
-                    zeile.appendChild(TEAM_SCHACH._knopf("Einladen",
-                        "knopf-still knopf-klein",
-                        () => TEAM_SCHACH.einladen(partie, freund.id)));
-                    bereich.appendChild(zeile);
-                }
-            }
-
-            /* Wer schon eingeladen ist, steht dabei — niemand fragt doppelt. */
-            const wartend = SCHACH_RUNDE.normalisieren(partie).eingeladen
-                .filter((id) => SCHACH_RUNDE.istEingeladen(partie, id));
-            if (wartend.length > 0) {
-                bereich.appendChild(TEAM_SCHACH._element("p", "erklaerung",
-                    "Eingeladen: " + wartend.map(
-                        (id) => TEAM_SCHACH._nameVon(id)).join(", ")));
-            }
+        const einladen = TEAM_SCHACH._einladenKnopfBauen(partie, person);
+        if (einladen) {
+            bereich.appendChild(einladen);
         }
 
         return bereich;
@@ -1405,32 +1604,6 @@ const TEAM_SCHACH = {
      * ---------------------------------------------------------------- */
 
     /*
-     * DIE FUSSLEISTE IST DIE EINE STELLE FÜR ALLE RUNDEN-AKTIONEN
-     * (seit v0.26.0, Nutzer-Ansage 24.08.: „wenn ich ein spiel starte gibt
-     * es noch die knöpfe zurück und so ganz unten, die sollen alle zsm
-     * gefasst werden").
-     *
-     * Vorher lagen sie an drei Orten: „Zurück" oben im Kopf, „Team
-     * verlassen" an der eigenen Team-Karte, und hier unten Aufgeben,
-     * Umbenennen, Neu aufstellen und Zur Übersicht. Jetzt steht alles hier —
-     * und zwar nur noch das, was in der jeweiligen Lage überhaupt geht:
-     *
-     *     beendet          Neu aufstellen (Hauptaktion), Zur Übersicht
-     *     läuft, ich spiele mit   Aufgeben, Neu aufstellen, Runde verlassen
-     *     wartet, ich spiele mit  Neu aufstellen, Runde verlassen,
-     *                             Zur Übersicht
-     *     ich schaue nur zu       Zur Übersicht
-     *
-     * „ZUR ÜBERSICHT" FEHLT IN DER LAUFENDEN EIGENEN PARTIE — dieselbe
-     * Entscheidung wie beim Zurück-Knopf im Kopf (F10, v0.9.0): Solange die
-     * eigene Runde läuft, zeigt die App nur sie. Wer wirklich raus will,
-     * gibt auf oder verlässt die Runde.
-     *
-     * „UMBENENNEN" IST GANZ ENTFALLEN: Seit v0.14.0 haben Runden keinen
-     * eigenen Namen mehr, nur den Titel ihrer Spielart. Der Knopf hätte
-     * etwas geändert, das es nicht mehr gibt.
-     */
-    /*
      * DAS ZAHNRAD FÜR DIE PARTIE-EINSTELLUNGEN (seit v0.59.0 hier).
      *
      * Bis v0.58 sass es allein in der Fussleiste einer laufenden Partie
@@ -1458,120 +1631,98 @@ const TEAM_SCHACH = {
         return zahnrad;
     },
 
+    /*
+     * OB SICH DIE ARMEE NEU WÜRFELN LÄSST (Regel seit v0.42.0, seit v0.61.0
+     * eine eigene Funktion).
+     *
+     * Nutzer-Ansage 24.08.2026, Lesart am selben Tag bestätigt: „Neu
+     * aufstellen" ist zum NEU WÜRFELN da. Ohne Zufallsarmee würfelt der
+     * Knopf nichts — er stellte nur dieselbe feste Aufstellung wieder hin.
+     *
+     * ZWEI FÄLLE, UND SIE UNTERSCHEIDEN SICH:
+     *   - Beide Seiten bekommen DIESELBE Armee (`armeeUnterschiedlich` aus,
+     *     die Vorgabe): Es wird einmal für alle gewürfelt, also darf man auch
+     *     VOR der Team-Wahl neu würfeln.
+     *   - Jede Seite würfelt für sich (`armeeUnterschiedlich` an): erst NACH
+     *     dem Beitritt — vorher wüsste der Knopf nicht, wessen Armee er neu
+     *     würfelt.
+     *
+     * SIE HAT SEIT v0.61.0 KEINEN AUFRUFER und steht das absichtlich durch:
+     * Der Knopf sass in der Fussleiste der wartenden Partie, und die gibt es
+     * nicht mehr — der Seitenwahl-Bildschirm hat sie ersetzt. Sein Platz ist
+     * der ZWEITE Start-Bildschirm (`ROADMAP.md` Punkt 5: Brett plus Neu
+     * aufstellen), und dort wird genau diese Regel wieder gebraucht. Die
+     * Prüfung dazu läuft weiter, sie fragt jetzt diese Funktion.
+     *
+     * DIE BEENDETE PARTIE IST NICHT GEMEINT: Dort heisst derselbe Knopf zwar
+     * auch „Neu aufstellen" (in der Fussleiste), tut aber etwas anderes — er
+     * startet die Revanche.
+     */
+    _darfNeuWuerfeln(partie, person) {
+        if (partie.ergebnis || !SCHACH_RUNDE.armeeAn(partie)) {
+            return false;
+        }
+
+        const jedeSeiteFuerSich =
+            SCHACH_RUNDE.normalisieren(partie).regeln.armeeUnterschiedlich === true;
+
+        return jedeSeiteFuerSich
+            ? !!SCHACH_RUNDE.teamVon(partie, person.id)
+            : true;
+    },
+
+    /*
+     * DIE FUSSLEISTE TRÄGT NUR NOCH ZWEI LAGEN (seit v0.61.0).
+     *
+     * Sie war seit v0.26.0 die eine Stelle für alle Runden-Aktionen — bis
+     * v0.59.0 das Zahnrad zum Spieler zog und v0.61.0 die WARTENDE Partie
+     * ganz auf den Seitenwahl-Bildschirm nahm. Was dort stand, steht jetzt
+     * dort: „Runde verlassen" ist das „Zurück" oben links geworden, „Neu
+     * aufstellen" wartet auf den zweiten Start-Bildschirm.
+     *
+     * Übrig sind:
+     *
+     *     beendet                 Neu aufstellen (Revanche), Zur Übersicht
+     *     läuft, ich spiele mit   nichts — die Leiste ist null
+     *     läuft, ich schaue zu    Zur Übersicht
+     *
+     * „ZUR ÜBERSICHT" FEHLT IN DER LAUFENDEN EIGENEN PARTIE (F10, v0.9.0):
+     * Solange die eigene Runde läuft, zeigt die App nur sie. Wer wirklich
+     * raus will, gibt hinter dem Zahnrad auf.
+     *
+     * WARUM ER FÜR ZUSCHAUER BLEIBT: Eine offene Partie ist ein Fenster OHNE
+     * Tab-Leiste (v0.113). Wer über einen Beitritts-Code hereingekommen ist
+     * und keine Seite hat, hat auch kein „Runde verlassen" — ohne diesen
+     * Knopf wäre er in einer Runde eingesperrt, die er nicht einmal spielt.
+     */
     _fussleisteBauen(partie, person) {
-        const leiste = TEAM_SCHACH._element("div", "fussleiste");
         const meinTeam = SCHACH_RUNDE.teamVon(partie, person.id);
-        const laeuftMit = !partie.ergebnis && partie.laeuft === true && !!meinTeam;
 
         /*
-         * EIN WORT FÜR EINE SACHE (seit v0.94).
-         *
-         * Beide Zweige rufen `neuAufstellen` — bis v0.93 hiess derselbe
-         * Vorgang bei beendeter Partie „Neu aufstellen" und bei laufender
-         * „Partie zurücksetzen". Sie stehen nie gleichzeitig da, deshalb fiel
-         * es nicht auf; wer aber beides einmal gesehen hat, sucht danach zwei
-         * verschiedene Dinge. Jetzt heisst es überall „Neu aufstellen" — der
-         * Unterschied bleibt in der FARBE (Hauptaktion, sobald die Partie
-         * vorbei ist) und in der Rückfrage, die `neuAufstellen` ohnehin stellt.
+         * IM LAUFENDEN MATCH IST DIE FUSSLEISTE LEER (seit v0.59.0). Bis
+         * v0.58 stand hier das Zahnrad (v0.48.0); es sitzt jetzt in der
+         * eigenen Spielerzeile (`_einstellungenKnopfBauen`), und dahinter
+         * liegt das Aufgeben.
+         */
+        if (!partie.ergebnis && partie.laeuft === true && meinTeam) {
+            return null;
+        }
+
+        const leiste = TEAM_SCHACH._element("div", "fussleiste");
+
+        /*
+         * EIN WORT FÜR EINE SACHE (seit v0.94): Auch die Revanche heisst
+         * „Neu aufstellen" und ruft `neuAufstellen`. Der Unterschied bleibt
+         * in der FARBE (Hauptaktion, sobald die Partie vorbei ist) und in der
+         * Rückfrage, die `neuAufstellen` ohnehin stellt.
          */
         if (partie.ergebnis) {
             leiste.appendChild(TEAM_SCHACH._knopf("Neu aufstellen", "knopf-haupt",
                 () => TEAM_SCHACH.neuAufstellen(partie)));
-        } else if (laeuftMit) {
-            /*
-             * IM LAUFENDEN MATCH GIBT ES NUR „AUFGEBEN" (seit v0.43.0).
-             *
-             * Nutzer-Ansage 24.08.2026: „Sobald Match startet soll nur ein
-             * aufgeben Knopf geben, wo das Match schliesst und man
-             * verliert." Weggefallen sind hier deshalb „Neu aufstellen"
-             * (eine laufende Partie zurückzusetzen ist kein Zug, sondern
-             * ein Rückgängig) und „Runde verlassen" (dasselbe Ergebnis wie
-             * Aufgeben, nur ohne es so zu nennen).
-             *
-             * Das ist die konsequente Fassung von F10 (v0.9.0): Solange die
-             * eigene Runde läuft, zeigt die App nur sie — und es gibt genau
-             * einen Weg hinaus, der ehrlich heisst, was er tut. Die zwei
-             * Schritte bleiben: Aufgeben ist nichts, was ein Daumen
-             * versehentlich erledigen darf.
-             */
-            /*
-             * IM LAUFENDEN MATCH IST DIE FUSSLEISTE LEER (seit v0.59.0).
-             *
-             * Bis v0.58 stand hier das Zahnrad (v0.48.0). Mit der Nutzer-
-             * Skizze zieht es zu den Steuer-Knöpfen am Spieler
-             * (`_einstellungenKnopfBauen` in der eigenen Spielerzeile). Der
-             * laufende Spieler braucht die Fussleiste damit nicht mehr — F10
-             * bleibt: kein Ausgang, der an der Partie vorbeiführt.
-             */
-            return null;
         }
 
-        /*
-         * „NEU AUFSTELLEN" GIBT ES NUR BEI ZUFALLSARMEE (seit v0.42.0).
-         *
-         * Nutzer-Ansage 24.08.2026, Lesart am selben Tag bestätigt: Der
-         * Knopf ist zum NEU WÜRFELN da. Ohne Zufallsarmee würfelt er nichts
-         * — er stellte nur dieselbe feste Aufstellung wieder hin, und dafür
-         * braucht es keinen Knopf.
-         *
-         * ZWEI FÄLLE, UND SIE UNTERSCHEIDEN SICH:
-         *   - Beide Seiten bekommen DIESELBE Armee (`armeeUnterschiedlich`
-         *     aus, die Vorgabe): Es wird einmal für alle gewürfelt, also
-         *     darf man auch VOR der Team-Wahl neu würfeln.
-         *   - Jede Seite würfelt für sich (`armeeUnterschiedlich` an): erst
-         *     NACH dem Beitritt — vorher wüsste der Knopf nicht, wessen
-         *     Armee er neu würfelt.
-         *
-         * DIE BEENDETE PARTIE IST NICHT GEMEINT: Dort heisst derselbe Knopf
-         * zwar auch „Neu aufstellen" (der Zweig weiter oben), tut aber etwas
-         * anderes — er startet die Revanche. Der bleibt, wie er war.
-         */
-        const armeeGewuerfelt = SCHACH_RUNDE.armeeAn(partie);
-        const jedeSeiteFuerSich =
-            SCHACH_RUNDE.normalisieren(partie).regeln.armeeUnterschiedlich === true;
-        const darfNeuWuerfeln = armeeGewuerfelt
-            && (jedeSeiteFuerSich ? !!meinTeam : true);
-
-        if (!partie.ergebnis && darfNeuWuerfeln) {
-            leiste.appendChild(TEAM_SCHACH._knopf("Neu aufstellen", "knopf-still knopf-klein",
-                () => TEAM_SCHACH.neuAufstellen(partie)));
-        }
-
-        /* Der Weg aus der Runde heraus — bis v0.25.0 stand er als „Team
-           verlassen" an der eigenen Team-Karte. Zwei Schritte, weil er die
-           Runde für Alleinspielende zugleich schliesst. */
-        if (meinTeam && !partie.ergebnis) {
-            leiste.appendChild(DIALOG.zweiSchritt(
-                TEAM_SCHACH._knopf("Runde verlassen", "knopf-still knopf-klein", null),
-                () => TEAM_SCHACH.teamVerlassen(partie)));
-        }
-
-        /*
-         * „ZUR ÜBERSICHT" GIBT ES NUR NOCH OHNE EIGENES TEAM (seit v0.44.0).
-         *
-         * Nutzer-Entscheidung 24.08.2026 zu Punkt 7: „Zur Übersicht kann
-         * raus." Wer in einem Team sitzt, hat mit „Runde verlassen" den
-         * ehrlicheren Weg — er sagt, was er tut.
-         *
-         * WARUM ER FÜR ZUSCHAUER STEHEN BLEIBT, obwohl die Ansage ihn
-         * ausnahmslos strich: Eine offene Partie ist ein Fenster OHNE
-         * Tab-Leiste (v0.113). Wer sie über einen Beitritts-Code betreten,
-         * aber noch keine Seite gewählt hat, hat kein Team — also auch kein
-         * „Runde verlassen". Ohne diesen Knopf wäre er eingesperrt, und
-         * zwar in einer Runde, die er nicht einmal spielt. Fällt die
-         * Tab-Leiste dort je wieder an, kann der Knopf ersatzlos weg.
-         */
-        if (!meinTeam && !partie.ergebnis) {
-            leiste.appendChild(TEAM_SCHACH._knopf("Zur Übersicht", "knopf-still knopf-klein",
-                () => TEAM_SCHACH.uebersichtOeffnen()));
-        }
-
-        /* Die beendete Partie behält ihren Ausgang: Von dort führt sonst
-           nichts zurück, und „Runde verlassen" gibt es dort nicht. */
-        if (partie.ergebnis) {
-            leiste.appendChild(TEAM_SCHACH._knopf("Zur Übersicht", "knopf-still knopf-klein",
-                () => TEAM_SCHACH.uebersichtOeffnen()));
-        }
+        leiste.appendChild(TEAM_SCHACH._knopf("Zur Übersicht", "knopf-still knopf-klein",
+            () => TEAM_SCHACH.uebersichtOeffnen()));
 
         return leiste;
     },

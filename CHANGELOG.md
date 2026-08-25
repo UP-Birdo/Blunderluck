@@ -3,6 +3,27 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.61.0 — 25.08.2026
+
+**Eine neue Runde beginnt jetzt mit einem eigenen Bildschirm: nur noch die
+Seitenwahl, gross und aufgeräumt.**
+
+- Wer eine Runde startet oder beitritt, sieht **kein Brett mehr**, bevor es
+  losgeht — sondern **Weiß, Schwarz und Zufall gross nebeneinander**, darunter
+  „Bereit". Vorher stand das alles unter einem Brett, auf dem ohnehin niemand
+  ziehen konnte.
+- **Oben links steht „Zurück"**, wie überall in der App. Er ersetzt den Knopf
+  „Runde verlassen" und fragt vorher nach: Bist du der Letzte, wird die Runde
+  geschlossen.
+- **Der Beitritts-Code steht gross am Fuß** — vorlesbar und abtippbar, statt
+  blass in der Ecke.
+- **Freunde einladen ist ein Knopf** mit dem Freunde-Zeichen; die Namen stehen
+  in seinem Fenster. Bisher war es eine Liste mit einer Zeile je Freund.
+- **Vorübergehend nicht möglich: die Zufallsarmee neu würfeln.** Der Würfel
+  gehört auf den zweiten Start-Bildschirm (Brett ansehen und neu aufstellen),
+  und der wird als Nächstes gebaut.
+
+
 ## v0.60.0 — 25.08.2026
 
 **Bei gleicher Zufallsarmee steht Schwarz jetzt spiegelverkehrt zu Weiß — beide

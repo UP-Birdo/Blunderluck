@@ -1783,11 +1783,13 @@ pruefe("Im laufenden Match ist die Fussleiste leer, das Zahnrad sitzt am Spieler
     let partie = SCHACH_RUNDE.teamBeitreten(angelegt.partie, person.id, "weiss", 8620);
     partie = SCHACH_RUNDE.teamBeitreten(partie, "id-bert", "schwarz", 8620);
 
-    /* Vor dem Start: der Ausgang steht da, noch kein Aufgeben. */
+    /*
+     * Vor dem Start steht noch kein Aufgeben da. Der AUSGANG wird hier nicht
+     * mehr geprueft: Seit v0.61.0 zeichnet die wartende Partie gar keine
+     * Fussleiste mehr, sie ist der Seitenwahl-Bildschirm mit dem „Zurueck"
+     * oben links — dafuer gibt es einen eigenen Test.
+     */
     const vorher = knopfTexte(TEAM_SCHACH._fussleisteBauen(partie, person));
-    if (vorher.indexOf("Runde verlassen") === -1) {
-        throw new Error("vor dem Start fehlt der Ausgang: " + vorher.join(", "));
-    }
     if (vorher.indexOf("Aufgeben") !== -1) {
         throw new Error("Aufgeben steht schon vor dem Start da");
     }
@@ -1822,23 +1824,16 @@ pruefe("Neu aufstellen gibt es nur bei Zufallsarmee (v0.42.0)", () => {
      *   ohne Zufallsarmee            -> nie
      *   gleiche Armee fuer beide     -> auch ohne eigenes Team
      *   jede Seite fuer sich         -> erst mit eigenem Team
+     *
+     * GEPRUEFT WIRD SEIT v0.61.0 DIE REGEL, NICHT DER KNOPF. Er sass in der
+     * Fussleiste der wartenden Partie; die gibt es nicht mehr, seit der
+     * Seitenwahl-Bildschirm sie ersetzt hat. Sein Platz ist der zweite
+     * Start-Bildschirm (ROADMAP Punkt 5) — bis dahin lebt die Regel allein
+     * in `_darfNeuWuerfeln`, und genau die muss stimmen bleiben.
      */
     const person = umgebung.ICH.person();
 
-    const knopfDa = (partie) => {
-        const leiste = TEAM_SCHACH._fussleisteBauen(partie, person);
-        let gefunden = false;
-        const suchen = (element) => {
-            if (String(element.textContent || "") === "Neu aufstellen") {
-                gefunden = true;
-            }
-            for (const kind of element.kinder || []) {
-                suchen(kind);
-            }
-        };
-        suchen(leiste);
-        return gefunden;
-    };
+    const knopfDa = (partie) => TEAM_SCHACH._darfNeuWuerfeln(partie, person);
 
     const bauen = (regeln, mitTeam) => {
         const angelegt = SCHACH_TAFEL.partieAnlegen(
@@ -5781,22 +5776,37 @@ pruefe("Das Icon-Raster zeigt jede Faehigkeit mit Stufenrahmen (v0.12.0)", () =>
  * Die Fussleiste sammelt die Runden-Aktionen (v0.26.0)
  * ------------------------------------------------------------------ */
 
-pruefe("Alle Runden-Aktionen stehen in der Fussleiste (v0.26.0)", () => {
+pruefe("Die wartende Partie ist der Seitenwahl-Bildschirm (v0.61.0)", () => {
     /*
-     * DIE GEMELDETE ANSAGE: „wenn ich ein spiel starte gibt es noch die
-     * knoepfe zurueck und so ganz unten, die sollen alle zsm gefasst
-     * werden."
+     * DIE GEMELDETE ANSAGE (25.08.2026): „Wenn ich eine Runde starte, soll
+     * erst ein Screen, welcher nur oben links wie ueberall Zurueck hat, die
+     * Knoepfe Weiss, Schwarz und Zufall gross stehen — und du hast noch den
+     * Einladungs-Code sowie Freunde-einladen-Knopf."
      *
-     * Geprueft wird an einer WARTENDEN Partie (dort gibt es am meisten zu
-     * sehen): „Runde verlassen" ist von der Team-Karte in die Fussleiste
-     * gezogen, und „Umbenennen" ist ganz weg — Runden haben seit v0.14.0
-     * keinen eigenen Namen mehr.
+     * Dieser Test loest den alten „Alle Runden-Aktionen stehen in der
+     * Fussleiste (v0.26.0)" ab: Die wartende Partie hat gar keine
+     * Fussleiste mehr. Geprueft wird deshalb dieselbe Lage mit den neuen
+     * Erwartungen — und zwar am GEZEICHNETEN Bildschirm, nicht an einer
+     * einzelnen Bau-Funktion:
+     *
+     *   - kein Brett (das kommt erst mit dem zweiten Start-Bildschirm),
+     *   - keine Fussleiste,
+     *   - oben links ein „Zurueck",
+     *   - kein „Runde verlassen", kein „Umbenennen" (v0.14.0),
+     *   - die drei Beitritts-Knoepfe gross,
+     *   - „Bereit" als eigener grosser Knopf,
+     *   - der Beitritts-Code.
      */
     let partie = SCHACH_TAFEL.partie(TEAM_SCHACH.abgleich.daten,
         kennungen[SCHACH_VARIANTEN.liste[0].id]);
     partie = SCHACH_RUNDE.kopieren(partie);
     partie.laeuft = false;
     partie.ergebnis = null;
+
+    /* Die Bereitschaft muss mit zurueck: Wer schon bereit ist, bekommt seit
+       v0.44.0 keine Wahl mehr angeboten — die Partie lief ja, weil beide
+       Seiten bereit waren. */
+    partie.bereit = { weiss: false, schwarz: false };
 
     const vorher = TEAM_SCHACH.abgleich.daten;
 
@@ -5814,38 +5824,153 @@ pruefe("Alle Runden-Aktionen stehen in der Fussleiste (v0.26.0)", () => {
             }
             return treffer;
         };
+        const mitKlasse = (klasse) => einsammeln(TEAM_SCHACH.wurzelEl, (kind) =>
+            String(kind.className || "").indexOf(klasse) !== -1, []);
 
-        const leiste = einsammeln(TEAM_SCHACH.wurzelEl, (kind) =>
-            String(kind.className || "").indexOf("fussleiste") !== -1, [])[0];
-        if (!leiste) {
-            throw new Error("keine Fussleiste in der Partie");
+        if (mitKlasse("brett-halter").length > 0) {
+            throw new Error("vor dem Anpfiff steht ein Brett da");
+        }
+        if (mitKlasse("fussleiste").length > 0) {
+            throw new Error("die wartende Partie hat noch eine Fussleiste");
         }
 
-        const texte = einsammeln(leiste, (kind) => kind.tagName === "button", [])
+        const texte = einsammeln(TEAM_SCHACH.wurzelEl, (kind) =>
+            kind.tagName === "button", [])
             .map((knopf) => String(knopf.textContent || ""));
 
-        if (texte.indexOf("Runde verlassen") === -1) {
-            throw new Error("Runde verlassen fehlt in der Fussleiste, da ist: "
-                + texte.join(", "));
+        if (texte.indexOf("Zurück") === -1) {
+            throw new Error("kein Zurueck oben links, da ist: " + texte.join(", "));
+        }
+        if (texte.indexOf("Runde verlassen") !== -1) {
+            throw new Error("Runde verlassen steht noch als eigener Knopf da");
         }
         if (texte.indexOf("Umbenennen") !== -1) {
             throw new Error("Umbenennen ist zurueck - Runden haben keinen Namen");
         }
 
-        /* Und an der Team-Karte haengt es nicht mehr. */
-        const karten = einsammeln(TEAM_SCHACH.wurzelEl, (kind) =>
-            String(kind.className || "").indexOf("team-karte") !== -1, []);
-        for (const karte of karten) {
-            const inKarte = einsammeln(karte, (kind) =>
-                kind.tagName === "button", [])
-                .map((knopf) => String(knopf.textContent || ""));
-            if (inKarte.indexOf("Team verlassen") !== -1) {
-                throw new Error("Team verlassen haengt noch an der Team-Karte");
-            }
+        /* Der Ausgang haengt IM KOPF, nicht irgendwo auf der Seite. */
+        const kopf = mitKlasse("partie-kopf")[0];
+        if (!kopf) {
+            throw new Error("kein Partie-Kopf auf dem Seitenwahl-Bildschirm");
+        }
+        const imKopf = einsammeln(kopf, (kind) => kind.tagName === "button", [])
+            .map((knopf) => String(knopf.textContent || ""));
+        if (imKopf.indexOf("Zurück") === -1) {
+            throw new Error("das Zurueck steht nicht im Kopf, dort ist: "
+                + imKopf.join(", "));
+        }
+
+        /* Die Wahl steht gross da, „Bereit" ebenfalls. */
+        if (mitKlasse("beitritt-reihe-gross").length === 0) {
+            throw new Error("die drei Beitritts-Knoepfe stehen nicht gross da");
+        }
+        if (mitKlasse("seitenwahl-bereit").length === 0) {
+            throw new Error("der grosse Bereit-Knopf fehlt");
+        }
+
+        /* Und der Code zum Weitergeben. */
+        const code = mitKlasse("einladung-code")[0];
+        if (!code) {
+            throw new Error("der Beitritts-Code fehlt");
+        }
+        if (String(code.textContent || "")
+                !== SCHACH_RUNDE.beitrittsCode(partie.id)) {
+            throw new Error("dort steht ein anderer Code: " + code.textContent);
         }
     } finally {
         TEAM_SCHACH.abgleich.daten = vorher;
         TEAM_SCHACH.uebersichtOeffnen();
+    }
+});
+
+pruefe("Das Zurueck fragt nach - der Zuschauer geht ohne Frage (v0.61.0)", () => {
+    /*
+     * Nutzer-Entscheidung 25.08.2026: Das „Zurueck" oben links tut, was
+     * „Runde verlassen" tat — also MIT Rueckfrage, weil es die Runde
+     * schliessen kann. Wer gar kein Team hat, verlaesst nichts und geht
+     * ohne Frage zur Uebersicht.
+     *
+     * Geprueft wird beides an derselben Funktion. Die Rueckfrage sagt hier
+     * ab (`false`), damit der Test nicht in `teamVerlassen` und dessen
+     * Senden laeuft — geprueft ist, DASS gefragt wird.
+     */
+    const person = umgebung.ICH.person();
+
+    const angelegt = SCHACH_TAFEL.partieAnlegen(
+        SCHACH_TAFEL.leereTafel(8900), "standard", "Ausgang", 8910);
+    const ohneTeam = angelegt.partie;
+    const mitTeam = SCHACH_RUNDE.teamBeitreten(ohneTeam, person.id, "weiss", 8920);
+
+    const echteFrage = umgebung.DIALOG.frage;
+    const echteUebersicht = TEAM_SCHACH.uebersichtOeffnen;
+    let gefragt = 0;
+    let zurUebersicht = 0;
+
+    try {
+        umgebung.DIALOG.frage = async () => {
+            gefragt++;
+            return false;
+        };
+        TEAM_SCHACH.uebersichtOeffnen = async () => {
+            zurUebersicht++;
+        };
+
+        TEAM_SCHACH._seitenwahlVerlassen(mitTeam, person);
+        if (gefragt !== 1) {
+            throw new Error("mit eigenem Team wurde nicht gefragt");
+        }
+        if (zurUebersicht !== 0) {
+            throw new Error("mit eigenem Team ging es an der Frage vorbei");
+        }
+
+        TEAM_SCHACH._seitenwahlVerlassen(ohneTeam, person);
+        if (zurUebersicht !== 1) {
+            throw new Error("der Zuschauer kommt nicht zur Uebersicht");
+        }
+        if (gefragt !== 1) {
+            throw new Error("der Zuschauer wird gefragt, obwohl er nichts verlaesst");
+        }
+    } finally {
+        umgebung.DIALOG.frage = echteFrage;
+        TEAM_SCHACH.uebersichtOeffnen = echteUebersicht;
+    }
+});
+
+pruefe("Einladen gibt es nur mit eigener Seite und nur mit Zielen (v0.61.0)", () => {
+    /*
+     * F17 („erst befreunden, dann einladen") gilt seit v0.13.0 — neu ist,
+     * dass der Knopf ganz WEGBLEIBT, statt eine leere Liste anzubieten: Ein
+     * Zeichen-Knopf, der ein leeres Fenster oeffnet, ist schlimmer als kein
+     * Knopf.
+     */
+    const person = umgebung.ICH.person();
+
+    const angelegt = SCHACH_TAFEL.partieAnlegen(
+        SCHACH_TAFEL.leereTafel(8950), "standard", "Einladen", 8960);
+
+    /* Ohne eigenes Team: nie. */
+    if (TEAM_SCHACH._einladenKnopfBauen(angelegt.partie, person) !== null) {
+        throw new Error("ohne eigene Seite steht der Einladen-Knopf da");
+    }
+
+    /* Mit Team, aber ohne einen einzigen Freund und ohne Wartende: auch
+       nicht — dann haette das Fenster nichts anzubieten. */
+    const mitTeam = SCHACH_RUNDE.teamBeitreten(
+        angelegt.partie, person.id, "weiss", 8970);
+    const echterStand = ANMELDUNG.abgleich.daten;
+    try {
+        ANMELDUNG.abgleich.daten = SPIELER.leereDaten(8975);
+        if (TEAM_SCHACH._einladenKnopfBauen(mitTeam, person) !== null) {
+            throw new Error("ohne Freunde und ohne Wartende steht er da");
+        }
+    } finally {
+        ANMELDUNG.abgleich.daten = echterStand;
+    }
+
+    /* Mit einem Wartenden steht er da, auch wenn niemand mehr einladbar ist. */
+    const mitWartendem = SCHACH_RUNDE.einladen(mitTeam, "id-bert", 8980);
+    if (!TEAM_SCHACH._einladenKnopfBauen(mitWartendem, person)) {
+        throw new Error("mit einem Eingeladenen fehlt der Knopf");
     }
 });
 
@@ -6134,8 +6259,35 @@ pruefe("Einladen in der Partie und die Einladung beim Eingeladenen (v0.13.0)", (
         const partieId = kennungen[SCHACH_VARIANTEN.liste[0].id];
         TEAM_SCHACH.partieOeffnen(partieId);
 
-        if (!knopfMitText("Einladen")) {
+        /*
+         * SEIT v0.61.0 IST DAS EINLADEN EIN ZEICHEN-KNOPF: Er traegt das
+         * Freunde-Zeichen statt des Wortes, und die Namen stehen in seinem
+         * Fenster (`DIALOG.liste`). Gesucht wird deshalb nach der Klasse —
+         * der Text ist ein SVG-Zeichen geworden.
+         */
+        const einladen = einsammeln(TEAM_SCHACH.wurzelEl, (kind) =>
+            String(kind.className || "").indexOf("einladen-knopf") !== -1, [])[0];
+        if (!einladen) {
             throw new Error("kein Einladen-Knopf fuer den freien Freund");
+        }
+
+        /* Der Klick bietet genau Cem an — und niemanden sonst. */
+        const echteListe = umgebung.DIALOG.liste;
+        let angeboten = null;
+        try {
+            umgebung.DIALOG.liste = async (titel, text, eintraege) => {
+                angeboten = eintraege;
+                return null;
+            };
+            einladen.ausloesen("click");
+        } finally {
+            umgebung.DIALOG.liste = echteListe;
+        }
+
+        if (!angeboten || angeboten.length !== 1
+                || angeboten[0].wert !== "id-cem") {
+            throw new Error("das Fenster bietet nicht genau Cem an: "
+                + JSON.stringify(angeboten));
         }
 
         /* Die Einladung liegt in der PARTIE (kein neuer Pfad) — der

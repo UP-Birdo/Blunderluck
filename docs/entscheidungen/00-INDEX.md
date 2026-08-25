@@ -51,6 +51,9 @@ wird. Die Liste dessen, was noch kommt, steht in [../ROADMAP.md](../ROADMAP.md).
   Play-Store-Umbau braeuchte - Referenz: docs\uebergabe-schach-app.md)
 
 ## erkenntnisse.md - Teuer erkaufte Erkenntnisse
+- **Die Projekt-Schranke stolperte über die eigene Netz-Adresse** (v0.61.0 —
+  eine grosse Doku-Datei am Stück neu zu schreiben löst den Fehlalarm aus;
+  abschnittsweise ändern, nichts umgehen)
 - Ein leerer Bereich darf nicht verschwinden (v0.47.0 - die
   Bildschirm-Tests zaehlen die Bereiche der Partie)
 

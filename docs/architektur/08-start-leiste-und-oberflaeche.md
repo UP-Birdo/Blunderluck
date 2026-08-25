@@ -50,10 +50,36 @@ Aus dem Umbau-Schwung vom 24.08.2026, je eine Auslieferung pro Nutzer-Ansage
   die Version und der Wunsch-Knopf sind der Reihe nach in die Einstellungen
   gezogen; die `h1` steht unsichtbar im `body`.
 
-## Die Fussleiste sammelt alle Runden-Aktionen (seit v0.26.0)
+## Vor dem Anpfiff: der Seitenwahl-Bildschirm (seit v0.61.0)
 
-`_fussleisteBauen` baut sie je nach Lage: Aufgeben, Neu aufstellen, Runde
-verlassen, Zur Übersicht.
+**Eine wartende Partie zeigt kein Brett.** `_partieZeichnen` verzweigt bei
+`!laeuft && !ergebnis` sofort nach `_seitenwahlZeichnen` — dem ersten von zwei
+Start-Bildschirmen der Nutzer-Skizze (der zweite, Brett plus Neu-Aufstellen,
+ist noch nicht gebaut; `ROADMAP.md` Punkt 5).
+
+Was dort steht, in dieser Reihenfolge: Kopf mit „Zurück" (der einzige Ausgang),
+die zwei Spielerzeilen ohne Brett dazwischen, der Computer-Hinweis, die drei
+Beitritts-Knöpfe gross, „Bereit" als Hauptaktion, und am Fuss der Beitritts-Code
+samt Einladen-Knopf.
+
+- **„Zurück" ist „Runde verlassen"** (`_seitenwahlVerlassen`) — mit Rückfrage
+  über `DIALOG.frage`, nicht über `DIALOG.zweiSchritt`: Der zweite Schritt
+  schreibt seine Frage IN den Knopf, und ein Knopf, der „Zurück" heisst, darf
+  seine Beschriftung nicht unter dem Finger ändern. Ohne eigenes Team führt er
+  ohne Rückfrage zur Übersicht.
+- **Der Einladen-Knopf gilt auch im Match** (`_einladenKnopfBauen`, F19:
+  Nachzügler dürfen herein) und ist deshalb ein eigener Baustein; er liefert
+  `null`, wenn es weder einzuladende Freunde noch Wartende gibt.
+- **„Neu aufstellen" fehlt hier bewusst** (Nutzer-Entscheidung 25.08.2026): Es
+  gehört auf den zweiten Bildschirm. Die Regel dazu wartet ohne Aufrufer in
+  `_darfNeuWuerfeln`.
+
+## Die Fussleiste — zwei Lagen (v0.26.0, stark gekürzt in v0.61.0)
+
+`_fussleisteBauen` trägt nur noch die beendete Partie (Neu aufstellen als
+Revanche, Zur Übersicht) und den Zuschauer einer laufenden (Zur Übersicht). Für
+den Mitspielenden im Match ist sie `null` — sein Zahnrad sitzt seit v0.59.0 in
+der Spielerzeile. Die wartende Partie ruft sie seit v0.61.0 gar nicht mehr.
 
 - **Wer die eigene laufende Runde offen hat, findet dort KEINEN Ausgang** —
   F10 gilt oben wie unten.

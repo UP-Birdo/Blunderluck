@@ -1422,6 +1422,89 @@ body.partie-fest .phasen-leiste {
     min-width: 0;
 }
 
+/* ------------------------------------------------------------------ *
+ * DER SEITENWAHL-BILDSCHIRM (seit v0.61.0)
+ *
+ * Der erste von zwei Start-Bildschirmen (Nutzer-Ansage 25.08.2026): oben
+ * links Zurück, die Wahl gross in der Mitte, unten Code und Einladen. Kein
+ * Brett — es kommt mit dem zweiten Bildschirm zurück.
+ *
+ * ALLES STEHT UNTEREINANDER UND MITTIG, mit einer Höchstbreite: Auf einem
+ * breiten Fenster liefe die Wahl sonst über die ganze Seite auseinander,
+ * und die drei Knöpfe wären dreimal so breit wie hoch.
+ * ------------------------------------------------------------------ */
+
+.seitenwahl-seiten {
+    max-width: 460px;
+    margin: 0 auto;
+}
+
+/* Die zwei Spielerzeilen stehen hier ohne Brett dazwischen — der Abstand
+   der Zeile selbst (`margin-bottom: 10px`) reicht dafür aus. */
+
+.beitritt-reihe-gross {
+    max-width: 460px;
+    margin-left: auto;
+    margin-right: auto;
+    gap: 10px;
+}
+
+/* GROSS heisst hier: hoch genug, dass ein Daumen sie ohne Zielen trifft, und
+   mit einer Schrift, die man aus Armlänge liest. Die Farben und die Form
+   bleiben die von v0.41.0 — es sind dieselben Knöpfe, nur in der Lage, in
+   der sie die Hauptsache sind. */
+.beitritt-reihe-gross .team-knopf {
+    min-height: 72px;
+    font-size: 1.05rem;
+    border-radius: 12px;
+}
+
+.seitenwahl-bereit {
+    display: block;
+    width: 100%;
+    max-width: 460px;
+    margin: 18px auto 0;
+    min-height: 52px;
+    font-size: 1.05rem;
+    font-weight: 600;
+}
+
+/*
+ * CODE UND EINLADEN AM FUSS: eine Zeile, mittig, mit Abstand nach oben — sie
+ * gehören nicht zur Wahl, sondern zum Warten auf den zweiten Spieler.
+ */
+.einladung-block {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    max-width: 460px;
+    margin: 28px auto 0;
+}
+
+/*
+ * DER CODE STEHT HIER GROSS, anders als die blasse Fassung im Match
+ * (`.partie-code`): Auf diesem Bildschirm ist er der Grund, warum man
+ * wartet — man liest ihn jemandem vor oder tippt ihn ab. Schreibmaschinen-
+ * schrift mit weitem Zeichenabstand, damit sich Null und O nicht streiten;
+ * `user-select` bleibt an, Markieren und Kopieren ist erwünscht.
+ */
+.einladung-code {
+    font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+    font-size: 1.5rem;
+    font-weight: 600;
+    letter-spacing: 0.22em;
+    color: var(--schrift);
+}
+
+/* Das Freunde-Zeichen im Einladen-Knopf, in derselben Grösse wie das Zahnrad
+   am Spieler (`.spiel-zahnrad .start-zeichen`). */
+.einladen-knopf .start-zeichen {
+    width: 1.4em;
+    height: 1.4em;
+    display: block;
+}
+
 /* `.team-zufall-zeile` ist mit v0.55.0 ohne Nutzer geworden — der Zufall
    steht jetzt in `.beitritt-reihe` neben den beiden anderen. Nachgesehen am
    25.08.2026 mit einer Suche über `js\`, `css\` und `tests\`: keine
