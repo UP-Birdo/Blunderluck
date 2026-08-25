@@ -3322,46 +3322,69 @@ pruefe("Nur die fuehrende Seite bekommt ein Plus (v0.76)", () => {
     }
 });
 
-pruefe("Der Friedhof steckt in einem Aufklapp-Knopf (v0.49.0)", () => {
+pruefe("Der Friedhof steht als Knopf bei jedem Spieler, mit den eigenen Gefallenen (v0.58.0)", () => {
     /*
-     * NUTZER-ANSAGE 24.08.2026: „Der Friedhof soll in einem knopf
-     * verschwinden der ausfahren kann mit der Liste."
-     *
-     * Geprueft wird die BAUART, nicht der Text: ein `details` mit einem
-     * `summary`, der die Haus-Knopf-Klassen traegt, und die Bilanz darin.
-     * Die Klassen sind wichtig, weil der Knopf sonst beim naechsten
-     * Stil-Umbau nicht mitzieht.
+     * NUTZER-SKIZZE 25.08.2026: ein „F" je Person am Spieler. NUTZER-
+     * ENTSCHEIDUNG: es zeigt die EIGENEN Gefallenen. Bis v0.57 war der
+     * Friedhof EIN Fach mit der Bilanz beider Seiten.
      */
     const partie = SCHACH_TAFEL.partie(TEAM_SCHACH.abgleich.daten, kennungen.standard);
-    const fach = TEAM_SCHACH._friedhofBauen(partie);
 
-    if (fach.tagName !== "details") {
-        throw new Error("der Friedhof ist kein Aufklapper, sondern " + fach.tagName);
+    /* Der Knopf: ein „F", Haus-Knopf mit Steuer-Klasse, Seite im aria-label. */
+    const knopf = TEAM_SCHACH._friedhofKnopfBauen(partie, "weiss");
+    if (knopf.tagName !== "button") {
+        throw new Error("der Friedhof ist kein Knopf, sondern " + knopf.tagName);
     }
-
-    const griff = fach.kinder[0];
-    if (!griff || griff.tagName !== "summary") {
-        throw new Error("dem Friedhof fehlt der Griff");
+    if (String(knopf.textContent || "").indexOf("F") !== 0) {
+        throw new Error("der Knopf zeigt kein F, sondern " + knopf.textContent);
     }
-    if (String(griff.className || "").indexOf("knopf") === -1) {
-        throw new Error("der Griff ist kein Haus-Knopf: " + griff.className);
+    if (String(knopf.className || "").indexOf("spiel-steuer-knopf") === -1) {
+        throw new Error("dem Friedhof-Knopf fehlt die Steuer-Klasse");
     }
-    if (String(griff.textContent || "").indexOf("Friedhof") !== 0) {
-        throw new Error("der Griff heisst nicht Friedhof, sondern " + griff.textContent);
-    }
-
-    if (!klasseSuchen(fach, "bilanz-reihe")) {
-        throw new Error("die Bilanz liegt nicht im Fach");
+    if (String(knopf.attribute["aria-label"] || "").indexOf("Weiss") === -1) {
+        throw new Error("der Knopf nennt seine Seite nicht: " + knopf.attribute["aria-label"]);
     }
 
-    /* Und sie liegt NUR dort — nicht zusaetzlich offen in der Karte. */
-    const karte = TEAM_SCHACH._verlaufBauen(partie);
-    if (klasseZaehlen(karte, "bilanz-reihe") !== 1) {
-        throw new Error("die Bilanz steht "
-            + klasseZaehlen(karte, "bilanz-reihe") + "-mal in der Karte");
+    /*
+     * EIGENE GEFALLENE = was die ANDERE Seite geschlagen hat. Geprueft wird
+     * die Richtung: die Zahl der Figuren im Friedhof einer Seite gleicht dem,
+     * was die Gegenseite geschlagen hat.
+     */
+    for (const farbe of ["weiss", "schwarz"]) {
+        const gegner = (farbe === "weiss") ? "schwarz" : "weiss";
+        const halter = TEAM_SCHACH._gefalleneBauen(partie, farbe);
+        if (!hatKlasse(halter, "friedhof-figuren")) {
+            throw new Error("kein Friedhof-Behaelter fuer " + farbe);
+        }
+        const figuren = klasseZaehlen(halter, "bilanz-figur");
+        const erwartet = SCHACH_RUNDE.bilanz(partie, gegner).geschlagen.length;
+        if (figuren !== erwartet) {
+            throw new Error("der Friedhof von " + farbe + " zeigt " + figuren
+                + " Figuren, die Gegenseite hat " + erwartet + " geschlagen");
+        }
     }
-    if (!hatKlasse(karte.kinder[0], "fach-reihe")) {
-        throw new Error("das erste Stueck der Karte ist keine Fach-Reihe");
+
+    /*
+     * IM LAUFENDEN MATCH traegt jede Spielerzeile ihren Friedhof-Knopf, VORHER
+     * nicht (da ist noch niemand gefallen).
+     */
+    const angelegt = SCHACH_TAFEL.partieAnlegen(
+        TEAM_SCHACH.abgleich.daten, "standard", "Friedhof", 6200);
+    const vorAnpfiff = TEAM_SCHACH._spielerZeileBauen(
+        angelegt.partie, umgebung.ICH.person(), "weiss");
+    if (klasseSuchen(vorAnpfiff, "spiel-steuer-knopf")) {
+        throw new Error("vor dem Anpfiff steht schon ein Friedhof-Knopf");
+    }
+
+    let laeuft = SCHACH_RUNDE.teamBeitreten(angelegt.partie, "id-anna", "weiss", 6200);
+    laeuft = SCHACH_RUNDE.teamBeitreten(laeuft, "id-bert", "schwarz", 6200);
+    laeuft = SCHACH_RUNDE.bereitSetzen(laeuft, "weiss", true, 6200);
+    laeuft = SCHACH_RUNDE.bereitSetzen(laeuft, "schwarz", true, 6200);
+
+    const imMatch = TEAM_SCHACH._spielerZeileBauen(
+        laeuft, umgebung.ICH.person(), "weiss");
+    if (!klasseSuchen(imMatch, "spiel-steuer-knopf")) {
+        throw new Error("die Spielerzeile im Match traegt keinen Friedhof-Knopf");
     }
 });
 pruefe("Die Spieler stehen als Zeilen am Brett, richtig herum (v0.53.0)", () => {
@@ -3529,39 +3552,32 @@ pruefe("Wer am Zug ist, leuchtet — und die Leiste sagt es nicht mehr (v0.53.0)
     }
 });
 
-pruefe("Friedhof und Zuege sind derselbe Knopf in einer Reihe (v0.50.0)", () => {
+pruefe("Der Zugverlauf bleibt ein Fach; der Friedhof ist ausgezogen (v0.58.0)", () => {
     /*
-     * NUTZER-ANSAGE 24.08.2026: „Zuege soll genauso in einem ausfahrt baren
-     * Knopf sein." — „genauso" heisst: dieselbe Bauart, derselbe Stil.
-     *
-     * Geprueft wird deshalb der VERGLEICH der beiden Griffe, nicht ihr
-     * Aussehen: gleiche Klassen, gleicher Aufbau, beide in derselben Reihe.
-     * Genau das laeuft sonst beim naechsten Umbau auseinander.
+     * Mit v0.58.0 ist der Friedhof aus der Verlauf-Karte ausgezogen (er sitzt
+     * jetzt als „F" bei jedem Spieler). In der Fach-Reihe bleibt vorerst nur
+     * der Zugverlauf — er wird mit dem nächsten Schritt ebenfalls ein Knopf.
      */
     const partie = SCHACH_TAFEL.partie(TEAM_SCHACH.abgleich.daten, kennungen.standard);
-    const reihe = TEAM_SCHACH._verlaufBauen(partie).kinder[0];
+    const karte = TEAM_SCHACH._verlaufBauen(partie);
+    const reihe = karte.kinder[0];
 
-    if (reihe.kinder.length !== 2) {
-        throw new Error("die Reihe haelt " + reihe.kinder.length + " Faecher statt zwei");
-    }
-
-    const griffe = reihe.kinder.map((fach) => fach.kinder[0]);
-    for (const fach of reihe.kinder) {
-        if (fach.tagName !== "details") {
-            throw new Error("kein Aufklapper, sondern " + fach.tagName);
-        }
-    }
-    if (griffe[0].className !== griffe[1].className) {
-        throw new Error("die Griffe sehen verschieden aus: "
-            + griffe[0].className + " / " + griffe[1].className);
-    }
-    if (String(griffe[1].textContent || "").indexOf("Züge") !== 0) {
-        throw new Error("der zweite Griff heisst nicht Zuege, sondern " + griffe[1].textContent);
+    if (reihe.kinder.length !== 1) {
+        throw new Error("die Reihe haelt " + reihe.kinder.length
+            + " Faecher statt einem (nur Zuege)");
     }
 
-    /* Die Zugliste haengt im Fach, nicht mehr offen in der Karte. */
-    if (!klasseSuchen(reihe.kinder[1], "zug-liste")) {
-        throw new Error("die Zugliste liegt nicht im Fach");
+    const fach = reihe.kinder[0];
+    if (fach.tagName !== "details") {
+        throw new Error("Zuege ist kein Aufklapper, sondern " + fach.tagName);
+    }
+    if (String(fach.kinder[0].textContent || "").indexOf("Züge") !== 0) {
+        throw new Error("das Fach heisst nicht Zuege, sondern " + fach.kinder[0].textContent);
+    }
+
+    /* Die alte Bilanz steht NICHT mehr in dieser Karte. */
+    if (klasseSuchen(karte, "bilanz-reihe")) {
+        throw new Error("die alte Bilanz steht noch in der Verlauf-Karte");
     }
 });
 

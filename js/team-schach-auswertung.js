@@ -1610,50 +1610,86 @@ Object.assign(TEAM_SCHACH, {
     },
 
     /*
-     * DER FRIEDHOF FÄHRT AUS EINEM KNOPF AUS (seit v0.49.0).
+     * DIE GEFALLENEN FIGUREN EINER SEITE (seit v0.58.0).
      *
-     * Nutzer-Ansage 24.08.2026: „Der Friedhof soll in einem knopf
-     * verschwinden der ausfahren kann mit der Liste." Bis dahin stand die
-     * Bilanz dauerhaft unter dem Brett und kostete auf dem Handy vier bis
-     * fünf Zeilen — Platz, den der Partie-Bildschirm braucht, um ohne Rollen
-     * auf eine Seite zu passen (ROADMAP-Punkt 4).
+     * Nutzer-Entscheidung 25.08.2026: Der Friedhof zeigt die EIGENEN
+     * Gefallenen — die verlorenen Figuren dieser Seite. Bis v0.57 zeigte der
+     * gemeinsame Friedhof-Fach die Bilanz (was jede Seite GESCHLAGEN hat);
+     * jetzt bekommt jede Seite ihren eigenen Friedhof mit dem, was sie
+     * VERLOREN hat.
      *
-     * DIE BILANZ SELBST BLEIBT UNVERÄNDERT. Gebaut wird sie weiter in
-     * `_bilanzBauen`; hier kommt nur die Klappe darum. Das ist Absicht: Die
-     * Rechnung dahinter (nur die führende Seite bekommt eine Zahl, gerechnet
-     * aus der Stellung) ist seit v0.76 geprüft, und ein Umbau an dieser
-     * Stelle hätte damit nichts zu tun.
-     *
-     * DER GRIFF IST EIN ECHTER HAUS-KNOPF (`knopf knopf-still knopf-klein`),
-     * kein eigener Stil. Stellt Punkt 11 die Knöpfe später auf 3D um, zieht
-     * dieser ohne Zutun mit — ein zweiter, handgemachter Knopf-Stil wäre
-     * genau die Sorte Doppelpflege, die im Haus schon zweimal
-     * auseinandergelaufen ist.
-     *
-     * ZUR NAMENSGLEICHHEIT: „Friedhof" heisst auch eine Fähigkeit (sie holt
-     * gefallene Gegner zurück). Gemeint ist hier trotzdem das Wort des
-     * Nutzers für die gefallenen Figuren — beide stehen nie nebeneinander,
-     * die Fähigkeit sitzt in ihrer eigenen Karte.
+     * VERLOREN hat eine Seite genau das, was die ANDERE geschlagen hat —
+     * deshalb `bilanz(gegenfarbe).geschlagen`. Diese Figuren sind
+     * `farbe`-farben und werden auch so gezeichnet. Die Zeichen-Logik ist aus
+     * `_bilanzBauen` übernommen (dort für die Beute): eine gefallene Figur
+     * sieht aus wie eine geschlagene, nur gehört sie der eigenen Seite.
      */
-    _friedhofBauen(partie) {
-        const fach = document.createElement("details");
-        fach.className = "fach";
+    _gefalleneBauen(partie, farbe) {
+        const gegner = (farbe === "weiss") ? "schwarz" : "weiss";
+        const gefallen = SCHACH_RUNDE.bilanz(partie, gegner).geschlagen;
 
-        /* Wie viele Figuren liegen überhaupt darin? Steht die Zahl im Griff,
-           muss man für die häufigste Frage gar nicht erst aufklappen. */
-        const gefallen = SCHACH_RUNDE.bilanz(partie, "weiss").geschlagen.length
-            + SCHACH_RUNDE.bilanz(partie, "schwarz").geschlagen.length;
+        const halter = TEAM_SCHACH._element("div", "friedhof-figuren");
+        const sortiert = gefallen.slice().sort((einer, anderer) =>
+            (SCHACH_RUNDE.FIGUR_WERT[anderer] || 0) - (SCHACH_RUNDE.FIGUR_WERT[einer] || 0));
 
-        const griff = document.createElement("summary");
-        griff.className = "knopf knopf-still knopf-klein fach-griff";
-        griff.textContent = "Friedhof (" + gefallen + ")";
-        fach.appendChild(griff);
+        for (const art of sortiert) {
+            /* Gefallen sind Figuren der EIGENEN Seite. */
+            const figur = (farbe === "weiss") ? art : art.toLowerCase();
+            halter.appendChild(TEAM_SCHACH._element("span",
+                "figur bilanz-figur figur-" + farbe
+                + TEAM_SCHACH._figurKlasse(figur),
+                TEAM_SCHACH._figurZeichen(figur)));
+        }
 
-        const inhalt = TEAM_SCHACH._element("div", "fach-inhalt");
-        inhalt.appendChild(TEAM_SCHACH._bilanzBauen(partie));
-        fach.appendChild(inhalt);
+        if (sortiert.length === 0) {
+            halter.appendChild(TEAM_SCHACH._element("span", "erklaerung",
+                "noch niemand gefallen"));
+        }
 
-        return fach;
+        return halter;
+    },
+
+    /*
+     * DER FRIEDHOF-KNOPF EINER SEITE (seit v0.58.0).
+     *
+     * Nutzer-Skizze 25.08.2026: ein „F" je Person, am jeweiligen Spieler. Er
+     * öffnet ein FENSTER (`DIALOG.hinweis`), keine Klappe an Ort und Stelle —
+     * eine Klappe würde die Höhe ändern, und auf der festen Seite (v0.52)
+     * rutschte davon das Brett. Im Fenster stehen die gefallenen Figuren und,
+     * wenn es ungleich steht, der Material-Vorsprung oder -Rückstand.
+     *
+     * Das „F" ist ein Buchstabe, kein eigenes Bild — genau so steht es in der
+     * Skizze. Was er heisst, sagt sein `aria-label`/`title`.
+     */
+    _friedhofKnopfBauen(partie, farbe) {
+        const gegner = (farbe === "weiss") ? "schwarz" : "weiss";
+        const anzahl = SCHACH_RUNDE.bilanz(partie, gegner).geschlagen.length;
+        const wer = (farbe === "weiss") ? "Weiss" : "Schwarz";
+
+        const knopf = TEAM_SCHACH._knopf("F",
+            "knopf-still knopf-klein spiel-steuer-knopf",
+            () => {
+                const inhalt = TEAM_SCHACH._element("div", "friedhof-fenster");
+                inhalt.appendChild(TEAM_SCHACH._gefalleneBauen(partie, farbe));
+
+                const vor = SCHACH_RUNDE.materialVorsprung(partie, farbe);
+                const zurueck = SCHACH_RUNDE.materialVorsprung(partie, gegner);
+                let stand = "Nach Material steht es gleich.";
+                if (vor > 0) {
+                    stand = "Vorsprung nach Material: " + vor + " Punkte.";
+                } else if (zurueck > 0) {
+                    stand = "Rückstand nach Material: " + zurueck + " Punkte.";
+                }
+                inhalt.appendChild(TEAM_SCHACH._element("p", "erklaerung", stand));
+
+                DIALOG.hinweis("Friedhof — " + wer,
+                    "Die gefallenen Figuren von " + wer + ".", inhalt);
+            });
+
+        const beschriftung = "Friedhof von " + wer + ", " + anzahl + " gefallen";
+        knopf.setAttribute("aria-label", beschriftung);
+        knopf.title = beschriftung;
+        return knopf;
     },
     /*
      * DIE ZÜGE FAHREN AUS DEMSELBEN KNOPF AUS (seit v0.50.0).
@@ -1722,7 +1758,12 @@ Object.assign(TEAM_SCHACH, {
         const karte = TEAM_SCHACH._element("section", "karte");
         const reihe = TEAM_SCHACH._element("div", "fach-reihe");
 
-        reihe.appendChild(TEAM_SCHACH._friedhofBauen(partie));
+        /*
+         * DER FRIEDHOF STEHT SEIT v0.58.0 BEI DEN SPIELERN, nicht mehr hier
+         * (`_friedhofKnopfBauen` je Seite in der Spielerzeile). In dieser
+         * Reihe bleibt vorerst nur der Zugverlauf; er wird mit dem nächsten
+         * Schritt ebenfalls zu einem Knopf am Spieler.
+         */
         reihe.appendChild(TEAM_SCHACH._zuegeBauen(partie));
 
         karte.appendChild(reihe);

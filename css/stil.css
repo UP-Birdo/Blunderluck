@@ -1276,6 +1276,30 @@ body.partie-fest .phasen-leiste {
     white-space: nowrap;
 }
 
+/*
+ * Die Steuer-Knöpfe am Spieler (seit v0.58.0, Nutzer-Skizze): kompakt und
+ * quadratisch, damit ein „F" (Friedhof) — später „Z" und das Zahnrad —
+ * neben Name und Lage passen, ohne die Zeile zu sprengen.
+ */
+.spiel-steuer-knopf {
+    flex: 0 0 auto;
+    min-width: 30px;
+    padding: 4px 8px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+/* Die gefallenen Figuren im Friedhof-Fenster — grösser als in der alten
+   Bilanz, weil das Fenster ihnen den Platz gibt. */
+.friedhof-figuren {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    font-size: 1.7rem;
+    line-height: 1;
+    margin-bottom: 10px;
+}
+
 /* Die eigene Seite trägt einen kräftigeren Rahmen — dasselbe Mittel wie
    früher an der eigenen Team-Karte (`team-karte-meine`). */
 .spieler-zeile-meine {

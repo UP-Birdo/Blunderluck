@@ -3,6 +3,19 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.58.0 — 25.08.2026
+
+**Jede Seite hat jetzt ihren eigenen Friedhof — ein „F" beim Spieler, das die
+eigenen gefallenen Figuren zeigt.**
+
+- Bisher lag der Friedhof als ein gemeinsames Fach unter dem Brett und zeigte,
+  was jede Seite geschlagen hat. Jetzt trägt jeder Spieler sein eigenes „F":
+  ein Tipp öffnet ein Fenster mit den **verlorenen** Figuren dieser Seite.
+- Dazu steht dort, ob die Seite nach Material vorn liegt oder zurück.
+- Das „F" sitzt direkt in der Zeile des Spielers und erscheint erst, wenn die
+  Partie läuft — vorher ist ja niemand gefallen.
+- Der Zugverlauf bleibt vorerst der bekannte „Züge"-Knopf unter dem Brett; er
+  zieht mit dem nächsten Schritt ebenfalls zu den Spielern.
 ## v0.57.0 — 25.08.2026
 
 **Die Fähigkeiten stehen jetzt als Kartenreihe am Brett — die des Gegners

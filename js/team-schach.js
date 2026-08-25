@@ -1128,6 +1128,16 @@ const TEAM_SCHACH = {
         zeile.appendChild(lage);
 
         /*
+         * DER FRIEDHOF DIESER SEITE (seit v0.58.0, Nutzer-Skizze): ein „F"
+         * am Spieler, das die EIGENEN Gefallenen zeigt (`_friedhofKnopfBauen`
+         * öffnet das Fenster). Nur im laufenden Match — vorher ist niemand
+         * gefallen. Er sitzt rechts, hinter der Lage.
+         */
+        if (laeuft) {
+            zeile.appendChild(TEAM_SCHACH._friedhofKnopfBauen(partie, farbe));
+        }
+
+        /*
          * NUR DIE EIGENE SEITE TRÄGT EINEN KNOPF — „Bereit" bzw. „Doch nicht
          * bereit". Er stand bis v0.52.0 im Fuss der eigenen Team-Karte und
          * bedeutet unverändert dasselbe.
