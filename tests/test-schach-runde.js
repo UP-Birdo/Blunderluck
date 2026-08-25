@@ -8314,5 +8314,86 @@ pruefe("Ein Stand von vor v0.62.0 behaelt seine Aufstellung genau (v0.62.0)", ()
     gleich(geheilt.armeeWurf.weiss, 0, "nachgeruestet auf 0");
     gleich(geheilt.aufstellungBereit.weiss, false, "und die Zusage auf nein");
 });
+pruefe("Zugeloste Seite: zuteilen, sofort bereit, kein Seitenwahl-Schirm (v0.66.0)", () => {
+    /*
+     * NUTZER-ANSAGE 25.08.2026: „Der Haken soll aussagen, ob es zufaellig
+     * entschieden wird, in welches Team man kommt, oder halt die Auswahl.
+     * Standardmaessig soll zufaellig sein, und somit faellt der erste Screen
+     * komplett raus."
+     *
+     * NUTZER-ENTSCHEIDUNG dazu: Die Zuteilung ZAEHLT als erste Bereitschaft
+     * — es gibt dann nur noch das zweite Bereit, das die Partie startet.
+     */
+    const runde = SCHACH_RUNDE.leereRunde(1000, "standard", "p-los", "Zulosen");
+    if (runde.regeln.seiteZufaellig !== true) {
+        throw new Error("die Vorgabe ist nicht das Zulosen");
+    }
+
+    const zugeteilt = SCHACH_RUNDE.seiteZulosen(runde, "id-anna", 2000);
+    const farbe = SCHACH_RUNDE.teamVon(zugeteilt, "id-anna");
+
+    if (!farbe) {
+        throw new Error("es wurde keine Seite zugeteilt");
+    }
+    if (zugeteilt.bereit[farbe] !== true) {
+        throw new Error("die Zuteilung gilt nicht als bereit");
+    }
+
+    /* Zweimal zuteilen aendert nichts — wer drin sitzt, sitzt drin. */
+    const nochmal = SCHACH_RUNDE.seiteZulosen(zugeteilt, "id-anna", 2100);
+    if (SCHACH_RUNDE.teamVon(nochmal, "id-anna") !== farbe) {
+        throw new Error("die zweite Zuteilung hat die Seite gewechselt");
+    }
+
+    /* Der Zweite bekommt die andere Seite — nicht die volle. */
+    const zuZweit = SCHACH_RUNDE.seiteZulosen(zugeteilt, "id-bert", 2200);
+    const zweite = SCHACH_RUNDE.teamVon(zuZweit, "id-bert");
+    if (!zweite || zweite === farbe) {
+        throw new Error("der Zweite landete nicht auf der freien Seite: " + zweite);
+    }
+
+    /* Jetzt sind beide da und bereit: die Aufstellung steht an. */
+    if (!SCHACH_RUNDE.inAufstellung(zuZweit, "id-anna")) {
+        throw new Error("die Runde steht nicht in der Aufstellung");
+    }
+
+    /* Ein Dritter wird NICHT einsortiert — beide Seiten sind besetzt. */
+    const dritter = SCHACH_RUNDE.seiteZulosen(zuZweit, "id-cem", 2300);
+    if (SCHACH_RUNDE.teamVon(dritter, "id-cem")) {
+        throw new Error("ein Dritter wurde in eine volle Runde gesteckt");
+    }
+});
+
+pruefe("Ohne den Haken bleibt die Seitenwahl, wie sie war (v0.66.0)", () => {
+    const runde = SCHACH_RUNDE.leereRunde(1000, "standard", "p-wahl", "Wahl");
+    runde.regeln.seiteZufaellig = false;
+
+    const unveraendert = SCHACH_RUNDE.seiteZulosen(runde, "id-anna", 2000);
+    if (SCHACH_RUNDE.teamVon(unveraendert, "id-anna")) {
+        throw new Error("ohne Haken wurde trotzdem zugeteilt");
+    }
+
+    /* Und ohne Team steht auch die Aufstellung nicht an — es kommt die
+       Seitenwahl. */
+    if (SCHACH_RUNDE.inAufstellung(runde, "id-anna")) {
+        throw new Error("die Aufstellung steht an, obwohl niemand gewaehlt hat");
+    }
+});
+
+pruefe("Eine Partie von vor v0.66.0 behaelt ihre Seitenwahl (v0.66.0)", () => {
+    /*
+     * DER DATENVERTRAG: Das Feld ist neu. Eine Runde von frueher hat es
+     * nicht — sie muss als AUS gelten, sonst aendert sich mitten in einer
+     * wartenden Runde der Ablauf unter den Spielern.
+     */
+    const alt = SCHACH_RUNDE.leereRunde(1000, "standard", "p-alt2", "Alt");
+    delete alt.regeln.seiteZufaellig;
+
+    const geheilt = SCHACH_RUNDE.normalisieren(alt);
+    if (geheilt.regeln.seiteZufaellig !== false) {
+        throw new Error("eine alte Partie loste die Seite ploetzlich zu");
+    }
+});
+
 console.log(anzahlOk + " ok, " + anzahlFehler + " Fehler");
 process.exit(anzahlFehler === 0 ? 0 : 1);

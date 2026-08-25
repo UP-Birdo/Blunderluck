@@ -314,6 +314,27 @@ const SCHACH_RUNDE = {
                 armeeUnterschiedlich: false,
 
                 /*
+                 * WIRD DIE SEITE ZUFÄLLIG ZUGETEILT? (seit v0.66.0)
+                 *
+                 * Nutzer-Ansage 25.08.2026: „Der erste Screen soll an einem
+                 * Grundeinstellungs-Haken hängen, ob er erscheint oder nicht.
+                 * Der Haken soll aussagen, ob es zufällig entschieden wird,
+                 * in welches Team man kommt, oder halt die Auswahl.
+                 * Standardmässig soll zufällig sein, und somit fällt der
+                 * erste Screen komplett raus."
+                 *
+                 * AN (die Vorgabe): Wer die Runde betritt, wird einer freien
+                 * Seite zugelost und gilt damit als bereit — der
+                 * Seitenwahl-Bildschirm entfällt, man steht sofort vor dem
+                 * Brett. AUS: Man sucht sich seine Seite aus wie seit v0.61.0.
+                 *
+                 * ALTE PARTIEN GELTEN ALS AUS (`=== true` beim
+                 * Normalisieren): Eine Runde, die vor v0.66.0 angelegt wurde,
+                 * behält genau das Verhalten, mit dem sie angelegt wurde.
+                 */
+                seiteZufaellig: true,
+
+                /*
                  * WIE VIELE FIGUREN die Zufallsarmee bekommt (seit v0.86,
                  * Wunsch V1). Eine der vier Stufen aus
                  * `SCHACH_VARIANTEN.ARMEE_STAERKEN`; „normal" ist die Zahl,
@@ -1269,6 +1290,9 @@ const SCHACH_RUNDE = {
 
             runde.regeln.zufallsArmee = (roh.regeln.zufallsArmee === true);
             runde.regeln.armeeUnterschiedlich = (roh.regeln.armeeUnterschiedlich === true);
+            /* Seit v0.66.0; alte Partien gelten als AUS und behalten damit
+               ihre Seitenwahl. */
+            runde.regeln.seiteZufaellig = (roh.regeln.seiteZufaellig === true);
 
             /* Unbekannte oder fehlende Stärke wird „normal" — der Wert von
                vor v0.86, damit angefangene Partien gleich bleiben. */
@@ -4277,11 +4301,81 @@ const SCHACH_RUNDE = {
      * Steht die Runde gerade auf dem zweiten Start-Bildschirm? Beide Seiten
      * besetzt und mit ihrer Seite einverstanden, das Brett aber noch nicht
      * angepfiffen. Der Bildschirm fragt genau das (`_partieZeichnen`).
+     *
+     * MIT ZUGELOSTER SEITE GENÜGT DIE EIGENE (seit v0.66.0): Dann gibt es
+     * keinen Seitenwahl-Bildschirm, auf den man zurückfallen könnte — wer
+     * drin sitzt, steht vor dem Brett und wartet dort auf den zweiten
+     * Spieler. `spielerId` sagt, wer fragt; ohne sie gilt die alte Regel
+     * (beide Seiten), damit jeder vorhandene Aufrufer unverändert weiterläuft.
      */
-    inAufstellung(runde) {
+    inAufstellung(runde, spielerId) {
         const stand = SCHACH_RUNDE.normalisieren(runde);
-        return !stand.laeuft && !stand.ergebnis
-            && SCHACH_RUNDE.kannStarten(stand);
+
+        if (stand.laeuft || stand.ergebnis) {
+            return false;
+        }
+        if (SCHACH_RUNDE.kannStarten(stand)) {
+            return true;
+        }
+
+        return stand.regeln.seiteZufaellig === true
+            && !!spielerId
+            && !!SCHACH_RUNDE.teamVon(stand, spielerId);
+    },
+
+    /*
+     * DIE SEITE ZULOSEN, WENN DER HAKEN ES SAGT (seit v0.66.0).
+     *
+     * Liefert die Runde unverändert zurück, wenn nichts zu tun ist — der
+     * Aufrufer muss nichts prüfen. Zugeteilt wird nur, wenn:
+     *
+     *   - der Haken `seiteZufaellig` an ist,
+     *   - die Runde noch nicht läuft und kein Ergebnis hat,
+     *   - die Person noch in keinem Team sitzt,
+     *   - und mindestens eine Seite LEER ist.
+     *
+     * DIE LETZTE BEDINGUNG IST DIE WICHTIGE: Sind beide Seiten besetzt,
+     * würde ein Dritter sonst ungefragt in ein Team gesteckt, das ihn nicht
+     * braucht. Wer bei einer vollen Runde hereinschaut, bleibt Zuschauer —
+     * so wie bisher auch.
+     *
+     * WER ZUGELOST WIRD, IST DAMIT BEREIT (Nutzer-Entscheidung 25.08.2026:
+     * „der erste Screen fällt komplett raus"). Die erste Bereitschaft war
+     * die Zusage zur eigenen SEITE — wer sie nicht aussuchen kann, hat
+     * nichts zuzusagen. Die zweite (die Aufstellung) bleibt und startet.
+     */
+    seiteZulosen(runde, spielerId, zeitpunkt) {
+        const stand = SCHACH_RUNDE.normalisieren(runde);
+
+        if (stand.regeln.seiteZufaellig !== true
+                || stand.laeuft || stand.ergebnis
+                || !spielerId
+                || SCHACH_RUNDE.teamVon(stand, spielerId)) {
+            return runde;
+        }
+
+        const leere = ["weiss", "schwarz"].filter(
+            (farbe) => stand.teams[farbe].length === 0);
+
+        if (leere.length === 0) {
+            return runde;
+        }
+
+        /*
+         * Steht genau eine Seite leer, geht es dorthin — sonst gäbe es kein
+         * Gegenüber. Sind beide leer, entscheidet der GERECHNETE Zufall:
+         * `Math.random()` hat im Modell nichts zu suchen, und die Kennung
+         * plus die Person ergibt für jedes Gerät dieselbe Antwort.
+         */
+        const farbe = (leere.length === 1)
+            ? leere[0]
+            : ((SCHACH_RUNDE._zufallsWert(
+                (stand.id || "partie") + "|seite|" + spielerId) < 0.5)
+                ? "weiss" : "schwarz");
+
+        return SCHACH_RUNDE.bereitSetzen(
+            SCHACH_RUNDE.teamBeitreten(runde, spielerId, farbe, zeitpunkt),
+            farbe, true, zeitpunkt);
     },
 
     /*

@@ -4872,8 +4872,11 @@ async function zeitlimitPruefen() {
 
             try {
                 START.spielartMerken(SCHACH_VARIANTEN.liste[0].id);
+                /* Die Seite wird hier AUSGESUCHT (v0.66.0): Dieser Test prueft
+                   genau den Weg ueber die Seitenwahl. Mit zugeloster Seite
+                   gaebe es ihn nicht — dafuer steht ein eigener Test. */
                 START.regelnMerken(Object.assign(TEAM_SCHACH._regelnVorgabe(),
-                    { gegenComputer: true }));
+                    { gegenComputer: true, seiteZufaellig: false }));
 
                 await START.spielen();
 
@@ -4973,6 +4976,11 @@ async function zeitlimitPruefen() {
              * DIE LUECKE, DIE MIT DER SEITENWAHL ENTSTAND (v0.29.0): Wer
              * „Spielen" drueckt und ohne Seitenwahl zurueckgeht, liesse eine
              * menschenleere Runde im gemeinsamen Stand stehen.
+             *
+             * DAS SETZT DIE SEITENWAHL VORAUS (seit v0.66.0 ausdruecklich):
+             * Mit zugeloster Seite sitzt man sofort drin, die Runde ist also
+             * nie menschenleer — dafuer fuehrt dort das „Zurueck" aus der
+             * Runde heraus und schliesst sie (eigener Test).
              */
             const START = umgebung.START;
             const echteDaten = TEAM_SCHACH.abgleich.daten;
@@ -4982,7 +4990,7 @@ async function zeitlimitPruefen() {
             try {
                 START.spielartMerken(SCHACH_VARIANTEN.liste[0].id);
                 START.regelnMerken(Object.assign(TEAM_SCHACH._regelnVorgabe(),
-                    { gegenComputer: true }));
+                    { gegenComputer: true, seiteZufaellig: false }));
 
                 await START.spielen();
 
@@ -6164,6 +6172,10 @@ pruefe("Die wartende Partie ist der Seitenwahl-Bildschirm (v0.61.0)", () => {
        v0.44.0 keine Wahl mehr angeboten — die Partie lief ja, weil beide
        Seiten bereit waren. */
     partie.bereit = { weiss: false, schwarz: false };
+
+    /* Und die Seite wird hier AUSGESUCHT, nicht zugelost (v0.66.0) — sonst
+       gaebe es diesen Bildschirm gar nicht. */
+    partie.regeln = Object.assign({}, partie.regeln, { seiteZufaellig: false });
 
     const vorher = TEAM_SCHACH.abgleich.daten;
 

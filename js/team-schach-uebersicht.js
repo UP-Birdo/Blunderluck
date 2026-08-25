@@ -258,6 +258,14 @@ Object.assign(TEAM_SCHACH, {
                     + "Aus bekommen beide dieselben Figuren, spiegelbildlich.",
                 nurMitArmee: true
             },
+            {
+                schluessel: "seiteZufaellig",
+                titel: "Seite zulosen",
+                hinweis: "An (Vorgabe) bekommt jeder seine Farbe zugelost, sobald er "
+                    + "die Runde betritt — es geht sofort ans Brett. Aus sucht sich "
+                    + "jeder seine Seite selbst aus; dafür kommt vorher ein "
+                    + "Bildschirm mit Weiss, Schwarz und Zufall."
+            },
             /*
              * EINIGKEIT IST SEIT v0.76 DIE VORGABE — der Haken fragt das
              * GEGENTEIL ab (Eingangskorb vom 18.08.: „Team muss einig sein soll

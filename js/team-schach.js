@@ -127,6 +127,9 @@ const TEAM_SCHACH = {
         zufallsArmee: false,
         armeeUnterschiedlich: false,
 
+        /* Seit v0.66.0: Seite zulosen statt aussuchen (Vorgabe AN). */
+        seiteZufaellig: true,
+
         /*
          * Wie viele Figuren JEDE Seite bekommt (seit v0.86) — eine der Stufen
          * aus `SCHACH_VARIANTEN.ARMEE_STAERKEN`.
@@ -692,7 +695,7 @@ const TEAM_SCHACH = {
              * hat, ist die Seitenwahl dran; sobald beide Seiten besetzt und
              * einverstanden sind, kommt die Aufstellung mit dem Brett.
              */
-            if (SCHACH_RUNDE.inAufstellung(partie)) {
+            if (SCHACH_RUNDE.inAufstellung(partie, person.id)) {
                 TEAM_SCHACH._aufstellungZeichnen(wurzel, partie, person);
             } else {
                 TEAM_SCHACH._seitenwahlZeichnen(wurzel, partie, person);
@@ -962,17 +965,41 @@ const TEAM_SCHACH = {
          * NUR WER MITSPIELT, SAGT ZU. Ein Zuschauer ohne Seite kann hier
          * nichts bestätigen — er sieht die Aufstellung und wartet, wie die
          * beiden Spielerzeilen es ihm zeigen.
+         *
+         * UND NUR, WENN JEMAND GEGENÜBER SITZT (seit v0.66.0): Bei
+         * zugeloster Seite steht man schon vor dem Brett, während die andere
+         * Seite noch leer ist. Ein „Bereit", das nichts bewirken kann, wäre
+         * dort eine Lüge — deshalb sagt an seiner Stelle ein Satz, worauf
+         * gewartet wird.
          */
-        if (meinTeam) {
+        const vollstaendig = partie.teams.weiss.length > 0
+            && partie.teams.schwarz.length > 0;
+
+        if (meinTeam && vollstaendig) {
             const gesagt = partie.aufstellungBereit[meinTeam];
             reihe.appendChild(TEAM_SCHACH._knopf(
                 gesagt ? "Doch nicht bereit" : "Bereit",
                 (gesagt ? "knopf-still" : "knopf-haupt") + " aufstellung-bereit",
                 () => TEAM_SCHACH.aufstellungBereitUmschalten(
                     partie, meinTeam, !gesagt)));
+        } else if (meinTeam) {
+            reihe.appendChild(TEAM_SCHACH._element("p",
+                "erklaerung aufstellung-warten",
+                "Wartet auf einen Mitspieler — gib den Code weiter oder lade "
+                + "jemanden ein."));
         }
 
         wurzel.appendChild(reihe);
+
+        /*
+         * CODE UND EINLADEN STEHEN AUCH HIER (seit v0.66.0), denn mit
+         * zugeloster Seite ist dies der ERSTE Bildschirm — und wer wartet,
+         * braucht genau die beiden. Steht der Gegner schon am Brett, ist
+         * nichts mehr weiterzugeben; dann bleibt der Block weg.
+         */
+        if (!vollstaendig) {
+            wurzel.appendChild(TEAM_SCHACH._einladungBlockBauen(partie, person));
+        }
 
         /* Erst wenn das Brett im Bildschirm steht, lässt sich die Feldgrösse
            messen — wie im Match (`_partieZeichnen`). Animiert wird hier
@@ -1026,6 +1053,23 @@ const TEAM_SCHACH = {
 
         if (!meinTeam) {
             await TEAM_SCHACH.uebersichtOeffnen();
+            return;
+        }
+
+        /*
+         * MIT ZUGELOSTER SEITE FÜHRT ZURÜCK AUS DER RUNDE (seit v0.66.0).
+         *
+         * Der Grund ist zwingend: Ohne Seitenwahl gibt es keinen Bildschirm
+         * mehr, auf den man zurückfallen könnte — die erste Bereitschaft
+         * zurückzunehmen führte in ein Nichts, aus dem die Zuteilung einen
+         * sofort wieder herausholt. Beim ersten Bau war genau das der Fall,
+         * und ein Test hat es gefangen: Eine angelegte Runde räumte sich
+         * nicht mehr weg, weil niemand sie je verliess.
+         *
+         * Ohne den Haken bleibt es beim Schritt zurück zur Seitenwahl.
+         */
+        if (SCHACH_RUNDE.normalisieren(partie).regeln.seiteZufaellig === true) {
+            await TEAM_SCHACH._seitenwahlVerlassen(partie, person);
             return;
         }
 
@@ -2024,6 +2068,48 @@ const TEAM_SCHACH = {
         }
 
         TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
+
+        /*
+         * MIT ZUGELOSTER SEITE WIRD BEIM BETRETEN ZUGETEILT (seit v0.66.0).
+         *
+         * NACH dem Zeichnen und ohne `await`: Das Brett steht damit sofort
+         * da, und die Zuteilung schiebt gleich darauf die zweite Fassung
+         * hinterher. Andersherum sähe man beim Betreten einen Lidschlag lang
+         * nichts.
+         */
+        TEAM_SCHACH._seiteZulosenWennNoetig(partie);
+    },
+
+    /*
+     * Die Zuteilung ausführen und senden — oder nichts tun (seit v0.66.0).
+     *
+     * OB überhaupt zugeteilt wird, entscheidet das Modell
+     * (`SCHACH_RUNDE.seiteZulosen`): Haken an, Runde wartet, Person hat noch
+     * keine Seite, mindestens eine Seite ist frei. Hier wird nur geschickt,
+     * was dabei herauskommt — und erkannt, ob sich überhaupt etwas geändert
+     * hat, damit nicht jedes Öffnen einen Schreibvorgang auslöst.
+     *
+     * DER COMPUTER STEIGT DABEI EIN wie sonst beim Bereit-Drücken: Die
+     * Zuteilung IST die erste Bereitschaft, also gehört beides zusammen.
+     */
+    _seiteZulosenWennNoetig(partie) {
+        const person = TEAM_SCHACH._ich();
+        if (!partie || !person) {
+            return;
+        }
+
+        let neu = SCHACH_RUNDE.seiteZulosen(partie, person.id);
+        if (!SCHACH_RUNDE.teamVon(neu, person.id)) {
+            return;
+        }
+        if (SCHACH_RUNDE.teamVon(partie, person.id)) {
+            return;
+        }
+
+        neu = SCHACH_BOT.beiBereitDazuholen(neu, person.id);
+        neu = SCHACH_BOT.aufstellungBestaetigen(neu);
+
+        TEAM_SCHACH._sendenMitPruefung(neu, partie.zugZaehler);
     },
 
     /*
@@ -2915,6 +3001,7 @@ const TEAM_SCHACH = {
             lootboxMenge: SCHACH_VARIANTEN.MENGE_VORGABE,
             zufallsArmee: false,
             armeeUnterschiedlich: false,
+            seiteZufaellig: true,
             armeeStaerke: "normal",
             itemVorrat: "alle",
 
@@ -3095,6 +3182,7 @@ const TEAM_SCHACH = {
             lootboxMenge: wunsch.lootboxMenge,
             zufallsArmee: wunsch.zufallsArmee,
             armeeUnterschiedlich: wunsch.armeeUnterschiedlich,
+            seiteZufaellig: wunsch.seiteZufaellig,
             armeeStaerke: wunsch.armeeStaerke,
             itemVorrat: wunsch.itemVorrat,
             itemAuswahl: wunsch.itemAuswahl,

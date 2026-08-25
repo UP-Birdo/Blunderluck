@@ -391,6 +391,7 @@ const SCHACH_TAFEL = {
 
             partie.regeln.zufallsArmee = (regeln.zufallsArmee === true);
             partie.regeln.armeeUnterschiedlich = (regeln.armeeUnterschiedlich === true);
+            partie.regeln.seiteZufaellig = (regeln.seiteZufaellig === true);
 
             /*
              * DIESE ZWEI FEHLTEN — v0.86 und v0.87 waren dadurch WIRKUNGSLOS

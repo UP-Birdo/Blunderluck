@@ -3,6 +3,23 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.66.0 — 25.08.2026
+
+**Die Seite wird jetzt zugelost — der Bildschirm zum Aussuchen entfällt.**
+
+- **Neuer Haken in den Grundeinstellungen: „Seite zulosen"**, von Anfang an
+  gesetzt. Wer die Runde betritt, bekommt seine Farbe sofort zugeteilt und
+  steht gleich vor dem Brett.
+- Damit **fällt der erste Bildschirm weg**: kein Weiß/Schwarz/Zufall mehr,
+  kein erstes „Bereit". Es bleibt das eine „Bereit", das die Partie startet.
+- Solange der zweite Spieler fehlt, wartest du am Brett — **Beitritts-Code
+  und Freunde-einladen stehen dort**, und „Bereit" erscheint erst, wenn
+  jemand gegenübersitzt.
+- **Haken aus:** Alles wie bisher — du suchst dir deine Seite selbst aus,
+  und der Bildschirm dafür kommt zurück.
+- Bereits laufende oder wartende Runden behalten ihren Ablauf; der Haken
+  gilt für neu angelegte.
+
 ## v0.65.0 — 25.08.2026
 
 **Aus „F" und „Z" am Brett sind Zeichen geworden.**

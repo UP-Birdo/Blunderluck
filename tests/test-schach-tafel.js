@@ -291,6 +291,9 @@ pruefe("JEDE Einstellung aus der Auswahl kommt in der Partie an (v0.91)", () => 
         lootboxMenge: "viele",
         zufallsArmee: true,
         armeeUnterschiedlich: true,
+        /* Seit v0.66.0: die Seite zulosen statt aussuchen. Hier bewusst AUS,
+           damit der Test den nicht-vorgegebenen Wert durchreichen sieht. */
+        seiteZufaellig: false,
         armeeStaerke: "wenig",
         itemVorrat: "viele",
         einigkeit: false,
