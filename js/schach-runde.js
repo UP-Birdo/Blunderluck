@@ -928,15 +928,56 @@ const SCHACH_RUNDE = {
             zeichen.push(".");
         }
 
-        for (const farbe of [SCHACH.WEISS, SCHACH.SCHWARZ]) {
-            const felder = SCHACH_RUNDE._armeeFelder(variante, farbe, staerke);
+        if (!getrennt) {
+            /*
+             * BEIDE SEITEN DIESELBE ARMEE, SCHWARZ SPIEGELVERKEHRT (seit
+             * v0.60.0).
+             *
+             * Nutzer-Ansage 25.08.2026: „Zufallsarmee, wenn beide dieselbe
+             * haben, soll die schwarze Armee spiegelverkehrt aufgebaut werden
+             * wie die weisse." Bis dahin bekam Schwarz dieselbe Figurenfolge
+             * auf dieselben SPALTEN (Turm auf a-Linie hüben wie drüben) — eine
+             * Verschiebung, keine Spiegelung. Weil sich das Brett zur eigenen
+             * Seite dreht (`_drehungVon`), sahen die zwei Spieler dadurch
+             * LINKS-RECHTS vertauschte Aufstellungen.
+             *
+             * Jetzt landet jede schwarze Figur auf dem um 180 Grad gedrehten
+             * Feld der weissen (`gesamt - 1 - feld`) — dieselbe Figur,
+             * punktgespiegelt. Damit sieht jeder Spieler von SEINER Seite
+             * dieselbe Aufstellung, wie im echten Schach. Das gilt für jede
+             * rechteckige Breite und jede Armeestärke, weil die Drehung
+             * feldweise rechnet; ein `arten.reverse()` wäre ab der zweiten
+             * Reihe falsch. Das Kreuz hat seinen eigenen Weg
+             * (`_armeeStandKreuz`) und ist hier nicht berührt.
+             *
+             * Die Figurenfolge wird EINMAL für Weiss gewürfelt und gespiegelt;
+             * bei `getrennt === false` ignoriert `_armeeFiguren` die Farbe
+             * ohnehin, beide bekämen dieselbe Saat.
+             */
+            const gesamt = breite * hoehe;
+            const felder = SCHACH_RUNDE._armeeFelder(variante, SCHACH.WEISS, staerke);
             const arten = SCHACH_RUNDE._armeeFiguren(
-                id, farbe, variante, getrennt, undefined, staerke, felder.length);
+                id, SCHACH.WEISS, variante, getrennt, undefined, staerke, felder.length);
             const anzahl = Math.min(felder.length, arten.length);
 
             for (let stelle = 0; stelle < anzahl; stelle++) {
-                zeichen[felder[stelle]] = (farbe === SCHACH.WEISS)
-                    ? arten[stelle] : arten[stelle].toLowerCase();
+                const weiss = felder[stelle];
+                zeichen[weiss] = arten[stelle];
+                zeichen[gesamt - 1 - weiss] = arten[stelle].toLowerCase();
+            }
+        } else {
+            /* Jede Seite würfelt für sich (armeeUnterschiedlich an) — hier
+               wird nichts gespiegelt, die Armeen sind ohnehin verschieden. */
+            for (const farbe of [SCHACH.WEISS, SCHACH.SCHWARZ]) {
+                const felder = SCHACH_RUNDE._armeeFelder(variante, farbe, staerke);
+                const arten = SCHACH_RUNDE._armeeFiguren(
+                    id, farbe, variante, getrennt, undefined, staerke, felder.length);
+                const anzahl = Math.min(felder.length, arten.length);
+
+                for (let stelle = 0; stelle < anzahl; stelle++) {
+                    zeichen[felder[stelle]] = (farbe === SCHACH.WEISS)
+                        ? arten[stelle] : arten[stelle].toLowerCase();
+                }
             }
         }
 

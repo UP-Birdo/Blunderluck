@@ -4489,6 +4489,44 @@ pruefe("Dieselbe Kennung ergibt dieselbe Armee", () => {
         "eine andere Partie bekommt eine andere Armee");
 });
 
+pruefe("Bei gleicher Zufallsarmee ist Schwarz das Spiegelbild von Weiss (v0.60.0)", () => {
+    /*
+     * NUTZER-ANSAGE 25.08.2026: „Zufallsarmee, wenn beide dieselbe haben,
+     * soll die schwarze Armee spiegelverkehrt aufgebaut werden wie die
+     * weisse." Gebaut ist das als 180-Grad-Drehung: die schwarze Figur steht
+     * auf dem Gegenfeld `gesamt - 1 - feld` der weissen. Damit sieht jeder
+     * Spieler von SEINER Seite dieselbe Aufstellung.
+     *
+     * Geprueft wird das ganze Brett: Jedes belegte Feld traegt auf seinem
+     * Gegenfeld dieselbe Art in der Gegenfarbe, jedes leere ein leeres.
+     */
+    const runde = armeePartie("standard", "p-spiegel", false);
+    const brett = runde.stand.brett;
+    const gesamt = brett.length;
+
+    let weisse = 0;
+    for (let feld = 0; feld < gesamt; feld++) {
+        const hier = brett[feld];
+        const dort = brett[gesamt - 1 - feld];
+
+        if (hier === ".") {
+            gleich(dort, ".", "Feld " + feld + " ist leer, sein Gegenfeld auch");
+            continue;
+        }
+
+        gleich(hier.toLowerCase(), dort.toLowerCase(),
+            "Feld " + feld + " und sein Gegenfeld tragen dieselbe Art");
+        wahr(hier !== dort,
+            "Feld " + feld + " und sein Gegenfeld tragen entgegengesetzte Farben");
+
+        if (hier === hier.toUpperCase()) {
+            weisse++;
+        }
+    }
+
+    wahr(weisse > 0, "es steht ueberhaupt eine weisse Armee da");
+});
+
 pruefe("Eine Armee ist wirklich gemischt, nicht siebenmal dieselbe Figur", () => {
     /*
      * DER FEHLER AUS v0.49 (gefunden beim Nachmessen, behoben in v0.49.1):

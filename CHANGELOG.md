@@ -3,6 +3,21 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.60.0 — 25.08.2026
+
+**Bei gleicher Zufallsarmee steht Schwarz jetzt spiegelverkehrt zu Weiß — beide
+sehen dieselbe Aufstellung.**
+
+- Bisher bekam Schwarz dieselbe Figurenfolge auf denselben Linien (Turm auf
+  der a-Linie bei beiden). Weil sich das Brett aber zu jeder Seite dreht, sahen
+  die zwei Spieler ihre Aufstellungen **links-rechts vertauscht** — es fühlte
+  sich schief an.
+- Jetzt ist die schwarze Armee das **Punktspiegelbild** der weißen: Jede Figur
+  steht auf dem gegenüberliegenden Feld. Damit sieht jeder Spieler von seiner
+  Seite dieselbe Aufstellung, wie im echten Schach.
+- Gilt nur, wenn beide Seiten dieselbe Zufallsarmee bekommen. Würfelt jede
+  Seite für sich (Haken „unterschiedliche Armeen"), bleibt alles wie gehabt —
+  da gibt es nichts zu spiegeln.
 ## v0.59.0 — 25.08.2026
 
 **Zugverlauf und Einstellungen sind jetzt Knöpfe direkt bei dir — neben dem
