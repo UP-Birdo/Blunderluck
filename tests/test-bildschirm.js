@@ -2526,6 +2526,95 @@ pruefe("Gegen den Computer startet die Partie auch nach einem Hin und Her (v0.64
     }
 });
 
+pruefe("Der Team-Kasten: Farbe gross, erster Name klein, Rest hinter einem Tipp (v0.68.0)", () => {
+    /*
+     * NUTZER-ANSAGE 25.08.2026: „Ein grosser Kasten mit Team plus dem ersten
+     * Benutzer — alle weiteren erscheinen, wenn man drauf klickt. Weiss
+     * gross und der erste Name klein drunter, nicht nebendran."
+     */
+    const person = umgebung.ICH.person();
+    const partie = SCHACH_RUNDE.kopieren(
+        SCHACH_TAFEL.partie(TEAM_SCHACH.abgleich.daten, kennungen.standard));
+
+    /* Drei auf einer Seite: der erste steht da, die anderen zwei nicht. */
+    partie.teams.weiss = ["id-anna", "id-bert", "id-cem"];
+
+    const kasten = TEAM_SCHACH._spielerZeileBauen(partie, person, "weiss");
+
+    const textVon = (klasse) => {
+        const treffer = [];
+        const suchen = (element) => {
+            for (const kind of element.kinder || []) {
+                if (String(kind.className || "").indexOf(klasse) !== -1) {
+                    treffer.push(String(kind.textContent || ""));
+                }
+                suchen(kind);
+            }
+        };
+        suchen(kasten);
+        return treffer;
+    };
+
+    if (textVon("spieler-farbe")[0] !== "Weiss") {
+        throw new Error("die Farbe steht nicht als Ueberschrift da");
+    }
+
+    const namen = textVon("spieler-name");
+    if (namen.length !== 1) {
+        throw new Error("es steht nicht genau ein Name da, sondern " + namen.length);
+    }
+    if (namen[0].indexOf(",") !== -1) {
+        throw new Error("die Namen stehen aneinandergereiht: " + namen[0]);
+    }
+
+    /* Die Zahl sagt, dass mehr dahinterstehen. */
+    if (textVon("spieler-mehr")[0] !== "+2") {
+        throw new Error("die Zahl der weiteren fehlt: "
+            + textVon("spieler-mehr").join("/"));
+    }
+
+    /* Farbe UND Name liegen im selben Stapel, also untereinander. */
+    const stapel = (kasten.kinder || []).find((kind) =>
+        String(kind.className || "").indexOf("spieler-stapel") !== -1);
+    if (!stapel) {
+        throw new Error("es gibt keinen Stapel aus Farbe und Name");
+    }
+
+    /* Der Kasten ist antippbar und oeffnet die volle Liste. */
+    if (String(kasten.className || "").indexOf("spieler-zeile-tippbar") === -1) {
+        throw new Error("der Kasten ist nicht antippbar");
+    }
+
+    const echterHinweis = umgebung.DIALOG.hinweis;
+    let gezeigt = null;
+    try {
+        umgebung.DIALOG.hinweis = async (titel, text, zusatz) => {
+            gezeigt = { titel: titel, zusatz: zusatz };
+            return true;
+        };
+        kasten.ausloesen("click");
+    } finally {
+        umgebung.DIALOG.hinweis = echterHinweis;
+    }
+
+    if (!gezeigt || String(gezeigt.titel || "").indexOf("Weiss") === -1) {
+        throw new Error("der Tipp oeffnet kein Team-Fenster");
+    }
+
+    const zeilen = ((gezeigt.zusatz || {}).kinder || []).length;
+    if (zeilen !== 3) {
+        throw new Error("das Fenster zeigt nicht alle drei, sondern " + zeilen);
+    }
+
+    /* Bei nur einem Spieler gibt es nichts zu oeffnen. */
+    const alleine = SCHACH_RUNDE.kopieren(partie);
+    alleine.teams.weiss = ["id-anna"];
+    const einer = TEAM_SCHACH._spielerZeileBauen(alleine, person, "weiss");
+    if (String(einer.className || "").indexOf("spieler-zeile-tippbar") !== -1) {
+        throw new Error("ein Kasten mit einem Namen ist trotzdem antippbar");
+    }
+});
+
 pruefe("Gleiche Faehigkeiten stehen als EIN Stapel mit Anzahl (v0.67.0)", () => {
     /*
      * NUTZER-ANSAGE 25.08.2026: „Nicht das alte Item-Rechteck mit Schrift,

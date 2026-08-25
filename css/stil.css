@@ -1548,6 +1548,120 @@ body.partie-fest .phasen-leiste {
    25.08.2026 mit einer Suche über `js\`, `css\` und `tests\`: keine
    Fundstelle mehr. Deshalb hier gestrichen und nicht auskommentiert. */
 
+/* ------------------------------------------------------------------ *
+ * DER TEAM-KASTEN (seit v0.68.0)
+ *
+ * Nutzer-Ansage 25.08.2026: „Ein grosser Kasten bis unten zum Bildschirmrand
+ * mit Team plus dem ersten Benutzer — alle weiteren erscheinen, wenn man
+ * drauf klickt. Die Schriftgrösse für das Team grösser, also Weiss gross und
+ * der erste Name klein drunter, nicht nebendran."
+ *
+ * Aus der schmalen Zeile wird ein Kasten in der Bildschirmecke: die Farbe
+ * gross, der Name klein darunter.
+ * ------------------------------------------------------------------ */
+
+.spieler-stapel {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    min-width: 0;
+    line-height: 1.15;
+}
+
+/* DIE FARBE IST DIE ÜBERSCHRIFT DES KASTENS. */
+.spieler-stapel .spieler-farbe {
+    font-size: 1.35rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+}
+
+/* Der Name darunter — klein und zurückgenommen, er ist die Beifügung. */
+.spieler-stapel .spieler-name {
+    font-size: 0.82rem;
+    color: var(--schrift-leise);
+    max-width: 14ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* „+2" sagt, dass noch welche dahinterstehen. */
+.spieler-mehr {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--haupt);
+}
+
+/* Wo es etwas zu zeigen gibt, sieht man es dem Kasten an. */
+.spieler-zeile-tippbar {
+    cursor: pointer;
+}
+
+.spieler-zeile-tippbar:hover {
+    border-color: var(--haupt);
+}
+
+/*
+ * DER KASTEN GEHT BIS AN DEN BILDSCHIRMRAND (Nutzer-Ansage).
+ *
+ * `.tab-inhalt` hat rings `var(--abstand)` Rand; der Kasten schiebt sich mit
+ * einem negativen Rand darüber hinaus und verliert die Rundung nach aussen.
+ *
+ * AUF EINEM BREITEN FENSTER ist das der Rand des SPIELBEREICHS, nicht der
+ * des Bildschirms (`.tab-inhalt` ist auf 820px begrenzt und zentriert) — ein
+ * Kasten, der auf einem 27-Zoll-Schirm bis zur Glaskante liefe, stünde
+ * einsam in der Landschaft. Auf dem Handy fallen beide Ränder zusammen, und
+ * dort ist die Ansage zu Hause.
+ */
+.seiten-reihe .spieler-zeile {
+    padding: 10px 14px;
+    border-radius: 12px;
+}
+
+.seiten-reihe-oben .spieler-zeile {
+    margin-right: calc(var(--abstand) * -1);
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    border-right: none;
+}
+
+.seiten-reihe-unten .spieler-zeile {
+    margin-left: calc(var(--abstand) * -1);
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    border-left: none;
+}
+
+/* Die Namensliste im Fenster hinter dem Kasten. */
+.team-namen-liste {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.team-namen-zeile {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    padding: 6px 10px;
+    border: 1px solid var(--rahmen);
+    border-radius: 8px;
+    background: var(--karte);
+}
+
+.team-namen-nummer {
+    color: var(--schrift-leise);
+    font-size: 0.85rem;
+    min-width: 1.6em;
+}
+
+.team-namen-name {
+    font-weight: 600;
+}
+
+
 .team-namen {
     margin: 0;
     color: var(--schrift-leise);

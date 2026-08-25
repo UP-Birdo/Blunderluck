@@ -1623,12 +1623,59 @@ const TEAM_SCHACH = {
            dunklem Grund ist eine Zumutung, und Vorleseprogramme sehen gar
            keine Farbe. */
         zeile.appendChild(TEAM_SCHACH._element("span", "spieler-punkt"));
-        zeile.appendChild(TEAM_SCHACH._element("span", "spieler-farbe",
+
+        /*
+         * DIE FARBE GROSS, DER NAME KLEIN DARUNTER (seit v0.68.0).
+         *
+         * Nutzer-Ansage 25.08.2026: „Die Schriftgrösse für das Team soll
+         * grösser gemacht werden — also Weiss gross und der erste Name klein
+         * drunter, nicht nebendran."
+         *
+         * Bis v0.67.0 standen beide nebeneinander in einer Zeile und waren
+         * gleich gross; welches Wort die SEITE und welches den Spieler meint,
+         * musste man aus dem Inhalt schliessen. Übereinander sagt die Grösse
+         * es von selbst.
+         */
+        const stapel = TEAM_SCHACH._element("span", "spieler-stapel");
+        stapel.appendChild(TEAM_SCHACH._element("span", "spieler-farbe",
             (farbe === "weiss") ? "Weiss" : "Schwarz"));
 
+        /*
+         * NUR DER ERSTE NAME STEHT DA (seit v0.68.0, Nutzer-Ansage: „alle
+         * weiteren Benutzer erscheinen, wenn man drauf klickt — sonst nur
+         * der, wo zuerst drin war").
+         *
+         * Im Team-Modus können mehrere je Seite sitzen; ihre Namen aneinander
+         * gereiht sprengten jede Ecke. Die Zahl dahinter sagt, dass es mehr
+         * sind, und ein Tipp auf den Kasten zeigt alle
+         * (`_teamKastenOeffnen`).
+         */
         const namen = partie.teams[farbe].map((id) => TEAM_SCHACH._nameVon(id));
-        zeile.appendChild(TEAM_SCHACH._element("span", "spieler-name",
-            (namen.length > 0) ? namen.join(", ") : "noch niemand"));
+        const ersterName = (namen.length > 0) ? namen[0] : "noch niemand";
+
+        const nameZeile = TEAM_SCHACH._element("span", "spieler-name", ersterName);
+        stapel.appendChild(nameZeile);
+
+        if (namen.length > 1) {
+            stapel.appendChild(TEAM_SCHACH._element("span", "spieler-mehr",
+                "+" + (namen.length - 1)));
+        }
+
+        zeile.appendChild(stapel);
+
+        /*
+         * DER KASTEN IST ANTIPPBAR, sobald mehr als einer dahintersteht —
+         * sonst gäbe es nichts zu zeigen, und ein Knopf, der ein Fenster mit
+         * einer einzigen Zeile öffnet, ist eine Enttäuschung.
+         */
+        if (namen.length > 1) {
+            zeile.className += " spieler-zeile-tippbar";
+            zeile.setAttribute("role", "button");
+            zeile.setAttribute("tabindex", "0");
+            zeile.title = "Wer spielt auf dieser Seite?";
+            zeile.addEventListener("click",
+                () => TEAM_SCHACH._teamKastenOeffnen(farbe, namen));
+        }
 
         const lage = TEAM_SCHACH._element("span", "spieler-lage");
 
@@ -1757,6 +1804,34 @@ const TEAM_SCHACH = {
         return spalte;
     },
 
+
+    /*
+     * WER AUF DIESER SEITE SPIELT (seit v0.68.0).
+     *
+     * Das Fenster hinter dem Team-Kasten. Es zeigt ALLE Namen — der Kasten
+     * selbst zeigt nur den ersten, weil er in eine Bildschirmecke passen
+     * muss. Der erste ist der, der zuerst beigetreten ist; die Reihenfolge
+     * im Team ist die des Beitritts und wird nirgends sortiert.
+     */
+    _teamKastenOeffnen(farbe, namen) {
+        const wer = (farbe === "weiss") ? "Weiss" : "Schwarz";
+        const liste = TEAM_SCHACH._element("div", "team-namen-liste");
+
+        namen.forEach((name, stelle) => {
+            const zeile = TEAM_SCHACH._element("div", "team-namen-zeile");
+            zeile.appendChild(TEAM_SCHACH._element("span", "team-namen-nummer",
+                String(stelle + 1) + "."));
+            zeile.appendChild(TEAM_SCHACH._element("span", "team-namen-name", name));
+            liste.appendChild(zeile);
+        });
+
+        DIALOG.hinweis("Team " + wer,
+            (namen.length === 1)
+                ? "Auf dieser Seite spielt einer."
+                : "Auf dieser Seite spielen " + namen.length + " — in der "
+                    + "Reihenfolge ihres Beitritts.",
+            liste);
+    },
 
     /*
      * WELCHE FARBE OBEN AM BRETT STEHT.

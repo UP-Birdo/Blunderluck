@@ -3,6 +3,20 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.68.0 — 25.08.2026
+
+**Aus der Spielerzeile ist ein Team-Kasten in der Bildschirmecke geworden.**
+
+- **Die Farbe steht gross**, der Name klein darunter — nicht mehr beides
+  gleich gross nebeneinander.
+- Der Kasten **geht bis an den Rand**: oben rechts und unten links schliesst
+  er bündig ab, statt mit Abstand in der Mitte zu schweben.
+- **Nur der erste Spieler steht da.** Sind mehrere auf einer Seite, sagt ein
+  kleines **+2** daneben, wie viele noch — ein Tipp auf den Kasten zeigt alle
+  in der Reihenfolge ihres Beitritts.
+- Bei nur einem Spieler bleibt der Kasten stumm: Ein Fenster mit einer
+  einzigen Zeile wäre eine Enttäuschung.
+
 ## v0.67.0 — 25.08.2026
 
 **Die Fähigkeiten am Brett sind jetzt Symbol-Karten, und gleiche liegen auf
