@@ -3,6 +3,25 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.67.0 — 25.08.2026
+
+**Die Fähigkeiten am Brett sind jetzt Symbol-Karten, und gleiche liegen auf
+einem Stapel.**
+
+- Statt des breiten Rechtecks mit Namen steht dort nur noch das **Symbol in
+  seiner Umrandung** — ein Quadrat in der Farbe seiner Seltenheitsstufe.
+- **Gleiche Fähigkeiten werden zusammengelegt:** Hast du dreimal denselben
+  Sprung, siehst du eine Karte mit einer kleinen **3** in der Ecke statt drei
+  gleicher nebeneinander.
+- Die Karten **schieben sich halb übereinander** wie in der Hand gehaltene
+  Spielkarten. Die angetippte hebt sich heraus, damit du siehst, was du
+  triffst.
+- Der Name steht weiter im Kurzhinweis und im Fenster, das ein Tipp öffnet —
+  und für Vorleseprogramme unverändert an der Karte.
+- Die beiden kleinen Zeichen bleiben: das **+** (dein Zug bleibt dir) und der
+  **Blitz** (geht auch, während der Gegner dran ist) — jetzt in den Ecken der
+  Karte.
+
 ## v0.66.0 — 25.08.2026
 
 **Die Seite wird jetzt zugelost — der Bildschirm zum Aussuchen entfällt.**

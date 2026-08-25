@@ -4565,6 +4565,111 @@ body.design-3d .werte-figur {
 }
 
 
+/* ------------------------------------------------------------------ *
+ * DIE FÄHIGKEITEN ALS SYMBOL-STAPEL (seit v0.67.0)
+ *
+ * Nutzer-Ansage 25.08.2026: „Nicht das alte Item-Rechteck mit Schrift,
+ * sondern nur das Symbol mit der Umrandung — gruppiert hintereinander
+ * gestapelt."
+ *
+ * Aus der breiten Marke mit Wort wird ein Quadrat. Gleiche Fähigkeiten
+ * zählt `_faehigkeitReiheBauen` zusammen (die Zahl in der Ecke), und die
+ * Quadrate schieben sich zusätzlich halb übereinander — beides zusammen
+ * macht aus acht Karten einen handbreiten Streifen.
+ * ------------------------------------------------------------------ */
+
+.faehigkeit-reihe .faehigkeit-knopf {
+    position: relative;
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    padding: 0;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    /*
+     * DAS ÜBEREINANDERSCHIEBEN. Ein negativer linker Rand zieht jede Karte
+     * unter ihre Vorgängerin; die erste bleibt, wo sie ist. Der Schatten
+     * trennt sie optisch, sonst verschwämmen die Umrandungen ineinander.
+     */
+    margin-left: -12px;
+    background: var(--flaeche);
+    box-shadow: -2px 0 4px rgba(0, 0, 0, 0.35);
+}
+
+.faehigkeit-reihe .faehigkeit-knopf:first-child {
+    margin-left: 0;
+    box-shadow: none;
+}
+
+/*
+ * WER OBEN LIEGT, IST DIE VORDERSTE. Ohne diese Zeile läge jede Karte unter
+ * der davor — dann verdeckte die erste alle anderen statt umgekehrt. Beim
+ * Antippen kommt die getroffene ganz nach vorn, damit man sieht, was man
+ * gerade trifft.
+ */
+.faehigkeit-reihe .faehigkeit-knopf:hover,
+.faehigkeit-reihe .faehigkeit-knopf:focus {
+    z-index: 2;
+    transform: translateY(-3px);
+}
+
+.faehigkeit-reihe .faehigkeit-bild {
+    width: 26px;
+    height: 26px;
+}
+
+/*
+ * DIE ANZAHL IN DER ECKE — oben rechts, wie die Stückzahl auf einer
+ * Spielkarte. Sie steht auf einem eigenen Grund, damit sie auch über einem
+ * Zeichen lesbar bleibt.
+ */
+.faehigkeit-anzahl {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    border-radius: 9px;
+    background: var(--stufe-farbe, var(--rahmen));
+    color: var(--flaeche);
+    font-size: 0.72rem;
+    font-weight: 700;
+    line-height: 18px;
+    text-align: center;
+}
+
+/* Die zwei Kosten-Zeichen rücken in die untere Zeile der Karte — klein, aber
+   an einem festen Platz, damit das Auge sie nicht suchen muss. */
+.faehigkeit-ecke-plus,
+.faehigkeit-ecke-blitz {
+    position: absolute;
+    bottom: -3px;
+    font-size: 0.7rem;
+    line-height: 1;
+}
+
+.faehigkeit-ecke-plus {
+    right: 3px;
+}
+
+.faehigkeit-ecke-blitz {
+    left: 3px;
+    width: 12px;
+    height: 12px;
+}
+
+/* Der Streifen braucht seitlich etwas Luft, weil die Zahl über den Rand der
+   ersten Karte ragt. */
+.faehigkeit-reihe {
+    padding-top: 7px;
+    padding-right: 7px;
+}
+
+
 .faehigkeit-leer {
     opacity: 0.7;
 }

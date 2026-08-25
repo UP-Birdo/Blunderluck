@@ -584,9 +584,34 @@ Object.assign(TEAM_SCHACH, {
             return reihe;
         }
 
+        /*
+         * GLEICHE FÄHIGKEITEN STEHEN ALS EIN STAPEL DA (seit v0.67.0,
+         * Nutzer-Ansage 25.08.2026: „das soll dort gruppiert hintereinander
+         * gestapelt werden").
+         *
+         * Wer dreimal denselben Sprung gesammelt hat, sah bis v0.66.0
+         * dreimal dieselbe Karte nebeneinander — bei acht Fähigkeiten war der
+         * Streifen länger als das Brett breit. Jetzt zählt eine Zahl an der
+         * Karte, wie viele es sind.
+         *
+         * DIE REIHENFOLGE BLEIBT DIE DES SAMMELNS: gezählt wird in eine
+         * Reihenfolge hinein, die beim ersten Auftreten festgelegt wird. Ein
+         * Sortieren nach Seltenheit wäre hübscher und würde die Karten unter
+         * dem Finger wandern lassen, sobald eine neue dazukommt.
+         */
+        const gezaehlt = [];
         for (const art of koennen) {
+            const schon = gezaehlt.find((eintrag) => eintrag.art === art);
+            if (schon) {
+                schon.anzahl++;
+            } else {
+                gezaehlt.push({ art: art, anzahl: 1 });
+            }
+        }
+
+        for (const eintrag of gezaehlt) {
             reihe.appendChild(TEAM_SCHACH._faehigkeitMarkeBauen(
-                partie, person, art, meine));
+                partie, person, eintrag.art, meine, eintrag.anzahl));
         }
 
         return reihe;
@@ -621,7 +646,7 @@ Object.assign(TEAM_SCHACH, {
      * Schildchen, und wer wissen wollte, was der Gegner da hat, musste die
      * Bibliothek durchsuchen.
      */
-    _faehigkeitMarkeBauen(partie, person, art, meineFarbe) {
+    _faehigkeitMarkeBauen(partie, person, art, meineFarbe, anzahl) {
         const beschreibung = SCHACH_VARIANTEN.FAEHIGKEITEN[art] || {};
         const stufe = SCHACH_VARIANTEN.stufeVon(art);
         const darf = meineFarbe && SCHACH_RUNDE.darfEinsetzen(partie, person.id, art);
@@ -656,37 +681,72 @@ Object.assign(TEAM_SCHACH, {
                 + "die er haben will. Sein Angebot wechselt mit jedem Zug.";
         }
 
-        const marke = TEAM_SCHACH._knopf(SCHACH_VARIANTEN.faehigkeitTitel(art),
+        /*
+         * NUR NOCH DAS ZEICHEN, KEIN WORT MEHR (seit v0.67.0).
+         *
+         * Nutzer-Ansage 25.08.2026: „Es soll in der Runde nicht das alte
+         * Item-Rechteck mit Schrift sein, sondern nur das Symbol mit der
+         * Umrandung."
+         *
+         * v0.63.0 hatte das Zeichen VOR das Wort gesetzt, mit der Begründung,
+         * ein Bild allein müsse man erst lernen. Das galt — solange es die
+         * Zeichen gerade erst gab. Jetzt tragen sie, und die Karte wird zum
+         * Quadrat: Der Name steht weiter im Kurzhinweis und im Fenster, das
+         * ein Tipp öffnet.
+         *
+         * DER TITEL BLEIBT IM `aria-label`: Für Vorleseprogramme ist ein
+         * gezeichnetes Quadrat nichts, und die Karte ist ein Knopf.
+         */
+        const marke = TEAM_SCHACH._knopf("",
             "knopf-still knopf-klein faehigkeit-knopf"
                 + (darf ? "" : " faehigkeit-knopf-fremd"),
             () => (darf
                 ? TEAM_SCHACH.faehigkeitEinsetzen(partie, art)
                 : TEAM_SCHACH.faehigkeitAnsehen(art, grund)));
 
-        /*
-         * DAS ZEICHEN STEHT VOR DEM WORT (seit v0.63.0), nicht an seiner
-         * Stelle: In der Kartenreihe am Brett liegen bis zu sechs Marken
-         * nebeneinander, und ein Bild allein müsste man erst lernen. Das
-         * Wort bleibt also — das Zeichen macht die Reihe auf einen Blick
-         * unterscheidbar. Es steht VORNE, weil man von links liest.
-         */
         const bild = (typeof FAEHIGKEIT_ZEICHEN !== "undefined")
             ? FAEHIGKEIT_ZEICHEN.bauen(art)
             : null;
 
         if (bild) {
-            marke.insertBefore(bild, marke.firstChild);
+            marke.appendChild(bild);
+        } else {
+            /* Ohne Zeichen bliebe ein leeres Quadrat — dann doch das Wort. */
+            marke.textContent = SCHACH_VARIANTEN.faehigkeitTitel(art);
         }
 
+        /*
+         * WIE VIELE ES SIND, steht als Zahl in der Ecke — aber nur ab zwei.
+         * Eine „1" an jeder Karte wäre Lärm.
+         */
+        if (anzahl > 1) {
+            marke.appendChild(TEAM_SCHACH._element("span",
+                "faehigkeit-anzahl", String(anzahl)));
+        }
+
+        /*
+         * DIE ZWEI ZEICHEN, DIE SAGEN WAS SIE KOSTET, bleiben — als kleine
+         * Marken in den Ecken statt hinter dem Wort. Sie standen bis v3.5
+         * nirgends, und man musste eine Fähigkeit EINSETZEN, um zu erfahren,
+         * ob damit der Zug weg ist; bei einer legendären eine teure Art, es
+         * herauszufinden. Diesen Gewinn gibt der Umbau nicht wieder her.
+         */
         if (SCHACH_VARIANTEN.zeigtPlus(art)) {
-            const plus = TEAM_SCHACH._element("span", "faehigkeit-zeichen", "+");
+            const plus = TEAM_SCHACH._element("span",
+                "faehigkeit-zeichen faehigkeit-ecke-plus", "+");
             plus.title = "Danach bleibt der normale Zug — es kann noch gezogen "
                 + "und geschlagen werden.";
             marke.appendChild(plus);
         }
         if (beschreibung.imGegenzug) {
-            marke.appendChild(TEAM_SCHACH._blitzBauen());
+            const blitz = TEAM_SCHACH._blitzBauen();
+            blitz.setAttribute("class", "faehigkeit-blitz faehigkeit-ecke-blitz");
+            marke.appendChild(blitz);
         }
+
+        marke.setAttribute("aria-label",
+            SCHACH_VARIANTEN.faehigkeitTitel(art)
+            + ((anzahl > 1) ? (", " + anzahl + " Stück") : ""));
 
         /* Die Farbe der Stufe trägt die Marke — so sieht man sofort, wie
            selten die Fähigkeit war. */
@@ -702,7 +762,9 @@ Object.assign(TEAM_SCHACH, {
          * hineinschreiben. Genau so wurde es gemeldet („zeigt den Riesentext").
          * Die ganze Beschreibung steht weiter im Fenster und in der Bibliothek.
          */
-        marke.title = stufe.titel + " — " + SCHACH_VARIANTEN.faehigkeitKurz(art);
+        marke.title = SCHACH_VARIANTEN.faehigkeitTitel(art)
+            + ((anzahl > 1) ? (" (" + anzahl + ")") : "")
+            + " — " + stufe.titel + ": " + SCHACH_VARIANTEN.faehigkeitKurz(art);
 
         return marke;
     },

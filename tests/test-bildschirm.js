@@ -2526,6 +2526,70 @@ pruefe("Gegen den Computer startet die Partie auch nach einem Hin und Her (v0.64
     }
 });
 
+pruefe("Gleiche Faehigkeiten stehen als EIN Stapel mit Anzahl (v0.67.0)", () => {
+    /*
+     * NUTZER-ANSAGE 25.08.2026: „Nicht das alte Item-Rechteck mit Schrift,
+     * sondern nur das Symbol mit der Umrandung — gruppiert hintereinander
+     * gestapelt."
+     *
+     * Geprueft wird beides: dass gleiche Arten zusammengezaehlt werden (aus
+     * drei Karten wird eine mit einer 3) und dass auf der Karte kein Wort
+     * mehr steht.
+     */
+    const person = umgebung.ICH.person();
+    const partie = SCHACH_RUNDE.kopieren(
+        SCHACH_TAFEL.partie(TEAM_SCHACH.abgleich.daten, kennungen.faehigkeiten));
+    const meinTeam = SCHACH_RUNDE.teamVon(partie, person.id);
+
+    partie.faehigkeiten[meinTeam] = ["sprung", "frost", "sprung", "sprung"];
+
+    const reihe = TEAM_SCHACH._faehigkeitReiheBauen(partie, person, meinTeam);
+    const karten = (reihe.kinder || []).filter((kind) =>
+        String(kind.className || "").indexOf("faehigkeit-knopf") !== -1);
+
+    if (karten.length !== 2) {
+        throw new Error("aus vier Faehigkeiten wurden nicht zwei Stapel, "
+            + "sondern " + karten.length);
+    }
+
+    /* Die erste ist der Dreier-Stapel Sprung. */
+    const anzahl = (karte) => {
+        const marke = (karte.kinder || []).find((kind) =>
+            String(kind.className || "").indexOf("faehigkeit-anzahl") !== -1);
+        return marke ? String(marke.textContent || "") : "";
+    };
+
+    if (anzahl(karten[0]) !== "3") {
+        throw new Error("der Sprung-Stapel zeigt nicht 3, sondern: "
+            + anzahl(karten[0]));
+    }
+
+    /* Der einzelne Frost traegt KEINE Zahl — eine 1 an jeder Karte waere
+       Laerm. */
+    if (anzahl(karten[1]) !== "") {
+        throw new Error("die einzelne Faehigkeit traegt eine Zahl: "
+            + anzahl(karten[1]));
+    }
+
+    /* Kein Wort mehr auf der Karte, aber ein Zeichen darin. */
+    if (!(karten[0].kinder || []).some((kind) => kind.tagName === "svg")) {
+        throw new Error("auf der Karte steht kein Zeichen");
+    }
+
+    /* Der Name steht weiter fuer Vorleseprogramme und im Kurzhinweis da —
+       sonst waere die Karte fuer sie ein leerer Knopf. */
+    const beschriftung = String(karten[0].attribute["aria-label"] || "");
+    if (beschriftung.indexOf("Sprung") === -1) {
+        throw new Error("die Karte nennt ihren Namen nicht: " + beschriftung);
+    }
+    if (beschriftung.indexOf("3") === -1) {
+        throw new Error("die Karte nennt ihre Anzahl nicht: " + beschriftung);
+    }
+    if (String(karten[0].title || "").indexOf("Sprung") === -1) {
+        throw new Error("der Kurzhinweis nennt den Namen nicht: " + karten[0].title);
+    }
+});
+
 pruefe("Die Anordnung der zweiten Skizze: Banner in der Ecke, Knoepfe am Rand (v0.64.0)", () => {
     /*
      * NUTZER-SKIZZE 25.08.2026 (die zweite):
