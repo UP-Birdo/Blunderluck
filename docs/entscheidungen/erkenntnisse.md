@@ -2,6 +2,51 @@
 
 ## Teuer erkaufte Erkenntnisse
 
+### Bei gleicher Spezifitaet gewinnt die SPAETERE Regel — vier Runden lang unbemerkt (v0.67.0, gefunden v0.71.0)
+
+**Der Fehlschlag:** Mit v0.67.0 wurde aus der Marke mit Wort eine Karte, auf
+der nur noch das Zeichen steht. Dafuer kam die Regel
+
+    .faehigkeit-reihe .faehigkeit-bild { width: 26px; height: 26px; }
+
+in die Stildatei. Sie hat NIE gegriffen. Weiter unten in derselben Datei
+stand seit v0.63.0
+
+    .faehigkeit-knopf .faehigkeit-bild { width: 1.15em; height: 1.15em; }
+
+Beide Selektoren zaehlen zwei Klassen, sind also gleich spezifisch — und bei
+Gleichstand gewinnt die spaetere Regel im Dokument. Das war die alte. Das
+Zeichen auf der Karte war damit 1,15 em von 0,88 rem, also rund 16 Pixel, auf
+einer Flaeche von 44 mal 44. Ein Drittel der Karte.
+
+**Was es gekostet hat:** vier Auslieferungen. v0.67.0 (Symbol-Karte), v0.70.0
+(Spielkarten-Form) und die Beurteilung dazwischen liefen alle gegen ein Bild,
+das ein Drittel so gross war wie gemeint. In der `STATUS.md` stand die Frage
+„Erkennt man die Zeichen ohne Wort?" als Punkt fuer den Nutzer — die Antwort
+war die ganze Zeit „nein, aber nicht wegen der Zeichen".
+
+**Warum kein Test es gefangen hat, und auch keiner es kann:** Die Testkette
+laedt die echten Dateien aus `js\`, aber sie rendert nichts. Es gibt kein
+Layout, keine Kaskade, keine gerechneten Groessen. Was ausschliesslich in der
+Stildatei entschieden wird, ist fuer die Tests unsichtbar — dieser Fehler
+gehoert zu der Sorte, gegen die nur ein Blick auf ein echtes Geraet hilft.
+
+**Die Regel daraus:** Wer eine bestehende Regel ueberschreiben will, macht
+den neuen Selektor NACHWEISLICH spezifischer — nicht gleich spezifisch und
+weiter oben. Praktisch heisst das: die volle Kette hinschreiben
+(`.faehigkeit-reihe .faehigkeit-knopf .faehigkeit-bild`, drei Klassen) statt
+sich auf die Reihenfolge zu verlassen. Und besser noch: nachsehen, ob die
+alte Regel ueberhaupt noch jemanden bedient. Diese hier war seit v0.67.0 tot
+— `.faehigkeit-knopf` entsteht an genau einer Stelle und haengt an genau
+einer Stelle, beide innerhalb der Reihe. Sie ist mit v0.71.0 geloescht, und
+die Groesse steht jetzt nur noch an einer Stelle.
+
+**Der Verdacht, der zum Fund fuehrte:** Beim Umbau fiel auf, dass zwei
+Regeln dasselbe setzen. Das allein ist schon der Alarm — zwei Stellen fuer
+eine Zahl laufen garantiert irgendwann auseinander. Hier waren sie nie
+zusammen.
+
+
 ### Wer eine Zusage streicht, muss sagen, wer sie erneuert (v0.62.0, gefunden v0.64.1)
 
 

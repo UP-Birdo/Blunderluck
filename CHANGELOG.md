@@ -3,6 +3,30 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.71.0 — 25.08.2026
+
+**Die Item-Karten sind jetzt genau so hoch wie die Team-Karte daneben — und
+das Zeichen darauf ist endlich so gross, wie es immer sein sollte.**
+
+- **Gleiche Höhe, auf jedem Gerät.** Die Karten nehmen die Höhe der
+  Team-Karte an, statt eine eigene zu haben. Das gilt am Laptop, am Tablet,
+  am Handy und auch dann, wenn im Team-Modus ein „+2" die Team-Karte höher
+  macht.
+- **Das Brett bekommt seinen Platz zurück.** Die höheren Karten aus v0.70.0
+  hatten ihm rund 18 Pixel Höhe genommen; jetzt ist die Zeile wieder genau so
+  hoch wie die Team-Karte, und das Brett ist so gross wie vor der
+  Formänderung.
+- **Behoben: Das Zeichen auf der Karte war viel zu klein.** Seit v0.67.0
+  sollte es 26 Pixel gross sein — tatsächlich waren es rund 16, weil eine
+  ältere Regel in der Stildatei die neuere überstimmt hat. Genau deshalb
+  wirkte die Karte so leer. Jetzt gilt die gemeinte Grösse.
+- Die **Zahl an gestapelten Karten** (2, 3, …) steht jetzt innerhalb der
+  Karte in der oberen rechten Ecke, wie der Wert auf einer Spielkarte, statt
+  über den Rand hinauszuragen.
+- Am Handy sind die Karten etwas schmaler als am Laptop (36 statt 38 Pixel),
+  damit das Kartenverhältnis dort stimmt, wo auch die Team-Karte etwas
+  niedriger ist.
+
 ## v0.70.0 — 25.08.2026
 
 **Die eingesammelten Fähigkeiten sehen jetzt aus wie Spielkarten.**

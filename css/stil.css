@@ -4560,9 +4560,32 @@ body.design-3d .werte-figur {
     flex-wrap: nowrap;
     overflow-x: auto;
     gap: 6px;
-    padding: 2px 0;
+
+    /*
+     * KEIN INNENABSTAND OBEN UND UNTEN (seit v0.71.0). Jeder Pixel hier
+     * machte die Karten NIEDRIGER als die Team-Karte, denn sie füllen die
+     * Reihe abzüglich ihres Innenabstands. Bis v0.70.0 standen hier 2 px
+     * plus 7 px für die überstehende Anzahl-Blase — die ist mit v0.71.0
+     * nach innen gerückt, eben damit hier nichts mehr stehen muss.
+     */
+    padding: 0;
+
+    /* Die Karten füllen die Reihe, die Reihe füllt die Zeile — so kommt die
+       Höhe der Team-Karte bei der Karte an (siehe `.seiten-reihe`). */
+    align-items: stretch;
+
     /* Der Streifen schiebt beim Rollen nicht die ganze Seite mit. */
     overscroll-behavior-x: contain;
+}
+
+/* Was in der Reihe KEINE Karte ist, wird nicht gestreckt: „noch keine" und
+   die Warte-Zeile mit ihrem Abbrechen-Knopf stehen weiter mittig. */
+.faehigkeit-reihe-ziel {
+    align-items: center;
+}
+
+.faehigkeit-reihe .faehigkeit-leer {
+    align-self: center;
 }
 
 /* Die Karten behalten im Streifen ihre Breite, statt zusammengedrückt zu
@@ -4597,9 +4620,29 @@ body.design-3d .werte-figur {
  * Ecke, ob neben ihm etwas steht oder nicht.
  * ------------------------------------------------------------------ */
 
+/*
+ * `stretch` STATT `center` (seit v0.71.0) — daran hängt, dass die
+ * Item-Karten GENAU so hoch sind wie die Team-Karte (Nutzer-Ansage
+ * 25.08.2026).
+ *
+ * Die Team-Karte hat keine feste Höhe: Am Laptop ist sie rund 54 px, unter
+ * 600 px Breite rund 52 px (kleinerer Innenabstand), und im Team-Modus rund
+ * 68 px, sobald ein „+2" als dritte Zeile im Stapel steht. Eine Zahl in
+ * dieser Datei träfe also immer nur einen dieser Fälle und liefe beim
+ * nächsten Eingriff an der Schriftgrösse davon.
+ *
+ * `stretch` streckt beide Kinder auf die Höhe des höheren. Der Banner ist
+ * IMMER der höhere — die Karten haben von sich aus nur die Höhe ihres
+ * Zeichens —, also gibt er die Höhe vor und die Karten nehmen sie an. Das
+ * gilt ohne Nachrechnen für jede Breite, jeden Innenabstand und auch für
+ * die dritte Zeile im Team-Modus.
+ *
+ * WER HIER `center` ZURÜCKSETZT, macht die Karten wieder kleiner als den
+ * Banner — und zwar lautlos, ohne dass ein Test anspringt.
+ */
 .seiten-reihe {
     display: flex;
-    align-items: center;
+    align-items: stretch;
     justify-content: space-between;
     gap: 10px;
     min-width: 0;
@@ -4692,49 +4735,79 @@ body.design-3d .werte-figur {
  * macht aus acht Karten einen handbreiten Streifen.
  *
  * SEIT v0.70.0 IST ES DIE FORM EINER SPIELKARTE, nicht mehr das Quadrat
- * (Nutzer-Ansage 25.08.2026). 40 auf 56 Pixel ist das Seitenverhältnis
- * einer Pokerkarte (63 zu 88 Millimeter, also 0,71); die Eckenrundung
- * fällt von 10 auf 6 Pixel, weil eine hochkante Karte mit stark
- * gerundeten Ecken wie eine Pille aussieht statt wie eine Karte.
+ * (Nutzer-Ansage 25.08.2026). Die Eckenrundung fällt dafür von 10 auf 6
+ * Pixel, weil eine hochkante Karte mit stark gerundeten Ecken wie eine
+ * Pille aussieht statt wie eine Karte.
+ *
+ * SEIT v0.71.0 KOMMT DIE HÖHE NICHT MEHR AUS DIESER DATEI, sondern von
+ * der Team-Karte daneben (Nutzer-Ansage 25.08.2026: „genau so hoch wie
+ * die Team-Karte"). Wie das zugeht, steht bei `.seiten-reihe` — in einem
+ * Satz: `align-items: stretch`, und der Banner ist immer der höhere.
+ * Deshalb steht hier KEIN `height` mehr. Wer eines einträgt, koppelt die
+ * beiden wieder ab.
+ *
+ * DIE BREITE BLEIBT EINE ZAHL, weil das Seitenverhältnis sonst mitwandern
+ * würde: 38 Pixel zu den rund 54 der Team-Karte sind 0,70 — das
+ * Verhältnis einer Pokerkarte (63 zu 88 Millimeter, also 0,71). Unter
+ * 600 Pixel Bildschirmbreite ist die Team-Karte rund 52 hoch, dort stehen
+ * deshalb 36 (siehe Handy-Abschnitt am Dateiende).
+ *
+ * WARUM NICHT `aspect-ratio` STATT DER ZWEI ZAHLEN: Damit hätte die Karte
+ * eine eigene Höhe, und die Zeile nähme bei `stretch` die GRÖSSERE von
+ * beiden. Am Handy wäre das die Karte — dann würde plötzlich sie den
+ * Banner strecken statt umgekehrt. Ohne `aspect-ratio` ist die Karte von
+ * sich aus nur so hoch wie ihr Zeichen, also immer die kleinere, und der
+ * Banner behält die Führung.
  *
  * DAS ZEICHEN BLEIBT 26 PIXEL GROSS — es ist der Grund, warum es die
- * Karte gibt, und darf durch die Formänderung nicht schrumpfen. Die
- * gewonnene Höhe geht deshalb ganz an den Fuss der Karte, wo jetzt die
- * zwei Kosten-Zeichen INNEN stehen statt über dem Rand zu hängen.
+ * Karte gibt, und darf durch die Formänderung nicht schrumpfen.
  *
- * WAS ES KOSTET: Die Kartenreihe wird 12 Pixel höher, oben wie unten.
- * Auf der festen Seite rechnet `_brettEinpassen` die Brettbreite aus der
- * Höhe, die übrig bleibt — dem Brett fehlen also rund 24 Pixel. Das ist
- * gemessen, nicht geschätzt, aber am Gerät nie gesehen.
+ * WAS ES KOSTET: nichts mehr. v0.70.0 hatte die Reihe 9 Pixel höher
+ * gemacht als die Team-Karte (56 Karte plus 7 Innenabstand gegen 54
+ * Banner), und weil `_brettEinpassen` die Brettbreite aus der übrigen
+ * Höhe zurückrechnet, fehlten dem Brett rund 18 Pixel. Mit v0.71.0 ist
+ * die Zeile wieder genau so hoch wie der Banner — das Brett ist damit so
+ * gross wie zu Quadrat-Zeiten.
  * ------------------------------------------------------------------ */
 
 .faehigkeit-reihe .faehigkeit-knopf {
     position: relative;
-    width: 40px;
-    min-width: 40px;
-    height: 56px;
+    width: 38px;
+    min-width: 38px;
     border-radius: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
 
     /*
+     * DIE HÖHE KOMMT VON DER TEAM-KARTE (seit v0.71.0) — hier steht nur,
+     * dass die Karte sie annimmt. `align-self` wiederholt, was die Zeile
+     * ohnehin vorgibt; es steht trotzdem da, weil sonst nicht zu sehen
+     * wäre, dass die fehlende Höhenangabe Absicht ist.
+     */
+    align-self: stretch;
+    height: auto;
+
+    /*
      * DER FUSS DER KARTE GEHÖRT DEN KOSTEN-ZEICHEN (seit v0.70.0). Die
-     * Innenkante unten nimmt dem Zeichen diese 12 Pixel weg, also sitzt es
+     * Innenkante unten nimmt dem Zeichen diese 11 Pixel weg, also sitzt es
      * mittig im oberen Teil — darunter bleibt der Streifen frei, in dem
      * Pluszeichen und Blitz stehen.
      */
-    padding: 0 0 12px 0;
+    padding: 0 0 11px 0;
 
     /*
      * DAS ÜBEREINANDERSCHIEBEN. Ein negativer linker Rand zieht jede Karte
      * unter ihre Vorgängerin; die erste bleibt, wo sie ist. Der Schatten
      * trennt sie optisch, sonst verschwämmen die Umrandungen ineinander.
      *
-     * ES SIND 10 PIXEL STATT 12 (seit v0.70.0): Die Karte ist 4 Pixel
-     * schmaler geworden, das Zeichen darin aber nicht. Bei den alten 12
-     * verschwände ein Stück mehr davon unter der Nachbarkarte — so bleibt
-     * sichtbar, was vorher sichtbar war.
+     * ES SIND 10 PIXEL STATT 12 (seit v0.70.0): Die Karte ist schmaler
+     * geworden, das Zeichen darin aber nicht. Bei den alten 12 verschwände
+     * ein Stück mehr davon unter der Nachbarkarte — so bleibt sichtbar, was
+     * vorher sichtbar war. Nachgerechnet mit den 6 Pixeln Abstand der
+     * Reihe: Jede weitere Karte rückt um 38 minus 10 plus 6 gleich 34
+     * Pixel vor, verdeckt wird also nur der 4 Pixel breite Rand links —
+     * das 26 Pixel breite Zeichen beginnt erst bei 6.
      */
     margin-left: -10px;
     background: var(--flaeche);
@@ -4751,37 +4824,73 @@ body.design-3d .werte-figur {
  * der davor — dann verdeckte die erste alle anderen statt umgekehrt. Beim
  * Antippen kommt die getroffene ganz nach vorn, damit man sieht, was man
  * gerade trifft.
+ *
+ * SIE RUTSCHT DABEI NICHT MEHR NACH OBEN (bis v0.70.0 drei Pixel): Die
+ * Reihe hat seit v0.71.0 keinen Innenabstand mehr, an dem sich das
+ * Herausheben abspielen könnte — es würde am oberen Rand abgeschnitten.
+ * Den Zweck erfüllt das Aufhellen genauso, und auf dem Handy, wo mit dem
+ * Finger gezielt wird, gab es den Effekt ohnehin nie zu sehen.
  */
 .faehigkeit-reihe .faehigkeit-knopf:hover,
 .faehigkeit-reihe .faehigkeit-knopf:focus {
     z-index: 2;
-    transform: translateY(-3px);
-}
-
-.faehigkeit-reihe .faehigkeit-bild {
-    width: 26px;
-    height: 26px;
+    filter: brightness(1.18);
+    box-shadow: -2px 0 8px rgba(0, 0, 0, 0.5);
 }
 
 /*
- * DIE ANZAHL IN DER ECKE — oben rechts, wie die Stückzahl auf einer
- * Spielkarte. Sie steht auf einem eigenen Grund, damit sie auch über einem
- * Zeichen lesbar bleibt.
+ * DAS ZEICHEN AUF DER KARTE — die einzige Stelle, an der seine Grösse
+ * steht (seit v0.71.0; bis dahin wurde diese Regel von einer gleich
+ * spezifischen weiter unten geschlagen, siehe dort).
+ *
+ * 26 Pixel auf einer 38 Pixel breiten Karte lassen 6 Pixel Rand je Seite,
+ * am Handy auf 36 Pixel noch 5. Der Selektor nennt bewusst alle drei
+ * Klassen: Damit ist er spezifischer als alles, was mit zwei Klassen
+ * dazwischenfunken könnte.
+ */
+.faehigkeit-reihe .faehigkeit-knopf .faehigkeit-bild {
+    width: 26px;
+    height: 26px;
+    flex: 0 0 auto;
+}
+
+/*
+ * DIE ANZAHL IN DER ECKE — oben rechts, wie der Wert auf einer Spielkarte.
+ * Sie steht auf einem eigenen Grund, damit sie auch über einem Zeichen
+ * lesbar bleibt.
+ *
+ * SIE STEHT SEIT v0.71.0 INNERHALB DER KARTE (vorher `top: -5px;
+ * right: -5px`, also über die Ecke hinaus). Der Grund ist nicht Optik,
+ * sondern Höhe: Solange sie überstand, brauchte die Reihe 7 Pixel
+ * Innenabstand oben, damit sie nicht abgeschnitten wird — und genau diese
+ * 7 Pixel machten die Karte niedriger als die Team-Karte. Innen kostet sie
+ * nichts.
+ *
+ * SIE ÜBERLAPPT DABEI DIE OBERE RECHTE ECKE DES ZEICHENS. Das ist in Kauf
+ * genommen und nicht zu vermeiden: Anzahl, Zeichen und die zwei
+ * Kosten-Zeichen brauchen zusammen rund 58 Pixel Höhe, die Karte hat rund
+ * 54. Verdeckt wird eine Ecke, nie die Mitte, an der man das Zeichen
+ * erkennt — und der Ring in Kartenfarbe trennt beide sauber. Die
+ * Alternative wäre ein kleineres Zeichen gewesen, und das ist der Grund,
+ * warum es die Karte gibt.
  */
 .faehigkeit-anzahl {
     position: absolute;
-    top: -5px;
-    right: -5px;
-    min-width: 18px;
-    height: 18px;
-    padding: 0 4px;
-    border-radius: 9px;
+    top: 2px;
+    right: 2px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 3px;
+    border-radius: 8px;
     background: var(--stufe-farbe, var(--rahmen));
     color: var(--flaeche);
-    font-size: 0.72rem;
+    font-size: 0.66rem;
     font-weight: 700;
-    line-height: 18px;
+    line-height: 16px;
     text-align: center;
+
+    /* Der Ring in der Kartenfarbe hebt die Blase vom Zeichen darunter ab. */
+    box-shadow: 0 0 0 1.5px var(--flaeche);
 }
 
 /* Die zwei Kosten-Zeichen rücken in die untere Zeile der Karte — klein, aber
@@ -4808,12 +4917,11 @@ body.design-3d .werte-figur {
     height: 12px;
 }
 
-/* Der Streifen braucht seitlich etwas Luft, weil die Zahl über den Rand der
-   ersten Karte ragt. */
-.faehigkeit-reihe {
-    padding-top: 7px;
-    padding-right: 7px;
-}
+/* Der Streifen brauchte bis v0.70.0 rundum Luft, weil die Anzahl-Blase über
+   den Rand der Karte ragte. Seit v0.71.0 steht sie innen — und der
+   Innenabstand ist ersatzlos weg, weil er die Karte niedriger machte als die
+   Team-Karte. Die Regel steht als Rest hier, damit niemand sie aus alter
+   Gewohnheit wieder einträgt. */
 
 
 .faehigkeit-leer {
@@ -5567,13 +5675,28 @@ body.dialog-offen {
     color: var(--stufe-farbe, var(--schrift-leise));
 }
 
-/* An der Marke steht es vor dem Wort und richtet sich nach der Schrifthöhe,
-   damit die Zeile nicht wächst. */
-.faehigkeit-knopf .faehigkeit-bild {
-    width: 1.15em;
-    height: 1.15em;
-    flex: 0 0 auto;
-}
+/*
+ * HIER STAND `.faehigkeit-knopf .faehigkeit-bild` MIT 1,15 em — gelöscht
+ * mit v0.71.0, und das war ein FEHLER, kein Aufräumen.
+ *
+ * Die Regel stammt aus v0.63.0, als die Marke noch das Wort trug und das
+ * Zeichen davor stand: Dann muss es der Schrifthöhe folgen, damit die Zeile
+ * nicht wächst. Mit v0.67.0 fiel das Wort weg, die Marke wurde eine Karte,
+ * und weiter oben kam `.faehigkeit-reihe .faehigkeit-knopf .faehigkeit-bild`
+ * mit 26 Pixeln dazu.
+ *
+ * NUR GEGRIFFEN HAT DIE NIE. Beide Selektoren zählten zwei Klassen, waren
+ * also gleich spezifisch — und bei Gleichstand gewinnt die spätere Regel.
+ * Das war diese hier. Das Zeichen in der Karte war seit v0.67.0 also 1,15
+ * em von 0,88 rem, rund 16 Pixel, auf einer Fläche von 44 mal 44: ein
+ * Drittel der Karte. Genau deshalb wirkte sie leer.
+ *
+ * ERSATZLOS, NICHT UMGESCHRIEBEN: `.faehigkeit-knopf` entsteht an genau
+ * einer Stelle (`_faehigkeitMarkeBauen`) und wird an genau einer Stelle
+ * eingehängt (`_faehigkeitReiheBauen`) — es gibt keinen Knopf ausserhalb
+ * der Reihe, den diese Regel noch bedienen könnte. Die Grösse des Zeichens
+ * steht damit nur noch an einer Stelle, wie es die Hausregel verlangt.
+ */
 
 /* ------------------------------------------------------------------ *
  * DAS EINLADUNGS-BANNER (seit v0.13.0, Bündel A Schritt 7)
@@ -5887,6 +6010,29 @@ body.dialog-offen {
 
     .faehigkeit-zeile {
         gap: 6px;
+    }
+
+    /*
+     * DIE ITEM-KARTEN AM HANDY (seit v0.71.0).
+     *
+     * Ihre HÖHE steht hier bewusst nicht: Sie kommt von der Team-Karte
+     * daneben (`.seiten-reihe` mit `align-items: stretch`), und die ist
+     * hier von selbst niedriger, weil `.schach .spieler-zeile` weiter oben
+     * in diesem Abschnitt den Innenabstand von 6 auf 5 Pixel nimmt — rund
+     * 52 statt 54 Pixel.
+     *
+     * MITZIEHEN MUSS DESHALB NUR DIE BREITE, sonst würde die Karte hier
+     * gedrungener wirken als am Laptop: 36 zu 52 sind 0,69, am Laptop sind
+     * 38 zu 54 gleich 0,70. Beides ist das Verhältnis einer Pokerkarte.
+     *
+     * Zwischen Handy und Laptop liegt nichts: Diese Datei hat genau EINEN
+     * Breitenwechsel (600 Pixel), und die Schriftgrösse der Seite steht
+     * fest bei 16 Pixeln. Ein Tablet und ein Laptop bekommen darum
+     * dasselbe Bild, egal wie breit ihr Fenster ist.
+     */
+    .faehigkeit-reihe .faehigkeit-knopf {
+        width: 36px;
+        min-width: 36px;
     }
 
     /* Die Randbeschriftung des Bretts darf schmaler sein. */

@@ -51,6 +51,10 @@ wird. Die Liste dessen, was noch kommt, steht in [../ROADMAP.md](../ROADMAP.md).
   Play-Store-Umbau braeuchte - Referenz: docs\uebergabe-schach-app.md)
 
 ## erkenntnisse.md - Teuer erkaufte Erkenntnisse
+- **Bei gleicher Spezifitaet gewinnt die SPAETERE Regel** (v0.67.0, gefunden
+  v0.71.0 — das Zeichen auf der Item-Karte war vier Auslieferungen lang 16
+  statt 26 Pixel gross, weil eine aeltere Regel weiter unten stand; die
+  Testkette rendert nicht und kann so etwas nie fangen)
 - **Wer eine Zusage streicht, muss sagen, wer sie erneuert** (v0.62.0,
   gefunden v0.64.1 — der Computer sagte nach einer Ruecknahme nie wieder zu,
   das Spiel begann nie; der Fehler sass in der Naht zwischen Bildschirm und
