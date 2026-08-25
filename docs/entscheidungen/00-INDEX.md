@@ -43,6 +43,10 @@ wird. Die Liste dessen, was noch kommt, steht in [../ROADMAP.md](../ROADMAP.md).
   (23./24.08.2026, v0.6.0 bis v0.13.0 — Bauvorlage und alle 19 Antworten:
   docs\entwurf-konto-und-startbildschirm.md)
 - Die Ausgliederung aus dem Quizz (23.08.2026)
+- **Acht Festlegungen zum Rundenablauf und zum Spiel-Bildschirm** (v0.34.0
+  bis v0.70.0 — zugeloste Seite, Symbol-Karten in Spielkartenform,
+  Zurueck-Knopf, Spielerzeilen, Icons nur fuer Nebensachen, Code-Feld,
+  Wuerfel-Knopf; am 26.08.2026 aus der STATUS.md hierher gezogen)
 
 ## offen-und-abgelehnt.md - Blunderluck-Eintraege
 

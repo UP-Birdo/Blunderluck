@@ -1,5 +1,41 @@
 # Blunderluck - Entscheidungen / Entschieden - und warum
 
+## Acht Festlegungen zum Rundenablauf und zum Spiel-Bildschirm (v0.34.0 bis v0.70.0)
+
+> **Hierher gezogen am 26.08.2026 aus der `STATUS.md`.** Sie standen dort im
+> Uebergabe-Block und waren damit an EINER Stelle gesichert, die sich selbst
+> als "darf weg" bezeichnet — beim Aufraeumen waeren sie verloren gegangen.
+> Eine Entscheidung gehoert nicht in einen Stand, sondern hierher.
+
+- **Die Seite wird ZUGELOST** (v0.66.0, Vorgabe): Wer die Runde betritt,
+  bekommt seine Farbe und gilt damit als bereit; der Seitenwahl-Bildschirm
+  erscheint nur mit abgeschaltetem Haken. Wer wartet, wartet am Brett.
+- **Faehigkeiten sind Symbol-Karten, gestapelt UND ueberlappend** (v0.67.0),
+  **in der Form einer Spielkarte** — hochkant, nicht quadratisch (v0.70.0,
+  Masse an die Team-Karte gekoppelt in v0.71.0/v0.72.0). Der Team-Kasten
+  traegt die Farbe gross, den ersten Namen klein darunter; weitere Spieler
+  stehen hinter einem Tipp (v0.68.0).
+- **Das "Zurueck" auf dem Seitenwahl-Bildschirm verlaesst die Runde**
+  (v0.61.0, mit Rueckfrage ueber `DIALOG.frage`). Und: **"Neu aufstellen"
+  fiel dort sofort weg**, statt uebergangsweise stehen zu bleiben — beides
+  ausdruecklich so entschieden am 25.08.2026.
+- **Die Spieler stehen als zwei Zeilen am Brett** (v0.53.0), Gegner oben.
+  Zur Wahl standen: alles in die Leiste oben, oder hinter ein drittes Fach.
+- **Nur die Nebensachen werden Icons — fertig.** Die IN-MATCH-Steuerung ist
+  mit v0.59.0 zu Knoepfen am Spieler geworden (Zahnrad und Zugverlauf),
+  "Einladen" mit v0.61.0 zum Zeichen-Knopf, der Wuerfel mit v0.62.0; "Runde
+  verlassen" und "Zur Uebersicht" sind im "Zurueck" aufgegangen. "Bereit"
+  und die drei Seitenwahl-Knoepfe behalten ihr Wort.
+- **Sechs Kaestchen fuers Code-Feld** (v0.51.0). Der Wunsch war in sich
+  widerspruechlich; wer das Feld anfasst, liest zuerst die Rechnung bei
+  `.code-feld` in der Stildatei.
+- **"Deine offenen Partien" ist weg**, dafuer fuehrt der Startbildschirm
+  zurueck in die eigene Runde (v0.34.0/v0.35.0).
+- **"Neu aufstellen" ist ein Wuerfel-Knopf**, kein Zuruecksetzen — nur bei
+  Zufallsarmee (v0.42.0). Der gleichnamige Knopf an der BEENDETEN Partie
+  startet dagegen die Revanche und ist unberuehrt. **Genau deshalb bekommt
+  nur der erste das Wuerfel-Zeichen.**
+
 ## Die Seitenwahl gegen den Computer (24.08.2026, v0.29.0)
 
 Nutzer-Ansage: „Wenn ich bot ja mach und die Schwierigkeit einstelle und dann
