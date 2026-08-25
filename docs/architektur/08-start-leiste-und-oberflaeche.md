@@ -50,7 +50,28 @@ Aus dem Umbau-Schwung vom 24.08.2026, je eine Auslieferung pro Nutzer-Ansage
   die Version und der Wunsch-Knopf sind der Reihe nach in die Einstellungen
   gezogen; die `h1` steht unsichtbar im `body`.
 
-## Vor dem Anpfiff: der Seitenwahl-Bildschirm (seit v0.61.0)
+## Die Seite wird zugelost — und der Wahl-Bildschirm entfällt (seit v0.66.0)
+
+**Die Regel `seiteZufaellig` ist ab Werk AN.** Dann gibt es den
+Seitenwahl-Bildschirm nicht: `TEAM_SCHACH._seiteZulosenWennNoetig` teilt beim
+Öffnen zu (`SCHACH_RUNDE.seiteZulosen`), und **die Zuteilung IST die erste
+Bereitschaft** — es bleibt nur noch die zweite, die anpfeift.
+
+- **Zugeteilt wird nur, wenn eine Seite LEER ist.** Wer bei einer vollen
+  Runde hereinschaut, bleibt Zuschauer.
+- **Gelost wird gerechnet, nicht gewürfelt** (`_zufallsWert` aus Partie-Kennung
+  und Person) — eiserne Regel, sonst sähe jedes Gerät etwas anderes.
+- **Wer wartet, wartet am BRETT:** `inAufstellung(runde, spielerId)` ist mit
+  dem Haken schon wahr, sobald die eigene Seite steht. Der
+  Aufstellungs-Bildschirm trägt dann Code und Einladen, und statt „Bereit"
+  einen Satz — ein Knopf, der nichts bewirken kann, wäre eine Lüge.
+- **Das „Zurück" führt dort aus der Runde**, nicht eine Stufe zurück: Es gibt
+  keinen Bildschirm mehr davor. Ohne diese Ausnahme räumte sich eine
+  angelegte Runde nie wieder weg (ein Test hat es gefangen).
+- **Alte Partien gelten als AUS** (`=== true` beim Normalisieren) und behalten
+  ihren Ablauf.
+
+## Vor dem Anpfiff: der Seitenwahl-Bildschirm (seit v0.61.0, nur ohne den Haken)
 
 **Eine wartende Partie zeigt kein Brett.** `_partieZeichnen` verzweigt bei
 `!laeuft && !ergebnis` sofort nach `_seitenwahlZeichnen` — dem ersten von zwei

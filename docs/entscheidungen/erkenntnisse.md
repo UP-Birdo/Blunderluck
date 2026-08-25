@@ -2,6 +2,41 @@
 
 ## Teuer erkaufte Erkenntnisse
 
+### Wer eine Zusage streicht, muss sagen, wer sie erneuert (v0.62.0, gefunden v0.64.1)
+
+
+**Der Fehlschlag:** Der Nutzer meldete: „Manchmal beginnt das Spiel nicht,
+auch wenn ich gegen den Bot spiele und wir beide auf bereit gedrückt haben."
+Nachgemessen mit einem Wegwerf-Skript, in zwei von drei Wegen reproduzierbar.
+
+**Warum:** v0.62.0 hat die zweite Bereitschaft eingeführt und dazu eine
+richtige Regel: Wer seine erste Zusage zurücknimmt, streicht die
+Aufstellungs-Zusage BEIDER Seiten — sonst startete eine Partie mit einem
+Brett, das eine Seite nie gesehen hat. Der Computer bekam seine Zusage aber
+nur an EINER Stelle: beim Einsteigen (`SCHACH_BOT.inRundeSetzen`, gerufen aus
+`beiBereitDazuholen`). Und einsteigen tut er genau einmal.
+
+Damit war die Rechnung: Eine Regel streicht regelmässig, eine andere setzt
+einmalig. Wer einmal „Doch nicht bereit" drückte oder vom
+Aufstellungs-Bildschirm zurückging, hatte danach für immer einen Computer
+ohne Zusage — und ein Spiel, das nie begann.
+
+**Die Lösung:** `SCHACH_BOT.aufstellungBestaetigen` läuft jetzt nach JEDEM
+Bereit-Druck (`TEAM_SCHACH.bereitUmschalten`), nicht nur beim Einsteigen —
+und ausserhalb des `if`, denn die Rücknahme ist es ja, die streicht.
+
+**Die Regel daraus, und sie gilt über dieses Projekt hinaus:** Wer eine
+Zusage, ein Recht oder einen Zustand an einer Stelle STREICHT, schreibt
+sofort dazu, wer ihn wieder setzt — und prüft, ob dieser Setzer auch dann
+läuft, wenn kein Mensch beteiligt ist. Ein automatischer Mitspieler kann
+nicht nachfragen; was ihm genommen wird, muss ihm zurückgegeben werden.
+
+**Warum kein Test es gefangen hat:** Es gab Tests für beide Seiten einzeln —
+das Streichen (Modell) und das Einsteigen (Bot). Der Fehler sass in der NAHT
+zwischen Bildschirm und Bot, und die hatte keinen. Der neue Test geht deshalb
+den ganzen Weg über `TEAM_SCHACH.bereitUmschalten`.
+
+
 ### Die Projekt-Schranke stolperte über die eigene Netz-Adresse (v0.61.0)
 
 **Der Fehlschlag:** Am Rundenende sollte die `STATUS.md` am Stück neu
