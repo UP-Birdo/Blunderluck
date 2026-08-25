@@ -718,10 +718,9 @@ const TEAM_SCHACH = {
         }
 
         /*
-         * DIE SPIELER STEHEN AM BRETT (seit v0.53.0), einer darüber, einer
-         * darunter. Die Reihenfolge hier IST die Anordnung auf dem Schirm,
-         * und `_farbeObenAmBrett` sorgt dafür, dass die obere Zeile zu der
-         * Seite gehört, die auch oben auf dem Brett spielt.
+         * DIE SEITEN FLANKIEREN DAS BRETT (seit v0.53.0), eine darüber, eine
+         * darunter. `_farbeObenAmBrett` sorgt dafür, dass die obere Seite zu
+         * der gehört, die auch oben auf dem Brett spielt.
          *
          * Die Unglücksmeldung bleibt vor beiden — sie steht seit jeher direkt
          * unter der Standleiste, und ein Bildschirm-Test prüft genau diese
@@ -731,24 +730,54 @@ const TEAM_SCHACH = {
         const untenFarbe = (obenFarbe === "weiss") ? "schwarz" : "weiss";
 
         /*
-         * DIE FÄHIGKEITEN FLANKIEREN DAS BRETT (seit v0.57.0, Nutzer-Skizze):
-         * die des Gegners OBEN (über seiner Zeile), meine UNTEN (unter meiner).
-         * Jede Reihe ist null, wenn Fähigkeiten in dieser Partie aus sind.
+         * DIE ANORDNUNG DER ZWEITEN NUTZER-SKIZZE (seit v0.64.0).
+         *
+         * Bis v0.63.0 stand je Seite ALLES in einer Zeile: Farbpunkt, Name,
+         * Lage und die Steuer-Knöpfe, darüber bzw. darunter die Kartenreihe.
+         * Die Skizze ordnet dieselben Teile anders — punktsymmetrisch um das
+         * Brett:
+         *
+         *     [Karten Gegner ........]  [ Banner Gegner ]
+         *                                            [F]
+         *                    B R E T T
+         *     [Zahnrad]
+         *     [Z]
+         *     [F]
+         *     [ Banner ich ]  [........ Karten ich ]
+         *
+         * DREI SACHEN ÄNDERN SICH DAMIT:
+         *
+         *   1. Karten und Banner stehen NEBENEINANDER statt untereinander —
+         *      das spart eine ganze Zeile Höhe je Seite.
+         *   2. Der Banner steht in der äusseren Ecke: oben rechts, unten
+         *      links. Diagonal, weil das Brett sich zur eigenen Seite dreht.
+         *   3. Die Steuer-Knöpfe sind aus dem Banner heraus und stehen als
+         *      SPALTE am Rand — beim Gegner sein Friedhof rechts, bei mir
+         *      Zahnrad, Züge und Friedhof links (Nutzer-Entscheidung
+         *      25.08.2026: alle drei untereinander).
+         *
+         * WAS DAS KOSTET: Die Knopfspalte nimmt Höhe, die vorher in der
+         * Bannerzeile mitlief. `_brettEinpassen` MISST den Rest und rechnet
+         * die Brettbreite daraus — das Brett wird also von selbst kleiner,
+         * statt dass die Seite zu rollen anfängt (v0.52.0). Ob es dabei noch
+         * angenehm gross ist, entscheidet der Blick am Gerät.
          */
-        const gegnerKoennen = TEAM_SCHACH._faehigkeitReiheBauen(partie, person, obenFarbe);
-        if (gegnerKoennen) {
-            wurzel.appendChild(gegnerKoennen);
+        wurzel.appendChild(TEAM_SCHACH._seitenReiheBauen(partie, person, obenFarbe, true));
+
+        const obenKnoepfe = TEAM_SCHACH._steuerSpalteBauen(partie, person, obenFarbe);
+        if (obenKnoepfe) {
+            wurzel.appendChild(obenKnoepfe);
         }
-        wurzel.appendChild(TEAM_SCHACH._spielerZeileBauen(partie, person, obenFarbe));
 
         const halter = TEAM_SCHACH._brettBauen(partie, person);
         wurzel.appendChild(halter);
 
-        wurzel.appendChild(TEAM_SCHACH._spielerZeileBauen(partie, person, untenFarbe));
-        const meinKoennen = TEAM_SCHACH._faehigkeitReiheBauen(partie, person, untenFarbe);
-        if (meinKoennen) {
-            wurzel.appendChild(meinKoennen);
+        const untenKnoepfe = TEAM_SCHACH._steuerSpalteBauen(partie, person, untenFarbe);
+        if (untenKnoepfe) {
+            wurzel.appendChild(untenKnoepfe);
         }
+
+        wurzel.appendChild(TEAM_SCHACH._seitenReiheBauen(partie, person, untenFarbe, false));
         wurzel.appendChild(TEAM_SCHACH._teamExtrasBauen(partie, person));
 
         /*
@@ -1570,26 +1599,16 @@ const TEAM_SCHACH = {
         zeile.appendChild(lage);
 
         /*
-         * DER FRIEDHOF DIESER SEITE (seit v0.58.0, Nutzer-Skizze): ein „F"
-         * am Spieler, das die EIGENEN Gefallenen zeigt (`_friedhofKnopfBauen`
-         * öffnet das Fenster). Nur im laufenden Match — vorher ist niemand
-         * gefallen. Er sitzt rechts, hinter der Lage.
+         * DIE STEUER-KNÖPFE STEHEN SEIT v0.64.0 NICHT MEHR HIER, sondern als
+         * Spalte am Rand (`_steuerSpalteBauen`, zweite Nutzer-Skizze). Diese
+         * Zeile ist damit reiner BANNER geworden: wer auf dieser Seite
+         * spielt und wie es um sie steht — mehr nicht.
+         *
+         * Sie kamen mit v0.58.0 (Friedhof) und v0.59.0 (Züge, Zahnrad)
+         * hierher und sassen rechts hinter der Lage. Der Grund für den Umzug
+         * ist Platz: Banner und Kartenreihe stehen jetzt nebeneinander, und
+         * dort ist für drei Knöpfe kein Raum mehr.
          */
-        if (laeuft) {
-            zeile.appendChild(TEAM_SCHACH._friedhofKnopfBauen(partie, farbe));
-
-            /*
-             * MEINE SEITE TRÄGT ZUSÄTZLICH ZÜGE UND EINSTELLUNGEN (seit
-             * v0.59.0, Nutzer-Skizze): das „Z" für den Zugverlauf und das
-             * Zahnrad, das aus der Fussleiste hierher gezogen ist. Der Gegner
-             * braucht beide nicht — den Verlauf sieht man auf beiden Seiten
-             * gleich, und einstellen (samt Aufgeben) kann nur, wer mitspielt.
-             */
-            if (meinTeam === farbe) {
-                zeile.appendChild(TEAM_SCHACH._zuegeKnopfBauen(partie));
-                zeile.appendChild(TEAM_SCHACH._einstellungenKnopfBauen());
-            }
-        }
 
         /*
          * NUR DIE EIGENE SEITE TRÄGT EINEN KNOPF — „Bereit" bzw. „Doch nicht
@@ -1614,6 +1633,86 @@ const TEAM_SCHACH = {
 
         return zeile;
     },
+    /*
+     * EINE SEITE ALS EINE ZEILE: KARTEN UND BANNER NEBENEINANDER
+     * (seit v0.64.0, zweite Nutzer-Skizze).
+     *
+     * Bis v0.63.0 waren das zwei Zeilen übereinander — erst die Kartenreihe,
+     * dann der Banner. Zusammen in einer Zeile spart das je Seite eine ganze
+     * Zeilenhöhe, und genau die braucht die neue Knopfspalte.
+     *
+     * DIE SEITEN SIND SPIEGELBILDLICH: Oben stehen die Karten links und der
+     * Banner rechts aussen, unten umgekehrt. Der Banner sitzt damit immer in
+     * der ÄUSSEREN Ecke — dort, wo in der Skizze der jeweilige Spieler steht.
+     * `obenAmBrett` sagt, welche der beiden Lagen gemeint ist.
+     *
+     * WENN FÄHIGKEITEN AUS SIND, ist die Kartenreihe null und der Banner
+     * bekommt die Zeile für sich. Er bleibt trotzdem an seiner Ecke: Die
+     * Zeile ist eine Flexbox mit Platz dazwischen, kein Raster mit festen
+     * Spalten.
+     */
+    _seitenReiheBauen(partie, person, farbe, obenAmBrett) {
+        const reihe = TEAM_SCHACH._element("div",
+            "seiten-reihe seiten-reihe-" + (obenAmBrett ? "oben" : "unten"));
+
+        const banner = TEAM_SCHACH._spielerZeileBauen(partie, person, farbe);
+        const koennen = TEAM_SCHACH._faehigkeitReiheBauen(partie, person, farbe);
+
+        if (obenAmBrett) {
+            if (koennen) {
+                reihe.appendChild(koennen);
+            }
+            reihe.appendChild(banner);
+        } else {
+            reihe.appendChild(banner);
+            if (koennen) {
+                reihe.appendChild(koennen);
+            }
+        }
+
+        return reihe;
+    },
+
+    /*
+     * DIE STEUER-KNÖPFE ALS SPALTE AM RAND (seit v0.64.0, zweite
+     * Nutzer-Skizze).
+     *
+     * Beim Gegner steht nur sein Friedhof, und zwar RECHTS; bei mir stehen
+     * Zahnrad, Züge und Friedhof untereinander LINKS (Nutzer-Entscheidung
+     * 25.08.2026: alle drei).
+     *
+     * JEDE SPALTE KLEBT AN DERSELBEN SEITE WIE IHR BANNER: oben beide
+     * rechts, unten beide links. So bleibt die Diagonale der Skizze
+     * erhalten — jede Seite hat ihre Ecke, und die des Gegners liegt der
+     * eigenen gegenüber.
+     *
+     * DIE REIHENFOLGE VON OBEN NACH UNTEN ist bei mir Zahnrad, Z, F — das
+     * Zahnrad am weitesten weg vom Brett, weil man es am seltensten braucht
+     * und dahinter das Aufgeben liegt. Der Friedhof kommt ans Brett, weil er
+     * beim Spielen am häufigsten aufgeht.
+     *
+     * NULL, solange die Partie nicht läuft: Vor dem Anpfiff ist niemand
+     * gefallen, es gibt keinen Zug zu sehen, und einzustellen gibt es nur,
+     * was auf den Start-Bildschirmen ohnehin dasteht.
+     */
+    _steuerSpalteBauen(partie, person, farbe) {
+        if (!partie.laeuft || partie.ergebnis) {
+            return null;
+        }
+
+        const meine = (SCHACH_RUNDE.teamVon(partie, person.id) === farbe);
+        const spalte = TEAM_SCHACH._element("div",
+            "steuer-spalte steuer-spalte-" + (meine ? "meine" : "fremde"));
+
+        if (meine) {
+            spalte.appendChild(TEAM_SCHACH._einstellungenKnopfBauen());
+            spalte.appendChild(TEAM_SCHACH._zuegeKnopfBauen(partie));
+        }
+        spalte.appendChild(TEAM_SCHACH._friedhofKnopfBauen(partie, farbe));
+
+        return spalte;
+    },
+
 
     /*
      * WELCHE FARBE OBEN AM BRETT STEHT.

@@ -3,6 +3,21 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.64.0 — 25.08.2026
+
+**Der Spiel-Bildschirm ist neu angeordnet — nach deiner zweiten Skizze.**
+
+- **Name und Karten stehen jetzt nebeneinander** statt untereinander: oben
+  die Karten des Gegners und rechts daneben sein Name, unten dein Name links
+  und deine Karten rechts. Das spart je Seite eine ganze Zeile.
+- **Die kleinen Knöpfe sind aus der Namenszeile heraus** und stehen als
+  Spalte am Rand: beim Gegner sein Friedhof rechts oben, bei dir Zahnrad,
+  Zugverlauf und Friedhof untereinander links unten.
+- Damit hat jede Seite ihre eigene Ecke, und die des Gegners liegt deiner
+  gegenüber — so wie ihr am Tisch sitzen würdet.
+- **Das Brett passt sich an:** Es wird so gross, wie der übrige Platz es
+  zulässt, statt dass die Seite zu rollen anfängt.
+
 ## v0.63.0 — 25.08.2026
 
 **Jede Fähigkeit und jedes Unglück hat jetzt ihr eigenes Zeichen.**

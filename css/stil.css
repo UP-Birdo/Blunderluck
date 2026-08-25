@@ -4464,6 +4464,99 @@ body.design-3d .werte-figur {
     min-height: 0;
 }
 
+/* ------------------------------------------------------------------ *
+ * DIE ANORDNUNG DER ZWEITEN NUTZER-SKIZZE (seit v0.64.0)
+ *
+ * Je Seite EINE Zeile aus Kartenreihe und Banner, dazu eine Knopfspalte am
+ * Rand. Punktsymmetrisch um das Brett:
+ *
+ *     [Karten Gegner ........]  [ Banner Gegner ]
+ *                                            [F]
+ *                    B R E T T
+ *     [Zahnrad] [Z] [F]  (untereinander)
+ *     [ Banner ich ]  [........ Karten ich ]
+ *
+ * WARUM FLEXBOX UND KEIN RASTER: Die Kartenreihe ist mal da und mal nicht
+ * (Fähigkeiten aus), und ihre Breite hängt davon ab, wie viele Karten man
+ * gesammelt hat. Ein Raster mit festen Spalten müsste beide Fälle kennen;
+ * `space-between` braucht sie nicht zu kennen — der Banner sitzt in seiner
+ * Ecke, ob neben ihm etwas steht oder nicht.
+ * ------------------------------------------------------------------ */
+
+.seiten-reihe {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-width: 0;
+    margin-bottom: 6px;
+}
+
+/* Die untere Reihe steht unter dem Brett und braucht ihren Abstand oben
+   statt unten. */
+.seiten-reihe-unten {
+    margin-top: 6px;
+    margin-bottom: 0;
+}
+
+/*
+ * DIE KARTENREIHE NIMMT DEN PLATZ, DER ÜBRIG BLEIBT — und gibt ihn wieder
+ * her, wenn der Banner ihn braucht (`min-width: 0` erlaubt das Schrumpfen
+ * unter die Inhaltsbreite; ohne diese Zeile drängt ein voller Streifen den
+ * Banner aus der Zeile).
+ */
+.seiten-reihe .faehigkeit-reihe {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin: 0;
+}
+
+/* Der Banner behält seine Breite und wird nicht gestaucht — er trägt Namen
+   und Lage, und beide dürfen nicht abgeschnitten werden. */
+.seiten-reihe .spieler-zeile {
+    flex: 0 1 auto;
+    margin: 0;
+}
+
+/*
+ * DIE KNOPFSPALTE AM RAND.
+ *
+ * Sie ist selbst eine Zeile über die volle Breite, damit die Knöpfe an den
+ * richtigen Rand rücken — die Spalte darin steht senkrecht. Das ist eine
+ * Verschachtelung mehr, aber die einzige Art, „rechts oben" und „links
+ * unten" ohne feste Masse zu treffen.
+ */
+.steuer-spalte {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: fit-content;
+    margin: 2px 0;
+}
+
+/* Die des Gegners rechts, meine links — dieselbe Ecke wie der zugehörige
+   Banner. */
+.steuer-spalte-fremde {
+    margin-left: auto;
+    align-items: flex-end;
+}
+
+.steuer-spalte-meine {
+    margin-right: auto;
+    align-items: flex-start;
+}
+
+/* In der Spalte sind alle Knöpfe gleich breit — nebeneinander in einer Zeile
+   durften sie noch unterschiedlich sein, untereinander sieht das unruhig
+   aus. */
+.steuer-spalte .spiel-steuer-knopf {
+    width: 34px;
+    min-width: 34px;
+    padding: 4px 0;
+    justify-content: center;
+}
+
+
 .faehigkeit-leer {
     opacity: 0.7;
 }

@@ -1844,15 +1844,28 @@ pruefe("Im laufenden Match ist die Fussleiste leer, das Zahnrad sitzt am Spieler
         throw new Error("die Fussleiste im laufenden Match ist nicht leer");
     }
 
-    /* Das Zahnrad sitzt in der EIGENEN Spielerzeile (person spielt weiss),
-       nicht in der des Gegners — einstellen kann nur, wer mitspielt. */
-    const meine = TEAM_SCHACH._spielerZeileBauen(partie, person, "weiss");
+    /*
+     * Das Zahnrad sitzt in der EIGENEN Steuer-Spalte (person spielt weiss),
+     * nicht in der des Gegners — einstellen kann nur, wer mitspielt.
+     *
+     * SEIT v0.64.0 IST DAS DIE SPALTE AM RAND und nicht mehr die
+     * Spielerzeile (zweite Nutzer-Skizze). Die Frage blieb dieselbe, der Ort
+     * hat sich geaendert — wie schon zwischen v0.48.0 (Fussleiste) und
+     * v0.59.0 (Spielerzeile).
+     */
+    const meine = TEAM_SCHACH._steuerSpalteBauen(partie, person, "weiss");
     if (!klasseSuchen(meine, "spiel-zahnrad")) {
-        throw new Error("das Zahnrad fehlt in der eigenen Spielerzeile");
+        throw new Error("das Zahnrad fehlt in der eigenen Steuer-Spalte");
     }
-    const gegner = TEAM_SCHACH._spielerZeileBauen(partie, person, "schwarz");
+    const gegner = TEAM_SCHACH._steuerSpalteBauen(partie, person, "schwarz");
     if (klasseSuchen(gegner, "spiel-zahnrad")) {
-        throw new Error("die Gegnerzeile traegt ein Zahnrad");
+        throw new Error("die Spalte des Gegners traegt ein Zahnrad");
+    }
+
+    /* Und die Spielerzeile ist reiner Banner geworden: kein Knopf mehr. */
+    const banner = TEAM_SCHACH._spielerZeileBauen(partie, person, "weiss");
+    if (klasseSuchen(banner, "spiel-steuer-knopf")) {
+        throw new Error("im Banner steht noch ein Steuer-Knopf");
     }
 });
 
@@ -2455,6 +2468,100 @@ pruefe("Klassisch ohne Wuerfel zeigt die Karte weiterhin nicht", () => {
     TEAM_SCHACH.partieOeffnen(kennungen.faehigkeiten);
 });
 
+pruefe("Die Anordnung der zweiten Skizze: Banner in der Ecke, Knoepfe am Rand (v0.64.0)", () => {
+    /*
+     * NUTZER-SKIZZE 25.08.2026 (die zweite):
+     *
+     *     [Karten Gegner ........]  [ Banner Gegner ]
+     *                                            [F]
+     *                    B R E T T
+     *     [Zahnrad] [Z] [F]  (untereinander)
+     *     [ Banner ich ]  [........ Karten ich ]
+     *
+     * Geprueft wird die REIHENFOLGE im Baum — sie ist die Anordnung auf dem
+     * Schirm — und die Zuordnung der Seiten. Ein Banner an der falschen
+     * Ecke oder eine Knopfspalte auf der falschen Seite des Bretts faellt
+     * hier auf.
+     */
+    TEAM_SCHACH.partieOeffnen(kennungen.faehigkeiten);
+    const kinder = TEAM_SCHACH.wurzelEl.kinder;
+
+    const stelle = (passt) => kinder.findIndex(passt);
+    const brett = stelle((k) => hatKlasse(k, "brett-halter"));
+    const obenReihe = stelle((k) => hatKlasse(k, "seiten-reihe-oben"));
+    const untenReihe = stelle((k) => hatKlasse(k, "seiten-reihe-unten"));
+
+    if (obenReihe < 0 || untenReihe < 0) {
+        throw new Error("die zwei Seiten-Zeilen fehlen");
+    }
+    if (!(obenReihe < brett && brett < untenReihe)) {
+        throw new Error("die Seiten stehen nicht ueber und unter dem Brett: "
+            + obenReihe + " / " + brett + " / " + untenReihe);
+    }
+
+    /* Die Knopfspalten liegen ZWISCHEN Seiten-Zeile und Brett. */
+    const spalten = [];
+    kinder.forEach((k, i) => {
+        if (hatKlasse(k, "steuer-spalte")) {
+            spalten.push(i);
+        }
+    });
+    if (spalten.length !== 2) {
+        throw new Error("erwartet zwei Steuer-Spalten, gefunden: " + spalten.length);
+    }
+    if (!(obenReihe < spalten[0] && spalten[0] < brett)) {
+        throw new Error("die obere Spalte liegt nicht zwischen Zeile und Brett");
+    }
+    if (!(brett < spalten[1] && spalten[1] < untenReihe)) {
+        throw new Error("die untere Spalte liegt nicht zwischen Brett und Zeile");
+    }
+
+    /* Oben die des Gegners (nur Friedhof), unten meine (drei Knoepfe). */
+    if (!hatKlasse(kinder[spalten[0]], "steuer-spalte-fremde")) {
+        throw new Error("oben steht nicht die Spalte des Gegners");
+    }
+    if (!hatKlasse(kinder[spalten[1]], "steuer-spalte-meine")) {
+        throw new Error("unten steht nicht die eigene Spalte");
+    }
+
+    const meineKnoepfe = klasseZaehlen(kinder[spalten[1]], "spiel-steuer-knopf");
+    if (meineKnoepfe !== 3) {
+        throw new Error("erwartet drei eigene Knoepfe (Zahnrad, Z, F), gefunden: "
+            + meineKnoepfe);
+    }
+    const fremdeKnoepfe = klasseZaehlen(kinder[spalten[0]], "spiel-steuer-knopf");
+    if (fremdeKnoepfe !== 1) {
+        throw new Error("der Gegner soll genau seinen Friedhof haben, hat aber: "
+            + fremdeKnoepfe);
+    }
+
+    /* In jeder Seiten-Zeile stehen Karten UND Banner — nebeneinander. */
+    for (const stelleReihe of [obenReihe, untenReihe]) {
+        const zeile = kinder[stelleReihe];
+        if (!klasseSuchen(zeile, "spieler-zeile")) {
+            throw new Error("in einer Seiten-Zeile fehlt der Banner");
+        }
+        if (!klasseSuchen(zeile, "faehigkeit-reihe")) {
+            throw new Error("in einer Seiten-Zeile fehlen die Karten");
+        }
+    }
+
+    /*
+     * DIE ECKEN: Oben steht der Banner HINTER den Karten (also rechts),
+     * unten DAVOR (also links). Das ist die Punktsymmetrie der Skizze, und
+     * sie steckt allein in der Reihenfolge der zwei Kinder.
+     */
+    const bannerStelle = (zeile) => (zeile.kinder || [])
+        .findIndex((k) => hatKlasse(k, "spieler-zeile"));
+
+    if (bannerStelle(kinder[obenReihe]) !== 1) {
+        throw new Error("oben steht der Banner nicht rechts aussen");
+    }
+    if (bannerStelle(kinder[untenReihe]) !== 0) {
+        throw new Error("unten steht der Banner nicht links aussen");
+    }
+});
+
 pruefe("Die Faehigkeiten flankieren das Brett: Gegner oben, ich unten (v0.57.0)", () => {
     /*
      * NUTZER-SKIZZE 25.08.2026: Die Faehigkeiten stehen als Kartenreihe am
@@ -2462,6 +2569,11 @@ pruefe("Die Faehigkeiten flankieren das Brett: Gegner oben, ich unten (v0.57.0)"
      * Anordnung im DOM: eine `faehigkeit-reihe` VOR dem Brett und eine
      * DAHINTER. Steht eine auf der falschen Seite, sitzt sie beim falschen
      * Spieler.
+     *
+     * SEIT v0.64.0 STECKT JEDE REIHE IN IHRER SEITEN-ZEILE (`seiten-reihe`,
+     * zweite Nutzer-Skizze: Karten und Banner nebeneinander) — deshalb wird
+     * die Suche eine Ebene tiefer gefuehrt. Die Frage bleibt dieselbe: oben
+     * oder unten.
      */
     TEAM_SCHACH.partieOeffnen(kennungen.faehigkeiten);
     const kinder = TEAM_SCHACH.wurzelEl.kinder;
@@ -2473,7 +2585,7 @@ pruefe("Die Faehigkeiten flankieren das Brett: Gegner oben, ich unten (v0.57.0)"
 
     const reihen = [];
     kinder.forEach((k, i) => {
-        if (hatKlasse(k, "faehigkeit-reihe")) {
+        if (hatKlasse(k, "faehigkeit-reihe") || klasseSuchen(k, "faehigkeit-reihe")) {
             reihen.push(i);
         }
     });
@@ -3385,15 +3497,18 @@ pruefe("Der Friedhof steht als Knopf bei jedem Spieler, mit den eigenen Gefallen
     }
 
     /*
-     * IM LAUFENDEN MATCH traegt jede Spielerzeile ihren Friedhof-Knopf, VORHER
-     * nicht (da ist noch niemand gefallen).
+     * IM LAUFENDEN MATCH hat jede Seite ihre Steuer-Spalte mit dem
+     * Friedhof-Knopf, VORHER nicht (da ist noch niemand gefallen).
+     *
+     * SEIT v0.64.0 IST DAS DIE SPALTE AM RAND (`_steuerSpalteBauen`), nicht
+     * mehr die Spielerzeile — die ist reiner Banner geworden.
      */
     const angelegt = SCHACH_TAFEL.partieAnlegen(
         TEAM_SCHACH.abgleich.daten, "standard", "Friedhof", 6200);
-    const vorAnpfiff = TEAM_SCHACH._spielerZeileBauen(
+    const vorAnpfiff = TEAM_SCHACH._steuerSpalteBauen(
         angelegt.partie, umgebung.ICH.person(), "weiss");
-    if (klasseSuchen(vorAnpfiff, "spiel-steuer-knopf")) {
-        throw new Error("vor dem Anpfiff steht schon ein Friedhof-Knopf");
+    if (vorAnpfiff !== null) {
+        throw new Error("vor dem Anpfiff steht schon eine Steuer-Spalte");
     }
 
     let laeuft = SCHACH_RUNDE.teamBeitreten(angelegt.partie, "id-anna", "weiss", 6200);
@@ -3401,10 +3516,10 @@ pruefe("Der Friedhof steht als Knopf bei jedem Spieler, mit den eigenen Gefallen
     laeuft = bereitUndAufgestellt(laeuft, "weiss", 6200);
     laeuft = bereitUndAufgestellt(laeuft, "schwarz", 6200);
 
-    const imMatch = TEAM_SCHACH._spielerZeileBauen(
+    const imMatch = TEAM_SCHACH._steuerSpalteBauen(
         laeuft, umgebung.ICH.person(), "weiss");
     if (!klasseSuchen(imMatch, "spiel-steuer-knopf")) {
-        throw new Error("die Spielerzeile im Match traegt keinen Friedhof-Knopf");
+        throw new Error("die Steuer-Spalte im Match traegt keinen Friedhof-Knopf");
     }
 });
 pruefe("Die Spieler stehen als Zeilen am Brett, richtig herum (v0.53.0)", () => {
