@@ -3468,10 +3468,32 @@ const TEAM_SCHACH = {
 
         if (!partie.ergebnis && TEAM_SCHACH._istVerwaist(danach)) {
             await TEAM_SCHACH._verwaisteRundeSchliessen(danach);
+            await TEAM_SCHACH.uebersichtOeffnen();
             return;
         }
 
         await TEAM_SCHACH._sendenMitPruefung(danach, partie.zugZaehler);
+
+        /*
+         * UND DANN AUF DEN STARTBILDSCHIRM (seit v0.69.0).
+         *
+         * Nutzer-Ansage 25.08.2026: „Wenn ich aus einer Runde rausgehe,
+         * möchte ich auf dem Start-Screen landen und nicht im
+         * Runde-beitreten-Screen."
+         *
+         * DAS IST DIE ANSAGE VON v0.36.0, DIE HIER EINEN WEG ÜBERSEHEN HAT.
+         * Damals wurde „Zur Übersicht" umgebogen (`uebersichtOeffnen` führt
+         * seither zum Start), aber `teamVerlassen` schickte nur den neuen
+         * Stand und liess den Bildschirm für sich selbst entscheiden. Der
+         * entschied richtig: Ohne offene Partie zeichnet er die Übersicht —
+         * und die ist seit v0.35.0 nur noch das Code-Feld für FREMDE Runden.
+         * Wer gerade seine eigene verlassen hat, stand also vor einem leeren
+         * Formular.
+         *
+         * `uebersichtOeffnen` heisst weiter so, tut aber genau das Richtige:
+         * offene Partie schliessen, aufräumen, zum Start.
+         */
+        await TEAM_SCHACH.uebersichtOeffnen();
     },
 
     /*

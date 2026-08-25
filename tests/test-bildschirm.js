@@ -2526,6 +2526,7 @@ pruefe("Gegen den Computer startet die Partie auch nach einem Hin und Her (v0.64
     }
 });
 
+
 pruefe("Der Team-Kasten: Farbe gross, erster Name klein, Rest hinter einem Tipp (v0.68.0)", () => {
     /*
      * NUTZER-ANSAGE 25.08.2026: „Ein grosser Kasten mit Team plus dem ersten
@@ -5392,6 +5393,72 @@ async function zeitlimitPruefen() {
             }
         });
 
+
+    await pruefeMitWarten("Wer eine Runde verlaesst, landet auf dem Startbildschirm (v0.69.0)", async () => {
+        /*
+         * NUTZER-ANSAGE 25.08.2026: „Wenn ich aus einer Runde rausgehe, moechte
+         * ich auf dem Start-Screen landen und nicht im Runde-beitreten-Screen."
+         *
+         * DAS IST DIE ANSAGE VON v0.36.0, DIE EINEN WEG UEBERSAH: Damals wurde
+         * „Zur Uebersicht" umgebogen, `teamVerlassen` aber nicht. Geprueft wird
+         * deshalb genau dieser Weg — und zwar an BEIDEN Ausgaengen der Funktion:
+         * der Runde, die stehen bleibt (noch jemand drin), und der, die sich
+         * dabei schliesst (niemand mehr drin).
+         */
+        const person = umgebung.ICH.person();
+        const echteDaten = TEAM_SCHACH.abgleich.daten;
+        const echteOffene = TEAM_SCHACH.offeneId;
+    
+        const gelandet = () => String((umgebung.TABS.gewechseltZu || ""));
+    
+        try {
+            /* FALL 1: Es bleibt jemand zurueck — die Runde ueberlebt. */
+            const angelegt = SCHACH_TAFEL.partieAnlegen(
+                SCHACH_TAFEL.leereTafel(9500), "standard", "Verlassen", 9510);
+            let partie = SCHACH_RUNDE.teamBeitreten(
+                angelegt.partie, person.id, "weiss", 9520);
+            partie = SCHACH_RUNDE.teamBeitreten(partie, "id-bert", "schwarz", 9520);
+    
+            TEAM_SCHACH.abgleich.daten = SCHACH_TAFEL.partieEinsetzen(
+                SCHACH_TAFEL.leereTafel(9500), partie, 9530);
+            TEAM_SCHACH.offeneId = partie.id;
+            umgebung.TABS.gewechseltZu = "";
+    
+            /* `teamVerlassen` ist async: Der Sprung zum Start steht hinter dem
+               Senden. Deshalb wird hier auf die Kette gewartet. */
+            await TEAM_SCHACH.teamVerlassen(partie);
+    
+            if (gelandet() !== "start") {
+                throw new Error("nach dem Verlassen nicht auf dem Start, sondern: "
+                    + gelandet());
+            }
+            if (TEAM_SCHACH.offeneId !== "") {
+                throw new Error("die Partie ist noch offen");
+            }
+    
+            /* FALL 2: Der Letzte geht — die Runde schliesst sich dabei. */
+            const zweite = SCHACH_TAFEL.partieAnlegen(
+                SCHACH_TAFEL.leereTafel(9600), "standard", "Allein", 9610);
+            const allein = SCHACH_RUNDE.teamBeitreten(
+                zweite.partie, person.id, "weiss", 9620);
+    
+            TEAM_SCHACH.abgleich.daten = SCHACH_TAFEL.partieEinsetzen(
+                SCHACH_TAFEL.leereTafel(9600), allein, 9630);
+            TEAM_SCHACH.offeneId = allein.id;
+            umgebung.TABS.gewechseltZu = "";
+    
+            await TEAM_SCHACH.teamVerlassen(allein);
+    
+            if (gelandet() !== "start") {
+                throw new Error("nach dem Schliessen nicht auf dem Start, sondern: "
+                    + gelandet());
+            }
+        } finally {
+            TEAM_SCHACH.abgleich.daten = echteDaten;
+            TEAM_SCHACH.offeneId = echteOffene;
+            umgebung.TABS.gewechseltZu = "";
+        }
+        });
     console.log(anzahlOk + " ok, " + anzahlFehler + " Fehler");
     process.exit(anzahlFehler === 0 ? 0 : 1);
 }

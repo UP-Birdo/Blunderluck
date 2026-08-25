@@ -3,6 +3,15 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.69.0 — 25.08.2026
+
+**Wer eine Runde verlässt, landet jetzt auf dem Startbildschirm.**
+
+- Bisher stand man danach vor „Runde beitreten" — einem leeren Code-Feld für
+  FREMDE Runden. Jetzt führt der Weg dorthin, wo man eine neue Runde startet.
+- Das galt seit v0.36.0 schon für „Zur Übersicht"; der Weg über „Runde
+  verlassen" war dabei übersehen worden.
+
 ## v0.68.0 — 25.08.2026
 
 **Aus der Spielerzeile ist ein Team-Kasten in der Bildschirmecke geworden.**
