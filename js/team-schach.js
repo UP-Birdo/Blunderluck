@@ -704,18 +704,26 @@ const TEAM_SCHACH = {
         const obenFarbe = TEAM_SCHACH._farbeObenAmBrett(partie, person);
         const untenFarbe = (obenFarbe === "weiss") ? "schwarz" : "weiss";
 
+        /*
+         * DIE FÄHIGKEITEN FLANKIEREN DAS BRETT (seit v0.57.0, Nutzer-Skizze):
+         * die des Gegners OBEN (über seiner Zeile), meine UNTEN (unter meiner).
+         * Jede Reihe ist null, wenn Fähigkeiten in dieser Partie aus sind.
+         */
+        const gegnerKoennen = TEAM_SCHACH._faehigkeitReiheBauen(partie, person, obenFarbe);
+        if (gegnerKoennen) {
+            wurzel.appendChild(gegnerKoennen);
+        }
         wurzel.appendChild(TEAM_SCHACH._spielerZeileBauen(partie, person, obenFarbe));
 
         const halter = TEAM_SCHACH._brettBauen(partie, person);
         wurzel.appendChild(halter);
 
         wurzel.appendChild(TEAM_SCHACH._spielerZeileBauen(partie, person, untenFarbe));
-        wurzel.appendChild(TEAM_SCHACH._teamExtrasBauen(partie, person));
-
-        const koennen = TEAM_SCHACH._faehigkeitenBauen(partie, person);
-        if (koennen) {
-            wurzel.appendChild(koennen);
+        const meinKoennen = TEAM_SCHACH._faehigkeitReiheBauen(partie, person, untenFarbe);
+        if (meinKoennen) {
+            wurzel.appendChild(meinKoennen);
         }
+        wurzel.appendChild(TEAM_SCHACH._teamExtrasBauen(partie, person));
 
         wurzel.appendChild(TEAM_SCHACH._verlaufBauen(partie));
         wurzel.appendChild(TEAM_SCHACH._fussleisteBauen(partie, person));

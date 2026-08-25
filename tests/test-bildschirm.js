@@ -2435,6 +2435,55 @@ pruefe("Klassisch ohne Wuerfel zeigt die Karte weiterhin nicht", () => {
     TEAM_SCHACH.partieOeffnen(kennungen.faehigkeiten);
 });
 
+pruefe("Die Faehigkeiten flankieren das Brett: Gegner oben, ich unten (v0.57.0)", () => {
+    /*
+     * NUTZER-SKIZZE 25.08.2026: Die Faehigkeiten stehen als Kartenreihe am
+     * Brett, die des Gegners OBEN, meine UNTEN. Geprueft wird genau diese
+     * Anordnung im DOM: eine `faehigkeit-reihe` VOR dem Brett und eine
+     * DAHINTER. Steht eine auf der falschen Seite, sitzt sie beim falschen
+     * Spieler.
+     */
+    TEAM_SCHACH.partieOeffnen(kennungen.faehigkeiten);
+    const kinder = TEAM_SCHACH.wurzelEl.kinder;
+
+    const brett = kinder.findIndex((k) => hatKlasse(k, "brett-halter"));
+    if (brett < 0) {
+        throw new Error("kein Brett-Halter unter den Bereichen");
+    }
+
+    const reihen = [];
+    kinder.forEach((k, i) => {
+        if (hatKlasse(k, "faehigkeit-reihe")) {
+            reihen.push(i);
+        }
+    });
+
+    if (!reihen.some((i) => i < brett)) {
+        throw new Error("keine Faehigkeitsreihe ueber dem Brett (Gegner)");
+    }
+    if (!reihen.some((i) => i > brett)) {
+        throw new Error("keine Faehigkeitsreihe unter dem Brett (ich)");
+    }
+
+    /*
+     * OFFEN (Nutzer-Entscheidung 25.08.2026): Eine Faehigkeit im Vorrat des
+     * Gegners wird als Karte gezeigt, nicht verborgen.
+     */
+    const person = umgebung.ICH.person();
+    const partie = SCHACH_RUNDE.kopieren(
+        SCHACH_TAFEL.partie(TEAM_SCHACH.abgleich.daten, kennungen.faehigkeiten));
+    const meinTeam = SCHACH_RUNDE.teamVon(partie, person.id);
+    const gegner = (meinTeam === "weiss") ? "schwarz" : "weiss";
+
+    partie.faehigkeiten = { weiss: [], schwarz: [] };
+    partie.faehigkeiten[gegner] = ["sprung"];
+
+    const reihe = TEAM_SCHACH._faehigkeitReiheBauen(partie, person, gegner);
+    if (!reihe || !klasseSuchen(reihe, "faehigkeit-knopf")) {
+        throw new Error("die Faehigkeit des Gegners wird nicht offen als Karte gezeigt");
+    }
+});
+
 pruefe("Wartet eine Faehigkeit auf ihr Ziel, sind die Felder markiert", () => {
     /*
      * Eine frische, laufende Partie, in der Anna wirklich am Zug ist. Seit

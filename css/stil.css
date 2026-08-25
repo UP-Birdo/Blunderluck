@@ -4288,6 +4288,41 @@ body.design-3d .werte-figur {
     border-top: 1px solid var(--rahmen);
 }
 
+/*
+ * DIE FÄHIGKEITS-KARTENREIHE EINER SEITE (seit v0.57.0, Nutzer-Skizze)
+ *
+ * Sie steht am Brett, nicht in einer Karte — deshalb kein Trennstrich oben.
+ * EIN Streifen (kein Umbruch): Bei vielen Fähigkeiten wischt man seitlich,
+ * statt eine zweite Zeile aufzumachen. Das hält die Höhe klein — wichtig,
+ * seit das Match auf eine feste Seite passen soll (v0.52).
+ */
+.faehigkeit-reihe {
+    border-top: none;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 6px;
+    padding: 2px 0;
+    /* Der Streifen schiebt beim Rollen nicht die ganze Seite mit. */
+    overscroll-behavior-x: contain;
+}
+
+/* Die Karten behalten im Streifen ihre Breite, statt zusammengedrückt zu
+   werden. */
+.faehigkeit-reihe .faehigkeit-knopf {
+    flex: 0 0 auto;
+}
+
+/* Die Reihe des Gegners steht oben, meine unten — heute nur als Haken zum
+   späteren Feinschliff (etwa eigene Karten stärker hervorheben). */
+.faehigkeit-reihe-gegner,
+.faehigkeit-reihe-meine {
+    min-height: 0;
+}
+
+.faehigkeit-leer {
+    opacity: 0.7;
+}
+
 /* ------------------------------------------------------------------ *
  * Imposter
  * ------------------------------------------------------------------ */

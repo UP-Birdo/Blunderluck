@@ -522,67 +522,74 @@ Object.assign(TEAM_SCHACH, {
      * Würfeln" weg: Die Würfel lagen auf dem Brett, aber die eingesammelten
      * Fähigkeiten liessen sich nirgends einsetzen.
      */
-    _faehigkeitenBauen(partie, person) {
+    /*
+     * DIE FÄHIGKEITEN EINER SEITE ALS KARTENREIHE (seit v0.57.0).
+     *
+     * Nutzer-Skizze 25.08.2026: Die Fähigkeiten stehen als Karten am Brett —
+     * die des Gegners oben, meine unten. Bis v0.56 lagen beide Seiten
+     * zusammen in EINER Karte unter dem Brett; jetzt bekommt jede Seite ihre
+     * Reihe an ihrem Platz (eingehängt in `_partieZeichnen`).
+     *
+     * OFFEN FÜR BEIDE SEITEN (Nutzer-Entscheidung 25.08.2026): Ich sehe die
+     * Fähigkeiten des Gegners im Klartext. Das war schon immer so — die alte
+     * Karte zeigte beide Farben —, jetzt steht es nur an der richtigen Stelle.
+     *
+     * Die Marke je Fähigkeit baut unverändert `_faehigkeitMarkeBauen`: eigene
+     * sind anklickbar (einsetzen), fremde nur zum Ansehen, mit Stufenfarbe
+     * und den Zeichen für +/Blitz. Diese Funktion ordnet sie nur an.
+     *
+     * DIE FARBE STEHT NICHT MEHR DABEI: Die Reihe klebt an der Spielerzeile
+     * ihrer Seite, die den Namen schon nennt (weniger Text, Nutzer-Ziel). Der
+     * Kopf „Fähigkeiten" samt i-Knopf ist mit weggefallen — was +/Blitz
+     * bedeuten, sagt weiter der Kurzhinweis der Marke und die Bibliothek.
+     *
+     * Die Klasse `faehigkeit-zeile` BLEIBT (zwei Bildschirm-Tests zählen sie);
+     * `faehigkeit-reihe` trägt den neuen Streifen-Stil.
+     */
+    _faehigkeitReiheBauen(partie, person, farbe) {
         if (!SCHACH_RUNDE.faehigkeitenAn(partie)) {
             return null;
         }
 
-        const karte = TEAM_SCHACH._element("section", "karte");
+        const meinTeam = SCHACH_RUNDE.teamVon(partie, person.id);
+        const meine = (meinTeam === farbe);
 
         /*
-         * Überschrift und i-Knopf in einer Zeile.
-         *
-         * Bis v3.5 stand unter der Überschrift ein Absatz, der die Würfel
-         * erklärte, und der i-Knopf ganz unten. Auf dem Handy schob das die
-         * Fähigkeiten — das Einzige, was man hier anfassen kann — unter den
-         * sichtbaren Bereich. Der Erklärtext steht jetzt im i-Menü, wo er
-         * hingehört: Wer ihn braucht, sucht ihn dort; wer spielt, sieht seine
-         * Fähigkeiten.
+         * Wartet eine EIGENE Fähigkeit auf ihr Ziel, zählt nur das — und zwar
+         * in MEINER Reihe, denn es ist meine Handlung. Die Reihe des Gegners
+         * bleibt davon unberührt.
          */
-        const kopf = TEAM_SCHACH._element("div", "karte-kopf");
-        kopf.appendChild(TEAM_SCHACH._element("h3", "", "Fähigkeiten"));
-        kopf.appendChild(TEAM_SCHACH._infoKnopfBauen());
-        karte.appendChild(kopf);
-
-        const meinTeam = SCHACH_RUNDE.teamVon(partie, person.id);
-
-        /* Wartet gerade eine Fähigkeit auf ihr Ziel? Dann zählt nur das. */
-        if (TEAM_SCHACH.zielFaehigkeit) {
-            const hinweis = TEAM_SCHACH._element("p", "erklaerung erklaerung-rochade",
+        if (meine && TEAM_SCHACH.zielFaehigkeit) {
+            const warten = TEAM_SCHACH._element("div",
+                "faehigkeit-zeile faehigkeit-reihe faehigkeit-reihe-ziel");
+            warten.appendChild(TEAM_SCHACH._element("span", "erklaerung",
                 SCHACH_VARIANTEN.faehigkeitTitel(TEAM_SCHACH.zielFaehigkeit)
-                + ": Tippe eines der hervorgehobenen Felder an.");
-            karte.appendChild(hinweis);
-
-            const leiste = TEAM_SCHACH._element("div", "faehigkeit-zeile");
-            leiste.appendChild(TEAM_SCHACH._knopf("Abbrechen", "knopf-still knopf-klein",
+                + ": tippe eines der hervorgehobenen Felder an."));
+            warten.appendChild(TEAM_SCHACH._knopf("Abbrechen", "knopf-still knopf-klein",
                 () => {
                     TEAM_SCHACH._auswahlAufheben();
                     TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
                 }));
-            karte.appendChild(leiste);
-            return karte;
+            return warten;
         }
 
-        for (const farbe of ["weiss", "schwarz"]) {
-            const koennen = partie.faehigkeiten[farbe];
-            const zeile = TEAM_SCHACH._element("div", "faehigkeit-zeile");
+        const koennen = partie.faehigkeiten[farbe];
+        const reihe = TEAM_SCHACH._element("div",
+            "faehigkeit-zeile faehigkeit-reihe"
+            + (meine ? " faehigkeit-reihe-meine" : " faehigkeit-reihe-gegner"));
 
-            zeile.appendChild(TEAM_SCHACH._element("span", "zug-farbe",
-                (farbe === "weiss") ? "Weiss" : "Schwarz"));
-
-            if (koennen.length === 0) {
-                zeile.appendChild(TEAM_SCHACH._element("span", "erklaerung", "keine"));
-            }
-
-            for (let stelle = 0; stelle < koennen.length; stelle++) {
-                zeile.appendChild(TEAM_SCHACH._faehigkeitMarkeBauen(
-                    partie, person, koennen[stelle], meinTeam === farbe));
-            }
-
-            karte.appendChild(zeile);
+        if (koennen.length === 0) {
+            reihe.appendChild(TEAM_SCHACH._element("span", "erklaerung faehigkeit-leer",
+                "noch keine"));
+            return reihe;
         }
 
-        return karte;
+        for (const art of koennen) {
+            reihe.appendChild(TEAM_SCHACH._faehigkeitMarkeBauen(
+                partie, person, art, meine));
+        }
+
+        return reihe;
     },
 
     /*

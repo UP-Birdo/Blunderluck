@@ -3,6 +3,21 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.57.0 — 25.08.2026
+
+**Die Fähigkeiten stehen jetzt als Kartenreihe am Brett — die des Gegners
+oben, deine unten.**
+
+- Bisher lagen beide Seiten zusammen in einer Karte unter dem Brett. Jetzt
+  hat jede Seite ihre eigene Reihe an ihrem Platz: der Gegner über seinem
+  Namen, du unter deinem.
+- Die Karten des Gegners stehen **offen** — du siehst, welche Fähigkeiten er
+  hat. (Das war schon vorher so, jetzt steht es an der richtigen Stelle.)
+- Deine Fähigkeiten setzt du wie gewohnt mit einem Tipp ein; die des Gegners
+  zeigen beim Antippen nur, was sie tun. Stufenfarbe und die Zeichen für
+  „Zug bleibt" (+) und „geht auch beim Gegner" (Blitz) bleiben.
+- Bei vielen Fähigkeiten wischt die Reihe seitlich, statt eine zweite Zeile
+  aufzumachen — so bleibt das Brett groß.
 ## v0.56.0 — 25.08.2026
 
 **Bei der Brettform-Wahl steht kein Erklärabsatz mehr — die Knöpfe und Bilder
