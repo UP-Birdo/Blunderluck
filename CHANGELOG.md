@@ -3,6 +3,25 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.62.0 — 25.08.2026
+
+**Vor dem Anpfiff siehst du jetzt deine Aufstellung — und darfst sie neu
+würfeln, bevor es losgeht.**
+
+- Sobald auf beiden Seiten jemand sitzt und beide „Bereit" gedrückt haben,
+  kommt ein **zweiter Bildschirm mit dem Brett**. Dort siehst du, wie deine
+  Figuren stehen.
+- Ist eine **Zufallsarmee** eingestellt, steht daneben ein **Würfel-Knopf**:
+  einmal drücken, und die Aufstellung wird neu gezogen. Haben beide Seiten
+  dieselbe Armee, ändert sich beides; würfelt jede Seite für sich, ändert
+  sich nur deine.
+- **Erst das zweite „Bereit" startet die Partie** — und zwar von beiden
+  Seiten. Würfelt jemand zwischendurch neu, muss auch neu zugesagt werden:
+  Niemand soll in eine Aufstellung starten, die er nicht gesehen hat.
+- **Oben links „Zurück"** führt eine Stufe zurück zur Seitenwahl.
+- Gegen den Computer geht alles wie gewohnt: Er sagt sofort zu, du
+  entscheidest allein, wann es losgeht.
+
 ## v0.61.0 — 25.08.2026
 
 **Eine neue Runde beginnt jetzt mit einem eigenen Bildschirm: nur noch die

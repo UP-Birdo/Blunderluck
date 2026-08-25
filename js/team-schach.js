@@ -686,7 +686,17 @@ const TEAM_SCHACH = {
          * gehört ab hier dem LAUFENDEN Match und der beendeten Partie.
          */
         if (!partie.laeuft && !partie.ergebnis) {
-            TEAM_SCHACH._seitenwahlZeichnen(wurzel, partie, person);
+            /*
+             * ZWEI START-BILDSCHIRME, NICHT EINER (seit v0.62.0). Solange
+             * noch jemand fehlt oder eine Seite ihre Wahl nicht bestätigt
+             * hat, ist die Seitenwahl dran; sobald beide Seiten besetzt und
+             * einverstanden sind, kommt die Aufstellung mit dem Brett.
+             */
+            if (SCHACH_RUNDE.inAufstellung(partie)) {
+                TEAM_SCHACH._aufstellungZeichnen(wurzel, partie, person);
+            } else {
+                TEAM_SCHACH._seitenwahlZeichnen(wurzel, partie, person);
+            }
             return;
         }
 
@@ -861,6 +871,167 @@ const TEAM_SCHACH = {
         }
 
         wurzel.appendChild(TEAM_SCHACH._einladungBlockBauen(partie, person));
+    },
+
+    /* ---------------------------------------------------------------- *
+     * Vor dem Anpfiff, zweiter Schritt: die Aufstellung (seit v0.62.0)
+     * ---------------------------------------------------------------- */
+
+    /*
+     * DER ZWEITE START-BILDSCHIRM (Nutzer-Ansage 25.08.2026).
+     *
+     * „Sobald beide Seiten einen Spieler haben und beide bereit sind, gehts
+     * ein Screen weiter, wo das Spielfeld gezeigt wird — wo aber beide noch
+     * die Möglichkeit haben, neu aufzustellen … wenn beide nochmal auf
+     * Bereit klicken, kommen sie ins Spiel."
+     *
+     * HIER KOMMT DAS BRETT ZURÜCK, das der Seitenwahl-Bildschirm nicht hat —
+     * und diesmal mit einer Aufgabe: Man sieht seine Aufstellung an und
+     * entscheidet, ob man sie behält. Deshalb steht das Brett gross in der
+     * Mitte, darunter der Würfel und die Zusage.
+     *
+     * WAS ES HIER NICHT GIBT: die Seitenwahl (die ist getroffen, sonst wäre
+     * man nicht hier), das Einladen (die Runde ist voll) und den Friedhof
+     * (es ist noch niemand gefallen). Das „Zurück" oben links führt eine
+     * Stufe zurück zur Seitenwahl, nicht aus der Runde heraus — hinaus kommt
+     * man von dort.
+     */
+    _aufstellungZeichnen(wurzel, partie, person) {
+        const meinTeam = SCHACH_RUNDE.teamVon(partie, person.id);
+
+        const kopf = TEAM_SCHACH._partieKopfBauen(partie,
+            TEAM_SCHACH._knopf("Zurück", "knopf-still knopf-klein",
+                () => TEAM_SCHACH._aufstellungVerlassen(partie, person)));
+        kopf.className += " partie-kopf-klebt";
+        wurzel.appendChild(kopf);
+
+        /* Gegner oben, ich unten — dieselbe Anordnung wie im Match, damit der
+           Anpfiff nichts verschiebt. */
+        const obenFarbe = TEAM_SCHACH._farbeObenAmBrett(partie, person);
+        const untenFarbe = (obenFarbe === "weiss") ? "schwarz" : "weiss";
+
+        wurzel.appendChild(TEAM_SCHACH._spielerZeileBauen(partie, person, obenFarbe));
+        wurzel.appendChild(TEAM_SCHACH._brettBauen(partie, person));
+        wurzel.appendChild(TEAM_SCHACH._spielerZeileBauen(partie, person, untenFarbe));
+
+        /*
+         * DIE ZWEI KNÖPFE DIESES BILDSCHIRMS: neu würfeln und zusagen.
+         *
+         * Der Würfel steht NUR bei Zufallsarmee da (`_darfNeuWuerfeln`, die
+         * Regel von v0.42.0) — ohne sie stellte er nur dieselbe feste
+         * Aufstellung wieder hin. Ohne ihn bleibt die Zusage allein stehen,
+         * und das ist richtig so: Dann gibt es an der Aufstellung nichts zu
+         * entscheiden, nur zu bestätigen.
+         */
+        const reihe = TEAM_SCHACH._element("div", "aufstellung-reihe");
+
+        if (TEAM_SCHACH._darfNeuWuerfeln(partie, person)) {
+            reihe.appendChild(TEAM_SCHACH._wuerfelKnopfBauen(partie, meinTeam));
+        }
+
+        /*
+         * NUR WER MITSPIELT, SAGT ZU. Ein Zuschauer ohne Seite kann hier
+         * nichts bestätigen — er sieht die Aufstellung und wartet, wie die
+         * beiden Spielerzeilen es ihm zeigen.
+         */
+        if (meinTeam) {
+            const gesagt = partie.aufstellungBereit[meinTeam];
+            reihe.appendChild(TEAM_SCHACH._knopf(
+                gesagt ? "Doch nicht bereit" : "Bereit",
+                (gesagt ? "knopf-still" : "knopf-haupt") + " aufstellung-bereit",
+                () => TEAM_SCHACH.aufstellungBereitUmschalten(
+                    partie, meinTeam, !gesagt)));
+        }
+
+        wurzel.appendChild(reihe);
+
+        /* Erst wenn das Brett im Bildschirm steht, lässt sich die Feldgrösse
+           messen — wie im Match (`_partieZeichnen`). Animiert wird hier
+           nichts: Es ist noch kein Zug geschehen. */
+        TEAM_SCHACH._brettEinpassen();
+        TEAM_SCHACH._figurGroesseSetzen();
+        TEAM_SCHACH._groessenWaechterStarten();
+    },
+
+    /*
+     * DER WÜRFEL-KNOPF (seit v0.62.0).
+     *
+     * Er trägt das Würfel-Zeichen des Startbildschirms; fehlt START
+     * (Testumgebung), steht das Wort da. Die Beschriftung bleibt in `title`
+     * und `aria-label` wortgleich erhalten — umbenannt wird nichts.
+     */
+    _wuerfelKnopfBauen(partie, meinTeam) {
+        const knopf = document.createElement("button");
+        knopf.type = "button";
+        knopf.className =
+            "knopf knopf-still spiel-steuer-knopf wuerfel-knopf";
+        knopf.setAttribute("aria-label", "Neu aufstellen");
+        knopf.title = "Neu aufstellen";
+
+        if (typeof START !== "undefined" && START._wuerfelZeichenBauen) {
+            knopf.appendChild(START._wuerfelZeichenBauen());
+        } else {
+            knopf.textContent = "Neu aufstellen";
+        }
+
+        knopf.addEventListener("click",
+            () => TEAM_SCHACH.armeeNeuWuerfeln(partie, meinTeam));
+        return knopf;
+    },
+
+    /*
+     * ZURÜCK HEISST HIER EINE STUFE ZURÜCK (seit v0.62.0).
+     *
+     * Anders als auf dem Seitenwahl-Bildschirm verlässt dieses „Zurück" die
+     * Runde NICHT — es nimmt die Zusage zur eigenen Seite zurück und führt
+     * damit beide auf den ersten Bildschirm. Das ist der ehrliche Weg: Wer
+     * hierher gekommen ist, hat zugesagt; wer zurück will, nimmt genau das
+     * zurück. Hinaus kommt man eine Stufe weiter vorne, wo auch „Runde
+     * verlassen" wohnt.
+     *
+     * Ein Zuschauer ohne Seite hat nichts zurückzunehmen — für ihn führt der
+     * Knopf zur Übersicht, wie überall.
+     */
+    async _aufstellungVerlassen(partie, person) {
+        const meinTeam = SCHACH_RUNDE.teamVon(partie, person.id);
+
+        if (!meinTeam) {
+            await TEAM_SCHACH.uebersichtOeffnen();
+            return;
+        }
+
+        await TEAM_SCHACH.bereitUmschalten(partie, meinTeam, false);
+    },
+
+    /*
+     * Die zweite Bereitschaft umschalten — und damit anpfeifen, sobald beide
+     * Seiten sie gegeben haben. Das Modell entscheidet, wann es losgeht
+     * (`SCHACH_RUNDE.aufstellungBereitSetzen`); hier wird nichts gerechnet.
+     */
+    async aufstellungBereitUmschalten(partie, farbe, bereit) {
+        await TEAM_SCHACH._sendenMitPruefung(
+            SCHACH_RUNDE.aufstellungBereitSetzen(partie, farbe, bereit),
+            partie.zugZaehler);
+    },
+
+    /*
+     * Neu würfeln, ohne die Runde zurückzusetzen (seit v0.62.0).
+     *
+     * OHNE RÜCKFRAGE, anders als `neuAufstellen`: Hier geht nichts verloren.
+     * Es ist noch kein Zug geschehen, niemand hat eine Figur bewegt — was der
+     * Druck kostet, ist im schlimmsten Fall ein zweiter Druck. Die Rückfrage
+     * von `neuAufstellen` schützt etwas anderes: eine BEENDETE Partie, deren
+     * Rückschau danach weg wäre.
+     *
+     * Der Computer sagt sofort wieder zu (`SCHACH_BOT.aufstellungBestaetigen`)
+     * — das Modell hat seine Zusage eben mit gestrichen, und er hat zum Brett
+     * keine Meinung.
+     */
+    async armeeNeuWuerfeln(partie, farbe) {
+        const neu = SCHACH_BOT.aufstellungBestaetigen(
+            SCHACH_RUNDE.armeeNeuWuerfeln(partie, farbe));
+
+        await TEAM_SCHACH._sendenMitPruefung(neu, partie.zugZaehler);
     },
 
     /*
@@ -1647,12 +1818,11 @@ const TEAM_SCHACH = {
      *     dem Beitritt — vorher wüsste der Knopf nicht, wessen Armee er neu
      *     würfelt.
      *
-     * SIE HAT SEIT v0.61.0 KEINEN AUFRUFER und steht das absichtlich durch:
-     * Der Knopf sass in der Fussleiste der wartenden Partie, und die gibt es
-     * nicht mehr — der Seitenwahl-Bildschirm hat sie ersetzt. Sein Platz ist
-     * der ZWEITE Start-Bildschirm (`ROADMAP.md` Punkt 5: Brett plus Neu
-     * aufstellen), und dort wird genau diese Regel wieder gebraucht. Die
-     * Prüfung dazu läuft weiter, sie fragt jetzt diese Funktion.
+     * SIE HAT SEIT v0.62.0 WIEDER EINEN AUFRUFER: den Würfel-Knopf auf dem
+     * zweiten Start-Bildschirm (`_aufstellungZeichnen`). In v0.61.0 stand sie
+     * eine Auslieferung lang ohne einen da — der Knopf sass bis dahin in der
+     * Fussleiste der wartenden Partie, und die hatte der Seitenwahl-Bildschirm
+     * ersetzt.
      *
      * DIE BEENDETE PARTIE IST NICHT GEMEINT: Dort heisst derselbe Knopf zwar
      * auch „Neu aufstellen" (in der Fussleiste), tut aber etwas anderes — er

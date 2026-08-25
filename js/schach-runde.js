@@ -157,6 +157,37 @@ const SCHACH_RUNDE = {
             teams: { weiss: [], schwarz: [] },
             bereit: { weiss: false, schwarz: false },
 
+            /*
+             * DIE ZWEITE BEREITSCHAFT (seit v0.62.0) — die Zusage zur
+             * AUFSTELLUNG.
+             *
+             * Nutzer-Ansage 25.08.2026: „Sobald beide Seiten einen Spieler
+             * haben und beide bereit sind, gehts ein Screen weiter, wo das
+             * Spielfeld gezeigt wird … wenn beide nochmal auf Bereit klicken,
+             * kommen sie ins Spiel."
+             *
+             * `bereit` heisst seither: Ich bin mit meiner SEITE einverstanden.
+             * `aufstellungBereit` heisst: Ich bin auch mit dem BRETT
+             * einverstanden. Erst wenn beide Seiten beides gesagt haben, geht
+             * es los (`kannAnpfeifen`). Alte Partien haben das Feld nicht — sie
+             * gelten als noch nicht aufstellungsbereit, was nur wartende
+             * Runden betrifft: eine laufende trägt `laeuft` bereits.
+             */
+            aufstellungBereit: { weiss: false, schwarz: false },
+
+            /*
+             * WIE OFT JEDE SEITE IHRE ZUFALLSARMEE NEU GEWÜRFELT HAT (seit
+             * v0.62.0). Die Zahl geht als Saat-Zusatz in die Ziehung
+             * (`_wurfZusatz`) — bei 0 gar nicht, damit jede Partie von früher
+             * genau dieselbe Aufstellung behält.
+             *
+             * Sie steht hier und nicht als fertige Aufstellung, weil das
+             * Würfeln GERECHNET wird (eiserne Regel: kein `Math.random()` im
+             * Modell). Ein Zähler im gemeinsamen Stand genügt, damit jedes
+             * Gerät dasselbe Brett sieht.
+             */
+            armeeWurf: { weiss: 0, schwarz: 0 },
+
             /* Wer in diese Runde eingeladen ist (seit v0.13.0, Bündel A
                Schritt 7) — Kennungen aus der Spielerliste. Das Feld liegt
                IN der Partie, damit es keinen neuen Datenbank-Pfad und
@@ -410,7 +441,8 @@ const SCHACH_RUNDE = {
             runde.stand,
             (runde.id || "partie") + (saatZusatz || ""),
             runde.regeln.armeeUnterschiedlich === true,
-            runde.regeln.armeeStaerke);
+            runde.regeln.armeeStaerke,
+            runde.armeeWurf);
 
         return runde;
     },
@@ -913,14 +945,39 @@ const SCHACH_RUNDE = {
         return "B";
     },
 
+    /*
+     * DER SAAT-ZUSATZ EINER SEITE (seit v0.62.0).
+     *
+     * Wie oft diese Seite ihre Armee schon neu gewürfelt hat, geht in die
+     * Ziehung ein — dadurch ändert sich beim Neu-Würfeln GENAU die Seite, die
+     * gedrückt hat, und die andere behält ihre Figuren.
+     *
+     * ZWEI FESTE PUNKTE, die nicht aufgeweicht werden dürfen:
+     *
+     *   - **Bei 0 kommt NICHTS dazu.** Jede Partie, die vor v0.62.0 angelegt
+     *     wurde, muss exakt dieselbe Aufstellung behalten; ein Zusatz „|wurf0"
+     *     würde jede einzelne davon umwürfeln.
+     *   - **Ohne getrennte Armeen zählt nur Weiss.** Beide Seiten bekommen
+     *     dieselbe Armee (Schwarz gespiegelt, v0.60.0) — sie MÜSSEN also
+     *     dieselbe Saat sehen, sonst liefe die Spiegelung auseinander. Beim
+     *     Neu-Würfeln werden dort ohnehin beide Zähler zugleich erhöht.
+     */
+    _wurfZusatz(wurf, farbe, getrennt) {
+        if (!wurf) {
+            return "";
+        }
+        const zahl = getrennt ? wurf[farbe] : wurf.weiss;
+        return (typeof zahl === "number" && zahl > 0) ? ("|wurf" + zahl) : "";
+    },
+
     /* Ein Brett-Stand mit gewürfelten Armeen auf beiden Seiten. */
-    _armeeStand(stand, id, getrennt, staerke) {
+    _armeeStand(stand, id, getrennt, staerke, wurf) {
         const variante = SCHACH.varianteVon(stand);
         const breite = SCHACH.breiteVon(stand);
         const hoehe = SCHACH.hoeheVon(stand);
 
         if (variante.kreuz) {
-            return SCHACH_RUNDE._armeeStandKreuz(stand, id, getrennt, staerke);
+            return SCHACH_RUNDE._armeeStandKreuz(stand, id, getrennt, staerke, wurf);
         }
 
         const zeichen = [];
@@ -957,7 +1014,8 @@ const SCHACH_RUNDE = {
             const gesamt = breite * hoehe;
             const felder = SCHACH_RUNDE._armeeFelder(variante, SCHACH.WEISS, staerke);
             const arten = SCHACH_RUNDE._armeeFiguren(
-                id, SCHACH.WEISS, variante, getrennt, undefined, staerke, felder.length);
+                id + SCHACH_RUNDE._wurfZusatz(wurf, SCHACH.WEISS, getrennt),
+                SCHACH.WEISS, variante, getrennt, undefined, staerke, felder.length);
             const anzahl = Math.min(felder.length, arten.length);
 
             for (let stelle = 0; stelle < anzahl; stelle++) {
@@ -971,7 +1029,8 @@ const SCHACH_RUNDE = {
             for (const farbe of [SCHACH.WEISS, SCHACH.SCHWARZ]) {
                 const felder = SCHACH_RUNDE._armeeFelder(variante, farbe, staerke);
                 const arten = SCHACH_RUNDE._armeeFiguren(
-                    id, farbe, variante, getrennt, undefined, staerke, felder.length);
+                    id + SCHACH_RUNDE._wurfZusatz(wurf, farbe, getrennt),
+                    farbe, variante, getrennt, undefined, staerke, felder.length);
                 const anzahl = Math.min(felder.length, arten.length);
 
                 for (let stelle = 0; stelle < anzahl; stelle++) {
@@ -1015,7 +1074,7 @@ const SCHACH_RUNDE = {
      *      und ein gewürfelter Bauer zwei Felder weiter fiele ohne Eintrag auf
      *      die Farbregel zurück und liefe auf dem Flügel quer.
      */
-    _armeeStandKreuz(stand, id, getrennt, staerke) {
+    _armeeStandKreuz(stand, id, getrennt, staerke, wurf) {
         const variante = SCHACH.varianteVon(stand);
         const zeichen = [];
 
@@ -1029,7 +1088,8 @@ const SCHACH_RUNDE = {
             for (const seite of SCHACH.startSeitenVon(stand, farbe)) {
                 const felder = SCHACH_RUNDE._armeeFelderKreuz(variante, seite, staerke);
                 const arten = SCHACH_RUNDE._armeeFiguren(
-                    id, farbe, variante, getrennt, seite, staerke, felder.length);
+                    id + SCHACH_RUNDE._wurfZusatz(wurf, farbe, getrennt),
+                    farbe, variante, getrennt, seite, staerke, felder.length);
                 const anzahl = Math.min(felder.length, arten.length);
 
                 for (let stelle = 0; stelle < anzahl; stelle++) {
@@ -1132,6 +1192,17 @@ const SCHACH_RUNDE = {
                 .filter((id, stelle, alle) => alle.indexOf(id) === stelle);
 
             runde.bereit[farbe] = !!(roh.bereit && roh.bereit[farbe] === true);
+
+            /* Die zweite Bereitschaft und der Würfel-Zähler (beide v0.62.0),
+               additiv nachgerüstet: fehlen sie, gilt „noch nicht bestätigt"
+               und „noch nie neu gewürfelt". */
+            runde.aufstellungBereit[farbe] = !!(roh.aufstellungBereit
+                && roh.aufstellungBereit[farbe] === true);
+
+            const wuerfe = (roh.armeeWurf && roh.armeeWurf[farbe]);
+            if (typeof wuerfe === "number" && isFinite(wuerfe) && wuerfe > 0) {
+                runde.armeeWurf[farbe] = Math.floor(wuerfe);
+            }
 
             const koennen = (roh.faehigkeiten && Array.isArray(roh.faehigkeiten[farbe]))
                 ? roh.faehigkeiten[farbe]
@@ -4069,6 +4140,19 @@ const SCHACH_RUNDE = {
             && !SCHACH_RUNDE.teamVon(stand, spielerId);
     },
 
+    /*
+     * DIE ERSTE BEREITSCHAFT: Ich bin mit meiner SEITE einverstanden.
+     *
+     * BIS v0.61.0 FING DIE PARTIE HIER AN. Seit v0.62.0 führt sie nur noch in
+     * die AUFSTELLUNG (`inAufstellung`) — angepfiffen wird erst, wenn beide
+     * Seiten auch das Brett bestätigt haben (`aufstellungBereitSetzen`).
+     *
+     * WER SEINE ZUSAGE ZURÜCKNIMMT, NIMMT BEIDEN DIE ZWEITE (Zeile unten).
+     * Sonst stünde folgender Fall offen: Weiss geht zurück zur Seitenwahl,
+     * würfelt später neu, drückt wieder bereit — und Schwarz' Zusage zur
+     * ALTEN Aufstellung liegt noch da und pfeift sofort an. Man startete eine
+     * Partie mit einem Brett, das man nie gesehen hat.
+     */
     bereitSetzen(runde, farbe, bereit, zeitpunkt) {
         const neu = SCHACH_RUNDE.kopieren(runde);
 
@@ -4077,9 +4161,31 @@ const SCHACH_RUNDE = {
         }
         neu.bereit[farbe] = (bereit === true);
 
-        /* Sobald beide Seiten bereit sind und in jedem Team jemand steht,
-           beginnt die Partie von selbst. */
-        if (SCHACH_RUNDE.kannStarten(neu)) {
+        if (bereit !== true) {
+            neu.aufstellungBereit = { weiss: false, schwarz: false };
+        }
+
+        neu.geaendertAm = (zeitpunkt === undefined) ? Date.now() : zeitpunkt;
+        return neu;
+    },
+
+    /*
+     * DIE ZWEITE BEREITSCHAFT: Ich bin auch mit dem BRETT einverstanden —
+     * und damit geht es los (seit v0.62.0).
+     *
+     * Der Anpfiff steht hier und nicht mehr in `bereitSetzen`: Er hängt an
+     * der letzten Zusage, die fehlt, und das ist seit dem zweiten
+     * Start-Bildschirm diese.
+     */
+    aufstellungBereitSetzen(runde, farbe, bereit, zeitpunkt) {
+        const neu = SCHACH_RUNDE.kopieren(runde);
+
+        if (farbe !== "weiss" && farbe !== "schwarz") {
+            return neu;
+        }
+        neu.aufstellungBereit[farbe] = (bereit === true);
+
+        if (SCHACH_RUNDE.kannAnpfeifen(neu)) {
             neu.laeuft = true;
 
             /* Nur beim ERSTEN Start setzen: „Neu aufstellen" soll die
@@ -4093,12 +4199,89 @@ const SCHACH_RUNDE = {
         return neu;
     },
 
+    /*
+     * Beide Seiten besetzt und beide mit ihrer SEITE einverstanden. Das war
+     * bis v0.61.0 die Bedingung für den Anpfiff; seit v0.62.0 ist es die
+     * Bedingung für die AUFSTELLUNG. Der Name blieb, weil er weiterhin sagt,
+     * was er sagt: Ab hier kann die Runde starten — sie tut es nur in zwei
+     * Schritten.
+     */
     kannStarten(runde) {
         const stand = SCHACH_RUNDE.normalisieren(runde);
         return stand.teams.weiss.length > 0
             && stand.teams.schwarz.length > 0
             && stand.bereit.weiss
             && stand.bereit.schwarz;
+    },
+
+    /*
+     * DIE ARMEE NEU WÜRFELN, OHNE DIE RUNDE ZURÜCKZUSETZEN (seit v0.62.0).
+     *
+     * Nutzer-Ansage 25.08.2026: „Beide haben noch die Möglichkeit, neu
+     * aufzustellen. Wenn beide dieselbe haben, können beide Spieler separat
+     * auf den Knopf drücken und es ändern sich beide Armeen; wenn beide
+     * unterschiedliche haben, ändert sich nur die eigene."
+     *
+     * GENAU DAS macht der Zähler `armeeWurf`: Bei getrennten Armeen steigt
+     * nur der der drückenden Seite, sonst beide zugleich (die gemeinsame
+     * Armee wird aus Weiss gezogen und für Schwarz gespiegelt — ein einzelner
+     * Zähler würde die Spiegelung zerreissen).
+     *
+     * DAS IST NICHT `neuePartie`. Jene ist die Revanche: neuer Stand, alle
+     * Bereitschaften weg, Verlauf leer. Hier bleibt alles stehen, was
+     * ausgesucht wurde — nur das BRETT wird neu gezogen. Was verfällt, ist
+     * die zweite Bereitschaft BEIDER Seiten: Wer eine Aufstellung bestätigt
+     * hat, hat diese bestätigt und nicht die nächste.
+     *
+     * Ohne Zufallsarmee gibt es nichts zu würfeln — dann bleibt die Runde
+     * unverändert, und der Aufrufer muss nichts prüfen.
+     */
+    armeeNeuWuerfeln(runde, farbe, zeitpunkt) {
+        const neu = SCHACH_RUNDE.kopieren(runde);
+
+        if (!SCHACH_RUNDE.armeeAn(neu) || neu.ergebnis || neu.laeuft) {
+            return neu;
+        }
+
+        const getrennt = neu.regeln.armeeUnterschiedlich === true;
+
+        if (getrennt && (farbe === "weiss" || farbe === "schwarz")) {
+            neu.armeeWurf[farbe] = neu.armeeWurf[farbe] + 1;
+        } else {
+            neu.armeeWurf.weiss = neu.armeeWurf.weiss + 1;
+            neu.armeeWurf.schwarz = neu.armeeWurf.schwarz + 1;
+        }
+
+        /* Das Brett von Grund auf neu herrichten — Kreuz-Risse zuerst, dann
+           die Figuren, dann der Zuschnitt auf die Armeestärke. Genau die
+           Reihenfolge von `neuePartie`, nur ohne deren Rücksetzungen. */
+        neu.stand = SCHACH.neuerStand(neu.variante);
+        SCHACH_RUNDE.kreuzAufstellen(neu);
+        SCHACH_RUNDE.armeeAufstellen(neu);
+        SCHACH_RUNDE.aufstellungAnpassen(neu);
+
+        neu.aufstellungBereit = { weiss: false, schwarz: false };
+        neu.geaendertAm = (zeitpunkt === undefined) ? Date.now() : zeitpunkt;
+        return neu;
+    },
+
+    /* Beide haben auch das Brett bestätigt — jetzt wird angepfiffen. */
+    kannAnpfeifen(runde) {
+        const stand = SCHACH_RUNDE.normalisieren(runde);
+        return SCHACH_RUNDE.kannStarten(stand)
+            && stand.aufstellungBereit.weiss
+            && stand.aufstellungBereit.schwarz;
+    },
+
+    /*
+     * Steht die Runde gerade auf dem zweiten Start-Bildschirm? Beide Seiten
+     * besetzt und mit ihrer Seite einverstanden, das Brett aber noch nicht
+     * angepfiffen. Der Bildschirm fragt genau das (`_partieZeichnen`).
+     */
+    inAufstellung(runde) {
+        const stand = SCHACH_RUNDE.normalisieren(runde);
+        return !stand.laeuft && !stand.ergebnis
+            && SCHACH_RUNDE.kannStarten(stand);
     },
 
     /*
@@ -4981,6 +5164,9 @@ const SCHACH_RUNDE = {
         neu.laeuft = false;
         neu.ergebnis = "";
         neu.bereit = { weiss: false, schwarz: false };
+        /* Auch die Zusage zur Aufstellung (v0.62.0) — die Revanche stellt ein
+           neues Brett hin, und dazu hat noch niemand ja gesagt. */
+        neu.aufstellungBereit = { weiss: false, schwarz: false };
         neu.faehigkeiten = { weiss: [], schwarz: [] };
         neu.bonusGesammelt = [];
         neu.bonus = [];

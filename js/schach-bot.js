@@ -383,14 +383,48 @@ const SCHACH_BOT = {
 
     /*
      * Den Computer in eine Runde setzen und seine Seite sofort bereit
-     * melden. Er wartet auf nichts — angepfiffen wird, sobald der Mensch
-     * bereit ist (`SCHACH_RUNDE.kannStarten` verlangt beide Seiten).
+     * melden — seit v0.62.0 BEIDE Bereitschaften: die zur Seite und die zur
+     * Aufstellung. Er wartet auf nichts; angepfiffen wird, sobald der Mensch
+     * beides gesagt hat (`SCHACH_RUNDE.kannAnpfeifen`).
+     *
+     * WARUM ER DIE AUFSTELLUNG NIE PRÜFT: Er hat keine Meinung zum Brett.
+     * Müsste er zustimmen, stünde der Mensch auf dem zweiten Start-Bildschirm
+     * und wartete auf jemanden, der nie antwortet.
      */
     inRundeSetzen(runde, farbe, zeitpunkt) {
         const mitBot = SCHACH_RUNDE.teamBeitreten(
             runde, SCHACH_BOT.KENNUNG, farbe, zeitpunkt);
 
-        return SCHACH_RUNDE.bereitSetzen(mitBot, farbe, true, zeitpunkt);
+        return SCHACH_BOT.aufstellungBestaetigen(
+            SCHACH_RUNDE.bereitSetzen(mitBot, farbe, true, zeitpunkt), zeitpunkt);
+    },
+
+    /*
+     * JEDE SEITE, IN DER NUR DER COMPUTER SITZT, SAGT JA ZUR AUFSTELLUNG
+     * (seit v0.62.0).
+     *
+     * Gebraucht an zwei Stellen: beim Einsteigen (oben) und nach jedem
+     * Neu-Würfeln — `SCHACH_RUNDE.armeeNeuWuerfeln` streicht die Zusage
+     * BEIDER Seiten, und der Computer würde seine sonst nie erneuern.
+     *
+     * Liefert die Runde unverändert zurück, wenn kein Computer mitspielt;
+     * der Aufrufer muss nichts prüfen.
+     */
+    aufstellungBestaetigen(runde, zeitpunkt) {
+        let neu = runde;
+
+        for (const farbe of ["weiss", "schwarz"]) {
+            const seite = SCHACH_RUNDE.normalisieren(neu).teams[farbe];
+            const nurBot = seite.length > 0
+                && seite.every((id) => SCHACH_BOT.istBot(id));
+
+            if (nurBot) {
+                neu = SCHACH_RUNDE.aufstellungBereitSetzen(
+                    neu, farbe, true, zeitpunkt);
+            }
+        }
+
+        return neu;
     },
 
     /*

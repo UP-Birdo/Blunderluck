@@ -663,6 +663,55 @@ const START = {
         return svg;
     },
 
+    /*
+     * DAS WÜRFEL-ZEICHEN FÜR „NEU AUFSTELLEN" (seit v0.62.0).
+     *
+     * Nutzer-Entscheidung 25.08.2026: Die Nebenaktionen werden Icons. „Neu
+     * aufstellen" bekommt einen Würfel, weil der Knopf genau das tut — die
+     * Armee neu WÜRFELN. Er steht deshalb auch nur bei Zufallsarmee da
+     * (`TEAM_SCHACH._darfNeuWuerfeln`).
+     *
+     * Gezeichnet wie die anderen Zeichen (kein Emoji, Haus-Regel), über
+     * currentColor gefärbt: ein abgerundetes Quadrat mit fünf Augen.
+     */
+    _wuerfelZeichenBauen() {
+        const ns = "http://www.w3.org/2000/svg";
+        const svg = document.createElementNS(ns, "svg");
+        svg.setAttribute("viewBox", "0 0 24 24");
+        svg.setAttribute("class", "start-zeichen");
+        svg.setAttribute("aria-hidden", "true");
+
+        const koerper = document.createElementNS(ns, "rect");
+        koerper.setAttribute("x", "3.2");
+        koerper.setAttribute("y", "3.2");
+        koerper.setAttribute("width", "17.6");
+        koerper.setAttribute("height", "17.6");
+        koerper.setAttribute("rx", "4");
+        koerper.setAttribute("fill", "none");
+        koerper.setAttribute("stroke", "currentColor");
+        koerper.setAttribute("stroke-width", "2.2");
+        svg.appendChild(koerper);
+
+        /* Die Fünf: vier Ecken und die Mitte. Weniger Augen wären kleiner zu
+           zeichnen, aber schlechter als Würfel zu erkennen. */
+        const auge = (x, y) => {
+            const punkt = document.createElementNS(ns, "circle");
+            punkt.setAttribute("cx", String(x));
+            punkt.setAttribute("cy", String(y));
+            punkt.setAttribute("r", "1.5");
+            punkt.setAttribute("fill", "currentColor");
+            svg.appendChild(punkt);
+        };
+
+        auge(8.4, 8.4);
+        auge(15.6, 8.4);
+        auge(12, 12);
+        auge(8.4, 15.6);
+        auge(15.6, 15.6);
+
+        return svg;
+    },
+
     /* Der nach unten zeigende Pfeil des Match-Quadrats. */
     _pfeilBauen() {
         const ns = "http://www.w3.org/2000/svg";

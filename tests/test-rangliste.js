@@ -26,6 +26,23 @@ const SCHACH_TAFEL = globalThis.SCHACH_TAFEL;
 let anzahlOk = 0;
 let anzahlFehler = 0;
 
+
+/*
+ * BEIDE BEREITSCHAFTEN AUF EINMAL (seit v0.62.0).
+ *
+ * Seit dem zweiten Start-Bildschirm braucht der Anpfiff ZWEI Zusagen je
+ * Seite: die zur eigenen Seite (`bereitSetzen`) und die zur Aufstellung
+ * (`aufstellungBereitSetzen`). Fast jede Testpartie will einfach eine
+ * LAUFENDE Partie herstellen — dafuer steht dieser Helfer, damit nicht in
+ * jeder Vorbereitung zwei Aufrufe stehen.
+ *
+ * Wer die Stufen EINZELN pruefen will, ruft das Modell weiterhin direkt.
+ */
+function bereitUndAufgestellt(runde, farbe, zeitpunkt) {
+    return SCHACH_RUNDE.aufstellungBereitSetzen(
+        SCHACH_RUNDE.bereitSetzen(runde, farbe, true, zeitpunkt),
+        farbe, true, zeitpunkt);
+}
 function pruefe(bezeichnung, funktion) {
     try {
         funktion();
@@ -121,8 +138,8 @@ pruefe("Geschlagene Figuren bringen Teilpunkte — auch beim Verlierer", () => {
 
     let partie = SCHACH_RUNDE.teamBeitreten(angelegt.partie, "id-anna", "weiss", 1000);
     partie = SCHACH_RUNDE.teamBeitreten(partie, "id-bert", "schwarz", 1000);
-    partie = SCHACH_RUNDE.bereitSetzen(partie, "weiss", true, 1000);
-    partie = SCHACH_RUNDE.bereitSetzen(partie, "schwarz", true, 1000);
+    partie = bereitUndAufgestellt(partie, "weiss", 1000);
+    partie = bereitUndAufgestellt(partie, "schwarz", 1000);
 
     /* Schwarz nimmt Weiss die Dame ab (Wert 9) und gibt dann auf. */
     partie.verloren.weiss.push("D");
@@ -342,8 +359,8 @@ pruefe("Eine neue Partie haelt Beginn und Zugzahl fest", () => {
 
     let partie = SCHACH_RUNDE.teamBeitreten(angelegt.partie, "id-anna", "weiss", 2000);
     partie = SCHACH_RUNDE.teamBeitreten(partie, "id-bert", "schwarz", 2000);
-    partie = SCHACH_RUNDE.bereitSetzen(partie, "weiss", true, 2000);
-    partie = SCHACH_RUNDE.bereitSetzen(partie, "schwarz", true, 5000);
+    partie = bereitUndAufgestellt(partie, "weiss", 2000);
+    partie = bereitUndAufgestellt(partie, "schwarz", 5000);
 
     gleich(partie.gestartetAm, 5000, "gestartet, als beide bereit waren");
 

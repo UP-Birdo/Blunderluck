@@ -24,6 +24,23 @@ const SCHACH_RUNDE = globalThis.SCHACH_RUNDE;
 let anzahlOk = 0;
 let anzahlFehler = 0;
 
+
+/*
+ * BEIDE BEREITSCHAFTEN AUF EINMAL (seit v0.62.0).
+ *
+ * Seit dem zweiten Start-Bildschirm braucht der Anpfiff ZWEI Zusagen je
+ * Seite: die zur eigenen Seite (`bereitSetzen`) und die zur Aufstellung
+ * (`aufstellungBereitSetzen`). Fast jede Testpartie will einfach eine
+ * LAUFENDE Partie herstellen — dafuer steht dieser Helfer, damit nicht in
+ * jeder Vorbereitung zwei Aufrufe stehen.
+ *
+ * Wer die Stufen EINZELN pruefen will, ruft das Modell weiterhin direkt.
+ */
+function bereitUndAufgestellt(runde, farbe, zeitpunkt) {
+    return SCHACH_RUNDE.aufstellungBereitSetzen(
+        SCHACH_RUNDE.bereitSetzen(runde, farbe, true, zeitpunkt),
+        farbe, true, zeitpunkt);
+}
 function pruefe(bezeichnung, funktion) {
     try {
         funktion();
@@ -59,7 +76,7 @@ function botPartie(varianteId, stufeId) {
     let runde = SCHACH_RUNDE.leereRunde(1000, varianteId, "p-test", "Test");
     runde = SCHACH_RUNDE.teamBeitreten(runde, "id-anna", "weiss", 1000);
     runde = SCHACH_BOT.inRundeSetzen(runde, "schwarz", 1000);
-    runde = SCHACH_RUNDE.bereitSetzen(runde, "weiss", true, 1000);
+    runde = bereitUndAufgestellt(runde, "weiss", 1000);
 
     if (stufeId) {
         runde = SCHACH_RUNDE.kopieren(runde);
@@ -166,7 +183,7 @@ pruefe("Der Computer steigt beim Bereit GEGENUEBER ein (v0.29.0)", () => {
         runde = SCHACH_RUNDE.kopieren(runde);
         runde.regeln.botStufe = "mittel";
         runde = SCHACH_RUNDE.teamBeitreten(runde, "id-anna", meine, 1000);
-        runde = SCHACH_RUNDE.bereitSetzen(runde, meine, true, 1000);
+        runde = bereitUndAufgestellt(runde, meine, 1000);
 
         gleich(runde.laeuft, false, meine + ": allein laeuft nichts");
 
@@ -183,7 +200,7 @@ pruefe("beiBereitDazuholen laesst alles andere in Ruhe", () => {
     /* Eine Partie unter Menschen bekommt keinen Computer angehaengt. */
     let ohne = SCHACH_RUNDE.teamBeitreten(
         SCHACH_RUNDE.leereRunde(1000), "id-anna", "weiss", 1000);
-    ohne = SCHACH_RUNDE.bereitSetzen(ohne, "weiss", true, 1000);
+    ohne = bereitUndAufgestellt(ohne, "weiss", 1000);
 
     wahr(!SCHACH_BOT.istBotPartie(SCHACH_BOT.beiBereitDazuholen(ohne, "id-anna", 1100)),
         "ohne Stufe kommt kein Computer");
@@ -214,7 +231,7 @@ pruefe("inRundeSetzen meldet die Seite des Computers sofort bereit", () => {
     ohneMensch = SCHACH_RUNDE.teamBeitreten(ohneMensch, "id-anna", "weiss", 1000);
     ohneMensch = SCHACH_BOT.inRundeSetzen(ohneMensch, "schwarz", 1000);
     gleich(ohneMensch.laeuft, false, "laeuft noch nicht");
-    gleich(SCHACH_RUNDE.bereitSetzen(ohneMensch, "weiss", true, 1000).laeuft, true,
+    gleich(bereitUndAufgestellt(ohneMensch, "weiss", 1000).laeuft, true,
         "und laeuft, sobald der Mensch bereit ist");
 });
 
@@ -241,8 +258,8 @@ pruefe("In einer Partie ohne Computer waehlt er nichts", () => {
     let runde = SCHACH_RUNDE.leereRunde(1000, "", "p-test", "Test");
     runde = SCHACH_RUNDE.teamBeitreten(runde, "id-anna", "weiss", 1000);
     runde = SCHACH_RUNDE.teamBeitreten(runde, "id-bert", "schwarz", 1000);
-    runde = SCHACH_RUNDE.bereitSetzen(runde, "weiss", true, 1000);
-    runde = SCHACH_RUNDE.bereitSetzen(runde, "schwarz", true, 1000);
+    runde = bereitUndAufgestellt(runde, "weiss", 1000);
+    runde = bereitUndAufgestellt(runde, "schwarz", 1000);
 
     const nachWeiss = SCHACH_RUNDE.ziehen(runde, "id-anna",
         SCHACH.feldNummer("e2"), SCHACH.feldNummer("e4"), "D", "Anna", 2000);

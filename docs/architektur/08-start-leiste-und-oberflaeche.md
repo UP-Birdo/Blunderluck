@@ -70,9 +70,35 @@ samt Einladen-Knopf.
 - **Der Einladen-Knopf gilt auch im Match** (`_einladenKnopfBauen`, F19:
   Nachzügler dürfen herein) und ist deshalb ein eigener Baustein; er liefert
   `null`, wenn es weder einzuladende Freunde noch Wartende gibt.
-- **„Neu aufstellen" fehlt hier bewusst** (Nutzer-Entscheidung 25.08.2026): Es
-  gehört auf den zweiten Bildschirm. Die Regel dazu wartet ohne Aufrufer in
-  `_darfNeuWuerfeln`.
+- **„Neu aufstellen" steht nicht hier, sondern auf dem zweiten Bildschirm**
+  (Nutzer-Entscheidung 25.08.2026).
+
+## Vor dem Anpfiff, zweiter Schritt: die Aufstellung (seit v0.62.0)
+
+Sobald beide Seiten besetzt und mit ihrer Seite einverstanden sind
+(`SCHACH_RUNDE.inAufstellung`), zeichnet `_aufstellungZeichnen` das BRETT
+zwischen den zwei Spielerzeilen, darunter den Würfel und die zweite Zusage.
+
+- **Es gibt ZWEI Bereitschaften je Seite.** `bereit` heisst „ich bin mit
+  meiner Seite einverstanden" und führt in die Aufstellung; `aufstellungBereit`
+  heisst „ich bin auch mit dem Brett einverstanden" und pfeift an
+  (`aufstellungBereitSetzen` → `kannAnpfeifen`). **`bereitSetzen` startet seit
+  v0.62.0 keine Partie mehr** — wer das übersieht, sucht den Anpfiff an der
+  falschen Stelle.
+- **Wer die erste Zusage zurücknimmt, streicht BEIDEN die zweite.** Sonst
+  pfiffe eine stehengebliebene Zusage später zu einem Brett an, das die
+  andere Seite nie gesehen hat.
+- **Der Würfel trifft die richtige Seite** (`SCHACH_RUNDE.armeeNeuWuerfeln`):
+  Bei getrennten Armeen steigt nur der Zähler `armeeWurf` der drückenden
+  Seite, sonst beide — die gemeinsame Armee wird aus Weiss gezogen und für
+  Schwarz gespiegelt (v0.60.0), ein einzelner Zähler zerrisse das. **Bei
+  Zähler 0 geht nichts in die Saat ein**, damit jede Partie von früher genau
+  ihre Aufstellung behält.
+- **Jedes Neu-Würfeln streicht beiden die zweite Zusage** — und der Computer
+  erneuert seine sofort (`SCHACH_BOT.aufstellungBestaetigen`), denn er hat
+  zum Brett keine Meinung.
+- **Das „Zurück" führt hier eine Stufe zurück**, nicht aus der Runde: Es
+  nimmt die erste Zusage zurück. Hinaus kommt man auf dem Bildschirm davor.
 
 ## Die Fussleiste — zwei Lagen (v0.26.0, stark gekürzt in v0.61.0)
 

@@ -22,6 +22,23 @@ const SCHACH_RUNDE = globalThis.SCHACH_RUNDE;
 let anzahlOk = 0;
 let anzahlFehler = 0;
 
+
+/*
+ * BEIDE BEREITSCHAFTEN AUF EINMAL (seit v0.62.0).
+ *
+ * Seit dem zweiten Start-Bildschirm braucht der Anpfiff ZWEI Zusagen je
+ * Seite: die zur eigenen Seite (`bereitSetzen`) und die zur Aufstellung
+ * (`aufstellungBereitSetzen`). Fast jede Testpartie will einfach eine
+ * LAUFENDE Partie herstellen — dafuer steht dieser Helfer, damit nicht in
+ * jeder Vorbereitung zwei Aufrufe stehen.
+ *
+ * Wer die Stufen EINZELN pruefen will, ruft das Modell weiterhin direkt.
+ */
+function bereitUndAufgestellt(runde, farbe, zeitpunkt) {
+    return SCHACH_RUNDE.aufstellungBereitSetzen(
+        SCHACH_RUNDE.bereitSetzen(runde, farbe, true, zeitpunkt),
+        farbe, true, zeitpunkt);
+}
 function pruefe(bezeichnung, funktion) {
     try {
         funktion();
@@ -50,8 +67,8 @@ function alterEinzelstand() {
     let runde = SCHACH_RUNDE.leereRunde(1000);
     runde = SCHACH_RUNDE.teamBeitreten(runde, "id-anna", "weiss", 1000);
     runde = SCHACH_RUNDE.teamBeitreten(runde, "id-bert", "schwarz", 1000);
-    runde = SCHACH_RUNDE.bereitSetzen(runde, "weiss", true, 1000);
-    runde = SCHACH_RUNDE.bereitSetzen(runde, "schwarz", true, 1000);
+    runde = bereitUndAufgestellt(runde, "weiss", 1000);
+    runde = bereitUndAufgestellt(runde, "schwarz", 1000);
     runde = SCHACH_RUNDE.ziehen(runde, "id-anna",
         SCHACH.feldNummer("e2"), SCHACH.feldNummer("e4"), "D", "Anna", 1100);
 
@@ -176,8 +193,8 @@ pruefe("Laufende Partien stehen oben, beendete unten", () => {
 
     let partie = SCHACH_RUNDE.teamBeitreten(laufend.partie, "id-anna", "weiss", 2100);
     partie = SCHACH_RUNDE.teamBeitreten(partie, "id-bert", "schwarz", 2100);
-    partie = SCHACH_RUNDE.bereitSetzen(partie, "weiss", true, 2100);
-    partie = SCHACH_RUNDE.bereitSetzen(partie, "schwarz", true, 2100);
+    partie = bereitUndAufgestellt(partie, "weiss", 2100);
+    partie = bereitUndAufgestellt(partie, "schwarz", 2100);
     tafel = SCHACH_TAFEL.partieEinsetzen(tafel, partie, 2300);
 
     let beendet = SCHACH_RUNDE.kopieren(fertig.partie);
@@ -332,8 +349,8 @@ pruefe("eigeneLaufende findet nur laufende Partien mit eigener Beteiligung", () 
     const eins = SCHACH_TAFEL.partieAnlegen(tafel, "standard", "Laeuft", 2000);
     let partieEins = SCHACH_RUNDE.teamBeitreten(eins.partie, "id-anna", "weiss", 2000);
     partieEins = SCHACH_RUNDE.teamBeitreten(partieEins, "id-bert", "schwarz", 2000);
-    partieEins = SCHACH_RUNDE.bereitSetzen(partieEins, "weiss", true, 2000);
-    partieEins = SCHACH_RUNDE.bereitSetzen(partieEins, "schwarz", true, 2000);
+    partieEins = bereitUndAufgestellt(partieEins, "weiss", 2000);
+    partieEins = bereitUndAufgestellt(partieEins, "schwarz", 2000);
     tafel = SCHACH_TAFEL.partieEinsetzen(eins.tafel, partieEins, 2000);
 
     /* Partie 2: laeuft, aber OHNE Anna — fremde Partien ziehen niemanden
@@ -341,8 +358,8 @@ pruefe("eigeneLaufende findet nur laufende Partien mit eigener Beteiligung", () 
     const zwei = SCHACH_TAFEL.partieAnlegen(tafel, "standard", "Fremd", 3000);
     let partieZwei = SCHACH_RUNDE.teamBeitreten(zwei.partie, "id-cem", "weiss", 3000);
     partieZwei = SCHACH_RUNDE.teamBeitreten(partieZwei, "id-bert", "schwarz", 3000);
-    partieZwei = SCHACH_RUNDE.bereitSetzen(partieZwei, "weiss", true, 3000);
-    partieZwei = SCHACH_RUNDE.bereitSetzen(partieZwei, "schwarz", true, 3000);
+    partieZwei = bereitUndAufgestellt(partieZwei, "weiss", 3000);
+    partieZwei = bereitUndAufgestellt(partieZwei, "schwarz", 3000);
     tafel = SCHACH_TAFEL.partieEinsetzen(zwei.tafel, partieZwei, 3000);
 
     /* Partie 3: Anna ist beigetreten, aber die Partie laeuft noch NICHT
@@ -382,8 +399,8 @@ pruefe("eigeneOffene findet auch die noch wartende Runde (v0.34.0)", () => {
     const vorbei = SCHACH_TAFEL.partieAnlegen(tafel, "standard", "Vorbei", 3000);
     let partieVorbei = SCHACH_RUNDE.teamBeitreten(vorbei.partie, "id-anna", "weiss", 3000);
     partieVorbei = SCHACH_RUNDE.teamBeitreten(partieVorbei, "id-bert", "schwarz", 3000);
-    partieVorbei = SCHACH_RUNDE.bereitSetzen(partieVorbei, "weiss", true, 3000);
-    partieVorbei = SCHACH_RUNDE.bereitSetzen(partieVorbei, "schwarz", true, 3000);
+    partieVorbei = bereitUndAufgestellt(partieVorbei, "weiss", 3000);
+    partieVorbei = bereitUndAufgestellt(partieVorbei, "schwarz", 3000);
     partieVorbei = SCHACH_RUNDE.aufgeben(partieVorbei, "weiss", 3100);
     tafel = SCHACH_TAFEL.partieEinsetzen(vorbei.tafel, partieVorbei, 3100);
 
@@ -410,8 +427,8 @@ pruefe("eigeneLaufende laesst beendete Partien aus", () => {
     const eins = SCHACH_TAFEL.partieAnlegen(tafel, "standard", "Vorbei", 2000);
     let partie = SCHACH_RUNDE.teamBeitreten(eins.partie, "id-anna", "weiss", 2000);
     partie = SCHACH_RUNDE.teamBeitreten(partie, "id-bert", "schwarz", 2000);
-    partie = SCHACH_RUNDE.bereitSetzen(partie, "weiss", true, 2000);
-    partie = SCHACH_RUNDE.bereitSetzen(partie, "schwarz", true, 2000);
+    partie = bereitUndAufgestellt(partie, "weiss", 2000);
+    partie = bereitUndAufgestellt(partie, "schwarz", 2000);
     partie = SCHACH_RUNDE.aufgeben(partie, "schwarz", 2100);
     tafel = SCHACH_TAFEL.partieEinsetzen(eins.tafel, partie, 2100);
 
@@ -470,8 +487,8 @@ pruefe("partieZuCode findet offene Partien grosszuegig, beendete nicht", () => {
     let partie = SCHACH_TAFEL.partie(tafel, partieId);
     partie = SCHACH_RUNDE.teamBeitreten(partie, "id-anna", "weiss", 2100);
     partie = SCHACH_RUNDE.teamBeitreten(partie, "id-bert", "schwarz", 2100);
-    partie = SCHACH_RUNDE.bereitSetzen(partie, "weiss", true, 2100);
-    partie = SCHACH_RUNDE.bereitSetzen(partie, "schwarz", true, 2100);
+    partie = bereitUndAufgestellt(partie, "weiss", 2100);
+    partie = bereitUndAufgestellt(partie, "schwarz", 2100);
     partie = SCHACH_RUNDE.aufgeben(partie, "schwarz", 2200);
     tafel = SCHACH_TAFEL.partieEinsetzen(tafel, partie, 2200);
 
@@ -518,8 +535,8 @@ pruefe("istEingeladen erlischt mit Beitritt und Partie-Ende", () => {
     /* Mit dem Ergebnis erlischt jede Einladung (F16a). */
     let vorbei = SCHACH_RUNDE.teamBeitreten(runde, "id-anna", "weiss", 2100);
     vorbei = SCHACH_RUNDE.teamBeitreten(vorbei, "id-bert", "schwarz", 2100);
-    vorbei = SCHACH_RUNDE.bereitSetzen(vorbei, "weiss", true, 2100);
-    vorbei = SCHACH_RUNDE.bereitSetzen(vorbei, "schwarz", true, 2100);
+    vorbei = bereitUndAufgestellt(vorbei, "weiss", 2100);
+    vorbei = bereitUndAufgestellt(vorbei, "schwarz", 2100);
     vorbei = SCHACH_RUNDE.aufgeben(vorbei, "schwarz", 2200);
     wahr(!SCHACH_RUNDE.istEingeladen(vorbei, "id-cem"),
         "eine beendete Runde laedt niemanden mehr ein");

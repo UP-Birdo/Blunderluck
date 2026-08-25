@@ -36,8 +36,10 @@ Drei Festlegungen, die man kennen muss:
 - **Was fehlt, wird weggelassen — nicht geschätzt.** Partien von vor v3.3 haben
   keine Startzeit und keine Zugzahl (`begonnenAm`/`zuege` = 0). Dann steht die
   Angabe einfach nicht da. Neu mitgeführt wird `gestartetAm` in der Partie
-  (gesetzt, wenn beide Seiten bereit sind — und nur beim ERSTEN Mal, damit „Neu
-  aufstellen" die Dauer nicht zurückdreht).
+  (gesetzt beim Anpfiff — und nur beim ERSTEN Mal, damit „Neu aufstellen" die
+  Dauer nicht zurückdreht). **Seit v0.62.0 ist der Anpfiff die ZWEITE
+  Bereitschaft** (`aufstellungBereitSetzen`), nicht mehr die erste: Die
+  Aufstellung anzusehen kostet keine Spielzeit.
 
 ### Wer darf löschen? (seit v3.3)
 

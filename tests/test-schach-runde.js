@@ -17,6 +17,23 @@ const SCHACH_VARIANTEN = globalThis.SCHACH_VARIANTEN;
 let anzahlOk = 0;
 let anzahlFehler = 0;
 
+
+/*
+ * BEIDE BEREITSCHAFTEN AUF EINMAL (seit v0.62.0).
+ *
+ * Seit dem zweiten Start-Bildschirm braucht der Anpfiff ZWEI Zusagen je
+ * Seite: die zur eigenen Seite (`bereitSetzen`) und die zur Aufstellung
+ * (`aufstellungBereitSetzen`). Fast jede Testpartie will einfach eine
+ * LAUFENDE Partie herstellen — dafuer steht dieser Helfer, damit nicht in
+ * jeder Vorbereitung zwei Aufrufe stehen.
+ *
+ * Wer die Stufen EINZELN pruefen will, ruft das Modell weiterhin direkt.
+ */
+function bereitUndAufgestellt(runde, farbe, zeitpunkt) {
+    return SCHACH_RUNDE.aufstellungBereitSetzen(
+        SCHACH_RUNDE.bereitSetzen(runde, farbe, true, zeitpunkt),
+        farbe, true, zeitpunkt);
+}
 function pruefe(bezeichnung, funktion) {
     try {
         funktion();
@@ -45,8 +62,8 @@ function laufendePartie() {
     let runde = SCHACH_RUNDE.leereRunde(1000);
     runde = SCHACH_RUNDE.teamBeitreten(runde, "id-anna", "weiss", 1000);
     runde = SCHACH_RUNDE.teamBeitreten(runde, "id-bert", "schwarz", 1000);
-    runde = SCHACH_RUNDE.bereitSetzen(runde, "weiss", true, 1000);
-    runde = SCHACH_RUNDE.bereitSetzen(runde, "schwarz", true, 1000);
+    runde = bereitUndAufgestellt(runde, "weiss", 1000);
+    runde = bereitUndAufgestellt(runde, "schwarz", 1000);
     return runde;
 }
 
@@ -120,13 +137,13 @@ pruefe("Die Partie startet erst, wenn beide Seiten besetzt und bereit sind", () 
     let runde = SCHACH_RUNDE.leereRunde();
 
     runde = SCHACH_RUNDE.teamBeitreten(runde, "id-anna", "weiss", 1000);
-    runde = SCHACH_RUNDE.bereitSetzen(runde, "weiss", true, 1000);
+    runde = bereitUndAufgestellt(runde, "weiss", 1000);
     gleich(runde.laeuft, false, "eine Seite reicht nicht");
 
     runde = SCHACH_RUNDE.teamBeitreten(runde, "id-bert", "schwarz", 1000);
     gleich(runde.laeuft, false, "Bereitschaft von Schwarz fehlt");
 
-    runde = SCHACH_RUNDE.bereitSetzen(runde, "schwarz", true, 1000);
+    runde = bereitUndAufgestellt(runde, "schwarz", 1000);
     gleich(runde.laeuft, true, "jetzt laeuft es");
 });
 
@@ -323,8 +340,8 @@ function faehigkeitenPartie() {
     let runde = SCHACH_RUNDE.leereRunde(1000, "faehigkeiten", "p-f", "Mit Faehigkeiten");
     runde = SCHACH_RUNDE.teamBeitreten(runde, "id-anna", "weiss", 1000);
     runde = SCHACH_RUNDE.teamBeitreten(runde, "id-bert", "schwarz", 1000);
-    runde = SCHACH_RUNDE.bereitSetzen(runde, "weiss", true, 1000);
-    runde = SCHACH_RUNDE.bereitSetzen(runde, "schwarz", true, 1000);
+    runde = bereitUndAufgestellt(runde, "weiss", 1000);
+    runde = bereitUndAufgestellt(runde, "schwarz", 1000);
     return runde;
 }
 
@@ -1131,8 +1148,8 @@ pruefe("Zwei Partien ziehen verschiedene Wuerfel", () => {
     let andere = SCHACH_RUNDE.leereRunde(1000, "faehigkeiten", "p-andere", "Andere");
     andere = SCHACH_RUNDE.teamBeitreten(andere, "id-anna", "weiss", 1000);
     andere = SCHACH_RUNDE.teamBeitreten(andere, "id-bert", "schwarz", 1000);
-    andere = SCHACH_RUNDE.bereitSetzen(andere, "weiss", true, 1000);
-    andere = SCHACH_RUNDE.bereitSetzen(andere, "schwarz", true, 1000);
+    andere = bereitUndAufgestellt(andere, "weiss", 1000);
+    andere = bereitUndAufgestellt(andere, "schwarz", 1000);
 
     const eine = springerZuege(faehigkeitenPartie(), 24);
     const zwei = springerZuege(andere, 24);
@@ -3553,8 +3570,8 @@ function einigkeitsPartie() {
     runde = SCHACH_RUNDE.teamBeitreten(runde, "id-anna", "weiss", 1000);
     runde = SCHACH_RUNDE.teamBeitreten(runde, "id-cem", "weiss", 1000);
     runde = SCHACH_RUNDE.teamBeitreten(runde, "id-bert", "schwarz", 1000);
-    runde = SCHACH_RUNDE.bereitSetzen(runde, "weiss", true, 1000);
-    runde = SCHACH_RUNDE.bereitSetzen(runde, "schwarz", true, 1000);
+    runde = bereitUndAufgestellt(runde, "weiss", 1000);
+    runde = bereitUndAufgestellt(runde, "schwarz", 1000);
     return runde;
 }
 
@@ -3571,8 +3588,8 @@ pruefe("Allein im Team braucht es keine Abstimmung", () => {
     runde.regeln.einigkeit = true;
     runde = SCHACH_RUNDE.teamBeitreten(runde, "id-anna", "weiss", 1000);
     runde = SCHACH_RUNDE.teamBeitreten(runde, "id-bert", "schwarz", 1000);
-    runde = SCHACH_RUNDE.bereitSetzen(runde, "weiss", true, 1000);
-    runde = SCHACH_RUNDE.bereitSetzen(runde, "schwarz", true, 1000);
+    runde = bereitUndAufgestellt(runde, "weiss", 1000);
+    runde = bereitUndAufgestellt(runde, "schwarz", 1000);
 
     const danach = SCHACH_RUNDE.zugVorschlagen(runde, "id-anna",
         SCHACH.feldNummer("e2"), SCHACH.feldNummer("e4"), "D", "Anna", 2000);
@@ -7653,13 +7670,13 @@ function fastMattPartie() {
 
     runde.regeln.faehigkeiten = true;
 
-    const gestartet = SCHACH_RUNDE.bereitSetzen(
-        SCHACH_RUNDE.bereitSetzen(
+    const gestartet = bereitUndAufgestellt(
+        bereitUndAufgestellt(
             SCHACH_RUNDE.teamBeitreten(
                 SCHACH_RUNDE.teamBeitreten(runde, "id-anna", "weiss", 1000),
                 "id-bert", "schwarz", 1000),
-            "weiss", true, 1000),
-        "schwarz", true, 1000);
+            "weiss", 1000),
+        "schwarz", 1000);
 
     gestartet.stand = SCHACH.standNormalisieren({
         variante: "klein",
@@ -7725,8 +7742,8 @@ pruefe("Auch Schach allein reicht schon zur Abweisung (v0.95)", () => {
 
     let gestartet = SCHACH_RUNDE.teamBeitreten(runde, "id-anna", "weiss", 1000);
     gestartet = SCHACH_RUNDE.teamBeitreten(gestartet, "id-bert", "schwarz", 1000);
-    gestartet = SCHACH_RUNDE.bereitSetzen(gestartet, "weiss", true, 1000);
-    gestartet = SCHACH_RUNDE.bereitSetzen(gestartet, "schwarz", true, 1000);
+    gestartet = bereitUndAufgestellt(gestartet, "weiss", 1000);
+    gestartet = bereitUndAufgestellt(gestartet, "schwarz", 1000);
 
     /* Der schwarze Koenig steht auf f6 (oben rechts), die weisse Grundreihe
        ist unten. Ein Bauer auf f1 gibt kein Schach — ein Turm schon, aber der
@@ -7842,8 +7859,8 @@ pruefe("Wer den Zug behaelt, darf sich auch selbst nicht festsetzen (v0.95)", ()
 
     let gestartet = SCHACH_RUNDE.teamBeitreten(runde, "id-anna", "weiss", 1000);
     gestartet = SCHACH_RUNDE.teamBeitreten(gestartet, "id-bert", "schwarz", 1000);
-    gestartet = SCHACH_RUNDE.bereitSetzen(gestartet, "weiss", true, 1000);
-    gestartet = SCHACH_RUNDE.bereitSetzen(gestartet, "schwarz", true, 1000);
+    gestartet = bereitUndAufgestellt(gestartet, "weiss", 1000);
+    gestartet = bereitUndAufgestellt(gestartet, "schwarz", 1000);
 
     /* 6x6: Der weisse Koenig steht in der Ecke, Schwarz weit weg. */
     gestartet.stand = SCHACH.standNormalisieren({
@@ -8129,5 +8146,173 @@ pruefe("Keine Beschreibung wird wieder zu lang (v0.94, verschaerft v0.100)", () 
     }
 });
 
+
+/* ------------------------------------------------------------------ *
+ * Die zwei Bereitschaften und das Neu-Würfeln (v0.62.0)
+ * ------------------------------------------------------------------ */
+
+pruefe("Der Anpfiff braucht BEIDE Bereitschaften je Seite (v0.62.0)", () => {
+    /*
+     * Nutzer-Ansage 25.08.2026: „Sobald beide Seiten einen Spieler haben und
+     * beide bereit sind, gehts ein Screen weiter … wenn beide nochmal auf
+     * Bereit klicken, kommen sie ins Spiel."
+     *
+     * Bis v0.61.0 pfiff die erste Bereitschaft an. Jetzt fuehrt sie in die
+     * AUFSTELLUNG, und erst die zweite startet — geprueft wird jede Stufe
+     * einzeln, damit nicht eine von beiden still verschwinden kann.
+     */
+    let runde = SCHACH_RUNDE.leereRunde(1000, "standard", "p-zwei", "Zwei Stufen");
+    runde = SCHACH_RUNDE.teamBeitreten(runde, "id-anna", "weiss", 1000);
+    runde = SCHACH_RUNDE.teamBeitreten(runde, "id-bert", "schwarz", 1000);
+
+    runde = SCHACH_RUNDE.bereitSetzen(runde, "weiss", true, 1010);
+    wahr(!SCHACH_RUNDE.kannStarten(runde), "eine Seite allein reicht nicht");
+    wahr(!SCHACH_RUNDE.inAufstellung(runde), "und die Aufstellung steht noch nicht an");
+
+    runde = SCHACH_RUNDE.bereitSetzen(runde, "schwarz", true, 1020);
+    wahr(SCHACH_RUNDE.kannStarten(runde), "beide Seiten haben ihre Seite bestaetigt");
+    wahr(SCHACH_RUNDE.inAufstellung(runde), "jetzt steht die Aufstellung an");
+    gleich(runde.laeuft, false, "aber angepfiffen ist noch nicht");
+
+    runde = SCHACH_RUNDE.aufstellungBereitSetzen(runde, "weiss", true, 1030);
+    gleich(runde.laeuft, false, "eine Zusage zur Aufstellung reicht nicht");
+
+    runde = SCHACH_RUNDE.aufstellungBereitSetzen(runde, "schwarz", true, 1040);
+    gleich(runde.laeuft, true, "mit der zweiten geht es los");
+    gleich(runde.gestartetAm, 1040, "und die Spieldauer laeuft ab jetzt");
+    wahr(!SCHACH_RUNDE.inAufstellung(runde), "die Aufstellung ist vorbei");
+});
+
+pruefe("Wer seine Seite zurueckzieht, streicht BEIDEN die Aufstellung (v0.62.0)", () => {
+    /*
+     * Der Fall, den diese Regel verhindert: Weiss geht zurueck zur
+     * Seitenwahl, wuerfelt spaeter neu und drueckt wieder bereit — und die
+     * alte Zusage von Schwarz pfiffe sofort an, zu einem Brett, das die
+     * schwarze Seite nie gesehen hat.
+     */
+    let runde = SCHACH_RUNDE.leereRunde(1000, "standard", "p-rueck", "Rueckzug");
+    runde = SCHACH_RUNDE.teamBeitreten(runde, "id-anna", "weiss", 1000);
+    runde = SCHACH_RUNDE.teamBeitreten(runde, "id-bert", "schwarz", 1000);
+    runde = SCHACH_RUNDE.bereitSetzen(runde, "weiss", true, 1010);
+    runde = SCHACH_RUNDE.bereitSetzen(runde, "schwarz", true, 1020);
+    runde = SCHACH_RUNDE.aufstellungBereitSetzen(runde, "schwarz", true, 1030);
+
+    gleich(runde.aufstellungBereit.schwarz, true, "Schwarz hat zugesagt");
+
+    runde = SCHACH_RUNDE.bereitSetzen(runde, "weiss", false, 1040);
+
+    gleich(runde.aufstellungBereit.schwarz, false, "die Zusage von Schwarz ist mit weg");
+    gleich(runde.aufstellungBereit.weiss, false, "die eigene ohnehin");
+    gleich(runde.laeuft, false, "und angepfiffen wird nichts");
+});
+
+pruefe("Neu wuerfeln trifft die richtige Seite (v0.62.0)", () => {
+    /*
+     * Nutzer-Ansage 25.08.2026: „Wenn beide dieselbe haben, koennen beide
+     * Spieler separat auf den Knopf druecken und es aendern sich beide
+     * Armeen; wenn beide unterschiedliche haben, aendert sich nur die
+     * eigene."
+     *
+     * Geprueft wird am BRETT, nicht am Zaehler: Der Zaehler ist nur das
+     * Mittel, das Brett ist die Aussage.
+     */
+    const bauen = (getrennt) => {
+        const runde = SCHACH_RUNDE.leereRunde(1000, "standard", "p-wurf", "Wuerfeln");
+        runde.regeln.zufallsArmee = true;
+        runde.regeln.armeeUnterschiedlich = getrennt;
+        SCHACH_RUNDE.armeeAufstellen(runde);
+        return runde;
+    };
+
+    /* Die Grundreihen der beiden Seiten aus dem Brett-String. */
+    const reihen = (runde) => {
+        const breite = SCHACH.breiteVon(runde.stand);
+        const felder = runde.stand.brett;
+        return {
+            weiss: felder.slice(felder.length - breite),
+            schwarz: felder.slice(0, breite)
+        };
+    };
+
+    /* Getrennt: nur die eigene Seite bekommt neue Figuren. */
+    const getrennt = bauen(true);
+    const vorher = reihen(getrennt);
+    const danach = reihen(SCHACH_RUNDE.armeeNeuWuerfeln(getrennt, "weiss", 2000));
+
+    wahr(danach.weiss !== vorher.weiss, "getrennt: Weiss steht anders");
+    gleich(danach.schwarz, vorher.schwarz, "getrennt: Schwarz bleibt unberuehrt");
+
+    /* Gemeinsam: beide Seiten aendern sich, denn es ist DIESELBE Armee. */
+    const gemeinsam = bauen(false);
+    const vorherB = reihen(gemeinsam);
+    const danachB = reihen(SCHACH_RUNDE.armeeNeuWuerfeln(gemeinsam, "weiss", 2000));
+
+    wahr(danachB.weiss !== vorherB.weiss, "gemeinsam: Weiss steht anders");
+    wahr(danachB.schwarz !== vorherB.schwarz, "gemeinsam: Schwarz auch");
+});
+
+pruefe("Neu wuerfeln nimmt beiden die Zusage, laesst die Seiten stehen (v0.62.0)", () => {
+    /*
+     * Der Unterschied zu `neuePartie` (der Revanche): Dort faellt alles
+     * zurueck, hier NUR das Brett und die Zusage dazu. Wer eine Aufstellung
+     * bestaetigt hat, hat diese bestaetigt und nicht die naechste.
+     */
+    let runde = SCHACH_RUNDE.leereRunde(1000, "standard", "p-wurf2", "Zusage");
+    runde.regeln.zufallsArmee = true;
+    runde = SCHACH_RUNDE.teamBeitreten(runde, "id-anna", "weiss", 1000);
+    runde = SCHACH_RUNDE.teamBeitreten(runde, "id-bert", "schwarz", 1000);
+    runde = SCHACH_RUNDE.bereitSetzen(runde, "weiss", true, 1010);
+    runde = SCHACH_RUNDE.bereitSetzen(runde, "schwarz", true, 1020);
+    runde = SCHACH_RUNDE.aufstellungBereitSetzen(runde, "schwarz", true, 1030);
+
+    const danach = SCHACH_RUNDE.armeeNeuWuerfeln(runde, "weiss", 2000);
+
+    gleich(danach.aufstellungBereit.schwarz, false, "die Zusage zum alten Brett faellt");
+    gleich(danach.bereit.weiss, true, "die Seite bleibt bestaetigt");
+    gleich(danach.bereit.schwarz, true, "auf beiden Seiten");
+    gleich(danach.teams.weiss.join(","), "id-anna", "die Teams bleiben stehen");
+    wahr(SCHACH_RUNDE.inAufstellung(danach), "man steht weiter in der Aufstellung");
+});
+
+pruefe("Ohne Zufallsarmee gibt es nichts zu wuerfeln (v0.62.0)", () => {
+    let runde = SCHACH_RUNDE.leereRunde(1000, "standard", "p-fest", "Feste Armee");
+    runde.regeln.zufallsArmee = false;
+    runde = SCHACH_RUNDE.teamBeitreten(runde, "id-anna", "weiss", 1000);
+    runde = SCHACH_RUNDE.teamBeitreten(runde, "id-bert", "schwarz", 1000);
+    runde = SCHACH_RUNDE.bereitSetzen(runde, "weiss", true, 1010);
+    runde = SCHACH_RUNDE.bereitSetzen(runde, "schwarz", true, 1020);
+    runde = SCHACH_RUNDE.aufstellungBereitSetzen(runde, "schwarz", true, 1030);
+
+    const danach = SCHACH_RUNDE.armeeNeuWuerfeln(runde, "weiss", 2000);
+
+    gleich(danach.stand.brett, runde.stand.brett, "das Brett bleibt, wie es war");
+    gleich(danach.aufstellungBereit.schwarz, true, "und niemandes Zusage faellt");
+});
+
+pruefe("Ein Stand von vor v0.62.0 behaelt seine Aufstellung genau (v0.62.0)", () => {
+    /*
+     * DER DATENVERTRAG. `armeeWurf` ist neu; stuende der Zaehler auch bei 0
+     * in der Saat („|wurf0"), wuerfelte JEDE Partie von frueher beim naechsten
+     * Laden anders. Deshalb kommt bei 0 nichts dazu — und genau das prueft
+     * dieser Test, indem er den Zaehler wegnimmt.
+     */
+    const runde = SCHACH_RUNDE.leereRunde(1000, "standard", "p-alt", "Alter Stand");
+    runde.regeln.zufallsArmee = true;
+    SCHACH_RUNDE.armeeAufstellen(runde);
+    const mitZaehler = runde.stand.brett;
+
+    const ohne = SCHACH_RUNDE.leereRunde(1000, "standard", "p-alt", "Alter Stand");
+    ohne.regeln.zufallsArmee = true;
+    delete ohne.armeeWurf;
+    SCHACH_RUNDE.armeeAufstellen(ohne);
+
+    gleich(ohne.stand.brett, mitZaehler,
+        "ohne Zaehler dasselbe Brett wie mit Zaehler 0");
+
+    /* Und nach dem Normalisieren ist der Zaehler wieder da. */
+    const geheilt = SCHACH_RUNDE.normalisieren(ohne);
+    gleich(geheilt.armeeWurf.weiss, 0, "nachgeruestet auf 0");
+    gleich(geheilt.aufstellungBereit.weiss, false, "und die Zusage auf nein");
+});
 console.log(anzahlOk + " ok, " + anzahlFehler + " Fehler");
 process.exit(anzahlFehler === 0 ? 0 : 1);

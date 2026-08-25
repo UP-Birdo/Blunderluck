@@ -1505,6 +1505,44 @@ body.partie-fest .phasen-leiste {
     display: block;
 }
 
+/* ------------------------------------------------------------------ *
+ * DER AUFSTELLUNGS-BILDSCHIRM (seit v0.62.0)
+ *
+ * Der zweite Start-Bildschirm: Brett ansehen, bei Zufallsarmee neu würfeln,
+ * dann zusagen. Das Brett ist hier die Hauptsache — die zwei Knöpfe stehen
+ * darunter in einer Reihe und nehmen ihm keinen Platz weg.
+ * ------------------------------------------------------------------ */
+
+.aufstellung-reihe {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    max-width: 460px;
+    margin: 18px auto 0;
+}
+
+/* Die Zusage ist die Hauptaktion und nimmt den Platz, der übrig bleibt; der
+   Würfel daneben bleibt quadratisch. */
+.aufstellung-bereit {
+    flex: 1 1 auto;
+    min-height: 52px;
+    font-size: 1.05rem;
+    font-weight: 600;
+}
+
+.wuerfel-knopf {
+    flex: 0 0 auto;
+    min-height: 52px;
+    min-width: 52px;
+}
+
+.wuerfel-knopf .start-zeichen {
+    width: 1.6em;
+    height: 1.6em;
+    display: block;
+}
+
 /* `.team-zufall-zeile` ist mit v0.55.0 ohne Nutzer geworden — der Zufall
    steht jetzt in `.beitritt-reihe` neben den beiden anderen. Nachgesehen am
    25.08.2026 mit einer Suche über `js\`, `css\` und `tests\`: keine

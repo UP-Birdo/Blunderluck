@@ -28,6 +28,23 @@ const jsOrdner = pfad.join(projekt, "js");
 let anzahlOk = 0;
 let anzahlFehler = 0;
 
+
+/*
+ * BEIDE BEREITSCHAFTEN AUF EINMAL (seit v0.62.0).
+ *
+ * Seit dem zweiten Start-Bildschirm braucht der Anpfiff ZWEI Zusagen je
+ * Seite: die zur eigenen Seite (`bereitSetzen`) und die zur Aufstellung
+ * (`aufstellungBereitSetzen`). Fast jede Testpartie will einfach eine
+ * LAUFENDE Partie herstellen — dafuer steht dieser Helfer, damit nicht in
+ * jeder Vorbereitung zwei Aufrufe stehen.
+ *
+ * Wer die Stufen EINZELN pruefen will, ruft das Modell weiterhin direkt.
+ */
+function bereitUndAufgestellt(runde, farbe, zeitpunkt) {
+    return SCHACH_RUNDE.aufstellungBereitSetzen(
+        SCHACH_RUNDE.bereitSetzen(runde, farbe, true, zeitpunkt),
+        farbe, true, zeitpunkt);
+}
 function pruefe(bezeichnung, funktion) {
     try {
         funktion();
@@ -462,8 +479,8 @@ for (const variante of SCHACH_VARIANTEN.liste) {
 
     let partie = SCHACH_RUNDE.teamBeitreten(angelegt.partie, "id-anna", "weiss", zeitpunkt);
     partie = SCHACH_RUNDE.teamBeitreten(partie, "id-bert", "schwarz", zeitpunkt);
-    partie = SCHACH_RUNDE.bereitSetzen(partie, "weiss", true, zeitpunkt);
-    partie = SCHACH_RUNDE.bereitSetzen(partie, "schwarz", true, zeitpunkt);
+    partie = bereitUndAufgestellt(partie, "weiss", zeitpunkt);
+    partie = bereitUndAufgestellt(partie, "schwarz", zeitpunkt);
 
     tafel = SCHACH_TAFEL.partieEinsetzen(angelegt.tafel, partie, zeitpunkt);
     kennungen[variante.id] = partie.id;
@@ -853,8 +870,8 @@ pruefe("Die Rochade steht als Zugpunkt beim Koenig", () => {
 
     let partie = SCHACH_RUNDE.teamBeitreten(angelegt.partie, "id-anna", "weiss", 4000);
     partie = SCHACH_RUNDE.teamBeitreten(partie, "id-bert", "schwarz", 4000);
-    partie = SCHACH_RUNDE.bereitSetzen(partie, "weiss", true, 4000);
-    partie = SCHACH_RUNDE.bereitSetzen(partie, "schwarz", true, 4000);
+    partie = bereitUndAufgestellt(partie, "weiss", 4000);
+    partie = bereitUndAufgestellt(partie, "schwarz", 4000);
 
     /* Freie Grundreihe: Koenig auf e1, Tuerme auf a1 und h1. */
     partie.stand = SCHACH.standNormalisieren({
@@ -925,8 +942,8 @@ pruefe("Ohne Zug gibt es keine Spur, nach einem Zug schon", () => {
 
     let partie = SCHACH_RUNDE.teamBeitreten(angelegt.partie, "id-anna", "weiss", 5000);
     partie = SCHACH_RUNDE.teamBeitreten(partie, "id-bert", "schwarz", 5000);
-    partie = SCHACH_RUNDE.bereitSetzen(partie, "weiss", true, 5000);
-    partie = SCHACH_RUNDE.bereitSetzen(partie, "schwarz", true, 5000);
+    partie = bereitUndAufgestellt(partie, "weiss", 5000);
+    partie = bereitUndAufgestellt(partie, "schwarz", 5000);
 
     TEAM_SCHACH.abgleich.daten = SCHACH_TAFEL.partieEinsetzen(angelegt.tafel, partie, 5000);
     TEAM_SCHACH.partieOeffnen(partie.id);
@@ -1618,8 +1635,8 @@ pruefe("Die Rueckschau nennt den Ausgang, farbig (v0.46.0)", () => {
             SCHACH_TAFEL.leereTafel(8000), "standard", "Ausgang", 8010);
         let partie = SCHACH_RUNDE.teamBeitreten(angelegt.partie, person.id, "weiss", 8020);
         partie = SCHACH_RUNDE.teamBeitreten(partie, "id-bert", "schwarz", 8020);
-        partie = SCHACH_RUNDE.bereitSetzen(partie, "weiss", true, 8030);
-        partie = SCHACH_RUNDE.bereitSetzen(partie, "schwarz", true, 8030);
+        partie = bereitUndAufgestellt(partie, "weiss", 8030);
+        partie = bereitUndAufgestellt(partie, "schwarz", 8030);
         partie = SCHACH_RUNDE.aufgeben(partie, "weiss", 8040);
 
         TEAM_SCHACH.abgleich.daten = SCHACH_TAFEL.partieEinsetzen(
@@ -1676,8 +1693,8 @@ pruefe("Der Abschluss ist ein Fenster ohne Tab-Leiste (v0.45.0)", () => {
             SCHACH_TAFEL.leereTafel(8200), "standard", "Vorbei", 8210);
         let partie = SCHACH_RUNDE.teamBeitreten(angelegt.partie, person.id, "weiss", 8220);
         partie = SCHACH_RUNDE.teamBeitreten(partie, "id-bert", "schwarz", 8220);
-        partie = SCHACH_RUNDE.bereitSetzen(partie, "weiss", true, 8230);
-        partie = SCHACH_RUNDE.bereitSetzen(partie, "schwarz", true, 8230);
+        partie = bereitUndAufgestellt(partie, "weiss", 8230);
+        partie = bereitUndAufgestellt(partie, "schwarz", 8230);
         partie = SCHACH_RUNDE.aufgeben(partie, "weiss", 8240);
 
         TEAM_SCHACH.abgleich.daten = SCHACH_TAFEL.partieEinsetzen(
@@ -1737,7 +1754,7 @@ pruefe("Wer bereit ist, sieht die andere Seite nicht mehr als Angebot (v0.44.0)"
         throw new Error("vor dem Bereit fehlt die andere Seite als Angebot");
     }
 
-    partie = SCHACH_RUNDE.bereitSetzen(partie, "weiss", true, 8430);
+    partie = bereitUndAufgestellt(partie, "weiss", 8430);
     if (mitspielenDa(partie)) {
         throw new Error("nach dem Bereit steht die andere Seite noch da");
     }
@@ -1794,8 +1811,8 @@ pruefe("Im laufenden Match ist die Fussleiste leer, das Zahnrad sitzt am Spieler
         throw new Error("Aufgeben steht schon vor dem Start da");
     }
 
-    partie = SCHACH_RUNDE.bereitSetzen(partie, "weiss", true, 8630);
-    partie = SCHACH_RUNDE.bereitSetzen(partie, "schwarz", true, 8630);
+    partie = bereitUndAufgestellt(partie, "weiss", 8630);
+    partie = bereitUndAufgestellt(partie, "schwarz", 8630);
     if (partie.laeuft !== true) {
         throw new Error("die Testpartie laeuft gar nicht");
     }
@@ -2070,7 +2087,7 @@ pruefe("Nach einer Bot-Partie kommt kein Punkte-Schirm (v0.32.0)", () => {
            eine laufende laesst sich aufgeben. Ohne diesen Schritt bleibt
            `ergebnis` leer, und `zeichnen` zeigt die Uebersicht statt des
            Abschlusses (beim Schreiben des Tests genau so passiert). */
-        partie = SCHACH_RUNDE.bereitSetzen(partie, "weiss", true, 9615);
+        partie = bereitUndAufgestellt(partie, "weiss", 9615);
         partie = SCHACH_RUNDE.aufgeben(partie, "weiss", 9620);
 
         if (!SCHACH_BOT.istBotPartie(partie)) {
@@ -2304,8 +2321,8 @@ pruefe("Eine neu erschienene Lootbox verdeckt die Zugspur nicht (v0.69, Wunsch #
 
     let partie = SCHACH_RUNDE.teamBeitreten(angelegt.partie, "id-anna", "weiss", 7000);
     partie = SCHACH_RUNDE.teamBeitreten(partie, "id-bert", "schwarz", 7000);
-    partie = SCHACH_RUNDE.bereitSetzen(partie, "weiss", true, 7000);
-    partie = SCHACH_RUNDE.bereitSetzen(partie, "schwarz", true, 7000);
+    partie = bereitUndAufgestellt(partie, "weiss", 7000);
+    partie = bereitUndAufgestellt(partie, "schwarz", 7000);
 
     /* Ein Springerzug — und danach von Hand der Eintrag, den das Erscheinen
        einer Lootbox schreibt. */
@@ -2394,8 +2411,8 @@ pruefe("Klassisch mit zugeschalteten Wuerfeln zeigt die Faehigkeiten-Karte", () 
 
     let partie = SCHACH_RUNDE.teamBeitreten(angelegt.partie, "id-anna", "weiss", 6100);
     partie = SCHACH_RUNDE.teamBeitreten(partie, "id-bert", "schwarz", 6100);
-    partie = SCHACH_RUNDE.bereitSetzen(partie, "weiss", true, 6100);
-    partie = SCHACH_RUNDE.bereitSetzen(partie, "schwarz", true, 6100);
+    partie = bereitUndAufgestellt(partie, "weiss", 6100);
+    partie = bereitUndAufgestellt(partie, "schwarz", 6100);
 
     TEAM_SCHACH.abgleich.daten = SCHACH_TAFEL.partieEinsetzen(angelegt.tafel, partie, 6100);
     TEAM_SCHACH.partieOeffnen(partie.id);
@@ -2477,8 +2494,8 @@ pruefe("Wartet eine Faehigkeit auf ihr Ziel, sind die Felder markiert", () => {
 
     let partie = SCHACH_RUNDE.teamBeitreten(angelegt.partie, "id-anna", "weiss", 9400);
     partie = SCHACH_RUNDE.teamBeitreten(partie, "id-bert", "schwarz", 9400);
-    partie = SCHACH_RUNDE.bereitSetzen(partie, "weiss", true, 9400);
-    partie = SCHACH_RUNDE.bereitSetzen(partie, "schwarz", true, 9400);
+    partie = bereitUndAufgestellt(partie, "weiss", 9400);
+    partie = bereitUndAufgestellt(partie, "schwarz", 9400);
 
     TEAM_SCHACH.abgleich.daten = SCHACH_TAFEL.partieEinsetzen(angelegt.tafel, partie, 9400);
 
@@ -2520,8 +2537,8 @@ pruefe("Ein Tipp setzt den Vorschau-Kasten, statt sofort einzusetzen (v0.57)", (
 
     let partie = SCHACH_RUNDE.teamBeitreten(angelegt.partie, "id-anna", "weiss", 9500);
     partie = SCHACH_RUNDE.teamBeitreten(partie, "id-bert", "schwarz", 9500);
-    partie = SCHACH_RUNDE.bereitSetzen(partie, "weiss", true, 9500);
-    partie = SCHACH_RUNDE.bereitSetzen(partie, "schwarz", true, 9500);
+    partie = bereitUndAufgestellt(partie, "weiss", 9500);
+    partie = bereitUndAufgestellt(partie, "schwarz", 9500);
     partie.faehigkeiten.weiss.push("mauer");
 
     TEAM_SCHACH.abgleich.daten = SCHACH_TAFEL.partieEinsetzen(angelegt.tafel, partie, 9500);
@@ -2955,8 +2972,8 @@ pruefe("Ein eingesammelter Unglueckswuerfel wird angesagt (v0.59)", () => {
 
     let partie = SCHACH_RUNDE.teamBeitreten(angelegt.partie, "id-anna", "weiss", 5700);
     partie = SCHACH_RUNDE.teamBeitreten(partie, "id-bert", "schwarz", 5700);
-    partie = SCHACH_RUNDE.bereitSetzen(partie, "weiss", true, 5700);
-    partie = SCHACH_RUNDE.bereitSetzen(partie, "schwarz", true, 5700);
+    partie = bereitUndAufgestellt(partie, "weiss", 5700);
+    partie = bereitUndAufgestellt(partie, "schwarz", 5700);
 
     /* Ein Unglückswürfel genau dort, wohin der Bauer zieht. */
     partie = SCHACH_RUNDE.kopieren(partie);
@@ -3025,8 +3042,8 @@ pruefe("Zug und Unglueck haben getrennte Spurfarben (v0.76)", () => {
 
     let partie = SCHACH_RUNDE.teamBeitreten(angelegt.partie, "id-anna", "weiss", 7700);
     partie = SCHACH_RUNDE.teamBeitreten(partie, "id-bert", "schwarz", 7700);
-    partie = SCHACH_RUNDE.bereitSetzen(partie, "weiss", true, 7700);
-    partie = SCHACH_RUNDE.bereitSetzen(partie, "schwarz", true, 7700);
+    partie = bereitUndAufgestellt(partie, "weiss", 7700);
+    partie = bereitUndAufgestellt(partie, "schwarz", 7700);
 
     partie = SCHACH_RUNDE.kopieren(partie);
     partie.regeln.faehigkeiten = true;
@@ -3108,8 +3125,8 @@ pruefe("Wer nicht am Zug ist, kann das Brett nicht bedienen", () => {
 
     let partie = SCHACH_RUNDE.teamBeitreten(angelegt.partie, "id-anna", "weiss", 6000);
     partie = SCHACH_RUNDE.teamBeitreten(partie, "id-bert", "schwarz", 6000);
-    partie = SCHACH_RUNDE.bereitSetzen(partie, "weiss", true, 6000);
-    partie = SCHACH_RUNDE.bereitSetzen(partie, "schwarz", true, 6000);
+    partie = bereitUndAufgestellt(partie, "weiss", 6000);
+    partie = bereitUndAufgestellt(partie, "schwarz", 6000);
     partie = SCHACH_RUNDE.ziehen(partie, "id-anna",
         SCHACH.feldNummer("a2"), SCHACH.feldNummer("a3"), "D", "Anna", 6100);
 
@@ -3359,8 +3376,8 @@ pruefe("Der Friedhof steht als Knopf bei jedem Spieler, mit den eigenen Gefallen
 
     let laeuft = SCHACH_RUNDE.teamBeitreten(angelegt.partie, "id-anna", "weiss", 6200);
     laeuft = SCHACH_RUNDE.teamBeitreten(laeuft, "id-bert", "schwarz", 6200);
-    laeuft = SCHACH_RUNDE.bereitSetzen(laeuft, "weiss", true, 6200);
-    laeuft = SCHACH_RUNDE.bereitSetzen(laeuft, "schwarz", true, 6200);
+    laeuft = bereitUndAufgestellt(laeuft, "weiss", 6200);
+    laeuft = bereitUndAufgestellt(laeuft, "schwarz", 6200);
 
     const imMatch = TEAM_SCHACH._spielerZeileBauen(
         laeuft, umgebung.ICH.person(), "weiss");
@@ -3639,8 +3656,8 @@ pruefe("Ein laufender Sprung laesst sich abbrechen (v0.76)", () => {
     let partie = angelegt.partie;
     partie = SCHACH_RUNDE.teamBeitreten(partie, "id-anna", "weiss", 7500);
     partie = SCHACH_RUNDE.teamBeitreten(partie, "id-bert", "schwarz", 7500);
-    partie = SCHACH_RUNDE.bereitSetzen(partie, "weiss", true, 7500);
-    partie = SCHACH_RUNDE.bereitSetzen(partie, "schwarz", true, 7500);
+    partie = bereitUndAufgestellt(partie, "weiss", 7500);
+    partie = bereitUndAufgestellt(partie, "schwarz", 7500);
     partie.faehigkeiten.weiss.push("sprung");
 
     partie = SCHACH_RUNDE.faehigkeitEinsetzen(
@@ -4049,8 +4066,8 @@ pruefe("Ein Zug steht sofort auf dem Brett, bevor gespeichert ist", () => {
 
     let partie = SCHACH_RUNDE.teamBeitreten(angelegt.partie, "id-anna", "weiss", 7000);
     partie = SCHACH_RUNDE.teamBeitreten(partie, "id-bert", "schwarz", 7000);
-    partie = SCHACH_RUNDE.bereitSetzen(partie, "weiss", true, 7000);
-    partie = SCHACH_RUNDE.bereitSetzen(partie, "schwarz", true, 7000);
+    partie = bereitUndAufgestellt(partie, "weiss", 7000);
+    partie = bereitUndAufgestellt(partie, "schwarz", 7000);
 
     TEAM_SCHACH.abgleich.daten = SCHACH_TAFEL.partieEinsetzen(angelegt.tafel, partie, 7000);
     TEAM_SCHACH.partieOeffnen(partie.id);
@@ -4097,8 +4114,8 @@ pruefe("Eine Auswahl ueberlebt den naechsten Zug nicht", () => {
 
     let partie = SCHACH_RUNDE.teamBeitreten(angelegt.partie, "id-anna", "weiss", 9000);
     partie = SCHACH_RUNDE.teamBeitreten(partie, "id-bert", "schwarz", 9000);
-    partie = SCHACH_RUNDE.bereitSetzen(partie, "weiss", true, 9000);
-    partie = SCHACH_RUNDE.bereitSetzen(partie, "schwarz", true, 9000);
+    partie = bereitUndAufgestellt(partie, "weiss", 9000);
+    partie = bereitUndAufgestellt(partie, "schwarz", 9000);
 
     TEAM_SCHACH.abgleich.daten = SCHACH_TAFEL.partieEinsetzen(angelegt.tafel, partie, 9000);
     TEAM_SCHACH.partieOeffnen(partie.id);
@@ -4146,8 +4163,8 @@ pruefe("Wer nicht am Zug ist, sieht keine Zielpunkte", () => {
 
     let partie = SCHACH_RUNDE.teamBeitreten(angelegt.partie, "id-anna", "weiss", 9300);
     partie = SCHACH_RUNDE.teamBeitreten(partie, "id-bert", "schwarz", 9300);
-    partie = SCHACH_RUNDE.bereitSetzen(partie, "weiss", true, 9300);
-    partie = SCHACH_RUNDE.bereitSetzen(partie, "schwarz", true, 9300);
+    partie = bereitUndAufgestellt(partie, "weiss", 9300);
+    partie = bereitUndAufgestellt(partie, "schwarz", 9300);
 
     TEAM_SCHACH.abgleich.daten = SCHACH_TAFEL.partieEinsetzen(angelegt.tafel, partie, 9300);
     TEAM_SCHACH.partieOeffnen(partie.id);
@@ -4184,8 +4201,8 @@ pruefe("Eine geoeffnete Partie schliesst die Spielart-Auswahl", () => {
 
     let partie = SCHACH_RUNDE.teamBeitreten(angelegt.partie, "id-anna", "weiss", 9400);
     partie = SCHACH_RUNDE.teamBeitreten(partie, "id-bert", "schwarz", 9400);
-    partie = SCHACH_RUNDE.bereitSetzen(partie, "weiss", true, 9400);
-    partie = SCHACH_RUNDE.bereitSetzen(partie, "schwarz", true, 9400);
+    partie = bereitUndAufgestellt(partie, "weiss", 9400);
+    partie = bereitUndAufgestellt(partie, "schwarz", 9400);
 
     TEAM_SCHACH.abgleich.daten = SCHACH_TAFEL.partieEinsetzen(angelegt.tafel, partie, 9400);
 
@@ -4255,8 +4272,8 @@ pruefe("Ein Abschluss verdraengt keine laufende Partie", () => {
     const beendet = SCHACH_TAFEL.partieAnlegen(tafelJetzt, "standard", "Vorbei", 8000);
     let alt = SCHACH_RUNDE.teamBeitreten(beendet.partie, "id-anna", "weiss", 8000);
     alt = SCHACH_RUNDE.teamBeitreten(alt, "id-bert", "schwarz", 8000);
-    alt = SCHACH_RUNDE.bereitSetzen(alt, "weiss", true, 8000);
-    alt = SCHACH_RUNDE.bereitSetzen(alt, "schwarz", true, 8000);
+    alt = bereitUndAufgestellt(alt, "weiss", 8000);
+    alt = bereitUndAufgestellt(alt, "schwarz", 8000);
     alt = SCHACH_RUNDE.aufgeben(alt, "schwarz", 8100);
     tafelJetzt = SCHACH_TAFEL.partieEinsetzen(beendet.tafel, alt, 8100);
 
@@ -4264,8 +4281,8 @@ pruefe("Ein Abschluss verdraengt keine laufende Partie", () => {
     const laufend = SCHACH_TAFEL.partieAnlegen(tafelJetzt, "standard", "Laeuft", 8200);
     let neu = SCHACH_RUNDE.teamBeitreten(laufend.partie, "id-anna", "weiss", 8200);
     neu = SCHACH_RUNDE.teamBeitreten(neu, "id-bert", "schwarz", 8200);
-    neu = SCHACH_RUNDE.bereitSetzen(neu, "weiss", true, 8200);
-    neu = SCHACH_RUNDE.bereitSetzen(neu, "schwarz", true, 8200);
+    neu = bereitUndAufgestellt(neu, "weiss", 8200);
+    neu = bereitUndAufgestellt(neu, "schwarz", 8200);
     tafelJetzt = SCHACH_TAFEL.partieEinsetzen(laufend.tafel, neu, 8200);
 
     TEAM_SCHACH.abschluss = null;
@@ -4323,8 +4340,8 @@ pruefe("Ein Tipp neben die Zielfelder bricht die Faehigkeit ab", () => {
 
     let partie = SCHACH_RUNDE.teamBeitreten(angelegt.partie, "id-anna", "weiss", 6000);
     partie = SCHACH_RUNDE.teamBeitreten(partie, "id-bert", "schwarz", 6000);
-    partie = SCHACH_RUNDE.bereitSetzen(partie, "weiss", true, 6000);
-    partie = SCHACH_RUNDE.bereitSetzen(partie, "schwarz", true, 6000);
+    partie = bereitUndAufgestellt(partie, "weiss", 6000);
+    partie = bereitUndAufgestellt(partie, "schwarz", 6000);
 
     TEAM_SCHACH.abgleich.daten = SCHACH_TAFEL.partieEinsetzen(angelegt.tafel, partie, 6000);
     TEAM_SCHACH.partieOeffnen(partie.id);
@@ -4703,8 +4720,29 @@ async function zeitlimitPruefen() {
                 if (partie.bereit.weiss !== true) {
                     throw new Error("der Computer meldet sich nicht bereit");
                 }
+
+                /*
+                 * SEIT v0.62.0 IST DAMIT ERST DIE HALBE MIETE. Der Mensch
+                 * steht jetzt auf dem zweiten Start-Bildschirm und sieht
+                 * seine Aufstellung an; angepfiffen wird erst mit seiner
+                 * zweiten Zusage. Der Computer hat seine schon gegeben — er
+                 * hat zum Brett keine Meinung.
+                 */
+                if (partie.laeuft) {
+                    throw new Error("die Partie laeuft schon vor der Aufstellung");
+                }
+                if (partie.aufstellungBereit.weiss !== true) {
+                    throw new Error("der Computer bestaetigt die Aufstellung nicht");
+                }
+                if (!SCHACH_RUNDE.inAufstellung(partie)) {
+                    throw new Error("die Runde steht nicht in der Aufstellung");
+                }
+
+                await TEAM_SCHACH.aufstellungBereitUmschalten(hole(), "schwarz", true);
+
+                partie = hole();
                 if (!partie.laeuft) {
-                    throw new Error("die Partie beginnt nicht, obwohl beide bereit sind");
+                    throw new Error("die Partie beginnt nicht, obwohl beide zugesagt haben");
                 }
 
                 /* Und der Computer heisst am Bildschirm nicht Unbekannt. */
@@ -4937,7 +4975,7 @@ async function zeitlimitPruefen() {
                 let partie = SCHACH_RUNDE.teamBeitreten(
                     angelegt.partie, "id-anna", "weiss", 9910);
                 partie = SCHACH_BOT.inRundeSetzen(partie, "schwarz", 9910);
-                partie = SCHACH_RUNDE.bereitSetzen(partie, "weiss", true, 9910);
+                partie = bereitUndAufgestellt(partie, "weiss", 9910);
 
                 TEAM_SCHACH.abgleich.daten = SCHACH_TAFEL.partieEinsetzen(
                     angelegt.tafel, partie, 9910);
@@ -5876,6 +5914,121 @@ pruefe("Die wartende Partie ist der Seitenwahl-Bildschirm (v0.61.0)", () => {
         if (String(code.textContent || "")
                 !== SCHACH_RUNDE.beitrittsCode(partie.id)) {
             throw new Error("dort steht ein anderer Code: " + code.textContent);
+        }
+    } finally {
+        TEAM_SCHACH.abgleich.daten = vorher;
+        TEAM_SCHACH.uebersichtOeffnen();
+    }
+});
+
+pruefe("Die Aufstellung ist der zweite Start-Bildschirm (v0.62.0)", () => {
+    /*
+     * Nutzer-Ansage 25.08.2026: „Sobald beide Seiten einen Spieler haben und
+     * beide bereit sind, gehts ein Screen weiter, wo das Spielfeld gezeigt
+     * wird — wo aber beide noch die Moeglichkeit haben, neu aufzustellen."
+     *
+     * Geprueft wird am GEZEICHNETEN Bildschirm: Das Brett ist zurueck (der
+     * erste Screen hat keins), der Wuerfel steht da (Zufallsarmee an), die
+     * zweite Zusage auch — und die Seitenwahl NICHT mehr, die ist getroffen.
+     */
+    let partie = SCHACH_TAFEL.partie(TEAM_SCHACH.abgleich.daten,
+        kennungen[SCHACH_VARIANTEN.liste[0].id]);
+    partie = SCHACH_RUNDE.kopieren(partie);
+    partie.laeuft = false;
+    partie.ergebnis = null;
+    partie.bereit = { weiss: true, schwarz: true };
+    partie.aufstellungBereit = { weiss: false, schwarz: false };
+    partie.regeln = Object.assign({}, partie.regeln, { zufallsArmee: true });
+
+    const vorher = TEAM_SCHACH.abgleich.daten;
+
+    try {
+        TEAM_SCHACH.abgleich.daten = SCHACH_TAFEL.partieEinsetzen(
+            vorher, partie, 9200);
+        TEAM_SCHACH.partieOeffnen(partie.id);
+
+        const einsammeln = (element, passt, treffer) => {
+            for (const kind of element.kinder || []) {
+                if (passt(kind)) {
+                    treffer.push(kind);
+                }
+                einsammeln(kind, passt, treffer);
+            }
+            return treffer;
+        };
+        const mitKlasse = (klasse) => einsammeln(TEAM_SCHACH.wurzelEl, (kind) =>
+            String(kind.className || "").indexOf(klasse) !== -1, []);
+
+        if (mitKlasse("brett-halter").length === 0) {
+            throw new Error("in der Aufstellung fehlt das Brett");
+        }
+        if (mitKlasse("wuerfel-knopf").length === 0) {
+            throw new Error("der Wuerfel fehlt, obwohl die Armee gewuerfelt wird");
+        }
+        if (mitKlasse("aufstellung-bereit").length === 0) {
+            throw new Error("die zweite Zusage fehlt");
+        }
+
+        /* Die Seitenwahl ist vorbei — und eingeladen wird auch nicht mehr. */
+        if (mitKlasse("beitritt-reihe").length > 0) {
+            throw new Error("die Seitenwahl steht noch da");
+        }
+        if (mitKlasse("einladung-block").length > 0) {
+            throw new Error("der Einladungs-Block steht noch da");
+        }
+
+        /* Und oben links das Zurueck, wie ueberall. */
+        const kopf = mitKlasse("partie-kopf")[0];
+        const imKopf = einsammeln(kopf, (kind) => kind.tagName === "button", [])
+            .map((knopf) => String(knopf.textContent || ""));
+        if (imKopf.indexOf("Zurück") === -1) {
+            throw new Error("kein Zurueck im Kopf, dort ist: " + imKopf.join(", "));
+        }
+    } finally {
+        TEAM_SCHACH.abgleich.daten = vorher;
+        TEAM_SCHACH.uebersichtOeffnen();
+    }
+});
+
+pruefe("Ohne Zufallsarmee steht in der Aufstellung kein Wuerfel (v0.62.0)", () => {
+    /*
+     * Die Regel von v0.42.0 gilt unveraendert weiter, nur an einem neuen Ort:
+     * Ohne Zufallsarmee wuerfelt der Knopf nichts — er stellte dieselbe feste
+     * Aufstellung wieder hin. Dann bleibt die Zusage allein stehen.
+     */
+    let partie = SCHACH_TAFEL.partie(TEAM_SCHACH.abgleich.daten,
+        kennungen[SCHACH_VARIANTEN.liste[0].id]);
+    partie = SCHACH_RUNDE.kopieren(partie);
+    partie.laeuft = false;
+    partie.ergebnis = null;
+    partie.bereit = { weiss: true, schwarz: true };
+    partie.aufstellungBereit = { weiss: false, schwarz: false };
+    partie.regeln = Object.assign({}, partie.regeln, { zufallsArmee: false });
+
+    const vorher = TEAM_SCHACH.abgleich.daten;
+
+    try {
+        TEAM_SCHACH.abgleich.daten = SCHACH_TAFEL.partieEinsetzen(
+            vorher, partie, 9210);
+        TEAM_SCHACH.partieOeffnen(partie.id);
+
+        const einsammeln = (element, passt, treffer) => {
+            for (const kind of element.kinder || []) {
+                if (passt(kind)) {
+                    treffer.push(kind);
+                }
+                einsammeln(kind, passt, treffer);
+            }
+            return treffer;
+        };
+        const mitKlasse = (klasse) => einsammeln(TEAM_SCHACH.wurzelEl, (kind) =>
+            String(kind.className || "").indexOf(klasse) !== -1, []);
+
+        if (mitKlasse("wuerfel-knopf").length > 0) {
+            throw new Error("ohne Zufallsarmee steht ein Wuerfel da");
+        }
+        if (mitKlasse("aufstellung-bereit").length === 0) {
+            throw new Error("die Zusage fehlt");
         }
     } finally {
         TEAM_SCHACH.abgleich.daten = vorher;
