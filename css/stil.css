@@ -4686,29 +4686,57 @@ body.design-3d .werte-figur {
  * sondern nur das Symbol mit der Umrandung — gruppiert hintereinander
  * gestapelt."
  *
- * Aus der breiten Marke mit Wort wird ein Quadrat. Gleiche Fähigkeiten
+ * Aus der breiten Marke mit Wort wird eine Karte. Gleiche Fähigkeiten
  * zählt `_faehigkeitReiheBauen` zusammen (die Zahl in der Ecke), und die
- * Quadrate schieben sich zusätzlich halb übereinander — beides zusammen
+ * Karten schieben sich zusätzlich halb übereinander — beides zusammen
  * macht aus acht Karten einen handbreiten Streifen.
+ *
+ * SEIT v0.70.0 IST ES DIE FORM EINER SPIELKARTE, nicht mehr das Quadrat
+ * (Nutzer-Ansage 25.08.2026). 40 auf 56 Pixel ist das Seitenverhältnis
+ * einer Pokerkarte (63 zu 88 Millimeter, also 0,71); die Eckenrundung
+ * fällt von 10 auf 6 Pixel, weil eine hochkante Karte mit stark
+ * gerundeten Ecken wie eine Pille aussieht statt wie eine Karte.
+ *
+ * DAS ZEICHEN BLEIBT 26 PIXEL GROSS — es ist der Grund, warum es die
+ * Karte gibt, und darf durch die Formänderung nicht schrumpfen. Die
+ * gewonnene Höhe geht deshalb ganz an den Fuss der Karte, wo jetzt die
+ * zwei Kosten-Zeichen INNEN stehen statt über dem Rand zu hängen.
+ *
+ * WAS ES KOSTET: Die Kartenreihe wird 12 Pixel höher, oben wie unten.
+ * Auf der festen Seite rechnet `_brettEinpassen` die Brettbreite aus der
+ * Höhe, die übrig bleibt — dem Brett fehlen also rund 24 Pixel. Das ist
+ * gemessen, nicht geschätzt, aber am Gerät nie gesehen.
  * ------------------------------------------------------------------ */
 
 .faehigkeit-reihe .faehigkeit-knopf {
     position: relative;
-    width: 44px;
-    min-width: 44px;
-    height: 44px;
-    padding: 0;
-    border-radius: 10px;
+    width: 40px;
+    min-width: 40px;
+    height: 56px;
+    border-radius: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
 
     /*
+     * DER FUSS DER KARTE GEHÖRT DEN KOSTEN-ZEICHEN (seit v0.70.0). Die
+     * Innenkante unten nimmt dem Zeichen diese 12 Pixel weg, also sitzt es
+     * mittig im oberen Teil — darunter bleibt der Streifen frei, in dem
+     * Pluszeichen und Blitz stehen.
+     */
+    padding: 0 0 12px 0;
+
+    /*
      * DAS ÜBEREINANDERSCHIEBEN. Ein negativer linker Rand zieht jede Karte
      * unter ihre Vorgängerin; die erste bleibt, wo sie ist. Der Schatten
      * trennt sie optisch, sonst verschwämmen die Umrandungen ineinander.
+     *
+     * ES SIND 10 PIXEL STATT 12 (seit v0.70.0): Die Karte ist 4 Pixel
+     * schmaler geworden, das Zeichen darin aber nicht. Bei den alten 12
+     * verschwände ein Stück mehr davon unter der Nachbarkarte — so bleibt
+     * sichtbar, was vorher sichtbar war.
      */
-    margin-left: -12px;
+    margin-left: -10px;
     background: var(--flaeche);
     box-shadow: -2px 0 4px rgba(0, 0, 0, 0.35);
 }
@@ -4757,21 +4785,25 @@ body.design-3d .werte-figur {
 }
 
 /* Die zwei Kosten-Zeichen rücken in die untere Zeile der Karte — klein, aber
-   an einem festen Platz, damit das Auge sie nicht suchen muss. */
+   an einem festen Platz, damit das Auge sie nicht suchen muss.
+
+   SEIT v0.70.0 STEHEN SIE INNEN (vorher `bottom: -3px`, also halb über dem
+   Rand): Auf dem Quadrat war unten kein Platz, auf der Spielkarte schon.
+   Auf einer echten Spielkarte steht auch alles innerhalb des Rands. */
 .faehigkeit-ecke-plus,
 .faehigkeit-ecke-blitz {
     position: absolute;
-    bottom: -3px;
+    bottom: 2px;
     font-size: 0.7rem;
     line-height: 1;
 }
 
 .faehigkeit-ecke-plus {
-    right: 3px;
+    right: 4px;
 }
 
 .faehigkeit-ecke-blitz {
-    left: 3px;
+    left: 4px;
     width: 12px;
     height: 12px;
 }

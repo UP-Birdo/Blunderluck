@@ -690,12 +690,18 @@ Object.assign(TEAM_SCHACH, {
          *
          * v0.63.0 hatte das Zeichen VOR das Wort gesetzt, mit der Begründung,
          * ein Bild allein müsse man erst lernen. Das galt — solange es die
-         * Zeichen gerade erst gab. Jetzt tragen sie, und die Karte wird zum
-         * Quadrat: Der Name steht weiter im Kurzhinweis und im Fenster, das
-         * ein Tipp öffnet.
+         * Zeichen gerade erst gab. Jetzt tragen sie, und aus der Marke wird
+         * eine Karte: Der Name steht weiter im Kurzhinweis und im Fenster,
+         * das ein Tipp öffnet.
+         *
+         * WIE SIE AUSSIEHT, STEHT IN DER STILDATEI, nicht hier — seit
+         * v0.67.0 als Quadrat, seit v0.70.0 in der Form einer Spielkarte
+         * (`.faehigkeit-reihe .faehigkeit-knopf` in `css\stil.css`). Diese
+         * Funktion baut nur den Knopf und hängt Zeichen, Zahl und die zwei
+         * Kosten-Zeichen hinein; sie kennt keine Masse.
          *
          * DER TITEL BLEIBT IM `aria-label`: Für Vorleseprogramme ist ein
-         * gezeichnetes Quadrat nichts, und die Karte ist ein Knopf.
+         * gezeichnetes Bild nichts, und die Karte ist ein Knopf.
          */
         const marke = TEAM_SCHACH._knopf("",
             "knopf-still knopf-klein faehigkeit-knopf"
@@ -711,7 +717,7 @@ Object.assign(TEAM_SCHACH, {
         if (bild) {
             marke.appendChild(bild);
         } else {
-            /* Ohne Zeichen bliebe ein leeres Quadrat — dann doch das Wort. */
+            /* Ohne Zeichen bliebe eine leere Karte — dann doch das Wort. */
             marke.textContent = SCHACH_VARIANTEN.faehigkeitTitel(art);
         }
 

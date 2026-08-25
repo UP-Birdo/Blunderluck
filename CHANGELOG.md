@@ -3,6 +3,25 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.70.0 — 25.08.2026
+
+**Die eingesammelten Fähigkeiten sehen jetzt aus wie Spielkarten.**
+
+- Statt des Quadrats von v0.67.0 ist jede Fähigkeit ein **hochkantes
+  Rechteck** im Seitenverhältnis einer echten Spielkarte, mit ruhigeren
+  Ecken.
+- **Das Zeichen darin bleibt gleich gross** — die Karte ist gewachsen, nicht
+  das Bild geschrumpft.
+- Die zwei kleinen Kosten-Zeichen (**+** und **Blitz**) stehen jetzt
+  **innerhalb** der Karte am Fuss, statt halb über ihrem Rand zu hängen.
+  Auf dem Quadrat war dafür kein Platz, auf der Karte schon.
+- Was gleich bleibt: gleiche Fähigkeiten liegen weiter als **ein Stapel mit
+  Zahl** übereinander, und der Name steht weiter im Kurzhinweis und in dem
+  Fenster, das ein Tipp öffnet.
+- **Zu beachten:** Die höheren Karten nehmen dem Brett rund 24 Pixel Höhe.
+  Auf dem Handy heisst das ein leicht kleineres Brett — das ist gerechnet,
+  aber noch nicht am Gerät beurteilt.
+
 ## v0.69.0 — 25.08.2026
 
 **Wer eine Runde verlässt, landet jetzt auf dem Startbildschirm.**
