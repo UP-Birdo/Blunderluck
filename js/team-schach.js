@@ -3383,6 +3383,30 @@ const TEAM_SCHACH = {
             neu = SCHACH_BOT.beiBereitDazuholen(neu, person.id);
         }
 
+        /*
+         * UND ER BESTÄTIGT DIE AUFSTELLUNG ERNEUT (seit v0.64.1) — das ist
+         * die Behebung eines Fehlers, den v0.62.0 eingebaut hat.
+         *
+         * SO SAH ER AUS: „Manchmal beginnt das Spiel nicht, obwohl wir beide
+         * auf bereit gedrückt haben" (Nutzer, 25.08.2026, gegen den
+         * Computer). Nachgemessen und bestätigt.
+         *
+         * WARUM: `bereitSetzen(false)` streicht seit v0.62.0 die
+         * Aufstellungs-Zusage BEIDER Seiten — richtig so, sonst startete
+         * eine Partie mit einem Brett, das eine Seite nie gesehen hat. Der
+         * Computer erneuerte seine aber nur beim EINSTEIGEN
+         * (`beiBereitDazuholen` → `inRundeSetzen`), und einsteigen tut er
+         * genau einmal. Wer also einmal „Doch nicht bereit" drückte oder vom
+         * Aufstellungs-Bildschirm zurückging, hatte einen Computer, der nie
+         * wieder zusagte — und ein Spiel, das nie begann.
+         *
+         * DER AUFRUF STEHT AUSSERHALB DES `if`: Auch die Rücknahme muss ihn
+         * durchlaufen, denn sie ist es ja, die streicht. Angepfiffen wird
+         * dadurch nichts Falsches — `kannAnpfeifen` verlangt weiterhin, dass
+         * beide Seiten ihre erste Zusage stehen haben.
+         */
+        neu = SCHACH_BOT.aufstellungBestaetigen(neu);
+
         await TEAM_SCHACH._sendenMitPruefung(neu, partie.zugZaehler);
     },
 

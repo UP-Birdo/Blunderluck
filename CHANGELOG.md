@@ -3,6 +3,19 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.64.1 — 25.08.2026
+
+**Behoben: Gegen den Computer begann die Partie manchmal nicht.**
+
+- Wer einmal „Doch nicht bereit" gedrückt hatte — oder vom
+  Aufstellungs-Bildschirm mit „Zurück" eine Stufe zurückging —, wartete
+  danach vergeblich: Der Computer sagte zur Aufstellung nie wieder zu, und
+  das Spiel startete nicht mehr.
+- Ursache war die zweite Bereitschaft aus v0.62.0: Sie wird bei jeder
+  Rücknahme absichtlich für beide Seiten gestrichen, aber der Computer
+  erneuerte seine nur beim Einsteigen. Jetzt bestätigt er nach jedem
+  Bereit-Druck neu.
+
 ## v0.64.0 — 25.08.2026
 
 **Der Spiel-Bildschirm ist neu angeordnet — nach deiner zweiten Skizze.**

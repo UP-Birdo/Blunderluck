@@ -2468,6 +2468,64 @@ pruefe("Klassisch ohne Wuerfel zeigt die Karte weiterhin nicht", () => {
     TEAM_SCHACH.partieOeffnen(kennungen.faehigkeiten);
 });
 
+pruefe("Gegen den Computer startet die Partie auch nach einem Hin und Her (v0.64.1)", () => {
+    /*
+     * DER GEMELDETE FEHLER (Nutzer, 25.08.2026): „Manchmal beginnt das Spiel
+     * nicht, auch wenn ich gegen den Bot spiele und wir beide auf bereit
+     * gedrueckt haben."
+     *
+     * URSACHE: `bereitSetzen(false)` streicht seit v0.62.0 die
+     * Aufstellungs-Zusage BEIDER Seiten. Der Computer erneuerte seine nur
+     * beim Einsteigen — und einsteigen tut er genau einmal. Wer einmal „Doch
+     * nicht bereit" drueckte, hatte danach einen Computer, der nie wieder
+     * zusagte.
+     *
+     * GEPRUEFT WIRD DER GANZE WEG ueber `bereitUmschalten`, nicht nur die
+     * Modellfunktion: Der Fehler sass genau in der Naht zwischen Bildschirm
+     * und Bot, und ein Test am Modell allein haette ihn nie gesehen.
+     */
+    const person = umgebung.ICH.person();
+    const echteDaten = TEAM_SCHACH.abgleich.daten;
+    const echteOffene = TEAM_SCHACH.offeneId;
+
+    try {
+        const angelegt = SCHACH_TAFEL.partieAnlegen(
+            SCHACH_TAFEL.leereTafel(9300), "standard", "Bot-Start", 9310);
+        let partie = angelegt.partie;
+        partie.regeln = Object.assign({}, partie.regeln, { botStufe: "leicht" });
+        partie = SCHACH_RUNDE.teamBeitreten(partie, person.id, "weiss", 9320);
+
+        TEAM_SCHACH.abgleich.daten = SCHACH_TAFEL.partieEinsetzen(
+            SCHACH_TAFEL.leereTafel(9300), partie, 9330);
+        TEAM_SCHACH.offeneId = partie.id;
+
+        const hole = () => SCHACH_TAFEL.partie(TEAM_SCHACH.abgleich.daten, partie.id);
+
+        /* Bereit — zurueck — wieder bereit. Genau der gemeldete Weg. */
+        TEAM_SCHACH.bereitUmschalten(hole(), "weiss", true);
+        TEAM_SCHACH.bereitUmschalten(hole(), "weiss", false);
+        TEAM_SCHACH.bereitUmschalten(hole(), "weiss", true);
+
+        const nachHinUndHer = hole();
+        if (nachHinUndHer.aufstellungBereit.schwarz !== true) {
+            throw new Error("der Computer hat seine Zusage nicht erneuert");
+        }
+        if (!SCHACH_RUNDE.inAufstellung(nachHinUndHer)) {
+            throw new Error("die Runde steht nicht in der Aufstellung");
+        }
+
+        /* Und das zweite Bereit pfeift an. */
+        TEAM_SCHACH.aufstellungBereitUmschalten(hole(), "weiss", true);
+
+        if (hole().laeuft !== true) {
+            throw new Error("die Partie beginnt nicht, obwohl beide zugesagt haben");
+        }
+    } finally {
+        TEAM_SCHACH.abgleich.daten = echteDaten;
+        TEAM_SCHACH.offeneId = echteOffene;
+    }
+});
+
 pruefe("Die Anordnung der zweiten Skizze: Banner in der Ecke, Knoepfe am Rand (v0.64.0)", () => {
     /*
      * NUTZER-SKIZZE 25.08.2026 (die zweite):
