@@ -3,6 +3,16 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.65.0 — 25.08.2026
+
+**Aus „F" und „Z" am Brett sind Zeichen geworden.**
+
+- Der **Friedhof** trägt jetzt einen **Totenkopf** statt des Buchstabens F —
+  freundlich gezeichnet, wie auf einer Piratenflagge.
+- Der **Zugverlauf** trägt ein **Verlaufs-Zeichen** statt des Z: drei Zeilen
+  mit ihrem Punkt davor, so wie die Liste dahinter aussieht.
+- Damit sind alle Knöpfe am Brett Zeichen: Zahnrad, Verlauf, Totenkopf.
+
 ## v0.64.1 — 25.08.2026
 
 **Behoben: Gegen den Computer begann die Partie manchmal nicht.**

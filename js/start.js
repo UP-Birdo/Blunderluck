@@ -664,6 +664,119 @@ const START = {
     },
 
     /*
+     * DER TOTENKOPF FÜR DEN FRIEDHOF (seit v0.65.0).
+     *
+     * Nutzer-Ansage 25.08.2026: „Das F für Friedhof soll zu einem Totenkopf
+     * werden." Bis dahin stand dort der Buchstabe F.
+     *
+     * FREUNDLICH GEZEICHNET, nicht gruselig: runder Schädel, zwei grosse
+     * Augen, ein kleines Nasendreieck, eine angedeutete Zahnreihe. Das
+     * passt zur Entscheidung „kein Blut, Zielgruppe ab sechs"
+     * (`docs\VISION.md`, Abschnitt 6) — ein Totenkopf ist dort so
+     * selbstverständlich wie auf einer Piratenflagge, solange er nicht
+     * bedrohlich aussieht.
+     */
+    _totenkopfZeichenBauen() {
+        const ns = "http://www.w3.org/2000/svg";
+        const svg = document.createElementNS(ns, "svg");
+        svg.setAttribute("viewBox", "0 0 24 24");
+        svg.setAttribute("class", "start-zeichen");
+        svg.setAttribute("aria-hidden", "true");
+
+        /* Die Hirnschale mit dem eckigen Kiefer darunter. */
+        const schaedel = document.createElementNS(ns, "path");
+        schaedel.setAttribute("d",
+            "M12 2.6 C6.8 2.6 3.4 6.4 3.4 11 C3.4 13.6 4.6 15.6 6.4 16.8 "
+            + "V19.2 C6.4 20.2 7.2 21 8.2 21 H15.8 C16.8 21 17.6 20.2 17.6 19.2 "
+            + "V16.8 C19.4 15.6 20.6 13.6 20.6 11 C20.6 6.4 17.2 2.6 12 2.6 Z");
+        schaedel.setAttribute("fill", "none");
+        schaedel.setAttribute("stroke", "currentColor");
+        schaedel.setAttribute("stroke-width", "2");
+        schaedel.setAttribute("stroke-linejoin", "round");
+        svg.appendChild(schaedel);
+
+        /* Zwei grosse Augen — gefüllt, damit sie auch klein noch tragen. */
+        for (const x of [9, 15]) {
+            const auge = document.createElementNS(ns, "circle");
+            auge.setAttribute("cx", String(x));
+            auge.setAttribute("cy", "11");
+            auge.setAttribute("r", "2.1");
+            auge.setAttribute("fill", "currentColor");
+            svg.appendChild(auge);
+        }
+
+        /* Das Nasendreieck. */
+        const nase = document.createElementNS(ns, "path");
+        nase.setAttribute("d", "M12 14 L10.7 16.2 H13.3 Z");
+        nase.setAttribute("fill", "currentColor");
+        svg.appendChild(nase);
+
+        /* Die Zahnreihe: zwei senkrechte Striche im Kiefer. */
+        for (const x of [10.4, 13.6]) {
+            const zahn = document.createElementNS(ns, "line");
+            zahn.setAttribute("x1", String(x));
+            zahn.setAttribute("y1", "18");
+            zahn.setAttribute("x2", String(x));
+            zahn.setAttribute("y2", "21");
+            zahn.setAttribute("stroke", "currentColor");
+            zahn.setAttribute("stroke-width", "1.6");
+            zahn.setAttribute("stroke-linecap", "round");
+            svg.appendChild(zahn);
+        }
+
+        return svg;
+    },
+
+    /*
+     * DAS VERLAUFS-ZEICHEN FÜR DIE ZUGLISTE (seit v0.65.0).
+     *
+     * Nutzer-Ansage 25.08.2026: „Z soll zu einem Verlaufs-Zeichen ersetzt
+     * werden." Bis dahin stand dort der Buchstabe Z.
+     *
+     * EINE LISTE, KEINE UHR: Das übliche Verlaufs-Zeichen im Browser ist eine
+     * Uhr mit Rückwärtspfeil — die ist hier aber schon vergeben
+     * (`_verlaufZeichenBauen`, die vergangenen Matches oben in der Leiste).
+     * Zwei fast gleiche Uhren an einem Bildschirm wären schlimmer als gar
+     * kein Zeichen. Die Zugliste bekommt deshalb, was sie IST: drei Zeilen
+     * mit ihrem Aufzählungspunkt.
+     */
+    _zugverlaufZeichenBauen() {
+        const ns = "http://www.w3.org/2000/svg";
+        const svg = document.createElementNS(ns, "svg");
+        svg.setAttribute("viewBox", "0 0 24 24");
+        svg.setAttribute("class", "start-zeichen");
+        svg.setAttribute("aria-hidden", "true");
+
+        /* Drei Zeilen; die oberste ist die neueste und deshalb am längsten. */
+        const zeilen = [
+            { y: 6.5, bis: 20.5 },
+            { y: 12, bis: 18 },
+            { y: 17.5, bis: 15.5 }
+        ];
+
+        for (const zeile of zeilen) {
+            const punkt = document.createElementNS(ns, "circle");
+            punkt.setAttribute("cx", "5");
+            punkt.setAttribute("cy", String(zeile.y));
+            punkt.setAttribute("r", "1.7");
+            punkt.setAttribute("fill", "currentColor");
+            svg.appendChild(punkt);
+
+            const strich = document.createElementNS(ns, "line");
+            strich.setAttribute("x1", "9");
+            strich.setAttribute("y1", String(zeile.y));
+            strich.setAttribute("x2", String(zeile.bis));
+            strich.setAttribute("y2", String(zeile.y));
+            strich.setAttribute("stroke", "currentColor");
+            strich.setAttribute("stroke-width", "2");
+            strich.setAttribute("stroke-linecap", "round");
+            svg.appendChild(strich);
+        }
+
+        return svg;
+    },
+
+    /*
      * DAS WÜRFEL-ZEICHEN FÜR „NEU AUFSTELLEN" (seit v0.62.0).
      *
      * Nutzer-Entscheidung 25.08.2026: Die Nebenaktionen werden Icons. „Neu

@@ -1696,6 +1696,11 @@ Object.assign(TEAM_SCHACH, {
         const anzahl = SCHACH_RUNDE.bilanz(partie, gegner).geschlagen.length;
         const wer = (farbe === "weiss") ? "Weiss" : "Schwarz";
 
+        /*
+         * SEIT v0.65.0 EIN TOTENKOPF STATT DES BUCHSTABENS F (Nutzer-Ansage
+         * 25.08.2026). Der Buchstabe bleibt als Rückfall, wenn START fehlt
+         * (Testumgebung) — wie bei jedem anderen Zeichen-Knopf auch.
+         */
         const knopf = TEAM_SCHACH._knopf("F",
             "knopf-still knopf-klein spiel-steuer-knopf",
             () => {
@@ -1715,6 +1720,11 @@ Object.assign(TEAM_SCHACH, {
                 DIALOG.hinweis("Friedhof — " + wer,
                     "Die gefallenen Figuren von " + wer + ".", inhalt);
             });
+
+        if (typeof START !== "undefined" && START._totenkopfZeichenBauen) {
+            knopf.textContent = "";
+            knopf.appendChild(START._totenkopfZeichenBauen());
+        }
 
         const beschriftung = "Friedhof von " + wer + ", " + anzahl + " gefallen";
         knopf.setAttribute("aria-label", beschriftung);
@@ -1776,6 +1786,13 @@ Object.assign(TEAM_SCHACH, {
                 DIALOG.hinweis("Züge (" + anzahl + ")",
                     liste ? "Neueste zuerst." : "Noch kein Zug.", liste);
             });
+
+        /* Seit v0.65.0 das Verlaufs-Zeichen statt des Buchstabens Z
+           (Nutzer-Ansage 25.08.2026); der Buchstabe bleibt der Rückfall. */
+        if (typeof START !== "undefined" && START._zugverlaufZeichenBauen) {
+            knopf.textContent = "";
+            knopf.appendChild(START._zugverlaufZeichenBauen());
+        }
 
         const beschriftung = "Zugverlauf, " + anzahl + " Züge";
         knopf.setAttribute("aria-label", beschriftung);

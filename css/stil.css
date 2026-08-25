@@ -4556,6 +4556,14 @@ body.design-3d .werte-figur {
     justify-content: center;
 }
 
+/* Die Zeichen in der Knopfspalte (Totenkopf, Verlauf, Zahnrad — seit
+   v0.65.0 auch die ersten beiden). Sie füllen den Knopf wie das Zahnrad. */
+.steuer-spalte .spiel-steuer-knopf .start-zeichen {
+    width: 1.4em;
+    height: 1.4em;
+    display: block;
+}
+
 
 .faehigkeit-leer {
     opacity: 0.7;

@@ -3525,8 +3525,17 @@ pruefe("Der Friedhof steht als Knopf bei jedem Spieler, mit den eigenen Gefallen
     if (knopf.tagName !== "button") {
         throw new Error("der Friedhof ist kein Knopf, sondern " + knopf.tagName);
     }
-    if (String(knopf.textContent || "").indexOf("F") !== 0) {
-        throw new Error("der Knopf zeigt kein F, sondern " + knopf.textContent);
+    /*
+     * SEIT v0.65.0 TRAEGT ER EINEN TOTENKOPF statt des Buchstabens F
+     * (Nutzer-Ansage 25.08.2026). Geprueft wird das Zeichen; der Buchstabe
+     * bleibt nur der Rueckfall, wenn START fehlt.
+     */
+    if (!(knopf.kinder || []).some((kind) => kind.tagName === "svg")) {
+        throw new Error("der Friedhof-Knopf traegt kein Zeichen, sondern: "
+            + knopf.textContent);
+    }
+    if (String(knopf.textContent || "") !== "") {
+        throw new Error("neben dem Zeichen steht noch Text: " + knopf.textContent);
     }
     if (String(knopf.className || "").indexOf("spiel-steuer-knopf") === -1) {
         throw new Error("dem Friedhof-Knopf fehlt die Steuer-Klasse");
@@ -3761,8 +3770,13 @@ pruefe("Der Zugverlauf ist ein Z-Knopf am Spieler (v0.59.0)", () => {
     if (knopf.tagName !== "button") {
         throw new Error("Zuege ist kein Knopf, sondern " + knopf.tagName);
     }
-    if (String(knopf.textContent || "").indexOf("Z") !== 0) {
-        throw new Error("der Knopf zeigt kein Z, sondern " + knopf.textContent);
+    /* Seit v0.65.0 das Verlaufs-Zeichen statt des Buchstabens Z. */
+    if (!(knopf.kinder || []).some((kind) => kind.tagName === "svg")) {
+        throw new Error("der Zuege-Knopf traegt kein Zeichen, sondern: "
+            + knopf.textContent);
+    }
+    if (String(knopf.textContent || "") !== "") {
+        throw new Error("neben dem Zeichen steht noch Text: " + knopf.textContent);
     }
     if (String(knopf.className || "").indexOf("spiel-steuer-knopf") === -1) {
         throw new Error("dem Zuege-Knopf fehlt die Steuer-Klasse");
