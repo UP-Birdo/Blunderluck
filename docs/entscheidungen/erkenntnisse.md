@@ -1541,3 +1541,53 @@ gefährlicher als gar keiner, weil er das Nachsehen ersetzt.
 Gedächtnis. Wer einen solchen Kommentar schreibt, schreibt dazu, WO er
 gesucht hat. (Mit v0.50.0 sind die Klassen wirklich ohne Nutzer und deshalb
 gestrichen.)
+
+## Der Zustand einer Seite und die Wahl zwischen den Seiten gehören nicht an denselben Ort (v0.53.0, gemeldet v0.55.0)
+
+Mit v0.53.0 zogen die beiden Team-Karten in zwei schmale Zeilen um — eine
+über dem Brett, eine darunter. Mit ihnen zog alles um, was in den Karten
+stand, und darunter waren die Knöpfe „Mitspielen". Das war die eine Sache zu
+viel.
+
+**Was der Nutzer meldete:** „Besser an dem Punkt wie zuvor machen, dass
+Schwarz, Weiss und Zufall beisammen stehen."
+
+**Warum es schieflief:** Die Zeile ist der richtige Ort für den ZUSTAND einer
+Seite — wer dort spielt, ob sie bereit ist, ob sie am Zug ist. Sie ist der
+falsche Ort für die WAHL zwischen den Seiten, denn eine Wahl braucht die
+Möglichkeiten NEBENEINANDER. Zwischen den beiden Zeilen liegt das Brett; der
+Vergleich, den man beim Wählen anstellt, ging über einen halben Bildschirm.
+Der dritte Knopf („Zufall") stand ohnehin weiter unten und gehörte zu keiner
+Zeile — das hätte auffallen können.
+
+**Die Regel dahinter, und sie gilt über diesen Fall hinaus:** Was zu EINEM
+Ding gehört, wandert mit diesem Ding. Was eine ENTSCHEIDUNG zwischen Dingen
+ist, bleibt an einer Stelle beisammen. Beim Umräumen ist die erste Frage
+deshalb nicht „wo gehört das hin", sondern „ist das eine Eigenschaft oder
+eine Wahl".
+
+**Nebenbefund:** Beisammen stehend brauchen die drei Knöpfe keine gleiche
+Beschriftung mehr, sondern ihre eigene — aus dreimal „Mitspielen" wurde
+Weiss, Schwarz und Zufall. Ein Wort, das nur in EINEM Zusammenhang stimmt
+(hier: unter der Überschrift „Weiss"), zieht selten sauber mit um.
+
+## Die feste Seite passt nicht zu jedem Zustand desselben Bildschirms (v0.52.0, gemeldet v0.55.0)
+
+Mit v0.52.0 bekam die offene Partie eine feste Seite: volle Fensterhöhe, das
+Brett nimmt, was übrig bleibt. Gedacht war sie fürs Spielen — geschaltet war
+sie für den ganzen Bildschirm, also auch für die Zeit davor.
+
+**Was der Nutzer meldete:** „Das mit dem fixen Spiel soll beim Entscheiden,
+welches Team man ist, noch nicht sein, und da ist es eher verwirrend."
+
+**Warum er recht hat:** Die feste Seite ist eine Zusage darüber, was das
+WICHTIGSTE auf dem Schirm ist — sie gibt dem Brett allen Platz und drückt
+alles andere an den Rand. Vor dem Anpfiff ist das Brett aber nur eine
+Vorschau; wichtig sind die Seitenwahl, wer schon da ist und das Einladen.
+Genau die wurden klein gedrückt.
+
+**Die Regel dahinter:** Ein Bildschirm, der mehrere Zustände hat (wartend,
+laufend, beendet), darf sein Layout an EINEN davon binden — aber dann muss
+die Bindung auch an diesen Zustand geknüpft sein und nicht an den Bildschirm.
+Der dritte Wert von `TABS.rundeSetzen` hängt seit v0.55.0 an `laeuft`, nicht
+mehr an „diese Partie ist offen".

@@ -184,6 +184,15 @@ wird. Die Liste dessen, was noch kommt, steht in [../ROADMAP.md](../ROADMAP.md).
       (v0.50.0) — `.verlauf-kasten` galt seit v0.37.0 als ohne Nutzer und
       war es nie. „Wird das noch benutzt?" beantwortet die Suche, nicht das
       Gedächtnis
+    - **Der Zustand einer Seite und die Wahl zwischen den Seiten gehören
+      nicht an denselben Ort** (v0.53.0, gemeldet v0.55.0) — beim Umräumen
+      ist die erste Frage nicht „wo gehört das hin", sondern **„ist das eine
+      Eigenschaft oder eine Wahl"**. Eine Wahl braucht ihre Möglichkeiten
+      nebeneinander
+    - **Die feste Seite passt nicht zu jedem Zustand desselben Bildschirms**
+      (v0.52.0, gemeldet v0.55.0) — wer das Layout an einen Zustand bindet
+      (hier: „das Brett bekommt allen Platz"), knüpft die Bindung auch an
+      diesen Zustand und nicht an den Bildschirm
 
 ## entschieden.md - Entschieden - und warum
 

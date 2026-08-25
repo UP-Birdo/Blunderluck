@@ -3,6 +3,15 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.56.0 — 25.08.2026
+
+**Bei der Brettform-Wahl steht kein Erklärabsatz mehr — die Knöpfe und Bilder
+sagen es selbst.**
+
+- Unter den drei Knöpfen (Quadratisch, Rechteckig, Kreuz) stand ein Satz, der
+  die gewählte Form beschrieb. Er wiederholte nur, was die Knöpfe und die
+  Brettbilder auf den Kacheln ohnehin zeigen — und schob die Kacheln nach
+  unten, also genau das, was man dort antippen will.
 ## v0.55.0 — 25.08.2026
 
 **Beim Aussuchen der Seite rollt die Runde wieder — und Weiss, Schwarz und

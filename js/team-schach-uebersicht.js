@@ -160,13 +160,17 @@ Object.assign(TEAM_SCHACH, {
 
         karte.appendChild(leiste);
 
-        const gewaehlt = SCHACH_VARIANTEN.FORMEN.find(
-            (form) => form.id === TEAM_SCHACH.gewaehlteForm);
-
-        if (gewaehlt) {
-            karte.appendChild(TEAM_SCHACH._element("p", "erklaerung", gewaehlt.beschreibung));
-        }
-
+        /*
+         * KEIN ERKLÄRABSATZ MEHR UNTER DEN FORM-KNÖPFEN (seit v0.56.0).
+         *
+         * Nutzer-Ansage 25.08.2026: „Beschreibung unter Brettform weg,
+         * selbst erklärend." Die drei Knöpfe (Quadratisch, Rechteckig, Kreuz)
+         * und die Brettbilder auf den Kacheln darunter sagen bereits, was
+         * jede Form ist; der Satz `FORMEN[].beschreibung` wiederholte es nur
+         * und schob die Kacheln nach unten. Das Datenfeld bleibt im Modell —
+         * es tut niemandem weh und könnte an anderer Stelle wieder gebraucht
+         * werden.
+         */
         return karte;
     },
 
