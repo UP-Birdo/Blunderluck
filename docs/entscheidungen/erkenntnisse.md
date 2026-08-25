@@ -70,6 +70,18 @@ umschrieben statt zitiert.
 sondern abschnittsweise ändern. Das ist ohnehin die bessere Gewohnheit — es
 hält die Änderung klein und macht sichtbar, was wirklich anders wird.
 
+**Dritter Anlauf, dieselbe Ursache (25.08.2026, beim Umzugs-Aufräumen):** Ein
+`perl`-Ausdruck, der einen ganzen Absatz ersetzen sollte, enthielt „Haus:"
+gefolgt von einem Zeilenumbruch-Escape. Für die Schranke war das ein Pfad,
+und sie wies ab. **Es ist nicht die Netz-Adresse allein** — es ist JEDER
+Doppelpunkt, hinter dem etwas wie ein Pfad aussieht, und ein `\n` reicht
+dafür aus.
+
+**Die schärfere Regel:** Lange Regex-Ersetzungen über ganze Absätze sind hier
+das falsche Werkzeug. Wer einen Absatz ändern will, nimmt das
+Bearbeiten-Werkzeug mit altem und neuem Text — dann steht der fragliche
+Inhalt in keinem Befehl, und die Änderung ist obendrein lesbar.
+
 
 ### Ein leerer Bereich darf nicht verschwinden (v0.47.0)
 
