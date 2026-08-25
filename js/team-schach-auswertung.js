@@ -578,7 +578,18 @@ Object.assign(TEAM_SCHACH, {
             "faehigkeit-zeile faehigkeit-reihe"
             + (meine ? " faehigkeit-reihe-meine" : " faehigkeit-reihe-gegner"));
 
+        /*
+         * EINE LEERE REIHE ZIEHT SICH NICHT ÜBER DIE BREITE (seit v0.72.0).
+         *
+         * Am Rechner gesehen 26.08.2026: „noch keine" stand am linken
+         * Bildschirmrand, der Team-Kasten des Gegners rechts — dazwischen
+         * die ganze Fensterbreite. Der Satz gehört zu diesem Kasten, also
+         * steht er auch bei ihm. Die Klasse sagt der Stildatei, dass diese
+         * Reihe nur ihren Text breit sein soll; ohne sie nimmt sie den
+         * ganzen Platz (`flex: 1 1 auto`), den ein voller Streifen braucht.
+         */
         if (koennen.length === 0) {
+            reihe.className += " faehigkeit-reihe-leer";
             reihe.appendChild(TEAM_SCHACH._element("span", "erklaerung faehigkeit-leer",
                 "noch keine"));
             return reihe;

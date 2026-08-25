@@ -2,6 +2,53 @@
 
 ## Teuer erkaufte Erkenntnisse
 
+### `overflow-y: auto` macht die WAAGERECHTE Achse gleich mit rollbar (v0.68.0, gefunden v0.72.0)
+
+**Der Fehlschlag:** Der Nutzer schickte am 26.08.2026 ein Bild vom Rechner.
+Unter dem Spielfeld lag eine waagerechte Bildlaufleiste ueber die volle
+Breite — an einem Bildschirm, der laut Entwurf auf EINE Seite passt und
+ueberhaupt nicht rollen soll.
+
+**Warum:** `body.partie-fest .schach` hat `overflow-y: auto`, damit ein sehr
+flaches Fenster notfalls doch rollen kann. Nach den CSS-Regeln gilt aber:
+Steht EINE Achse auf `auto`, kann die andere nicht mehr `visible` sein — sie
+wird stillschweigend ebenfalls zu `auto`. Der Bereich war damit auch
+waagerecht ein Rollbereich.
+
+Herausgeragt hat, was seit v0.68.0 absichtlich heraussteht: Der Team-Kasten
+und die Zug-Leiste ziehen sich mit einem negativen Rand ueber den Rand des
+Inhalts, damit sie buendig abschliessen. Gemessen: `clientWidth` 788,
+`scrollWidth` 804 — exakt die 16 Pixel des Randes.
+
+**Die Loesung, und warum nicht die naheliegende:** `overflow-x: hidden` haette
+die Leiste auch beseitigt — und dabei den Kasten am Rand gekappt, also genau
+das kaputt gemacht, wofuer er den Ueberstand hat. Stattdessen reicht der
+Bereich jetzt selbst bis an die Kante (negativer Rand) und holt sich den
+Abstand als eigenen Innenabstand zurueck. Der Kasten endet AN der Kante,
+statt darueber hinaus.
+
+**Der zweite Fehler, den dieselbe Messung zutage foerderte:** Am Handy ist
+der Rand des Inhalts 12 Pixel, Kasten und Leiste rechneten aber weiter mit
+`--abstand`, also 16 — vier Pixel zu weit. Beide Zahlen standen an
+verschiedenen Stellen und liefen auseinander. Es gibt jetzt `--inhalt-rand`,
+und alle vier Stellen beziehen sich darauf.
+
+**Die Regel daraus:** Wer einen negativen Rand benutzt, um etwas ueber seinen
+Behaelter hinausragen zu lassen, prueft ZWEI Dinge: ob der Behaelter rollt
+(auch auf der anderen Achse), und ob der Wert, gegen den er rechnet, wirklich
+derselbe ist wie der Innenabstand des Behaelters — auf JEDER Bildschirmgroesse.
+
+**Wie es gefunden wurde, und das ist der eigentliche Ertrag:** nicht durch
+Lesen, sondern durch Messen. Eine Wegwerf-Seite im Ablage-Ordner laedt die
+echten Dateien aus `js\` und `css\`, stellt ohne Netz eine laufende Partie
+her und schreibt die gerechneten Groessen sichtbar auf die Seite; Edge
+zeichnet sie im Kopflos-Modus als Bild. Der 4-Pixel-Ueberstand wurde dabei
+namentlich gemeldet („phasen-leiste stand-leiste L+4 R+4") — geraten haette
+ich ihn nie. **Die Testkette kann das grundsaetzlich nicht:** Sie laedt zwar
+die echten Dateien, rendert aber nicht. Fuer alles, was allein die Stildatei
+entscheidet, gibt es nur diesen Weg oder den Blick des Nutzers.
+
+
 ### Bei gleicher Spezifitaet gewinnt die SPAETERE Regel — vier Runden lang unbemerkt (v0.67.0, gefunden v0.71.0)
 
 **Der Fehlschlag:** Mit v0.67.0 wurde aus der Marke mit Wort eine Karte, auf

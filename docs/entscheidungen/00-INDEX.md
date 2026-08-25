@@ -51,6 +51,10 @@ wird. Die Liste dessen, was noch kommt, steht in [../ROADMAP.md](../ROADMAP.md).
   Play-Store-Umbau braeuchte - Referenz: docs\uebergabe-schach-app.md)
 
 ## erkenntnisse.md - Teuer erkaufte Erkenntnisse
+- **`overflow-y: auto` macht die WAAGERECHTE Achse gleich mit rollbar**
+  (v0.68.0, gefunden v0.72.0 — der buendige Team-Kasten erzeugte dadurch eine
+  Bildlaufleiste; enthaelt ausserdem, WIE man so etwas misst: Wegwerf-Seite
+  mit den echten Dateien plus Edge im Kopflos-Modus)
 - **Bei gleicher Spezifitaet gewinnt die SPAETERE Regel** (v0.67.0, gefunden
   v0.71.0 — das Zeichen auf der Item-Karte war vier Auslieferungen lang 16
   statt 26 Pixel gross, weil eine aeltere Regel weiter unten stand; die

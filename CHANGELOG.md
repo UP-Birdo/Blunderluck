@@ -3,6 +3,29 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.72.0 — 26.08.2026
+
+**Die störende Bildlaufleiste unter dem Spielfeld ist weg, und die Karten
+haben endlich das richtige Verhältnis.** Alles in dieser Runde ist am Rechner
+im Browser nachgemessen, nicht gerechnet.
+
+- **Die waagerechte Bildlaufleiste unter dem Brett ist verschwunden.** Sie
+  entstand, weil der Team-Kasten und die Zug-Leiste absichtlich ein Stück
+  über den Rand hinausragen — der Spielbereich hielt das für etwas, das man
+  wegrollen können muss.
+- **Das Brett ist dadurch etwas grösser geworden** (rund 10 Pixel), weil der
+  Platz jetzt dem Brett gehört statt der Leiste.
+- **Am Handy standen Zug-Leiste und Team-Kasten vier Pixel zu weit über dem
+  Rand.** Der Rand ist dort schmaler als am Rechner, die beiden rechneten
+  aber weiter mit dem breiten Wert.
+- **Die Karten sind breiter** (44 statt 38 Pixel, am Handy 37 statt 36). Die
+  Team-Karte ist 62 Pixel hoch, nicht 54 wie in v0.71.0 angenommen — die
+  Karten waren dadurch zu schmal für ihre Höhe. Jetzt stimmt das Verhältnis
+  einer Spielkarte auf allen Geräten.
+- **„noch keine" steht jetzt beim Team-Kasten**, wenn eine Seite noch nichts
+  gesammelt hat. Vorher stand der Satz am gegenüberliegenden Bildschirmrand,
+  weit weg von dem, worauf er sich bezieht.
+
 ## v0.71.0 — 25.08.2026
 
 **Die Item-Karten sind jetzt genau so hoch wie die Team-Karte daneben — und
