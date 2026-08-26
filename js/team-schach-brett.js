@@ -253,6 +253,45 @@ Object.assign(TEAM_SCHACH, {
         /* Die Felder, über die zuletzt gezogen wurde — siehe _letzteSpur. */
         const spur = TEAM_SCHACH._letzteSpur(partie);
 
+        /*
+         * DIE VORSCHLÄGE DES EIGENEN TEAMS (seit v0.83.0, Fund A2-3): Wer im
+         * Einigkeits-Modus zieht, zieht erst einmal nur einen VORSCHLAG — die
+         * Mitspieler sehen die Figur durchsichtig auf ihrem Ziel (wie einen
+         * Grab-Schemen) und den Laufweg grün. Der Gegner sieht nichts davon
+         * (`_teamVorschlaege` liefert ihm eine leere Liste). Eine
+         * vorgeschlagene FÄHIGKEIT markiert nur ihr Zielfeld — ihre Karte in
+         * der Hand trägt die eigentliche Marke.
+         */
+        const vorschlaege = TEAM_SCHACH._teamVorschlaege(partie, person);
+        const vorschau = { geister: {}, weg: {}, ziele: {} };
+
+        for (const eintrag of vorschlaege) {
+            const dessen = eintrag.vorschlag;
+
+            if (dessen.art === "faehigkeit") {
+                if (dessen.zielFeld >= 0) {
+                    vorschau.ziele[dessen.zielFeld] = true;
+                }
+                continue;
+            }
+
+            const laeufer = SCHACH.figurAuf(stand, dessen.von);
+            if (laeufer === ".") {
+                continue;
+            }
+
+            for (const wegFeld of SCHACH.wegFelder(stand, dessen.von, dessen.nach)) {
+                vorschau.weg[wegFeld] = true;
+            }
+            vorschau.ziele[dessen.nach] = true;
+            vorschau.geister[dessen.nach] = laeufer;
+        }
+
+        /* Solange Vorschläge offen sind, bleibt die Frist im Blick. */
+        if (vorschlaege.length > 0) {
+            TEAM_SCHACH._fristVerfolgen(partie);
+        }
+
         /* Was sich seit dem letzten Zeichnen geändert hat — siehe
            `_veraenderungen`. GENAU EINMAL je Zeichnung abfragen: Der Aufruf
            merkt sich den neuen Anblick, ein zweiter fände nichts mehr. */
@@ -578,6 +617,29 @@ Object.assign(TEAM_SCHACH, {
                 }
             }
 
+            /*
+             * Der Vorschlag eines Team-Mitglieds (seit v0.83.0): Laufweg und
+             * Ziel grün, auf einem freien Ziel die Figur als Schemen — mit
+             * derselben Klasse wie ein Grab, das ist die gewünschte Optik
+             * („transparent wie beim Nekromanten"). Steht auf dem Ziel eine
+             * Figur (ein Schlag), bleibt sie sichtbar und nur der grüne
+             * Rahmen sagt, wohin es gehen soll.
+             */
+            if (vorschau.weg[feld]) {
+                zelle.classList.add("feld-vorschlag-weg");
+            }
+            if (vorschau.ziele[feld]) {
+                zelle.classList.add("feld-vorschlag-ziel");
+            }
+            if (vorschau.geister[feld] && figur === ".") {
+                zelle.appendChild(TEAM_SCHACH._element("span",
+                    "figur figur-schemen "
+                    + ((SCHACH.farbeVon(vorschau.geister[feld]) === "weiss")
+                        ? "figur-weiss" : "figur-schwarz")
+                    + TEAM_SCHACH._figurKlasse(vorschau.geister[feld]),
+                    TEAM_SCHACH._figurZeichen(vorschau.geister[feld])));
+            }
+
             /* Wartet die Fähigkeit auf ein Ziel? Dann sind die möglichen
                Felder markiert. */
             if (TEAM_SCHACH.zielFelder.indexOf(feld) !== -1) {
@@ -721,10 +783,9 @@ Object.assign(TEAM_SCHACH, {
             halter.appendChild(zugmuster);
         }
 
-        const abstimmung = TEAM_SCHACH._abstimmungBauen(partie, person);
-        if (abstimmung) {
-            halter.appendChild(abstimmung);
-        }
+        /* Die Abstimmungs-Karte stand bis v0.82.0 hier und drückte das Brett
+           auf die Mindestbreite (Fund A2-3) — die Vorschläge zeigt seit
+           v0.83.0 das Brett selbst, siehe `_teamVorschlaege`. */
 
         return halter;
     },
@@ -881,88 +942,42 @@ Object.assign(TEAM_SCHACH, {
     },
 
     /*
-     * Der offene Zugvorschlag, über den das Team abstimmt. Nur in Partien, die
-     * mit „Team muss sich einig sein“ angelegt wurden.
+     * HIER STAND BIS v0.82.0 `_abstimmungBauen` — die Abstimmungs-Karte mit
+     * „Einverstanden"/„Verwerfen" und Countdown (206 px hoch, drückte das
+     * Brett auf die Mindestbreite; Fund A2-3 der Mess-Runde vom 26.08.2026).
+     * Seit v0.83.0 zeigt das Brett die Vorschläge selbst: durchsichtige
+     * Figur auf dem Ziel plus grüner Laufweg (Nutzer-Ansage 26.08.2026,
+     * „kein Feld, kein Extra"). Zugestimmt wird, indem man denselben Zug
+     * selbst macht; die Knöpfe `zugMittragen`/`vorschlagVerwerfen` sind mit
+     * der Karte gegangen.
      */
-    _abstimmungBauen(partie, person) {
-        if (!partie.vorschlag || partie.vorschlag.zugZaehler !== partie.zugZaehler) {
-            return null;
+
+    /*
+     * Die offenen Vorschläge MEINES Teams — nur die bekommt man zu sehen:
+     * Der Gegner sieht von alledem nichts (Nutzer-Ansage 26.08.2026). Leer,
+     * wenn ich nicht im Team am Zug bin oder gar nicht mitspiele.
+     */
+    _teamVorschlaege(partie, person) {
+        if (!person || !SCHACH_RUNDE.brauchtEinigkeit(partie)) {
+            return [];
         }
 
         const meinTeam = SCHACH_RUNDE.teamVon(partie, person.id);
-        if (meinTeam !== partie.stand.amZug) {
-            return null;
+        if (!meinTeam || meinTeam !== partie.stand.amZug) {
+            return [];
         }
 
-        const breite = SCHACH.breiteVon(partie.stand);
-        const hoehe = SCHACH.hoeheVon(partie.stand);
-        const vorschlag = partie.vorschlag;
-
-        const karte = TEAM_SCHACH._element("section", "karte abstimmung");
-        karte.appendChild(TEAM_SCHACH._element("h3", "",
-            (vorschlag.art === "faehigkeit") ? "Fähigkeit vorgeschlagen" : "Zug vorgeschlagen"));
-
-        const was = (vorschlag.art === "faehigkeit")
-            ? SCHACH_VARIANTEN.faehigkeitTitel(vorschlag.faehigkeit)
-                + ((vorschlag.zielFeld >= 0)
-                    ? " auf " + SCHACH.feldName(vorschlag.zielFeld, breite, hoehe)
-                    : "")
-            : SCHACH.feldName(vorschlag.von, breite, hoehe) + " nach "
-                + SCHACH.feldName(vorschlag.nach, breite, hoehe);
-
-        karte.appendChild(TEAM_SCHACH._element("p", "abstimmung-zug",
-            (vorschlag.name || "Jemand") + " schlägt vor: " + was));
-
-        /* Der Countdown — er läuft für alle gleich, weil die Frist im
-           gemeinsamen Stand steht. */
-        if (vorschlag.frist) {
-            const bleiben = Math.max(0, Math.ceil((vorschlag.frist - Date.now()) / 1000));
-            karte.appendChild(TEAM_SCHACH._element("p", "abstimmung-frist",
-                (bleiben > 0)
-                    ? "Noch " + bleiben + " Sekunden — danach gilt der Vorschlag."
-                    : "Die Zeit ist um."));
-        }
-
-        const fehlende = partie.teams[meinTeam]
-            .filter((id) => vorschlag.stimmen.indexOf(id) === -1);
-
-        /*
-         * Solange eine Abstimmung läuft, wird jede Sekunde neu gezeichnet —
-         * anders ließe sich kein Countdown zeigen. Und wenn die Frist abläuft,
-         * schiebt ihn das erste Gerät an, das es bemerkt.
-         */
-        TEAM_SCHACH._fristVerfolgen(partie);
-
-        karte.appendChild(TEAM_SCHACH._element("p", "erklaerung",
-            fehlende.length === 0
-                ? "Alle sind einverstanden."
-                : "Es fehlt noch: " + fehlende.map((id) => TEAM_SCHACH._nameVon(id)).join(", ")));
-
-        const leiste = TEAM_SCHACH._element("div", "karte-fuss");
-
-        if (partie.vorschlag.stimmen.indexOf(person.id) === -1) {
-            leiste.appendChild(TEAM_SCHACH._knopf("Einverstanden", "knopf-haupt",
-                () => TEAM_SCHACH.zugMittragen(partie)));
-        } else {
-            leiste.appendChild(TEAM_SCHACH._element("span", "chip chip-fertig",
-                "Du bist einverstanden"));
-        }
-
-        leiste.appendChild(TEAM_SCHACH._knopf("Verwerfen", "knopf-still knopf-klein",
-            () => TEAM_SCHACH.vorschlagVerwerfen(partie)));
-
-        karte.appendChild(leiste);
-        return karte;
+        return SCHACH_RUNDE.offeneVorschlaege(partie, meinTeam);
     },
 
     /*
-     * Hält den Countdown am Laufen und löst den Vorschlag aus, wenn die Frist
-     * abgelaufen ist.
+     * Hält die Frist im Blick, solange Vorschläge offen sind, und lässt sie
+     * das Modell auflösen, wenn sie abläuft (Säumige werden übergangen).
      *
-     * Der Zeitgeber wird bei jedem Zeichnen neu gesetzt (und der alte gelöscht),
-     * damit nie zwei nebeneinander laufen. Ausgelöst wird über denselben Weg wie
-     * ein Zug — die Zugzähler-Prüfung sorgt dafür, dass es auch dann nur einmal
-     * passiert, wenn drei Geräte gleichzeitig aufwachen.
+     * Der Zeitgeber wird bei jedem Zeichnen neu gesetzt (und der alte
+     * gelöscht), damit nie zwei nebeneinander laufen. Ausgelöst wird über
+     * denselben Weg wie ein Zug — die Zugzähler-Prüfung sorgt dafür, dass es
+     * auch dann nur einmal passiert, wenn drei Geräte gleichzeitig aufwachen.
      */
     _fristVerfolgen(partie) {
         if (TEAM_SCHACH.fristZeitgeber !== null) {
@@ -970,59 +985,37 @@ Object.assign(TEAM_SCHACH, {
             TEAM_SCHACH.fristZeitgeber = null;
         }
 
-        const vorschlag = partie.vorschlag;
-        if (!vorschlag || !vorschlag.frist) {
+        const person = TEAM_SCHACH._ich();
+        const offen = person ? TEAM_SCHACH._teamVorschlaege(partie, person) : [];
+        if (offen.length === 0) {
             return;
         }
 
-        const bleiben = vorschlag.frist - Date.now();
+        const frist = Math.min(...offen.map((eintrag) => eintrag.vorschlag.frist));
+        const bleiben = frist - Date.now();
+
+        /* Ist die Frist schon um, aber nichts auszuführen (Uneinigkeit unter
+           den Abgebenden), genügt ein ruhiger Sekundentakt. */
+        const wartezeit = (bleiben <= 0)
+            ? 1000
+            : Math.max(250, Math.min(bleiben, 1000));
 
         TEAM_SCHACH.fristZeitgeber = window.setTimeout(() => {
             TEAM_SCHACH.fristZeitgeber = null;
 
             const jetzt = SCHACH_TAFEL.partie(TEAM_SCHACH.abgleich.daten, partie.id);
-            if (!jetzt || !jetzt.vorschlag) {
-                TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
+            if (!jetzt) {
                 return;
             }
-
-            if (Date.now() >= jetzt.vorschlag.frist) {
-                TEAM_SCHACH.fristAusloesen(jetzt);
-            } else {
-                TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
-            }
-        }, Math.max(250, Math.min(bleiben, 1000)));
+            TEAM_SCHACH.fristAusloesen(jetzt);
+        }, wartezeit);
     },
 
     async fristAusloesen(partie) {
         const neu = SCHACH_RUNDE.fristAbgelaufen(partie, Date.now());
         if (!neu) {
-            return;
-        }
-        await TEAM_SCHACH._sendenMitPruefung(neu, partie.zugZaehler);
-    },
-
-    async zugMittragen(partie) {
-        const person = TEAM_SCHACH._ich();
-        if (!person) {
-            return;
-        }
-
-        const neu = SCHACH_RUNDE.zugMittragen(partie, person.id);
-        if (!neu) {
-            return;
-        }
-        await TEAM_SCHACH._sendenMitPruefung(neu, partie.zugZaehler);
-    },
-
-    async vorschlagVerwerfen(partie) {
-        const person = TEAM_SCHACH._ich();
-        if (!person) {
-            return;
-        }
-
-        const neu = SCHACH_RUNDE.vorschlagVerwerfen(partie, person.id);
-        if (!neu) {
+            /* Noch nicht so weit — die Uhr bleibt im Blick. */
+            TEAM_SCHACH._fristVerfolgen(partie);
             return;
         }
         await TEAM_SCHACH._sendenMitPruefung(neu, partie.zugZaehler);

@@ -422,14 +422,27 @@ const SCHACH_RUNDE = {
             },
 
             /*
-             * Der Vorschlag, über den gerade abgestimmt wird (nur bei
-             * `einigkeit`). Er trägt entweder einen Zug oder eine Fähigkeit:
-             *
-             *   { art: "zug", von, nach, umwandlung, wer, name, zugZaehler,
-             *     stimmen: [ids], frist: <Zeitpunkt in ms> }
-             *   { art: "faehigkeit", faehigkeit, zielFeld, … }
+             * ALTBESTAND (bis v0.82.0): der EINE Vorschlag mit Stimmen-Liste
+             * („Einverstanden"-Knopf). Seit v0.83.0 stimmt das Team ab, indem
+             * jeder denselben Zug selbst macht (`vorschlaege`, Nutzer-Ansage
+             * 26.08.2026). Das Feld bleibt im Datenvertrag und wird
+             * durchgereicht, ausgewertet wird es nirgends mehr — wie `phase`
+             * im Würfel Quizz.
              */
             vorschlag: null,
+
+            /*
+             * Die Zug-Vorschläge der Abstimmung (seit v0.83.0, nur bei
+             * `einigkeit`): je Spieler-Kennung höchstens EINER — sein letzter.
+             * Ausgeführt wird, sobald alle aus dem Team am Zug DENSELBEN
+             * vorgeschlagen haben (oder die Frist die Säumigen übergeht):
+             *
+             *   { "<spielerId>": { art: "zug", von, nach, umwandlung,
+             *     name, zugZaehler, wann, frist },
+             *     "<andereId>": { art: "faehigkeit", faehigkeit, zielFeld,
+             *     wahl, … } }
+             */
+            vorschlaege: {},
 
             /*
              * Wie oft jemand eine Abstimmung hat verstreichen lassen. Daraus
@@ -1397,6 +1410,47 @@ const SCHACH_RUNDE = {
                     stimmen: stimmen
                         .filter((id) => typeof id === "string" && id !== "")
                         .filter((id, stelle, alle) => alle.indexOf(id) === stelle)
+                };
+            }
+        }
+
+        /*
+         * Die Zug-Vorschläge der Abstimmung (seit v0.83.0) — additiv
+         * nachgerüstet: Eine Partie von früher hat keine, dann bleibt das
+         * Objekt leer. Nur brauchbare Einträge werden übernommen; was weder
+         * ein Zug noch eine bekannte Fähigkeit ist, fällt weg.
+         */
+        if (roh.vorschlaege && typeof roh.vorschlaege === "object") {
+            for (const id of Object.keys(roh.vorschlaege)) {
+                const roher = roh.vorschlaege[id];
+                if (id === "" || !roher || typeof roher !== "object") {
+                    continue;
+                }
+
+                const istFaehigkeit = (roher.art === "faehigkeit")
+                    && !!SCHACH_VARIANTEN.FAEHIGKEITEN[roher.faehigkeit];
+
+                if (!istFaehigkeit
+                    && !(Number.isInteger(roher.von) && Number.isInteger(roher.nach))) {
+                    continue;
+                }
+
+                runde.vorschlaege[id] = {
+                    art: istFaehigkeit ? "faehigkeit" : "zug",
+                    faehigkeit: istFaehigkeit ? roher.faehigkeit : "",
+                    zielFeld: Number.isInteger(roher.zielFeld) ? roher.zielFeld : -1,
+                    von: Number.isInteger(roher.von) ? roher.von : -1,
+                    nach: Number.isInteger(roher.nach) ? roher.nach : -1,
+                    umwandlung: (typeof roher.umwandlung === "string")
+                        ? roher.umwandlung : "D",
+                    wahl: (typeof roher.wahl === "string") ? roher.wahl : "",
+                    name: (typeof roher.name === "string") ? roher.name : "",
+                    zugZaehler: Number.isInteger(roher.zugZaehler)
+                        ? roher.zugZaehler : 0,
+                    wann: (typeof roher.wann === "number" && isFinite(roher.wann))
+                        ? roher.wann : 0,
+                    frist: (typeof roher.frist === "number" && isFinite(roher.frist))
+                        ? roher.frist : 0
                 };
             }
         }
@@ -4717,6 +4771,7 @@ const SCHACH_RUNDE = {
 
         /* Ein Zug beendet jede offene Abstimmung. */
         neu.vorschlag = null;
+        neu.vorschlaege = {};
 
         /*
          * Verlorene Figuren merken — die Wiedergeburt holt sie zurück.
@@ -5050,14 +5105,32 @@ const SCHACH_RUNDE = {
      * Abstimmung im Team (nur wenn `regeln.einigkeit` gesetzt ist)
      *
      * Die Hausregel lautet sonst: Wer zuerst zieht, hat gezogen. Wer diese
-     * Partie mit Einigkeit angelegt hat, will genau das nicht — dann wird ein
-     * Zug erst vorgeschlagen und ausgeführt, sobald ALLE aus dem Team am Zug
-     * zugestimmt haben. Der Vorschlagende stimmt automatisch mit zu.
+     * Partie mit Einigkeit angelegt hat, will genau das nicht.
      *
-     * Der Vorschlag steht im gemeinsamen Stand: Anders als ein Vorzug ist er
-     * kein Geheimnis — das eigene Team muss ihn ja sehen, und dass der Gegner
-     * mitliest, ist der Preis dieser Einstellung. Sie steht deshalb in der
-     * Auswahl mit diesem Hinweis.
+     * SEIT v0.83.0 OHNE KNÖPFE (Nutzer-Ansage 26.08.2026): Jeder aus dem
+     * Team macht seinen Zug einfach selbst am Brett. Er wird nicht
+     * ausgeführt, sondern als SEIN Vorschlag gemerkt (`vorschlaege`, je
+     * Spieler der letzte); die Mitspieler sehen ihn als durchsichtige Figur
+     * mit grünem Laufweg. Ausgeführt wird, sobald ALLE aus dem Team am Zug
+     * DASSELBE vorgeschlagen haben — wer anderer Meinung ist, macht einfach
+     * seinen eigenen Zug, und weiter geht es erst, wenn alle dasselbe tun.
+     * Bis v0.82.0 gab es stattdessen EINEN Vorschlag mit
+     * „Einverstanden"-Knopf und Stimmen-Liste (`vorschlag`, bleibt als
+     * Altbestand im Datenvertrag).
+     *
+     * DIE FRIST BLEIBT ALS RÜCKFALL (Entscheidung 26.08.2026, Hintergrund:
+     * `entscheidungen\offen-und-abgelehnt.md`, „Warum die Abstimmung eine
+     * Frist braucht"): Ohne sie stünde das Team still, sobald EINER aufhört
+     * mitzuspielen — bei einer Partie über Tage der Normalfall. Nach Ablauf
+     * zählen nur die ABGEGEBENEN Vorschläge: Sind die sich einig, wird
+     * gezogen, und wer nichts abgegeben hat, bekommt seinen Strich
+     * (`versaeumt`, verkürzt die nächste Frist). Sind sich die Abgebenden
+     * nicht einig, tut auch die Uhr nichts.
+     *
+     * Die Vorschläge stehen im gemeinsamen Stand — das eigene Team muss sie
+     * ja sehen. DER BILDSCHIRM ZEIGT SIE NUR DEM EIGENEN TEAM; dass der
+     * Gegner die Daten lesen KÖNNTE, ist der Preis dieser Einstellung und
+     * war es schon beim alten Verfahren.
      * ---------------------------------------------------------------- */
 
     brauchtEinigkeit(runde) {
@@ -5087,9 +5160,11 @@ const SCHACH_RUNDE = {
     },
 
     /*
-     * Schlägt einen Zug vor. Ist man allein im Team, wird er sofort ausgeführt —
-     * Einigkeit mit sich selbst ist keine Abstimmung wert.
-     * Liefert die neue Runde oder null.
+     * Merkt den Zug eines Spielers als SEINEN Vorschlag — ein weiterer Zug
+     * desselben Spielers ersetzt ihn. Ist man allein im Team (oder ohne
+     * Einigkeitspflicht), wird sofort gezogen — Einigkeit mit sich selbst
+     * ist keine Abstimmung wert.
+     * Liefert die neue Runde (oder gleich das Zug-Ergebnis) oder null.
      */
     zugVorschlagen(runde, spielerId, von, nach, umwandlung, wer, zeitpunkt) {
         const alt = SCHACH_RUNDE.normalisieren(runde);
@@ -5106,7 +5181,7 @@ const SCHACH_RUNDE = {
             return SCHACH_RUNDE.ziehen(alt, spielerId, von, nach, umwandlung, wer, zeitpunkt);
         }
 
-        /* Der Zug muss regelkonform sein — sonst stimmt das Team über etwas ab,
+        /* Der Zug muss regelkonform sein — sonst schlägt jemand etwas vor,
            das gar nicht geht. */
         if (!SCHACH.ziehen(alt.stand, von, nach, umwandlung)) {
             return null;
@@ -5115,22 +5190,25 @@ const SCHACH_RUNDE = {
         const wann = (zeitpunkt === undefined) ? Date.now() : zeitpunkt;
         const neu = SCHACH_RUNDE.kopieren(alt);
 
-        neu.vorschlag = {
+        neu.vorschlaege[spielerId] = {
             art: "zug",
             faehigkeit: "",
             zielFeld: -1,
             von: von,
             nach: nach,
             umwandlung: umwandlung || "D",
-            wer: spielerId,
+            wahl: "",
             name: wer || "",
             zugZaehler: alt.zugZaehler,
-            frist: wann + SCHACH_RUNDE.fristFuer(alt, farbe),
-            stimmen: [spielerId]
+            wann: wann,
+            frist: wann + SCHACH_RUNDE.fristFuer(alt, farbe)
         };
 
-        neu.geaendertAm = wann;
-        return neu;
+        /* Wer selbst zieht, ist dabei: Sein Säumnis-Zähler beginnt von vorn,
+           und damit gilt beim nächsten Mal wieder die volle Frist. */
+        delete neu.versaeumt[spielerId];
+
+        return SCHACH_RUNDE._vorschlaegePruefen(neu, farbe, wann);
     },
 
     /*
@@ -5170,119 +5248,179 @@ const SCHACH_RUNDE = {
         const wann = (zeitpunkt === undefined) ? Date.now() : zeitpunkt;
         const neu = SCHACH_RUNDE.kopieren(alt);
 
-        neu.vorschlag = {
+        neu.vorschlaege[spielerId] = {
             art: "faehigkeit",
             faehigkeit: art,
             zielFeld: Number.isInteger(zielFeld) ? zielFeld : -1,
             von: -1,
             nach: -1,
 
-            /* Auch die Wahl beim Bauernschub gehört in den Vorschlag: Das Team
-               stimmt über die fertige Handlung ab, nicht über die halbe. */
+            /* Auch die Wahl beim Bauernschub gehört in den Vorschlag: Einig
+               ist das Team erst über die FERTIGE Handlung, nicht die halbe. */
             umwandlung: (SCHACH.UMWANDLUNGEN.indexOf(umwandlung) !== -1)
                 ? umwandlung : "D",
 
             /*
              * Und die zweite Zusatzwahl (seit v0.80): heute nur die Lage der
              * Mauer („senkrecht"), sonst leer. Sie gehoert aus demselben Grund
-             * in den Vorschlag wie die Umwandlung — sonst stimmt das Team ueber
-             * eine waagerechte Mauer ab und bekommt eine senkrechte.
+             * in den Vorschlag wie die Umwandlung — sonst meint einer die
+             * waagerechte Mauer und bekommt eine senkrechte.
              */
             wahl: (typeof wahl === "string") ? wahl : "",
 
-            wer: spielerId,
             name: wer || "",
             zugZaehler: alt.zugZaehler,
-            frist: wann + SCHACH_RUNDE.fristFuer(alt, farbe),
-            stimmen: [spielerId]
+            wann: wann,
+            frist: wann + SCHACH_RUNDE.fristFuer(alt, farbe)
         };
 
-        neu.geaendertAm = wann;
-        return neu;
-    },
-
-    /*
-     * Stimmt dem offenen Vorschlag zu. Sobald ALLE aus dem Team am Zug
-     * zugestimmt haben, wird gezogen.
-     */
-    zugMittragen(runde, spielerId, zeitpunkt) {
-        const alt = SCHACH_RUNDE.normalisieren(runde);
-
-        if (!alt.vorschlag || !SCHACH_RUNDE.darfZiehen(alt, spielerId)) {
-            return null;
-        }
-        /* Ein Vorschlag von vor dem letzten Zug ist überholt. */
-        if (alt.vorschlag.zugZaehler !== alt.zugZaehler) {
-            return null;
-        }
-
-        const farbe = SCHACH_RUNDE.teamVon(alt, spielerId);
-        const neu = SCHACH_RUNDE.kopieren(alt);
-
-        if (neu.vorschlag.stimmen.indexOf(spielerId) === -1) {
-            neu.vorschlag.stimmen.push(spielerId);
-        }
-
-        /* Wer mitstimmt, ist wieder dabei: Sein Säumnis-Zähler beginnt von
-           vorn, und damit auch die volle Frist. */
+        /* Wie beim Zug: Wer vorschlägt, ist dabei. */
         delete neu.versaeumt[spielerId];
 
-        const fehlen = neu.teams[farbe]
-            .filter((id) => neu.vorschlag.stimmen.indexOf(id) === -1);
-
-        if (fehlen.length > 0) {
-            neu.geaendertAm = (zeitpunkt === undefined) ? Date.now() : zeitpunkt;
-            return neu;
-        }
-
-        return SCHACH_RUNDE._vorschlagAusfuehren(neu, zeitpunkt);
+        return SCHACH_RUNDE._vorschlaegePruefen(neu, farbe, wann);
     },
 
     /*
-     * Die Frist ist abgelaufen: Der Vorschlag geht durch, auch ohne alle
-     * Stimmen. Wer nicht abgestimmt hat, bekommt einen Strich — beim nächsten
-     * Mal ist die Frist dadurch kürzer.
-     *
-     * Ausgelöst wird das vom ERSTEN Gerät, das den Ablauf bemerkt; die Prüfung
-     * über den Zugzähler beim Schreiben sorgt dafür, dass es trotzdem nur
-     * einmal passiert.
+     * HIER STANDEN BIS v0.82.0 `zugMittragen` und `vorschlagVerwerfen` — die
+     * Knöpfe „Einverstanden" und „Verwerfen" der alten Abstimmungs-Karte.
+     * Seit v0.83.0 stimmt man zu, indem man denselben Zug selbst macht, und
+     * widerspricht, indem man einen anderen vorschlägt (Nutzer-Ansage
+     * 26.08.2026).
      */
-    fristAbgelaufen(runde, jetzt) {
-        const alt = SCHACH_RUNDE.normalisieren(runde);
 
-        if (!alt.vorschlag || alt.vorschlag.zugZaehler !== alt.zugZaehler) {
-            return null;
+    /*
+     * Die offenen Vorschläge eines Teams — nur die zur aktuellen Zugnummer;
+     * was von vor dem letzten Zug übrig ist, zählt nicht. Auch die Anzeige
+     * fragt hier, nie `vorschlaege` direkt.
+     */
+    offeneVorschlaege(runde, farbe) {
+        const stand = SCHACH_RUNDE.normalisieren(runde);
+
+        return stand.teams[farbe]
+            .filter((id) => stand.vorschlaege[id]
+                && stand.vorschlaege[id].zugZaehler === stand.zugZaehler)
+            .map((id) => ({ id: id, vorschlag: stand.vorschlaege[id] }));
+    },
+
+    /* Sagen zwei Vorschläge dasselbe? Verglichen wird die HANDLUNG —
+       Zug: von/nach/Umwandlung, Fähigkeit: Art/Ziel/Wahl/Umwandlung. */
+    _vorschlagGleich(a, b) {
+        if (a.art !== b.art) {
+            return false;
         }
-        if (!alt.vorschlag.frist || jetzt < alt.vorschlag.frist) {
-            return null;
+        if (a.art === "faehigkeit") {
+            return a.faehigkeit === b.faehigkeit
+                && a.zielFeld === b.zielFeld
+                && a.wahl === b.wahl
+                && a.umwandlung === b.umwandlung;
+        }
+        return a.von === b.von
+            && a.nach === b.nach
+            && a.umwandlung === b.umwandlung;
+    },
+
+    /*
+     * Prüft nach jedem neuen Vorschlag (und beim Fristablauf), ob gezogen
+     * wird. Zwei Wege zum Zug:
+     *
+     *   - ALLE aus dem Team haben denselben Vorschlag abgegeben.
+     *   - Die Frist ist um und die ABGEGEBENEN sind sich einig — die
+     *     Säumigen werden übergangen und bekommen ihren Strich.
+     *
+     * Sonst kommt die Runde unverändert (nur mit dem neuen Vorschlag)
+     * zurück und das Team sieht, wer was will.
+     */
+    _vorschlaegePruefen(runde, farbe, jetzt) {
+        const offen = SCHACH_RUNDE.offeneVorschlaege(runde, farbe);
+
+        const einig = offen.length > 0 && offen.every(
+            (eintrag) => SCHACH_RUNDE._vorschlagGleich(
+                eintrag.vorschlag, offen[0].vorschlag));
+
+        if (!einig) {
+            runde.geaendertAm = jetzt;
+            return runde;
         }
 
-        const farbe = alt.stand.amZug;
-        const neu = SCHACH_RUNDE.kopieren(alt);
+        const alleDa = (offen.length === runde.teams[farbe].length);
+        const fristUm = jetzt >= Math.min(
+            ...offen.map((eintrag) => eintrag.vorschlag.frist));
 
-        for (const id of neu.teams[farbe]) {
-            if (neu.vorschlag.stimmen.indexOf(id) === -1) {
-                neu.versaeumt[id] = (neu.versaeumt[id] || 0) + 1;
+        if (!alleDa && !fristUm) {
+            runde.geaendertAm = jetzt;
+            return runde;
+        }
+
+        if (!alleDa) {
+            /* Die Frist übergeht die Säumigen — mit Strich. */
+            for (const id of runde.teams[farbe]) {
+                if (!runde.vorschlaege[id]
+                    || runde.vorschlaege[id].zugZaehler !== runde.zugZaehler) {
+                    runde.versaeumt[id] = (runde.versaeumt[id] || 0) + 1;
+                }
             }
         }
 
-        return SCHACH_RUNDE._vorschlagAusfuehren(neu, jetzt);
+        /* Ausgeführt wird der FRÜHESTE Vorschlag — inhaltlich sind ohnehin
+           alle gleich, aber Name und Kennung im Verlauf sollen dem gehören,
+           der zuerst gezogen hat. */
+        let erster = offen[0];
+        for (const eintrag of offen) {
+            if (eintrag.vorschlag.wann < erster.vorschlag.wann) {
+                erster = eintrag;
+            }
+        }
+
+        return SCHACH_RUNDE._vorschlaegeAusfuehren(runde, erster, jetzt);
     },
 
-    /* Führt den offenen Vorschlag aus — Zug oder Fähigkeit. */
-    _vorschlagAusfuehren(runde, zeitpunkt) {
-        const vorschlag = runde.vorschlag;
-        runde.vorschlag = null;
+    /*
+     * Die Frist ist abgelaufen: Sind die ABGEGEBENEN sich einig, geht der
+     * Zug durch — ohne die Säumigen. Sind sich die Abgebenden NICHT einig,
+     * tut die Uhr nichts: Uneinigkeit unter Anwesenden löst kein Zeitablauf,
+     * nur das Einigwerden.
+     *
+     * Ausgelöst wird das vom ERSTEN Gerät, das den Ablauf bemerkt; die
+     * Prüfung über den Zugzähler beim Schreiben sorgt dafür, dass es
+     * trotzdem nur einmal passiert.
+     */
+    fristAbgelaufen(runde, jetzt) {
+        const alt = SCHACH_RUNDE.normalisieren(runde);
+        const farbe = alt.stand.amZug;
+        const offen = SCHACH_RUNDE.offeneVorschlaege(alt, farbe);
+
+        /* Nichts offen — oder alle da: Dann hat schon der Vorschlag selbst
+           entschieden, die Uhr hat nichts zu tun. */
+        if (offen.length === 0 || offen.length >= alt.teams[farbe].length) {
+            return null;
+        }
+        if (jetzt < Math.min(...offen.map((eintrag) => eintrag.vorschlag.frist))) {
+            return null;
+        }
+        if (!offen.every((eintrag) => SCHACH_RUNDE._vorschlagGleich(
+            eintrag.vorschlag, offen[0].vorschlag))) {
+            return null;
+        }
+
+        return SCHACH_RUNDE._vorschlaegePruefen(SCHACH_RUNDE.kopieren(alt), farbe, jetzt);
+    },
+
+    /* Führt die beschlossene Handlung aus — Zug oder Fähigkeit. */
+    _vorschlaegeAusfuehren(runde, eintrag, zeitpunkt) {
+        const vorschlag = eintrag.vorschlag;
+
+        /* Erst aufräumen: Im Ergebnis soll kein alter Vorschlag mehr stehen. */
+        runde.vorschlaege = {};
 
         const ergebnis = (vorschlag.art === "faehigkeit")
-            ? SCHACH_RUNDE.faehigkeitEinsetzen(runde, vorschlag.wer, vorschlag.faehigkeit,
-                vorschlag.zielFeld, vorschlag.name, zeitpunkt, vorschlag.umwandlung,
-                vorschlag.wahl)
-            : SCHACH_RUNDE.ziehen(runde, vorschlag.wer, vorschlag.von, vorschlag.nach,
-                vorschlag.umwandlung, vorschlag.name, zeitpunkt);
+            ? SCHACH_RUNDE.faehigkeitEinsetzen(runde, eintrag.id,
+                vorschlag.faehigkeit, vorschlag.zielFeld, vorschlag.name,
+                zeitpunkt, vorschlag.umwandlung, vorschlag.wahl)
+            : SCHACH_RUNDE.ziehen(runde, eintrag.id, vorschlag.von,
+                vorschlag.nach, vorschlag.umwandlung, vorschlag.name, zeitpunkt);
 
         if (!ergebnis) {
-            /* Inzwischen nicht mehr möglich — der Vorschlag fällt weg. */
+            /* Inzwischen nicht mehr möglich — die Vorschläge fallen weg. */
             runde.geaendertAm = (zeitpunkt === undefined) ? Date.now() : zeitpunkt;
             return runde;
         }
@@ -5291,20 +5429,6 @@ const SCHACH_RUNDE = {
            `ziehen` und `faehigkeitEinsetzen` arbeiten auf einer Kopie. */
         ergebnis.versaeumt = runde.versaeumt;
         return ergebnis;
-    },
-
-    /* Verwirft den offenen Vorschlag. */
-    vorschlagVerwerfen(runde, spielerId, zeitpunkt) {
-        const alt = SCHACH_RUNDE.normalisieren(runde);
-
-        if (!alt.vorschlag || !SCHACH_RUNDE.darfZiehen(alt, spielerId)) {
-            return null;
-        }
-
-        const neu = SCHACH_RUNDE.kopieren(alt);
-        neu.vorschlag = null;
-        neu.geaendertAm = (zeitpunkt === undefined) ? Date.now() : zeitpunkt;
-        return neu;
     },
 
     /* Neue Partie: Brett zurück, Teams bleiben, Bereitschaft muss neu kommen. */
@@ -5429,14 +5553,18 @@ const SCHACH_RUNDE = {
             && einsA.stand.fesselFeld === einsB.stand.fesselFeld;
     },
 
-    /* Der offene Vorschlag als Zeichenkette — ändert er sich, wird neu gezeichnet. */
+    /* Die offenen Vorschläge als Zeichenkette — ändert sich einer, wird neu
+       gezeichnet. Bis v0.82.0 stand hier der EINE Vorschlag samt Stimmen. */
     _vorschlagText(runde) {
-        if (!runde.vorschlag) {
-            return "";
-        }
-        return runde.vorschlag.von + ">" + runde.vorschlag.nach
-            + "@" + runde.vorschlag.zugZaehler
-            + ":" + runde.vorschlag.stimmen.slice().sort().join(",");
+        return Object.keys(runde.vorschlaege).sort()
+            .map((id) => {
+                const dessen = runde.vorschlaege[id];
+                return id + ":" + dessen.art + ":" + dessen.faehigkeit
+                    + ":" + dessen.zielFeld + ":" + dessen.von + ">" + dessen.nach
+                    + ":" + dessen.umwandlung + ":" + dessen.wahl
+                    + "@" + dessen.zugZaehler;
+            })
+            .join(",");
     },
 
     _bonusText(runde) {

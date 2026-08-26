@@ -3,6 +3,32 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.83.0 — 26.08.2026
+
+**Die Team-Abstimmung läuft jetzt über das Brett: Alle machen denselben Zug,
+dann zieht er — die Abstimmungs-Karte mit ihren Knöpfen ist weg.**
+
+- **Zustimmen heisst: denselben Zug selbst machen.** Wer im Einigkeits-Modus
+  zieht, schlägt damit vor; die Mitspieler sehen die Figur durchsichtig auf
+  ihrem Ziel (wie die Grab-Schemen des Nekromanten) und den Laufweg grün.
+  Machen alle aus dem Team denselben Zug, wird er ausgeführt. Wer etwas
+  anderes will, macht einfach seinen eigenen Zug — weiter geht es erst, wenn
+  alle dasselbe tun.
+- **Fähigkeiten genauso:** Wer eine einsetzen will, wählt sie samt Ziel; die
+  Karte trägt für das ganze Team eine blaue Marke, das Zielfeld ist grün
+  umrandet. Eingesetzt wird erst, wenn alle dieselbe Fähigkeit mit demselben
+  Ziel gewählt haben.
+- **Der Gegner sieht von alledem nichts** — keine Schemen, keine Wege, keine
+  Marken.
+- **Die Frist bleibt als Rückfall:** Wer gar nicht mitzieht, wird nach zehn
+  Sekunden übergangen (bei wiederholtem Fernbleiben schneller, wie bisher).
+  Uneinigkeit unter Anwesenden entscheidet die Uhr dagegen nie — da hilft
+  nur Einigwerden.
+- **Das Brett springt dabei nicht mehr:** Die alte Abstimmungs-Karte (206
+  Pixel hoch) erschien mitten im Spielfeld-Bereich und drückte das Brett auf
+  die Mindestbreite — ausgelöst vom Mitspieler, nicht von einem selbst (Fund
+  der Mess-Runde vom 26.08.). Sie ist ersatzlos weg.
+
 ## v0.82.0 — 26.08.2026
 
 **Ein Unglück liegt jetzt als Karte in der Hand — der rote Streifen über dem

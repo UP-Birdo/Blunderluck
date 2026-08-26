@@ -1,5 +1,36 @@
 # Blunderluck - Entscheidungen / Entschieden - und warum
 
+## Das Unglück ist eine Karte in der Hand, kein Streifen (26.08.2026, v0.82.0)
+
+**Nutzer-Ansage:** „Die Unglücksmeldung soll eine Karte werden, die in der
+Hand liegt [dessen], der aufs Feld gezogen ist und sie abbekommen hat — ein
+eigener Stapel an Karten. Die Karte geht weg, wenn es zeitlich begrenzt ist;
+wenn nicht, bleibt sie in der Hand."
+
+Das ist die Gestalt-Entscheidung zu Fund A2-1 (Mess-Runde 26.08.2026: der
+rote Streifen drückte das Brett um ~50 px) — und sie geht ueber die drei
+angebotenen Antworten hinaus: kein Schweben, kein Chip, kein reservierter
+Platz, sondern die Kartenreihe.
+
+- **Sie ersetzt den Streifen aus v0.59 (Wunsch #13) ersatzlos.** Dessen
+  Zweck — „man muss erfahren, WAS einen getroffen hat, ohne den Zugverlauf
+  zu suchen" — erfuellt jetzt die Karte; sie ist sogar dauerhaft statt einen
+  Zug lang. Der Gegner sieht sie ebenfalls (die Reihe jeder Seite ist offen).
+- **Die Liste haengt an der Partie (`unglueckskarten`), nicht am Verlauf** —
+  der wird gekuerzt (`_verlaufKuerzen`), eine dauerhafte Karte waere nach ein
+  paar Zuegen verschwunden. Additiv nachgeruestet; alte Partien zeigen
+  schlicht keine Karten.
+- **Was die Hand ZEIGT, entscheidet das Modell** (`unglueckskartenVon`):
+  die Halluzination nur, solange sie wirkt (`glasWirkt`, seit v0.82.0 im
+  Modell statt im Bildschirm); die vier dauerhaften immer. Ein verpufftes
+  Unglueck (zweite Box auf einem Weg) bekommt KEINE Karte — es hat niemanden
+  getroffen.
+- **Die Karte sieht aus wie ihre Bibliotheks-Kachel:** gestrichelter Rahmen
+  in Stufenfarbe, dazu roter Grund (`--fehler-flaeche`), damit sie sich auch
+  in der Gegner-Reihe (dort sind alle Karten gestrichelt) als Unglueck zu
+  erkennen gibt. Antippen oeffnet Beschreibung + Bildanleitung
+  (`unglueckAnsehen`, gemeinsam mit der Bibliothek).
+
 ## Acht Festlegungen zum Rundenablauf und zum Spiel-Bildschirm (v0.34.0 bis v0.70.0)
 
 > **Hierher gezogen am 26.08.2026 aus der `STATUS.md`.** Sie standen dort im

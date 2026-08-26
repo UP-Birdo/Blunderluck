@@ -2276,23 +2276,11 @@ body.partie-fest .phasen-leiste {
     color: var(--schrift-leise);
 }
 
-.abstimmung {
-    border-color: var(--haupt);
-    border-width: 2px;
-    margin-top: var(--abstand);
-}
-
-.abstimmung-zug {
-    margin: 0 0 4px 0;
-    font-weight: 600;
-}
-
-.abstimmung-frist {
-    margin: 0 0 6px 0;
-    color: var(--warnung);
-    font-size: 0.9rem;
-    font-variant-numeric: tabular-nums;
-}
+/* HIER STANDEN `.abstimmung`, `.abstimmung-zug` und `.abstimmung-frist`
+   (bis v0.82.0) — die Abstimmungs-Karte im Brett-Halter. Sie drückte das
+   Brett auf die Mindestbreite (Fund A2-3); seit v0.83.0 zeigt das Brett die
+   Vorschläge selbst (`.feld-vorschlag-weg`, `.feld-vorschlag-ziel`,
+   `.faehigkeit-vorgeschlagen`, bei den Brett- bzw. Karten-Regeln). */
 
 /* ------------------------------------------------------------------ *
  * Bilanz der geschlagenen Figuren
@@ -2525,6 +2513,16 @@ body.design-3d .feld-ziel {
 
 body.design-3d .feld-schlag {
     box-shadow: var(--kachel-schatten), inset 0 0 0 3px #e05a52;
+}
+
+/* Die Team-Vorschläge (v0.83.0) leuchten auch hier als Ring auf der Kachel —
+   dünner als Ziel und Schlag, siehe die Basis-Regeln. */
+body.design-3d .feld-vorschlag-weg {
+    box-shadow: var(--kachel-schatten), inset 0 0 0 2px var(--spur-ende);
+}
+
+body.design-3d .feld-vorschlag-ziel {
+    box-shadow: var(--kachel-schatten), inset 0 0 0 3px var(--spur-ende-kante);
 }
 
 /*
@@ -2826,6 +2824,26 @@ body.design-3d .werte-figur {
  * verschwindet dort ohnehin hinter der Figur — übrig bleibt die Kontur, also
  * genau das, was diese Regel vorher eigens gezeichnet hat.
  */
+
+/*
+ * DER VORSCHLAG EINES TEAM-MITGLIEDS (seit v0.83.0, Fund A2-3): Laufweg und
+ * Ziel in Grün — zweifarbig wie jede Brett-Markierung (heller Rand, dunkler
+ * Kern), aber DÜNNER als die eigenen Zugpunkte und ohne deren Mittelpunkt,
+ * damit sich Vorschlag und eigene Auswahl nicht verwechseln lassen. Die
+ * Figur selbst steht als Schemen auf dem Ziel (`.figur-schemen`, dieselbe
+ * Optik wie die Gräber des Nekromanten). Nur das eigene Team sieht das.
+ */
+.feld-vorschlag-weg {
+    box-shadow:
+        inset 0 0 0 1px var(--ziel-rand),
+        inset 0 0 0 3px var(--spur-ende);
+}
+
+.feld-vorschlag-ziel {
+    box-shadow:
+        inset 0 0 0 2px var(--ziel-rand),
+        inset 0 0 0 5px var(--spur-ende-kante);
+}
 
 .erklaerung-rochade {
     font-weight: 600;
@@ -5137,6 +5155,19 @@ body.design-3d .werte-figur {
 .faehigkeit-reihe .unglueck-knopf {
     border-style: dashed;
     background: var(--fehler-flaeche);
+}
+
+/*
+ * EINE IM TEAM VORGESCHLAGENE FÄHIGKEIT (seit v0.83.0, Fund A2-3): Die Karte
+ * trägt einen blauen Aussenring, bis sich das Team einig ist. `outline`
+ * statt `box-shadow`, weil der Schatten schon das Übereinanderschieben der
+ * Karten trennt; die Karte hebt sich zusätzlich nach vorn (`z-index`, wie
+ * beim Antippen), damit der Ring nicht unter der Nachbarkarte verschwindet.
+ */
+.faehigkeit-reihe .faehigkeit-vorgeschlagen {
+    outline: 2px solid var(--haupt);
+    outline-offset: 1px;
+    z-index: 1;
 }
 
 /*

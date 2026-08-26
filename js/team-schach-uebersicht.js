@@ -281,10 +281,14 @@ Object.assign(TEAM_SCHACH, {
                 schluessel: "einigkeit",
                 umgekehrt: true,
                 titel: "Wer zuerst zieht, hat gezogen",
-                hinweis: "Aus (Vorgabe) wird jeder Zug erst vorgeschlagen und "
-                    + "ausgeführt, wenn das Team zustimmt oder die Frist abläuft. "
-                    + "An zieht jeder sofort für sein ganzes Team. Der Vorschlag "
-                    + "steht im gemeinsamen Stand — der Gegner liest ihn mit."
+                /* Seit v0.83.0 stimmt das Team ab, indem jeder denselben Zug
+                   selbst macht — keine Karte, keine Knöpfe mehr. */
+                hinweis: "Aus (Vorgabe) zieht ein Zug erst, wenn ALLE aus dem "
+                    + "Team denselben gemacht haben — die Vorschläge der "
+                    + "anderen stehen durchsichtig auf dem Brett (der Gegner "
+                    + "sieht sie nicht). Wer nicht mitzieht, wird nach Ablauf "
+                    + "der Frist übergangen. An zieht jeder sofort für sein "
+                    + "ganzes Team."
             }
         ];
 

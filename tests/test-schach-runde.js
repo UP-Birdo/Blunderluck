@@ -2919,9 +2919,10 @@ pruefe("Die Lage reicht bis in die Zielfelder und in den Einsatz (v0.80)", () =>
 
 pruefe("Auch die Abstimmung traegt die Lage der Mauer (v0.80)", () => {
     /*
-     * Sonst stimmt das Team ueber eine waagerechte Mauer ab und bekommt eine
-     * senkrechte. Der Vorschlag speichert die Wahl deshalb mit — genau wie die
-     * Umwandlung beim Bauernschub.
+     * Sonst meint einer die waagerechte Mauer und bekommt eine senkrechte.
+     * Der Vorschlag speichert die Wahl deshalb mit — genau wie die Umwandlung
+     * beim Bauernschub. Seit v0.83.0 stimmt man zu, indem man DASSELBE
+     * einsetzt (samt Wahl), nicht mehr per Knopf.
      */
     let runde = faehigkeitenPartie();
     runde.teams.weiss.push("id-clara");
@@ -2934,18 +2935,20 @@ pruefe("Auch die Abstimmung traegt die Lage der Mauer (v0.80)", () => {
         platz, "Anna", 3000, undefined, "senkrecht");
 
     wahr(vorgeschlagen !== null, "vorgeschlagen");
-    wahr(vorgeschlagen.vorschlag !== null, "es wird wirklich abgestimmt");
-    gleich(vorgeschlagen.vorschlag.wahl, "senkrecht", "die Lage steht im Vorschlag");
+    gleich(vorgeschlagen.zugZaehler, runde.zugZaehler, "noch nicht eingesetzt");
+    gleich(vorgeschlagen.vorschlaege["id-anna"].wahl, "senkrecht",
+        "die Lage steht im Vorschlag");
 
     /* Nach dem Speichern und Laden ist sie noch da. */
     const geladen = SCHACH_RUNDE.normalisieren(
         JSON.parse(JSON.stringify(vorgeschlagen)));
-    gleich(geladen.vorschlag.wahl, "senkrecht", "und ueberlebt das Laden");
+    gleich(geladen.vorschlaege["id-anna"].wahl, "senkrecht", "und ueberlebt das Laden");
 
-    /* Und wenn der zweite zustimmt, entsteht die SENKRECHTE Mauer. */
-    const fertig = SCHACH_RUNDE.zugMittragen(geladen, "id-clara", 3100);
-    wahr(fertig !== null, "mitgetragen");
-    gleich(fertig.vorschlag, null, "der Vorschlag ist abgearbeitet");
+    /* Setzt die zweite DASSELBE ein, entsteht die SENKRECHTE Mauer. */
+    const fertig = SCHACH_RUNDE.faehigkeitVorschlagen(geladen, "id-clara", "mauer",
+        platz, "Clara", 3100, undefined, "senkrecht");
+    wahr(fertig !== null, "auch Clara hat eingesetzt");
+    gleich(Object.keys(fertig.vorschlaege).length, 0, "die Vorschlaege sind abgearbeitet");
 
     /* Seit v0.85 traegt jedes Mauerfeld seinen eigenen Eintrag (Frist je
        Feld) — gezaehlt werden deshalb die Felder. */
@@ -3580,7 +3583,7 @@ pruefe("Ohne Einigkeitspflicht zieht ein Vorschlag sofort", () => {
         SCHACH.feldNummer("e2"), SCHACH.feldNummer("e4"), "D", "Anna", 2000);
 
     gleich(runde.zugZaehler, 1, "gezogen");
-    gleich(runde.vorschlag, null, "kein Vorschlag offen");
+    gleich(Object.keys(runde.vorschlaege).length, 0, "kein Vorschlag offen");
 });
 
 pruefe("Allein im Team braucht es keine Abstimmung", () => {
@@ -3602,27 +3605,43 @@ pruefe("Mit Einigkeitspflicht wird erst vorgeschlagen, dann gezogen", () => {
         SCHACH.feldNummer("e2"), SCHACH.feldNummer("e4"), "D", "Anna", 2000);
 
     gleich(runde.zugZaehler, 0, "noch nicht gezogen");
-    wahr(runde.vorschlag !== null, "ein Vorschlag steht");
-    gleich(runde.vorschlag.stimmen.join(","), "id-anna", "der Vorschlagende ist dafuer");
+    wahr(!!runde.vorschlaege["id-anna"], "Annas Vorschlag steht");
     gleich(SCHACH.figurAuf(runde.stand, SCHACH.feldNummer("e4")), ".", "Brett unveraendert");
 
-    /* Cem stimmt zu — jetzt sind alle dafuer. */
-    runde = SCHACH_RUNDE.zugMittragen(runde, "id-cem", 2100);
+    /* Cem macht DENSELBEN Zug — das ist die Zustimmung (v0.83.0). */
+    runde = SCHACH_RUNDE.zugVorschlagen(runde, "id-cem",
+        SCHACH.feldNummer("e2"), SCHACH.feldNummer("e4"), "D", "Cem", 2100);
     gleich(runde.zugZaehler, 1, "jetzt gezogen");
     gleich(SCHACH.figurAuf(runde.stand, SCHACH.feldNummer("e4")), "B", "Bauer steht auf e4");
-    gleich(runde.vorschlag, null, "Vorschlag ist erledigt");
+    gleich(Object.keys(runde.vorschlaege).length, 0, "Vorschlaege sind erledigt");
 });
 
-pruefe("Der Gegner kann nicht mitstimmen, und ein Vorschlag laesst sich verwerfen", () => {
+pruefe("Uneinigkeit zieht nicht — erst wenn alle dasselbe tun (v0.83.0)", () => {
+    /* Anna will e2-e4, Cem will d2-d4: nichts passiert, beide Vorschlaege
+       stehen nebeneinander. */
     let runde = SCHACH_RUNDE.zugVorschlagen(einigkeitsPartie(), "id-anna",
         SCHACH.feldNummer("e2"), SCHACH.feldNummer("e4"), "D", "Anna", 2000);
+    runde = SCHACH_RUNDE.zugVorschlagen(runde, "id-cem",
+        SCHACH.feldNummer("d2"), SCHACH.feldNummer("d4"), "D", "Cem", 2100);
 
-    gleich(SCHACH_RUNDE.zugMittragen(runde, "id-bert", 2100), null,
-        "Schwarz stimmt nicht mit ab");
+    gleich(runde.zugZaehler, 0, "nichts gezogen");
+    gleich(Object.keys(runde.vorschlaege).length, 2, "beide Vorschlaege stehen");
 
-    runde = SCHACH_RUNDE.vorschlagVerwerfen(runde, "id-cem", 2200);
-    gleich(runde.vorschlag, null, "verworfen");
-    gleich(runde.zugZaehler, 0, "und nichts gezogen");
+    /* Anna schwenkt um: Ihr neuer Zug ERSETZT ihren alten Vorschlag — und
+       weil jetzt alle dasselbe wollen, wird gezogen. */
+    runde = SCHACH_RUNDE.zugVorschlagen(runde, "id-anna",
+        SCHACH.feldNummer("d2"), SCHACH.feldNummer("d4"), "D", "Anna", 2200);
+    gleich(runde.zugZaehler, 1, "jetzt gezogen");
+    gleich(SCHACH.figurAuf(runde.stand, SCHACH.feldNummer("d4")), "B", "Bauer steht auf d4");
+});
+
+pruefe("Der Gegner kann keinen Vorschlag abgeben", () => {
+    const runde = SCHACH_RUNDE.zugVorschlagen(einigkeitsPartie(), "id-anna",
+        SCHACH.feldNummer("e2"), SCHACH.feldNummer("e4"), "D", "Anna", 2000);
+
+    gleich(SCHACH_RUNDE.zugVorschlagen(runde, "id-bert",
+        SCHACH.feldNummer("e7"), SCHACH.feldNummer("e5"), "D", "Bert", 2100), null,
+        "Schwarz ist nicht am Zug und schlaegt nichts vor");
 });
 
 pruefe("Auch Faehigkeiten werden abgestimmt", () => {
@@ -3633,33 +3652,64 @@ pruefe("Auch Faehigkeiten werden abgestimmt", () => {
         "Anna", 2000);
 
     wahr(runde !== null, "vorgeschlagen");
-    gleich(runde.vorschlag.art, "faehigkeit", "als Faehigkeit vermerkt");
-    gleich(runde.vorschlag.faehigkeit, "bauernschub", "die richtige");
+    gleich(runde.vorschlaege["id-anna"].art, "faehigkeit", "als Faehigkeit vermerkt");
+    gleich(runde.vorschlaege["id-anna"].faehigkeit, "bauernschub", "die richtige");
     gleich(runde.faehigkeiten.weiss.length, 1, "noch nicht verbraucht");
     gleich(SCHACH.figurAuf(runde.stand, SCHACH.feldNummer("a3")), ".", "Brett unveraendert");
 
-    runde = SCHACH_RUNDE.zugMittragen(runde, "id-cem", 2100);
+    /* Cem setzt DIESELBE Faehigkeit ein — die Zustimmung von v0.83.0. */
+    runde = SCHACH_RUNDE.faehigkeitVorschlagen(runde, "id-cem", "bauernschub", -1,
+        "Cem", 2100);
     gleich(runde.faehigkeiten.weiss.length, 0, "jetzt verbraucht");
     gleich(SCHACH.figurAuf(runde.stand, SCHACH.feldNummer("a3")), "B", "die Bauern sind vor");
-    gleich(runde.vorschlag, null, "Abstimmung erledigt");
+    gleich(Object.keys(runde.vorschlaege).length, 0, "Abstimmung erledigt");
 });
 
-pruefe("Die Frist steht im Vorschlag und laeuft ab", () => {
-    let runde = SCHACH_RUNDE.zugVorschlagen(einigkeitsPartie(), "id-anna",
+pruefe("Zug gegen Faehigkeit ist Uneinigkeit (v0.83.0)", () => {
+    let runde = einigkeitsPartie();
+    runde.faehigkeiten.weiss.push("bauernschub");
+
+    runde = SCHACH_RUNDE.faehigkeitVorschlagen(runde, "id-anna", "bauernschub", -1,
+        "Anna", 2000);
+    runde = SCHACH_RUNDE.zugVorschlagen(runde, "id-cem",
+        SCHACH.feldNummer("e2"), SCHACH.feldNummer("e4"), "D", "Cem", 2100);
+
+    gleich(runde.zugZaehler, 0, "nichts ausgefuehrt");
+    gleich(runde.faehigkeiten.weiss.length, 1, "nichts verbraucht");
+    gleich(Object.keys(runde.vorschlaege).length, 2, "beide Vorschlaege stehen");
+});
+
+pruefe("Die Frist steht im Vorschlag und uebergeht die Saeumigen", () => {
+    const runde = SCHACH_RUNDE.zugVorschlagen(einigkeitsPartie(), "id-anna",
         SCHACH.feldNummer("e2"), SCHACH.feldNummer("e4"), "D", "Anna", 10000);
 
-    gleich(runde.vorschlag.frist, 10000 + SCHACH_RUNDE.FRIST_SEKUNDEN[0] * 1000,
+    gleich(runde.vorschlaege["id-anna"].frist,
+        10000 + SCHACH_RUNDE.FRIST_SEKUNDEN[0] * 1000,
         "zehn Sekunden ab dem Vorschlag");
 
     /* Vorher passiert nichts. */
     gleich(SCHACH_RUNDE.fristAbgelaufen(runde, 12000), null, "vor Ablauf nichts");
 
-    /* Danach geht der Zug durch, auch ohne Cems Stimme. */
+    /* Danach geht der Zug durch, auch ohne Cems Zug. */
     const danach = SCHACH_RUNDE.fristAbgelaufen(runde, 20001);
     wahr(danach !== null, "nach Ablauf ausgefuehrt");
     gleich(danach.zugZaehler, 1, "gezogen");
     gleich(danach.versaeumt["id-cem"], 1, "Cem hat einen Strich");
     gleich(danach.versaeumt["id-anna"], undefined, "Anna nicht");
+});
+
+pruefe("Die Uhr uebergeht keine Uneinigkeit unter Anwesenden (v0.83.0)", () => {
+    /* Beide haben etwas VERSCHIEDENES vorgeschlagen: Der Fristablauf tut
+       nichts — nur das Einigwerden zieht. Und niemand bekommt einen Strich,
+       denn saeumig ist hier keiner. */
+    let runde = SCHACH_RUNDE.zugVorschlagen(einigkeitsPartie(), "id-anna",
+        SCHACH.feldNummer("e2"), SCHACH.feldNummer("e4"), "D", "Anna", 10000);
+    runde = SCHACH_RUNDE.zugVorschlagen(runde, "id-cem",
+        SCHACH.feldNummer("d2"), SCHACH.feldNummer("d4"), "D", "Cem", 10100);
+
+    gleich(SCHACH_RUNDE.fristAbgelaufen(runde, 99999), null,
+        "die Uhr entscheidet keinen Streit");
+    gleich(runde.zugZaehler, 0, "nichts gezogen");
 });
 
 pruefe("Wer zweimal nicht abstimmt, verkuerzt die Frist — bis er wieder mitmacht", () => {
@@ -3684,11 +3734,13 @@ pruefe("Wer zweimal nicht abstimmt, verkuerzt die Frist — bis er wieder mitmac
         SCHACH_RUNDE.FRIST_SEKUNDEN[SCHACH_RUNDE.FRIST_SEKUNDEN.length - 1] * 1000,
         "aber nie unter die letzte Stufe");
 
-    /* Stimmt er wieder mit, faengt es von vorn an. */
+    /* Macht er wieder mit (denselben Zug wie Anna), faengt es von vorn an. */
     let mit = SCHACH_RUNDE.zugVorschlagen(runde, "id-anna",
         SCHACH.feldNummer("e2"), SCHACH.feldNummer("e4"), "D", "Anna", 10000);
-    mit = SCHACH_RUNDE.zugMittragen(mit, "id-cem", 10100);
+    mit = SCHACH_RUNDE.zugVorschlagen(mit, "id-cem",
+        SCHACH.feldNummer("e2"), SCHACH.feldNummer("e4"), "D", "Cem", 10100);
 
+    gleich(mit.zugZaehler, 1, "alle einig, gezogen");
     gleich(mit.versaeumt["id-cem"], undefined, "Zaehler zurueckgesetzt");
     gleich(SCHACH_RUNDE.fristFuer(mit, "weiss"), SCHACH_RUNDE.FRIST_SEKUNDEN[0] * 1000,
         "und wieder die volle Frist");

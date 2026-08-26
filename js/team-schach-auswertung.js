@@ -580,6 +580,19 @@ Object.assign(TEAM_SCHACH, {
            Begrenztes nur, solange es wirkt. */
         const abbekommen = SCHACH_RUNDE.unglueckskartenVon(partie, farbe);
 
+        /* Eine VORGESCHLAGENE Fähigkeit (Einigkeits-Modus, seit v0.83.0)
+           trägt ihre Marke auf der Karte — das Team sieht, worauf sich zu
+           einigen ist. Der Gegner nicht: `_teamVorschlaege` liefert ihm eine
+           leere Liste, und für seine Reihe wird gar nicht erst gefragt. */
+        const vorgeschlagen = {};
+        if (meine) {
+            for (const eintrag of TEAM_SCHACH._teamVorschlaege(partie, person)) {
+                if (eintrag.vorschlag.art === "faehigkeit") {
+                    vorgeschlagen[eintrag.vorschlag.faehigkeit] = true;
+                }
+            }
+        }
+
         const reihe = TEAM_SCHACH._element("div",
             "faehigkeit-zeile faehigkeit-reihe"
             + (meine ? " faehigkeit-reihe-meine" : " faehigkeit-reihe-gegner"));
@@ -628,7 +641,8 @@ Object.assign(TEAM_SCHACH, {
 
         for (const eintrag of gezaehlt) {
             reihe.appendChild(TEAM_SCHACH._faehigkeitMarkeBauen(
-                partie, person, eintrag.art, meine, eintrag.anzahl));
+                partie, person, eintrag.art, meine, eintrag.anzahl,
+                vorgeschlagen[eintrag.art] === true));
         }
 
         /*
@@ -726,7 +740,7 @@ Object.assign(TEAM_SCHACH, {
      * Schildchen, und wer wissen wollte, was der Gegner da hat, musste die
      * Bibliothek durchsuchen.
      */
-    _faehigkeitMarkeBauen(partie, person, art, meineFarbe, anzahl) {
+    _faehigkeitMarkeBauen(partie, person, art, meineFarbe, anzahl, istVorgeschlagen) {
         const beschreibung = SCHACH_VARIANTEN.FAEHIGKEITEN[art] || {};
         const stufe = SCHACH_VARIANTEN.stufeVon(art);
         const darf = meineFarbe && SCHACH_RUNDE.darfEinsetzen(partie, person.id, art);
@@ -785,7 +799,8 @@ Object.assign(TEAM_SCHACH, {
          */
         const marke = TEAM_SCHACH._knopf("",
             "knopf-still knopf-klein faehigkeit-knopf"
-                + (darf ? "" : " faehigkeit-knopf-fremd"),
+                + (darf ? "" : " faehigkeit-knopf-fremd")
+                + (istVorgeschlagen ? " faehigkeit-vorgeschlagen" : ""),
             () => (darf
                 ? TEAM_SCHACH.faehigkeitEinsetzen(partie, art)
                 : TEAM_SCHACH.faehigkeitAnsehen(art, grund)));
@@ -850,6 +865,7 @@ Object.assign(TEAM_SCHACH, {
          */
         marke.title = SCHACH_VARIANTEN.faehigkeitTitel(art)
             + ((anzahl > 1) ? (" (" + anzahl + ")") : "")
+            + (istVorgeschlagen ? " — im Team vorgeschlagen" : "")
             + " — " + stufe.titel + ": " + SCHACH_VARIANTEN.faehigkeitKurz(art);
 
         return marke;

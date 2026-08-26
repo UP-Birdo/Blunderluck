@@ -25,6 +25,10 @@ wird. Die Liste dessen, was noch kommt, steht in [../ROADMAP.md](../ROADMAP.md).
 
 ## entschieden.md - Blunderluck-Eintraege
 
+- **Das Unglueck ist eine Karte in der Hand, kein Streifen** (26.08.2026,
+  v0.82.0 — Gestalt-Entscheidung zu Fund A2-1, ersetzt den Streifen aus
+  v0.59 ersatzlos; Liste `unglueckskarten` an der Partie statt im Verlauf,
+  Anzeige-Filter im Modell `unglueckskartenVon`/`glasWirkt`)
 - Die Seitenwahl gegen den Computer (24.08.2026, v0.29.0 — Bot-Runden
   starten LEER, weil ein Teamwechsel im Modell verboten ist; daraus die
   Trennung `botVorgesehen` gegen `istBotPartie` und das Wegraeumen einer nie

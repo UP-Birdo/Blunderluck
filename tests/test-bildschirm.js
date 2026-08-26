@@ -3564,6 +3564,65 @@ pruefe("Ein eingesammeltes Unglueck liegt als Karte in der Hand (v0.82.0)", () =
     TEAM_SCHACH.abgleich.daten = vorher;
 });
 
+/*
+ * DIE TEAM-VORSCHLAEGE AM BRETT (v0.83.0, Fund A2-3; davor eine 206 px hohe
+ * Abstimmungs-Karte, die das Brett auf die Mindestbreite drueckte).
+ */
+pruefe("Ein Team-Vorschlag steht als Schemen mit gruenem Weg am Brett (v0.83.0)", () => {
+    const person = umgebung.ICH.person();
+    const vorher = TEAM_SCHACH.abgleich.daten;
+
+    const angelegt = SCHACH_TAFEL.partieAnlegen(
+        TEAM_SCHACH.abgleich.daten, "standard", "Einig", 9600,
+        { einigkeit: true });
+
+    let partie = SCHACH_RUNDE.teamBeitreten(angelegt.partie, person.id, "weiss", 9600);
+    partie = SCHACH_RUNDE.teamBeitreten(partie, "id-cem", "weiss", 9600);
+    partie = SCHACH_RUNDE.teamBeitreten(partie, "id-bert", "schwarz", 9600);
+    partie = bereitUndAufgestellt(partie, "weiss", 9600);
+    partie = bereitUndAufgestellt(partie, "schwarz", 9600);
+
+    /* Der MITSPIELER schlaegt e2-e4 vor — ausgefuehrt wird nichts. */
+    partie = SCHACH_RUNDE.zugVorschlagen(partie, "id-cem",
+        SCHACH.feldNummer("e2"), SCHACH.feldNummer("e4"), "D", "Cem", 9610);
+    if (partie.zugZaehler !== 0) {
+        throw new Error("der Vorschlag wurde faelschlich sofort gezogen");
+    }
+
+    TEAM_SCHACH.abgleich.daten = SCHACH_TAFEL.partieEinsetzen(
+        angelegt.tafel, partie, 9610);
+    TEAM_SCHACH.partieOeffnen(partie.id);
+
+    /* Keine Abstimmungs-Karte mehr — nichts drueckt das Brett zusammen. */
+    if (klasseSuchen(TEAM_SCHACH.wurzelEl, "abstimmung")) {
+        throw new Error("die alte Abstimmungs-Karte wird immer noch gebaut");
+    }
+
+    /* Dafuer: die Figur als Schemen auf dem Ziel und der gruene Weg. */
+    if (!klasseSuchen(TEAM_SCHACH.wurzelEl, "figur-schemen")) {
+        throw new Error("kein Schemen der vorgeschlagenen Figur auf dem Brett");
+    }
+    if (!klasseSuchen(TEAM_SCHACH.wurzelEl, "feld-vorschlag-weg")) {
+        throw new Error("kein gruener Laufweg zum Vorschlag");
+    }
+    if (!klasseSuchen(TEAM_SCHACH.wurzelEl, "feld-vorschlag-ziel")) {
+        throw new Error("kein markiertes Zielfeld zum Vorschlag");
+    }
+
+    /* Der GEGNER bekommt nichts davon zu sehen: Fuer ihn ist die Liste leer. */
+    if (TEAM_SCHACH._teamVorschlaege(partie, { id: "id-bert" }).length !== 0) {
+        throw new Error("der Gegner sieht die Vorschlaege des Teams");
+    }
+
+    /* Der Frist-Zeitgeber laeuft nicht in den naechsten Test hinein. Die
+       Zeitgeber der Testumgebung feuern nie (und `window` gibt es nur INNERHALB
+       der Umgebung) — er wird schlicht abgelegt. */
+    TEAM_SCHACH.fristZeitgeber = null;
+
+    TEAM_SCHACH.offeneId = "";
+    TEAM_SCHACH.abgleich.daten = vorher;
+});
+
 pruefe("Zug und Unglueck haben getrennte Spurfarben (v0.76)", () => {
     /*
      * DER GEMELDETE FEHLER: „Kann es sein, dass sich die gruene Farbe meiner
