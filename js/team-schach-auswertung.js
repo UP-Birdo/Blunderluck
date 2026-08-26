@@ -574,6 +574,12 @@ Object.assign(TEAM_SCHACH, {
         }
 
         const koennen = partie.faehigkeiten[farbe];
+
+        /* Die Unglücks-Karten dieser Seite (seit v0.82.0, Fund A2-1): Was die
+           Hand zeigt, sagt das Modell — Dauerhaftes bleibt, zeitlich
+           Begrenztes nur, solange es wirkt. */
+        const abbekommen = SCHACH_RUNDE.unglueckskartenVon(partie, farbe);
+
         const reihe = TEAM_SCHACH._element("div",
             "faehigkeit-zeile faehigkeit-reihe"
             + (meine ? " faehigkeit-reihe-meine" : " faehigkeit-reihe-gegner"));
@@ -588,7 +594,7 @@ Object.assign(TEAM_SCHACH, {
          * Reihe nur ihren Text breit sein soll; ohne sie nimmt sie den
          * ganzen Platz (`flex: 1 1 auto`), den ein voller Streifen braucht.
          */
-        if (koennen.length === 0) {
+        if (koennen.length === 0 && abbekommen.length === 0) {
             reihe.className += " faehigkeit-reihe-leer";
             reihe.appendChild(TEAM_SCHACH._element("span", "erklaerung faehigkeit-leer",
                 "noch keine"));
@@ -625,7 +631,70 @@ Object.assign(TEAM_SCHACH, {
                 partie, person, eintrag.art, meine, eintrag.anzahl));
         }
 
+        /*
+         * DIE UNGLÜCKS-KARTEN, ALS EIGENER STAPEL HINTER DEN FÄHIGKEITEN
+         * (seit v0.82.0, Nutzer-Ansage 26.08.2026): Das Unglück liegt als
+         * Karte in der Hand der Seite, die es abbekommen hat — gruppiert wie
+         * die Fähigkeiten, gestrichelt gerahmt wie in der Bibliothek. Die
+         * Reihenfolge bleibt die des Abbekommens.
+         */
+        const pechGezaehlt = [];
+        for (const eintrag of abbekommen) {
+            const schon = pechGezaehlt.find((p) => p.art === eintrag.art);
+            if (schon) {
+                schon.anzahl++;
+            } else {
+                pechGezaehlt.push({ art: eintrag.art, anzahl: 1 });
+            }
+        }
+        for (const eintrag of pechGezaehlt) {
+            reihe.appendChild(TEAM_SCHACH._unglueckMarkeBauen(
+                eintrag.art, eintrag.anzahl));
+        }
+
         return reihe;
+    },
+
+    /*
+     * Eine Unglücks-Karte in der Hand (seit v0.82.0): dieselbe Spielkarten-
+     * Form wie die Fähigkeiten, aber gestrichelt gerahmt (wie die Unglücks-
+     * Kachel der Bibliothek) — sie ist ein Merkzettel, kein Vorrat. Antippen
+     * öffnet Beschreibung und Bildanleitung; einsetzen kann man sie nie.
+     */
+    _unglueckMarkeBauen(art, anzahl) {
+        const stufe = SCHACH_VARIANTEN.pechStufeVon(art);
+
+        const marke = TEAM_SCHACH._knopf("",
+            "knopf-still knopf-klein faehigkeit-knopf unglueck-knopf",
+            () => TEAM_SCHACH.unglueckAnsehen(art));
+
+        const bild = (typeof FAEHIGKEIT_ZEICHEN !== "undefined")
+            ? FAEHIGKEIT_ZEICHEN.bauen(art)
+            : null;
+
+        if (bild) {
+            marke.appendChild(bild);
+        } else {
+            /* Ohne Zeichen bliebe eine leere Karte — dann doch das Wort. */
+            marke.textContent = SCHACH_VARIANTEN.pechTitel(art);
+        }
+
+        if (anzahl > 1) {
+            marke.appendChild(TEAM_SCHACH._element("span",
+                "faehigkeit-anzahl", String(anzahl)));
+        }
+
+        marke.setAttribute("aria-label",
+            SCHACH_VARIANTEN.pechTitel(art) + " (Unglück)"
+            + ((anzahl > 1) ? (", " + anzahl + " Mal") : ""));
+
+        marke.style.setProperty("--stufe-farbe", stufe.farbe);
+
+        marke.title = SCHACH_VARIANTEN.pechTitel(art)
+            + ((anzahl > 1) ? (" (" + anzahl + ")") : "")
+            + " — Unglück, " + stufe.titel + ": " + SCHACH_VARIANTEN.pechKurz(art);
+
+        return marke;
     },
 
     /*
@@ -1051,11 +1120,9 @@ Object.assign(TEAM_SCHACH, {
 
         kachel.addEventListener("click", () => {
             if (istPech) {
-                DIALOG.hinweis(
-                    titel + " (Unglück)",
-                    SCHACH_VARIANTEN.pechBeschreibung(art),
-                    TEAM_SCHACH._anleitungBauen(art)
-                );
+                /* Dasselbe Fenster wie an der Unglücks-Karte der Hand —
+                   seit v0.82.0 eine gemeinsame Funktion. */
+                TEAM_SCHACH.unglueckAnsehen(art);
             } else {
                 TEAM_SCHACH.faehigkeitAnsehen(art);
             }

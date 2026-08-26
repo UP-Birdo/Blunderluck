@@ -737,19 +737,15 @@ const TEAM_SCHACH = {
         wurzel.appendChild(TEAM_SCHACH._partieKopfBauen(partie));
         wurzel.appendChild(TEAM_SCHACH._standLeisteBauen(partie, person));
 
-        const unglueck = TEAM_SCHACH._unglueckMeldungBauen(partie);
-        if (unglueck) {
-            wurzel.appendChild(unglueck);
-        }
+        /* Die Unglücksmeldung stand bis v0.81.0 hier als roter Streifen und
+           drückte das Brett um ~50 px zusammen (Fund A2-1). Seit v0.82.0 ist
+           sie eine Karte in der Hand der betroffenen Seite — gebaut in
+           `_faehigkeitReiheBauen`, gespeist aus `SCHACH_RUNDE.unglueckskartenVon`. */
 
         /*
          * DIE SEITEN FLANKIEREN DAS BRETT (seit v0.53.0), eine darüber, eine
          * darunter. `_farbeObenAmBrett` sorgt dafür, dass die obere Seite zu
          * der gehört, die auch oben auf dem Brett spielt.
-         *
-         * Die Unglücksmeldung bleibt vor beiden — sie steht seit jeher direkt
-         * unter der Standleiste, und ein Bildschirm-Test prüft genau diese
-         * Stelle.
          */
         const obenFarbe = TEAM_SCHACH._farbeObenAmBrett(partie, person);
         const untenFarbe = (obenFarbe === "weiss") ? "schwarz" : "weiss";
@@ -1331,46 +1327,27 @@ const TEAM_SCHACH = {
     },
 
     /*
-     * DER STREIFEN NACH EINEM UNGLÜCKSWÜRFEL (seit v0.59, Wunsch #13).
-     *
-     * Gemeldet als: „Es muss eine Information erscheinen, ob ein negatives Item
-     * eingesammelt wurde." Bis dahin sah man nur die Folgen — Felder leuchteten
-     * rot auf, eine Figur stand plötzlich woanders — und musste sich den Grund
-     * aus dem Zugverlauf zusammensuchen, der weit unter dem Brett steht.
-     *
-     * Drei Entscheidungen dahinter:
-     *
-     *   - Er steht DIREKT UNTER der Stand-Leiste, über dem Brett: Dort schaut
-     *     man ohnehin hin, und er schiebt das Brett nicht aus dem Bild.
-     *   - Er wird aus dem VERLAUF gelesen, nicht aus einem gemerkten Zustand.
-     *     Damit sieht ihn JEDES Gerät (auch der Gegner, der wissen muss, warum
-     *     das Brett sich verändert hat), und er überlebt jedes Neuzeichnen.
-     *   - Er verschwindet von selbst, sobald irgendetwas anderes passiert —
-     *     wegklicken muss ihn niemand.
-     *
-     * Kein Bruch der eisernen Regel „die Oberfläche verrät nie, was in einem
-     * Würfel steckt": Hier ist er bereits eingesammelt und hat gewirkt.
+     * HIER STAND VON v0.59 BIS v0.81.0 `_unglueckMeldungBauen` — der rote
+     * Streifen nach einem Unglückswürfel (Wunsch #13). Er erschien zwischen
+     * Standleiste und Brett und drückte das Brett um ~50 px zusammen (Fund
+     * A2-1 der Mess-Runde vom 26.08.2026). Seine Aufgabe übernimmt seit
+     * v0.82.0 die Unglücks-Karte in der Hand der betroffenen Seite
+     * (Nutzer-Ansage 26.08.2026) — gebaut in `_faehigkeitReiheBauen`.
      */
-    _unglueckMeldungBauen(partie) {
-        const letzter = partie.verlauf[partie.verlauf.length - 1];
 
-        if (!letzter || letzter.wirkung !== "pech") {
-            return null;
+    /* Beschreibung und Bildanleitung eines Unglücks — das Gegenstück zu
+       `faehigkeitAnsehen`, gerufen von der Unglücks-Karte der Hand (v0.82.0)
+       und von der Bibliotheks-Kachel. */
+    async unglueckAnsehen(art) {
+        if (!SCHACH_VARIANTEN.PECH[art]) {
+            return;
         }
 
-        const streifen = TEAM_SCHACH._element("div", "meldung meldung-fehler unglueck-meldung");
-
-        /* Seite und Text getrennt — genau wie im Zugverlauf. Der Satz gehört
-           dem Modell (`_pechAusloesen` schreibt ihn), die Seite steht im
-           Eintrag daneben; zusammengesetzt stünde sie zweimal da. */
-        streifen.appendChild(TEAM_SCHACH._element(
-            "span",
-            "zug-farbe " + ((letzter.farbe === "weiss") ? "zug-weiss" : "zug-schwarz"),
-            (letzter.farbe === "weiss") ? "Weiss" : "Schwarz"
-        ));
-        streifen.appendChild(TEAM_SCHACH._element("span", "unglueck-text", letzter.text));
-
-        return streifen;
+        await DIALOG.hinweis(
+            SCHACH_VARIANTEN.pechTitel(art) + " (Unglück)",
+            SCHACH_VARIANTEN.pechBeschreibung(art),
+            TEAM_SCHACH._anleitungBauen(art)
+        );
     },
 
     /* ---------------------------------------------------------------- *

@@ -3504,13 +3504,13 @@ pruefe("Ohne Haken ist ein Unglueckswuerfel nicht zu erkennen (v0.49)", () => {
 });
 
 /*
- * DER STREIFEN NACH EINEM UNGLÜCKSWÜRFEL (v0.59, Wunsch #13).
+ * DIE UNGLÜCKS-KARTE DER HAND (v0.82.0, Fund A2-1; davor v0.59 bis v0.81.0
+ * ein roter Streifen ueber dem Brett, der es ~50 px zusammendrueckte).
  *
- * Er wird aus dem letzten Verlaufseintrag gelesen. Gebaut wird der Fall hier
- * über einen echten Zug auf einen Unglückswürfel — dann steht der Eintrag im
- * Verlauf, so wie er im Spiel entsteht.
+ * Gebaut wird der Fall ueber einen echten Zug auf einen Unglueckswuerfel —
+ * dann steht die Karte in `unglueckskarten`, so wie sie im Spiel entsteht.
  */
-pruefe("Ein eingesammelter Unglueckswuerfel wird angesagt (v0.59)", () => {
+pruefe("Ein eingesammeltes Unglueck liegt als Karte in der Hand (v0.82.0)", () => {
     const angelegt = SCHACH_TAFEL.partieAnlegen(
         TEAM_SCHACH.abgleich.daten, "standard", "Unglueck", 5700);
 
@@ -3537,29 +3537,27 @@ pruefe("Ein eingesammelter Unglueckswuerfel wird angesagt (v0.59)", () => {
         throw new Error("der Zug hat gar keinen Unglueckswuerfel ausgeloest");
     }
 
-    const streifen = TEAM_SCHACH.wurzelEl.kinder.find(
-        (kind) => String(kind.className || "").indexOf("unglueck-meldung") !== -1);
-
-    if (!streifen) {
-        throw new Error("kein Streifen nach dem Unglueckswuerfel");
+    /* Der alte Streifen ist weg — nichts schiebt sich mehr vor das Brett. */
+    if (TEAM_SCHACH.wurzelEl.kinder.some(
+        (kind) => String(kind.className || "").indexOf("unglueck-meldung") !== -1)) {
+        throw new Error("der alte Streifen wird immer noch gebaut");
     }
 
-    /* Er steht ueber dem Brett, nicht darunter: direkt hinter der Standleiste. */
-    const stelle = TEAM_SCHACH.wurzelEl.kinder.indexOf(streifen);
-    if (stelle !== 2) {
-        throw new Error("der Streifen steht an Stelle " + stelle + " statt ueber dem Brett");
+    /* Stattdessen liegt die Karte in der Hand der betroffenen Seite. */
+    if (!klasseSuchen(TEAM_SCHACH.wurzelEl, "unglueck-knopf")) {
+        throw new Error("keine Unglueck-Karte in der Hand nach dem Unglueckswuerfel");
     }
 
-    /* Und nach einem gewoehnlichen Zug ist er wieder weg. */
+    /* Der Erdrutsch ist DAUERHAFT: Die Karte bleibt auch nach dem naechsten
+       Zug liegen (Nutzer-Ansage 26.08.2026 — nur zeitlich Begrenztes geht). */
     partie = SCHACH_RUNDE.ziehen(partie, "id-bert",
         SCHACH.feldNummer("h7"), SCHACH.feldNummer("h6"), "D", "Bert", 5720);
     TEAM_SCHACH.abgleich.daten = SCHACH_TAFEL.partieEinsetzen(
         TEAM_SCHACH.abgleich.daten, partie, 5720);
     TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
 
-    if (TEAM_SCHACH.wurzelEl.kinder.some(
-        (kind) => String(kind.className || "").indexOf("unglueck-meldung") !== -1)) {
-        throw new Error("der Streifen bleibt nach dem naechsten Zug stehen");
+    if (!klasseSuchen(TEAM_SCHACH.wurzelEl, "unglueck-knopf")) {
+        throw new Error("die dauerhafte Unglueck-Karte verschwindet mit dem naechsten Zug");
     }
 
     TEAM_SCHACH.offeneId = "";

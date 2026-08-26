@@ -309,6 +309,12 @@ const SCHACH_VARIANTEN = {
         return eintrag ? eintrag.beschreibung : "";
     },
 
+    /* Der erste Satz — für den Kurzhinweis an der Unglücks-Karte der Hand
+       (seit v0.82.0), dieselbe Rechnung wie `faehigkeitKurz`. */
+    pechKurz(art) {
+        return SCHACH_VARIANTEN._ersterSatz(SCHACH_VARIANTEN.pechBeschreibung(art));
+    },
+
     pechStufeVon(art) {
         const eintrag = SCHACH_VARIANTEN.PECH[art];
         if (!eintrag) {
@@ -2429,7 +2435,13 @@ const SCHACH_VARIANTEN = {
      * Satz mittendrin.
      */
     faehigkeitKurz(art) {
-        const voll = SCHACH_VARIANTEN.faehigkeitBeschreibung(art);
+        return SCHACH_VARIANTEN._ersterSatz(
+            SCHACH_VARIANTEN.faehigkeitBeschreibung(art));
+    },
+
+    /* Der erste Satz eines Beschreibungstextes. EINE Stelle für die Rechnung —
+       `faehigkeitKurz` und `pechKurz` (v0.82.0) fragen beide hier. */
+    _ersterSatz(voll) {
         const treffer = voll.match(/^[\s\S]*?[.!?](\s|$)/);
 
         return (treffer ? treffer[0] : voll).trim();

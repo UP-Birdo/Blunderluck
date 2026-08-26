@@ -705,18 +705,10 @@ body.partie-fest .phasen-leiste {
     color: var(--gefahr);
 }
 
-.unglueck-meldung {
-    display: flex;
-    align-items: baseline;
-    gap: 8px;
-    border: 1px solid var(--gefahr);
-    font-size: 0.92rem;
-}
-
-.unglueck-text {
-    min-width: 0;
-    overflow-wrap: anywhere;
-}
+/* HIER STANDEN `.unglueck-meldung` und `.unglueck-text` (v0.59 bis v0.81.0) —
+   der rote Streifen nach einem Unglückswürfel. Er drückte das Brett um ~50 px
+   zusammen (Fund A2-1); seine Aufgabe übernimmt seit v0.82.0 die
+   Unglücks-Karte in der Hand (`.unglueck-knopf`, bei den Karten der Reihe). */
 
 /* Der schwebende Zurück-Knopf (v0.59 bis v0.109) ist raus — Nutzer-Ansage
    22.08.: EIN Zurück-Knopf, in der ganzen App gleich zu finden. In den
@@ -5133,6 +5125,18 @@ body.design-3d .werte-figur {
 .faehigkeit-reihe .faehigkeit-knopf:first-child {
     margin-left: 0;
     box-shadow: none;
+}
+
+/*
+ * DIE UNGLÜCKS-KARTE DER HAND (seit v0.82.0, Fund A2-1): Ein abbekommenes
+ * Unglück liegt als Karte hinter den Fähigkeiten — gestrichelt gerahmt wie
+ * seine Kachel in der Bibliothek, auf dem roten Fehler-Grund, damit sie auch
+ * in der GEGNER-Reihe (dort sind alle Fähigkeiten gestrichelt) als Unglück
+ * zu erkennen ist. Der Rahmen behält die Stufenfarbe wie jede andere Karte.
+ */
+.faehigkeit-reihe .unglueck-knopf {
+    border-style: dashed;
+    background: var(--fehler-flaeche);
 }
 
 /*

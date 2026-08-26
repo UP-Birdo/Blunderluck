@@ -1477,9 +1477,9 @@ Object.assign(TEAM_SCHACH, {
      * und nirgends in den Regeln — `SCHACH.zuege` weiß nichts davon.
      */
     _glasWirkt(partie, meinTeam) {
-        return !!meinTeam
-            && partie.stand.glasFarbe === meinTeam
-            && partie.zugZaehler < partie.stand.glasBis;
+        /* Die Rechnung wohnt seit v0.82.0 im Modell — die Unglücks-Karte der
+           Hand stellt dieselbe Frage, und eine Regel steht genau einmal. */
+        return SCHACH_RUNDE.glasWirkt(partie, meinTeam);
     },
 
     /*

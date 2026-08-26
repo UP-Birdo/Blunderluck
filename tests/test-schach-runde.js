@@ -6779,6 +6779,70 @@ pruefe("Stolperstein wirft die einsammelnde Figur zurueck", () => {
     gleich(letzter.wege.length, 1, "ein Weg fuer den Pfeil");
 });
 
+/*
+ * DIE UNGLUECKS-KARTEN DER HAND (v0.82.0, Fund A2-1, Nutzer-Ansage
+ * 26.08.2026): Ein gewirktes Unglueck liegt als Karte in der Hand der Seite,
+ * die es abbekommen hat. Dauerhafte bleiben die ganze Partie; zeitlich
+ * Begrenztes (die Halluzination) liegt nur da, solange es wirkt. Die Liste
+ * haengt an der Partie, NICHT am Verlauf — der wird gekuerzt.
+ */
+pruefe("Ein gewirktes Unglueck liegt als Karte in der Hand (v0.82.0)", () => {
+    const runde = pechEinsammeln(faehigkeitenPartie(), "stolperstein", "e2", "e4");
+
+    gleich(runde.unglueckskarten.weiss.length, 1, "eine Karte fuer Weiss");
+    gleich(runde.unglueckskarten.weiss[0].art, "stolperstein", "mit der Art");
+    gleich(runde.unglueckskarten.schwarz.length, 0, "Schwarz hat keine");
+
+    /* Der Stolperstein ist dauerhaft — die Hand zeigt ihn. */
+    gleich(SCHACH_RUNDE.unglueckskartenVon(runde, "weiss").length, 1,
+        "die Hand zeigt die Karte");
+
+    /* Und sie ueberlebt Speichern und Laden (additiver Vertrag). */
+    const geladen = SCHACH_RUNDE.normalisieren(JSON.parse(JSON.stringify(runde)));
+    gleich(geladen.unglueckskarten.weiss.length, 1, "ueberlebt das Laden");
+    gleich(geladen.unglueckskarten.weiss[0].art, "stolperstein", "mit der Art");
+});
+
+pruefe("Die Halluzinations-Karte geht mit dem Ablauf aus der Hand (v0.82.0)", () => {
+    let runde = pechEinsammeln(faehigkeitenPartie(), "vollesGlas", "e2", "e4");
+
+    gleich(runde.unglueckskarten.weiss.length, 1, "die Karte liegt da");
+    gleich(SCHACH_RUNDE.unglueckskartenVon(runde, "weiss").length, 1,
+        "und die Hand zeigt sie, solange das Glas wirkt");
+
+    /* Nach dem Ablauf (zugZaehler erreicht glasBis) verschwindet sie aus der
+       Hand — der Eintrag selbst bleibt, nur die Anzeige filtert. */
+    runde = SCHACH_RUNDE.kopieren(runde);
+    runde.zugZaehler = runde.stand.glasBis;
+
+    gleich(SCHACH_RUNDE.glasWirkt(runde, "weiss"), false, "das Glas ist abgelaufen");
+    gleich(SCHACH_RUNDE.unglueckskartenVon(runde, "weiss").length, 0,
+        "abgelaufen heisst aus der Hand");
+    gleich(runde.unglueckskarten.weiss.length, 1, "der Eintrag selbst bleibt");
+});
+
+pruefe("normalisieren wirft fremden Muell aus den Ungluecks-Karten (v0.82.0)", () => {
+    const runde = SCHACH_RUNDE.normalisieren({
+        unglueckskarten: {
+            weiss: [
+                { art: "erdrutsch", zugZaehler: 3 },
+                { art: "keinUnglueck", zugZaehler: 1 },
+                { art: "meuterei", zugZaehler: -1 },
+                "quatsch"
+            ]
+        }
+    });
+
+    gleich(runde.unglueckskarten.weiss.length, 1, "nur der echte Eintrag bleibt");
+    gleich(runde.unglueckskarten.weiss[0].art, "erdrutsch", "der Erdrutsch");
+    gleich(runde.unglueckskarten.schwarz.length, 0, "fehlend heisst leer");
+
+    /* Eine Partie von frueher hat das Feld gar nicht — dann bleibt es leer. */
+    const alt = SCHACH_RUNDE.normalisieren({});
+    gleich(alt.unglueckskarten.weiss.length, 0, "alte Partie: leer fuer Weiss");
+    gleich(alt.unglueckskarten.schwarz.length, 0, "und leer fuer Schwarz");
+});
+
 pruefe("Ausdehnung laesst das Brett wachsen und rechnet alle Felder um", () => {
     /* Links anbauen ist der harte Fall: Jede Feldnummer verschiebt sich. */
     const stand = SCHACH.standNormalisieren({ variante: "standard" });

@@ -3,6 +3,24 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.82.0 — 26.08.2026
+
+**Ein Unglück liegt jetzt als Karte in der Hand — der rote Streifen über dem
+Brett ist weg.**
+
+- **Wer eine Unglücks-Lootbox abbekommt, trägt sie ab sofort als Karte** in
+  seiner Kartenreihe, als eigener Stapel hinter den Fähigkeiten: gestrichelt
+  gerahmt, auf rotem Grund, mit dem Zeichen des Unglücks. Antippen zeigt
+  Beschreibung und Bildanleitung — genau wie in der Bibliothek.
+- **Dauerhafte Unglücke (Stolperstein, Spalt, Meuterei, Erdrutsch) bleiben
+  die ganze Partie in der Hand** — man sieht jederzeit, was einen schon
+  getroffen hat, auch beim Gegner. **Die Halluzination verschwindet von
+  selbst**, sobald ihre vier Halbzüge um sind.
+- **Der rote Melde-Streifen zwischen Leiste und Brett ist weg.** Er drückte
+  das Brett bei jedem Unglück um rund 50 Pixel zusammen und sprang mit dem
+  nächsten Zug wieder zurück (Fund der Mess-Runde vom 26.08.). Jetzt bleibt
+  das Brett ruhig — die Karte übernimmt die Ansage.
+
 ## v0.81.0 — 26.08.2026
 
 **Feinschliff der Eck-Kästen nach der ersten Nutzer-Runde: offener

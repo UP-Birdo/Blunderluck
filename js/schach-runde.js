@@ -238,6 +238,21 @@ const SCHACH_RUNDE = {
             gefallen: { weiss: [], schwarz: [] },
 
             /*
+             * WELCHE UNGLÜCKE JEDE SEITE ABBEKOMMEN HAT (seit v0.82.0):
+             * [{ art, zugZaehler }] je Farbe, das Jüngste hinten. Daraus baut
+             * die Hand ihre Unglücks-Karten (Nutzer-Ansage 26.08.2026: die
+             * Meldung wird eine Karte in der Hand dessen, der aufs Feld
+             * gezogen ist).
+             *
+             * Warum nicht aus dem VERLAUF gelesen: Der wird gekürzt
+             * (`_verlaufKuerzen`) — eine dauerhafte Karte wäre nach ein paar
+             * Zügen wieder weg. Die Liste wächst je Partie um höchstens eine
+             * Handvoll Einträge; was die Hand davon ZEIGT, beantwortet
+             * `unglueckskartenVon` (zeitlich Begrenztes nur, solange es wirkt).
+             */
+            unglueckskarten: { weiss: [], schwarz: [] },
+
+            /*
              * Was beim Anlegen eingestellt wurde. Die Vorgaben entsprechen dem
              * Verhalten von vorher, damit angefangene Partien sich nicht
              * ändern — sie haben diese Felder nicht und bekommen genau das,
@@ -1251,6 +1266,23 @@ const SCHACH_RUNDE = {
                     && SCHACH.artName(eintrag.art) !== ""
                     && Number.isInteger(eintrag.feld) && eintrag.feld >= 0)
                 .map((eintrag) => ({ art: eintrag.art, feld: eintrag.feld }));
+
+            /* Die Unglücks-Karten der Hand (seit v0.82.0) — additiv
+               nachgerüstet: Eine Partie von früher hat keine, dann bleibt die
+               Liste leer und die Hand zeigt schlicht nichts. Nur echte
+               Unglücks-Arten werden übernommen. */
+            const abbekommen = (roh.unglueckskarten
+                && Array.isArray(roh.unglueckskarten[farbe]))
+                ? roh.unglueckskarten[farbe] : [];
+            runde.unglueckskarten[farbe] = abbekommen
+                .filter((eintrag) => eintrag && typeof eintrag.art === "string"
+                    && SCHACH_VARIANTEN.PECH[eintrag.art]
+                    && Number.isInteger(eintrag.zugZaehler)
+                    && eintrag.zugZaehler >= 0)
+                .map((eintrag) => ({
+                    art: eintrag.art,
+                    zugZaehler: eintrag.zugZaehler
+                }));
         }
 
         if (roh.regeln && typeof roh.regeln === "object") {
@@ -3207,6 +3239,14 @@ const SCHACH_RUNDE = {
             runde.stand = wirkung.stand;
             text += " — " + wirkung.text;
 
+            /* Die Karte für die Hand (seit v0.82.0): Wer das Unglück
+               abbekommen hat, trägt es ab jetzt als Karte. Nur ein Unglück,
+               das WIRKT, zählt — ein verpufftes hat niemanden getroffen. */
+            runde.unglueckskarten[farbe].push({
+                art: art,
+                zugZaehler: runde.zugZaehler
+            });
+
             /*
              * GESCHOBENE BAUERN NEHMEN AUCH HIER IHRE EINTRÄGE MIT (seit
              * v0.98). Bis dahin galt das nur für die FÄHIGKEITEN — ein
@@ -3298,6 +3338,38 @@ const SCHACH_RUNDE = {
             wege: wirkung ? (wirkung.wege || []) : []
         });
         SCHACH_RUNDE._verlaufKuerzen(runde);
+    },
+
+    /*
+     * Verschwimmt die Sicht dieser Seite gerade? (seit v0.82.0 im Modell)
+     *
+     * Die Rechnung stand vorher nur im Bildschirm (`TEAM_SCHACH._glasWirkt`);
+     * seit die Unglücks-Karte der Hand dieselbe Frage stellt, wohnt sie hier —
+     * eine Regel steht genau einmal, und zwar im Modell.
+     */
+    glasWirkt(runde, farbe) {
+        return (farbe === "weiss" || farbe === "schwarz")
+            && runde.stand.glasFarbe === farbe
+            && runde.zugZaehler < runde.stand.glasBis;
+    },
+
+    /*
+     * Die Unglücks-Karten, die die Hand einer Seite ZEIGT (seit v0.82.0,
+     * Nutzer-Ansage 26.08.2026): Dauerhafte bleiben die ganze Partie liegen;
+     * zeitlich Begrenztes liegt nur in der Hand, solange es wirkt. Die
+     * Halluzination ist das einzige Unglück mit Ablauf — wer ein zweites
+     * baut, ergänzt seinen Fall HIER, nicht im Bildschirm.
+     */
+    unglueckskartenVon(runde, farbe) {
+        const liste = (runde.unglueckskarten && runde.unglueckskarten[farbe])
+            ? runde.unglueckskarten[farbe] : [];
+
+        return liste.filter((eintrag) => {
+            if (eintrag.art === "vollesGlas") {
+                return SCHACH_RUNDE.glasWirkt(runde, farbe);
+            }
+            return true;
+        });
     },
 
     /*
