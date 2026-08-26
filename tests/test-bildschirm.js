@@ -3447,6 +3447,62 @@ function unglueckswuerfelZeichnen(pechZeigen, wann) {
         "[data-feld=\"" + SCHACH.feldNummer("g5") + "\"]");
 }
 
+pruefe("Die Lootbox steht im Feld VOR der Figur (v0.83.1)", () => {
+    /*
+     * GEMELDET 27.08.2026: „die Lootbox ist im Vordergrund statt hinter der
+     * Figur". Sie liegt auf dem Feld, die Figur steht darauf — also gehoert
+     * sie dahinter. Beide sitzen in der Stildatei auf DERSELBEN Stufe
+     * (`z-index: 1`), damit die Box weiterhin ueber den Feldmarken liegt;
+     * welche von beiden vorn ist, entscheidet deshalb die Reihenfolge IM
+     * FELD. Genau die haelt dieser Test fest.
+     *
+     * Eine Figur steht auf einer Box, wann immer sie GESCHOBEN wurde
+     * (Erdrutsch, Nudelholz, Bauernschub) oder dorthin gestellt wurde
+     * (Friedhof, Wiedergeburt): Geschoben zu werden ist kein Zug, es wird
+     * dabei nichts eingesammelt.
+     */
+    let partie = SCHACH_TAFEL.partie(TEAM_SCHACH.abgleich.daten, kennungen.faehigkeiten);
+    partie = SCHACH_RUNDE.kopieren(partie);
+
+    /* Ein Feld, auf dem eine Figur STEHT — und eine Box daraufgelegt. */
+    const feld = SCHACH.feldNummer("a2");
+    if (SCHACH.figurAuf(partie.stand, feld) === ".") {
+        throw new Error("auf a2 steht keine Figur, der Fall waere nicht nachgebaut");
+    }
+    if (!partie.bonus.some((eintrag) => eintrag.feld === feld)) {
+        partie.bonus.push({ feld: feld, art: "", stufe: "gruen" });
+    }
+
+    TEAM_SCHACH.abgleich.daten = SCHACH_TAFEL.partieEinsetzen(
+        TEAM_SCHACH.abgleich.daten, partie, 5450);
+    TEAM_SCHACH.partieOeffnen(partie.id);
+
+    const zelle = TEAM_SCHACH.wurzelEl.querySelector(
+        "[data-feld=\"" + feld + "\"]");
+    if (!zelle) {
+        throw new Error("das Feld wurde gar nicht gezeichnet");
+    }
+
+    const stelleWuerfel = zelle.kinder.findIndex((kind) => kind.attribute
+        && String(kind.attribute["class"] || "").indexOf("wuerfel") !== -1);
+    const stelleFigur = zelle.kinder.findIndex((kind) =>
+        String(kind.className || "").indexOf("figur") !== -1);
+
+    if (stelleWuerfel === -1) {
+        throw new Error("keine Lootbox auf dem Feld");
+    }
+    if (stelleFigur === -1) {
+        throw new Error("keine Figur auf dem Feld");
+    }
+    if (stelleWuerfel > stelleFigur) {
+        throw new Error("die Lootbox steht hinter der Figur im Feld (Stelle "
+            + stelleWuerfel + " statt vor " + stelleFigur + ") — sie liegt "
+            + "damit im Vordergrund");
+    }
+
+    TEAM_SCHACH.offeneId = "";
+});
+
 pruefe("Mit Haken traegt ein Unglueckswuerfel ein umgedrehtes Fragezeichen", () => {
     /*
      * SEIT v0.24.0 IST DAS ZEICHEN EINGRAVIERT, also Teil des Bildes: Der

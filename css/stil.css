@@ -2526,6 +2526,33 @@ body.design-3d .feld-vorschlag-ziel {
 }
 
 /*
+ * EIN RISS IST EIN LOCH — UND EIN LOCH HAT KEINE KANTE (seit v0.83.1).
+ *
+ * DER FEHLER, DEN DAS BEHEBT (gemeldet 27.08.2026: „der untere Rand der
+ * fehlenden Felder bleibt da"): `.feld-riss` weiter unten setzt zwar
+ * `background: transparent !important` — aber der `box-shadow` daneben trägt
+ * KEIN `!important`. Und dort steht die Kachelkante des 3D-Looks
+ * (`body.design-3d .feld-hell`, Spezifität 0-2-1 gegen 0-1-0): Der erhabene
+ * 5-Pixel-Streifen unter dem Feld blieb also stehen, während die Fläche
+ * verschwand — ein Loch mit Sockel. Im Browser gemessen: `rgb(151, 169, 188)
+ * 0px 5px 0px`.
+ *
+ * WARUM NICHT EINFACH `!important` DAZU: Die Loch-Optik (`inset`-Schatten von
+ * oben) und die Kachelkante stehen in DERSELBEN Eigenschaft — wer sie mit
+ * `!important` festnagelt, nimmt jeder späteren Regel die Möglichkeit, am
+ * Riss noch etwas anzuzeigen. Eine eigene 3D-Regel ist dasselbe Mittel, das
+ * die Kreuz-Ecke gleich darunter schon benutzt.
+ *
+ * SIE MUSS NACH `body.design-3d .feld-spur` STEHEN: Ein Springer setzt über
+ * Risse hinweg, sein Weg färbt also auch ein Riss-Feld. Beide Regeln wiegen
+ * gleich schwer — hier entscheidet die Reihenfolge.
+ */
+body.design-3d .feld-riss {
+    --kachel-schatten: none;
+    box-shadow: inset 0 3px 4px -2px rgba(0, 0, 0, 0.5);
+}
+
+/*
  * DIE ECKEN EINES KREUZ-BRETTS SIND KEINE KACHELN (v0.31.0). Diese Regel
  * steht bewusst als LETZTE der Kachel-Regeln: Sie hat dieselbe Stärke wie
  * `.feld-hell` und `.feld-dunkel` und gewinnt nur, weil sie später kommt.
@@ -3161,7 +3188,26 @@ body.design-3d .werte-figur {
     width: 76%;
     height: 76%;
     pointer-events: none;
-    z-index: 2;
+
+    /*
+     * SIE LIEGT AUF DEM FELD, DIE FIGUR STEHT DARAUF (seit v0.83.1).
+     *
+     * DER FEHLER, DEN DAS BEHEBT (gemeldet 27.08.2026: „die Lootbox ist im
+     * Vordergrund statt hinter der Figur"): Die Box hatte `z-index: 2`, die
+     * Figur hat `1` — sie lag also vor jeder Figur, die auf ihrem Feld steht
+     * (geschoben von Erdrutsch, Nudelholz oder Bauernschub, gestellt von
+     * Friedhof und Wiedergeburt: geschoben zu werden ist kein Zug, es wird
+     * dabei nichts eingesammelt).
+     *
+     * JETZT DIESELBE STUFE WIE DIE FIGUR — und die Reihenfolge im Feld
+     * entscheidet: `_brettBauen` hängt die Box als ERSTES Kind ein, die Figur
+     * danach. Warum nicht einfach eine Stufe tiefer (`0`): Dort läge sie
+     * unter dem Zielpunkt (`.feld-ziel::after`), und der säße dann mitten auf
+     * ihr. Warum die Figur nicht höher: Schild-, Fessel- und Leihring liegen
+     * auf Stufe 2 und gehören ÜBER die Figur — die Stufen sind eng.
+     */
+    z-index: 1;
+
     filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.45));
     animation: wuerfel-schweben 2.4s ease-in-out infinite;
 }

@@ -1430,11 +1430,16 @@ Object.assign(TEAM_SCHACH, {
                     && !versteckt) || enttarnt;
 
                 zelle.classList.add("feld-bonus");
-                zelle.appendChild(TEAM_SCHACH._wuerfelBauen(
+
+                /* Wie am echten Brett ganz nach vorn ins Feld, also HINTER
+                   die Figur (seit v0.83.1) — die Begründung steht bei
+                   `.wuerfel` in `css\stil.css`. Die Bildanleitungen zeigen
+                   genau diesen Fall: eine Figur, die auf eine Lootbox zieht. */
+                zelle.insertBefore(TEAM_SCHACH._wuerfelBauen(
                     farbeZeigen
                         ? SCHACH_RUNDE.bonusStufe(wuerfel)
                         : SCHACH_VARIANTEN.STUFE_UNBEKANNT,
-                    wuerfel.pech));
+                    wuerfel.pech), zelle.firstChild);
             }
 
             /* Ränder wie am echten Brett: nur aussen, damit die drei Felder

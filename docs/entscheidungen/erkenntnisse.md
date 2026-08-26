@@ -2,6 +2,57 @@
 
 ## Teuer erkaufte Erkenntnisse
 
+### Ein `!important` schuetzt nur SEINE Eigenschaft — und ein z-index sagt nichts ohne seine Nachbarn (v0.83.1)
+
+**Zwei Meldungen des Nutzers am 27.08.2026, ein gemeinsamer Boden:** „Der
+untere Rand der fehlenden Felder bleibt da" und „die Lootbox ist im
+Vordergrund statt hinter der Figur". Beides sind reine ANZEIGE-Fehler, beide
+im Browser nachgemessen (Edge kopflos, echte `css\stil.css`).
+
+**Fall 1 — das Loch mit Sockel.** `.feld-riss` raeumt die Kachel ab:
+`background: transparent !important` UND einen eigenen `box-shadow` fuer die
+Loch-Optik. Der `background` verschwand auch zuverlaessig — der `box-shadow`
+nicht: Dort steht im 3D-Look die Kachelkante (`body.design-3d .feld-hell`,
+Spezifitaet 0-2-1 gegen 0-1-0), und die hat den Riss-Schatten schlicht
+ueberstimmt. Gemessen: `rgb(151, 169, 188) 0px 5px 0px`. Sichtbar war ein
+Loch, unter dem der erhabene Rand stehen blieb.
+
+> **Die Regel:** Ein `!important` an EINER Eigenschaft sagt nichts ueber die
+> Eigenschaft daneben. Wer etwas WEGNEHMEN will, muss jede Eigenschaft
+> treffen, in der es steckt — und wenn eine davon einem staerkeren Selektor
+> gehoert, braucht es einen ebenso starken (hier: eine eigene
+> `body.design-3d`-Regel, genau wie die Kreuz-Ecke sie seit v0.31.0 hat).
+> Zweitens: Wer eine solche Regel einfuegt, prueft die REIHENFOLGE gegen die
+> gleich schweren Nachbarn (`body.design-3d .feld-spur` faerbt dasselbe Feld,
+> wenn ein Springer darueber setzt).
+
+**Fall 2 — die Box vor der Figur.** `.wuerfel` hatte `z-index: 2`, `.figur`
+hat `1`. Die Zahl 2 war fuer sich richtig gedacht (ueber den Feldmarken),
+aber niemand hat sie gegen die FIGUR gehalten — und eine Figur steht sehr
+wohl auf einer Box, wann immer sie geschoben (Erdrutsch, Nudelholz,
+Bauernschub) oder gestellt wurde (Friedhof, Wiedergeburt): Geschoben zu
+werden ist kein Zug, es wird dabei nichts eingesammelt.
+
+Die Stufen im Feld liegen eng: `auto` Feldmarken, `1` Figur, `2` Schild-,
+Fessel- und Leihring plus Mauer (alles Pseudo-Elemente, die ueber der Figur
+liegen SOLLEN), `3` Verpuffen und Wirkungs-Schauspiele. Zwischen Marken und
+Figur ist kein Platz — deshalb liegt die Box jetzt auf DERSELBEN Stufe wie
+die Figur (`1`) und wird im Feld als ERSTES Kind eingehaengt.
+
+> **Die Regel:** Ein `z-index` ist keine Eigenschaft eines Bauteils, sondern
+> eine Aussage ueber ALLE, die im selben Feld liegen koennen. Wer eine Zahl
+> vergibt, zaehlt die Nachbarn auf — und wo zwei Dinge sich eine Stufe
+> teilen, haelt ein Test die Reihenfolge fest (`tests\test-bildschirm.js`,
+> „Die Lootbox steht im Feld VOR der Figur").
+
+**Was beide verbindet — und die eigentliche Lehre:** Kein Test der Kette
+haette eines von beidem finden koennen, denn **die Kette rendert nicht**
+(dieselbe Feststellung wie bei „Bei gleicher Spezifitaet gewinnt die
+SPAETERE Regel", v0.71.0). Gefunden hat sie der Blick des Nutzers, belegt
+hat sie die Browser-Messung. Fuer alles Optische gilt deshalb weiter: erst
+messen, dann rechnen — und was gerechnet und nie gesehen wurde, gilt als
+ungeprueft.
+
 ### Wer gemessene PIXEL schreibt, muss nach jeder Groessenaenderung neu messen — ZWEIMAL passiert (Quizz v0.88 und Blunderluck v0.74.0)
 
 **Der Fehlschlag, zum zweiten Mal:** Der Nutzer meldete am 26.08.2026 „wenn

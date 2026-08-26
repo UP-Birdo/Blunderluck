@@ -50,16 +50,23 @@ Leute, einer hört auf mitzuspielen — und der andere kann nie wieder ziehen. D
 ist kein theoretischer Fall, sondern der Normalfall bei einer Partie über
 mehrere Tage.
 
-Deshalb läuft die Abstimmung jetzt gegen die Uhr: zehn Sekunden, dann gilt der
-Vorschlag. Wer **zweimal** nicht abstimmt, verkürzt sie auf fünf, dann auf drei
-Sekunden — und sobald er wieder mitstimmt, gilt wieder die volle Zeit. Die
-Staffelung bestraft also nicht das einmalige Verpassen, sondern nur das
-dauerhafte Fernbleiben.
+Deshalb läuft die Abstimmung gegen die Uhr: zehn Sekunden. Wer **zweimal**
+nicht mitmacht, verkürzt sie auf fünf, dann auf drei Sekunden — und sobald er
+wieder mitmacht, gilt wieder die volle Zeit. Die Staffelung bestraft also
+nicht das einmalige Verpassen, sondern nur das dauerhafte Fernbleiben.
 
 Die Frist steht **im gemeinsamen Stand**, nicht in jedem Browser: Sonst liefe
 sie auf jedem Gerät anders, und wer eine langsame Verbindung hat, wäre immer der
 Säumige. Ausgelöst wird sie vom ersten Gerät, das den Ablauf bemerkt; die
 Zugzähler-Prüfung sorgt dafür, dass sie trotzdem nur einmal greift.
+
+**Nachtrag 26.08.2026 (v0.83.0):** Die Abstimmung selbst läuft seither über
+deckungsgleiche Züge statt über Knöpfe (Eintrag „Zustimmen heisst denselben
+Zug machen" in `entschieden.md`). Auf Rückfrage ausdrücklich entschieden:
+**Die Frist bleibt als Rückfall** — nach Ablauf zählen nur die ABGEGEBENEN
+Vorschläge, und nur wer GAR NICHTS abgegeben hat, wird übergangen und
+bekommt seinen Strich. Einen Streit unter Anwesenden entscheidet die Uhr
+nie.
 
 ## Bewusst abgelehnt
 

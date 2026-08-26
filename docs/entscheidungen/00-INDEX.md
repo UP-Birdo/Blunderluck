@@ -25,6 +25,11 @@ wird. Die Liste dessen, was noch kommt, steht in [../ROADMAP.md](../ROADMAP.md).
 
 ## entschieden.md - Blunderluck-Eintraege
 
+- **Zustimmen heisst denselben Zug machen** (26.08.2026, v0.83.0 —
+  Gestalt-Entscheidung zu Fund A2-3: Abstimmungs-Karte und Knoepfe ersatzlos
+  weg, je Spieler SEIN Vorschlag (`vorschlaege`), Schemen + gruener Laufweg
+  nur fuers eigene Team; Frist bleibt als Rueckfall gegen Abwesende, die Uhr
+  entscheidet nie einen Streit — Nachtrag dazu in `offen-und-abgelehnt.md`)
 - **Das Unglueck ist eine Karte in der Hand, kein Streifen** (26.08.2026,
   v0.82.0 — Gestalt-Entscheidung zu Fund A2-1, ersetzt den Streifen aus
   v0.59 ersatzlos; Liste `unglueckskarten` an der Partie statt im Verlauf,
@@ -59,6 +64,11 @@ wird. Die Liste dessen, was noch kommt, steht in [../ROADMAP.md](../ROADMAP.md).
   Play-Store-Umbau braeuchte - Referenz: docs\uebergabe-schach-app.md)
 
 ## erkenntnisse.md - Teuer erkaufte Erkenntnisse
+- **Ein `!important` schuetzt nur SEINE Eigenschaft — und ein z-index sagt
+  nichts ohne seine Nachbarn** (v0.83.1, zwei Nutzer-Meldungen vom
+  27.08.2026: Riss mit stehengebliebener Kachelkante, Lootbox vor der Figur;
+  enthaelt die Stufen-Landschaft im Brettfeld und die Erinnerung, dass die
+  Testkette nicht rendert)
 - **Wer gemessene PIXEL schreibt, muss nach jeder Groessenaenderung neu
   messen — ZWEIMAL passiert** (Quizz v0.88 Brett, Blunderluck v0.74.0
   Tab-Pille; `resize` PLUS `orientationchange`, messen im naechsten Bild,

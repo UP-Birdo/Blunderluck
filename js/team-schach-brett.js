@@ -425,9 +425,18 @@ Object.assign(TEAM_SCHACH, {
                 zelle.setAttribute("aria-label",
                     SCHACH.feldName(feld, breite, hoehe) + ", " + zelle.title);
 
-                zelle.appendChild(TEAM_SCHACH._wuerfelBauen(
+                /*
+                 * DIE BOX GEHT GANZ NACH VORN IN DAS FELD (seit v0.83.1) —
+                 * also HINTER alles, was danach kommt, allen voran die Figur:
+                 * Sie liegt auf dem Feld, die Figur steht darauf. Bis v0.83.0
+                 * wurde sie angehängt und lag damit vor der Figur (gemeldet
+                 * 27.08.2026). Die Stildatei gibt beiden dieselbe Stufe, hier
+                 * entscheidet die Reihenfolge — die Begründung steht bei
+                 * `.wuerfel` in `css\stil.css`, ein Test hält es fest.
+                 */
+                zelle.insertBefore(TEAM_SCHACH._wuerfelBauen(
                     zeigen ? stufe : SCHACH_VARIANTEN.STUFE_UNBEKANNT,
-                    pechZeigen));
+                    pechZeigen), zelle.firstChild);
             }
 
             /*

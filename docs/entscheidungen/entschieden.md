@@ -1,5 +1,45 @@
 # Blunderluck - Entscheidungen / Entschieden - und warum
 
+## Zustimmen heisst denselben Zug machen (26.08.2026, v0.83.0)
+
+**Nutzer-Ansage:** „Das Abstimmen geht anders: Jeder im Team kann einen Move
+machen, die anderen sehen diesen Move — die Figur ist transparent wie beim
+Nekromanten, und es wird mit Grün gezeigt, wie sie läuft. Wenn alle denselben
+Move auch ziehen, wird das umgesetzt. Kein Feld, kein Extra, nur das. Wenn man
+eine Fähigkeit nutzen will, soll die Karte markiert werden, und alle aus dem
+Team können dies auch auswählen; wenn andere Sachen gedrückt werden, geht es
+erst weiter, bis sich alle einig sind und dasselbe drücken. Der Gegner sieht
+von alledem nichts."
+
+Das ist die Gestalt-Entscheidung zu Fund A2-3 (die Abstimmungs-Karte drückte
+das Brett auf die Mindestbreite, ausgelöst vom MITSPIELER) — und sie ersetzt
+das Verfahren, nicht nur die Optik:
+
+- **Kein EIN Vorschlag mit Stimmen mehr, sondern je Spieler SEINER** (Feld
+  `vorschlaege`, additiv; das alte Feld `vorschlag` bleibt als Altbestand im
+  Vertrag wie `phase` im Würfel Quizz). Gleichheit heisst gleiche HANDLUNG:
+  von/nach/Umwandlung beim Zug, Art/Ziel/Wahl bei der Fähigkeit
+  (`_vorschlagGleich`). Ausgeführt wird unter dem Namen des FRÜHESTEN
+  Vorschlagenden.
+- **Die Optik ist geliehen, nicht erfunden:** Der Schemen auf dem Zielfeld
+  ist `figur-schemen` (die Grab-Optik des Nekromanten — ausdrücklich so
+  gewünscht), der Laufweg kommt aus `SCHACH.wegFelder` (beim Springer das L)
+  und ist dünner grün gerahmt als die eigenen Zugpunkte, damit sich
+  Vorschlag und eigene Auswahl nicht verwechseln. Die vorgeschlagene
+  Fähigkeits-Karte trägt einen blauen Aussenring.
+- **„Der Gegner sieht nichts" ist eine ANZEIGE-Regel:** `_teamVorschlaege`
+  liefert nur dem Team am Zug etwas. Die Daten selbst stehen wie bisher im
+  gemeinsamen Stand — dass der Gegner sie lesen KÖNNTE, war schon beim alten
+  Verfahren der dokumentierte Preis der Einstellung.
+- **DIE FRIST BLEIBT ALS RÜCKFALL** (Rückfrage 26.08.2026, Antwort:
+  „Frist als Rückfall behalten"): Die Ansage regelt die Uneinigkeit, nicht
+  die Abwesenheit — ohne Frist stünde das Team still, sobald einer aufhört
+  (der dokumentierte Normalfall, siehe `offen-und-abgelehnt.md`). Neu ist:
+  Nach Ablauf zählen nur die ABGEGEBENEN Vorschläge, und die Uhr entscheidet
+  NIE einen Streit unter Anwesenden — Uneinigkeit löst nur das Einigwerden.
+  Die Staffelung 10/5/3 Sekunden und `versaeumt` gelten unverändert;
+  Vorschlagen zählt jetzt als Mitmachen (setzt den Zähler zurück).
+
 ## Das Unglück ist eine Karte in der Hand, kein Streifen (26.08.2026, v0.82.0)
 
 **Nutzer-Ansage:** „Die Unglücksmeldung soll eine Karte werden, die in der

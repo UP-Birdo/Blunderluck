@@ -3,6 +3,18 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.83.1 — 27.08.2026
+
+**Zwei Anzeigefehler am Brett behoben.**
+
+- **Ein weggebrochenes Feld ist jetzt wirklich ein Loch.** Unter dem Riss
+  blieb der erhabene untere Rand der Kachel stehen — die Fläche war weg, der
+  Sockel nicht. Jetzt verschwindet beides.
+- **Die Lootbox liegt hinter der Figur, nicht davor.** Steht eine Figur auf
+  einem Feld mit Lootbox — das passiert, wenn sie dorthin geschoben oder
+  gestellt wurde und dabei nichts einsammelt —, war die Box vor ihr zu
+  sehen. Jetzt liegt sie darunter, wo sie hingehört.
+
 ## v0.83.0 — 26.08.2026
 
 **Die Team-Abstimmung läuft jetzt über das Brett: Alle machen denselben Zug,
