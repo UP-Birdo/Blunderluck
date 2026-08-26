@@ -590,6 +590,22 @@ body.partie-fest .phasen-leiste {
     background: var(--fehler-flaeche);
 }
 
+/*
+ * DER FREIGEHALTENE PLATZ DER MARKE „Wird gesendet" (seit v0.79.1).
+ *
+ * `visibility: hidden` und NICHT `display: none`: Der Kasten bleibt stehen
+ * und hält damit die Höhe der Standleiste konstant. Genau darum geht es —
+ * auf der festen Seite rechnet `TEAM_SCHACH._brettEinpassen` die Brettbreite
+ * aus der Höhe, die neben der Leiste übrig bleibt; eine Marke, die kommt und
+ * geht, macht das Brett kurz kleiner und gleich wieder grösser.
+ *
+ * Die Begründung im Langen steht bei `_standLeisteBauen` in
+ * `js\team-schach.js`.
+ */
+.chip-platzhalter {
+    visibility: hidden;
+}
+
 .chip-verwaltung {
     color: var(--warnung);
     border-color: var(--warnung);

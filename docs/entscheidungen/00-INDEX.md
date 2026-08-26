@@ -59,6 +59,10 @@ wird. Die Liste dessen, was noch kommt, steht in [../ROADMAP.md](../ROADMAP.md).
   messen — ZWEIMAL passiert** (Quizz v0.88 Brett, Blunderluck v0.74.0
   Tab-Pille; `resize` PLUS `orientationchange`, messen im naechsten Bild,
   mehrere Ereignisse nur EINE Messung)
+- **Auf der festen Seite ist JEDE Marke, die kommt und geht, eine
+  Brettgroesse** (v0.79.1, derselbe Fehler zum dritten Mal nach v0.52.0 und
+  v0.54.0 — die Marke „Wird gesendet" machte das Brett bei jedem eigenen Zug
+  354 → 349 → 354 px; Loesung: Platz freihalten statt weglassen)
 - **`overflow-y: auto` macht die WAAGERECHTE Achse gleich mit rollbar**
   (v0.68.0, gefunden v0.72.0 — der buendige Team-Kasten erzeugte dadurch eine
   Bildlaufleiste; enthaelt ausserdem, WIE man so etwas misst: Wegwerf-Seite

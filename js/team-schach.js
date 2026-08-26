@@ -1562,11 +1562,38 @@ const TEAM_SCHACH = {
          * keine Züge mehr an (`ziehtGerade`), sagt es aber niemandem. Wer
          * mehrmals drückt und nichts passieren sieht, hält die Seite für
          * abgestürzt — genau so wurde es gemeldet.
+         *
+         * IHR PLATZ BLEIBT IMMER FREI (seit v0.79.1) — sie wird nur
+         * unsichtbar, nie weggelassen. Grund ist das Brett:
+         *
+         *   Auf der festen Seite rechnet `_brettEinpassen` die Brettbreite
+         *   aus der Höhe, die neben den Geschwistern übrig bleibt. Diese
+         *   Marke ist höher als alles andere in der Leiste (am 26.08.2026
+         *   im Browser gemessen: Leiste 42 px ohne, 47 px mit ihr). Sie
+         *   erscheint mit dem eigenen Zug und verschwindet, sobald der
+         *   Server geantwortet hat — das Brett wurde dabei jedes Mal um
+         *   5 px kleiner und gleich wieder grösser. Genau das hat der
+         *   Nutzer gemeldet: „schiebt sich das gesamte Brett kurz hoch und
+         *   direkt zurück, sieht aus, als würde das Brett hängen."
+         *
+         * WARUM EIN PLATZHALTER UND KEINE FESTE HÖHE IN DER STILDATEI: Eine
+         * Zahl dort müsste jedes Mal nachgerechnet werden, wenn sich Polster
+         * oder Schriftgrösse der Marke ändern — und keine Prüfung könnte das
+         * merken, weil die Tests nicht zeichnen. Der Platzhalter IST die
+         * Marke: Er kann gar nicht anders hoch sein, und dass er dasteht,
+         * prüft `test-bildschirm.js`.
+         *
+         * `aria-hidden`, weil ein Vorleseprogramm sonst bei jedem Bild
+         * „Wird gesendet" ansagen würde, obwohl gerade nichts unterwegs ist.
          */
-        if (TEAM_SCHACH.ziehtGerade) {
-            leiste.appendChild(TEAM_SCHACH._element("span", "chip chip-laeuft",
-                "Wird gesendet …"));
+        const sendeMarke = TEAM_SCHACH._element("span",
+            TEAM_SCHACH.ziehtGerade ? "chip chip-laeuft" : "chip chip-platzhalter",
+            "Wird gesendet …");
+
+        if (!TEAM_SCHACH.ziehtGerade) {
+            sendeMarke.setAttribute("aria-hidden", "true");
         }
+        leiste.appendChild(sendeMarke);
 
         /* Aktive Fähigkeiten sichtbar machen — sonst wundert sich der Gegner
            über einen Zug, den es sonst nicht gibt. */

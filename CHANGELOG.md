@@ -3,6 +3,23 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.79.1 — 26.08.2026
+
+**Das Brett hängt nicht mehr: Es springt beim eigenen Zug nicht mehr kurz
+hoch und wieder zurück.**
+
+- Sobald man gezogen hatte, erschien oben in der Leiste kurz die Marke
+  „Wird gesendet …" — und verschwand wieder, sobald der Server geantwortet
+  hatte. Diese Marke ist ein paar Pixel höher als der übrige Inhalt der
+  Leiste, und weil das Brett immer genau den Platz bekommt, der übrig
+  bleibt, wurde es dabei jedes Mal kurz kleiner und gleich wieder grösser.
+  Von aussen sah das aus, als hänge das Brett.
+- **Jetzt bleibt der Platz der Marke immer frei** — sie wird nur unsichtbar,
+  statt zu verschwinden. Die Leiste ist damit immer gleich hoch, und das
+  Brett behält seine Grösse, egal was gerade unterwegs ist.
+- Das Brett ist dadurch dauerhaft rund fünf Pixel kleiner als vorher im
+  Ruhezustand. Das ist der Preis dafür, dass es sich nie wieder bewegt.
+
 ## v0.79.0 — 26.08.2026
 
 **Die Vormarkierung beim Einsetzen einer Fähigkeit ist jetzt ein grüner

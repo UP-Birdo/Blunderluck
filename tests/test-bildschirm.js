@@ -4689,12 +4689,55 @@ pruefe("Waehrend ein Zug unterwegs ist, sagt es die Leiste", () => {
             throw new Error("keine Standleiste gefunden");
         }
         const marken = leiste.kinder.map((kind) => kind.textInhalt || kind.text || "");
+
+        /* Seit v0.79.1 steht die Marke IMMER da — gesucht wird deshalb die
+           sichtbare Fassung, nicht bloss der Text. */
         if (!leiste.kinder.some((kind) =>
-            String(kind.textContent || "").indexOf("gesendet") !== -1)) {
-            throw new Error("keine Marke 'Wird gesendet': " + marken.join(" | "));
+            String(kind.textContent || "").indexOf("gesendet") !== -1
+            && String(kind.className || "").indexOf("chip-laeuft") !== -1
+            && String(kind.className || "").indexOf("chip-platzhalter") === -1)) {
+            throw new Error("keine sichtbare Marke 'Wird gesendet': " + marken.join(" | "));
         }
     } finally {
         TEAM_SCHACH.ziehtGerade = false;
+    }
+});
+
+pruefe("Der Platz der Marke 'Wird gesendet' bleibt auch ohne Zug frei", () => {
+    /*
+     * WARUM DAS GEPRUEFT WIRD (v0.79.1): Auf der festen Seite rechnet
+     * `_brettEinpassen` die Brettbreite aus der Hoehe, die neben der
+     * Standleiste uebrig bleibt. Diese Marke ist hoeher als alles andere in
+     * der Leiste (gemessen: 42 gegen 47 Pixel). Kam und ging sie, wurde das
+     * Brett bei JEDEM eigenen Zug kurz kleiner und gleich wieder groesser —
+     * gemeldet als „das Brett haengt".
+     *
+     * Ohne diese Pruefung faellt ein Rueckbau auf `if (ziehtGerade)` nicht
+     * auf: Die App laeuft weiter, das Brett zappelt nur wieder.
+     */
+    TEAM_SCHACH.partieOeffnen(kennungen.standard);
+    TEAM_SCHACH.ziehtGerade = false;
+    TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
+
+    const leiste = TEAM_SCHACH.wurzelEl.kinder.find((kind) =>
+        String(kind.className || "").indexOf("stand-leiste") !== -1);
+
+    if (!leiste) {
+        throw new Error("keine Standleiste gefunden");
+    }
+
+    const platzhalter = leiste.kinder.find((kind) =>
+        String(kind.className || "").indexOf("chip-platzhalter") !== -1);
+
+    if (!platzhalter) {
+        throw new Error("kein Platzhalter fuer 'Wird gesendet' in der Leiste");
+    }
+    if (String(platzhalter.textContent || "").indexOf("gesendet") === -1) {
+        throw new Error("der Platzhalter traegt nicht denselben Text und ist "
+            + "damit nicht gleich hoch: " + platzhalter.textContent);
+    }
+    if (platzhalter.attribute["aria-hidden"] !== "true") {
+        throw new Error("der Platzhalter ist nicht vor Vorleseprogrammen verborgen");
     }
 });
 

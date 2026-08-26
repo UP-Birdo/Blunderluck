@@ -46,6 +46,46 @@ schuetzt nur diese Fundstelle.
 (Brett und Figurengroesse) und `TABS._markerNachmessen` (die Pille). Wer eine
 dritte solche Stelle baut, haelt sich an dieselben drei Punkte.
 
+### Auf der festen Seite ist JEDE Marke, die kommt und geht, eine Brettgroesse (v0.79.1, dritter Anlauf)
+
+**Der Fehlschlag:** Der Nutzer meldete am 26.08.2026 „wenn ich manchmal eine
+Figur andruecke, schiebt sich das gesamte Brett kurz hoch und direkt zurueck
+— sieht aus, als wuerde das Brett haengen".
+
+**Warum:** Sobald ein eigener Zug abgeschickt ist, haengt
+`_standLeisteBauen` die Marke „Wird gesendet …" in die Standleiste; sobald
+der Server geantwortet hat, zeichnet die App neu und die Marke ist wieder
+weg. Diese Marke ist ein `.chip` und damit HOEHER als der uebrige Inhalt der
+Leiste (Polster 3 px, Rahmen 1 px). Am 26.08.2026 im Browser gemessen:
+Leiste **42 px ohne, 47 px mit** ihr. Auf der festen Seite rechnet
+`_brettEinpassen` die Brettbreite aus der Hoehe, die neben den Geschwistern
+uebrig bleibt — das Brett wurde also **354 → 349 → 354 px** und wanderte
+dabei sichtbar. „Manchmal" ist die Antwortzeit des Servers: Ist sie kurz,
+blitzt es nur; ist sie laenger, sieht man es deutlich.
+
+**Es ist derselbe Fehler zum DRITTEN Mal.** v0.52.0 machte die Partie-Seite
+fest, v0.54.0 warf den Erklaertext unter dem Brett hinaus („der drueckt das
+Feld hoch, runter, wenn ich eine Figur andruecke"), v0.79.1 nun die Marke.
+Jedes Mal war es dasselbe: etwas, das mitten im Spiel erscheint und wieder
+verschwindet, in einem Bildschirm, in dem das Brett den Rest bekommt.
+
+**Die Loesung, und warum nicht die naheliegende:** Eine feste Hoehe fuer die
+Leiste in der Stildatei waere eine Zahl, die niemand nachrechnet, wenn sich
+Polster oder Schriftgroesse der Marke aendern — und keine Pruefung koennte
+das merken, weil die Testkette nicht zeichnet. Stattdessen steht die Marke
+IMMER da und wird nur unsichtbar (`.chip-platzhalter`,
+`visibility: hidden`). Sie ist damit ihr eigener Platzhalter und kann gar
+nicht anders hoch sein. Dass sie dasteht, prueft `test-bildschirm.js` —
+etwas, das ein Stil-Wert nie koennte.
+
+**Die Regel daraus:** Auf `body.partie-fest` darf KEIN Geschwister des
+Bretts seine Hoehe im laufenden Spiel aendern. Wer dort etwas einhaengt, das
+nur zeitweise da ist, haelt seinen Platz frei (`visibility: hidden`), statt
+es wegzulassen. Betroffen ist alles in der Standleiste, in den Seitenreihen
+und in den Knopfspalten. Ausgenommen bleibt, was der eigene Fingerdruck
+AUSLOEST und was einen Knopf traegt (die Platzier-Leiste, das Zugmuster) —
+dort ist die Groessenaenderung Teil der Handlung, nicht ihre Nebenwirkung.
+
 ### `overflow-y: auto` macht die WAAGERECHTE Achse gleich mit rollbar (v0.68.0, gefunden v0.72.0)
 
 **Der Fehlschlag:** Der Nutzer schickte am 26.08.2026 ein Bild vom Rechner.
