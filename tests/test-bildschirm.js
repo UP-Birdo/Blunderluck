@@ -1847,27 +1847,42 @@ pruefe("Im laufenden Match ist die Fussleiste leer, das Zahnrad sitzt am Spieler
     }
 
     /*
-     * Das Zahnrad sitzt in der EIGENEN Steuer-Spalte (person spielt weiss),
-     * nicht in der des Gegners — einstellen kann nur, wer mitspielt.
+     * Die Einstellungen liegen im Menue hinter dem EIGENEN Namens-Kasten
+     * (person spielt weiss) — einstellen kann nur, wer mitspielt.
      *
-     * SEIT v0.64.0 IST DAS DIE SPALTE AM RAND und nicht mehr die
-     * Spielerzeile (zweite Nutzer-Skizze). Die Frage blieb dieselbe, der Ort
-     * hat sich geaendert — wie schon zwischen v0.48.0 (Fussleiste) und
-     * v0.59.0 (Spielerzeile).
+     * SEIT v0.80.0 IST DAS DAS ECK-MENUE und nicht mehr die Steuer-Spalte
+     * (dritte Nutzer-Skizze). Die Frage blieb dieselbe, der Ort hat sich
+     * geaendert — wie schon v0.48.0 (Fussleiste), v0.59.0 (Spielerzeile)
+     * und v0.64.0 (Spalte am Rand).
      */
-    const meine = TEAM_SCHACH._steuerSpalteBauen(partie, person, "weiss");
-    if (!klasseSuchen(meine, "spiel-zahnrad")) {
-        throw new Error("das Zahnrad fehlt in der eigenen Steuer-Spalte");
-    }
-    const gegner = TEAM_SCHACH._steuerSpalteBauen(partie, person, "schwarz");
-    if (klasseSuchen(gegner, "spiel-zahnrad")) {
-        throw new Error("die Spalte des Gegners traegt ein Zahnrad");
+    TEAM_SCHACH.eckMenueOffen = true;
+    try {
+        const meine = TEAM_SCHACH._eckMenueBauen(partie, person);
+        const texte = knopfTexte(meine);
+        if (texte.indexOf("Einstellungen") === -1) {
+            throw new Error("im Eck-Menue fehlen die Einstellungen: " + texte.join(" | "));
+        }
+        if (!texte.some((t) => t.indexOf("Zugverlauf") === 0)) {
+            throw new Error("im Eck-Menue fehlt der Zugverlauf: " + texte.join(" | "));
+        }
+
+        /* Wer nicht mitspielt, bekommt kein Menue. */
+        const fremd = { id: "id-zuschauer", name: "Zaungast" };
+        if (TEAM_SCHACH._eckMenueBauen(partie, fremd) !== null) {
+            throw new Error("ein Zuschauer bekommt ein Eck-Menue");
+        }
+    } finally {
+        TEAM_SCHACH.eckMenueOffen = false;
     }
 
-    /* Und die Spielerzeile ist reiner Banner geworden: kein Knopf mehr. */
+    /* Und die Spielerzeile traegt weiterhin keinen Steuer-Knopf im Inneren —
+       sie IST seit v0.80.0 selbst der Knopf (role="button" bei der eigenen). */
     const banner = TEAM_SCHACH._spielerZeileBauen(partie, person, "weiss");
     if (klasseSuchen(banner, "spiel-steuer-knopf")) {
         throw new Error("im Banner steht noch ein Steuer-Knopf");
+    }
+    if (banner.attribute["role"] !== "button") {
+        throw new Error("der eigene Namens-Kasten ist kein Knopf");
     }
 });
 
@@ -2583,9 +2598,13 @@ pruefe("Der Team-Kasten: Farbe gross, erster Name klein, Rest hinter einem Tipp 
         throw new Error("es gibt keinen Stapel aus Farbe und Name");
     }
 
-    /* Der Kasten ist antippbar und oeffnet die volle Liste. */
+    /*
+     * DIE VOLLE LISTE LIEGT SEIT v0.80.0 HINTER ZWEI WEGEN: Der EIGENE
+     * Kasten oeffnet das Eck-Menue (dort haengt „Team (3)"), der Kasten
+     * des GEGNERS oeffnet die Liste weiterhin direkt.
+     */
     if (String(kasten.className || "").indexOf("spieler-zeile-tippbar") === -1) {
-        throw new Error("der Kasten ist nicht antippbar");
+        throw new Error("der eigene Kasten ist nicht antippbar");
     }
 
     const echterHinweis = umgebung.DIALOG.hinweis;
@@ -2595,26 +2614,58 @@ pruefe("Der Team-Kasten: Farbe gross, erster Name klein, Rest hinter einem Tipp 
             gezeigt = { titel: titel, zusatz: zusatz };
             return true;
         };
+
+        /* Weg 1 — mein Kasten: Tipp klappt das Menue auf, die Liste haengt
+           dort als Knopf. */
         kasten.ausloesen("click");
+        if (TEAM_SCHACH.eckMenueOffen !== true) {
+            throw new Error("der Tipp auf den eigenen Kasten oeffnet das Menue nicht");
+        }
+        const menue = TEAM_SCHACH._eckMenueBauen(partie, person);
+        const teamKnopf = (menue.kinder || []).find((kind) =>
+            String(kind.textContent || "").indexOf("Team (3)") !== -1);
+        if (!teamKnopf) {
+            throw new Error("im Eck-Menue fehlt der Team-Knopf");
+        }
+        teamKnopf.ausloesen("click");
+
+        if (!gezeigt || String(gezeigt.titel || "").indexOf("Weiss") === -1) {
+            throw new Error("der Team-Knopf oeffnet kein Team-Fenster");
+        }
+        const zeilen = ((gezeigt.zusatz || {}).kinder || []).length;
+        if (zeilen !== 3) {
+            throw new Error("das Fenster zeigt nicht alle drei, sondern " + zeilen);
+        }
+
+        /* Weg 2 — der Kasten des Gegners (aus Sicht von Bert ist Weiss der
+           Gegner): der Tipp oeffnet die Liste direkt. */
+        gezeigt = null;
+        const gegnerSicht = { id: "id-zaungast", name: "Zaungast" };
+        const fremd = TEAM_SCHACH._spielerZeileBauen(partie, gegnerSicht, "weiss");
+        if (String(fremd.className || "").indexOf("spieler-zeile-tippbar") === -1) {
+            throw new Error("der fremde Kasten mit dreien ist nicht antippbar");
+        }
+        fremd.ausloesen("click");
+        if (!gezeigt || String(gezeigt.titel || "").indexOf("Weiss") === -1) {
+            throw new Error("der fremde Kasten oeffnet kein Team-Fenster");
+        }
     } finally {
         umgebung.DIALOG.hinweis = echterHinweis;
+        TEAM_SCHACH.eckMenueOffen = false;
     }
 
-    if (!gezeigt || String(gezeigt.titel || "").indexOf("Weiss") === -1) {
-        throw new Error("der Tipp oeffnet kein Team-Fenster");
-    }
-
-    const zeilen = ((gezeigt.zusatz || {}).kinder || []).length;
-    if (zeilen !== 3) {
-        throw new Error("das Fenster zeigt nicht alle drei, sondern " + zeilen);
-    }
-
-    /* Bei nur einem Spieler gibt es nichts zu oeffnen. */
+    /* Ein fremder Kasten mit nur einem Spieler bleibt stumm; der eigene ist
+       seit v0.80.0 IMMER antippbar — hinter ihm liegt ja das Menue. */
     const alleine = SCHACH_RUNDE.kopieren(partie);
     alleine.teams.weiss = ["id-anna"];
-    const einer = TEAM_SCHACH._spielerZeileBauen(alleine, person, "weiss");
-    if (String(einer.className || "").indexOf("spieler-zeile-tippbar") !== -1) {
-        throw new Error("ein Kasten mit einem Namen ist trotzdem antippbar");
+    const fremdEiner = TEAM_SCHACH._spielerZeileBauen(
+        alleine, { id: "id-zaungast", name: "Zaungast" }, "weiss");
+    if (String(fremdEiner.className || "").indexOf("spieler-zeile-tippbar") !== -1) {
+        throw new Error("ein fremder Kasten mit einem Namen ist trotzdem antippbar");
+    }
+    const eigenerEiner = TEAM_SCHACH._spielerZeileBauen(alleine, person, "weiss");
+    if (String(eigenerEiner.className || "").indexOf("spieler-zeile-tippbar") === -1) {
+        throw new Error("der eigene Kasten traegt sein Menue nicht");
     }
 });
 
@@ -2682,20 +2733,20 @@ pruefe("Gleiche Faehigkeiten stehen als EIN Stapel mit Anzahl (v0.67.0)", () => 
     }
 });
 
-pruefe("Die Anordnung der zweiten Skizze: Banner in der Ecke, Knoepfe am Rand (v0.64.0)", () => {
+pruefe("Die Anordnung der dritten Skizze: Eck-Kasten mit Friedhof-Streifen (v0.80.0)", () => {
     /*
-     * NUTZER-SKIZZE 25.08.2026 (die zweite):
+     * NUTZER-SKIZZE 26.08.2026 (die dritte):
      *
      *     [Karten Gegner ........]  [ Banner Gegner ]
-     *                                            [F]
+     *                               [ Pfeil/Friedhof]
      *                    B R E T T
-     *     [Zahnrad] [Z] [F]  (untereinander)
-     *     [ Banner ich ]  [........ Karten ich ]
+     *     [ Pfeil/Friedhof]
+     *     [ Banner ich    ]  [........ Karten ich ]
      *
-     * Geprueft wird die REIHENFOLGE im Baum — sie ist die Anordnung auf dem
-     * Schirm — und die Zuordnung der Seiten. Ein Banner an der falschen
-     * Ecke oder eine Knopfspalte auf der falschen Seite des Bretts faellt
-     * hier auf.
+     * Der Pfeil-Streifen sitzt an der BRETTSEITE des Namens-Kastens und
+     * klappt den Friedhof an Ort und Stelle auf; die Steuer-Spalten der
+     * zweiten Skizze sind weg. Geprueft wird die Reihenfolge im Baum —
+     * sie ist die Lesereihenfolge der Skizze.
      */
     TEAM_SCHACH.partieOeffnen(kennungen.faehigkeiten);
     const kinder = TEAM_SCHACH.wurzelEl.kinder;
@@ -2713,43 +2764,12 @@ pruefe("Die Anordnung der zweiten Skizze: Banner in der Ecke, Knoepfe am Rand (v
             + obenReihe + " / " + brett + " / " + untenReihe);
     }
 
-    /* Die Knopfspalten liegen ZWISCHEN Seiten-Zeile und Brett. */
-    const spalten = [];
-    kinder.forEach((k, i) => {
-        if (hatKlasse(k, "steuer-spalte")) {
-            spalten.push(i);
-        }
-    });
-    if (spalten.length !== 2) {
-        throw new Error("erwartet zwei Steuer-Spalten, gefunden: " + spalten.length);
-    }
-    if (!(obenReihe < spalten[0] && spalten[0] < brett)) {
-        throw new Error("die obere Spalte liegt nicht zwischen Zeile und Brett");
-    }
-    if (!(brett < spalten[1] && spalten[1] < untenReihe)) {
-        throw new Error("die untere Spalte liegt nicht zwischen Brett und Zeile");
+    /* Die Steuer-Spalten gibt es seit v0.80.0 nicht mehr. */
+    if (kinder.some((k) => hatKlasse(k, "steuer-spalte"))) {
+        throw new Error("es steht noch eine Steuer-Spalte im Baum");
     }
 
-    /* Oben die des Gegners (nur Friedhof), unten meine (drei Knoepfe). */
-    if (!hatKlasse(kinder[spalten[0]], "steuer-spalte-fremde")) {
-        throw new Error("oben steht nicht die Spalte des Gegners");
-    }
-    if (!hatKlasse(kinder[spalten[1]], "steuer-spalte-meine")) {
-        throw new Error("unten steht nicht die eigene Spalte");
-    }
-
-    const meineKnoepfe = klasseZaehlen(kinder[spalten[1]], "spiel-steuer-knopf");
-    if (meineKnoepfe !== 3) {
-        throw new Error("erwartet drei eigene Knoepfe (Zahnrad, Z, F), gefunden: "
-            + meineKnoepfe);
-    }
-    const fremdeKnoepfe = klasseZaehlen(kinder[spalten[0]], "spiel-steuer-knopf");
-    if (fremdeKnoepfe !== 1) {
-        throw new Error("der Gegner soll genau seinen Friedhof haben, hat aber: "
-            + fremdeKnoepfe);
-    }
-
-    /* In jeder Seiten-Zeile stehen Karten UND Banner — nebeneinander. */
+    /* Jede Seiten-Zeile traegt Karten, Banner UND ihren Friedhof-Streifen. */
     for (const stelleReihe of [obenReihe, untenReihe]) {
         const zeile = kinder[stelleReihe];
         if (!klasseSuchen(zeile, "spieler-zeile")) {
@@ -2758,21 +2778,107 @@ pruefe("Die Anordnung der zweiten Skizze: Banner in der Ecke, Knoepfe am Rand (v
         if (!klasseSuchen(zeile, "faehigkeit-reihe")) {
             throw new Error("in einer Seiten-Zeile fehlen die Karten");
         }
+        if (!klasseSuchen(zeile, "friedhof-streifen")) {
+            throw new Error("in einer Seiten-Zeile fehlt der Friedhof-Streifen");
+        }
     }
 
     /*
-     * DIE ECKEN: Oben steht der Banner HINTER den Karten (also rechts),
-     * unten DAVOR (also links). Das ist die Punktsymmetrie der Skizze, und
-     * sie steckt allein in der Reihenfolge der zwei Kinder.
+     * DIE LESEREIHENFOLGE DER ECKEN: Oben [Karten][Banner][Streifen] —
+     * der Streifen zuletzt, denn er ist die Unterkante des Eck-Kastens.
+     * Unten beginnt die Zeile mit ihm: [Streifen][Banner][Karten].
      */
-    const bannerStelle = (zeile) => (zeile.kinder || [])
-        .findIndex((k) => hatKlasse(k, "spieler-zeile"));
+    const folge = (zeile) => (zeile.kinder || []).map((k) => {
+        if (hatKlasse(k, "spieler-zeile")) { return "banner"; }
+        if (hatKlasse(k, "friedhof-streifen")) { return "streifen"; }
+        return "karten";
+    }).join(",");
 
-    if (bannerStelle(kinder[obenReihe]) !== 1) {
-        throw new Error("oben steht der Banner nicht rechts aussen");
+    if (folge(kinder[obenReihe]) !== "karten,banner,streifen") {
+        throw new Error("obere Zeile falsch geordnet: " + folge(kinder[obenReihe]));
     }
-    if (bannerStelle(kinder[untenReihe]) !== 0) {
-        throw new Error("unten steht der Banner nicht links aussen");
+    if (folge(kinder[untenReihe]) !== "streifen,banner,karten") {
+        throw new Error("untere Zeile falsch geordnet: " + folge(kinder[untenReihe]));
+    }
+});
+
+pruefe("Der Pfeil-Streifen klappt den Friedhof an Ort und Stelle auf (v0.80.0)", () => {
+    /*
+     * Nutzer-Ansage 26.08.2026: „der pfeil soll ein separater knopf werden
+     * wo der friedhof ausgeklappt werden". Ein Tipp oeffnet die Klappe
+     * ZWISCHEN Eck-Kasten und Brett (dort zeigt der Pfeil hin), ein
+     * zweiter schliesst sie. Kein Fenster mehr.
+     */
+    TEAM_SCHACH.partieOeffnen(kennungen.faehigkeiten);
+
+    const klappen = () => TEAM_SCHACH.wurzelEl.kinder
+        .filter((k) => hatKlasse(k, "friedhof-klappe")).length;
+
+    if (klappen() !== 0) {
+        throw new Error("eine Friedhof-Klappe steht schon beim Oeffnen da");
+    }
+
+    /* Aufklappen — die Klappe der OBEREN Seite steht vor dem Brett. */
+    const obenFarbe = "schwarz";
+    TEAM_SCHACH.friedhofUmschalten(obenFarbe);
+    try {
+        if (klappen() !== 1) {
+            throw new Error("nach dem Tipp steht keine Klappe da");
+        }
+        const kinder = TEAM_SCHACH.wurzelEl.kinder;
+        const klappe = kinder.findIndex((k) => hatKlasse(k, "friedhof-klappe"));
+        const brett = kinder.findIndex((k) => hatKlasse(k, "brett-halter"));
+        const obenReihe = kinder.findIndex((k) => hatKlasse(k, "seiten-reihe-oben"));
+        if (!(obenReihe < klappe && klappe < brett)) {
+            throw new Error("die Klappe steht nicht zwischen Eck-Kasten und Brett");
+        }
+
+        /* Der Streifen sagt Vorleseprogrammen, dass er offen ist. */
+        const streifen = klasseSuchen(kinder[obenReihe], "friedhof-streifen");
+        if (streifen.attribute["aria-expanded"] !== "true") {
+            throw new Error("der offene Streifen meldet aria-expanded nicht");
+        }
+    } finally {
+        TEAM_SCHACH.friedhofUmschalten(obenFarbe);
+    }
+
+    if (klappen() !== 0) {
+        throw new Error("der zweite Tipp schliesst die Klappe nicht");
+    }
+});
+
+pruefe("Der eigene Namens-Kasten klappt das Eck-Menue auf (v0.80.0)", () => {
+    /*
+     * Nutzer-Ansage 26.08.2026: „der benutzer namen ein eigner knopf wo
+     * einstellung und zugverlauf dahinter liegen". Das Menue steht UNTER
+     * der eigenen Seiten-Zeile, vom Brett weg.
+     */
+    TEAM_SCHACH.partieOeffnen(kennungen.faehigkeiten);
+
+    const menue = () => TEAM_SCHACH.wurzelEl.kinder
+        .find((k) => hatKlasse(k, "eck-menue"));
+
+    if (menue()) {
+        throw new Error("das Eck-Menue steht schon beim Oeffnen da");
+    }
+
+    TEAM_SCHACH.eckMenueUmschalten();
+    try {
+        const offen = menue();
+        if (!offen) {
+            throw new Error("nach dem Tipp steht kein Eck-Menue da");
+        }
+        const kinder = TEAM_SCHACH.wurzelEl.kinder;
+        const untenReihe = kinder.findIndex((k) => hatKlasse(k, "seiten-reihe-unten"));
+        if (kinder.indexOf(offen) <= untenReihe) {
+            throw new Error("das Menue steht nicht unter der eigenen Zeile");
+        }
+    } finally {
+        TEAM_SCHACH.eckMenueUmschalten();
+    }
+
+    if (menue()) {
+        throw new Error("der zweite Tipp schliesst das Menue nicht");
     }
 });
 
@@ -3668,36 +3774,29 @@ pruefe("Nur die fuehrende Seite bekommt ein Plus (v0.76)", () => {
     }
 });
 
-pruefe("Der Friedhof steht als Knopf bei jedem Spieler, mit den eigenen Gefallenen (v0.58.0)", () => {
+pruefe("Der Friedhof-Streifen traegt Totenkopf, Zahl und Pfeil (v0.80.0)", () => {
     /*
-     * NUTZER-SKIZZE 25.08.2026: ein „F" je Person am Spieler. NUTZER-
-     * ENTSCHEIDUNG: es zeigt die EIGENEN Gefallenen. Bis v0.57 war der
-     * Friedhof EIN Fach mit der Bilanz beider Seiten.
+     * NUTZER-ENTSCHEIDUNG 25.08.2026 (unveraendert): Der Friedhof zeigt
+     * die EIGENEN Gefallenen. NUTZER-WAHL 26.08.2026: Im Streifen stehen
+     * Totenkopf UND Zahl — man sieht ohne Tipp, ob sich das Oeffnen lohnt.
      */
     const partie = SCHACH_TAFEL.partie(TEAM_SCHACH.abgleich.daten, kennungen.standard);
 
-    /* Der Knopf: ein „F", Haus-Knopf mit Steuer-Klasse, Seite im aria-label. */
-    const knopf = TEAM_SCHACH._friedhofKnopfBauen(partie, "weiss");
-    if (knopf.tagName !== "button") {
-        throw new Error("der Friedhof ist kein Knopf, sondern " + knopf.tagName);
+    const knopf = TEAM_SCHACH._friedhofStreifenBauen(partie, "weiss", false);
+    if (!knopf || knopf.tagName !== "button") {
+        throw new Error("der Friedhof-Streifen ist kein Knopf");
     }
-    /*
-     * SEIT v0.65.0 TRAEGT ER EINEN TOTENKOPF statt des Buchstabens F
-     * (Nutzer-Ansage 25.08.2026). Geprueft wird das Zeichen; der Buchstabe
-     * bleibt nur der Rueckfall, wenn START fehlt.
-     */
-    if (!(knopf.kinder || []).some((kind) => kind.tagName === "svg")) {
-        throw new Error("der Friedhof-Knopf traegt kein Zeichen, sondern: "
-            + knopf.textContent);
+    /* Totenkopf und Pfeil sind SVGs, die Zahl ist ein eigener Baustein. */
+    const svgs = (knopf.kinder || []).filter((kind) => kind.tagName === "svg").length;
+    if (svgs < 2) {
+        throw new Error("dem Streifen fehlen Totenkopf oder Pfeil (" + svgs + " SVGs)");
     }
-    if (String(knopf.textContent || "") !== "") {
-        throw new Error("neben dem Zeichen steht noch Text: " + knopf.textContent);
-    }
-    if (String(knopf.className || "").indexOf("spiel-steuer-knopf") === -1) {
-        throw new Error("dem Friedhof-Knopf fehlt die Steuer-Klasse");
+    if (!klasseSuchen(knopf, "friedhof-zahl")) {
+        throw new Error("dem Streifen fehlt die Zahl der Gefallenen");
     }
     if (String(knopf.attribute["aria-label"] || "").indexOf("Weiss") === -1) {
-        throw new Error("der Knopf nennt seine Seite nicht: " + knopf.attribute["aria-label"]);
+        throw new Error("der Streifen nennt seine Seite nicht: "
+            + knopf.attribute["aria-label"]);
     }
 
     /*
@@ -3720,18 +3819,16 @@ pruefe("Der Friedhof steht als Knopf bei jedem Spieler, mit den eigenen Gefallen
     }
 
     /*
-     * IM LAUFENDEN MATCH hat jede Seite ihre Steuer-Spalte mit dem
-     * Friedhof-Knopf, VORHER nicht (da ist noch niemand gefallen).
-     *
-     * SEIT v0.64.0 IST DAS DIE SPALTE AM RAND (`_steuerSpalteBauen`), nicht
-     * mehr die Spielerzeile — die ist reiner Banner geworden.
+     * IM LAUFENDEN MATCH hat jede Seite ihren Streifen, VORHER nicht (da
+     * ist noch niemand gefallen; der Seitenwahl-Bildschirm hat andere
+     * Sorgen). Dieselbe Bedingung galt bis v0.79 fuer die Steuer-Spalte.
      */
     const angelegt = SCHACH_TAFEL.partieAnlegen(
         TEAM_SCHACH.abgleich.daten, "standard", "Friedhof", 6200);
-    const vorAnpfiff = TEAM_SCHACH._steuerSpalteBauen(
-        angelegt.partie, umgebung.ICH.person(), "weiss");
+    const vorAnpfiff = TEAM_SCHACH._friedhofStreifenBauen(
+        angelegt.partie, "weiss", false);
     if (vorAnpfiff !== null) {
-        throw new Error("vor dem Anpfiff steht schon eine Steuer-Spalte");
+        throw new Error("vor dem Anpfiff steht schon ein Friedhof-Streifen");
     }
 
     let laeuft = SCHACH_RUNDE.teamBeitreten(angelegt.partie, "id-anna", "weiss", 6200);
@@ -3739,10 +3836,19 @@ pruefe("Der Friedhof steht als Knopf bei jedem Spieler, mit den eigenen Gefallen
     laeuft = bereitUndAufgestellt(laeuft, "weiss", 6200);
     laeuft = bereitUndAufgestellt(laeuft, "schwarz", 6200);
 
-    const imMatch = TEAM_SCHACH._steuerSpalteBauen(
-        laeuft, umgebung.ICH.person(), "weiss");
-    if (!klasseSuchen(imMatch, "spiel-steuer-knopf")) {
-        throw new Error("die Steuer-Spalte im Match traegt keinen Friedhof-Knopf");
+    const imMatch = TEAM_SCHACH._friedhofStreifenBauen(laeuft, "weiss", false);
+    if (imMatch === null) {
+        throw new Error("im laufenden Match fehlt der Friedhof-Streifen");
+    }
+
+    /* Und die Klappe traegt Figuren UND den Material-Satz — denselben
+       Inhalt, der bis v0.79 im Fenster stand. */
+    const klappe = TEAM_SCHACH._friedhofKlappeBauen(laeuft, "weiss");
+    if (!klasseSuchen(klappe, "friedhof-figuren")) {
+        throw new Error("in der Klappe fehlen die Gefallenen");
+    }
+    if (!klasseSuchen(klappe, "erklaerung")) {
+        throw new Error("in der Klappe fehlt der Material-Satz");
     }
 });
 pruefe("Die Spieler stehen als Zeilen am Brett, richtig herum (v0.53.0)", () => {
@@ -3910,48 +4016,40 @@ pruefe("Wer am Zug ist, leuchtet — und die Leiste sagt es nicht mehr (v0.53.0)
     }
 });
 
-pruefe("Der Zugverlauf ist ein Z-Knopf am Spieler (v0.59.0)", () => {
+pruefe("Der Zugverlauf liegt im Eck-Menue und zaehlt seine Zuege (v0.80.0)", () => {
     /*
-     * Seit v0.59.0 ist der Zugverlauf kein Fach unter dem Brett mehr, sondern
-     * ein „Z"-Knopf am Spieler (`_zuegeKnopfBauen`), der ein Fenster öffnet.
-     * `_verlaufBauen` und den Fach gibt es nicht mehr.
+     * Seit v0.59.0 ist der Zugverlauf kein Fach unter dem Brett mehr;
+     * seit v0.80.0 oeffnet ihn der Knopf im Menue hinter dem eigenen
+     * Namens-Kasten (`zuegeOeffnen`). `_verlaufBauen` und das Fach gibt
+     * es weiterhin nicht.
      */
     const partie = SCHACH_TAFEL.partie(TEAM_SCHACH.abgleich.daten, kennungen.standard);
 
     if (typeof TEAM_SCHACH._verlaufBauen === "function") {
         throw new Error("_verlaufBauen gibt es noch — die Verlauf-Karte sollte weg sein");
     }
+    if (typeof TEAM_SCHACH.zuegeOeffnen !== "function") {
+        throw new Error("zuegeOeffnen fehlt");
+    }
 
-    const knopf = TEAM_SCHACH._zuegeKnopfBauen(partie);
-    if (knopf.tagName !== "button") {
-        throw new Error("Zuege ist kein Knopf, sondern " + knopf.tagName);
-    }
-    /* Seit v0.65.0 das Verlaufs-Zeichen statt des Buchstabens Z. */
-    if (!(knopf.kinder || []).some((kind) => kind.tagName === "svg")) {
-        throw new Error("der Zuege-Knopf traegt kein Zeichen, sondern: "
-            + knopf.textContent);
-    }
-    if (String(knopf.textContent || "") !== "") {
-        throw new Error("neben dem Zeichen steht noch Text: " + knopf.textContent);
-    }
-    if (String(knopf.className || "").indexOf("spiel-steuer-knopf") === -1) {
-        throw new Error("dem Zuege-Knopf fehlt die Steuer-Klasse");
-    }
-});
-
-pruefe("Eine leere Zugliste ist null, der Z-Knopf zaehlt trotzdem (v0.59.0)", () => {
-    const partie = SCHACH_RUNDE.kopieren(
-        SCHACH_TAFEL.partie(TEAM_SCHACH.abgleich.daten, kennungen.standard));
-    partie.verlauf = [];
-
-    if (TEAM_SCHACH._zugListeBauen(partie) !== null) {
+    /* Eine leere Zugliste ist null (das Fenster sagt es dann selbst) … */
+    const leer = SCHACH_RUNDE.kopieren(partie);
+    leer.verlauf = [];
+    if (TEAM_SCHACH._zugListeBauen(leer) !== null) {
         throw new Error("die leere Zugliste ist nicht null");
     }
 
-    const knopf = TEAM_SCHACH._zuegeKnopfBauen(partie);
-    if (String(knopf.attribute["aria-label"] || "").indexOf("0 Züge") === -1) {
-        throw new Error("der Z-Knopf zaehlt die leere Liste falsch: "
-            + knopf.attribute["aria-label"]);
+    /* … und der Menue-Knopf zaehlt trotzdem: „Zugverlauf (0)". */
+    TEAM_SCHACH.eckMenueOffen = true;
+    try {
+        const menue = TEAM_SCHACH._eckMenueBauen(leer, umgebung.ICH.person());
+        const zaehlt = (menue.kinder || []).some((kind) =>
+            String(kind.textContent || "").indexOf("Zugverlauf (0)") !== -1);
+        if (!zaehlt) {
+            throw new Error("der Menue-Knopf zaehlt die leere Liste nicht");
+        }
+    } finally {
+        TEAM_SCHACH.eckMenueOffen = false;
     }
 });
 pruefe("Einigkeit ist die Vorgabe, der Haken fragt das Gegenteil (v0.76)", () => {
@@ -6757,19 +6855,29 @@ pruefe("In der eigenen laufenden Partie fuehrt nichts an ihr vorbei (F10)", () =
     }
 
     /*
-     * DAS AUFGEBEN STEHT HINTER DEM ZAHNRAD (v0.48.0), das seit v0.59.0 in der
-     * eigenen Spielerzeile sitzt statt in der Fussleiste. Geprueft wird beides
-     * — sonst bliebe der Test gruen, wenn das Aufgeben ganz verschwaende.
+     * DAS AUFGEBEN STEHT HINTER DEN EINSTELLUNGEN (v0.48.0), die seit
+     * v0.80.0 im Menue hinter dem eigenen Namens-Kasten liegen. Geprueft
+     * wird der ganze Weg — sonst bliebe der Test gruen, wenn das Aufgeben
+     * ganz verschwaende: Kasten antippen, Menue auf, Einstellungen.
      */
-    const zahnrad = einsammeln(TEAM_SCHACH.wurzelEl, (kind) =>
-        String(kind.className || "").indexOf("spiel-zahnrad") !== -1, [])[0];
-    if (!zahnrad) {
-        throw new Error("kein Zahnrad in der laufenden Partie");
+    const kasten = einsammeln(TEAM_SCHACH.wurzelEl, (kind) =>
+        String(kind.className || "").indexOf("spieler-zeile-tippbar") !== -1
+        && String(kind.attribute["role"] || "") === "button", [])[0];
+    if (!kasten) {
+        throw new Error("kein antippbarer Namens-Kasten in der laufenden Partie");
     }
 
-    zahnrad.ausloesen("click");
+    kasten.ausloesen("click");
+    const einstellungen = einsammeln(TEAM_SCHACH.wurzelEl, (kind) =>
+        kind.tagName === "button"
+        && String(kind.textContent || "") === "Einstellungen", [])[0];
+    if (!einstellungen) {
+        throw new Error("hinter dem Namens-Kasten fehlen die Einstellungen");
+    }
+
+    einstellungen.ausloesen("click");
     if (!TEAM_SCHACH.spielEinstellungenOffen) {
-        throw new Error("das Zahnrad oeffnet nichts");
+        throw new Error("der Einstellungen-Knopf im Eck-Menue oeffnet nichts");
     }
 
     const dahinter = einsammeln(TEAM_SCHACH.wurzelEl, (kind) =>
@@ -6780,6 +6888,7 @@ pruefe("In der eigenen laufenden Partie fuehrt nichts an ihr vorbei (F10)", () =
     }
 
     TEAM_SCHACH.spielEinstellungenSchliessen();
+    TEAM_SCHACH.eckMenueOffen = false;
     TEAM_SCHACH.uebersichtOeffnen();
 });
 

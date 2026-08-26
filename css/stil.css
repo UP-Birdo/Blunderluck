@@ -4771,14 +4771,48 @@ body.design-3d .werte-figur {
  * WER HIER `center` ZURÜCKSETZT, macht die Karten wieder kleiner als den
  * Banner — und zwar lautlos, ohne dass ein Test anspringt.
  */
+/*
+ * SEIT v0.80.0 IST DIE ZEILE EIN RASTER (dritte Nutzer-Skizze): Der
+ * Namens-Kasten bekommt an seiner Brettseite den Friedhof-Streifen, und
+ * BEIDE Zusagen müssen zugleich halten — die Karten sind genau so hoch wie
+ * der Kasten (v0.71.0, sie teilen sich seine Raster-Zeile), und der
+ * Streifen ist genau so breit wie der Kasten (er teilt sich seine
+ * Raster-Spalte). In einer Flexbox ginge nur eines von beiden.
+ *
+ * Die `minmax(0, 1fr)`-Spalte der Karten übernimmt, was vorher
+ * `min-width: 0` tat: Ein voller Kartenstreifen rollt in sich, statt die
+ * Zeile zu sprengen (siehe die Kette in `erkenntnisse.md`, v0.79.2).
+ */
 .seiten-reihe {
-    display: flex;
-    align-items: stretch;
-    justify-content: space-between;
-    gap: 10px;
+    display: grid;
+    column-gap: 10px;
+
+    /* Der Streifen KLEBT am Kasten — die Lücke dazwischen wäre eine
+       Einladung, beide für getrennte Dinge zu halten. */
+    row-gap: 2px;
     min-width: 0;
     margin-bottom: 6px;
 }
+
+/* Oben: Karten links (nehmen den Restplatz), Kasten rechts aussen in der
+   Ecke, der Streifen unter dem Kasten — zum Brett hin. */
+.seiten-reihe-oben {
+    grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.seiten-reihe-oben .faehigkeit-zeile { grid-column: 1; grid-row: 1; }
+.seiten-reihe-oben .spieler-zeile { grid-column: 2; grid-row: 1; }
+.seiten-reihe-oben .friedhof-streifen { grid-column: 2; grid-row: 2; }
+
+/* Unten gespiegelt: Streifen ÜBER dem Kasten (zum Brett hin), Kasten links
+   aussen, Karten rechts. */
+.seiten-reihe-unten {
+    grid-template-columns: auto minmax(0, 1fr);
+}
+
+.seiten-reihe-unten .friedhof-streifen { grid-column: 1; grid-row: 1; }
+.seiten-reihe-unten .spieler-zeile { grid-column: 1; grid-row: 2; }
+.seiten-reihe-unten .faehigkeit-zeile { grid-column: 2; grid-row: 2; }
 
 /* Die untere Reihe steht unter dem Brett und braucht ihren Abstand oben
    statt unten. */
@@ -4788,112 +4822,103 @@ body.design-3d .werte-figur {
 }
 
 /*
- * DIE KARTENREIHE NIMMT DEN PLATZ, DER ÜBRIG BLEIBT — und gibt ihn wieder
- * her, wenn der Banner ihn braucht (`min-width: 0` erlaubt das Schrumpfen
- * unter die Inhaltsbreite; ohne diese Zeile drängt ein voller Streifen den
- * Banner aus der Zeile).
+ * DIE KARTENREIHE ROLLT IN SICH, STATT DIE ZEILE ZU SPRENGEN. Ihre Spalte
+ * ist `minmax(0, 1fr)` — das Gegenstück zum alten `min-width: 0` der
+ * Flex-Fassung; ohne die 0 drängte ein voller Streifen den Kasten aus der
+ * Zeile (v0.79.2, `erkenntnisse.md`).
  */
 .seiten-reihe .faehigkeit-reihe {
-    flex: 1 1 auto;
     min-width: 0;
     margin: 0;
 }
 
 /*
- * EINE LEERE REIHE BLEIBT BEIM KASTEN (seit v0.72.0).
- *
- * Am Rechner gesehen 26.08.2026: Solange eine Seite nichts gesammelt hat,
- * stand „noch keine" am äussersten Rand und der Team-Kasten am anderen —
- * `justify-content: space-between` schiebt zwei Kinder eben auseinander.
- * Der Satz gehört aber zum Kasten.
- *
- * ZWEI ZEILEN, WEIL DIE SEITEN SPIEGELBILDLICH SIND: Oben steht die Reihe
- * VOR dem Kasten, unten dahinter. Der automatische Rand füllt jeweils die
- * Lücke auf der Aussenseite auf, so dass die Reihe an den Kasten rückt.
- * `flex: 0 0 auto` nimmt ihr dabei den Anspruch auf den freien Platz, den
- * ein voller Kartenstreifen braucht.
+ * EINE LEERE REIHE BLEIBT BEIM KASTEN (seit v0.72.0; seit v0.80.0 über
+ * `justify-self` statt der automatischen Ränder der Flex-Fassung): Solange
+ * eine Seite nichts gesammelt hat, soll „noch keine" AM Kasten stehen,
+ * nicht am anderen Bildschirmrand — der Satz gehört zu ihm.
  */
-.seiten-reihe .faehigkeit-reihe-leer {
-    flex: 0 0 auto;
-}
-
 .seiten-reihe-oben .faehigkeit-reihe-leer {
-    margin-left: auto;
+    justify-self: end;
 }
 
 .seiten-reihe-unten .faehigkeit-reihe-leer {
-    margin-right: auto;
+    justify-self: start;
 }
 
-/* Der Banner behält seine Breite und wird nicht gestaucht — er trägt Namen
-   und Lage, und beide dürfen nicht abgeschnitten werden.
-
-   `0 0 auto`, nicht `0 1 auto` (seit v0.79.2): Die 1 erlaubte genau das
-   Stauchen, das der Satz darüber ausschliesst. Sobald der Kartenstreifen
-   voll war, drückte `space-between` den Kasten unter seine Inhaltsbreite
-   (gemessen: 100 px Kasten, 113 px Inhalt) — der Name ragte über den Rand
-   hinaus, und der Überstand erzeugte am Rechner unter dem Spielfeld eine
-   waagerechte Bildlaufleiste, die dem Brett 10 px Höhe nahm. Weichen soll
-   die KARTENREIHE (`flex: 1 1 auto` plus `min-width: 0`, siehe oben) —
-   genau dafür hat sie ihr eigenes Rollen. */
+/* Der Namens-Kasten bestimmt seine Spalte: Das Raster misst sie an ihm
+   (`auto`), gestaucht wird er nie — der Kartenstreifen weicht (v0.79.2). */
 .seiten-reihe .spieler-zeile {
-    flex: 0 0 auto;
     margin: 0;
 }
 
 /*
- * DIE KNOPFSPALTE AM RAND.
+ * DER FRIEDHOF-STREIFEN (seit v0.80.0, dritte Nutzer-Skizze) — der breite,
+ * flache Knopf an der Brettseite des Namens-Kastens: Totenkopf, Zahl,
+ * Pfeil. Seine BREITE steht hier absichtlich nicht: Er teilt sich die
+ * Raster-Spalte mit dem Kasten und wird von ihr gestreckt.
  *
- * Sie ist selbst eine Zeile über die volle Breite, damit die Knöpfe an den
- * richtigen Rand rücken — die Spalte darin steht senkrecht. Das ist eine
- * Verschachtelung mehr, aber die einzige Art, „rechts oben" und „links
- * unten" ohne feste Masse zu treffen.
+ * `display: flex` gehört zu `justify-content` — ohne das wäre die
+ * Zentrierung stumm (v0.79.2, `erkenntnisse.md`).
+ *
+ * HIER STAND BIS v0.79 DIE KNOPFSPALTE AM RAND (`.steuer-spalte`, zweite
+ * Skizze) — ihre Regeln sind mit ihr gegangen.
  */
-.steuer-spalte {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    width: fit-content;
-    margin: 2px 0;
-}
-
-/* Die des Gegners rechts, meine links — dieselbe Ecke wie der zugehörige
-   Banner. */
-.steuer-spalte-fremde {
-    margin-left: auto;
-    align-items: flex-end;
-}
-
-.steuer-spalte-meine {
-    margin-right: auto;
-    align-items: flex-start;
-}
-
-/* In der Spalte sind alle Knöpfe gleich breit — nebeneinander in einer Zeile
-   durften sie noch unterschiedlich sein, untereinander sieht das unruhig
-   aus.
-
-   `display: flex` steht hier nicht zur Zierde (seit v0.79.2): Ohne das ist
-   ein Knopf KEIN Flex-Behälter, und das `justify-content` darunter tut
-   lautlos gar nichts — die Zeichen sassen deshalb seit v0.64.0 links im
-   Knopf statt mittig (im Browser gemessen: 1 px Luft links, 13 rechts).
-   Eine Flex-Eigenschaft ohne `display: flex` meldet keinen Fehler; siehe
-   `docs\entscheidungen\erkenntnisse.md`. */
-.steuer-spalte .spiel-steuer-knopf {
-    width: 34px;
-    min-width: 34px;
-    padding: 4px 0;
+.friedhof-streifen {
     display: flex;
     align-items: center;
     justify-content: center;
+    gap: 8px;
+    padding: 3px 8px;
+    min-height: 24px;
 }
 
-/* Die Zeichen in der Knopfspalte (Totenkopf, Verlauf, Zahnrad — seit
-   v0.65.0 auch die ersten beiden). Sie füllen den Knopf wie das Zahnrad. */
-.steuer-spalte .spiel-steuer-knopf .start-zeichen {
-    width: 1.4em;
-    height: 1.4em;
+.friedhof-streifen .start-zeichen {
+    width: 1.1em;
+    height: 1.1em;
     display: block;
+}
+
+.friedhof-streifen .friedhof-zahl {
+    font-weight: 700;
+    font-size: 0.85rem;
+    line-height: 1;
+}
+
+.klapp-pfeil {
+    width: 0.9em;
+    height: 0.6em;
+    display: block;
+    opacity: 0.7;
+}
+
+/*
+ * DIE AUFGEKLAPPTE FRIEDHOF-ZEILE: zwischen Eck-Kasten und Brett, volle
+ * Breite — die Figurenliste braucht sie. Dass sie dem Brett Höhe nimmt,
+ * ist erlaubt: Sie folgt dem eigenen Fingertipp (`erkenntnisse.md`).
+ */
+.friedhof-klappe {
+    background: var(--karte);
+    border: 1px solid var(--rahmen);
+    border-radius: var(--radius);
+    padding: 8px 12px;
+    margin-bottom: 6px;
+}
+
+.friedhof-klappe .friedhof-figuren {
+    margin-bottom: 4px;
+}
+
+.friedhof-klappe .erklaerung {
+    margin: 0;
+}
+
+/* Das Menue hinter dem eigenen Namens-Kasten: eine schlichte Knopfzeile
+   unter der eigenen Seiten-Zeile, an deren Kasten-Ecke (links). */
+.eck-menue {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 6px;
 }
 
 

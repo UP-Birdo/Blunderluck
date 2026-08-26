@@ -1759,62 +1759,115 @@ Object.assign(TEAM_SCHACH, {
     },
 
     /*
-     * DER FRIEDHOF-KNOPF EINER SEITE (seit v0.58.0).
-     *
-     * Nutzer-Skizze 25.08.2026: ein „F" je Person, am jeweiligen Spieler. Er
-     * öffnet ein FENSTER (`DIALOG.hinweis`), keine Klappe an Ort und Stelle —
-     * eine Klappe würde die Höhe ändern, und auf der festen Seite (v0.52)
-     * rutschte davon das Brett. Im Fenster stehen die gefallenen Figuren und,
-     * wenn es ungleich steht, der Material-Vorsprung oder -Rückstand.
-     *
-     * Das „F" ist ein Buchstabe, kein eigenes Bild — genau so steht es in der
-     * Skizze. Was er heisst, sagt sein `aria-label`/`title`.
+     * DER PFEIL, DER AN- UND ZUKLAPPT (seit v0.80.0) — ein kleines
+     * SVG-Winkelzeichen. Zu: Er zeigt zum Brett, denn dorthin klappt der
+     * Friedhof auf. Offen: Er zeigt zurueck zum Kasten.
      */
-    _friedhofKnopfBauen(partie, farbe) {
+    _klappPfeilBauen(nachUnten) {
+        const ns = "http://www.w3.org/2000/svg";
+        const svg = document.createElementNS(ns, "svg");
+        svg.setAttribute("class", "klapp-pfeil");
+        svg.setAttribute("viewBox", "0 0 16 10");
+        svg.setAttribute("aria-hidden", "true");
+
+        const linie = document.createElementNS(ns, "path");
+        linie.setAttribute("d", nachUnten ? "M2 2 L8 8 L14 2" : "M2 8 L8 2 L14 8");
+        linie.setAttribute("fill", "none");
+        linie.setAttribute("stroke", "currentColor");
+        linie.setAttribute("stroke-width", "2.4");
+        linie.setAttribute("stroke-linecap", "round");
+        linie.setAttribute("stroke-linejoin", "round");
+        svg.appendChild(linie);
+
+        return svg;
+    },
+
+    /*
+     * DER FRIEDHOF-STREIFEN EINER SEITE (seit v0.80.0, dritte
+     * Nutzer-Skizze): der breite, rechteckige Knopf an der Brettseite des
+     * Namens-Kastens — Totenkopf, Zahl der Gefallenen (Nutzer-Wahl
+     * 26.08.2026) und der Pfeil. Ein Tipp klappt den Friedhof an Ort und
+     * Stelle auf (`_friedhofKlappeBauen`), kein Fenster mehr.
+     *
+     * WIE BREIT ER IST, entscheidet das Raster der Seiten-Zeile: Er liegt
+     * in derselben Spalte wie der Kasten und wird von ihr gestreckt —
+     * darum steht hier keine Breite.
+     *
+     * NULL, solange die Partie nicht laeuft — dieselbe Bedingung, unter
+     * der bis v0.79 die Steuer-Spalten standen: Vor dem Anpfiff ist
+     * niemand gefallen, danach zeigt die Auswertung die Bilanz.
+     */
+    _friedhofStreifenBauen(partie, farbe, obenAmBrett) {
+        if (!partie.laeuft || partie.ergebnis) {
+            return null;
+        }
+
         const gegner = (farbe === "weiss") ? "schwarz" : "weiss";
         const anzahl = SCHACH_RUNDE.bilanz(partie, gegner).geschlagen.length;
         const wer = (farbe === "weiss") ? "Weiss" : "Schwarz";
+        const offen = TEAM_SCHACH.friedhofOffen[farbe] === true;
 
-        /*
-         * SEIT v0.65.0 EIN TOTENKOPF STATT DES BUCHSTABENS F (Nutzer-Ansage
-         * 25.08.2026). Der Buchstabe bleibt als Rückfall, wenn START fehlt
-         * (Testumgebung) — wie bei jedem anderen Zeichen-Knopf auch.
-         */
-        const knopf = TEAM_SCHACH._knopf("F",
-            "knopf-still knopf-klein spiel-steuer-knopf",
-            () => {
-                const inhalt = TEAM_SCHACH._element("div", "friedhof-fenster");
-                inhalt.appendChild(TEAM_SCHACH._gefalleneBauen(partie, farbe));
-
-                const vor = SCHACH_RUNDE.materialVorsprung(partie, farbe);
-                const zurueck = SCHACH_RUNDE.materialVorsprung(partie, gegner);
-                let stand = "Nach Material steht es gleich.";
-                if (vor > 0) {
-                    stand = "Vorsprung nach Material: " + vor + " Punkte.";
-                } else if (zurueck > 0) {
-                    stand = "Rückstand nach Material: " + zurueck + " Punkte.";
-                }
-                inhalt.appendChild(TEAM_SCHACH._element("p", "erklaerung", stand));
-
-                DIALOG.hinweis("Friedhof — " + wer,
-                    "Die gefallenen Figuren von " + wer + ".", inhalt);
-            });
+        const knopf = TEAM_SCHACH._knopf("",
+            "knopf-still friedhof-streifen",
+            () => TEAM_SCHACH.friedhofUmschalten(farbe));
 
         if (typeof START !== "undefined" && START._totenkopfZeichenBauen) {
-            knopf.textContent = "";
             knopf.appendChild(START._totenkopfZeichenBauen());
         }
+        knopf.appendChild(TEAM_SCHACH._element("span", "friedhof-zahl",
+            String(anzahl)));
 
-        const beschriftung = "Friedhof von " + wer + ", " + anzahl + " gefallen";
+        /*
+         * Zu zeigt der Pfeil zum Brett (oben am Brett heisst: nach unten),
+         * offen wieder zurueck. In der Testumgebung fehlt das SVG-Bauen
+         * nicht — `_klappPfeilBauen` braucht nur `createElementNS`.
+         */
+        const zumBrett = obenAmBrett;
+        knopf.appendChild(TEAM_SCHACH._klappPfeilBauen(
+            offen ? !zumBrett : zumBrett));
+
+        const beschriftung = "Friedhof von " + wer + ", " + anzahl
+            + " gefallen — " + (offen ? "zuklappen" : "aufklappen");
         knopf.setAttribute("aria-label", beschriftung);
+        knopf.setAttribute("aria-expanded", offen ? "true" : "false");
         knopf.title = beschriftung;
         return knopf;
+    },
+
+    /*
+     * DIE AUFGEKLAPPTE FRIEDHOF-ZEILE (seit v0.80.0): die gefallenen
+     * Figuren der Seite und der Material-Stand — derselbe Inhalt, der bis
+     * v0.79 im Fenster stand. Sie steht zwischen Eck-Kasten und Brett,
+     * dort, wo der Pfeil hinzeigt.
+     *
+     * DASS SIE DIE BRETTGROESSE AENDERT, IST HIER ERLAUBT: Sie folgt dem
+     * eigenen Fingertipp (Regel in `erkenntnisse.md` — verboten ist nur,
+     * was ungefragt erscheint).
+     */
+    _friedhofKlappeBauen(partie, farbe) {
+        const gegner = (farbe === "weiss") ? "schwarz" : "weiss";
+
+        const klappe = TEAM_SCHACH._element("div",
+            "friedhof-klappe friedhof-klappe-" + farbe);
+        klappe.appendChild(TEAM_SCHACH._gefalleneBauen(partie, farbe));
+
+        const vor = SCHACH_RUNDE.materialVorsprung(partie, farbe);
+        const zurueck = SCHACH_RUNDE.materialVorsprung(partie, gegner);
+        let stand = "Nach Material steht es gleich.";
+        if (vor > 0) {
+            stand = "Vorsprung nach Material: " + vor + " Punkte.";
+        } else if (zurueck > 0) {
+            stand = "Rückstand nach Material: " + zurueck + " Punkte.";
+        }
+        klappe.appendChild(TEAM_SCHACH._element("p", "erklaerung", stand));
+
+        return klappe;
     },
     /*
      * DER ZUGVERLAUF ALS LISTE (seit v0.59.0 nur noch die Liste).
      *
      * Bis v0.58 steckte die Liste in einem Fach unter dem Brett. Seit v0.59.0
-     * ist der Zugverlauf ein „Z"-Knopf am Spieler (`_zuegeKnopfBauen`), der
+     * oeffnet ihn ein Knopf im Eck-Menue (`zuegeOeffnen`, seit v0.80.0), der
      * ein Fenster öffnet — diese Funktion baut nur noch die Liste darin.
      * Null, wenn noch kein Zug gefallen ist (das Fenster sagt es dann selbst).
      */
@@ -1847,35 +1900,14 @@ Object.assign(TEAM_SCHACH, {
     },
 
     /*
-     * DER ZÜGE-KNOPF AM SPIELER (seit v0.59.0, Nutzer-Skizze).
-     *
-     * Ein „Z" neben Friedhof und Einstellungen, das den Zugverlauf in einem
-     * FENSTER öffnet — wie der Friedhof, und aus demselben Grund: Eine Klappe
-     * an Ort und Stelle würde die Höhe ändern und auf der festen Seite (v0.52)
-     * das Brett verschieben. Bis v0.58 war der Zugverlauf ein Fach unter dem
-     * Brett; das Fach und die Verlauf-Karte darum sind damit weg.
+     * DER ZUGVERLAUF IM FENSTER (seit v0.59.0 als Fenster; seit v0.80.0
+     * gerufen vom Menue hinter dem eigenen Namens-Kasten statt vom
+     * „Z"-Knopf der Steuer-Spalte — die gibt es nicht mehr).
      */
-    _zuegeKnopfBauen(partie) {
+    zuegeOeffnen(partie) {
         const anzahl = partie.verlauf.length;
-
-        const knopf = TEAM_SCHACH._knopf("Z",
-            "knopf-still knopf-klein spiel-steuer-knopf",
-            () => {
-                const liste = TEAM_SCHACH._zugListeBauen(partie);
-                DIALOG.hinweis("Züge (" + anzahl + ")",
-                    liste ? "Neueste zuerst." : "Noch kein Zug.", liste);
-            });
-
-        /* Seit v0.65.0 das Verlaufs-Zeichen statt des Buchstabens Z
-           (Nutzer-Ansage 25.08.2026); der Buchstabe bleibt der Rückfall. */
-        if (typeof START !== "undefined" && START._zugverlaufZeichenBauen) {
-            knopf.textContent = "";
-            knopf.appendChild(START._zugverlaufZeichenBauen());
-        }
-
-        const beschriftung = "Zugverlauf, " + anzahl + " Züge";
-        knopf.setAttribute("aria-label", beschriftung);
-        knopf.title = beschriftung;
-        return knopf;
+        const liste = TEAM_SCHACH._zugListeBauen(partie);
+        DIALOG.hinweis("Züge (" + anzahl + ")",
+            liste ? "Neueste zuerst." : "Noch kein Zug.", liste);
     },
 });

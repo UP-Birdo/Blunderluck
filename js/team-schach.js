@@ -316,6 +316,24 @@ const TEAM_SCHACH = {
     botZeitgeber: null,
 
     /*
+     * DIE ZWEI KLAPPEN DER ECK-KAESTEN (seit v0.80.0, dritte Nutzer-Skizze).
+     *
+     * Jede Seite hat unter bzw. ueber ihrem Namens-Kasten einen
+     * Pfeil-Streifen, der den Friedhof AN ORT UND STELLE aufklappt; der
+     * eigene Namens-Kasten oeffnet zusaetzlich ein kleines Menue
+     * (Einstellungen, Zugverlauf). Beides lebt HIER und nicht im Stand,
+     * damit es das staendige Neuzeichnen der Abfrage ueberlebt — und nie
+     * beim Gegner landet.
+     *
+     * DAS AUFKLAPPEN AENDERT DIE BRETTGROESSE, UND DAS IST HIER ERLAUBT:
+     * Die Regel aus `erkenntnisse.md` (kein Brett-Nachbar aendert im Spiel
+     * seine Hoehe) verbietet nur, was OHNE eigenes Zutun erscheint. Die
+     * Klappe folgt dem eigenen Fingertipp — wie die Platzier-Leiste.
+     */
+    friedhofOffen: { weiss: false, schwarz: false },
+    eckMenueOffen: false,
+
+    /*
      * Bis zu welchem Zugzähler eine Partie schon animiert wurde, je Kennung.
      * Ohne diesen Merker liefe die Bewegung bei jedem Neuzeichnen erneut —
      * und die Abfrage zeichnet oft.
@@ -767,25 +785,38 @@ const TEAM_SCHACH = {
          */
         wurzel.appendChild(TEAM_SCHACH._seitenReiheBauen(partie, person, obenFarbe, true));
 
-        const obenKnoepfe = TEAM_SCHACH._steuerSpalteBauen(partie, person, obenFarbe);
-        if (obenKnoepfe) {
-            wurzel.appendChild(obenKnoepfe);
+        /*
+         * DIE FRIEDHOF-KLAPPEN (seit v0.80.0, dritte Nutzer-Skizze). Der
+         * Pfeil-Streifen sitzt IM Eck-Kasten (`_seitenReiheBauen`); die
+         * aufgeklappte Liste steht als eigene Zeile zwischen Kasten und
+         * Brett — dort zeigt der Pfeil hin. Die schmalen Steuer-Spalten am
+         * Rand (v0.64.0) sind damit weg.
+         */
+        if (TEAM_SCHACH.friedhofOffen[obenFarbe] && partie.laeuft && !partie.ergebnis) {
+            wurzel.appendChild(TEAM_SCHACH._friedhofKlappeBauen(partie, obenFarbe));
         }
 
         const halter = TEAM_SCHACH._brettBauen(partie, person);
         wurzel.appendChild(halter);
 
-        const untenKnoepfe = TEAM_SCHACH._steuerSpalteBauen(partie, person, untenFarbe);
-        if (untenKnoepfe) {
-            wurzel.appendChild(untenKnoepfe);
+        if (TEAM_SCHACH.friedhofOffen[untenFarbe] && partie.laeuft && !partie.ergebnis) {
+            wurzel.appendChild(TEAM_SCHACH._friedhofKlappeBauen(partie, untenFarbe));
         }
 
         wurzel.appendChild(TEAM_SCHACH._seitenReiheBauen(partie, person, untenFarbe, false));
+
+        /* Das Menue hinter dem eigenen Namens-Kasten — unterhalb der
+           eigenen Zeile, vom Brett weg. */
+        const eckMenue = TEAM_SCHACH._eckMenueBauen(partie, person);
+        if (eckMenue) {
+            wurzel.appendChild(eckMenue);
+        }
+
         wurzel.appendChild(TEAM_SCHACH._teamExtrasBauen(partie, person));
 
         /*
          * DIE VERLAUF-KARTE IST WEG (seit v0.59.0): Der Zugverlauf sitzt jetzt
-         * als „Z"-Knopf am Spieler (`_zuegeKnopfBauen` in der Spielerzeile),
+         * im Menue hinter dem eigenen Namens-Kasten (`zuegeOeffnen`, seit v0.80.0),
          * genau wie der Friedhof seit v0.58.0.
          *
          * Die Fussleiste kann jetzt null sein — im laufenden Match ist sie
@@ -1716,11 +1747,27 @@ const TEAM_SCHACH = {
         zeile.appendChild(stapel);
 
         /*
-         * DER KASTEN IST ANTIPPBAR, sobald mehr als einer dahintersteht —
-         * sonst gäbe es nichts zu zeigen, und ein Knopf, der ein Fenster mit
-         * einer einzigen Zeile öffnet, ist eine Enttäuschung.
+         * DER EIGENE KASTEN IST EIN KNOPF (seit v0.80.0, dritte
+         * Nutzer-Skizze): Ein Tipp klappt das Menue mit Einstellungen und
+         * Zugverlauf auf (`_eckMenueBauen`) — „der benutzer namen ein
+         * eigner knopf wo einstellung und zugverlauf dahinter liegen".
+         * Die Team-Liste, die hier bis v0.79 bei mehreren Spielern lag,
+         * haengt in diesem Menue als dritter Knopf.
+         *
+         * DER GEGNERISCHE KASTEN behaelt den alten Weg: antippbar, sobald
+         * mehr als einer dahintersteht — ein Menue haette er nicht, und
+         * ein Fenster mit einer einzigen Zeile ist eine Enttaeuschung.
          */
-        if (namen.length > 1) {
+        if (meinTeam === farbe && laeuft) {
+            zeile.className += " spieler-zeile-tippbar";
+            zeile.setAttribute("role", "button");
+            zeile.setAttribute("tabindex", "0");
+            zeile.setAttribute("aria-expanded",
+                TEAM_SCHACH.eckMenueOffen ? "true" : "false");
+            zeile.title = "Einstellungen und Zugverlauf";
+            zeile.addEventListener("click",
+                () => TEAM_SCHACH.eckMenueUmschalten());
+        } else if (namen.length > 1) {
             zeile.className += " spieler-zeile-tippbar";
             zeile.setAttribute("role", "button");
             zeile.setAttribute("tabindex", "0");
@@ -1743,7 +1790,7 @@ const TEAM_SCHACH = {
 
         /*
          * DIE STEUER-KNÖPFE STEHEN SEIT v0.64.0 NICHT MEHR HIER, sondern als
-         * Spalte am Rand (`_steuerSpalteBauen`, zweite Nutzer-Skizze). Diese
+         * Eck-Kasten-Menue (`_eckMenueBauen`, seit v0.80.0 dritte Skizze). Diese
          * Zeile ist damit reiner BANNER geworden: wer auf dieser Seite
          * spielt und wie es um sie steht — mehr nicht.
          *
@@ -1794,19 +1841,43 @@ const TEAM_SCHACH = {
      * Zeile ist eine Flexbox mit Platz dazwischen, kein Raster mit festen
      * Spalten.
      */
+    /*
+     * EINE SEITEN-ZEILE IST SEIT v0.80.0 EIN RASTER (dritte Nutzer-Skizze,
+     * 26.08.2026): Der Namens-Kasten bekommt an seiner Brettseite einen
+     * Pfeil-Streifen, der den Friedhof aufklappt — beide zusammen bilden
+     * den Eck-Kasten. Die schmalen Steuer-Spalten am Rand (v0.64.0) sind
+     * damit weg; was in ihnen stand, liegt jetzt hinter dem eigenen
+     * Namens-Kasten (`_eckMenueBauen`) und hinter den Pfeilen.
+     *
+     * WARUM EIN RASTER UND KEINE FLEXBOX MEHR: Zwei Zusagen zugleich —
+     * die Karten sind GENAU so hoch wie der Namens-Kasten (v0.71.0), und
+     * der Streifen ist GENAU so breit wie der Kasten (die Skizze zeichnet
+     * ihn als dessen Unterkante). In einer Flex-Zeile ginge nur eines von
+     * beiden; im Raster ist der Kasten die Zelle, an der sich beide
+     * ausrichten. Die Zellen stehen in der Stildatei (`.seiten-reihe`).
+     */
     _seitenReiheBauen(partie, person, farbe, obenAmBrett) {
         const reihe = TEAM_SCHACH._element("div",
             "seiten-reihe seiten-reihe-" + (obenAmBrett ? "oben" : "unten"));
 
         const banner = TEAM_SCHACH._spielerZeileBauen(partie, person, farbe);
         const koennen = TEAM_SCHACH._faehigkeitReiheBauen(partie, person, farbe);
+        const streifen = TEAM_SCHACH._friedhofStreifenBauen(partie, farbe, obenAmBrett);
 
+        /* Die DOM-Reihenfolge bleibt die Lesereihenfolge der Skizze; WO die
+           Teile stehen, entscheidet allein das Raster. */
         if (obenAmBrett) {
             if (koennen) {
                 reihe.appendChild(koennen);
             }
             reihe.appendChild(banner);
+            if (streifen) {
+                reihe.appendChild(streifen);
+            }
         } else {
+            if (streifen) {
+                reihe.appendChild(streifen);
+            }
             reihe.appendChild(banner);
             if (koennen) {
                 reihe.appendChild(koennen);
@@ -1817,43 +1888,59 @@ const TEAM_SCHACH = {
     },
 
     /*
-     * DIE STEUER-KNÖPFE ALS SPALTE AM RAND (seit v0.64.0, zweite
-     * Nutzer-Skizze).
+     * DAS MENUE HINTER DEM EIGENEN NAMENS-KASTEN (seit v0.80.0).
      *
-     * Beim Gegner steht nur sein Friedhof, und zwar RECHTS; bei mir stehen
-     * Zahnrad, Züge und Friedhof untereinander LINKS (Nutzer-Entscheidung
-     * 25.08.2026: alle drei).
+     * Nutzer-Ansage 26.08.2026: „der benutzer namen ein eigner knopf wo
+     * einstellung und zugverlauf dahinter liegen". Ein Tipp auf den eigenen
+     * Kasten klappt diese Zeile auf, ein zweiter schliesst sie. Sie steht
+     * UNTER der eigenen Seiten-Zeile — vom Brett weg, wo Platz ist.
      *
-     * JEDE SPALTE KLEBT AN DERSELBEN SEITE WIE IHR BANNER: oben beide
-     * rechts, unten beide links. So bleibt die Diagonale der Skizze
-     * erhalten — jede Seite hat ihre Ecke, und die des Gegners liegt der
-     * eigenen gegenüber.
+     * „Team ansehen" haengt sich an, sobald mehr als einer auf der Seite
+     * spielt: Der Tipp auf den Kasten oeffnete bis v0.79 die Team-Liste,
+     * und dieser Weg darf nicht stillschweigend verschwinden.
      *
-     * DIE REIHENFOLGE VON OBEN NACH UNTEN ist bei mir Zahnrad, Z, F — das
-     * Zahnrad am weitesten weg vom Brett, weil man es am seltensten braucht
-     * und dahinter das Aufgeben liegt. Der Friedhof kommt ans Brett, weil er
-     * beim Spielen am häufigsten aufgeht.
-     *
-     * NULL, solange die Partie nicht läuft: Vor dem Anpfiff ist niemand
-     * gefallen, es gibt keinen Zug zu sehen, und einzustellen gibt es nur,
-     * was auf den Start-Bildschirmen ohnehin dasteht.
+     * NULL, solange die Partie nicht laeuft oder ich nicht mitspiele —
+     * dieselbe Bedingung, unter der bis v0.79 die eigene Steuer-Spalte
+     * stand.
      */
-    _steuerSpalteBauen(partie, person, farbe) {
-        if (!partie.laeuft || partie.ergebnis) {
+    _eckMenueBauen(partie, person) {
+        if (!TEAM_SCHACH.eckMenueOffen || !partie.laeuft || partie.ergebnis) {
+            return null;
+        }
+        const meinTeam = SCHACH_RUNDE.teamVon(partie, person.id);
+        if (!meinTeam) {
             return null;
         }
 
-        const meine = (SCHACH_RUNDE.teamVon(partie, person.id) === farbe);
-        const spalte = TEAM_SCHACH._element("div",
-            "steuer-spalte steuer-spalte-" + (meine ? "meine" : "fremde"));
+        const menue = TEAM_SCHACH._element("div", "eck-menue");
 
-        if (meine) {
-            spalte.appendChild(TEAM_SCHACH._einstellungenKnopfBauen());
-            spalte.appendChild(TEAM_SCHACH._zuegeKnopfBauen(partie));
+        menue.appendChild(TEAM_SCHACH._knopf("Einstellungen",
+            "knopf-still knopf-klein",
+            () => TEAM_SCHACH.spielEinstellungenOeffnen()));
+
+        menue.appendChild(TEAM_SCHACH._knopf(
+            "Zugverlauf (" + partie.verlauf.length + ")",
+            "knopf-still knopf-klein",
+            () => TEAM_SCHACH.zuegeOeffnen(partie)));
+
+        const namen = partie.teams[meinTeam].map((id) => TEAM_SCHACH._nameVon(id));
+        if (namen.length > 1) {
+            menue.appendChild(TEAM_SCHACH._knopf("Team (" + namen.length + ")",
+                "knopf-still knopf-klein",
+                () => TEAM_SCHACH._teamKastenOeffnen(meinTeam, namen)));
         }
-        spalte.appendChild(TEAM_SCHACH._friedhofKnopfBauen(partie, farbe));
 
-        return spalte;
+        return menue;
+    },
+
+    eckMenueUmschalten() {
+        TEAM_SCHACH.eckMenueOffen = !TEAM_SCHACH.eckMenueOffen;
+        TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
+    },
+
+    friedhofUmschalten(farbe) {
+        TEAM_SCHACH.friedhofOffen[farbe] = !TEAM_SCHACH.friedhofOffen[farbe];
+        TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
     },
 
 
@@ -2053,24 +2140,11 @@ const TEAM_SCHACH = {
      * Aufgeben, später mehr. Gezeichnet statt als Bilddatei, dasselbe Zahnrad
      * wie auf dem Startbildschirm; fehlt START (Testumgebung), steht ein Wort.
      */
-    _einstellungenKnopfBauen() {
-        const zahnrad = document.createElement("button");
-        zahnrad.type = "button";
-        zahnrad.className =
-            "knopf knopf-still knopf-klein spiel-steuer-knopf spiel-zahnrad";
-        zahnrad.setAttribute("aria-label", "Einstellungen für diese Partie");
-        zahnrad.title = "Einstellungen für diese Partie";
-
-        if (typeof START !== "undefined" && START._zahnradBauen) {
-            zahnrad.appendChild(START._zahnradBauen());
-        } else {
-            zahnrad.textContent = "Einstellungen";
-        }
-
-        zahnrad.addEventListener("click",
-            () => TEAM_SCHACH.spielEinstellungenOeffnen());
-        return zahnrad;
-    },
+    /*
+     * HIER STAND BIS v0.79 `_einstellungenKnopfBauen` — das Zahnrad der
+     * Steuer-Spalte. Seit v0.80.0 liegen die Einstellungen als Wort-Knopf
+     * im Menue hinter dem eigenen Namens-Kasten (`_eckMenueBauen`).
+     */
 
     /*
      * OB SICH DIE ARMEE NEU WÜRFELN LÄSST (Regel seit v0.42.0, seit v0.61.0
@@ -2141,7 +2215,7 @@ const TEAM_SCHACH = {
         /*
          * IM LAUFENDEN MATCH IST DIE FUSSLEISTE LEER (seit v0.59.0). Bis
          * v0.58 stand hier das Zahnrad (v0.48.0); es sitzt jetzt in der
-         * eigenen Spielerzeile (`_einstellungenKnopfBauen`), und dahinter
+         * Menue hinter dem eigenen Namens-Kasten (`_eckMenueBauen`), und dahinter
          * liegt das Aufgeben.
          */
         if (!partie.ergebnis && partie.laeuft === true && meinTeam) {
@@ -2185,6 +2259,11 @@ const TEAM_SCHACH = {
          */
         TEAM_SCHACH.auswahlOffen = false;
         TEAM_SCHACH._auswahlAufheben();
+
+        /* Die Eck-Klappen (v0.80.0) starten zu: Was in der VORIGEN Partie
+           aufgeklappt war, hat in dieser nichts verloren. */
+        TEAM_SCHACH.friedhofOffen = { weiss: false, schwarz: false };
+        TEAM_SCHACH.eckMenueOffen = false;
 
         /* Beim Öffnen wird nicht animiert: Der letzte Zug liegt womöglich
            Stunden zurück. */

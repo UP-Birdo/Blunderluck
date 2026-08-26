@@ -3,6 +3,23 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.80.0 — 26.08.2026
+
+**Die neue Knopf-Anordnung im Match (dritte Skizze): Jede Seite hat jetzt
+einen Eck-Kasten mit Pfeil — die schmalen Knopfspalten am Rand sind weg.**
+
+- **Unter bzw. über dem Team-Namen sitzt ein breiter Pfeil-Streifen** mit
+  Totenkopf und der Zahl der Gefallenen. Ein Tipp klappt den Friedhof
+  direkt am Brett auf (Figuren + Material-Stand), ein zweiter Tipp
+  schliesst ihn — kein Fenster mehr.
+- **Der eigene Team-Kasten ist jetzt selbst ein Knopf:** Dahinter liegen
+  „Einstellungen" und „Zugverlauf" (und „Team", sobald mehrere auf der
+  Seite spielen). Beim Gegner öffnet der Kasten wie bisher die Team-Liste.
+- **Das Brett ist dadurch spürbar grösser** — am Handy rund 40 Pixel
+  breiter, weil die Randspalten ihre Höhe zurückgeben.
+- Die Karten sind weiterhin genau so hoch wie der Team-Kasten, und der
+  Streifen ist genau so breit wie er — beides im Browser nachgemessen.
+
 ## v0.79.2 — 26.08.2026
 
 **Drei Anzeigefehler im Match behoben, gefunden bei einer gezielten
