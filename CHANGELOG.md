@@ -3,6 +3,15 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.83.2 — 27.08.2026
+
+**Nachzügler zu v0.83.1: dieselbe Reihenfolge auch im Spielart-Vorschaubild.**
+
+- Das kleine Vorschaubild einer Spielart legte seine angedeuteten Lootboxen
+  noch vor die Figuren. **Heute ohne sichtbare Wirkung** — dort treffen die
+  beiden nie aufeinander —, aber die Regel gilt jetzt an allen drei Stellen
+  gleich, statt an einer zu fehlen.
+
 ## v0.83.1 — 27.08.2026
 
 **Zwei Anzeigefehler am Brett behoben.**

@@ -1105,8 +1105,15 @@ Object.assign(TEAM_SCHACH, {
             const beispiel = variante.bonusFelder.find((eintrag) => eintrag.feld === feld);
             if (beispiel) {
                 zelle.classList.add("feld-bonus");
-                zelle.appendChild(TEAM_SCHACH._wuerfelBauen(
-                    SCHACH_VARIANTEN.stufeVon(beispiel.art)));
+
+                /* Ganz nach vorn ins Feld, also hinter eine Figur — dieselbe
+                   Reihenfolge wie am echten Brett und in den Bildanleitungen
+                   (seit v0.83.1, Begründung bei `.wuerfel` in `css\stil.css`).
+                   Hier treffen die beiden heute nicht aufeinander; die Regel
+                   gilt trotzdem überall gleich, sonst fällt die dritte Stelle
+                   beim nächsten Umbau durch. */
+                zelle.insertBefore(TEAM_SCHACH._wuerfelBauen(
+                    SCHACH_VARIANTEN.stufeVon(beispiel.art)), zelle.firstChild);
             }
 
             vorschau.appendChild(zelle);
