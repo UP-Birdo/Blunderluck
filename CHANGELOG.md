@@ -3,6 +3,25 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.75.0 — 26.08.2026
+
+**In den Bildanleitungen der Fähigkeiten war die oberste Figurenreihe
+abgeschnitten.**
+
+- Die Anleitungsbilder reservieren oben Platz für die Figuren, die über die
+  erste Reihe hinausragen. Dieser Platz war **fest auf 30 Pixel** eingestellt,
+  während die Figuren mit der Bildgrösse mitwachsen — bei sechs Spalten sind
+  sie rund doppelt so hoch. Der Überstand wurde gekappt.
+- Jetzt wächst der Platz mit der Figur mit, wie beim echten Spielbrett auch.
+- **Der Inhalt der Anleitungen war nie falsch:** Nachgemessen haben alle 22
+  Fähigkeiten ihr Bild, alle rechnen mit den echten Spielregeln durch, und
+  keines zeigt eine Wirkung, die es nicht mehr gibt. Falsch war allein die
+  Darstellung.
+
+> **Was noch offen ist:** Ob die Anleitungen auch jeden Handgriff zeigen, den
+> man im Match wirklich anklicken muss — das ist ein eigener Punkt und kommt
+> später.
+
 ## v0.74.0 — 26.08.2026
 
 **Die blaue Pille im Hauptmenü zappelt beim Drehen nicht mehr.**

@@ -2644,9 +2644,38 @@ body.design-3d .vorschau-feld > .figur-bild {
 
 /* Der Platz oben wächst mit der Figur: Was über die erste Reihe hinausragt,
    würde sonst abgeschnitten. Der Faktor gehört zur Grösse oben. */
-body.design-3d .brett,
-body.design-3d .vorschau {
+body.design-3d .brett {
     padding-top: calc(var(--figur-groesse, 30px) * 1.1);
+}
+
+/*
+ * DAS VORSCHAUBRETT RECHNET IN `em`, NICHT IN PIXELN (seit v0.75.0).
+ *
+ * DER FEHLER, DEN DAS BEHEBT (Nutzer-Meldung 26.08.2026: „die Vorschaubilder
+ * der Items stimmen nicht mehr … und die Grösse der Figuren darin stimmt auch
+ * nicht mehr"): Bis v0.74.0 stand die Vorschau in derselben Regel wie das
+ * Brett und rechnete damit ebenfalls mit `--figur-groesse`. Diese Variable
+ * setzt aber `TEAM_SCHACH._figurGroesseSetzen` — und zwar AUSSCHLIESSLICH am
+ * echten Brett, aus dessen gemessener Feldbreite. Im Vorschaubrett war sie nie
+ * gesetzt, es griff also immer der Rückfall von 30 Pixeln.
+ *
+ * Reserviert waren damit feste 33 Pixel, während die Figuren dort mit der
+ * Brettgrösse mitwachsen: Bei sechs Spalten sind es rund 65 Pixel Figur auf
+ * 33 Pixel Platz. Der Überstand wurde oben abgeschnitten — und weil das nur
+ * die oberste Reihe trifft, sah es nach „das Bild stimmt nicht" aus.
+ *
+ * WARUM `em` HIER RICHTIG IST UND PIXEL DORT: Das echte Brett kennt seine
+ * Feldbreite nur gemessen, es MUSS sie als Pixelwert bekommen. Die Vorschau
+ * dagegen setzt ihre Feldgrösse selbst über `font-size` (siehe `.vorschau`) —
+ * dort ist `em` die natürliche Einheit und wächst von allein mit.
+ *
+ * WOHER DIE 0,8 KOMMEN: Die Figur ist `1.85em` hoch und sitzt `12%` über dem
+ * Zellboden; die Schrift ist auf 80 Prozent der Zellbreite gesetzt. Damit ragt
+ * sie 0,6 Zellen über die erste Reihe hinaus, und das sind 0,75em. Aufgerundet
+ * auf 0,8em bleibt ein Rest Luft.
+ */
+body.design-3d .vorschau {
+    padding-top: 0.8em;
 }
 
 /*
