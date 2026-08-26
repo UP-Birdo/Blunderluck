@@ -560,12 +560,21 @@ body.partie-fest .phasen-leiste {
  * Marken (Chips) und Meldungen
  * ------------------------------------------------------------------ */
 
+/*
+ * FLACH WIE DIE TEXTZEILE DANEBEN (seit v0.81.0): Ein Chip, der hoeher
+ * ist als „Zug N", macht die Standleiste hoeher, sobald er erscheint —
+ * und alles unter ihr rueckt nach (die Familie von v0.79.1). Seit die
+ * Marke „Wird gesendet" weg ist, haelt kein Platzhalter mehr die Hoehe;
+ * jetzt tut es diese Regel: Polster 2 px und `line-height` knapp an der
+ * Schrift halten jeden Chip unter der Hoehe der Zugnummer-Zeile.
+ */
 .chip {
     display: inline-block;
-    padding: 3px 10px;
+    padding: 2px 8px;
     border-radius: 999px;
     font-size: 0.78rem;
     font-weight: 600;
+    line-height: 1.2;
     border: 1px solid var(--rahmen);
     color: var(--schrift-leise);
     background: var(--karte-leise);
@@ -591,20 +600,11 @@ body.partie-fest .phasen-leiste {
 }
 
 /*
- * DER FREIGEHALTENE PLATZ DER MARKE „Wird gesendet" (seit v0.79.1).
- *
- * `visibility: hidden` und NICHT `display: none`: Der Kasten bleibt stehen
- * und hält damit die Höhe der Standleiste konstant. Genau darum geht es —
- * auf der festen Seite rechnet `TEAM_SCHACH._brettEinpassen` die Brettbreite
- * aus der Höhe, die neben der Leiste übrig bleibt; eine Marke, die kommt und
- * geht, macht das Brett kurz kleiner und gleich wieder grösser.
- *
- * Die Begründung im Langen steht bei `_standLeisteBauen` in
- * `js\team-schach.js`.
+ * HIER STAND v0.79.1–v0.80.0 `.chip-platzhalter` — der freigehaltene
+ * Platz der Marke „Wird gesendet". Die Marke ist seit v0.81.0 ganz weg
+ * (Nutzer-Ansage); die Hoehen-Stabilitaet der Leiste haengt jetzt an den
+ * flachen Chips (siehe `.chip`).
  */
-.chip-platzhalter {
-    visibility: hidden;
-}
 
 .chip-verwaltung {
     color: var(--warnung);
@@ -1330,10 +1330,31 @@ body.partie-fest .phasen-leiste {
     gap: 6px;
 }
 
-.spieler-amzug {
-    font-weight: 600;
-    color: var(--haupt);
-    white-space: nowrap;
+/*
+ * HIER STAND BIS v0.80.0 `.spieler-amzug` — das Wort „am Zug" in der
+ * Lage. Seit v0.81.0 sagt es allein die Färbung (`.spieler-zeile-amzug`,
+ * Nutzer-Ansage: „wer blau ist, ist gerade am Zug").
+ */
+
+/*
+ * DIE MENUE-KNOEPFE IM KASTEN (v0.81.0): Zahnrad und Verlaufs-Zeichen
+ * erscheinen an der Stelle der Lage, sobald der eigene Kasten angetippt
+ * ist — klein und quadratisch, damit sie den Kasten nicht sprengen.
+ */
+.eck-knopf {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3px;
+    min-width: 26px;
+    min-height: 26px;
+}
+
+.eck-knopf .start-zeichen {
+    width: 1.15em;
+    height: 1.15em;
+    display: block;
 }
 
 /*
@@ -4800,7 +4821,10 @@ body.design-3d .werte-figur {
     grid-template-columns: minmax(0, 1fr) auto;
 }
 
-.seiten-reihe-oben .faehigkeit-zeile { grid-column: 1; grid-row: 1; }
+/* Die Karten spannen BEIDE Zeilen (seit v0.81.0, Nutzer-Ansage: „so hoch
+   wie die beiden Knöpfe zusammen") — sie sind damit so hoch wie Kasten
+   plus Streifen. */
+.seiten-reihe-oben .faehigkeit-zeile { grid-column: 1; grid-row: 1 / 3; }
 .seiten-reihe-oben .spieler-zeile { grid-column: 2; grid-row: 1; }
 .seiten-reihe-oben .friedhof-streifen { grid-column: 2; grid-row: 2; }
 
@@ -4808,11 +4832,32 @@ body.design-3d .werte-figur {
    aussen, Karten rechts. */
 .seiten-reihe-unten {
     grid-template-columns: auto minmax(0, 1fr);
+
+    /* Das untere Viertel der Karten wird vom Rand VERSCHLUCKT
+       (Nutzer-Ansage v0.81.0) — die Zeile schneidet ab, was ihre
+       verschobene Kartenreihe unten ueberragt. */
+    overflow: hidden;
 }
 
 .seiten-reihe-unten .friedhof-streifen { grid-column: 1; grid-row: 1; }
 .seiten-reihe-unten .spieler-zeile { grid-column: 1; grid-row: 2; }
-.seiten-reihe-unten .faehigkeit-zeile { grid-column: 2; grid-row: 2; }
+.seiten-reihe-unten .faehigkeit-zeile { grid-column: 2; grid-row: 1 / 3; }
+
+/* Um ein Viertel der eigenen Hoehe nach unten geschoben: Sichtbar bleiben
+   drei Viertel, der Rest verschwindet im Bildschirmrand (Nutzer-Ansage
+   v0.81.0). `transform` statt Rand, damit das Raster nicht mitwaechst —
+   und NUR die echte Kartenreihe: „noch keine" und die Warte-Zeile der
+   Fähigkeiten bleiben ungeschoben lesbar. */
+.seiten-reihe-unten .faehigkeit-reihe-meine,
+.seiten-reihe-unten .faehigkeit-reihe-gegner {
+    transform: translateY(25%);
+}
+
+/* Die ungeschobenen Sonderzeilen stehen mittig in ihrer hohen Zelle. */
+.seiten-reihe .faehigkeit-reihe-leer,
+.seiten-reihe .faehigkeit-reihe-ziel {
+    align-self: center;
+}
 
 /* Die untere Reihe steht unter dem Brett und braucht ihren Abstand oben
    statt unten. */
@@ -4826,10 +4871,21 @@ body.design-3d .werte-figur {
  * ist `minmax(0, 1fr)` — das Gegenstück zum alten `min-width: 0` der
  * Flex-Fassung; ohne die 0 drängte ein voller Streifen den Kasten aus der
  * Zeile (v0.79.2, `erkenntnisse.md`).
+ *
+ * `height: 0` PLUS `min-height: 100%` (seit v0.81.0): Die Karten leiten
+ * ihre Breite aus ihrer Höhe ab (`aspect-ratio`), und OHNE diese zwei
+ * Zeilen liefe das rückwärts — die Wunschgrösse der Karten ginge in die
+ * Zeilen-Messung des Rasters ein, und die Ecke wüchse auf Karten- statt
+ * auf Kastenmass (gemessen: 428 statt 98 px). Mit `height: 0` trägt die
+ * Reihe NICHTS zur Zeilenhöhe bei; die messen allein Kasten und
+ * Streifen, und `min-height: 100%` streckt die Reihe danach auf das
+ * fertige Mass.
  */
 .seiten-reihe .faehigkeit-reihe {
     min-width: 0;
     margin: 0;
+    height: 0;
+    min-height: 100%;
 }
 
 /*
@@ -4893,32 +4949,73 @@ body.design-3d .werte-figur {
 }
 
 /*
- * DIE AUFGEKLAPPTE FRIEDHOF-ZEILE: zwischen Eck-Kasten und Brett, volle
- * Breite — die Figurenliste braucht sie. Dass sie dem Brett Höhe nimmt,
- * ist erlaubt: Sie folgt dem eigenen Fingertipp (`erkenntnisse.md`).
+ * DIE AUFGEKLAPPTE FRIEDHOF-ZEILE — seit v0.81.0 EIN flacher Streifen
+ * ohne Text (Nutzer-Ansage): links die Bilanz-Zahl, rechts die
+ * gefallenen Figuren, gruppiert und von rechts gelesen. Sie ist
+ * standardmaessig offen und fuellt die Flaeche zwischen Eck-Kasten und
+ * Brett, statt etwas zu verschieben.
  */
 .friedhof-klappe {
+    display: flex;
+    align-items: center;
+    gap: 10px;
     background: var(--karte);
     border: 1px solid var(--rahmen);
     border-radius: var(--radius);
-    padding: 8px 12px;
+    padding: 3px 10px;
     margin-bottom: 6px;
 }
 
+/* Die Bilanz ganz links: gruen heisst vorn, rot heisst hinten, eine 0
+   bleibt leise stehen. */
+.friedhof-bilanz {
+    flex: 0 0 auto;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--schrift-leise);
+}
+
+.friedhof-bilanz-gut {
+    color: var(--gut);
+}
+
+.friedhof-bilanz-schlecht {
+    color: var(--gefahr);
+}
+
+/* Die Figuren fuellen den Rest und lehnen sich RECHTS an — die
+   wertvollste steht am rechten Rand, gelesen wird von rechts nach
+   links. Werden es zu viele, rollt die Reihe in sich (ohne sichtbaren
+   Balken, siehe die Kartenreihe). */
 .friedhof-klappe .friedhof-figuren {
-    margin-bottom: 4px;
-}
-
-.friedhof-klappe .erklaerung {
-    margin: 0;
-}
-
-/* Das Menue hinter dem eigenen Namens-Kasten: eine schlichte Knopfzeile
-   unter der eigenen Seiten-Zeile, an deren Kasten-Ecke (links). */
-.eck-menue {
-    display: flex;
+    flex: 1 1 auto;
+    min-width: 0;
+    justify-content: flex-end;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    margin-bottom: 0;
     gap: 8px;
-    margin-bottom: 6px;
+}
+
+.friedhof-klappe .friedhof-figuren::-webkit-scrollbar {
+    display: none;
+}
+
+/* Eine Saeule je Figurenart: das Zeichen, darunter „2x". */
+.friedhof-saeule {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 0 0 auto;
+    line-height: 1;
+}
+
+.friedhof-anzahl {
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: var(--schrift-leise);
+    margin-top: 1px;
 }
 
 
@@ -4979,8 +5076,20 @@ body.design-3d .werte-figur {
 
 .faehigkeit-reihe .faehigkeit-knopf {
     position: relative;
-    width: 44px;
-    min-width: 44px;
+
+    /*
+     * DIE BREITE FOLGT SEIT v0.81.0 DER HOEHE (`aspect-ratio` im
+     * Pokerkarten-Verhaeltnis 44 zu 62 = 0,71): Die Karten spannen jetzt
+     * BEIDE Rasterzeilen (Kasten plus Streifen, Nutzer-Ansage „so hoch
+     * wie die beiden Knöpfe zusammen") — eine feste Breite passte immer
+     * nur zu einer Hoehe. `aspect-ratio` war bei v0.71.0 ausdruecklich
+     * verboten, weil die Karte damals ihre Hoehe selbst bestimmt haette;
+     * heute kommt die Hoehe von der Rasterzelle, das Verhaeltnis liefert
+     * nur noch die Breite dazu.
+     */
+    width: auto;
+    min-width: 0;
+    aspect-ratio: 44 / 62;
     border-radius: 6px;
     display: flex;
     align-items: center;
@@ -5050,14 +5159,17 @@ body.design-3d .werte-figur {
  * steht (seit v0.71.0; bis dahin wurde diese Regel von einer gleich
  * spezifischen weiter unten geschlagen, siehe dort).
  *
- * 26 Pixel auf einer 38 Pixel breiten Karte lassen 6 Pixel Rand je Seite,
- * am Handy auf 36 Pixel noch 5. Der Selektor nennt bewusst alle drei
- * Klassen: Damit ist er spezifischer als alles, was mit zwei Klassen
- * dazwischenfunken könnte.
+ * SEIT v0.81.0 IN PROZENT DER KARTENBREITE statt in Pixeln: Die Karten
+ * wachsen jetzt mit der Hoehe des Eck-Kastens mit (`aspect-ratio`), und
+ * ein 26-Pixel-Zeichen saehe auf einer doppelt so grossen Karte verloren
+ * aus. 58 Prozent entsprechen dem alten Verhaeltnis (26 von 44 sind 59).
+ * Der Selektor nennt bewusst alle drei Klassen: Damit ist er spezifischer
+ * als alles, was mit zwei Klassen dazwischenfunken könnte.
  */
 .faehigkeit-reihe .faehigkeit-knopf .faehigkeit-bild {
-    width: 26px;
-    height: 26px;
+    width: 58%;
+    height: auto;
+    aspect-ratio: 1 / 1;
     flex: 0 0 auto;
 }
 
@@ -6233,28 +6345,12 @@ body.dialog-offen {
     }
 
     /*
-     * DIE ITEM-KARTEN AM HANDY (seit v0.71.0).
-     *
-     * Ihre HÖHE steht hier bewusst nicht: Sie kommt von der Team-Karte
-     * daneben (`.seiten-reihe` mit `align-items: stretch`), und die ist
-     * hier von selbst niedriger, weil `.schach .spieler-zeile` weiter oben
-     * in diesem Abschnitt den Innenabstand kleiner macht. Gemessen am
-     * 26.08.2026 im echten Browser: 52 Pixel gegen 62 am Laptop.
-     *
-     * MITZIEHEN MUSS DESHALB NUR DIE BREITE, sonst würde die Karte hier
-     * gedrungener wirken als am Laptop: 37 zu 52 sind 0,71, am Laptop 44
-     * zu 62 ebenfalls 0,71. Beides ist das Verhältnis einer Pokerkarte.
-     *
-     * Zwischen Handy und Laptop liegt nichts: Diese Datei hat genau EINEN
-     * Breitenwechsel (600 Pixel), und die Schriftgrösse der Seite steht
-     * fest bei 16 Pixeln. Ein Tablet und ein Laptop bekommen darum
-     * dasselbe Bild, egal wie breit ihr Fenster ist — am Rechner
-     * nachgesehen bei 820, 1440 und 1600 Pixeln Fensterbreite.
+     * DIE ITEM-KARTEN AM HANDY brauchen seit v0.81.0 KEINE eigene Breite
+     * mehr: Hoehe und Breite kommen ueberall aus der Rasterzelle plus
+     * `aspect-ratio` (Pokerkarten-Verhaeltnis 0,71) — der Handy-Fall ist
+     * damit automatisch kleiner, weil der Eck-Kasten dort niedriger ist.
+     * Bis v0.80.0 standen hier 37 px als Gegenstueck zu den 44 am Laptop.
      */
-    .faehigkeit-reihe .faehigkeit-knopf {
-        width: 37px;
-        min-width: 37px;
-    }
 
     /* Die Randbeschriftung des Bretts darf schmaler sein. */
     .brett-rand-reihen {

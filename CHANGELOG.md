@@ -3,6 +3,32 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.81.0 — 26.08.2026
+
+**Feinschliff der Eck-Kästen nach der ersten Nutzer-Runde: offener
+Friedhof, Menü im Kasten, grössere Karten.**
+
+- **Der Friedhof ist jetzt standardmässig aufgeklappt**, sobald die erste
+  Figur fällt — ein flacher Streifen ohne Text: ganz links der
+  Material-Stand als Zahl (**+2 grün** = vorn, **-2 rot** = hinten),
+  rechts die gefallenen Figuren, **gruppiert mit „2x" unter der Figur**
+  und von rechts nach links gelesen (die wertvollste ganz rechts).
+  Solange niemand gefallen ist, gibt es nichts aufzuklappen — der Pfeil
+  ist dann kein Knopf.
+- **Die Menü-Knöpfe erscheinen IM Team-Kasten:** Ein Tipp auf den eigenen
+  Kasten blendet Zahnrad und Zugverlaufs-Zeichen dort ein, wo bisher
+  „am Zug" stand — keine eigene Zeile mehr darunter.
+- **„am Zug" steht nirgends mehr als Wort** — die blaue Färbung des
+  Kastens sagt allein, wer dran ist.
+- **Die Marke „Wird gesendet …" ist weg** („nimmt zu viel Platz") — die
+  Leiste ist dadurch 5 Pixel flacher. Damit kein anderer Hinweis-Chip die
+  Leiste wieder wachsen lässt, sind alle Chips jetzt so flach wie die
+  Textzeile daneben.
+- **Die Item-Karten sind so hoch wie Kasten + Pfeil-Streifen zusammen**
+  (am Handy 69 × 98 statt 37 × 52, weiterhin Pokerkarten-Form, das
+  Zeichen wächst mit) — und **das untere Viertel der eigenen Karten
+  verschwindet im Bildschirmrand**, so bleibt trotz der Grösse Platz.
+
 ## v0.80.0 — 26.08.2026
 
 **Die neue Knopf-Anordnung im Match (dritte Skizze): Jede Seite hat jetzt

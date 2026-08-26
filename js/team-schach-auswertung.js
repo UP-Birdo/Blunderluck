@@ -1719,44 +1719,12 @@ Object.assign(TEAM_SCHACH, {
     },
 
     /*
-     * DIE GEFALLENEN FIGUREN EINER SEITE (seit v0.58.0).
-     *
-     * Nutzer-Entscheidung 25.08.2026: Der Friedhof zeigt die EIGENEN
-     * Gefallenen — die verlorenen Figuren dieser Seite. Bis v0.57 zeigte der
-     * gemeinsame Friedhof-Fach die Bilanz (was jede Seite GESCHLAGEN hat);
-     * jetzt bekommt jede Seite ihren eigenen Friedhof mit dem, was sie
-     * VERLOREN hat.
-     *
-     * VERLOREN hat eine Seite genau das, was die ANDERE geschlagen hat —
-     * deshalb `bilanz(gegenfarbe).geschlagen`. Diese Figuren sind
-     * `farbe`-farben und werden auch so gezeichnet. Die Zeichen-Logik ist aus
-     * `_bilanzBauen` übernommen (dort für die Beute): eine gefallene Figur
-     * sieht aus wie eine geschlagene, nur gehört sie der eigenen Seite.
+     * HIER STAND BIS v0.80.0 `_gefalleneBauen` — die Figurenliste des
+     * Friedhof-Fensters. Seit v0.81.0 baut `_friedhofKlappeBauen` die
+     * gruppierte Fassung (mit „Nx" unter der Figur) selbst; die
+     * Entscheidung dahinter gilt weiter: Der Friedhof zeigt die EIGENEN
+     * Gefallenen — also `bilanz(gegenfarbe).geschlagen` (25.08.2026).
      */
-    _gefalleneBauen(partie, farbe) {
-        const gegner = (farbe === "weiss") ? "schwarz" : "weiss";
-        const gefallen = SCHACH_RUNDE.bilanz(partie, gegner).geschlagen;
-
-        const halter = TEAM_SCHACH._element("div", "friedhof-figuren");
-        const sortiert = gefallen.slice().sort((einer, anderer) =>
-            (SCHACH_RUNDE.FIGUR_WERT[anderer] || 0) - (SCHACH_RUNDE.FIGUR_WERT[einer] || 0));
-
-        for (const art of sortiert) {
-            /* Gefallen sind Figuren der EIGENEN Seite. */
-            const figur = (farbe === "weiss") ? art : art.toLowerCase();
-            halter.appendChild(TEAM_SCHACH._element("span",
-                "figur bilanz-figur figur-" + farbe
-                + TEAM_SCHACH._figurKlasse(figur),
-                TEAM_SCHACH._figurZeichen(figur)));
-        }
-
-        if (sortiert.length === 0) {
-            halter.appendChild(TEAM_SCHACH._element("span", "erklaerung",
-                "noch niemand gefallen"));
-        }
-
-        return halter;
-    },
 
     /*
      * DER PFEIL, DER AN- UND ZUKLAPPT (seit v0.80.0) — ein kleines
@@ -1805,7 +1773,7 @@ Object.assign(TEAM_SCHACH, {
         const gegner = (farbe === "weiss") ? "schwarz" : "weiss";
         const anzahl = SCHACH_RUNDE.bilanz(partie, gegner).geschlagen.length;
         const wer = (farbe === "weiss") ? "Weiss" : "Schwarz";
-        const offen = TEAM_SCHACH.friedhofOffen[farbe] === true;
+        const offen = TEAM_SCHACH.friedhofOffen[farbe] === true && anzahl > 0;
 
         const knopf = TEAM_SCHACH._knopf("",
             "knopf-still friedhof-streifen",
@@ -1826,8 +1794,17 @@ Object.assign(TEAM_SCHACH, {
         knopf.appendChild(TEAM_SCHACH._klappPfeilBauen(
             offen ? !zumBrett : zumBrett));
 
+        /*
+         * SOLANGE NIEMAND GEFALLEN IST, GIBT ES NICHTS AUFZUKLAPPEN
+         * (v0.81.0, Nutzer-Ansage: „wenn keine geschlagen wurden, soll es
+         * nicht aufgehen"). Der Streifen bleibt sichtbar — die 0 sagt
+         * warum —, aber er ist kein Knopf mehr, bis die erste Figur faellt.
+         */
+        knopf.disabled = (anzahl === 0);
+
         const beschriftung = "Friedhof von " + wer + ", " + anzahl
-            + " gefallen — " + (offen ? "zuklappen" : "aufklappen");
+            + " gefallen" + ((anzahl === 0) ? ""
+                : (" — " + (offen ? "zuklappen" : "aufklappen")));
         knopf.setAttribute("aria-label", beschriftung);
         knopf.setAttribute("aria-expanded", offen ? "true" : "false");
         knopf.title = beschriftung;
@@ -1835,31 +1812,77 @@ Object.assign(TEAM_SCHACH, {
     },
 
     /*
-     * DIE AUFGEKLAPPTE FRIEDHOF-ZEILE (seit v0.80.0): die gefallenen
-     * Figuren der Seite und der Material-Stand — derselbe Inhalt, der bis
-     * v0.79 im Fenster stand. Sie steht zwischen Eck-Kasten und Brett,
-     * dort, wo der Pfeil hinzeigt.
+     * DIE AUFGEKLAPPTE FRIEDHOF-ZEILE — seit v0.81.0 EIN flacher Streifen
+     * ohne Text (Nutzer-Ansage 26.08.2026): ganz links die Material-Bilanz
+     * als Zahl (+N gruen, -N rot, 0 leise), rechts davon die gefallenen
+     * Figuren — gruppiert, mit „2x" UNTER der Figur, und von RECHTS nach
+     * links gelesen: die wertvollste steht ganz rechts am Rand.
      *
-     * DASS SIE DIE BRETTGROESSE AENDERT, IST HIER ERLAUBT: Sie folgt dem
-     * eigenen Fingertipp (Regel in `erkenntnisse.md` — verboten ist nur,
-     * was ungefragt erscheint).
+     * STANDARDMAESSIG OFFEN (`friedhofOffen` startet auf true): Sie ist
+     * damit ein fester Teil des Bildschirms und fuellt die Luecke zwischen
+     * Eck-Kasten und Brett, statt etwas zu verschieben. Gezeichnet wird
+     * sie nur, wenn ueberhaupt jemand gefallen ist.
      */
     _friedhofKlappeBauen(partie, farbe) {
         const gegner = (farbe === "weiss") ? "schwarz" : "weiss";
+        const gefallen = SCHACH_RUNDE.bilanz(partie, gegner).geschlagen;
+
+        /* Ohne Gefallene gibt es keine Klappe — der Streifen mit seiner 0
+           sagt bereits alles (Nutzer-Ansage v0.81.0). */
+        if (gefallen.length === 0) {
+            return null;
+        }
 
         const klappe = TEAM_SCHACH._element("div",
             "friedhof-klappe friedhof-klappe-" + farbe);
-        klappe.appendChild(TEAM_SCHACH._gefalleneBauen(partie, farbe));
 
+        /*
+         * DIE BILANZ AUS SICHT DIESER SEITE: vorn heisst gruen, hinten rot.
+         * Eine 0 bleibt stehen, aber leise — ein leeres Eck saehe aus wie
+         * ein Fehler.
+         */
         const vor = SCHACH_RUNDE.materialVorsprung(partie, farbe);
         const zurueck = SCHACH_RUNDE.materialVorsprung(partie, gegner);
-        let stand = "Nach Material steht es gleich.";
-        if (vor > 0) {
-            stand = "Vorsprung nach Material: " + vor + " Punkte.";
-        } else if (zurueck > 0) {
-            stand = "Rückstand nach Material: " + zurueck + " Punkte.";
+        const wert = (vor > 0) ? vor : ((zurueck > 0) ? -zurueck : 0);
+        const bilanz = TEAM_SCHACH._element("span",
+            "friedhof-bilanz" + ((wert > 0) ? " friedhof-bilanz-gut"
+                : ((wert < 0) ? " friedhof-bilanz-schlecht" : "")),
+            (wert > 0) ? ("+" + wert) : String(wert));
+        bilanz.title = "Material-Stand für " + ((farbe === "weiss") ? "Weiss" : "Schwarz");
+        klappe.appendChild(bilanz);
+
+        /*
+         * GRUPPIERT STATT AUFGEREIHT: Dreimal derselbe Bauer ist EINE Saeule
+         * mit „3x" darunter. Sortiert nach Wert, und weil die Reihe
+         * rechtsbuendig ist und von rechts gelesen wird, kommt die
+         * WERTVOLLSTE ans rechte Ende: aufsteigend anhaengen.
+         */
+        const gezaehlt = [];
+        for (const art of gefallen) {
+            const schon = gezaehlt.find((eintrag) => eintrag.art === art);
+            if (schon) {
+                schon.anzahl++;
+            } else {
+                gezaehlt.push({ art: art, anzahl: 1 });
+            }
         }
-        klappe.appendChild(TEAM_SCHACH._element("p", "erklaerung", stand));
+        gezaehlt.sort((einer, anderer) =>
+            (SCHACH_RUNDE.FIGUR_WERT[einer.art] || 0)
+            - (SCHACH_RUNDE.FIGUR_WERT[anderer.art] || 0));
+
+        const reihe = TEAM_SCHACH._element("span", "friedhof-figuren");
+        for (const eintrag of gezaehlt) {
+            const saeule = TEAM_SCHACH._element("span", "friedhof-saeule");
+            const figur = (farbe === "weiss") ? eintrag.art : eintrag.art.toLowerCase();
+            saeule.appendChild(TEAM_SCHACH._element("span",
+                "figur bilanz-figur figur-" + farbe
+                + TEAM_SCHACH._figurKlasse(figur),
+                TEAM_SCHACH._figurZeichen(figur)));
+            saeule.appendChild(TEAM_SCHACH._element("span", "friedhof-anzahl",
+                eintrag.anzahl + "x"));
+            reihe.appendChild(saeule);
+        }
+        klappe.appendChild(reihe);
 
         return klappe;
     },

@@ -325,12 +325,16 @@ const TEAM_SCHACH = {
      * damit es das staendige Neuzeichnen der Abfrage ueberlebt — und nie
      * beim Gegner landet.
      *
-     * DAS AUFKLAPPEN AENDERT DIE BRETTGROESSE, UND DAS IST HIER ERLAUBT:
-     * Die Regel aus `erkenntnisse.md` (kein Brett-Nachbar aendert im Spiel
-     * seine Hoehe) verbietet nur, was OHNE eigenes Zutun erscheint. Die
-     * Klappe folgt dem eigenen Fingertipp — wie die Platzier-Leiste.
+     * DER FRIEDHOF STARTET OFFEN (v0.81.0, Nutzer-Ansage: „soll
+     * standardmaessig ausgeklappt sein"): Er ist damit ein FESTER Teil des
+     * Bildschirms und fuellt die Luecke zwischen Eck-Kasten und Brett,
+     * statt beim Aufklappen etwas zu verschieben. Zuklappen bleibt
+     * erlaubt — der Tipp ist die eigene Entscheidung (Regel in
+     * `erkenntnisse.md`: verboten ist nur, was OHNE eigenes Zutun
+     * erscheint). Die erste Klappe erscheint mit der ERSTEN gefallenen
+     * Figur — das ist ein Ereignis des Spiels, kein Zappeln.
      */
-    friedhofOffen: { weiss: false, schwarz: false },
+    friedhofOffen: { weiss: true, schwarz: true },
     eckMenueOffen: false,
 
     /*
@@ -793,24 +797,26 @@ const TEAM_SCHACH = {
          * Rand (v0.64.0) sind damit weg.
          */
         if (TEAM_SCHACH.friedhofOffen[obenFarbe] && partie.laeuft && !partie.ergebnis) {
-            wurzel.appendChild(TEAM_SCHACH._friedhofKlappeBauen(partie, obenFarbe));
+            const obenKlappe = TEAM_SCHACH._friedhofKlappeBauen(partie, obenFarbe);
+            if (obenKlappe) {
+                wurzel.appendChild(obenKlappe);
+            }
         }
 
         const halter = TEAM_SCHACH._brettBauen(partie, person);
         wurzel.appendChild(halter);
 
         if (TEAM_SCHACH.friedhofOffen[untenFarbe] && partie.laeuft && !partie.ergebnis) {
-            wurzel.appendChild(TEAM_SCHACH._friedhofKlappeBauen(partie, untenFarbe));
+            const untenKlappe = TEAM_SCHACH._friedhofKlappeBauen(partie, untenFarbe);
+            if (untenKlappe) {
+                wurzel.appendChild(untenKlappe);
+            }
         }
 
         wurzel.appendChild(TEAM_SCHACH._seitenReiheBauen(partie, person, untenFarbe, false));
 
-        /* Das Menue hinter dem eigenen Namens-Kasten — unterhalb der
-           eigenen Zeile, vom Brett weg. */
-        const eckMenue = TEAM_SCHACH._eckMenueBauen(partie, person);
-        if (eckMenue) {
-            wurzel.appendChild(eckMenue);
-        }
+        /* Das Menue hinter dem eigenen Namens-Kasten wohnt seit v0.81.0 IM
+           Kasten (`_spielerZeileBauen`) — hier haengt nichts mehr. */
 
         wurzel.appendChild(TEAM_SCHACH._teamExtrasBauen(partie, person));
 
@@ -1587,44 +1593,18 @@ const TEAM_SCHACH = {
         }
 
         /*
-         * „Wird gesendet" — solange ein eigener Zug unterwegs ist (seit v3.9).
+         * DIE MARKE „Wird gesendet" IST WEG (v0.81.0, Nutzer-Ansage
+         * 26.08.2026: „nimmt zu viel Platz, brauch ich nicht"). Sie stand
+         * hier seit v3.9 und hielt ihren Platz seit v0.79.1 dauerhaft frei.
+         * Die Sperre selbst bleibt (`ziehtGerade` in `zugAusfuehren`) —
+         * nur gesagt wird es nicht mehr.
          *
-         * Ohne diese Marke tippt man in dieser Zeit ins Leere: Das Brett nimmt
-         * keine Züge mehr an (`ziehtGerade`), sagt es aber niemandem. Wer
-         * mehrmals drückt und nichts passieren sieht, hält die Seite für
-         * abgestürzt — genau so wurde es gemeldet.
-         *
-         * IHR PLATZ BLEIBT IMMER FREI (seit v0.79.1) — sie wird nur
-         * unsichtbar, nie weggelassen. Grund ist das Brett:
-         *
-         *   Auf der festen Seite rechnet `_brettEinpassen` die Brettbreite
-         *   aus der Höhe, die neben den Geschwistern übrig bleibt. Diese
-         *   Marke ist höher als alles andere in der Leiste (am 26.08.2026
-         *   im Browser gemessen: Leiste 42 px ohne, 47 px mit ihr). Sie
-         *   erscheint mit dem eigenen Zug und verschwindet, sobald der
-         *   Server geantwortet hat — das Brett wurde dabei jedes Mal um
-         *   5 px kleiner und gleich wieder grösser. Genau das hat der
-         *   Nutzer gemeldet: „schiebt sich das gesamte Brett kurz hoch und
-         *   direkt zurück, sieht aus, als würde das Brett hängen."
-         *
-         * WARUM EIN PLATZHALTER UND KEINE FESTE HÖHE IN DER STILDATEI: Eine
-         * Zahl dort müsste jedes Mal nachgerechnet werden, wenn sich Polster
-         * oder Schriftgrösse der Marke ändern — und keine Prüfung könnte das
-         * merken, weil die Tests nicht zeichnen. Der Platzhalter IST die
-         * Marke: Er kann gar nicht anders hoch sein, und dass er dasteht,
-         * prüft `test-bildschirm.js`.
-         *
-         * `aria-hidden`, weil ein Vorleseprogramm sonst bei jedem Bild
-         * „Wird gesendet" ansagen würde, obwohl gerade nichts unterwegs ist.
+         * DAMIT KEIN ANDERER CHIP DIE LEISTE WIEDER WACHSEN LÄSST, sind
+         * die Chips seit v0.81.0 so flach wie die Textzeile daneben
+         * (`.chip` in der Stildatei) — die Regel „kein Brett-Nachbar
+         * ändert im Spiel seine Höhe" hängt jetzt daran, nicht mehr am
+         * Platzhalter.
          */
-        const sendeMarke = TEAM_SCHACH._element("span",
-            TEAM_SCHACH.ziehtGerade ? "chip chip-laeuft" : "chip chip-platzhalter",
-            "Wird gesendet …");
-
-        if (!TEAM_SCHACH.ziehtGerade) {
-            sendeMarke.setAttribute("aria-hidden", "true");
-        }
-        leiste.appendChild(sendeMarke);
 
         /* Aktive Fähigkeiten sichtbar machen — sonst wundert sich der Gegner
            über einen Zug, den es sonst nicht gibt. */
@@ -1781,11 +1761,76 @@ const TEAM_SCHACH = {
         if (amZug && SCHACH.imSchach(partie.stand, farbe)) {
             lage.appendChild(TEAM_SCHACH._element("span", "chip chip-fehler", "Schach"));
         }
-        if (amZug) {
-            lage.appendChild(TEAM_SCHACH._element("span", "spieler-amzug", "am Zug"));
-        } else if (!laeuft && !partie.ergebnis && partie.bereit[farbe]) {
+        /*
+         * DAS WORT „am Zug" IST WEG (v0.81.0, Nutzer-Ansage 26.08.2026):
+         * „das kann übrigens raus, nur die Färbung vom Profil soll bleiben —
+         * wer blau ist, ist gerade am Zug." Die Klasse `spieler-zeile-amzug`
+         * oben trägt die Auskunft allein.
+         */
+        if (!amZug && !laeuft && !partie.ergebnis && partie.bereit[farbe]) {
             lage.appendChild(TEAM_SCHACH._element("span", "chip chip-fertig", "bereit"));
         }
+
+        /*
+         * DAS ECK-MENUE WOHNT IM KASTEN (v0.81.0, Nutzer-Ansage: „die
+         * Knöpfe sollen in dem Kasten erscheinen, wie ‚am Zug'"). Ein Tipp
+         * auf den eigenen Kasten blendet an der Stelle der Lage zwei kleine
+         * Zeichen-Knöpfe ein — Einstellungen und Zugverlauf; bei mehreren
+         * Mitspielern dazu „+N" für die Team-Liste. Die eigene Zeile UNTER
+         * der Reihe (v0.80.0) ist damit wieder weg.
+         *
+         * `stopPropagation`, weil die Knöpfe IM Kasten-Knopf liegen: Ohne
+         * das schlösse jeder Tipp auf einen von ihnen zugleich das Menü.
+         */
+        if (meinTeam === farbe && laeuft && TEAM_SCHACH.eckMenueOffen) {
+            /*
+             * EIN Horcher je Knopf, der Aktion UND `stopPropagation`
+             * uebernimmt: Die Knoepfe liegen IM Kasten-Knopf — ohne das
+             * Stoppen schloesse jeder Tipp auf einen von ihnen zugleich
+             * das Menue. `_knopf` reicht das Ereignis als erstes Argument
+             * durch.
+             */
+            const mitStopp = (aktion) => (ereignis) => {
+                if (ereignis && ereignis.stopPropagation) {
+                    ereignis.stopPropagation();
+                }
+                aktion();
+            };
+
+            const zahnrad = TEAM_SCHACH._knopf("", "knopf-still knopf-klein eck-knopf",
+                mitStopp(() => TEAM_SCHACH.spielEinstellungenOeffnen()));
+            if (typeof START !== "undefined" && START._zahnradBauen) {
+                zahnrad.appendChild(START._zahnradBauen());
+            } else {
+                zahnrad.textContent = "E";
+            }
+            zahnrad.setAttribute("aria-label", "Einstellungen für diese Partie");
+            zahnrad.title = "Einstellungen für diese Partie";
+            lage.appendChild(zahnrad);
+
+            const verlauf = TEAM_SCHACH._knopf("", "knopf-still knopf-klein eck-knopf",
+                mitStopp(() => TEAM_SCHACH.zuegeOeffnen(partie)));
+            if (typeof START !== "undefined" && START._zugverlaufZeichenBauen) {
+                verlauf.appendChild(START._zugverlaufZeichenBauen());
+            } else {
+                verlauf.textContent = "Z";
+            }
+            verlauf.setAttribute("aria-label",
+                "Zugverlauf, " + partie.verlauf.length + " Züge");
+            verlauf.title = "Zugverlauf, " + partie.verlauf.length + " Züge";
+            lage.appendChild(verlauf);
+
+            if (namen.length > 1) {
+                const team = TEAM_SCHACH._knopf("+" + (namen.length - 1),
+                    "knopf-still knopf-klein eck-knopf",
+                    mitStopp(() => TEAM_SCHACH._teamKastenOeffnen(farbe, namen)));
+                team.setAttribute("aria-label",
+                    "Wer spielt auf dieser Seite? (" + namen.length + ")");
+                team.title = "Wer spielt auf dieser Seite?";
+                lage.appendChild(team);
+            }
+        }
+
         zeile.appendChild(lage);
 
         /*
@@ -1888,50 +1933,12 @@ const TEAM_SCHACH = {
     },
 
     /*
-     * DAS MENUE HINTER DEM EIGENEN NAMENS-KASTEN (seit v0.80.0).
-     *
-     * Nutzer-Ansage 26.08.2026: „der benutzer namen ein eigner knopf wo
-     * einstellung und zugverlauf dahinter liegen". Ein Tipp auf den eigenen
-     * Kasten klappt diese Zeile auf, ein zweiter schliesst sie. Sie steht
-     * UNTER der eigenen Seiten-Zeile — vom Brett weg, wo Platz ist.
-     *
-     * „Team ansehen" haengt sich an, sobald mehr als einer auf der Seite
-     * spielt: Der Tipp auf den Kasten oeffnete bis v0.79 die Team-Liste,
-     * und dieser Weg darf nicht stillschweigend verschwinden.
-     *
-     * NULL, solange die Partie nicht laeuft oder ich nicht mitspiele —
-     * dieselbe Bedingung, unter der bis v0.79 die eigene Steuer-Spalte
-     * stand.
+     * HIER STAND v0.80.0 `_eckMenueBauen` — das Menue als eigene Zeile
+     * unter der Seiten-Zeile. Seit v0.81.0 erscheinen die Knoepfe IM
+     * Namens-Kasten an der Stelle der Lage (Nutzer-Ansage: „die Knöpfe
+     * sollen in dem Kasten erscheinen"); gebaut werden sie in
+     * `_spielerZeileBauen`.
      */
-    _eckMenueBauen(partie, person) {
-        if (!TEAM_SCHACH.eckMenueOffen || !partie.laeuft || partie.ergebnis) {
-            return null;
-        }
-        const meinTeam = SCHACH_RUNDE.teamVon(partie, person.id);
-        if (!meinTeam) {
-            return null;
-        }
-
-        const menue = TEAM_SCHACH._element("div", "eck-menue");
-
-        menue.appendChild(TEAM_SCHACH._knopf("Einstellungen",
-            "knopf-still knopf-klein",
-            () => TEAM_SCHACH.spielEinstellungenOeffnen()));
-
-        menue.appendChild(TEAM_SCHACH._knopf(
-            "Zugverlauf (" + partie.verlauf.length + ")",
-            "knopf-still knopf-klein",
-            () => TEAM_SCHACH.zuegeOeffnen(partie)));
-
-        const namen = partie.teams[meinTeam].map((id) => TEAM_SCHACH._nameVon(id));
-        if (namen.length > 1) {
-            menue.appendChild(TEAM_SCHACH._knopf("Team (" + namen.length + ")",
-                "knopf-still knopf-klein",
-                () => TEAM_SCHACH._teamKastenOeffnen(meinTeam, namen)));
-        }
-
-        return menue;
-    },
 
     eckMenueUmschalten() {
         TEAM_SCHACH.eckMenueOffen = !TEAM_SCHACH.eckMenueOffen;
@@ -2262,7 +2269,7 @@ const TEAM_SCHACH = {
 
         /* Die Eck-Klappen (v0.80.0) starten zu: Was in der VORIGEN Partie
            aufgeklappt war, hat in dieser nichts verloren. */
-        TEAM_SCHACH.friedhofOffen = { weiss: false, schwarz: false };
+        TEAM_SCHACH.friedhofOffen = { weiss: true, schwarz: true };
         TEAM_SCHACH.eckMenueOffen = false;
 
         /* Beim Öffnen wird nicht animiert: Der letzte Zug liegt womöglich
