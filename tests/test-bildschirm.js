@@ -7177,4 +7177,100 @@ pruefe("Der Nudelholz-Knopf nennt den Rand aus Sicht des Spielers (v0.73.0)", ()
     }
 });
 
+/* ------------------------------------------------------------------ *
+ * DIE PILLE DER TAB-LEISTE BEIM DREHEN (v0.74.0)
+ *
+ * Nutzer-Meldung 26.08.2026: „Wenn man den Bildschirm dreht, schiebt sich die
+ * blaue Pille aus dem Hauptmenü hin und her."
+ *
+ * Geprüft wird das ECHTE `js\tabs.js` in einem eigenen Kontext — im
+ * Haupt-Kontext ist TABS durch einen Stellvertreter ersetzt.
+ *
+ * Der Kern: Gemessen werden darf ERST, wenn der Browser das neue Layout
+ * gerechnet hat. Der Test hält deshalb fest, dass beim Ereignis noch NICHTS
+ * gemessen wird und die Messung im angemeldeten Bild nachkommt — und dass
+ * mehrere Ereignisse nur EIN Bild anmelden.
+ * ------------------------------------------------------------------ */
+
+pruefe("Die Tab-Pille misst erst im naechsten Bild und nur einmal (v0.74.0)", () => {
+    const bilder = [];
+    const tabUmgebung = {
+        console: console,
+        requestAnimationFrame(funktion) {
+            bilder.push(funktion);
+            return bilder.length;
+        },
+        document: {
+            createElement: neuesElement,
+            body: neuesElement("body")
+        },
+        window: { addEventListener() { /* im Test nicht gebraucht */ } }
+    };
+    tabUmgebung.globalThis = tabUmgebung;
+    vm.createContext(tabUmgebung);
+    vm.runInContext(
+        dateisystem.readFileSync(pfad.join(jsOrdner, "tabs.js"), "utf8")
+            + "\nglobalThis.TABS = TABS;",
+        tabUmgebung,
+        { filename: "tabs.js" }
+    );
+
+    const TABS_ECHT = tabUmgebung.TABS;
+
+    /* Eine Leiste mit einem aktiven Knopf, dessen Masse sich „beim Drehen"
+       aendern — mehr braucht `_markerSetzen` nicht. */
+    const knopf = neuesElement("button");
+    knopf.className = "tab-knopf tab-knopf-aktiv";
+    knopf.offsetLeft = 10;
+    knopf.offsetTop = 0;
+    knopf.offsetWidth = 100;
+    knopf.offsetHeight = 40;
+
+    const leiste = neuesElement("nav");
+    leiste.querySelector = (wahl) =>
+        (wahl === ".tab-knopf-aktiv" ? knopf : null);
+
+    TABS_ECHT.leisteEl = leiste;
+    TABS_ECHT.markerEl = neuesElement("span");
+    TABS_ECHT._markerFrame = 0;
+
+    /* Drei Ereignisse kurz hintereinander — wie beim Drehen. */
+    TABS_ECHT._markerNachmessen();
+    TABS_ECHT._markerNachmessen();
+    TABS_ECHT._markerNachmessen();
+
+    if (bilder.length !== 1) {
+        throw new Error("drei Ereignisse melden " + bilder.length
+            + " Bilder an statt genau eines");
+    }
+    if (TABS_ECHT.markerEl.style.left !== undefined
+            && TABS_ECHT.markerEl.style.left !== "") {
+        throw new Error("die Pille wurde schon beim Ereignis gesetzt statt "
+            + "erst im Bild — genau das misst die alte Lage");
+    }
+
+    /* Jetzt rechnet der Browser: neue Masse, dann das Bild. */
+    knopf.offsetLeft = 250;
+    knopf.offsetWidth = 60;
+    bilder[0]();
+
+    if (TABS_ECHT.markerEl.style.left !== "250px"
+            || TABS_ECHT.markerEl.style.width !== "60px") {
+        throw new Error("die Pille uebernimmt die neuen Masse nicht: left="
+            + TABS_ECHT.markerEl.style.left + " width="
+            + TABS_ECHT.markerEl.style.width);
+    }
+
+    /* Ohne Gleiten — sonst wandert sie beim Drehen sichtbar hinterher. */
+    if (String(TABS_ECHT.markerEl.className || "").indexOf("tab-marker-weich") !== -1) {
+        throw new Error("die Pille gleitet beim Drehen, statt zu springen");
+    }
+
+    /* Nach dem Bild ist wieder eines anmeldbar. */
+    TABS_ECHT._markerNachmessen();
+    if (bilder.length !== 2) {
+        throw new Error("nach dem Bild laesst sich kein neues anmelden");
+    }
+});
+
 zeitlimitPruefen();

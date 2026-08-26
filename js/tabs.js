@@ -74,8 +74,14 @@ const TABS = {
         TABS.markerEl.setAttribute("aria-hidden", "true");
         TABS.leisteEl.appendChild(TABS.markerEl);
 
-        if (typeof window !== "undefined") {
-            window.addEventListener("resize", () => TABS._markerSetzen(false));
+        /*
+         * NACH DEM DREHEN WIRD NEU GEMESSEN — aber erst im nächsten Bild
+         * (seit v0.74.0). Warum, steht bei `_markerNachmessen`.
+         */
+        if (typeof window !== "undefined"
+                && typeof window.addEventListener === "function") {
+            window.addEventListener("resize", TABS._markerNachmessen);
+            window.addEventListener("orientationchange", TABS._markerNachmessen);
         }
 
         if (TABS.liste.length > 0) {
@@ -93,6 +99,51 @@ const TABS = {
      * schmalen Geräten umbricht (`offsetTop`). `weich = false` setzt ohne
      * Gleiten: beim ersten Zeichnen und nach Fenster-Grössenänderung.
      */
+    /* Ein angemeldetes Bild; 0 heisst „keines unterwegs". */
+    _markerFrame: 0,
+
+    /*
+     * DIE PILLE NACH DEM DREHEN NEU MESSEN (seit v0.74.0).
+     *
+     * Nutzer-Meldung 26.08.2026: „Wenn man den Bildschirm dreht, schiebt sich
+     * die blaue Pille aus dem Hauptmenü hin und her."
+     *
+     * URSACHE, UND SIE IST HIER SCHON EINMAL AUFGETRETEN: `_markerSetzen`
+     * schreibt gemessene PIXELWERTE (`offsetLeft`, `offsetWidth`). Das
+     * `resize`-Ereignis meldet sich aber, BEVOR der Browser das neue Layout
+     * gerechnet hat — gemessen wird also die ALTE Lage. Beim Drehen feuert
+     * `resize` mehrfach, und jedes Mal setzt sich die Pille auf einen
+     * veralteten Zwischenstand: Sie zappelt hin und her.
+     *
+     * Exakt derselbe Fehler steckte bis v0.88 im Brett („schwarze Streifen
+     * beim Drehen", `_groessenWaechterStarten` in `team-schach-brett.js`).
+     * Dort wurde er mit `requestAnimationFrame` behoben — die Pille hatte
+     * diesen Schutz nie, weil sie aus einer anderen Runde stammt. Beide
+     * Stellen schreiben gemessene Pixel, und beide müssen deshalb NACH dem
+     * Neusetzen messen.
+     *
+     * `orientationchange` KOMMT DAZU, nicht ersatzweise: Auf älteren iPhones
+     * ist es das einzige Ereignis, das beim Drehen zuverlässig eintrifft —
+     * dieselbe Begründung wie beim Brett.
+     *
+     * Mehrere Ereignisse im selben Bild melden nur EIN Bild an; sonst liefe
+     * beim Drehen ein Dutzend Messungen für dasselbe Ergebnis.
+     */
+    _markerNachmessen() {
+        if (typeof requestAnimationFrame !== "function") {
+            TABS._markerSetzen(false);
+            return;
+        }
+        if (TABS._markerFrame) {
+            return;
+        }
+
+        TABS._markerFrame = requestAnimationFrame(() => {
+            TABS._markerFrame = 0;
+            TABS._markerSetzen(false);
+        });
+    },
+
     _markerSetzen(weich) {
         const aktiv = TABS.leisteEl
             ? TABS.leisteEl.querySelector(".tab-knopf-aktiv") : null;

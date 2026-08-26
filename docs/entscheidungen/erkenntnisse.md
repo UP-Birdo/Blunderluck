@@ -2,6 +2,50 @@
 
 ## Teuer erkaufte Erkenntnisse
 
+### Wer gemessene PIXEL schreibt, muss nach jeder Groessenaenderung neu messen — ZWEIMAL passiert (Quizz v0.88 und Blunderluck v0.74.0)
+
+**Der Fehlschlag, zum zweiten Mal:** Der Nutzer meldete am 26.08.2026 „wenn
+man den Bildschirm dreht, schiebt sich die blaue Pille aus dem Hauptmenue hin
+und her". Gemeint ist die Markierung hinter dem aktiven Tab (`tabs.js`,
+`_markerSetzen`).
+
+**Warum:** Die Pille ist ein eigenes Element und bekommt ihre Lage als
+PIXELWERTE geschrieben (`offsetLeft`, `offsetWidth` des aktiven Knopfes). Das
+`resize`-Ereignis meldet sich aber, BEVOR der Browser das neue Layout
+gerechnet hat — gemessen wird die ALTE Lage. Beim Drehen feuert `resize`
+mehrfach, und jedes Mal setzte sich die Pille auf einen veralteten
+Zwischenstand.
+
+**Und genau dieser Fehler war schon einmal da:** Bis Quizz-v0.88 hatte das
+BRETT ihn („schwarze Streifen manchmal, wenn man sein Display dreht").
+`_figurGroesseSetzen` schreibt die Feldbreite als Pixelwert; nach dem Drehen
+stimmte sie nicht mehr, Raster und Inhalt passten nicht zusammen, und die
+2-Pixel-Fugen blitzten als dunkle Streifen durch. Behoben wurde er dort mit
+`_groessenWaechterStarten`: `requestAnimationFrame` plus `orientationchange`.
+
+**Warum er sich wiederholen konnte:** Die Loesung von v0.88 stand NUR als
+Kommentar an der Fundstelle im Brett-Code — nirgends als Regel. Die Pille kam
+aus einer anderen Runde (v0.107/v0.111) und hat den Schutz nie mitbekommen.
+Deshalb steht der Eintrag jetzt hier: Eine Fallgeschichte an EINER Fundstelle
+schuetzt nur diese Fundstelle.
+
+**Die Regel daraus:**
+
+1. **Wer eine gemessene Groesse als Pixelwert in den Stil schreibt, meldet
+   sich fuer `resize` UND `orientationchange` an.** Das zweite kommt dazu,
+   nicht ersatzweise: Auf aelteren iPhones ist es das einzige, das beim
+   Drehen zuverlaessig eintrifft.
+2. **Gemessen wird im naechsten Bild, nie im Ereignis selbst**
+   (`requestAnimationFrame`) — sonst misst man das alte Layout und baut
+   genau den Fehler ein, den man beheben will.
+3. **Mehrere Ereignisse duerfen nur EINE Messung ausloesen.** Beim Drehen
+   kommen viele; ohne Entprellung laufen ein Dutzend Messungen fuer dasselbe
+   Ergebnis.
+
+**Wo es heute ueberall gilt:** `TEAM_SCHACH._groessenWaechterStarten`
+(Brett und Figurengroesse) und `TABS._markerNachmessen` (die Pille). Wer eine
+dritte solche Stelle baut, haelt sich an dieselben drei Punkte.
+
 ### `overflow-y: auto` macht die WAAGERECHTE Achse gleich mit rollbar (v0.68.0, gefunden v0.72.0)
 
 **Der Fehlschlag:** Der Nutzer schickte am 26.08.2026 ein Bild vom Rechner.

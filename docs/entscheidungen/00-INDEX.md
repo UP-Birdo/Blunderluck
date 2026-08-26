@@ -55,6 +55,10 @@ wird. Die Liste dessen, was noch kommt, steht in [../ROADMAP.md](../ROADMAP.md).
   Play-Store-Umbau braeuchte - Referenz: docs\uebergabe-schach-app.md)
 
 ## erkenntnisse.md - Teuer erkaufte Erkenntnisse
+- **Wer gemessene PIXEL schreibt, muss nach jeder Groessenaenderung neu
+  messen — ZWEIMAL passiert** (Quizz v0.88 Brett, Blunderluck v0.74.0
+  Tab-Pille; `resize` PLUS `orientationchange`, messen im naechsten Bild,
+  mehrere Ereignisse nur EINE Messung)
 - **`overflow-y: auto` macht die WAAGERECHTE Achse gleich mit rollbar**
   (v0.68.0, gefunden v0.72.0 — der buendige Team-Kasten erzeugte dadurch eine
   Bildlaufleiste; enthaelt ausserdem, WIE man so etwas misst: Wegwerf-Seite

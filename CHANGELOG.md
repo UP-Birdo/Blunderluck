@@ -3,6 +3,24 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.74.0 — 26.08.2026
+
+**Die blaue Pille im Hauptmenü zappelt beim Drehen nicht mehr.**
+
+- Beim Drehen des Bildschirms rutschte die Markierung hinter dem aktiven Tab
+  hin und her, statt einfach an ihrem Platz zu bleiben.
+- **Grund:** Die App hat ihre Lage gemessen, bevor der Browser das neue
+  Bild überhaupt gerechnet hatte — sie bekam also die alten Werte. Und weil
+  beim Drehen mehrere solche Meldungen kommen, sprang sie mehrfach.
+- Jetzt wird erst gemessen, wenn das neue Bild steht, und mehrere Meldungen
+  kurz hintereinander lösen nur noch **eine** Messung aus.
+- Auf älteren iPhones wird die Drehung jetzt auch dann bemerkt, wenn der
+  Browser nur die Drehmeldung schickt und keine Grössenänderung.
+
+> **Derselbe Fehler steckte bis v0.88 im Spielbrett** („schwarze Streifen
+> beim Drehen"). Die Pille stammt aus einer anderen Runde und hatte den dort
+> gebauten Schutz nie mitbekommen.
+
 ## v0.73.0 — 26.08.2026
 
 **Das Nudelholz sagt endlich die Wahrheit.** Wer Schwarz spielt, bekam bei
