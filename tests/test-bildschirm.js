@@ -7131,4 +7131,50 @@ pruefe("Das Anmelde-Vollbild prueft Name und Passwort live (v0.8.0)", () => {
     }
 });
 
+/*
+ * DER NUDELHOLZ-KNOPF UND DIE GEDREHTE ANSICHT (v0.73.0).
+ *
+ * Nutzer-Meldung 26.08.2026: „Nudelholz geht nicht … hat evtl was mit dem
+ * drehen zu tun." Nachgemessen: Die Fähigkeit selbst war in Ordnung, aber der
+ * Knopf nannte die Kante in BRETT-Koordinaten. Wer nicht von unten spielt,
+ * bekam bei jeder der vier Richtungen die falsche Auskunft — als Schwarz
+ * wählte man „von unten" und die Figuren rollten auf einen ZU.
+ *
+ * Geprüft werden beide Seiten: Für Weiss (Drehung 0) darf sich nichts ändern,
+ * für Schwarz (Drehung 2) muss sich JEDE der vier Richtungen umkehren.
+ */
+pruefe("Der Nudelholz-Knopf nennt den Rand aus Sicht des Spielers (v0.73.0)", () => {
+    const partie = SCHACH_TAFEL.partie(TEAM_SCHACH.abgleich.daten, kennungen.standard);
+    const echtePerson = umgebung.ICH.person;
+
+    try {
+        /* Weiss spielt von unten — Brett und Schirm meinen dasselbe. */
+        umgebung.ICH.person = () => ({ id: "id-anna", name: "Anna" });
+        for (const kante of ["unten", "oben", "links", "rechts"]) {
+            const text = TEAM_SCHACH.nudelholzKanteText(partie, kante);
+            if (text !== "von " + kante) {
+                throw new Error("fuer Weiss sagt '" + kante + "' faelschlich: " + text);
+            }
+        }
+
+        /* Schwarz sieht das Brett um 180 Grad gedreht. */
+        umgebung.ICH.person = () => ({ id: "id-bert", name: "Bert" });
+        const erwartet = {
+            unten: "von oben",
+            oben: "von unten",
+            links: "von rechts",
+            rechts: "von links"
+        };
+        for (const kante of Object.keys(erwartet)) {
+            const text = TEAM_SCHACH.nudelholzKanteText(partie, kante);
+            if (text !== erwartet[kante]) {
+                throw new Error("fuer Schwarz sagt '" + kante + "' faelschlich "
+                    + text + " statt " + erwartet[kante]);
+            }
+        }
+    } finally {
+        umgebung.ICH.person = echtePerson;
+    }
+});
+
 zeitlimitPruefen();

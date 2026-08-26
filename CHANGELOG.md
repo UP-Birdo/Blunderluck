@@ -3,6 +3,26 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.73.0 — 26.08.2026
+
+**Das Nudelholz sagt endlich die Wahrheit.** Wer Schwarz spielt, bekam bei
+allen vier Richtungen die falsche Auskunft.
+
+- **Der Knopf nennt die Richtung jetzt so, wie DU auf das Brett schaust.**
+  Bisher stand dort die Richtung des Bretts — und weil Schwarz das Brett
+  gedreht sieht, hiess „von unten" in Wirklichkeit „von oben". Wer als
+  Schwarz erwartete, dass die Figuren von ihm wegrollen, bekam sie auf sich
+  zugerollt.
+- **Die Fähigkeit selbst war nie kaputt.** Nachgemessen: Sie hat immer
+  richtig gerechnet — nur ihre Beschriftung log. Deshalb ändert sich am
+  Ergebnis eines Zuges nichts, nur daran, was vorher draufsteht.
+- Ein Test prüft ab jetzt beide Seiten: Für Weiss darf sich nichts ändern,
+  für Schwarz muss sich jede der vier Richtungen umkehren.
+
+> **Noch nicht dabei:** die Vormarkierung („der grüne Kasten"). Sie wird
+> ohnehin komplett umgebaut — grüner Rand um die möglichen Felder statt
+> grüner Fläche —, und das kommt als eigene Auslieferung.
+
 ## v0.72.0 — 26.08.2026
 
 **Die störende Bildlaufleiste unter dem Spielfeld ist weg, und die Karten

@@ -812,8 +812,16 @@ Object.assign(TEAM_SCHACH, {
          * markierten Randfelder zeigen den Rest.
          */
         if (TEAM_SCHACH.zielFaehigkeit === "nudelholz") {
+            /*
+             * AUS SICHT DES SPIELERS BESCHRIFTET (seit v0.73.0). Die Kante
+             * ist in Brett-Koordinaten gespeichert; wer nicht von unten
+             * spielt, sähe sonst bei jeder der vier Richtungen die falsche
+             * Auskunft. Warum das so gelöst ist, steht bei
+             * `nudelholzKanteText` in `team-schach.js`.
+             */
             leiste.appendChild(TEAM_SCHACH._knopf(
-                "Rollt " + TEAM_SCHACH.NUDELHOLZ_KANTEN_TEXT[TEAM_SCHACH.nudelholzKante],
+                "Rollt " + TEAM_SCHACH.nudelholzKanteText(
+                    partie, TEAM_SCHACH.nudelholzKante),
                 "knopf-still",
                 () => TEAM_SCHACH.drehenNudelholz(partie)));
         }

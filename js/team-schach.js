@@ -2545,6 +2545,54 @@ const TEAM_SCHACH = {
         rechts: "von rechts"
     },
 
+    /*
+     * DIE VIER RÄNDER IM UHRZEIGERSINN — die Reihenfolge, in der sie auf dem
+     * SCHIRM liegen. Grundlage der Umrechnung darunter.
+     */
+    NUDELHOLZ_UHR: ["oben", "rechts", "unten", "links"],
+
+    /*
+     * WIE DER RAND AUS SICHT DES SPIELERS HEISST (seit v0.73.0).
+     *
+     * DER FEHLER, DEN DAS BEHEBT (Nutzer-Meldung 26.08.2026: „Nudelholz geht
+     * nicht … hat evtl was mit dem drehen zu tun"): Die Kante ist in
+     * BRETT-Koordinaten gespeichert — so rechnet `SCHACH.nudelholz`, und das
+     * ist richtig, denn der Stand ist für alle derselbe. Der KNOPF nannte
+     * diese Kante aber unübersetzt. Wer nicht von unten spielt, bekam damit
+     * bei JEDER der vier Richtungen die falsche Auskunft.
+     *
+     * Nachgemessen am 26.08.2026 gegen die echten Dateien: Schwarz hat auf
+     * dem Standardbrett die Drehung 2. Dort sagte der Knopf „von unten", und
+     * auf dem Schirm rollte es von oben — also genau auf den Spieler zu,
+     * während er erwartete, dass es von ihm wegrollt. Das Nudelholz war nie
+     * kaputt; es tat etwas anderes, als sein Knopf versprach.
+     *
+     * WARUM NICHT DIE KANTE SELBST GEDREHT WIRD: Sie geht als `wahl` ins
+     * Modell und muss dort in Brett-Koordinaten ankommen — sonst sähe jede
+     * Seite ein anderes Ergebnis derselben Fähigkeit. Übersetzt wird deshalb
+     * nur die BESCHRIFTUNG, und zwar an genau dieser Stelle.
+     *
+     * Die Drehung liefert `_drehungVon` (team-schach-brett.js, seit v0.72):
+     * Vierteldrehungen im Uhrzeigersinn, 0 für unten, 2 für oben.
+     */
+    nudelholzKanteText(partie, kante) {
+        const uhr = TEAM_SCHACH.NUDELHOLZ_UHR;
+        const stelle = uhr.indexOf(kante);
+
+        if (stelle === -1) {
+            return TEAM_SCHACH.NUDELHOLZ_KANTEN_TEXT.unten;
+        }
+
+        const person = TEAM_SCHACH._ich();
+        const farbe = person
+            ? SCHACH_RUNDE.teamVon(partie, person.id)
+            : null;
+        const drehung = TEAM_SCHACH._drehungVon(partie, farbe);
+
+        return TEAM_SCHACH.NUDELHOLZ_KANTEN_TEXT[
+            uhr[(stelle + drehung) % uhr.length]];
+    },
+
     drehenNudelholz(partie) {
         const person = TEAM_SCHACH._ich();
         if (!person || TEAM_SCHACH.zielFaehigkeit !== "nudelholz") {
