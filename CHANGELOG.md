@@ -3,6 +3,28 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.79.2 — 26.08.2026
+
+**Drei Anzeigefehler im Match behoben, gefunden bei einer gezielten
+Mess-Runde im Browser.**
+
+- **Die Zeichen in den Knöpfen neben dem Brett (Zahnrad, Zugverlauf,
+  Friedhof) sitzen jetzt mittig.** Bisher klebten sie am linken Rand des
+  Knopfes — rechts blieben 13 Pixel Luft, links einer. Das war seit dem
+  Umbau zur Knopfspalte so und fiel nie einem Test auf, weil die Testkette
+  nicht zeichnet.
+- **Der Team-Kasten wird nicht mehr zusammengedrückt, wenn viele Karten
+  gesammelt sind.** Bisher quetschte ein voller Kartenstreifen den Kasten
+  unter seine Inhaltsbreite: Der Name ragte über den Rand hinaus, und am
+  Rechner erschien darunter eine Bildlaufleiste, die dem Brett 10 Pixel
+  Höhe nahm. Jetzt weicht der Kartenstreifen (er kann rollen), der Kasten
+  behält seine Breite.
+- **Die Karten schrumpfen am Rechner nicht mehr, sobald die Sammlung
+  breiter wird als der Streifen.** Der Rollbalken des Streifens nahm seine
+  rund 10 Pixel von den Karten selbst — sie waren dann niedriger als die
+  Team-Karte daneben. Der Balken ist jetzt unsichtbar; gerollt wird
+  weiter mit Finger, Rad oder Tastatur.
+
 ## v0.79.1 — 26.08.2026
 
 **Das Brett hängt nicht mehr: Es springt beim eigenen Zug nicht mehr kurz

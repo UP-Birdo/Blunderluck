@@ -59,6 +59,13 @@ wird. Die Liste dessen, was noch kommt, steht in [../ROADMAP.md](../ROADMAP.md).
   messen — ZWEIMAL passiert** (Quizz v0.88 Brett, Blunderluck v0.74.0
   Tab-Pille; `resize` PLUS `orientationchange`, messen im naechsten Bild,
   mehrere Ereignisse nur EINE Messung)
+- **Eine Flex-Eigenschaft ohne `display: flex` ist stumm** (v0.64.0,
+  gefunden v0.79.2 — `justify-content` an einem normalen `button` tat
+  lautlos nichts, die Zeichen der Knopfspalte sassen links statt mittig)
+- **Wer schrumpfen DARF, wird geschrumpft — und der Rollbalken ist ein
+  Bauteil mit Groesse** (gefunden v0.79.2 — `flex: 0 1 auto` staucht
+  entgegen dem eigenen Kommentar, und der Rechner-Rollbalken nahm den
+  Spielkarten 10 px Hoehe)
 - **Auf der festen Seite ist JEDE Marke, die kommt und geht, eine
   Brettgroesse** (v0.79.1, derselbe Fehler zum dritten Mal nach v0.52.0 und
   v0.54.0 — die Marke „Wird gesendet" machte das Brett bei jedem eigenen Zug

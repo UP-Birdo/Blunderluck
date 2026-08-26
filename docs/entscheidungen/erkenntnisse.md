@@ -46,6 +46,58 @@ schuetzt nur diese Fundstelle.
 (Brett und Figurengroesse) und `TABS._markerNachmessen` (die Pille). Wer eine
 dritte solche Stelle baut, haelt sich an dieselben drei Punkte.
 
+### Eine Flex-Eigenschaft ohne `display: flex` ist stumm (v0.64.0, gefunden v0.79.2)
+
+**Der Fehlschlag:** Die Zeichen in der Knopfspalte am Brett (Zahnrad, Z,
+Friedhof) sassen seit v0.64.0 links im Knopf statt mittig — gemessen 1 px
+Luft links, 13 rechts. Vier Auslieferungstage lang unbemerkt, weil die
+Testkette nicht zeichnet.
+
+**Warum:** `.steuer-spalte .spiel-steuer-knopf` deklarierte
+`justify-content: center` — aber ein `button` ist von sich aus KEIN
+Flex-Behaelter, und auf einem Nicht-Flex-Element tut `justify-content`
+lautlos gar nichts. Kein Fehler, keine Warnung, das Zeichen (ein
+`display: block`-SVG) blieb einfach links liegen.
+
+**Die Regel daraus:** Wer `justify-content`, `align-items`, `gap` oder
+`flex-*` in eine Regel schreibt, prueft, ob DERSELBE Block (oder eine
+Basisregel derselben Klasse) auch `display: flex`/`grid` setzt. Am
+26.08.2026 wurden alle 20 `justify-content`-Stellen der Stildatei
+durchgeprueft — genau diese eine war stumm.
+
+### Wer schrumpfen DARF, wird geschrumpft — und der Rollbalken ist ein Bauteil mit Groesse (v0.64.0/v0.67.0, gefunden v0.79.2)
+
+**Der Fehlschlag, in einer Kette:** Sobald eine Seite viele Karten
+gesammelt hatte, (1) drueckte der volle Kartenstreifen den Team-Kasten
+unter seine Inhaltsbreite — der Name ragte ueber den Rand hinaus; (2) der
+Ueberstand machte `.schach` waagerecht rollbar, und der Balken am Rechner
+nahm dem Brett 10 px Hoehe (dieselbe Mechanik wie beim v0.72.0-Fund);
+(3) unabhaengig davon zeichnete der Rechner-Browser den Rollbalken des
+Kartenstreifens IN den Streifen — die Karten schrumpften von 52 auf 42 px
+und brachen damit die Zusage von v0.71.0 („genau so hoch wie die
+Team-Karte").
+
+**Die zwei Wurzeln:**
+
+1. **Der Kommentar sagte „wird nicht gestaucht", der Code stand auf
+   `flex: 0 1 auto`** — und die mittlere 1 ist genau die Erlaubnis zum
+   Stauchen. Flexbox quetscht ein Kind unter seine Inhaltsbreite, sobald
+   der Platz knapp wird und `flex-shrink` nicht 0 ist; der Inhalt ragt
+   dann heraus. Wer „behaelt seine Breite" meint, schreibt `0 0 auto`.
+2. **Ein klassischer Rollbalken liegt nicht UEBER dem Inhalt, er nimmt ihm
+   Platz weg** — am Handy schwebt er (kostet nichts), am Rechner ist er
+   rund 10 px hoch und wohnt IM rollenden Element. Ein Streifen, dessen
+   Kinder sich nach seiner Hoehe strecken (`align-items: stretch`),
+   veraendert damit seine Kinder in dem Moment, in dem er zum ersten Mal
+   ueberlaeuft. Loesung hier: `scrollbar-width: none` plus
+   `::-webkit-scrollbar { display: none }` — die angeschnittene letzte
+   Karte zeigt weiterhin, dass rechts mehr wartet.
+
+**Die Regel daraus:** Bei jedem `overflow: auto` fragen, was der Balken
+am RECHNER kostet und wen er verdraengt — und bei jedem `flex`-Kurzwert
+den mittleren Wert bewusst waehlen, nicht erben. Gefunden wurde beides nur
+durch Messen im Browser; die Testkette kann es nicht sehen.
+
 ### Auf der festen Seite ist JEDE Marke, die kommt und geht, eine Brettgroesse (v0.79.1, dritter Anlauf)
 
 **Der Fehlschlag:** Der Nutzer meldete am 26.08.2026 „wenn ich manchmal eine

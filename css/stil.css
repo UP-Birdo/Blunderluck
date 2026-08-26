@@ -4689,6 +4689,24 @@ body.design-3d .werte-figur {
 
     /* Der Streifen schiebt beim Rollen nicht die ganze Seite mit. */
     overscroll-behavior-x: contain;
+
+    /*
+     * OHNE SICHTBAREN ROLLBALKEN (seit v0.79.2). Sobald die Sammlung
+     * breiter wird als die Reihe, zeichnet der Desktop-Browser einen
+     * waagerechten Balken IN die Reihe — und der nimmt seine rund 10 px
+     * von den Karten: Sie schrumpften von 52 auf 42 und waren damit nicht
+     * mehr so hoch wie die Team-Karte (genau das war die Zusage von
+     * v0.71.0). Am Handy liegt der Balken über dem Inhalt und kostet
+     * nichts; gemessen 26.08.2026 im Browser.
+     *
+     * Rollen geht weiter — mit dem Finger, mit dem Rad, mit der Tastatur.
+     * Dass rechts mehr wartet, zeigt die angeschnittene letzte Karte.
+     */
+    scrollbar-width: none;
+}
+
+.faehigkeit-reihe::-webkit-scrollbar {
+    display: none;
 }
 
 /* Was in der Reihe KEINE Karte ist, wird nicht gestreckt: „noch keine" und
@@ -4808,9 +4826,18 @@ body.design-3d .werte-figur {
 }
 
 /* Der Banner behält seine Breite und wird nicht gestaucht — er trägt Namen
-   und Lage, und beide dürfen nicht abgeschnitten werden. */
+   und Lage, und beide dürfen nicht abgeschnitten werden.
+
+   `0 0 auto`, nicht `0 1 auto` (seit v0.79.2): Die 1 erlaubte genau das
+   Stauchen, das der Satz darüber ausschliesst. Sobald der Kartenstreifen
+   voll war, drückte `space-between` den Kasten unter seine Inhaltsbreite
+   (gemessen: 100 px Kasten, 113 px Inhalt) — der Name ragte über den Rand
+   hinaus, und der Überstand erzeugte am Rechner unter dem Spielfeld eine
+   waagerechte Bildlaufleiste, die dem Brett 10 px Höhe nahm. Weichen soll
+   die KARTENREIHE (`flex: 1 1 auto` plus `min-width: 0`, siehe oben) —
+   genau dafür hat sie ihr eigenes Rollen. */
 .seiten-reihe .spieler-zeile {
-    flex: 0 1 auto;
+    flex: 0 0 auto;
     margin: 0;
 }
 
@@ -4844,11 +4871,20 @@ body.design-3d .werte-figur {
 
 /* In der Spalte sind alle Knöpfe gleich breit — nebeneinander in einer Zeile
    durften sie noch unterschiedlich sein, untereinander sieht das unruhig
-   aus. */
+   aus.
+
+   `display: flex` steht hier nicht zur Zierde (seit v0.79.2): Ohne das ist
+   ein Knopf KEIN Flex-Behälter, und das `justify-content` darunter tut
+   lautlos gar nichts — die Zeichen sassen deshalb seit v0.64.0 links im
+   Knopf statt mittig (im Browser gemessen: 1 px Luft links, 13 rechts).
+   Eine Flex-Eigenschaft ohne `display: flex` meldet keinen Fehler; siehe
+   `docs\entscheidungen\erkenntnisse.md`. */
 .steuer-spalte .spiel-steuer-knopf {
     width: 34px;
     min-width: 34px;
     padding: 4px 0;
+    display: flex;
+    align-items: center;
     justify-content: center;
 }
 
