@@ -451,7 +451,9 @@ const dateien = ["konfig.js", "spieler.js", "speicher.js", "abgleich.js",
     "team-schach-uebersicht.js", "team-schach-brett.js", "team-schach-auswertung.js",
     "team-schach-grundlagen.js",
     "rangliste.js", "start.js", "faehigkeiten.js", "freunde.js",
-    "einstellungen.js"];
+    "einstellungen.js",
+    /* Seit v0.78.0: Der Wunsch-Knopf haengt auch in den Match-Einstellungen. */
+    "wunsch.js"];
 
 const quelltext = dateien
     .map((name) => dateisystem.readFileSync(pfad.join(jsOrdner, name), "utf8"))
@@ -7270,6 +7272,40 @@ pruefe("Die Tab-Pille misst erst im naechsten Bild und nur einmal (v0.74.0)", ()
     TABS_ECHT._markerNachmessen();
     if (bilder.length !== 2) {
         throw new Error("nach dem Bild laesst sich kein neues anmelden");
+    }
+});
+
+/*
+ * DER WUNSCH-KNOPF IN DEN MATCH-EINSTELLUNGEN (v0.78.0)
+ *
+ * Nutzer-Ansage 26.08.2026: „Wunsch-Knopf soll mit in die
+ * Match-Einstellungen … man soll nicht das Match verlassen."
+ *
+ * Der Knopf hing bis dahin nur in den GERAETE-Einstellungen, und die sind ein
+ * eigener Tab — wer mitten im Spiel etwas melden wollte, musste die Partie
+ * verlassen. Geprueft wird, dass er jetzt auch im Einstellungs-Fenster der
+ * laufenden Partie steht.
+ */
+pruefe("Die Match-Einstellungen tragen den Wunsch-Knopf (v0.78.0)", () => {
+    const partie = SCHACH_TAFEL.partie(TEAM_SCHACH.abgleich.daten, kennungen.standard);
+    const person = umgebung.ICH.person();
+
+    const wurzel = neuesElement("div");
+    TEAM_SCHACH._spielEinstellungenZeichnen(wurzel, partie, person);
+
+    const suchen = (el) => {
+        for (const kind of el.kinder || []) {
+            if (String(kind.textContent || "") === "Wunsch") {
+                return kind;
+            }
+            const t = suchen(kind);
+            if (t) { return t; }
+        }
+        return null;
+    };
+
+    if (!suchen(wurzel)) {
+        throw new Error("in den Match-Einstellungen steht kein Wunsch-Knopf");
     }
 });
 

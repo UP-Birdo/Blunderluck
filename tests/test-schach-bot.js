@@ -103,9 +103,9 @@ function mitStellung(runde, zeilen) {
  * Wer ist der Bot?
  * ------------------------------------------------------------------ */
 
-pruefe("Die Kennung des Computers ist bot und sein Name Computer", () => {
+pruefe("Die Kennung des Bots ist bot und sein Name Bob der Bot", () => {
     gleich(SCHACH_BOT.KENNUNG, "bot", "Kennung");
-    gleich(SCHACH_BOT.NAME, "Computer", "Name");
+    gleich(SCHACH_BOT.NAME, "Bob der Bot", "Name");
     wahr(SCHACH_BOT.istBot("bot"), "bot ist der Bot");
     wahr(!SCHACH_BOT.istBot("id-anna"), "Anna ist es nicht");
     wahr(!SCHACH_BOT.istBot(""), "und eine leere Kennung auch nicht");

@@ -66,6 +66,6 @@ dafür gehören NICHT ins Projekt.
 drei Prüfungen in `tests\test-rangliste.js`.
 
 **Was noch offen ist:** Der Bot setzt bis heute KEINE Fähigkeiten ein (Ausbau 3
-in `../entwurf-bot.md`). Die Bedenkzeit `SCHACH_BOT.BEDENKZEIT_MS` (700 ms) und
+in `../entwurf-bot.md`). Die Bedenkzeit `SCHACH_BOT.BEDENKZEIT_MS` (1000 ms seit v0.77.0, davor 700) und
 die Stufen-Budgets sind am Bürorechner gemessen — ein Handy ist ein Mehrfaches
 langsamer.

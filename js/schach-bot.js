@@ -136,8 +136,21 @@ const SCHACH_BOT = {
      */
     KENNUNG: "bot",
 
-    /* Sein Anzeigename an der Team-Karte und im Verlauf. */
-    NAME: "Computer",
+    /*
+     * Sein Anzeigename an der Team-Karte und im Verlauf.
+     *
+     * „Bob der Bot" seit v0.76.0 (Nutzer-Ansage 26.08.2026, vorher
+     * „Computer"). Der Name gehört zur Zielgruppe ab sechs Jahren aus
+     * `docs\VISION.md`: Ein Gegner mit Namen ist ein Mitspieler, „der
+     * Computer" ist ein Gerät.
+     *
+     * ER STEHT NUR HIER. Wer ihn ändert, ändert ihn an dieser einen Zeile —
+     * die Team-Karte und der Zugverlauf holen ihn über
+     * `TEAM_SCHACH._nameVon`, und ein Test in `test-schach-bot.js` wacht
+     * darüber. Die Spielart heisst weiterhin „Gegen den Computer": Dort ist
+     * die Spielweise gemeint, nicht der Mitspieler.
+     */
+    NAME: "Bob der Bot",
 
     /*
      * Wie lange er nachdenkt, bevor sein Zug erscheint (Millisekunden).
@@ -145,10 +158,23 @@ const SCHACH_BOT = {
      * wie der eigene, und man sähe nicht, was passiert ist.
      *
      * ES IST EINE MINDESTPAUSE, KEINE HÖCHSTZEIT: Rechnet die höchste Stufe
-     * länger, dauert es eben länger. Die Zahl ist geschätzt und am Gerät
-     * nachzujustieren.
+     * länger, dauert es eben länger.
+     *
+     * 1000 STATT 700 SEIT v0.77.0 (Nutzer-Ansage 26.08.2026: „Bots können
+     * sogar ein wenig langsamer sein").
+     *
+     * WARUM DIESE ZAHL ETWAS BEWIRKT, und das ist nicht selbstverständlich:
+     * Am 24.08.2026 wurde auf dem Bürorechner gemessen, dass der schlechteste
+     * Zug 514 ms RECHNET. Die Pause ist damit fast immer die bestimmende
+     * Grösse — der Zug erscheint also verlässlich nach einer Sekunde, nicht
+     * mal nach 0,7 und mal nach 1,2. Wäre das Rechnen der Engpass, hätte
+     * das Erhöhen hier gar nichts geändert.
+     *
+     * AM HANDY KANN DAS ANDERS SEIN: Ist es doppelt so langsam, rechnet der
+     * schlechteste Fall rund 1030 ms und läuft der Pause davon. Genau das
+     * steht als offene Messung in der `STATUS.md`.
      */
-    BEDENKZEIT_MS: 700,
+    BEDENKZEIT_MS: 1000,
 
     /* ---------------------------------------------------------------- *
      * DIE VIER SCHWIERIGKEITSSTUFEN (seit v0.28.0)

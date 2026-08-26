@@ -3,6 +3,41 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.78.0 — 26.08.2026
+
+**Der Wunsch-Knopf steht jetzt auch in den Einstellungen der laufenden
+Partie — man muss das Match nicht mehr verlassen.**
+
+- Bisher hing er nur unter dem Zahnrad auf dem Startbildschirm. Wem mitten im
+  Spiel etwas auffiel, der musste die Partie verlassen, um es zu melden — und
+  bis dahin hatte man es oft vergessen.
+- Ein Tipp öffnet wie gewohnt das Schreibfeld **über** der Partie; das Spiel
+  bleibt stehen.
+- Der Knopf auf dem Startbildschirm bleibt, wo er ist.
+
+## v0.77.0 — 26.08.2026
+
+**Bob der Bot lässt sich etwas mehr Zeit.**
+
+- Sein Zug erscheint jetzt nach **einer Sekunde** statt nach 0,7 — man sieht
+  besser, was er getan hat.
+- Es ist eine Mindestpause, keine Obergrenze: Rechnet er auf der höchsten
+  Stufe länger, dauert es weiterhin länger.
+- **Auf dem Rechner ist die Pause der bestimmende Wert** (gemessen: der
+  schlechteste Zug rechnet 0,5 Sekunden), sein Zug kommt also verlässlich
+  nach einer Sekunde. **Am Handy könnte das Rechnen der Pause davonlaufen** —
+  das ist die Messung, die noch aussteht.
+
+## v0.76.0 — 26.08.2026
+
+**Der Computer heisst jetzt „Bob der Bot".**
+
+- Der Name steht an der Team-Karte und im Zugverlauf — überall dort, wo sonst
+  der Name eines Mitspielers steht.
+- **Die Spielart heisst weiterhin „Gegen den Computer".** Dort ist die
+  Spielweise gemeint, nicht der Mitspieler; „gegen Bob den Bot" wäre an der
+  Stelle eine Ansage über eine Person statt über einen Modus.
+
 ## v0.75.0 — 26.08.2026
 
 **In den Bildanleitungen der Fähigkeiten war die oberste Figurenreihe

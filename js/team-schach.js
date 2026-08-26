@@ -1372,6 +1372,31 @@ const TEAM_SCHACH = {
             + "dem Zahnrad auf dem Startbildschirm."));
 
         /*
+         * DER WUNSCH-KNOPF STEHT AUCH HIER (seit v0.78.0).
+         *
+         * Nutzer-Ansage 26.08.2026: „Wunsch-Knopf soll mit in die
+         * Match-Einstellungen; wenn man es benutzt, soll nur das Popup
+         * aufgehen zum Tippen, man soll nicht das Match verlassen."
+         *
+         * DAS POPUP GAB ES SCHON — `WUNSCH.oeffnen` fragt seit jeher über
+         * `DIALOG.eingabe`, und ein Dialog liegt ÜBER der Partie. Gefehlt hat
+         * der WEG dorthin: Der Knopf hing allein in den Geräte-Einstellungen,
+         * und die sind ein eigener Tab. Wer mitten im Spiel etwas melden
+         * wollte, musste also die Partie verlassen — genau das war gemeint.
+         *
+         * Der Knopf in den Geräte-Einstellungen BLEIBT: Er ist der Weg für
+         * alles, was einem ausserhalb einer Partie auffällt.
+         *
+         * Das GitHub-Formular öffnet danach in einem NEUEN Fenster
+         * (`window.open`), die Partie bleibt also auch dann stehen.
+         */
+        if (typeof WUNSCH !== "undefined") {
+            const wunschZeile = TEAM_SCHACH._element("div", "knopf-zeile");
+            WUNSCH.aufbauen(wunschZeile);
+            wurzel.appendChild(wunschZeile);
+        }
+
+        /*
          * AUFGEBEN GANZ UNTEN, GROSS UND ROT (Nutzer-Ansage). Die zwei
          * Schritte bleiben: Es beendet die Partie und man verliert — das
          * darf kein Daumen versehentlich erledigen.
