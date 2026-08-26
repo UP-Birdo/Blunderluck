@@ -3024,9 +3024,33 @@ body.design-3d .werte-figur {
  * gewinnt er. Richtig so, denn in diesem Moment fragt man sich, wohin
  * die neue Wirkung geht, nicht wo die alte liegt.
  */
+/*
+ * NUR EIN RAND, KEINE FLÄCHE (seit v0.79.0).
+ *
+ * Nutzer-Ansage 26.08.2026: „… soll vormarkiert werden, aber NICHT mit dem
+ * grünen draufgelegten rechteckigen Feld, was gar nicht mehr in den Stil
+ * passt, sondern ein grüner Rand um die Felder, die möglich sind."
+ *
+ * Bis v0.78.0 lag über der Gruppe eine grüne Fläche mit 28 Prozent Deckung.
+ * Sie verdeckte die Kacheln und die Figuren darauf — auf einem Brett, das
+ * seit v0.17.0 wie gebaute 3D-Platten aussieht, wirkte das wie ein
+ * aufgeklebtes Rechteck aus einer anderen App.
+ *
+ * DER RAND WAR SCHON DA und musste nicht gebaut werden: `_umrissKanten`
+ * setzt die vier Kanten-Klassen nur an den AUSSENkanten der Gruppe, sodass
+ * ein zusammenhängender Umriss entsteht. Sichtbar war er nur nicht, weil die
+ * Füllung ihn erschlug. Es fällt hier also etwas weg, statt dass etwas
+ * dazukommt.
+ *
+ * KEINE RESTTÖNUNG: Naheliegend wäre gewesen, statt 28 Prozent noch 8 zu
+ * lassen — „ein bisschen sieht man ja besser". Der Nutzer hat das
+ * ausdrücklich abgelehnt („nicht mit dem grünen draufgelegten Feld"), und
+ * er hat recht: Eine schwache Tönung ist kein Kompromiss, sondern beides
+ * halb — sie stört den Stil und hilft dem Auge kaum.
+ */
 .feld-vorschau::before {
     --umriss-kern: #2e9e52;
-    --umriss-fuellung: rgba(46, 158, 82, 0.28);
+    --umriss-fuellung: transparent;
 }
 
 .kante-oben::before {

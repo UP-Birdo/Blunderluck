@@ -3,6 +3,19 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.79.0 — 26.08.2026
+
+**Die Vormarkierung beim Einsetzen einer Fähigkeit ist jetzt ein grüner
+Rand — die grüne Fläche ist weg.**
+
+- Bisher lag über den betroffenen Feldern ein grünes Rechteck, das Kacheln
+  und Figuren verdeckte. Auf einem Brett, das wie gebaute 3D-Platten
+  aussieht, wirkte das wie aufgeklebt.
+- Jetzt sieht man **den Umriss** — man erkennt weiterhin genau, welche Felder
+  die Wirkung trifft, aber man sieht auch, was darauf steht.
+- **Eine schwache Resttönung gibt es bewusst nicht.** Sie wäre beides halb:
+  Sie stört den Stil und hilft dem Auge kaum.
+
 ## v0.78.0 — 26.08.2026
 
 **Der Wunsch-Knopf steht jetzt auch in den Einstellungen der laufenden
