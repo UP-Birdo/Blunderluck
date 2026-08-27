@@ -769,25 +769,37 @@ const ANMELDUNG = {
      * der Runde entfernen — etwa jemanden, der sich doppelt angemeldet oder
      * seine PIN vergessen hat. Auch das Löschen fremder Partien im Schach
      * hängt an diesem Zugang (VERWALTUNG.verlangen).
+     *
+     * Bis v0.99.0 SCHALTETE der Knopf in den Einstellungen nur um
+     * (verwaltungUmschalten), und die Mitspieler-Liste hing in der
+     * Spieler-Karte. Seitdem ÖFFNET er den eigenen Verwaltungs-Bildschirm
+     * (js\verwaltungs-bildschirm.js) — die Passwort-Abfrage davor ist
+     * unverändert VERWALTUNG.verlangen; beendet wird die Freischaltung
+     * über den Knopf auf dem Bildschirm (verwaltungBeenden).
      * ---------------------------------------------------------------- */
 
-    async verwaltungUmschalten() {
-        if (ICH.verwaltungAktiv()) {
-            ICH.verwaltungSetzen(false);
-            ANMELDUNG._anzeigenAuffrischen();
-            return;
+    async verwaltungOeffnen() {
+        if (!ICH.verwaltungAktiv()) {
+            const darf = await VERWALTUNG.verlangen(
+                "Verwaltung",
+                "Passwort eingeben. Damit lassen sich Spieler aus der Runde "
+                    + "entfernen und fremde Partien löschen."
+            );
+            if (!darf) {
+                return;
+            }
         }
 
-        const darf = await VERWALTUNG.verlangen(
-            "Verwaltung",
-            "Passwort eingeben. Damit lassen sich Spieler aus der Runde "
-                + "entfernen und fremde Partien löschen."
-        );
-        if (!darf) {
-            return;
-        }
+        TABS.wechseln("verwaltung");
+    },
 
+    /* Schliesst die Freischaltung auf diesem Gerät sichtbar wieder und führt
+       zurück in die Einstellungen (der Knopf dafür hängt auf dem
+       Verwaltungs-Bildschirm). */
+    verwaltungBeenden() {
+        ICH.verwaltungSetzen(false);
         ANMELDUNG._anzeigenAuffrischen();
+        TABS.wechseln("einstellungen");
     },
 
     /* Entfernt einen Spieler (nur mit aktiver Verwaltung aufrufbar — die
@@ -872,6 +884,12 @@ const ANMELDUNG = {
         }
         if (typeof EINSTELLUNGEN !== "undefined" && EINSTELLUNGEN.beimOeffnen) {
             EINSTELLUNGEN.beimOeffnen();
+        }
+        /* Auch die Spieler-Tabelle der Verwaltung — nach dem Entfernen
+           eines Spielers muss seine Zeile sofort verschwinden. */
+        if (typeof VERWALTUNGS_BILDSCHIRM !== "undefined"
+                && VERWALTUNGS_BILDSCHIRM.beimOeffnen) {
+            VERWALTUNGS_BILDSCHIRM.beimOeffnen();
         }
     }
 };

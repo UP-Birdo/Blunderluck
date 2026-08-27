@@ -1503,6 +1503,178 @@ pruefe("Die Account-Karte trennt Abmelden und Konto loeschen (v0.6.0)", () => {
 });
 
 /* ------------------------------------------------------------------ *
+ * Der Verwaltungs-Bildschirm (Nutzer-Ansage 27.08.2026)
+ *
+ * „gebe mir in der verwaltung nicht alle spieler unter einander sonderern
+ * alls seperater screen und als Tabelle." — Die Mitspieler-Liste hing bis
+ * v0.99.0 eingebettet in der Spieler-Karte der Einstellungen; jetzt ist
+ * sie ein eigener Bildschirm (js\verwaltungs-bildschirm.js) mit einer
+ * Tabellenzeile je Spieler. Drei Zusagen werden geprueft: die Zeilenzahl,
+ * der unveraenderte Entfernen-Weg und der fehlende Zugang ohne
+ * Freischaltung.
+ * ------------------------------------------------------------------ */
+
+pruefe("Die Verwaltungs-Tabelle hat eine Zeile je Spieler", () => {
+    const VB = umgebung.VERWALTUNGS_BILDSCHIRM;
+    if (!VB || VB.id !== "verwaltung" || VB.inLeiste !== false) {
+        throw new Error("der Verwaltungs-Bildschirm fehlt oder haengt in der Leiste");
+    }
+
+    const datenVorher = ANMELDUNG.abgleich.daten;
+    try {
+        /* Drei Spieler hinein — die Tabelle muss GENAU drei Zeilen zeigen. */
+        let daten = SPIELER.leereDaten(1000);
+        daten = SPIELER.spielerHinzufuegen(daten, "Anna", "id-anna", 1000);
+        daten = SPIELER.spielerHinzufuegen(daten, "Bert", "id-bert", 1000);
+        daten = SPIELER.spielerHinzufuegen(daten, "Cem", "id-cem", 1000);
+        ANMELDUNG.abgleich.daten = daten;
+
+        umgebung.ICH.verwaltungSetzen(true);
+        VB.aufbauen(neuesElement("div"));
+
+        const zeilen = einsammelnIn(VB.wurzelEl, (kind) =>
+            kind.tagName === "tr", []);
+        const koerperZeilen = zeilen.filter((zeile) =>
+            (zeile.kinder || []).some((zelle) => zelle.tagName === "td"));
+        if (koerperZeilen.length !== 3) {
+            throw new Error("die Tabelle zeigt " + koerperZeilen.length
+                + " statt 3 Zeilen");
+        }
+
+        /* Es ist eine echte Tabelle mit Kopf — keine Liste untereinander. */
+        if (!einsammelnIn(VB.wurzelEl, (kind) => kind.tagName === "table", [])[0]) {
+            throw new Error("keine Tabelle auf dem Verwaltungs-Bildschirm");
+        }
+        const kopfTexte = einsammelnIn(VB.wurzelEl, (kind) =>
+            kind.tagName === "th", []).map((zelle) => String(zelle.textContent));
+        if (kopfTexte.indexOf("Name") === -1) {
+            throw new Error("die Tabelle hat keine Namens-Spalte, nur: "
+                + kopfTexte.join(", "));
+        }
+
+        /* Die Tabelle rollt auf schmalen Bildschirmen im eigenen Behaelter. */
+        if (!einsammelnIn(VB.wurzelEl, (kind) =>
+                String(kind.className || "").indexOf("tabelle-rollbereich") !== -1,
+                [])[0]) {
+            throw new Error("die Tabelle hat keinen waagerechten Rollbereich");
+        }
+
+        /* Der eigene Eintrag ist markiert, ein Geheimnis steht nirgends. */
+        const annaZeile = koerperZeilen[0];
+        if (String((annaZeile.kinder[0] || {}).textContent).indexOf("(du)") === -1) {
+            throw new Error("der eigene Eintrag ist nicht als (du) markiert");
+        }
+    } finally {
+        ANMELDUNG.abgleich.daten = datenVorher;
+        umgebung.ICH.verwaltungSetzen(false);
+    }
+});
+
+pruefe("Entfernen laeuft weiter ueber ANMELDUNG.spielerEntfernen", () => {
+    const VB = umgebung.VERWALTUNGS_BILDSCHIRM;
+    const datenVorher = ANMELDUNG.abgleich.daten;
+    const entfernenVorher = ANMELDUNG.spielerEntfernen;
+    const entfernteIds = [];
+
+    try {
+        let daten = SPIELER.leereDaten(1000);
+        daten = SPIELER.spielerHinzufuegen(daten, "Anna", "id-anna", 1000);
+        daten = SPIELER.spielerHinzufuegen(daten, "Bert", "id-bert", 1000);
+        ANMELDUNG.abgleich.daten = daten;
+
+        /* Der Spitzel: aufzeichnen, mit welcher Kennung die BESTEHENDE
+           Funktion gerufen wird — der Weg selbst bleibt unveraendert. */
+        ANMELDUNG.spielerEntfernen = (id) => { entfernteIds.push(id); };
+
+        umgebung.ICH.verwaltungSetzen(true);
+        VB.aufbauen(neuesElement("div"));
+
+        const knoepfe = einsammelnIn(VB.wurzelEl, (kind) =>
+            kind.tagName === "button"
+                && String(kind.textContent) === "Entfernen", []);
+        if (knoepfe.length !== 2) {
+            throw new Error(knoepfe.length + " statt 2 Entfernen-Knoepfe");
+        }
+        if (einsammelnIn(VB.wurzelEl, (kind) => kind.tagName === "button"
+                && String(kind.className).indexOf("knopf-gefahr") !== -1
+                && String(kind.textContent) !== "Entfernen", []).length !== 0) {
+            throw new Error("ein anderer Knopf ist rot — nur Entfernen zerstoert");
+        }
+
+        /* Klick auf Berts Entfernen (zweiSchritt sagt im Test sofort zu). */
+        knoepfe[1].ausloesen("click");
+        if (entfernteIds.length !== 1 || entfernteIds[0] !== "id-bert") {
+            throw new Error("spielerEntfernen wurde gerufen mit: "
+                + entfernteIds.join(", "));
+        }
+    } finally {
+        ANMELDUNG.abgleich.daten = datenVorher;
+        ANMELDUNG.spielerEntfernen = entfernenVorher;
+        umgebung.ICH.verwaltungSetzen(false);
+    }
+});
+
+pruefe("Ohne Freischaltung: kein Zugang, keine eingebettete Liste mehr", () => {
+    const VB = umgebung.VERWALTUNGS_BILDSCHIRM;
+    const EINSTELLUNGEN = umgebung.EINSTELLUNGEN;
+    const datenVorher = ANMELDUNG.abgleich.daten;
+
+    try {
+        let daten = SPIELER.leereDaten(1000);
+        daten = SPIELER.spielerHinzufuegen(daten, "Anna", "id-anna", 1000);
+        daten = SPIELER.spielerHinzufuegen(daten, "Bert", "id-bert", 1000);
+        ANMELDUNG.abgleich.daten = daten;
+
+        /* 1. Der Bildschirm selbst zeigt ohne Freischaltung nur den
+           Hinweis — keine Tabelle, keine Entfernen-Knoepfe. */
+        umgebung.ICH.verwaltungSetzen(false);
+        VB.aufbauen(neuesElement("div"));
+
+        if (einsammelnIn(VB.wurzelEl, (kind) => kind.tagName === "table", [])[0]) {
+            throw new Error("ohne Freischaltung steht die Tabelle da");
+        }
+        if (einsammelnIn(VB.wurzelEl, (kind) => kind.tagName === "button"
+                && String(kind.textContent) === "Entfernen", []).length !== 0) {
+            throw new Error("ohne Freischaltung gibt es Entfernen-Knoepfe");
+        }
+
+        /* 2. Die Einstellungen betten die Liste auch MIT Freischaltung
+           nicht mehr ein — es bleibt der EINE Knopf „Verwaltung". */
+        umgebung.ICH.verwaltungSetzen(true);
+        EINSTELLUNGEN.aufbauen(neuesElement("div"));
+
+        const knopfTexte = einsammelnIn(EINSTELLUNGEN.wurzelEl, (kind) =>
+            kind.tagName === "button", []).map((knopf) =>
+            String(knopf.textContent));
+        if (knopfTexte.indexOf("Verwaltung") === -1) {
+            throw new Error("kein Verwaltung-Knopf in den Einstellungen");
+        }
+        if (knopfTexte.indexOf("Entfernen") !== -1) {
+            throw new Error("die Mitspieler-Liste haengt noch in den Einstellungen");
+        }
+        if (knopfTexte.indexOf("Verwaltung beenden") !== -1) {
+            throw new Error("der Umschalt-Knopf steht noch in den Einstellungen"
+                + " — beendet wird auf dem Verwaltungs-Bildschirm");
+        }
+    } finally {
+        ANMELDUNG.abgleich.daten = datenVorher;
+        umgebung.ICH.verwaltungSetzen(false);
+    }
+});
+
+/* Der kleine Sammler der drei Verwaltungs-Tests: alle Elemente unterhalb
+   von `element`, auf die `passt` zutrifft. */
+function einsammelnIn(element, passt, treffer) {
+    for (const kind of (element && element.kinder) || []) {
+        if (passt(kind)) {
+            treffer.push(kind);
+        }
+        einsammelnIn(kind, passt, treffer);
+    }
+    return treffer;
+}
+
+/* ------------------------------------------------------------------ *
  * Der Startbildschirm und der Faehigkeiten-Tab (v0.9.0, Schritt 4)
  * ------------------------------------------------------------------ */
 

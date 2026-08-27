@@ -941,6 +941,32 @@ body.partie-fest .phasen-leiste {
  * Ergebnistabelle
  * ------------------------------------------------------------------ */
 
+/*
+ * Der Rollbereich um eine Tabelle (Spieler-Tabelle der Verwaltung): Auf
+ * schmalen Bildschirmen rollt die Tabelle WAAGERECHT in diesem Behälter,
+ * statt die Seite zu verbreitern. Bewusst nur overflow-x und kein
+ * overflow-y — ein overflow-y würde die Achse stillschweigend mitrollen
+ * lassen (die --inhalt-rand-Erkenntnis in docs\entscheidungen\
+ * erkenntnisse.md); hier ragt nichts über den Rand, der Behälter darf
+ * deshalb schlicht selbst rollen.
+ */
+.tabelle-rollbereich {
+    overflow-x: auto;
+}
+
+/* Kennung und Aktions-Spalte der Verwaltungs-Tabelle: nicht umbrechen —
+   lieber rollt die Tabelle im Rollbereich. */
+.verwaltung-kennung,
+.verwaltung-aktion {
+    white-space: nowrap;
+}
+
+.verwaltung-kennung {
+    font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+    font-size: 0.82rem;
+    color: var(--schrift-leise);
+}
+
 .ergebnis-tabelle {
     width: 100%;
     border-collapse: collapse;

@@ -9,8 +9,9 @@
  *      Verwechslung wäre teuer.
  *   2. SPIELER: der Zugang zu Profil (Name/Passwort ändern) und Verwaltung —
  *      die Abläufe selbst stehen in anmeldung.js, dieser Tab zeigt nur die
- *      Knöpfe. Mit aktiver Verwaltung erscheint zusätzlich die Liste der
- *      Mitspieler mit einem Entfernen-Knopf je Person.
+ *      Knöpfe. Die Liste der Mitspieler hing bis v0.99.0 direkt in dieser
+ *      Karte; seitdem ist sie ein eigener Bildschirm mit Tabelle
+ *      (js\verwaltungs-bildschirm.js), der Knopf „Verwaltung" führt dorthin.
  *   3. VERBINDUNG (seit v0.15.0, Wunsch 2): der Stand des Abgleichs —
  *      grüner Punkt und Text. Bis v0.14.0 stand er dauerhaft im Kopf der
  *      Seite; gehalten wird er weiterhin in app.js (`APP.status`).
@@ -296,38 +297,20 @@ const EINSTELLUNGEN = {
 
         leiste.appendChild(EINSTELLUNGEN._knopf("Profil", "knopf-still knopf-klein",
             () => ANMELDUNG.profilOeffnen()));
+
+        /* EIN Knopf statt der eingebetteten Mitspieler-Liste (bis v0.99.0
+           hier, Nutzer-Ansage 27.08.2026): Er fragt bei Bedarf das
+           Verwaltungs-Passwort ab und öffnet dann den eigenen Bildschirm
+           mit der Spieler-Tabelle (js\verwaltungs-bildschirm.js). Beendet
+           wird die Verwaltung ebenfalls dort. */
         leiste.appendChild(EINSTELLUNGEN._knopf(
-            ICH.verwaltungAktiv() ? "Verwaltung beenden" : "Verwaltung",
-            "knopf-still knopf-klein",
-            () => ANMELDUNG.verwaltungUmschalten()));
+            "Verwaltung", "knopf-still knopf-klein",
+            () => ANMELDUNG.verwaltungOeffnen()));
 
         /* Die Selbst-Löschung („Konto löschen") wohnt seit v0.6.0 in der
            Account-Karte darüber — hier bleiben Profil und Verwaltung. */
 
         karte.appendChild(leiste);
-
-        /* Nur mit aktiver Verwaltung: die Mitspieler samt Entfernen-Knopf. */
-        if (ICH.verwaltungAktiv() && typeof ANMELDUNG !== "undefined"
-                && ANMELDUNG.abgleich) {
-            const liste = SPIELER.normalisieren(ANMELDUNG.abgleich.daten).spieler;
-
-            for (const spieler of liste) {
-                const zeile = document.createElement("div");
-                zeile.className = "schalter-halter";
-
-                const name = document.createElement("span");
-                name.className = "schalter-text";
-                name.textContent = spieler.name
-                    + (person && spieler.id === person.id ? " (du)" : "");
-                zeile.appendChild(name);
-
-                zeile.appendChild(DIALOG.zweiSchritt(
-                    EINSTELLUNGEN._knopf("Entfernen", "knopf-gefahr knopf-klein", null),
-                    () => ANMELDUNG.spielerEntfernen(spieler.id)));
-
-                karte.appendChild(zeile);
-            }
-        }
 
         return karte;
     },

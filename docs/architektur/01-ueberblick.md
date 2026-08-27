@@ -26,6 +26,7 @@ Schichten mit je einer Aufgabe. Keine Schicht greift an einer anderen vorbei:
     team-schach.js   Bildschirm: Übersicht und Brett des Schachs
     rangliste.js     Bildschirm: Punkte aus den Partien (liest nur)
     einstellungen.js Bildschirm: Darstellung + Spieler-Karte (Profil/Verwaltung)
+    verwaltungs-bildschirm.js   Bildschirm: Spieler-Verwaltung als Tabelle
     tabs.js          Bildschirm: Tab-Leiste
     dialog.js        Bildschirm: eigene Rückfragen und Eingaben
         |
@@ -56,7 +57,7 @@ anderer Speicher-Dienst kostet genau eine neue Klasse in `speicher.js`.
 | `js/ich.js` | Der Gerätespeicher: wer ich bin (Kennung, Name), Verwaltungs-Schalter, gesehene Partie-Abschlüsse. Verlässt das Gerät nie. |
 | `js/speicher.js` | Zwei Rückwände (`SpeicherLokal`, `SpeicherGemeinsam`) mit gleicher Schnittstelle plus `speicherErzeugen()`. |
 | `js/abgleich.js` | Klasse `Abgleich`: erstes Laden, verzögertes Schreiben, regelmäßiges Nachfragen im gemeinsamen Modus. |
-| `js/anmeldung.js` | Anmelde-Ablauf (drei Wege: bekanntes Gerät, Liste + PIN, neu), Profil (Name/PIN ändern), Verwaltung umschalten, Spieler entfernen. |
+| `js/anmeldung.js` | Anmelde-Ablauf (drei Wege: bekanntes Gerät, Liste + PIN, neu), Profil (Name/PIN ändern), Verwaltung öffnen/beenden, Spieler entfernen. |
 | `js/dialog.js` | `DIALOG.frage()`, `DIALOG.hinweis()`, `DIALOG.eingabe()`, `DIALOG.zahlen()`, `DIALOG.liste()`, `DIALOG.zweiSchritt()`. |
 | `js/tabs.js` | Offenes Tab-Register; ein Tab meldet sich mit `id`, `titel` und `aufbauen(behaelter)` an. |
 | `js/verwaltung.js` | Die eine Stelle für „darf der das?": `VERWALTUNG.verlangen(titel, grund)` fragt das Passwort ab, wenn die Verwaltung nicht ohnehin offen ist. |
@@ -72,7 +73,8 @@ anderer Speicher-Dienst kostet genau eine neue Klasse in `speicher.js`.
 | `js/team-schach-auswertung.js` | Ergänzt `TEAM_SCHACH`: Abschluss-Bildschirm mit Punktestand, Fähigkeiten-Übersicht, Bilanz und Zugverlauf. |
 | `js/team-schach-grundlagen.js` | Ergänzt `TEAM_SCHACH`: der Bildschirm von „Schach lernen". |
 | `js/rangliste.js` | Der Tab **Rangliste**: Punkte aller beendeten Partien plus **Spielerprofil** (`verlauf()`). Rechnender Teil ohne Browser testbar. |
-| `js/einstellungen.js` | Der Tab **Einstellungen**: Darstellung (3D-Look) und die Karte **Spieler** (Profil, Verwaltung, Spieler entfernen). |
+| `js/einstellungen.js` | Der Tab **Einstellungen**: Darstellung (3D-Look) und die Karte **Spieler** (Profil, Knopf zur Verwaltung). |
+| `js/verwaltungs-bildschirm.js` | Die Spieler-Verwaltung als **eigener Bildschirm**: Tabelle aller Mitspieler (Name, Kennung, Passwort ja/nein, Freunde) mit Entfernen je Zeile; Freischaltung wird hier auch beendet. |
 | `js/wunsch.js` | Der Wunsch-Knopf im Kopf: vorbefülltes GitHub-Formular, kein Token in der App. |
 | `js/app.js` | Startpunkt (`DOMContentLoaded`), Statusanzeige, Hinweisbalken; erzeugt beide Speicher und Abgleiche, startet die Anmeldung. |
 | `img/figuren/` | Die zwölf Figuren-Bilder des 3D-Looks (aus `tools/Figuren-Blender.py`). |

@@ -120,6 +120,10 @@ const APP = {
         TABS.registrieren(RANGLISTE);
         TABS.registrieren(TEAM_SCHACH);
         TABS.registrieren(EINSTELLUNGEN);
+        /* Die Spieler-Verwaltung als eigener Bildschirm (Nutzer-Ansage
+           27.08.2026), ebenfalls ohne Leisten-Knopf — betreten über den
+           Knopf „Verwaltung" in den Einstellungen. */
+        TABS.registrieren(VERWALTUNGS_BILDSCHIRM);
 
         /* Die gewählte Darstellung VOR dem ersten Zeichnen anwenden — sonst
            blitzt kurz das falsche Design auf (seit v0.119). */

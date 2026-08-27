@@ -467,6 +467,7 @@ umgebung.TABS = {
 const bausteinNamen = ["KONFIG", "SPIELER", "ANMELDUNG", "SCHACH_VARIANTEN", "SCHACH", "SCHACH_RUNDE",
     "SCHACH_TAFEL", "SCHACH_BOT", "SCHACH_VORSCHAU", "SCHACH_GRUNDLAGEN", "TEAM_SCHACH",
     "RANGLISTE", "START", "FAEHIGKEITEN", "FREUNDE", "EINSTELLUNGEN",
+    "VERWALTUNGS_BILDSCHIRM",
     "FAEHIGKEIT_ZEICHEN",
     "SpeicherGemeinsam",
     /* Seit v0.76 auch der Abgleich: Sein Rennen mit der regelmaessigen Abfrage
@@ -487,6 +488,8 @@ const dateien = ["konfig.js", "spieler.js", "speicher.js", "abgleich.js",
     "team-schach-grundlagen.js",
     "rangliste.js", "start.js", "faehigkeiten.js", "freunde.js",
     "einstellungen.js",
+    /* Die Spieler-Verwaltung als eigener Bildschirm mit Tabelle. */
+    "verwaltungs-bildschirm.js",
     /* Seit v0.78.0: Der Wunsch-Knopf haengt auch in den Match-Einstellungen. */
     "wunsch.js"];
 

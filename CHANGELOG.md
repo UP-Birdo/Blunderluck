@@ -3,6 +3,20 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.100.0 — 27.08.2026
+
+**Die Spieler-Verwaltung ist ein eigener Bildschirm mit Tabelle.**
+
+- Bisher hingen alle Mitspieler untereinander in den Einstellungen. Jetzt
+  öffnet der Knopf „Verwaltung" (nach der gewohnten Passwort-Abfrage)
+  einen eigenen Bildschirm mit einer Tabelle: eine Zeile je Spieler mit
+  Name, Kennung, ob ein Passwort gesetzt ist und der Freunde-Anzahl —
+  dazu je Zeile der Entfernen-Knopf mit der gewohnten
+  „Wirklich?"-Absicherung.
+- Auf schmalen Bildschirmen lässt sich die Tabelle seitlich rollen.
+  „Verwaltung beenden" wohnt jetzt ebenfalls auf diesem Bildschirm.
+- Am Passwort und an der Absicherung ändert sich nichts.
+
 ## v0.99.0 — 27.08.2026
 
 **Die Halluzinations-Karte zählt ihre Restzeit jetzt selbst herunter.**
