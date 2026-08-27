@@ -1127,6 +1127,251 @@ pruefe("Zwei-Schritt: erster Druck fragt nur, zweiter führt aus (v0.112)", () =
 });
 
 /* ------------------------------------------------------------------ *
+ * Das Fenster hinter dem Code-Knopf (Punkt 41, v0.104.0)
+ *
+ * Zwei Prüfungen, weil es zwei Dinge sind: Der BILDSCHIRM muss die
+ * zuletzt Bespielten nach oben stellen und ein Suchfeld anfordern — und
+ * der DIALOG muss mit diesem Suchfeld wirklich filtern. Das zweite läuft
+ * gegen das ECHTE dialog.js in eigenem Kontext (wie die
+ * Zwei-Schritt-Bestätigung oben), denn hier sind die Dialoge
+ * Stellvertreter.
+ * ------------------------------------------------------------------ */
+
+/* Spielt eine Partie bis zum Ergebnis durch und setzt sie in die Tafel. */
+function beendetePartieEinsetzen(tafel, weiss, schwarz, zeitpunkt) {
+    const angelegt = SCHACH_TAFEL.partieAnlegen(tafel, "standard", "Runde", zeitpunkt);
+    let partie = angelegt.partie;
+
+    for (const id of weiss) {
+        partie = SCHACH_RUNDE.teamBeitreten(partie, id, "weiss", zeitpunkt);
+    }
+    for (const id of schwarz) {
+        partie = SCHACH_RUNDE.teamBeitreten(partie, id, "schwarz", zeitpunkt);
+    }
+
+    partie = bereitUndAufgestellt(partie, "weiss", zeitpunkt);
+    partie = bereitUndAufgestellt(partie, "schwarz", zeitpunkt);
+    partie = SCHACH_RUNDE.aufgeben(partie, "schwarz", zeitpunkt);
+
+    return SCHACH_TAFEL.partieEinsetzen(angelegt.tafel, partie, zeitpunkt);
+}
+
+pruefe("Das Einladen-Fenster stellt die zuletzt Bespielten nach oben und fragt ein Suchfeld an (Punkt 41)", () => {
+    const echteSpieler = ANMELDUNG.abgleich.daten;
+    const echteTafel = TEAM_SCHACH.abgleich.daten;
+    const echteListe = umgebung.DIALOG.liste;
+
+    try {
+        /* Anna, drei Freunde — und Emil, mit dem sie gespielt hat, ohne
+           befreundet zu sein (F17). */
+        let daten = SPIELER.leereDaten(1000);
+        for (const eintrag of [["Anna", "id-anna"], ["Bert", "id-bert"],
+                ["Cem", "id-cem"], ["Dora", "id-dora"], ["Emil", "id-emil"]]) {
+            daten = SPIELER.spielerHinzufuegen(daten, eintrag[0], eintrag[1], 1000);
+        }
+        for (const anderer of ["id-bert", "id-cem", "id-dora"]) {
+            daten = SPIELER.freundHinzufuegen(daten, "id-anna", anderer, 1000);
+            daten = SPIELER.freundHinzufuegen(daten, anderer, "id-anna", 1000);
+        }
+        ANMELDUNG.abgleich.daten = daten;
+
+        /* Zwei beendete Partien (Emil aelter, Dora neuer) und die offene
+           Runde, um deren Einladungen es geht. */
+        let tafel = SCHACH_TAFEL.leereTafel(1000);
+        tafel = beendetePartieEinsetzen(tafel, ["id-anna"], ["id-emil"], 4000);
+        tafel = beendetePartieEinsetzen(tafel, ["id-anna"], ["id-dora"], 5000);
+
+        const angelegt = SCHACH_TAFEL.partieAnlegen(tafel, "standard", "Runde", 6000);
+        const offene = SCHACH_RUNDE.teamBeitreten(
+            angelegt.partie, "id-anna", "weiss", 6000);
+        tafel = SCHACH_TAFEL.partieEinsetzen(angelegt.tafel, offene, 6000);
+        TEAM_SCHACH.abgleich.daten = tafel;
+
+        let gerufen = null;
+        umgebung.DIALOG.liste = async (titel, text, eintraege, abbrechen, zusatz, suche) => {
+            gerufen = {
+                eintraege: eintraege, zusatz: zusatz, suche: suche
+            };
+            return null;
+        };
+
+        TEAM_SCHACH._einladenFensterOeffnen(
+            SCHACH_TAFEL.partie(tafel, offene.id), { id: "id-anna", name: "Anna" });
+
+        if (!gerufen) {
+            throw new Error("das Fenster hat gar keine Liste geoeffnet");
+        }
+
+        const namen = gerufen.eintraege.map((eintrag) => eintrag.beschriftung);
+        if (namen.join(",") !== "Dora,Bert,Cem") {
+            throw new Error("erwartet <Dora,Bert,Cem>, war <" + namen.join(",") + ">");
+        }
+        if (gerufen.eintraege[0].hinweis !== "Zuletzt gespielt") {
+            throw new Error("der zuletzt Bespielte traegt seinen Zusatz nicht");
+        }
+        if (gerufen.eintraege[1].hinweis || gerufen.eintraege[2].hinweis) {
+            throw new Error("die uebrigen Freunde tragen faelschlich einen Zusatz");
+        }
+        if (namen.indexOf("Emil") !== -1) {
+            throw new Error("ein Nicht-Freund ist einladbar — F17 gebrochen");
+        }
+        if (typeof gerufen.suche !== "string" || gerufen.suche === "") {
+            throw new Error("das Fenster fordert kein Suchfeld an");
+        }
+        if (!gerufen.zusatz
+                || String(gerufen.zusatz.textContent || "")
+                    !== SCHACH_RUNDE.beitrittsCode(offene.id)) {
+            throw new Error("der Beitritts-Code steht nicht mehr im Fenster");
+        }
+
+        /*
+         * WER SCHON EINGELADEN IST, FAELLT AUCH ALS ZULETZT BESPIELTER WEG —
+         * die Filter aus `_einladbareErmitteln` gelten unveraendert weiter.
+         */
+        const mitEinladung = SCHACH_RUNDE.einladen(
+            SCHACH_TAFEL.partie(tafel, offene.id), "id-dora", 6100);
+        TEAM_SCHACH.abgleich.daten =
+            SCHACH_TAFEL.partieEinsetzen(tafel, mitEinladung, 6100);
+
+        gerufen = null;
+        TEAM_SCHACH._einladenFensterOeffnen(
+            mitEinladung, { id: "id-anna", name: "Anna" });
+
+        const zweite = gerufen.eintraege.map((eintrag) => eintrag.beschriftung);
+        if (zweite.indexOf("Dora") !== -1) {
+            throw new Error("die schon Eingeladene steht weiterhin oben");
+        }
+        if (zweite.join(",") !== "Bert,Cem") {
+            throw new Error("erwartet <Bert,Cem>, war <" + zweite.join(",") + ">");
+        }
+
+    } finally {
+        ANMELDUNG.abgleich.daten = echteSpieler;
+        TEAM_SCHACH.abgleich.daten = echteTafel;
+        umgebung.DIALOG.liste = echteListe;
+    }
+});
+
+pruefe("Die Suche im Listen-Dialog blendet wirklich aus, was nicht passt (Punkt 41)", () => {
+    const dialogUmgebung = {
+        setTimeout: setTimeout,
+        clearTimeout: clearTimeout,
+        document: {
+            createElement: neuesElement,
+            addEventListener() { },
+            removeEventListener() { },
+            body: neuesElement("body")
+        }
+    };
+    vm.createContext(dialogUmgebung);
+    vm.runInContext(
+        dateisystem.readFileSync(pfad.join(jsOrdner, "dialog.js"), "utf8")
+            + "\nglobalThis.DIALOG = DIALOG;",
+        dialogUmgebung,
+        { filename: "dialog.js" }
+    );
+
+    const behaelter = neuesElement("div");
+    dialogUmgebung.DIALOG.aufbauen(behaelter);
+    dialogUmgebung.DIALOG.liste("Freunde einladen", "Text", [
+        { beschriftung: "Dora", hinweis: "Zuletzt gespielt", wert: "id-dora" },
+        { beschriftung: "Bert", wert: "id-bert" },
+        { beschriftung: "Cem", wert: "id-cem" }
+    ], "Schliessen", null, "Freunde suchen …");
+
+    const feld = behaelter.querySelector(".dialog-suche");
+    if (!feld) {
+        throw new Error("kein Suchfeld im Fenster");
+    }
+    if (feld.attribute["aria-label"] !== "Freunde suchen …") {
+        throw new Error("das Suchfeld hat keine Beschriftung fuer Vorleseprogramme");
+    }
+
+    const leer = behaelter.querySelector(".dialog-liste-leer");
+    if (!leer || leer.hidden !== true) {
+        throw new Error("die Leer-Meldung steht schon vor dem ersten Tippen da");
+    }
+
+    const eintraege = behaelter.querySelectorAll(".dialog-listeneintrag");
+    const nameVon = (knopf) => String(knopf.kinder[0].textContent || "");
+    const sichtbare = () => eintraege
+        .filter((knopf) => knopf.hidden !== true)
+        .map(nameVon)
+        .join(",");
+
+    if (eintraege.length !== 3) {
+        throw new Error("erwartet drei Eintraege, waren " + eintraege.length);
+    }
+    if (sichtbare() !== "Dora,Bert,Cem") {
+        throw new Error("vor dem Tippen sind nicht alle da: " + sichtbare());
+    }
+
+    /* Gross- und Kleinschreibung sind egal, gesucht wird irgendwo im Namen. */
+    feld.value = "ER";
+    feld.ausloesen("input");
+    if (sichtbare() !== "Bert") {
+        throw new Error("erwartet <Bert>, sichtbar war <" + sichtbare() + ">");
+    }
+    if (leer.hidden !== true) {
+        throw new Error("die Leer-Meldung steht da, obwohl es einen Treffer gibt");
+    }
+
+    feld.value = "zzz";
+    feld.ausloesen("input");
+    if (sichtbare() !== "") {
+        throw new Error("ohne Treffer steht noch etwas da: " + sichtbare());
+    }
+    if (leer.hidden !== false) {
+        throw new Error("ohne Treffer sagt die Liste nichts");
+    }
+
+    /* Feld wieder leer: alle kommen zurueck. */
+    feld.value = "  ";
+    feld.ausloesen("input");
+    if (sichtbare() !== "Dora,Bert,Cem") {
+        throw new Error("das leere Feld bringt nicht alle zurueck: " + sichtbare());
+    }
+    if (leer.hidden !== true) {
+        throw new Error("die Leer-Meldung bleibt stehen");
+    }
+});
+
+pruefe("Ohne Suchtext bleibt der Listen-Dialog genau der von vorher (Punkt 41)", () => {
+    const dialogUmgebung = {
+        setTimeout: setTimeout,
+        clearTimeout: clearTimeout,
+        document: {
+            createElement: neuesElement,
+            addEventListener() { },
+            removeEventListener() { },
+            body: neuesElement("body")
+        }
+    };
+    vm.createContext(dialogUmgebung);
+    vm.runInContext(
+        dateisystem.readFileSync(pfad.join(jsOrdner, "dialog.js"), "utf8")
+            + "\nglobalThis.DIALOG = DIALOG;",
+        dialogUmgebung,
+        { filename: "dialog.js" }
+    );
+
+    const behaelter = neuesElement("div");
+    dialogUmgebung.DIALOG.aufbauen(behaelter);
+    dialogUmgebung.DIALOG.liste("Bist du dabei?", "Text",
+        [{ beschriftung: "Anna", wert: "id-anna" }], "Abbrechen");
+
+    if (behaelter.querySelector(".dialog-suche")) {
+        throw new Error("ein Suchfeld ohne Auftrag");
+    }
+    if (behaelter.querySelector(".dialog-liste-leer")) {
+        throw new Error("eine Leer-Meldung ohne Suchfeld");
+    }
+    if (behaelter.querySelectorAll(".dialog-listeneintrag").length !== 1) {
+        throw new Error("die Liste selbst hat sich veraendert");
+    }
+});
+
+/* ------------------------------------------------------------------ *
  * Eine offene Runde ist ein eigenes Fenster (v0.113)
  * ------------------------------------------------------------------ */
 

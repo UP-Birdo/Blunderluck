@@ -230,13 +230,21 @@ const DIALOG = {
      * fertiges Element zwischen Text und Liste — gebraucht für den gross
      * angezeigten Beitritts-Code im Fenster „Freunde einladen" (Punkt 8,
      * 27.08.2026). Wer nichts übergibt, bekommt genau den Dialog von vorher.
+     *
+     * `suche` ist ebenfalls wahlfrei (Punkt 41, 27.08.2026) und enthält die
+     * Beschriftung des Suchfeldes, z. B. „Freunde suchen …". Steht dort ein
+     * Text, erscheint über der Liste ein Feld, das die Einträge beim Tippen
+     * filtert: Der angezeigte Name muss den Text enthalten, Gross- und
+     * Kleinschreibung sind egal. Auch das ist additiv — wer nichts übergibt,
+     * bekommt die Liste von vorher, ohne Feld.
      */
-    liste(titel, text, eintraege, abbrechenText, zusatz) {
+    liste(titel, text, eintraege, abbrechenText, zusatz, suche) {
         return DIALOG._zeigen({
             titel: titel,
             text: text,
             zusatz: zusatz || null,
             liste: eintraege,
+            suche: suche || "",
             knoepfe: [
                 { beschriftung: abbrechenText || "Abbrechen", wert: null, stil: "knopf-still" }
             ]
@@ -280,6 +288,10 @@ const DIALOG = {
                 const liste = document.createElement("div");
                 liste.className = "dialog-liste";
 
+                /* Je Eintrag der fertige Knopf und der Text, nach dem gesucht
+                   wird — die Suche blendet dann nur noch aus und ein. */
+                const gebaute = [];
+
                 for (const eintrag of vorgabe.liste) {
                     const knopf = document.createElement("button");
                     knopf.type = "button";
@@ -292,6 +304,17 @@ const DIALOG = {
 
                     knopf.addEventListener("click", () => schliessen(eintrag.wert));
                     liste.appendChild(knopf);
+                    gebaute.push({
+                        knopf: knopf,
+                        text: String(eintrag.beschriftung || "").toLowerCase()
+                    });
+                }
+
+                /* Das Suchfeld steht ÜBER der Liste — man tippt oben und sieht
+                   darunter, was übrig bleibt. */
+                if (vorgabe.suche) {
+                    kasten.appendChild(
+                        DIALOG._suchfeldBauen(vorgabe.suche, gebaute, liste));
                 }
 
                 kasten.appendChild(liste);
@@ -547,6 +570,54 @@ const DIALOG = {
                 }
             }
         });
+    },
+
+    /*
+     * DAS SUCHFELD ÜBER EINER AUSWAHLLISTE (Punkt 41, 27.08.2026).
+     *
+     * Es baut die Liste NICHT neu, sondern blendet die Knöpfe aus, die nicht
+     * passen (`hidden`). Das ist der billigere und der ehrlichere Weg: Die
+     * Knöpfe behalten ihre Klick-Verdrahtung, und niemand muss sich merken,
+     * wie ein Eintrag entsteht. Passt nichts mehr, sagt es die Liste selbst,
+     * statt einfach leer dazustehen.
+     *
+     * Gesucht wird im ANGEZEIGTEN Namen (`beschriftung`), nicht in der
+     * Kennung: Der Nutzer tippt, was er sieht. Gross- und Kleinschreibung
+     * sind egal, Leerraum am Rand ebenfalls.
+     */
+    _suchfeldBauen(platzhalter, gebaute, liste) {
+        const feld = document.createElement("input");
+        feld.type = "text";
+
+        /* Dieselbe Optik wie jedes Dialog-Feld (`dialog-feld`); die eigene
+           Klasse rückt es nur näher an die Liste, zu der es gehört. */
+        feld.className = "dialog-feld dialog-suche";
+        feld.placeholder = platzhalter;
+        feld.autocomplete = "off";
+        feld.setAttribute("aria-label", platzhalter);
+
+        const leer = DIALOG._zeile("dialog-liste-leer",
+            "Niemand gefunden, der dazu passt.");
+        leer.hidden = true;
+        liste.appendChild(leer);
+
+        feld.addEventListener("input", () => {
+            const gesucht = feld.value.trim().toLowerCase();
+            let sichtbar = 0;
+
+            for (const eintrag of gebaute) {
+                const passt = (gesucht === "")
+                    || (eintrag.text.indexOf(gesucht) !== -1);
+                eintrag.knopf.hidden = !passt;
+                if (passt) {
+                    sichtbar += 1;
+                }
+            }
+
+            leer.hidden = (sichtbar > 0);
+        });
+
+        return feld;
     },
 
     /* Eine Textzeile innerhalb eines Listeneintrags. */

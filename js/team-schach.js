@@ -1290,6 +1290,30 @@ const TEAM_SCHACH = {
      * nicht vorbei ist — wer das nicht darf (Zuschauer, beendete Partie),
      * sieht trotzdem den Code samt Hinweis zum Weitergeben: Der Code gilt
      * unabhängig von der Freundesliste.
+     *
+     * SEIT PUNKT 41 (27.08.2026) KANN DAS FENSTER ZWEI DINGE MEHR:
+     *
+     * 1. Ein SUCHFELD über der Liste (`DIALOG.liste`, letzter Wert). Bei
+     *    wenigen Freunden stört es nicht, bei vielen ist es der einzige Weg,
+     *    einen bestimmten zu finden. Gesucht wird im Namen.
+     * 2. Die ZULETZT BESPIELTEN stehen OBEN, jeder mit dem Zusatz „Zuletzt
+     *    gespielt" — sie sind der wahrscheinlichste nächste Mitspieler.
+     *    Wer sie sind, rechnet das Modell aus der Chronik
+     *    (`SCHACH_TAFEL.letzteMitspieler`); dieser Bildschirm fragt nur ab.
+     *
+     * WARUM SIE KEINE EIGENE LISTE BEKOMMEN, sondern nach oben sortiert
+     * werden: Sonst stünde ein Freund, mit dem man gerade gespielt hat,
+     * ZWEIMAL im Fenster — einmal oben, einmal in der Freundesliste. Ein
+     * Name, zwei Knöpfe, und niemand weiss, ob sie dasselbe tun.
+     *
+     * WER NICHT BEFREUNDET IST, TAUCHT AUCH HIER NICHT AUF. Das ist keine
+     * Nachlässigkeit, sondern F17 („erst befreunden, dann einladen",
+     * `docs\entwurf-konto-und-startbildschirm.md`): Eine Einladung setzt eine
+     * Freundschaft voraus. Für alle anderen gibt es den Code, der gross im
+     * selben Fenster steht — genau dafür ist er die Antwort auf den kalten
+     * Start. Dieselbe Sperre gilt für alle Filter aus `_einladbareErmitteln`:
+     * Wer schon mitspielt, schon eingeladen ist oder in einer anderen
+     * laufenden Partie sitzt, ist auch als letzter Mitspieler nicht einladbar.
      */
     _einladenFensterOeffnen(partie, person) {
         const darfEinladen = !partie.ergebnis
@@ -1303,10 +1327,32 @@ const TEAM_SCHACH = {
                 (id) => TEAM_SCHACH._nameVon(id)).join(", ")
             : "Der Eingeladene findet die Runde unter „Runde beitreten“.";
 
-        const eintraege = listen.einladbare.map((freund) => ({
-            beschriftung: freund.name,
-            wert: freund.id
-        }));
+        /* Die Kennungen der letzten Mitspieler — ohne den Computer, der kein
+           Konto hat und niemanden einlädt. */
+        const zuletzt = darfEinladen
+            ? SCHACH_TAFEL.letzteMitspieler(
+                TEAM_SCHACH.abgleich ? TEAM_SCHACH.abgleich.daten : null,
+                person.id, [SCHACH_BOT.KENNUNG])
+            : [];
+
+        /* Zuerst die zuletzt Bespielten in der Reihenfolge der Chronik
+           (neueste Partie vorn), dann die übrigen Freunde. */
+        const oben = listen.einladbare
+            .filter((freund) => zuletzt.indexOf(freund.id) !== -1)
+            .sort((a, b) => zuletzt.indexOf(a.id) - zuletzt.indexOf(b.id));
+        const unten = listen.einladbare
+            .filter((freund) => zuletzt.indexOf(freund.id) === -1);
+
+        const eintraege = oben
+            .map((freund) => ({
+                beschriftung: freund.name,
+                hinweis: "Zuletzt gespielt",
+                wert: freund.id
+            }))
+            .concat(unten.map((freund) => ({
+                beschriftung: freund.name,
+                wert: freund.id
+            })));
 
         /* Der Code gross im Fenster — dieselbe Schrift wie auf den
            Start-Bildschirmen (`einladung-code`), mittig gestellt
@@ -1315,7 +1361,11 @@ const TEAM_SCHACH = {
             "einladung-code dialog-code",
             SCHACH_RUNDE.beitrittsCode(partie.id));
 
-        DIALOG.liste("Freunde einladen", text, eintraege, "Schliessen", zusatz)
+        /* Ohne Liste kein Suchfeld — es hätte nichts zu filtern. */
+        const suche = (eintraege.length > 0) ? "Freunde suchen …" : "";
+
+        DIALOG.liste("Freunde einladen", text, eintraege, "Schliessen",
+            zusatz, suche)
             .then((id) => {
                 if (id) {
                     TEAM_SCHACH.einladen(partie, id);

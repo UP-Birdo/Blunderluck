@@ -547,5 +547,112 @@ pruefe("istEingeladen erlischt mit Beitritt und Partie-Ende", () => {
         "eine beendete Runde laedt niemanden mehr ein");
 });
 
+/* ------------------------------------------------------------------ *
+ * Die zuletzt bespielten Mitspieler (Punkt 41, v0.104.0)
+ *
+ * Gerechnet wird aus der CHRONIK — kein neues Datenfeld. Geprueft wird
+ * genau das, was das Fenster hinter dem Code-Knopf braucht: die richtigen
+ * Personen, in der richtigen Reihenfolge, ohne mich selbst, ohne den
+ * Computer, ohne Doppelte.
+ * ------------------------------------------------------------------ */
+
+/*
+ * Spielt EINE Partie bis zum Ergebnis durch und setzt sie in die Tafel.
+ * `beendetAm` wird zum uebergebenen Zeitpunkt — daran haengt die
+ * Reihenfolge.
+ */
+function beendetePartie(tafel, weiss, schwarz, zeitpunkt) {
+    const angelegt = SCHACH_TAFEL.partieAnlegen(tafel, "standard", "Runde", zeitpunkt);
+    let partie = angelegt.partie;
+
+    for (const id of weiss) {
+        partie = SCHACH_RUNDE.teamBeitreten(partie, id, "weiss", zeitpunkt);
+    }
+    for (const id of schwarz) {
+        partie = SCHACH_RUNDE.teamBeitreten(partie, id, "schwarz", zeitpunkt);
+    }
+
+    partie = bereitUndAufgestellt(partie, "weiss", zeitpunkt);
+    partie = bereitUndAufgestellt(partie, "schwarz", zeitpunkt);
+    partie = SCHACH_RUNDE.aufgeben(partie, "schwarz", zeitpunkt);
+
+    return SCHACH_TAFEL.partieEinsetzen(angelegt.tafel, partie, zeitpunkt);
+}
+
+pruefe("letzteMitspieler: die drei Richtigen, neueste zuerst, ohne mich und ohne Bot", () => {
+    let tafel = SCHACH_TAFEL.leereTafel(1000);
+
+    /* Absichtlich NICHT in zeitlicher Reihenfolge eingesetzt — sortiert wird
+       nach `beendetAm`, nicht nach der Reihenfolge des Speicherns. */
+    tafel = beendetePartie(tafel, ["id-anna"], ["id-emil"], 4000);
+    tafel = beendetePartie(tafel, ["id-anna", "id-cem"], ["id-bert"], 7000);
+    tafel = beendetePartie(tafel, ["id-anna"], ["bot"], 6000);
+    tafel = beendetePartie(tafel, ["id-anna"], ["id-dora", "id-bert"], 5000);
+    tafel = beendetePartie(tafel, ["id-bert"], ["id-cem"], 8000);
+
+    const gefunden = SCHACH_TAFEL.letzteMitspieler(tafel, "id-anna", ["bot"]);
+
+    /*
+     * 7000: Gegenseite Bert, dann das eigene Team Cem.
+     * 6000: nur der Computer — faellt weg.
+     * 5000: Dora neu, Bert schon da.
+     * 4000: Emil wird nicht mehr erreicht, drei sind voll.
+     * 8000: ohne Anna — zaehlt gar nicht.
+     */
+    gleich(gefunden.join(","), "id-bert,id-cem,id-dora",
+        "die drei letzten Mitspieler in der Reihenfolge der Chronik");
+
+    gleich(SCHACH_TAFEL.ZULETZT_ANZAHL, 3, "die Zahl steht im Modell");
+    gleich(gefunden.length, SCHACH_TAFEL.ZULETZT_ANZAHL, "hoechstens drei");
+    wahr(gefunden.indexOf("id-anna") === -1, "ich selbst bin kein Mitspieler");
+    wahr(gefunden.indexOf("bot") === -1, "der Computer ist kein Mitspieler");
+    wahr(gefunden.indexOf("id-emil") === -1,
+        "die vierte Person passt nicht mehr hinein");
+
+    /* Mit hoeherer Grenze kommt Emil dazu — und zwar hinten. */
+    gleich(SCHACH_TAFEL.letzteMitspieler(tafel, "id-anna", ["bot"], 9).join(","),
+        "id-bert,id-cem,id-dora,id-emil",
+        "eine hoehere Grenze holt die aelteren nach");
+
+    /* Ohne Ausschlussliste ist der Computer eine Kennung wie jede andere —
+       die Tafel kennt ihn nicht, das entscheidet der Aufrufer. */
+    wahr(SCHACH_TAFEL.letzteMitspieler(tafel, "id-anna", [], 9).indexOf("bot") !== -1,
+        "ohne Ausschluss zaehlt jede Kennung mit");
+
+    gleich(SCHACH_TAFEL.letzteMitspieler(tafel, "", ["bot"]).length, 0,
+        "ohne Kennung keine Mitspieler");
+    gleich(SCHACH_TAFEL.letzteMitspieler(tafel, "id-niemand", ["bot"]).length, 0,
+        "wer nie gespielt hat, hat keine Mitspieler");
+    gleich(SCHACH_TAFEL.letzteMitspieler(
+        SCHACH_TAFEL.leereTafel(1000), "id-anna", ["bot"]).length, 0,
+        "eine leere Tafel liefert eine leere Liste");
+});
+
+pruefe("letzteMitspieler ueberlebt das Loeschen der Partie und alte Chronik-Eintraege", () => {
+    let tafel = beendetePartie(SCHACH_TAFEL.leereTafel(1000),
+        ["id-anna"], ["id-bert"], 5000);
+
+    /* Die Partie selbst faellt weg, der Chronik-Eintrag bleibt. */
+    const ids = Object.keys(SCHACH_TAFEL.normalisieren(tafel).partien);
+    tafel = SCHACH_TAFEL.partieEntfernen(tafel, ids[0], 5100);
+    gleich(SCHACH_TAFEL.letzteMitspieler(tafel, "id-anna", ["bot"]).join(","),
+        "id-bert", "die Chronik traegt die Antwort, nicht die Partie");
+
+    /*
+     * Ein Eintrag aus der Zeit vor v3.3 hat kein `beendetAm` — dann steht
+     * dort 0. Er darf die Rechnung nicht zum Absturz bringen und landet
+     * hinten, weil er der aelteste ist.
+     */
+    const roh = JSON.parse(JSON.stringify(SCHACH_TAFEL.normalisieren(tafel)));
+    roh.chronik.push({
+        id: "p-alt",
+        ergebnis: "weiss",
+        teams: { weiss: ["id-anna"], schwarz: ["id-dora"] }
+    });
+
+    gleich(SCHACH_TAFEL.letzteMitspieler(roh, "id-anna", ["bot"]).join(","),
+        "id-bert,id-dora", "ein Eintrag ohne Zeitpunkt zaehlt als der aelteste");
+});
+
 console.log(anzahlOk + " ok, " + anzahlFehler + " Fehler");
 process.exit(anzahlFehler === 0 ? 0 : 1);

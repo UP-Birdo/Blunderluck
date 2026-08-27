@@ -170,6 +170,7 @@ Die Sammlung aller Partien — und vor allem der Umstieg.
 | Einsetzen | ändert nur die eine Partie — der Schutz gegen das Überschreiben fremder Partien |
 | Reihenfolge | laufende oben, noch nicht gestartete danach, beendete unten |
 | Vergleich | erkennt neue, geänderte und gelöschte Partien |
+| Zuletzt gespielt | `letzteMitspieler` liest die Chronik: die richtigen Personen, neueste Partie zuerst, ohne mich selbst, ohne die ausgeschlossenen Kennungen (der Computer), ohne Doppelte, höchstens `ZULETZT_ANZAHL`; überlebt das Löschen der Partie und Einträge ohne Zeitpunkt |
 
 ## Was wird geprüft (`test-rangliste.js`)
 
@@ -204,6 +205,8 @@ Prüfung VOR dem Zählen läuft).
 | Zugbewegung | läuft nach einem Zug — und beim nächsten Zeichnen **nicht** erneut |
 | Sonderfälle | eingesammelte Fähigkeit, beendete Partie, gelöschte offene Partie, nicht angemeldet |
 | Rangliste | zeichnet mit Mitspielern, ohne Mitspieler und bevor Daten da sind |
+| Einladen-Fenster | die zuletzt Bespielten stehen oben und tragen ihren Zusatz, ein Nicht-Freund taucht nicht auf (F17), schon Eingeladene fallen weg, der Code steht weiter im Fenster, ein Suchfeld wird angefordert |
+| Suche im Dialog | gegen das ECHTE `dialog.js` in eigenem Kontext: Tippen blendet aus, was nicht passt (Gross-/Kleinschreibung egal), ohne Treffer sagt es die Liste, das leere Feld bringt alle zurück — und ohne Suchtext bleibt der Dialog genau der von vorher |
 
 **Was sie nicht können:** Sie sagen nichts über das Aussehen — keine Stildatei,
 keine echten Größen, keine Farben. Sie beantworten nur die Frage, ob der Code

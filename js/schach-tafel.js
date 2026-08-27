@@ -242,6 +242,74 @@ const SCHACH_TAFEL = {
             && !!SCHACH_RUNDE.teamVon(partie, spielerId));
     },
 
+    /* Wie viele Mitspieler „zuletzt gespielt" umfasst (Punkt 41). Die Zahl
+       steht NUR hier; der Bildschirm fragt bloss ab. */
+    ZULETZT_ANZAHL: 3,
+
+    /*
+     * DIE ZULETZT BESPIELTEN MITSPIELER (Punkt 41, 27.08.2026).
+     *
+     * „Mit wem habe ich zuletzt gespielt?" beantwortet die CHRONIK — es
+     * brauchte dafür KEIN neues Datenfeld. Zu jeder beendeten Partie liegt
+     * dort seit v2.4 ein Eintrag, der die Teams BEIDER Seiten als Kennungen
+     * und den Zeitpunkt festhält (`_chronikEintrag`); mehr ist nicht nötig.
+     * Weil ein Chronik-Eintrag nie wieder angefasst wird, überlebt die
+     * Antwort auch das Löschen der Partie selbst.
+     *
+     * GEZÄHLT WERDEN BEIDE SEITEN: der Gegner ebenso wie die eigenen
+     * Mitstreiter — im Team-Modus hat man mit beiden gespielt. Innerhalb
+     * EINER Partie steht die Gegenseite vorn: An sie erinnert man sich, und
+     * bei der üblichen Partie zu zweit ist sie ohnehin die einzige.
+     *
+     * WER NICHT ALS MITSPIELER ZÄHLT, SAGT DER AUFRUFER (`ohne`, eine Liste
+     * von Kennungen). Der Computer-Gegner ist kein Mitspieler, aber die Tafel
+     * liegt UNTER ihm und darf ihn nicht kennen — `SCHACH_BOT.KENNUNG` reicht
+     * deshalb `team-schach.js` herein. Sich selbst streicht die Tafel von
+     * sich aus.
+     *
+     * Neueste Partie zuerst, ohne Doppelte, höchstens `anzahl` Personen
+     * (ohne Angabe: `ZULETZT_ANZAHL`). Zurück kommen KENNUNGEN, keine Namen —
+     * die Namen wohnen in der Spielerverwaltung, nicht hier.
+     */
+    letzteMitspieler(tafel, spielerId, ohne, anzahl) {
+        const grenze = (typeof anzahl === "number" && anzahl > 0)
+            ? anzahl : SCHACH_TAFEL.ZULETZT_ANZAHL;
+        const gestrichen = Array.isArray(ohne) ? ohne : [];
+
+        if (!spielerId) {
+            return [];
+        }
+
+        const meine = SCHACH_TAFEL.normalisieren(tafel).chronik
+            .filter((eintrag) =>
+                eintrag.teams.weiss.indexOf(spielerId) !== -1
+                || eintrag.teams.schwarz.indexOf(spielerId) !== -1)
+            .sort((a, b) => b.beendetAm - a.beendetAm);
+
+        const gefunden = [];
+
+        for (const eintrag of meine) {
+            const eigene = (eintrag.teams.weiss.indexOf(spielerId) !== -1)
+                ? "weiss" : "schwarz";
+            const gegen = (eigene === "weiss") ? "schwarz" : "weiss";
+
+            for (const id of eintrag.teams[gegen].concat(eintrag.teams[eigene])) {
+                if (id === spielerId || gestrichen.indexOf(id) !== -1) {
+                    continue;
+                }
+                if (gefunden.indexOf(id) === -1) {
+                    gefunden.push(id);
+                }
+            }
+
+            if (gefunden.length >= grenze) {
+                break;
+            }
+        }
+
+        return gefunden.slice(0, grenze);
+    },
+
     /*
      * Sucht die Partie zu einem Beitritts-Code (seit v0.10.0, Bündel A
      * Schritt 5). Die Eingabe wird grosszügig gelesen: Gross-/

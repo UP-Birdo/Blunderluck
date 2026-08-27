@@ -964,6 +964,39 @@ body.dialog-offen {
 }
 
 /*
+ * DAS SUCHFELD ÜBER DER LISTE (Punkt 41, 27.08.2026).
+ *
+ * Es trägt zusätzlich `dialog-feld` und sieht deshalb aus wie jedes andere
+ * Eingabefeld der Dialoge — hier steht nur, was anders ist: weniger Abstand
+ * nach unten, denn Feld und Liste gehören zusammen. Die Regel muss NACH
+ * `.dialog-feld` stehen (weiter oben in dieser Datei), sonst gewinnt deren
+ * `margin-bottom`.
+ */
+.dialog-suche {
+    margin-bottom: 8px;
+}
+
+/* Kein Treffer: Die Liste bleibt stehen und sagt es, statt leer dazustehen. */
+.dialog-liste-leer {
+    display: block;
+    padding: 8px 2px;
+    font-size: 0.9rem;
+    color: var(--schrift-leise);
+}
+
+/*
+ * AUSGEBLENDET HEISST WEG — auch bei `display: flex` und `display: block`.
+ * Die Voreinstellung des Browsers für `[hidden]` ist `display: none`, und die
+ * verliert gegen jede eigene `display`-Angabe. Ohne diese zwei Zeilen filterte
+ * die Suche unsichtbar: `dialog.js` setzte `hidden`, und die Einträge stünden
+ * trotzdem da.
+ */
+.dialog-listeneintrag[hidden],
+.dialog-liste-leer[hidden] {
+    display: none;
+}
+
+/*
  * DIE KNOPFLEISTE KLEBT UNTEN FEST (seit v0.67, Wunsch #27).
  *
  * Egal wie hoch der Inhalt ist — „Verstanden", „Abbrechen" und „Einsetzen"

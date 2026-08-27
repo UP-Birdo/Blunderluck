@@ -3,6 +3,22 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.104.0 — 27.08.2026
+
+**Hinter dem Code-Knopf: Freunde suchen und die letzten drei Mitspieler.**
+
+- Das Fenster, das sich beim Tippen auf den Beitritts-Code öffnet, hat
+  jetzt ein **Suchfeld** — tippst du einen Namen an, bleibt nur übrig, wer
+  dazu passt. Bei leerer Suche ist alles wie vorher.
+- **Ganz oben stehen die letzten drei Personen, mit denen du gespielt
+  hast**, gekennzeichnet mit „Zuletzt gespielt" — jeweils mit
+  Einladen-Knopf. Sie werden aus deinen beendeten Partien errechnet, es
+  wird nichts zusätzlich gespeichert.
+- Wer schon mitspielt oder schon eingeladen ist, taucht wie bisher nicht
+  auf. Auch weiter gilt: Einladen setzt eine Freundschaft voraus — wer
+  noch kein Freund ist, kommt über den Code herein, der gross im selben
+  Fenster steht.
+
 ## v0.103.0 — 27.08.2026
 
 **Oben rechts steht jetzt ein Menüband statt drei Icons.**
