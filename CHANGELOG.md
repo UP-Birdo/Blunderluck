@@ -3,6 +3,17 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.85.0 — 27.08.2026
+
+**Die Item-Karten stehen wieder vollständig da.**
+
+- Seit v0.81.0 verschwand das untere Viertel der eigenen und der
+  gegnerischen Kartenreihe absichtlich im Bildschirmrand. **Auf Ansage
+  zurückgenommen** — die Karten sind wieder ganz zu sehen.
+- **Platz kostet das nichts:** Die Verschiebung war reine Darstellung, die
+  Zeile war schon vorher so hoch wie Namens-Kasten und Pfeil-Streifen
+  zusammen. Das Brett bleibt also genauso gross wie bisher.
+
 ## v0.84.0 — 27.08.2026
 
 **Den Wirkungs-Bereich kannst du jetzt frei über das Brett ziehen.**

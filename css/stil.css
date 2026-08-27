@@ -4906,9 +4906,10 @@ body.design-3d .werte-figur {
 .seiten-reihe-unten {
     grid-template-columns: auto minmax(0, 1fr);
 
-    /* Das untere Viertel der Karten wird vom Rand VERSCHLUCKT
-       (Nutzer-Ansage v0.81.0) — die Zeile schneidet ab, was ihre
-       verschobene Kartenreihe unten ueberragt. */
+    /* Bleibt als Schutz gegen Überstand: Was eine Zeile höher wird als ihre
+       beiden Rasterzeilen, schneidet hier ab, statt das Brett zu schieben.
+       Bis v0.84.0 hing daran das absichtliche Verschlucken des unteren
+       Kartenviertels — siehe darunter. */
     overflow: hidden;
 }
 
@@ -4916,15 +4917,19 @@ body.design-3d .werte-figur {
 .seiten-reihe-unten .spieler-zeile { grid-column: 1; grid-row: 2; }
 .seiten-reihe-unten .faehigkeit-zeile { grid-column: 2; grid-row: 1 / 3; }
 
-/* Um ein Viertel der eigenen Hoehe nach unten geschoben: Sichtbar bleiben
-   drei Viertel, der Rest verschwindet im Bildschirmrand (Nutzer-Ansage
-   v0.81.0). `transform` statt Rand, damit das Raster nicht mitwaechst —
-   und NUR die echte Kartenreihe: „noch keine" und die Warte-Zeile der
-   Fähigkeiten bleiben ungeschoben lesbar. */
-.seiten-reihe-unten .faehigkeit-reihe-meine,
-.seiten-reihe-unten .faehigkeit-reihe-gegner {
-    transform: translateY(25%);
-}
+/*
+ * HIER STAND VON v0.81.0 BIS v0.84.0 EIN `transform: translateY(25%)` auf
+ * der eigenen und der gegnerischen Kartenreihe — „sichtbar bleiben drei
+ * Viertel, der Rest verschwindet im Bildschirmrand".
+ *
+ * ZURÜCKGENOMMEN AUF NUTZER-ANSAGE (27.08.2026: „nimm das 3/4-1/4-Ding aus
+ * dem Inventar heraus"), nachdem er es zum ersten Mal am Gerät gesehen hat.
+ * Die Karten stehen jetzt wieder vollständig da.
+ *
+ * ES KOSTET KEINEN PLATZ, sie ganz zu zeigen: `transform` verschiebt nur
+ * die Darstellung, nie das Layout — die Zeile war schon vorher so hoch wie
+ * Kasten plus Streifen zusammen. Weg ist damit nur das Abschneiden.
+ */
 
 /* Die ungeschobenen Sonderzeilen stehen mittig in ihrer hohen Zelle. */
 .seiten-reihe .faehigkeit-reihe-leer,
