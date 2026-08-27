@@ -438,9 +438,10 @@ body.dialog-offen {
     margin: 0 auto;
 }
 
-/* Oben rechts stehen seit v0.19.0 (Wunsch 6) ZWEI Zeichen nebeneinander:
-   Freunde und Zahnrad. Ein kleiner Abstand hält sie auseinander, ohne dass
-   sie als getrennte Knöpfe auseinanderfallen. */
+/* Oben rechts stand bis v0.102.0 eine Reihe einzelner Zeichen (Verlauf,
+   Freunde, Zahnrad). Seit v0.103.0 ist es EIN Knopf — das Menüband. Der
+   Abstand bleibt trotzdem stehen: Er kostet nichts und hält die Zeile
+   zusammen, falls je ein zweites Zeichen dazukommt. */
 .start-kopf {
     display: flex;
     justify-content: flex-end;
@@ -465,6 +466,95 @@ body.dialog-offen {
     display: block;
     width: 28px;
     height: 28px;
+}
+
+/* ------------------------------------------------------------------ *
+ * DAS MENÜBAND OBEN RECHTS (seit v0.103.0)
+ *
+ * Der Balken-Knopf und das Feld darunter (gebaut in
+ * `START._menuebandBauen`). Die Machart ist der vom Nutzer genannten
+ * Vorlage `ui.watermelon.sh` abgeschaut — NICHT eingebunden (React,
+ * Tailwind, Radix wären ein Technologie-Wechsel): abgerundetes Feld mit
+ * weichem Schatten, ruhige Trennung der Einträge, klarer Hover-Zustand,
+ * kurzes Einblenden. Farben, Rundungen und Schrift kommen aus den
+ * vorhandenen Variablen — keine neue Farbwelt.
+ *
+ * Der Halter ist der Bezugspunkt: Das Feld hängt absolut darunter, damit
+ * es die Vorschau darunter nicht wegschiebt.
+ * ------------------------------------------------------------------ */
+
+.start-menue-halter {
+    position: relative;
+}
+
+.start-menue {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    z-index: 20;
+
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    min-width: 210px;
+    padding: 6px;
+
+    background: var(--karte);
+    border: 1px solid var(--rahmen);
+    border-radius: 14px;
+
+    /* Zwei Schatten: der weite trägt das Feld, der enge zeichnet die Kante
+       nach — auf dunklem Grund wäre ein einzelner weicher Schatten nicht
+       zu sehen. */
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18),
+        0 2px 6px rgba(0, 0, 0, 0.10);
+}
+
+.start-menue-eintrag {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    width: 100%;
+    padding: 9px 12px;
+
+    font: inherit;
+    font-size: 0.95rem;
+    text-align: left;
+    color: var(--schrift);
+
+    background: none;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+/* Das Zeichen bleibt leise, bis der Eintrag angefasst wird — so führt die
+   Schrift, nicht die Bilderreihe. */
+.start-menue-eintrag .start-zeichen {
+    flex: 0 0 auto;
+    width: 20px;
+    height: 20px;
+    color: var(--schrift-leise);
+}
+
+.start-menue-eintrag:hover,
+.start-menue-eintrag:focus-visible {
+    background: var(--karte-leise);
+}
+
+.start-menue-eintrag:hover .start-zeichen,
+.start-menue-eintrag:focus-visible .start-zeichen {
+    color: var(--schrift);
+}
+
+.start-menue-eintrag:active {
+    background: var(--rahmen);
+}
+
+.start-menue-text {
+    min-width: 0;
 }
 
 /*
@@ -1406,5 +1496,28 @@ body.dialog-offen {
      */
     details.stufen-eintrag[open] > :not(summary) {
         animation: bereich-auf 0.16s ease-out;
+    }
+
+    /*
+     * Das Menüband klappt auf (seit v0.103.0): Es blendet ein und kommt
+     * dabei ein Stück von oben — kurz genug, dass niemand darauf wartet.
+     * Der Ursprung liegt oben rechts, weil es von dort ausgeht.
+     *
+     * Wie alles Bewegte steht es im no-preference-Block: Wer weniger
+     * Bewegung eingestellt hat, sieht das Feld einfach sofort. Ein
+     * Aus-Blenden gibt es nicht — beim Zuklappen wird das Feld gar nicht
+     * mehr gezeichnet (`START._zeichnen`), und eine Animation an einem
+     * Element, das es nicht mehr gibt, liefe nie.
+     */
+    .start-menue {
+        transform-origin: top right;
+        animation: start-menue-auf 0.16s ease-out;
+    }
+
+    @keyframes start-menue-auf {
+        from {
+            opacity: 0;
+            transform: translateY(-6px) scale(0.97);
+        }
     }
 }

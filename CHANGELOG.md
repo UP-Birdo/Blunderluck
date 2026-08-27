@@ -3,6 +3,22 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.103.0 — 27.08.2026
+
+**Oben rechts steht jetzt ein Menüband statt drei Icons.**
+
+- Statt Uhr, Freunde-Zeichen und Zahnrad nebeneinander gibt es einen Knopf
+  mit drei Balken. Dahinter liegen fünf Punkte, jeder mit Zeichen und
+  Beschriftung: **Profil**, **Einstellungen**, **Freunde**, **Verlauf**
+  und **Schach lernen**.
+- **Profil ist ein eigener Punkt geworden** — bisher war es nur über die
+  Einstellungen erreichbar. Dort bleibt es zusätzlich stehen.
+- **„Schach lernen" ist umgezogen:** Es stand beim Beitreten einer Runde
+  und wohnt jetzt im Menüband, wo man es sucht. Der Lern-Bildschirm
+  selbst ist unverändert.
+- Das Menü schliesst sich, sobald du woanders hintippst — wie das
+  Spieler-Menü im Match seit v0.96.0.
+
 ## v0.102.0 — 27.08.2026
 
 **Das Einstellungs-Symbol ist jetzt ein Zahnrad — vorher war es eine

@@ -50,8 +50,9 @@ teilen sich beide denselben Gerätespeicher):
    darf sich die Bewegung nicht wiederholen.
 9. **Jede Spielart einmal öffnen:** Jedes Brett muss vollständig sichtbar
    sein, ohne dass die Seite seitlich scrollt.
-10. **Fähigkeiten** einsammeln und einsetzen; **„Schach lernen"** öffnen
-    (vier Abschnitte, 8-mal-8-Brett, keine Lootbox).
+10. **Fähigkeiten** einsammeln und einsetzen; **„Schach lernen"** öffnen —
+    seit v0.103.0 über das **Menüband oben rechts auf dem Start**, nicht mehr
+    bei „Runde beitreten" (vier Abschnitte, 8-mal-8-Brett, keine Lootbox).
 11. **Löschen** einer Partie fragt nach und entfernt sie in beiden Fenstern.
 12. **Tab Rangliste:** alle Mitspieler mit Gesamtpunkten; hinter dem **i**
     steht die Rechnung. Nach einer beendeten Partie hat der Sieger dort mehr

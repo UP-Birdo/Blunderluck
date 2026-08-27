@@ -1162,10 +1162,16 @@ Object.assign(TEAM_SCHACH, {
         kopf.appendChild(TEAM_SCHACH._element("span", "phasen-text", "Spielen"));
 
         /*
-         * DER WEG ZU DEN SCHACHREGELN (seit v0.96): Wer Schach nicht kann,
-         * soll nachlesen können, BEVOR er einem Team beitritt.
+         * HIER STAND „SCHACH LERNEN" (v0.96 bis v0.102.0) — der Weg zu den
+         * Schachregeln, damit man nachlesen kann, BEVOR man einem Team
+         * beitritt. Nutzer-Ansage 27.08.2026: „Schach lernen soll wo ander
+         * hin aber nicht bei runde beitreten" (ROADMAP Punkt 36).
+         *
+         * Seit v0.103.0 hängt der Einstieg im Menüband des Startbildschirms
+         * (`START._menuePunkte`) — also eine Stufe FRÜHER als hier und ohne
+         * den Umweg über „Runde beitreten". Der Bildschirm selbst ist
+         * unverändert (`js\team-schach-grundlagen.js`).
          */
-        kopf.appendChild(TEAM_SCHACH._grundlagenKnopfBauen());
         wurzel.appendChild(kopf);
 
         /* ---- Runde beitreten: Einladungen und Code-Feld (F14/F17). ---- */

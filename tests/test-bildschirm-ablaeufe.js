@@ -1678,25 +1678,83 @@ function einsammelnIn(element, passt, treffer) {
  * Der Startbildschirm und der Faehigkeiten-Tab (v0.9.0, Schritt 4)
  * ------------------------------------------------------------------ */
 
-pruefe("Der Startbildschirm zeigt Vorschau, Spielen und Zahnrad (v0.9.0)", () => {
+/*
+ * Die drei kleinen Sucher der Menueband-Tests. Sie stehen hier oben, weil
+ * gleich vier Pruefungen sie brauchen — jede hatte sonst ihre eigene Kopie.
+ */
+function startEinsammeln(element, passt, treffer) {
+    for (const kind of element.kinder || []) {
+        if (passt(kind)) {
+            treffer.push(kind);
+        }
+        startEinsammeln(kind, passt, treffer);
+    }
+    return treffer;
+}
+
+/* Der Kopf oben rechts — der Kasten, in dem bis v0.102.0 die Icon-Reihe
+   stand und seit v0.103.0 nur noch das Menueband. */
+function startKopf(START) {
+    const kopf = startEinsammeln(START.wurzelEl, (kind) =>
+        String(kind.className || "").split(" ").indexOf("start-kopf") !== -1,
+        [])[0];
+    if (!kopf) {
+        throw new Error("kein Kopf oben rechts auf dem Start");
+    }
+    return kopf;
+}
+
+/* Alle Menuepunkte in ihrer Reihenfolge. */
+function startMenueEintraege(START) {
+    return startEinsammeln(START.wurzelEl, (kind) =>
+        kind.tagName === "button"
+        && String(kind.className || "").split(" ")
+            .indexOf("start-menue-eintrag") !== -1, []);
+}
+
+/*
+ * Die Beschriftung eines Menuepunktes. Sie steht NICHT am Knopf, sondern in
+ * seinem Text-Feld (`.start-menue-text`) — links davon haengt das Zeichen.
+ * Im nachgebauten DOM erbt `textContent` nicht nach oben, deshalb wird hier
+ * ausdruecklich das Feld gesucht.
+ */
+function startMenueText(eintrag) {
+    const feld = startEinsammeln(eintrag, (kind) =>
+        String(kind.className || "").split(" ")
+            .indexOf("start-menue-text") !== -1, [])[0];
+    return feld ? String(feld.textContent || "") : "";
+}
+
+/* Ein Menuepunkt mit dieser Beschriftung, oder null. */
+function startMenuePunkt(START, name) {
+    return startMenueEintraege(START).find((eintrag) =>
+        startMenueText(eintrag) === name) || null;
+}
+
+pruefe("Der Startbildschirm zeigt Vorschau, Spielen und das Menueband (v0.103.0)", () => {
+    /*
+     * BIS v0.102.0 HIESS DIESE PRUEFUNG „… und Zahnrad (v0.9.0)" und suchte
+     * oben rechts drei Zeichen-Knoepfe: Verlauf, Freunde, Zahnrad.
+     *
+     * NUTZER-ANSAGE 27.08.2026: „packe auf dem haupt screen oben rechts
+     * statt den ganzen icons ein menue band hin was von aussen 3 balken
+     * sind". Seitdem steht dort GENAU EIN Knopf — das pruefen wir jetzt
+     * ausdruecklich, denn „statt den ganzen icons" heisst: Es darf kein
+     * einzelnes Zeichen daneben stehenbleiben.
+     *
+     * Was diese Pruefung sonst prueft (Spielen als Hauptaktion, das
+     * Pfeil-Quadrat, das Vorschaubrett), ist unveraendert.
+     */
     const START = umgebung.START;
     if (!START || START.id !== "start") {
         throw new Error("der Start-Baustein fehlt");
     }
 
+    START.menueOffen = false;
+    START._menueHorcherAktiv = false;
     START.aufbauen(neuesElement("div"));
 
-    const einsammeln = (element, passt, treffer) => {
-        for (const kind of element.kinder || []) {
-            if (passt(kind)) {
-                treffer.push(kind);
-            }
-            einsammeln(kind, passt, treffer);
-        }
-        return treffer;
-    };
-
-    const knoepfe = einsammeln(START.wurzelEl,
+    const knoepfe = startEinsammeln(START.wurzelEl,
         (kind) => kind.tagName === "button", []);
 
     const spielen = knoepfe.find(
@@ -1712,13 +1770,22 @@ pruefe("Der Startbildschirm zeigt Vorschau, Spielen und Zahnrad (v0.9.0)", () =>
             && knopf.attribute["aria-label"] === "Grundeinstellungen")) {
         throw new Error("kein Quadrat fuer die Grundeinstellungen");
     }
-    if (!knoepfe.some((knopf) => knopf.attribute
-            && knopf.attribute["aria-label"] === "Einstellungen")) {
-        throw new Error("kein Zahnrad fuer die Einstellungen");
+
+    /* (a) OBEN RECHTS STEHT GENAU EIN KNOPF. */
+    const kopfKnoepfe = startEinsammeln(startKopf(START),
+        (kind) => kind.tagName === "button", []);
+    if (kopfKnoepfe.length !== 1) {
+        throw new Error("oben rechts stehen " + kopfKnoepfe.length
+            + " Knoepfe statt einem: "
+            + kopfKnoepfe.map((knopf) =>
+                String((knopf.attribute || {})["aria-label"] || "?")).join(", "));
+    }
+    if (String((kopfKnoepfe[0].attribute || {})["aria-label"]) !== "Menü") {
+        throw new Error("der eine Knopf oben rechts ist nicht das Menueband");
     }
 
     /* Das Vorschaubrett ist da und hat Felder. */
-    const vorschau = einsammeln(START.wurzelEl, (kind) =>
+    const vorschau = startEinsammeln(START.wurzelEl, (kind) =>
         String(kind.className || "").split(" ").indexOf("vorschau") !== -1, [])[0];
     if (!vorschau) {
         throw new Error("kein Vorschaubrett auf dem Start");
@@ -1727,14 +1794,185 @@ pruefe("Der Startbildschirm zeigt Vorschau, Spielen und Zahnrad (v0.9.0)", () =>
         throw new Error("das Vorschaubrett hat keine Felder");
     }
 
-    /* Das Zahnrad fuehrt in die Einstellungen. */
-    const zahnrad = knoepfe.find((knopf) => knopf.attribute
-        && knopf.attribute["aria-label"] === "Einstellungen");
-    zahnrad.ausloesen("click");
+    /* Das Zahnrad ist nicht weg, es liegt eine Stufe tiefer: erst das
+       Menueband antippen, dann fuehrt „Einstellungen" wie bisher. */
+    if (startMenuePunkt(START, "Einstellungen")) {
+        throw new Error("das Menue steht schon offen da");
+    }
+    kopfKnoepfe[0].ausloesen("click");
+
+    const einstellungen = startMenuePunkt(START, "Einstellungen");
+    if (!einstellungen) {
+        throw new Error("hinter dem Menueband fehlen die Einstellungen");
+    }
+    einstellungen.ausloesen("click");
     if (umgebung.TABS.gewechseltZu !== "einstellungen") {
-        throw new Error("das Zahnrad wechselt nicht zu den Einstellungen");
+        throw new Error("der Menuepunkt wechselt nicht zu den Einstellungen");
+    }
+    if (START.menueOffen) {
+        throw new Error("die Wahl eines Punktes klappt das Menue nicht zu");
     }
     umgebung.TABS.gewechseltZu = "";
+});
+
+pruefe("Hinter dem Menueband liegen die fuenf Punkte (v0.103.0)", () => {
+    /*
+     * DER GEMELDETE WUNSCH: „dahinter verstecken sich alle weiteren punkte
+     * wie Profil als eigner punkt unter den 3 balken und halt einstellungen
+     * freunde und verlauf" — dazu ROADMAP-Punkt 36: „Schach lernen soll wo
+     * ander hin aber nicht bei runde beitreten".
+     *
+     * Geprueft wird die REIHENFOLGE (sie ist die Nutzer-Ansage) und dass
+     * jeder Punkt sein Zeichen mitbringt. Zwei der fuenf werden ausserdem
+     * wirklich gedrueckt: „Einstellungen" oben in der Pruefung davor,
+     * „Schach lernen" hier — der Punkt, der neu dazugekommen ist.
+     */
+    const START = umgebung.START;
+
+    START.menueOffen = false;
+    START._menueHorcherAktiv = false;
+    START.aufbauen(neuesElement("div"));
+    START.menueUmschalten();
+
+    const eintraege = startMenueEintraege(START);
+
+    const erwartet = ["Profil", "Einstellungen", "Freunde", "Verlauf",
+        "Schach lernen"];
+    const gefunden = eintraege.map(startMenueText);
+    if (gefunden.join(" | ") !== erwartet.join(" | ")) {
+        throw new Error("die Menuepunkte stimmen nicht: " + gefunden.join(" | "));
+    }
+
+    /* Jeder Punkt traegt sein Zeichen links VOR dem Text. */
+    for (const eintrag of eintraege) {
+        const zeichen = (eintrag.kinder || [])[0];
+        if (!zeichen || zeichen.tagName !== "svg") {
+            throw new Error("der Punkt " + startMenueText(eintrag)
+                + " hat kein Zeichen");
+        }
+    }
+
+    /* „Schach lernen" fuehrt ins Team Schach und oeffnet die Anleitung. */
+    TEAM_SCHACH.grundlagenOffen = false;
+    umgebung.TABS.gewechseltZu = "";
+
+    startMenuePunkt(START, "Schach lernen").ausloesen("click");
+
+    if (umgebung.TABS.gewechseltZu !== "team-schach") {
+        throw new Error("Schach lernen wechselt nicht ins Team Schach");
+    }
+    if (!TEAM_SCHACH.grundlagenOffen) {
+        throw new Error("Schach lernen oeffnet die Anleitung nicht");
+    }
+    if (START.menueOffen) {
+        throw new Error("das Menue bleibt nach der Wahl offen");
+    }
+
+    TEAM_SCHACH.grundlagenSchliessen();
+    umgebung.TABS.gewechseltZu = "";
+    TEAM_SCHACH.uebersichtOeffnen();
+});
+
+pruefe("Das Menueband schliesst bei Klick ausserhalb (v0.103.0)", () => {
+    /*
+     * Dasselbe Muster wie beim Eck-Menue der Partie (v0.96.0, geprueft in
+     * test-bildschirm.js): Das Test-DOM feuert keine echten
+     * document-Ereignisse — `document.addEventListener` ist ein Stummel.
+     * Deshalb werden Anmelden und Abmelden hier MITGESCHRIEBEN und der
+     * angemeldete Horcher (`START._menueAussenklick`) direkt mit einem
+     * nachgestellten Ereignis aufgerufen: Klick IM Halter laesst das Menue
+     * offen, Klick ausserhalb klappt es zu und meldet den Horcher ab.
+     */
+    const START = umgebung.START;
+    const dokument = umgebung.document;
+    const echtesAnmelden = dokument.addEventListener;
+    const hatteAbmelden = Object.prototype.hasOwnProperty.call(
+        dokument, "removeEventListener");
+    const echtesAbmelden = dokument.removeEventListener;
+
+    let angemeldet = null;
+    let abgemeldet = null;
+    try {
+        dokument.addEventListener = (art, horcher) => {
+            angemeldet = { art: art, horcher: horcher };
+        };
+        dokument.removeEventListener = (art, horcher) => {
+            abgemeldet = { art: art, horcher: horcher };
+        };
+
+        START.menueOffen = false;
+        START._menueHorcherAktiv = false;
+        START.aufbauen(neuesElement("div"));
+
+        const balken = startEinsammeln(startKopf(START),
+            (kind) => kind.tagName === "button", [])[0];
+        balken.ausloesen("click");
+
+        if (START.menueOffen !== true) {
+            throw new Error("der Tipp auf die drei Balken oeffnet nichts");
+        }
+        if (!angemeldet || angemeldet.art !== "click") {
+            throw new Error("beim Aufklappen wird kein Klick-Horcher angemeldet");
+        }
+
+        /* Klick IM Halter (er traegt die Marke): Das Menue bleibt offen. */
+        const halter = startEinsammeln(startKopf(START), (kind) =>
+            kind.dataset && kind.dataset.startMenue === "1", [])[0];
+        if (!halter) {
+            throw new Error("der Menue-Halter traegt die Aussenklick-Marke nicht");
+        }
+        angemeldet.horcher({ target: halter });
+        if (START.menueOffen !== true) {
+            throw new Error("ein Klick IM Halter klappt das Menue faelschlich zu");
+        }
+
+        /* Klick irgendwo anders: zu, und der Horcher wieder abgemeldet —
+           kein dauerhafter globaler Horcher. */
+        angemeldet.horcher({ target: dokument.createElement("div") });
+        if (START.menueOffen !== false) {
+            throw new Error("ein Klick ausserhalb klappt das Menue nicht zu");
+        }
+        if (!abgemeldet || abgemeldet.horcher !== angemeldet.horcher) {
+            throw new Error("der Horcher wird beim Zuklappen nicht abgemeldet");
+        }
+        if (START._menueHorcherAktiv !== false) {
+            throw new Error("der Horcher gilt nach dem Zuklappen noch als angemeldet");
+        }
+        if (startMenuePunkt(START, "Profil")) {
+            throw new Error("die Punkte stehen nach dem Zuklappen noch da");
+        }
+    } finally {
+        dokument.addEventListener = echtesAnmelden;
+        if (hatteAbmelden) {
+            dokument.removeEventListener = echtesAbmelden;
+        } else {
+            delete dokument.removeEventListener;
+        }
+        START.menueOffen = false;
+        START._menueHorcherAktiv = false;
+    }
+});
+
+pruefe("Der Beitritts-Bildschirm hat kein Schach lernen mehr (v0.103.0)", () => {
+    /*
+     * ROADMAP-PUNKT 36, Nutzer-Wortlaut: „Schach lernen soll wo ander hin
+     * aber nicht bei runde beitreten." Der Einstieg stand seit v0.96 im
+     * Kopf des Zwischenbildschirms; seit v0.103.0 haengt er im Menueband
+     * des Starts. Geprueft wird beides — hier weg, dort da.
+     */
+    TEAM_SCHACH.abschluss = null;
+    TEAM_SCHACH.auswahlOffen = false;
+    TEAM_SCHACH.infoOffen = false;
+    TEAM_SCHACH.grundlagenOffen = false;
+    TEAM_SCHACH.uebersichtOeffnen();
+
+    const texte = startEinsammeln(TEAM_SCHACH.wurzelEl,
+        (kind) => kind.tagName === "button", [])
+        .map((knopf) => String(knopf.textContent || ""));
+
+    if (texte.indexOf("Schach lernen") !== -1) {
+        throw new Error("Schach lernen steht noch beim Runde beitreten");
+    }
 });
 
 pruefe("Das Zahnrad ist ein Zahnrad und keine Sonne (v0.102.0)", () => {
@@ -2695,6 +2933,11 @@ pruefe("Die Freunde-Seite am Start: suchen, anfragen, entfernen (Wunsch 6)", () 
      * Bis v0.18.0 hing dieselbe Karte auf dem Zwischenbildschirm; der Test
      * lief deshalb gegen TEAM_SCHACH. Jetzt gegen START — der Ablauf
      * darunter (Modell, Zusammenfuehrung) ist unveraendert.
+     *
+     * SEIT v0.103.0 STEHT DAS ZEICHEN NICHT MEHR OBEN RECHTS, sondern als
+     * Punkt „Freunde" im Menueband („statt den ganzen icons ein menue
+     * band"). Geoeffnet wird die Seite deshalb ueber zwei Tipps statt
+     * einen; alles danach ist unveraendert.
      */
     const START = umgebung.START;
 
@@ -2714,19 +2957,20 @@ pruefe("Die Freunde-Seite am Start: suchen, anfragen, entfernen (Wunsch 6)", () 
     const standVorher = ANMELDUNG.abgleich.daten;
 
     try {
+        START.menueOffen = false;
+        START._menueHorcherAktiv = false;
         START.aufbauen(neuesElement("div"));
 
-        /* Das Zeichen steht neben dem Zahnrad und oeffnet die Seite. */
-        const zeichen = einsammeln(START.wurzelEl, (kind) =>
-            kind.tagName === "button" && kind.attribute
-            && kind.attribute["aria-label"] === "Freunde", [])[0];
-        if (!zeichen) {
-            throw new Error("kein Freunde-Zeichen auf dem Start");
+        /* Erst das Menueband, dann der Punkt „Freunde". */
+        START.menueUmschalten();
+        const punkt = startMenuePunkt(START, "Freunde");
+        if (!punkt) {
+            throw new Error("kein Freunde-Punkt im Menueband");
         }
 
-        zeichen.ausloesen("click");
+        punkt.ausloesen("click");
         if (!START.freundeOffen) {
-            throw new Error("das Zeichen oeffnet die Freundesliste nicht");
+            throw new Error("der Punkt oeffnet die Freundesliste nicht");
         }
 
         /* Suchen: Der Filter laeuft ueber die Spielerliste. */

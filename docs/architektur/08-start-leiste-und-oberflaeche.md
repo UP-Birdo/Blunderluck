@@ -42,13 +42,53 @@ Aus dem Umbau-Schwung vom 24.08.2026, je eine Auslieferung pro Nutzer-Ansage
   `TEAM_SCHACH.auswahlTeil` („brett" / „regeln"). Einstiege sind
   `brettformOeffnen` (Vorschau) und `partieAnlegen` (Pfeil);
   `auswahlSchliessen` merkt die Regler.
-- **Oben rechts Freunde-Zeichen und Zahnrad**; die Freundesliste ist eine Seite
-  innerhalb des Starts (`START.freundeOffen`).
+- **Oben rechts stand eine Icon-Reihe** (Verlauf, Freunde, Zahnrad) — sie ist
+  seit v0.103.0 durch EINEN Knopf ersetzt, das Menüband (eigener Abschnitt
+  weiter unten). Die Freundesliste ist weiterhin eine Seite innerhalb des
+  Starts (`START.freundeOffen`), ebenso der Verlauf (`START.verlaufOffen`).
 - **Der stille Knopf „Runde beitreten"** führt zum Zwischenbildschirm — er ist
   seither NUR noch der Weg hinein in fremde Runden.
 - **Es gibt keinen Kopfbalken mehr** (seit v0.25.0): Der Stand des Abgleichs,
   die Version und der Wunsch-Knopf sind der Reihe nach in die Einstellungen
   gezogen; die `h1` steht unsichtbar im `body`.
+
+## Das Menüband oben rechts (seit v0.103.0)
+
+Nutzer-Ansage 27.08.2026: „statt den ganzen icons ein menü band … was von
+aussen 3 balken sind und dahinter verstecken sich alle weiteren punkte".
+Oben rechts steht seither **genau ein Knopf** mit drei Balken; ein Tipp
+klappt darunter ein Feld mit fünf Punkten auf, jeder mit seinem Zeichen
+links und der Beschriftung rechts:
+
+| Punkt | Führt zu | Zeichen |
+|---|---|---|
+| Profil | `ANMELDUNG.profilOeffnen()` (Name/Passwort) | `_profilZeichenBauen` (neu) |
+| Einstellungen | Tab `einstellungen` | `_zahnradBauen` |
+| Freunde | `START.freundeOeffnen()` | `_freundeZeichenBauen` |
+| Verlauf | `START.verlaufOeffnen()` | `_verlaufZeichenBauen` |
+| Schach lernen | `TEAM_SCHACH.grundlagenOeffnen()` | `_lernenZeichenBauen` (neu) |
+
+Alles dazu wohnt in `js\start.js` (`_menuePunkte`, `_menuebandBauen`,
+`menueUmschalten`), der Stil in `css\stil-start.css` (`.start-menue…`, die
+Bewegung im `no-preference`-Block am Dateiende).
+
+- **Profil ist ein eigener Punkt geworden.** Es bleibt zusätzlich in den
+  Einstellungen, Karte „Spieler" — dieselbe Funktion, zwei Wege.
+- **„Schach lernen" ist vom Beitritts-Bildschirm hierher gezogen** (ROADMAP
+  Punkt 36: „soll wo ander hin aber nicht bei runde beitreten"). Im Kopf von
+  `team-schach-uebersicht.js` steht an seiner Stelle nur noch der Vermerk;
+  der Bildschirm selbst (`team-schach-grundlagen.js`) ist unverändert.
+- **Der Aussenklick ist nach dem Muster des Eck-Menüs gebaut** (v0.96.0,
+  `TEAM_SCHACH.eckMenueUmschalten` / `_eckMenueAussenklick`): Merker,
+  `document`-Horcher nur solange offen, `dataset`-Marke am Halter. Bewusst
+  NACHGEBAUT statt geteilt — beide Seiten zeichnen verschieden neu.
+  **Ein Unterschied:** Dort liegen die Knöpfe IM Kasten-Knopf und müssen ihr
+  Ereignis stoppen; hier sind Balken-Knopf und Liste Geschwister im selben
+  markierten Halter, also kein `stopPropagation`.
+- **Die Optik ist `ui.watermelon.sh` abgeschaut, nicht eingebunden** (React
+  und Tailwind wären ein Technologie-Wechsel): rundes Feld, weicher
+  Schatten, ruhiger Hover, kurzes Einblenden — alles aus den vorhandenen
+  Variablen.
 
 ## Die Seite wird zugelost — und der Wahl-Bildschirm entfällt (seit v0.66.0)
 
