@@ -1567,6 +1567,36 @@
     box-shadow: 0 0 0 1.5px var(--flaeche);
 }
 
+/*
+ * DIE RESTZEIT AUF DER KARTE — oben links, das Gegenstück zur Anzahl
+ * (Punkt 27, 27.08.2026): Bei einem Unglück mit Ablauf zählt die Zahl die
+ * Halbzüge herunter, bis Wirkung UND Karte verschwinden. Gerechnet wird sie
+ * im Modell (`SCHACH_RUNDE.unglueckRestzeit`); dauerhafte Unglücke tragen
+ * keine.
+ *
+ * Dieselben festen zwei Farben wie `.feld-restzeit` (heller Rand, dunkler
+ * Kern): Sie funktionieren unverändert in Hell, Dunkel und im 3D-Look —
+ * eine Themenfarbe ginge auf einem der Gründe verloren.
+ */
+.karte-restzeit {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    z-index: 1;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 3px;
+    border-radius: 8px;
+    color: #fff;
+    background: rgba(20, 24, 32, 0.82);
+    border: 1px solid rgba(255, 255, 255, 0.75);
+    font-size: 0.66rem;
+    font-weight: 700;
+    line-height: 14px;
+    text-align: center;
+    pointer-events: none;
+}
+
 /* Die zwei Kosten-Zeichen rücken in die untere Zeile der Karte — klein, aber
    an einem festen Platz, damit das Auge sie nicht suchen muss.
 

@@ -666,8 +666,12 @@ Object.assign(TEAM_SCHACH, {
             }
         }
         for (const eintrag of pechGezaehlt) {
+            /* Die Restzeit rechnet das Modell — hier wird nur gezeichnet
+               (Punkt 27, 27.08.2026). Dauerhafte Unglücke liefern 0 und
+               bekommen keine Zahl. */
             reihe.appendChild(TEAM_SCHACH._unglueckMarkeBauen(
-                eintrag.art, eintrag.anzahl));
+                eintrag.art, eintrag.anzahl,
+                SCHACH_RUNDE.unglueckRestzeit(partie, farbe, eintrag.art)));
         }
 
         return reihe;
@@ -678,8 +682,14 @@ Object.assign(TEAM_SCHACH, {
      * Form wie die Fähigkeiten, aber gestrichelt gerahmt (wie die Unglücks-
      * Kachel der Bibliothek) — sie ist ein Merkzettel, kein Vorrat. Antippen
      * öffnet Beschreibung und Bildanleitung; einsetzen kann man sie nie.
+     *
+     * DIE RESTZEIT STEHT AUF DER KARTE (seit Punkt 27, 27.08.2026): Bei
+     * einem Unglück mit Ablauf zählt oben links eine kleine Zahl die
+     * Halbzüge herunter — gerechnet vom Modell (`unglueckRestzeit`), das
+     * die Karte bei 0 auch gleich aus der Hand nimmt. Dauerhafte Unglücke
+     * tragen keine Zahl; die Ecke oben rechts gehört weiter der Anzahl.
      */
-    _unglueckMarkeBauen(art, anzahl) {
+    _unglueckMarkeBauen(art, anzahl, restzeit) {
         const stufe = SCHACH_VARIANTEN.pechStufeVon(art);
 
         const marke = TEAM_SCHACH._knopf("",
@@ -702,15 +712,27 @@ Object.assign(TEAM_SCHACH, {
                 "faehigkeit-anzahl", String(anzahl)));
         }
 
+        if (restzeit > 0) {
+            marke.appendChild(TEAM_SCHACH._element("span",
+                "karte-restzeit", String(restzeit)));
+        }
+
+        const restText = (restzeit > 0)
+            ? (" — verschwindet in " + restzeit
+                + ((restzeit === 1) ? " Halbzug" : " Halbzügen"))
+            : "";
+
         marke.setAttribute("aria-label",
             SCHACH_VARIANTEN.pechTitel(art) + " (Unglück)"
-            + ((anzahl > 1) ? (", " + anzahl + " Mal") : ""));
+            + ((anzahl > 1) ? (", " + anzahl + " Mal") : "")
+            + restText);
 
         marke.style.setProperty("--stufe-farbe", stufe.farbe);
 
         marke.title = SCHACH_VARIANTEN.pechTitel(art)
             + ((anzahl > 1) ? (" (" + anzahl + ")") : "")
-            + " — Unglück, " + stufe.titel + ": " + SCHACH_VARIANTEN.pechKurz(art);
+            + " — Unglück, " + stufe.titel + ": " + SCHACH_VARIANTEN.pechKurz(art)
+            + restText;
 
         return marke;
     },

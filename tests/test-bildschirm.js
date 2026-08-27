@@ -3344,6 +3344,12 @@ pruefe("Ein eingesammeltes Unglueck liegt als Karte in der Hand (v0.82.0)", () =
         throw new Error("keine Unglueck-Karte in der Hand nach dem Unglueckswuerfel");
     }
 
+    /* Ein DAUERHAFTES Unglueck traegt keine Restzeit-Zahl (Punkt 27) — die
+       Zahl gehoert nur den Ungluecken mit Ablauf. */
+    if (klasseSuchen(TEAM_SCHACH.wurzelEl, "karte-restzeit")) {
+        throw new Error("die dauerhafte Unglueck-Karte traegt eine Restzeit-Zahl");
+    }
+
     /* Der Erdrutsch ist DAUERHAFT: Die Karte bleibt auch nach dem naechsten
        Zug liegen (Nutzer-Ansage 26.08.2026 — nur zeitlich Begrenztes geht). */
     partie = SCHACH_RUNDE.ziehen(partie, "id-bert",
@@ -3354,6 +3360,73 @@ pruefe("Ein eingesammeltes Unglueck liegt als Karte in der Hand (v0.82.0)", () =
 
     if (!klasseSuchen(TEAM_SCHACH.wurzelEl, "unglueck-knopf")) {
         throw new Error("die dauerhafte Unglueck-Karte verschwindet mit dem naechsten Zug");
+    }
+
+    TEAM_SCHACH.offeneId = "";
+    TEAM_SCHACH.abgleich.daten = vorher;
+});
+
+/*
+ * DIE RESTZEIT AUF DER KARTE (Punkt 27, 27.08.2026): Ein Unglueck mit Ablauf
+ * — die Halluzination — zaehlt seine Halbzuege als kleine Zahl auf der Karte
+ * herunter; die Zahl kommt aus dem Modell (`unglueckRestzeit`). Laeuft der
+ * Effekt ab, verschwindet die Karte mitsamt der Zahl aus der Hand.
+ */
+pruefe("Die Halluzinations-Karte zaehlt ihre Restzeit und geht mit dem Ablauf (Punkt 27)", () => {
+    const angelegt = SCHACH_TAFEL.partieAnlegen(
+        TEAM_SCHACH.abgleich.daten, "standard", "Glas", 5750);
+
+    let partie = SCHACH_RUNDE.teamBeitreten(angelegt.partie, "id-anna", "weiss", 5750);
+    partie = SCHACH_RUNDE.teamBeitreten(partie, "id-bert", "schwarz", 5750);
+    partie = bereitUndAufgestellt(partie, "weiss", 5750);
+    partie = bereitUndAufgestellt(partie, "schwarz", 5750);
+
+    /* Ein Unglueckswuerfel mit Halluzination genau dort, wohin der Bauer zieht. */
+    partie = SCHACH_RUNDE.kopieren(partie);
+    partie.regeln.faehigkeiten = true;
+    partie.bonus.push({ feld: SCHACH.feldNummer("a3"), art: "vollesGlas", pech: true });
+
+    partie = SCHACH_RUNDE.ziehen(partie, "id-anna",
+        SCHACH.feldNummer("a2"), SCHACH.feldNummer("a3"), "D", "Anna", 5760);
+
+    const vorher = TEAM_SCHACH.abgleich.daten;
+    TEAM_SCHACH.abgleich.daten = SCHACH_TAFEL.partieEinsetzen(
+        angelegt.tafel, partie, 5760);
+    TEAM_SCHACH.partieOeffnen(partie.id);
+
+    if (partie.stand.glasFarbe !== "weiss") {
+        throw new Error("die Halluzination wirkt gar nicht");
+    }
+
+    /* Die Karte liegt in der Hand und traegt die Zahl des Modells. */
+    if (!klasseSuchen(TEAM_SCHACH.wurzelEl, "unglueck-knopf")) {
+        throw new Error("keine Halluzinations-Karte in der Hand");
+    }
+    const zahl = klasseSuchen(TEAM_SCHACH.wurzelEl, "karte-restzeit");
+    if (!zahl) {
+        throw new Error("keine Restzeit-Zahl auf der Halluzinations-Karte");
+    }
+    const erwartet = SCHACH_RUNDE.unglueckRestzeit(partie, "weiss", "vollesGlas");
+    if (erwartet <= 0) {
+        throw new Error("das Modell nennt gar keine Restzeit");
+    }
+    if (String(zahl.textContent) !== String(erwartet)) {
+        throw new Error("die Zahl (" + zahl.textContent
+            + ") ist nicht die Restzeit des Modells (" + erwartet + ")");
+    }
+
+    /* Abgelaufen: Karte UND Zahl sind aus der Hand verschwunden. */
+    partie = SCHACH_RUNDE.kopieren(partie);
+    partie.zugZaehler = partie.stand.glasBis;
+    TEAM_SCHACH.abgleich.daten = SCHACH_TAFEL.partieEinsetzen(
+        TEAM_SCHACH.abgleich.daten, partie, 5770);
+    TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
+
+    if (klasseSuchen(TEAM_SCHACH.wurzelEl, "unglueck-knopf")) {
+        throw new Error("die abgelaufene Halluzinations-Karte liegt noch in der Hand");
+    }
+    if (klasseSuchen(TEAM_SCHACH.wurzelEl, "karte-restzeit")) {
+        throw new Error("eine Restzeit-Zahl steht ohne Karte da");
     }
 
     TEAM_SCHACH.offeneId = "";

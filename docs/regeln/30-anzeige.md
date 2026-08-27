@@ -54,6 +54,12 @@ Zug bedient wird, die Wortwahl am Bildschirm.
 - **Warum eine Regel nicht greift, erklärt das Regelwerk** — nicht der
   Bildschirm. `SCHACH.rochadeLage` liefert den Grund, `team-schach.js` zeigt ihn
   nur an. Sonst stünden die Bedingungen zweimal im Programm.
+- **Zeitlich Begrenztes zählt seine Restzeit dort herunter, wo es wirkt** —
+  am Feld als kleine Zahl (`SCHACH.restzeitAuf`, seit v0.53), auf der
+  Unglücks-Karte der Hand oben links (`SCHACH_RUNDE.unglueckRestzeit`, seit
+  Punkt 27). Die Zahl kommt immer aus dem Modell; bei 0 verschwindet die
+  Karte mitsamt der Wirkung (`unglueckskartenVon`). Dauerhaftes trägt keine
+  Zahl.
 - **Die Box im Team Schach heisst für den Nutzer „Lootbox"** (seit v0.68,
   Wunsch #25) — im Singular weiblich: *die* Lootbox. Wer einen sichtbaren Text
   schreibt, benutzt dieses Wort; die schlechten heissen **Unglücks-Lootbox**,

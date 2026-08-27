@@ -3,6 +3,20 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.99.0 — 27.08.2026
+
+**Die Halluzinations-Karte zählt ihre Restzeit jetzt selbst herunter.**
+
+- Auf der Unglücks-Karte in deiner Hand läuft jetzt eine kleine Zahl mit:
+  wie viele Halbzüge der Effekt noch wirkt. Bisher stand diese Angabe nur
+  im Hinweis-Chip der Leiste — der bleibt zusätzlich bestehen.
+- Läuft die Zeit ab, verschwindet die Karte wie bisher von selbst; die
+  Zahl und das Verschwinden rechnen jetzt über dieselbe Uhr im Modell,
+  sie können also nie auseinanderlaufen.
+- Die Effekte auf dem Brett (Mauer, Leihgabe, Fessel und Co.) zeigen ihre
+  abzählende Zahl schon lange direkt am Feld — daran ändert sich nichts.
+  Dauerhafte Unglücke bekommen keine Zahl.
+
 ## v0.98.0 — 27.08.2026
 
 **Bei Schachmatt wird das Königsfeld rot.**

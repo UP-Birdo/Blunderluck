@@ -1819,19 +1819,43 @@ Object.assign(SCHACH_RUNDE, {
     },
 
     /*
+     * Wie lange ein Unglück in der Hand dieser Seite noch wirkt — in
+     * Halbzügen (seit Punkt 27, 27.08.2026).
+     *
+     * 0 heisst: keine Zahl an der Karte — entweder wirkt das Unglück
+     * dauerhaft (Erdbeben, Erdrutsch, Meuterei, Stolperstein, Schrumpfung),
+     * oder es ist schon abgelaufen. Die Halluzination ist das einzige
+     * Unglück mit Ablauf; wer ein zweites baut, gibt ihm HIER seine
+     * Rechnung — der Bildschirm zeichnet nur die Zahl.
+     *
+     * Warum im Modell: Dieselbe Frist entscheidet auch, ob die Karte
+     * überhaupt noch in der Hand liegt (`unglueckskartenVon`) — zwei
+     * Rechnungen für dieselbe Uhr liefen garantiert auseinander.
+     */
+    unglueckRestzeit(runde, farbe, art) {
+        if (art === "vollesGlas" && SCHACH_RUNDE.glasWirkt(runde, farbe)) {
+            return runde.stand.glasBis - runde.zugZaehler;
+        }
+        return 0;
+    },
+
+    /*
      * Die Unglücks-Karten, die die Hand einer Seite ZEIGT (seit v0.82.0,
      * Nutzer-Ansage 26.08.2026): Dauerhafte bleiben die ganze Partie liegen;
-     * zeitlich Begrenztes liegt nur in der Hand, solange es wirkt. Die
-     * Halluzination ist das einzige Unglück mit Ablauf — wer ein zweites
-     * baut, ergänzt seinen Fall HIER, nicht im Bildschirm.
+     * zeitlich Begrenztes liegt nur in der Hand, solange es wirkt — mit dem
+     * Ablauf verschwindet die Karte mitsamt der Wirkung. Ob etwas abläuft
+     * und wie lange es noch gilt, sagt `unglueckRestzeit`; wer ein zweites
+     * Unglück mit Ablauf baut, ergänzt seinen Fall DORT, nicht im Bildschirm.
      */
+    UNGLUECKE_MIT_ABLAUF: ["vollesGlas"],
+
     unglueckskartenVon(runde, farbe) {
         const liste = (runde.unglueckskarten && runde.unglueckskarten[farbe])
             ? runde.unglueckskarten[farbe] : [];
 
         return liste.filter((eintrag) => {
-            if (eintrag.art === "vollesGlas") {
-                return SCHACH_RUNDE.glasWirkt(runde, farbe);
+            if (SCHACH_RUNDE.UNGLUECKE_MIT_ABLAUF.indexOf(eintrag.art) !== -1) {
+                return SCHACH_RUNDE.unglueckRestzeit(runde, farbe, eintrag.art) > 0;
             }
             return true;
         });

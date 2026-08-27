@@ -4780,6 +4780,45 @@ pruefe("Die Halluzinations-Karte geht mit dem Ablauf aus der Hand (v0.82.0)", ()
     gleich(runde.unglueckskarten.weiss.length, 1, "der Eintrag selbst bleibt");
 });
 
+/*
+ * DIE RESTZEIT AUF DER KARTE (Punkt 27, 27.08.2026): Das Modell nennt je
+ * Unglueck in der Hand, wie viele Halbzuege es noch wirkt — der Bildschirm
+ * zeichnet daraus die abzaehlende Zahl. Dauerhafte Ungluecke liefern 0 und
+ * bekommen keine Zahl; bei 0 nimmt `unglueckskartenVon` die Karte mitsamt
+ * der Wirkung aus der Hand.
+ */
+pruefe("Die Restzeit der Halluzinations-Karte zaehlt mit den Zuegen herunter (Punkt 27)", () => {
+    let runde = pechEinsammeln(faehigkeitenPartie(), "vollesGlas", "e2", "e4");
+    wahr(runde !== null, "eingesammelt");
+
+    /* Frisch gesetzt: die volle Frist. */
+    gleich(SCHACH_RUNDE.unglueckRestzeit(runde, "weiss", "vollesGlas"),
+        SCHACH_RUNDE.GLAS_HALBZUEGE, "frisch: die volle Frist");
+
+    /* Die andere Seite sieht richtig — fuer sie laeuft nichts ab. */
+    gleich(SCHACH_RUNDE.unglueckRestzeit(runde, "schwarz", "vollesGlas"), 0,
+        "die andere Seite: keine Restzeit");
+
+    /* Ein dauerhaftes Unglueck bekommt nie eine Zahl. */
+    gleich(SCHACH_RUNDE.unglueckRestzeit(runde, "weiss", "stolperstein"), 0,
+        "dauerhaft heisst 0");
+
+    /* Nach dem Antwortzug des Gegners ist die Frist einen Halbzug kuerzer. */
+    runde = SCHACH_RUNDE.ziehen(runde, "id-bert",
+        SCHACH.feldNummer("e7"), SCHACH.feldNummer("e5"), "D", "Bert", 4200);
+    wahr(runde !== null, "Schwarz zieht");
+    gleich(SCHACH_RUNDE.unglueckRestzeit(runde, "weiss", "vollesGlas"),
+        SCHACH_RUNDE.GLAS_HALBZUEGE - 1, "ein Halbzug weniger");
+
+    /* Abgelaufen: Restzeit 0, und die Karte ist samt Wirkung aus der Hand. */
+    runde = SCHACH_RUNDE.kopieren(runde);
+    runde.zugZaehler = runde.stand.glasBis;
+    gleich(SCHACH_RUNDE.unglueckRestzeit(runde, "weiss", "vollesGlas"), 0,
+        "abgelaufen heisst 0");
+    gleich(SCHACH_RUNDE.unglueckskartenVon(runde, "weiss").length, 0,
+        "und die Karte ist mit dem Effekt verschwunden");
+});
+
 pruefe("normalisieren wirft fremden Muell aus den Ungluecks-Karten (v0.82.0)", () => {
     const runde = SCHACH_RUNDE.normalisieren({
         unglueckskarten: {
