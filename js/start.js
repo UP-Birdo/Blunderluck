@@ -538,8 +538,23 @@ const START = {
         }
     },
 
-    /* Ein gezeichnetes Zahnrad — kein Emoji (Haus-Regel), keine Bilddatei:
-       ein Ring mit acht Zähnen, gefärbt über currentColor. */
+    /*
+     * Ein gezeichnetes Zahnrad — kein Emoji (Haus-Regel), keine Bilddatei.
+     *
+     * BIS v0.101.0 WAR ES EINE SONNE (Nutzer-Meldung 27.08.2026: „sieht aus
+     * wie die Sonne und nicht wie ein Zahnrad"). Er hatte recht, und der
+     * Grund lag in der Machart: ein dünner Ring mit acht RUNDEN Strichen,
+     * die daneben in der Luft standen — das ist das Bildzeichen der Sonne.
+     * Einem Zahnrad fehlten dabei drei Dinge: Zähne mit geraden Flanken, die
+     * AM Körper sitzen statt neben ihm; eine gefüllte Scheibe statt einer
+     * Kontur; und das Loch in der Mitte.
+     *
+     * Gezeichnet wird deshalb EIN gefüllter Pfad: acht Zahnköpfe auf dem
+     * Aussenradius, dazwischen der Fussradius, dazu als zweiter Teilpfad das
+     * Loch. `fill-rule="evenodd"` stanzt es aus — so stimmt das Zeichen auf
+     * jedem Untergrund, ohne dessen Farbe zu kennen. Gefärbt wird es wie
+     * die übrigen Zeichen über `currentColor`.
+     */
     _zahnradBauen() {
         const ns = "http://www.w3.org/2000/svg";
         const svg = document.createElementNS(ns, "svg");
@@ -547,27 +562,47 @@ const START = {
         svg.setAttribute("class", "start-zeichen");
         svg.setAttribute("aria-hidden", "true");
 
-        const ring = document.createElementNS(ns, "circle");
-        ring.setAttribute("cx", "12");
-        ring.setAttribute("cy", "12");
-        ring.setAttribute("r", "5");
-        ring.setAttribute("fill", "none");
-        ring.setAttribute("stroke", "currentColor");
-        ring.setAttribute("stroke-width", "2.4");
-        svg.appendChild(ring);
+        const ZAEHNE = 8;
+        const R_KOPF = 10.6;     /* Aussenkante eines Zahns */
+        const R_FUSS = 7.6;      /* der Körper zwischen zwei Zähnen */
+        const R_LOCH = 3.4;
+        const HALB_KOPF = 9;     /* halbe Zahnbreite oben, in Grad */
+        const HALB_FUSS = 14;    /* halbe Zahnbreite unten — daher die Flanke */
+        const SCHRITT = 360 / ZAEHNE;
 
-        for (let zahn = 0; zahn < 8; zahn++) {
-            const winkel = zahn * Math.PI / 4;
-            const linie = document.createElementNS(ns, "line");
-            linie.setAttribute("x1", String(12 + Math.cos(winkel) * 8));
-            linie.setAttribute("y1", String(12 + Math.sin(winkel) * 8));
-            linie.setAttribute("x2", String(12 + Math.cos(winkel) * 10.6));
-            linie.setAttribute("y2", String(12 + Math.sin(winkel) * 10.6));
-            linie.setAttribute("stroke", "currentColor");
-            linie.setAttribute("stroke-width", "2.6");
-            linie.setAttribute("stroke-linecap", "round");
-            svg.appendChild(linie);
+        const punkt = (radius, grad) => {
+            const bogen = grad * Math.PI / 180;
+            return (12 + radius * Math.cos(bogen)).toFixed(2)
+                + " " + (12 + radius * Math.sin(bogen)).toFixed(2);
+        };
+
+        let pfad = "M " + punkt(R_FUSS, -HALB_FUSS);
+
+        for (let zahn = 0; zahn < ZAEHNE; zahn++) {
+            const mitte = zahn * SCHRITT;
+
+            /* Flanke hoch, Zahnkopf entlang, Flanke herunter, dann der
+               Bogen des Körpers bis zum nächsten Zahn. */
+            pfad += " L " + punkt(R_KOPF, mitte - HALB_KOPF)
+                + " A " + R_KOPF + " " + R_KOPF + " 0 0 1 "
+                + punkt(R_KOPF, mitte + HALB_KOPF)
+                + " L " + punkt(R_FUSS, mitte + HALB_FUSS)
+                + " A " + R_FUSS + " " + R_FUSS + " 0 0 1 "
+                + punkt(R_FUSS, mitte + SCHRITT - HALB_FUSS);
         }
+        pfad += " Z";
+
+        /* Das Loch, als eigener Teilpfad aus zwei Halbbögen. */
+        pfad += " M " + punkt(R_LOCH, 0)
+            + " A " + R_LOCH + " " + R_LOCH + " 0 1 0 " + punkt(R_LOCH, 180)
+            + " A " + R_LOCH + " " + R_LOCH + " 0 1 0 " + punkt(R_LOCH, 0)
+            + " Z";
+
+        const rad = document.createElementNS(ns, "path");
+        rad.setAttribute("d", pfad);
+        rad.setAttribute("fill", "currentColor");
+        rad.setAttribute("fill-rule", "evenodd");
+        svg.appendChild(rad);
 
         return svg;
     },

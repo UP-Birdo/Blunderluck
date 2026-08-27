@@ -3,6 +3,19 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.102.0 — 27.08.2026
+
+**Das Einstellungs-Symbol ist jetzt ein Zahnrad — vorher war es eine
+Sonne.**
+
+- Das alte Zeichen war ein dünner Ring mit acht abstehenden runden
+  Strichen. Genau so zeichnet man eine Sonne: Die Striche standen neben
+  dem Ring statt an ihm, die Fläche war leer, und das Loch fehlte.
+- Das neue Zeichen ist eine gefüllte Scheibe mit acht Zähnen, die am
+  Körper sitzen und gerade Flanken haben, plus dem ausgestanzten Loch in
+  der Mitte. Es erscheint überall dort, wo bisher das alte stand — auf
+  dem Startbildschirm und am Spieler-Kasten im Match.
+
 ## v0.101.0 — 27.08.2026
 
 **Alle 22 Item-Anleitungen sagen jetzt, was du wirklich anklicken musst.**

@@ -1737,6 +1737,48 @@ pruefe("Der Startbildschirm zeigt Vorschau, Spielen und Zahnrad (v0.9.0)", () =>
     umgebung.TABS.gewechseltZu = "";
 });
 
+pruefe("Das Zahnrad ist ein Zahnrad und keine Sonne (v0.102.0)", () => {
+    /*
+     * NUTZER-MELDUNG 27.08.2026: „Ueberarbeite das Einstellungs-Symbol,
+     * sieht aus wie die Sonne und nicht wie ein Zahnrad."
+     *
+     * URSACHE WAR DIE MACHART: ein duenner Ring plus acht abstehende RUNDE
+     * Striche (`line` mit stroke-linecap round) — genau das Bildzeichen
+     * der Sonne. Geprueft wird deshalb die Machart, nicht das Aussehen:
+     * EIN gefuellter Pfad mit ausgestanztem Loch, und keine Strich-Zaehne
+     * mehr. Das faengt den Rueckfall, ohne Zahlen festzunageln.
+     */
+    const svg = umgebung.START._zahnradBauen();
+    const kinder = svg.kinder || [];
+
+    if (kinder.some((kind) => kind.tagName === "line")) {
+        throw new Error("das Zeichen hat wieder Strahlen statt Zaehne");
+    }
+    if (kinder.length !== 1 || kinder[0].tagName !== "path") {
+        throw new Error("erwartet genau EIN path-Element, waren "
+            + kinder.length + " (" + kinder.map((k) => k.tagName).join(", ") + ")");
+    }
+
+    const rad = kinder[0];
+    if (rad.attribute.fill !== "currentColor") {
+        throw new Error("das Rad ist nicht gefuellt");
+    }
+    if (rad.attribute["fill-rule"] !== "evenodd") {
+        throw new Error("ohne evenodd bleibt das Loch zu");
+    }
+
+    const d = String(rad.attribute.d || "");
+    /* Zwei Teilpfade: der Koerper und das ausgestanzte Loch. */
+    if ((d.match(/M/g) || []).length !== 2) {
+        throw new Error("der Pfad hat kein zweites Stueck fuers Loch");
+    }
+    /* Acht Zaehne, je zwei Boegen (Kopf und Koerper), plus zwei fuers Loch. */
+    if ((d.match(/A/g) || []).length !== 18) {
+        throw new Error("die Zahl der Boegen passt nicht zu acht Zaehnen: "
+            + (d.match(/A/g) || []).length);
+    }
+});
+
 pruefe("Ein Tipp auf die Vorschau oeffnet die Brettform (Wunsch 7)", () => {
     /*
      * DER GEMELDETE WUNSCH: „Die Schachbrett-Vorschau ueber Spielen wird
