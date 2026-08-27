@@ -3,6 +3,25 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.89.0 — 27.08.2026
+
+**Behoben: Man kam nach dem Schliessen nicht mehr in sein Konto.**
+
+- **Was passiert ist:** Hakt beim Öffnen der Seite die Verbindung auch nur
+  kurz, war die Spielerliste noch leer — und die App fragte trotzdem schon
+  nach dem Konto. Weil in einer leeren Liste niemand steht, erschien das
+  Anmeldebild, als gäbe es das Konto nicht. Kam die Liste Sekunden später
+  doch noch an, blieb das Bild trotzdem stehen. Wer dann „Neues Konto"
+  drückte, bekam ein zweites — sein altes lag unberührt in der Datenbank,
+  nur nicht mehr auffindbar.
+- **Jetzt:** Die App fragt erst nach dem Konto, wenn die Liste wirklich da
+  ist. Und falls das Anmeldebild doch einmal erscheint, verschwindet es von
+  selbst wieder, sobald die Liste nachkommt — man ist dann ohne Zutun in
+  seinem Konto.
+- **Dein altes Konto ist nicht verloren.** Wer bereits versehentlich ein
+  zweites angelegt hat, kommt über „Vorhandenes Konto" mit Name und
+  Passwort wieder an das alte heran.
+
 ## v0.88.0 — 27.08.2026
 
 **Das Brett hat jetzt eine feste Grösse und einen festen Platz.**

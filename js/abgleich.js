@@ -99,13 +99,29 @@ class Abgleich {
         this.eigeneId = id;
     }
 
-    /* Erstes Laden; danach läuft die regelmäßige Abfrage. */
+    /*
+     * Erstes Laden; danach läuft die regelmäßige Abfrage.
+     *
+     * LIEFERT SEIT v0.89.0, OB ES GEKLAPPT HAT (`true`/`false`). Vorher gab
+     * es nur ein Versprechen ohne Antwort — und weil ein Ladefehler hier
+     * gemeldet, aber nicht weitergereicht wird, konnte der Aufrufer nicht
+     * unterscheiden, ob er einen ECHTEN Stand vor sich hat oder den leeren
+     * Anfangswert. Genau daran hing der Anmelde-Fehler vom 27.08.2026
+     * (Kette und Messung: `anmeldung.js`, `datenAktualisiert`).
+     *
+     * Geworfen wird weiterhin NICHT: Die App muss auch ohne Netz starten
+     * (der Stand kommt dann mit der nächsten Abfrage nach), und ein
+     * abgebrochener Start hinterliesse eine halb aufgebaute Seite.
+     */
     async starten() {
+        let geladen = false;
+
         this.melden("laedt", "Wird geladen …");
         try {
             this.daten = await this.speicher.laden();
             this.beiDaten(this.daten);
             this.melden("bereit", this.speicher.beschreibung);
+            geladen = true;
         } catch (fehler) {
             this.melden("fehler", "Laden fehlgeschlagen: " + fehler.message);
         }
@@ -128,6 +144,8 @@ class Abgleich {
                 }
             });
         }
+
+        return geladen;
     }
 
     /*

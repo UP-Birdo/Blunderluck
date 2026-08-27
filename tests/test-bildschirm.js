@@ -7633,6 +7633,95 @@ pruefe("Das Anmelde-Vollbild prueft Name und Passwort live (v0.8.0)", () => {
 });
 
 /*
+ * DAS KONTO KOMMT ZURUECK, WENN DER STAND NACHKOMMT (v0.89.0).
+ *
+ * DRINGENDE NUTZER-MELDUNG 27.08.2026: „Jemand hat sich angemeldet, das
+ * Spiel geschlossen — und ist in seinen Account nicht wieder reingekommen."
+ *
+ * Nachgemessen war die Kette: Ein fehlgeschlagenes erstes Laden liess
+ * `anmelden()` mit dem LEEREN Anfangsstand laufen, das Vollbild erschien,
+ * und es verschwand auch dann nicht wieder, wenn die naechste Abfrage den
+ * echten Stand brachte — `datenAktualisiert` stieg aus, solange `ichId`
+ * null war. Wer dann ein neues Konto anlegte, hatte zwei.
+ */
+pruefe("Ein nachgereichter Stand meldet das Geraet selbst an (v0.89.0)", () => {
+    const echtePerson = umgebung.ICH.person;
+    const echterAbgleich = ANMELDUNG.abgleich;
+    const echteId = ANMELDUNG.ichId;
+    const echtesWurzelEl = ANMELDUNG.wurzelEl;
+    const echtesLaeuft = ANMELDUNG.anmeldenLaeuft;
+
+    try {
+        /* Der Startfall: Geraet kennt seine Person, der Stand ist LEER. */
+        umgebung.ICH.person = () => ({ id: "id-anna", name: "Anna" });
+        ANMELDUNG.wurzelEl = neuesElement("div");
+        ANMELDUNG.abgleich = { daten: { spieler: [] }, eigeneIdSetzen() { } };
+        ANMELDUNG.ichId = null;
+        ANMELDUNG.anmeldenLaeuft = false;
+
+        ANMELDUNG.anmelden();
+
+        if (!ANMELDUNG.anmeldenLaeuft) {
+            throw new Error("ohne Stand muesste das Vollbild erscheinen");
+        }
+        if (ANMELDUNG.ichId !== null) {
+            throw new Error("angemeldet, obwohl die Person nicht im Stand steht");
+        }
+
+        /* Jetzt kommt der echte Stand nach — das Geraet muss sich selbst
+           anmelden und das Vollbild wegraeumen. */
+        ANMELDUNG.datenAktualisiert(spielerDaten);
+
+        if (ANMELDUNG.ichId !== "id-anna") {
+            throw new Error("der nachgereichte Stand meldet nicht an, ichId ist "
+                + ANMELDUNG.ichId);
+        }
+        if (ANMELDUNG.anmeldenLaeuft) {
+            throw new Error("das Vollbild bleibt stehen, obwohl das Konto da ist");
+        }
+    } finally {
+        umgebung.ICH.person = echtePerson;
+        ANMELDUNG.abgleich = echterAbgleich;
+        ANMELDUNG.ichId = echteId;
+        ANMELDUNG.wurzelEl = echtesWurzelEl;
+        ANMELDUNG.anmeldenLaeuft = echtesLaeuft;
+    }
+});
+
+pruefe("Ohne gemerkte Person fragt der nachgereichte Stand nach (v0.89.0)", () => {
+    /*
+     * Die Gegenrichtung: Wer noch NIE angemeldet war, darf nach einem
+     * Fehlstart nicht ohne Anmeldung sitzen bleiben — `app.js` fragt seit
+     * v0.89.0 nicht mehr, wenn das erste Laden fehlschlug.
+     */
+    const echtePerson = umgebung.ICH.person;
+    const echterAbgleich = ANMELDUNG.abgleich;
+    const echteId = ANMELDUNG.ichId;
+    const echtesWurzelEl = ANMELDUNG.wurzelEl;
+    const echtesLaeuft = ANMELDUNG.anmeldenLaeuft;
+
+    try {
+        umgebung.ICH.person = () => null;
+        ANMELDUNG.wurzelEl = neuesElement("div");
+        ANMELDUNG.abgleich = { daten: spielerDaten, eigeneIdSetzen() { } };
+        ANMELDUNG.ichId = null;
+        ANMELDUNG.anmeldenLaeuft = false;
+
+        ANMELDUNG.datenAktualisiert(spielerDaten);
+
+        if (!ANMELDUNG.anmeldenLaeuft) {
+            throw new Error("ohne gemerktes Konto muesste jetzt gefragt werden");
+        }
+    } finally {
+        umgebung.ICH.person = echtePerson;
+        ANMELDUNG.abgleich = echterAbgleich;
+        ANMELDUNG.ichId = echteId;
+        ANMELDUNG.wurzelEl = echtesWurzelEl;
+        ANMELDUNG.anmeldenLaeuft = echtesLaeuft;
+    }
+});
+
+/*
  * DER NUDELHOLZ-KNOPF UND DIE GEDREHTE ANSICHT (v0.73.0).
  *
  * Nutzer-Meldung 26.08.2026: „Nudelholz geht nicht … hat evtl was mit dem

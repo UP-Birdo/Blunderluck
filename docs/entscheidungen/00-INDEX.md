@@ -25,6 +25,11 @@ wird. Die Liste dessen, was noch kommt, steht in [../ROADMAP.md](../ROADMAP.md).
 
 ## entschieden.md - Blunderluck-Eintraege
 
+- **Brett zuerst, der Rest ordnet sich unter** (27.08.2026, v0.88.0 —
+  **beendet die Familie „das Brett springt" an der Wurzel**: Groesse
+  eingefroren (`_brettLage`), fluechtige Kinder zaehlen nicht mit, Brett
+  klebt oben, Rollbalken bekommt festen Platz; Kehrseite: bei zu wenig
+  Platz rollt der Spielbereich)
 - **Der Vorschau-Kasten wird gezogen — UND weiter getippt** (27.08.2026,
   v0.84.0, Gruppe C — **loest den Widerspruch zur Entscheidung vom
   08.08.2026 auf, die das Ziehen verworfen hatte**: nebeneinander statt

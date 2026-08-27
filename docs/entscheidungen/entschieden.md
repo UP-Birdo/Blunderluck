@@ -1,5 +1,41 @@
 # Blunderluck - Entscheidungen / Entschieden - und warum
 
+## Brett zuerst, der Rest ordnet sich unter (27.08.2026, v0.88.0)
+
+**Nutzer-Frage:** „Was muss noch gemacht werden, dass das Schachbrett immer
+eine fixe Position auf dem Bildschirm hat?" **Zur Wahl standen drei Wege;
+gewählt wurde der erste** (27.08.2026).
+
+**Die Ursache, die dahinter steckte:** Das Brett bekam bis v0.87.0 den Platz,
+der nach allen Nachbarn ÜBRIG blieb (`_brettEinpassen` rechnete die Breite aus
+der Resthöhe des Halters, bei jedem Zeichnen neu). Damit war seine Grösse eine
+FOLGE seiner Nachbarn — jede Marke, Meldung oder Karte, die kam oder ging,
+verschob sie. Das hat seit v0.52.0 fünf einzelne Funde gekostet
+(Wird-gesendet-Marke v0.79.1, Unglücksmeldung A2-1, Abstimmung A2-3,
+Chip-Umbruch A2-2, Erklärtexte v0.54.0), und jeder davon war nur ein Symptom.
+
+**Was jetzt gilt:**
+
+- **Die Grösse wird eingefroren.** Gerechnet wird nur, wenn sich die
+  Bedingungen ändern, unter denen die Zahl entstand: Fenstergrösse,
+  Brettmasse der Spielart, offene Partie (`_brettLage`).
+- **Flüchtige Kinder zählen beim Rechnen nicht mit** (Platzier-Leiste,
+  laufendes Zugmuster) — sonst hinge die eingefrorene Zahl davon ab, ob beim
+  Rechnen gerade platziert wurde.
+- **Das Brett klebt oben im Halter** (`justify-content: flex-start` statt
+  `center`). Die Grösse allein hätte die LAGE nicht fixiert: Bei zentriertem
+  Inhalt rutscht das Brett nach oben, sobald unter ihm etwas erscheint.
+- **Der Rollbalken bekommt festen Platz** (`scrollbar-gutter: stable` an
+  `.schach`). Ohne ihn nahm er beim Erscheinen 10 px Breite weg — im Browser
+  gemessen, siehe `erkenntnisse.md`.
+- **Die Kehrseite ist gewollt:** Wird der Inhalt höher als das Fenster, rollt
+  der Spielbereich, statt dass das Brett schrumpft.
+
+**Gemessen nach dem Umbau** (Edge kopflos, zwei Fensterbreiten): Breite UND
+obere Kante des Bretts sind in allen drei Zuständen — ohne Einblendung, mit,
+wieder ohne — bit-genau gleich. Kosten der Rollbalken-Reservierung: 0 px am
+Rechner (dort deckelt ohnehin die Obergrenze), 10 px am schmalen Fenster.
+
 ## Der Vorschau-Kasten wird gezogen — UND weiter getippt (27.08.2026, v0.84.0)
 
 **Nutzer-Wunsch (26.08.2026, Gruppe C der ROADMAP):** „Beim Frost und den

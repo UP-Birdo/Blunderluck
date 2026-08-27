@@ -146,8 +146,29 @@ const APP = {
         Promise.all([
             spielerAbgleich.starten(),
             schachAbgleich.starten()
-        ]).then(() => {
-            ANMELDUNG.anmelden();
+        ]).then(([spielerGeladen]) => {
+            /*
+             * NUR FRAGEN, WENN WIR AUCH GESCHAUT HABEN (seit v0.89.0).
+             *
+             * `starten` wirft bei einem Ladefehler nicht — die App soll ja
+             * auch ohne Netz hochkommen —, sondern meldet ihn und liefert
+             * seit v0.89.0 `false`. Ohne diese Unterscheidung liefe hier
+             * `anmelden()` mit dem LEEREN Anfangsstand an: Die eigene
+             * Kennung steht dort nicht, das Anmelde-Vollbild erscheint, und
+             * wer dann ein neues Konto anlegt, hat zwei. Genau das wurde am
+             * 27.08.2026 gemeldet („bin in meinen Account nicht wieder
+             * reingekommen").
+             *
+             * Schlug das Laden fehl, wird hier NICHT gefragt: Die
+             * regelmässige Abfrage holt den Stand nach, und
+             * `ANMELDUNG.datenAktualisiert` meldet das Gerät dann von selbst
+             * an. Wer noch nie angemeldet war, bekommt sein Vollbild
+             * ebenfalls dort — sobald wirklich feststeht, dass es ihn nicht
+             * gibt.
+             */
+            if (spielerGeladen) {
+                ANMELDUNG.anmelden();
+            }
         });
     },
 

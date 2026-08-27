@@ -67,14 +67,81 @@ const ANMELDUNG = {
     },
 
     /*
-     * Wird nach jedem geholten Stand gerufen (app.js). Einzige Aufgabe:
-     * merken, wenn der eigene Spieler über die Verwaltung entfernt wurde —
-     * dann wird das Gerät abgemeldet und fragt neu.
-     * (Dass er durch ein Überschreiben verschwindet, verhindert
-     * SPIELER.zusammenfuehren.)
+     * Wird nach jedem geholten Stand gerufen (app.js). Zwei Aufgaben:
+     *
+     *  1. Merken, wenn der eigene Spieler über die Verwaltung entfernt
+     *     wurde — dann wird das Gerät abgemeldet und fragt neu. (Dass er
+     *     durch ein Überschreiben verschwindet, verhindert
+     *     `SPIELER.zusammenfuehren`.)
+     *  2. **Den Nachzügler-Fall auffangen (seit v0.89.0)** — siehe unten.
      */
     datenAktualisiert(daten) {
-        if (!ANMELDUNG.ichId || ANMELDUNG.anmeldenLaeuft) {
+        /*
+         * DAS KONTO KOMMT ZURÜCK, WENN DER STAND NACHKOMMT (seit v0.89.0).
+         *
+         * DER FEHLER, DEN DAS BEHEBT (dringende Nutzer-Meldung 27.08.2026:
+         * „jemand hat sich angemeldet, das Spiel geschlossen — und ist in
+         * seinen Account nicht wieder reingekommen"). Nachgemessen an den
+         * echten Dateien, die Kette war:
+         *
+         *   1. Beim Start schlägt das Laden fehl (ein Netz-Hänger genügt).
+         *      `Abgleich.starten` meldet das nur, LÖST sein Versprechen aber
+         *      auf — seit v0.89.0 sagt es zusätzlich, ob es geklappt hat.
+         *   2. `app.js` ruft danach `anmelden()`, und zwar mit dem noch
+         *      LEEREN Anfangsstand.
+         *   3. Die eigene Kennung steht dort naturgemäss nicht drin — das
+         *      Anmelde-Vollbild erscheint.
+         *   4. Sekunden später holt die regelmässige Abfrage den echten
+         *      Stand. Hier stand bis v0.88.0 ein `return`, solange `ichId`
+         *      null war: Das Vollbild blieb stehen, obwohl das Konto längst
+         *      wieder da war.
+         *   5. Wer dann „Neues Konto" drückt, bekommt eine ZWEITE Kennung —
+         *      sein altes Konto liegt unauffindbar in der Datenbank.
+         *
+         * Schritt 4 ist die Stelle, an der die Kette am billigsten reisst:
+         * Sobald ein Stand eintrifft, in dem die gemerkte Kennung steht,
+         * meldet das Gerät sich selbst an und räumt das Bild weg. Das gilt
+         * ausdrücklich AUCH, während das Vollbild offen ist — es ist ja
+         * genau der Fall, den es aufzulösen gilt. Wer schon etwas eingegeben
+         * hat, wird dabei nicht gestört: Der Fall tritt nur ein, wenn dieses
+         * Gerät eine gemerkte Kennung hat, und dann gehört ihm das Konto.
+         */
+        if (!ANMELDUNG.ichId) {
+            const person = ICH.person();
+
+            /*
+             * Niemand gemerkt: Dann ist jetzt der richtige Zeitpunkt zu
+             * fragen — wir haben einen ECHTEN Stand vor uns. `app.js` fragt
+             * seit v0.89.0 nicht mehr, wenn das erste Laden fehlschlug;
+             * ohne diese zwei Zeilen bliebe ein Gerät ohne gemerktes Konto
+             * nach einem Fehlstart ganz ohne Anmeldung sitzen.
+             * `anmelden()` prüft selbst, ob schon eines offen ist.
+             */
+            if (!person) {
+                ANMELDUNG.anmelden();
+                return;
+            }
+
+            const nachgekommen = SPIELER.spielerFinden(daten, person.id);
+            if (!nachgekommen) {
+                return;
+            }
+
+            ANMELDUNG._ichIdSetzen(nachgekommen.id);
+            if (nachgekommen.name !== person.name) {
+                ICH.personSetzen(nachgekommen.id, nachgekommen.name);
+            }
+
+            if (ANMELDUNG.anmeldenLaeuft) {
+                ANMELDUNG._vollbildSchliessen();
+            } else {
+                ANMELDUNG._anzeigenAuffrischen();
+                ANMELDUNG._angemeldetMelden();
+            }
+            return;
+        }
+
+        if (ANMELDUNG.anmeldenLaeuft) {
             return;
         }
         if (!SPIELER.spielerFinden(daten, ANMELDUNG.ichId)) {
