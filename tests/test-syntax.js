@@ -556,5 +556,225 @@ pruefe("Die feste Seite haengt an genau einer Stelle (v0.52.0)", () => {
     }
 });
 
+/* ------------------------------------------------------------------ *
+ * DER SERVICE WORKER (sw.js, seit v0.106.0 — ROADMAP Gruppe L, Punkt 45)
+ *
+ * Sieben Wächter. Der wertvollste ist der dritte: Er vergleicht die Liste im
+ * Worker mit dem, was wirklich im Projekt liegt. Wer eine Programmdatei
+ * ergänzt und den Worker vergisst, merkt das sonst NIE beim Bauen — online
+ * läuft alles, und erst der Nutzer ohne Netz steht vor einer halben App.
+ *
+ * NEUE PRUEFUNGEN GEHOEREN VOR DEN FAZIT-BLOCK. Alles hinter `process.exit`
+ * läuft nie (Haus-Lehre).
+ * ------------------------------------------------------------------ */
+
+const swPfad = pfad.join(projekt, "sw.js");
+const sw = dateisystem.readFileSync(swPfad, "utf8");
+
+pruefe("sw.js ist syntaktisch fehlerfrei", () => {
+    /* Wie bei den Programmdateien: übersetzen, nicht ausführen. Ein Service
+       Worker lässt sich hier ohnehin nicht starten (es gibt kein `self`,
+       kein `caches`) — ein Tippfehler in ihm bliebe sonst aber bis zum
+       ersten Aufruf im Browser unentdeckt, und dort meldet er sich nur in
+       der Entwickler-Konsole. */
+    new vm.Script(sw, { filename: "sw.js" });
+});
+
+pruefe("sw.js nennt dieselbe Version wie konfig.js und CHANGELOG.md", () => {
+    /*
+     * DIE HAUSREGEL: Die Version des Zwischenspeichers zieht im SELBEN
+     * Schritt mit der App-Version mit. Bleibt sie stehen, behalten die
+     * Geräte tagelang den alten Stand — der häufigste Auslieferungsfehler
+     * im Haus. Deshalb prüft dieser Wächter alle drei Stellen gegeneinander.
+     */
+    const konfig = dateisystem.readFileSync(pfad.join(jsOrdner, "konfig.js"), "utf8");
+    const treffer = konfig.match(/APP_VERSION:\s*"([^"]+)"/);
+    if (!treffer) {
+        throw new Error("APP_VERSION nicht in js/konfig.js gefunden");
+    }
+    const version = treffer[1];
+
+    const imWorker = sw.match(/blunderluck-v(\d+\.\d+\.\d+)/g) || [];
+    if (imWorker.length === 0) {
+        throw new Error("in sw.js steht kein Speichername der Form"
+            + " blunderluck-v0.0.0 — wie heisst der Zwischenspeicher?");
+    }
+    if (imWorker.length > 1) {
+        throw new Error("die Version steht " + imWorker.length + " mal in"
+            + " sw.js (" + imWorker.join(", ") + ") — sie gehoert an GENAU"
+            + " EINE Stelle, zwei Quellen laufen auseinander");
+    }
+    if (imWorker[0] !== "blunderluck-v" + version) {
+        throw new Error("sw.js nennt " + imWorker[0] + ", konfig.js aber v"
+            + version + " — beim naechsten Ausliefern behielten die Geraete"
+            + " den alten Stand");
+    }
+
+    const changelog = dateisystem.readFileSync(pfad.join(projekt, "CHANGELOG.md"), "utf8");
+    if (changelog.indexOf("v" + version) === -1) {
+        throw new Error("v" + version + " fehlt in CHANGELOG.md");
+    }
+});
+
+pruefe("sw.js legt genau die Dateien in den Zwischenspeicher, die es gibt", () => {
+    /*
+     * DER WICHTIGSTE WAECHTER DIESES BLOCKS.
+     *
+     * Verglichen wird in BEIDE Richtungen: Was im Projekt liegt, muss im
+     * Worker stehen (sonst fehlt es offline), und was im Worker steht, muss
+     * es geben (sonst scheitert `addAll` — und mit ihm die ganze
+     * Installation, weil `addAll` alles oder nichts nimmt).
+     *
+     * Die Erwartung kommt aus dem Dateisystem, nicht aus einer zweiten
+     * Liste: Eine Liste, die man von Hand nachziehen muss, ist genau das
+     * Problem, das hier gefangen werden soll.
+     */
+    const block = sw.match(/const DATEIEN = \[([\s\S]*?)\n\];/);
+    if (!block) {
+        throw new Error("in sw.js gibt es keine Liste `const DATEIEN = [ ... ];`");
+    }
+
+    const genannt = new Set((block[1].match(/"([^"]+)"/g) || [])
+        .map((text) => text.slice(1, -1).replace(/^\.\//, "")));
+
+    /* Die Ordner-Adresse selbst — so fragt der Browser die Seite an, wenn
+       niemand `index.html` tippt. */
+    if (!genannt.has("")) {
+        throw new Error("in DATEIEN fehlt \"./\" — der Aufruf ohne Dateinamen"
+            + " (genau der aus dem Manifest) waere offline nicht bedienbar");
+    }
+    genannt.delete("");
+
+    const erwartet = new Set(["index.html", "manifest.webmanifest", "icon.svg"]);
+    for (const ordner of ["icons", "css", "js", "img/figuren", "img/lootboxen"]) {
+        for (const name of dateisystem.readdirSync(pfad.join(projekt, ordner))) {
+            erwartet.add(ordner + "/" + name);
+        }
+    }
+
+    const fehlt = [...erwartet].filter((name) => !genannt.has(name)).sort();
+    const zuviel = [...genannt].filter((name) => !erwartet.has(name)).sort();
+
+    if (fehlt.length > 0) {
+        throw new Error("sw.js kennt " + fehlt.length + " Datei(en) nicht: "
+            + fehlt.join(", ") + " — sie fehlten im Offline-Betrieb");
+    }
+    if (zuviel.length > 0) {
+        throw new Error("sw.js nennt " + zuviel.length + " Datei(en), die es"
+            + " nicht gibt: " + zuviel.join(", ") + " — daran scheitert die"
+            + " ganze Installation (addAll nimmt alles oder nichts)");
+    }
+});
+
+pruefe("sw.js bedient nur GET und nur die eigene Herkunft (Firebase bleibt frisch)", () => {
+    /*
+     * WOGEGEN DIESER WAECHTER STEHT: Käme der gemeinsame Spielstand je aus
+     * dem Zwischenspeicher, zeigte das Brett einen Zug, den es nicht mehr
+     * gibt — und niemand sähe, woher das kommt. Firebase liegt unter einer
+     * FREMDEN Herkunft; entscheidend ist deshalb, dass der Worker Fremdes
+     * gar nicht erst anfasst (kein `respondWith`).
+     *
+     * Geprüft wird die Reihenfolge im Quelltext: Beide Ausstiege müssen VOR
+     * dem ersten `respondWith` stehen. Ein Ausstieg dahinter käme zu spät.
+     */
+    /*
+     * Gesucht wird im CODE des fetch-Horchers — ohne Kommentare und ohne
+     * den Rest der Datei. Beides ist noetig: Der Kopf der Datei erklaert
+     * `respondWith` in Worten, und die Kommentare im Horcher selbst
+     * ebenfalls. Ein Wort in einem Kommentar hat aber keine Reihenfolge,
+     * die etwas bedeutet — sonst stuende jeder Ausstieg scheinbar zu spaet.
+     */
+    const swCode = sw.replace(/\/\*[\s\S]*?\*\//g, "");
+    const horcher = swCode.slice(swCode.indexOf("self.addEventListener(\"fetch\""));
+
+    const methode = horcher.indexOf("anfrage.method !== \"GET\"");
+    const herkunft = horcher.indexOf("adresse.origin !== self.location.origin");
+    const antwort = horcher.indexOf("respondWith");
+
+    if (methode === -1) {
+        throw new Error("sw.js prueft die Methode nicht — ein PUT/PATCH an"
+            + " Firebase darf nie aus dem Zwischenspeicher beantwortet werden");
+    }
+    if (herkunft === -1) {
+        throw new Error("sw.js vergleicht die Herkunft nicht mit"
+            + " self.location.origin — Fremdes muss ungefiltert ans Netz");
+    }
+    if (antwort === -1) {
+        throw new Error("sw.js beantwortet gar nichts (kein respondWith)");
+    }
+    if (methode > antwort || herkunft > antwort) {
+        throw new Error("die beiden Ausstiege stehen HINTER dem ersten"
+            + " respondWith — dann greifen sie nicht mehr");
+    }
+
+    /* Und die Datenbank-Adresse selbst hat im Worker nichts verloren. */
+    const konfig = dateisystem.readFileSync(pfad.join(jsOrdner, "konfig.js"), "utf8");
+    const basis = (konfig.match(/firebaseBasis:\s*"https:\/\/([^"/]+)"/) || [])[1];
+    if (basis && sw.indexOf(basis) !== -1) {
+        throw new Error("die Firebase-Adresse steht in sw.js — der"
+            + " gemeinsame Stand darf nie zwischengespeichert werden");
+    }
+});
+
+pruefe("sw.js bevorzugt beim Bauen (localhost) das Netz", () => {
+    /*
+     * Ohne diesen Schalter sieht man beim Entwickeln nach jeder Änderung die
+     * alte Fassung: Der Zwischenspeicher antwortet schneller, als man neu
+     * laden kann. Erkannt wird der Bau-Rechner am Rechnernamen.
+     */
+    if (sw.indexOf("BEIM_BAUEN") === -1) {
+        throw new Error("in sw.js gibt es keinen Schalter BEIM_BAUEN");
+    }
+    if (sw.indexOf("self.location.hostname") === -1) {
+        throw new Error("BEIM_BAUEN fragt nicht self.location.hostname ab");
+    }
+    for (const name of ["\"localhost\"", "\"127.0.0.1\""]) {
+        if (sw.indexOf(name) === -1) {
+            throw new Error("BEIM_BAUEN kennt " + name + " nicht — unter"
+                + " diesem Namen laeuft der lokale Server");
+        }
+    }
+});
+
+pruefe("sw.js loescht nur seine EIGENEN alten Zwischenspeicher", () => {
+    /*
+     * DIE FALLE: Ein Zwischenspeicher gehoert der HERKUNFT, nicht dem
+     * Ordner. Unter `up-birdo.github.io` liegen mehrere Apps des Hauses —
+     * ein „loesche alles ausser meinem" beim Aktivieren zoege den
+     * Nachbar-Apps ihren Speicher unter den Fuessen weg, und zwar still.
+     */
+    if (sw.indexOf("startsWith(\"blunderluck-\")") === -1) {
+        throw new Error("beim Aufraeumen fehlt die Einschraenkung auf"
+            + " Namen, die mit blunderluck- beginnen — der Worker wuerde"
+            + " fremden Apps derselben Herkunft den Speicher loeschen");
+    }
+    if (sw.indexOf("caches.delete") === -1) {
+        throw new Error("sw.js raeumt alte Zwischenspeicher gar nicht weg");
+    }
+});
+
+pruefe("app.js meldet den Service Worker abgesichert an", () => {
+    /*
+     * Ohne Anmeldung ist der beste Worker wirkungslos. Zwei Sperren gehoeren
+     * dazu: alte Browser ohne `serviceWorker` und der Aufruf per Doppelklick
+     * (`file://`) — dort wirft `register`, und der Fehlerstreifen aus
+     * v0.105.0 erschiene bei JEDEM lokalen Aufruf.
+     */
+    const app = dateisystem.readFileSync(pfad.join(jsOrdner, "app.js"), "utf8");
+
+    if (app.indexOf("navigator.serviceWorker.register(\"sw.js\")") === -1) {
+        throw new Error("js/app.js meldet sw.js nicht an — die App bleibt"
+            + " ohne Netz unbenutzbar und wird nicht als installierbar angeboten");
+    }
+    if (app.indexOf("\"serviceWorker\" in navigator") === -1) {
+        throw new Error("die Anmeldung ist nicht gegen Browser ohne"
+            + " Service Worker abgesichert");
+    }
+    if (app.indexOf("location.protocol === \"file:\"") === -1) {
+        throw new Error("die Anmeldung ist nicht gegen den Aufruf per"
+            + " file:// abgesichert — dort wirft register()");
+    }
+});
+
 console.log(anzahlOk + " ok, " + anzahlFehler + " Fehler");
 process.exit(anzahlFehler === 0 ? 0 : 1);

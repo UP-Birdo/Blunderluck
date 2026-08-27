@@ -302,25 +302,87 @@ Stunde).
 
 1. Version in [../js/konfig.js](../js/konfig.js) nach der Haus-Regel erhöhen
    (`0.MINOR.PATCH`, siehe Dev-`CLAUDE.md`).
-2. [../CHANGELOG.md](../CHANGELOG.md) ergänzen, `STATUS.md` nachziehen.
-3. Tests: `powershell -ExecutionPolicy Bypass -File "tools\Test-Blunderluck.ps1" -NurFazit`
+2. **Im SELBEN Schritt die Nummer in [../sw.js](../sw.js) mitziehen**
+   (`SPEICHER_NAME = "blunderluck-v0.106.0"`) — sonst behalten die Geräte
+   den alten Stand. Einzelheiten in Abschnitt 7; der Test in Schritt 4
+   schlägt an, wenn es vergessen wird.
+3. [../CHANGELOG.md](../CHANGELOG.md) ergänzen, `STATUS.md` nachziehen.
+4. Tests: `powershell -ExecutionPolicy Bypass -File "tools\Test-Blunderluck.ps1" -NurFazit`
    — erwartet `0 Fehler`.
-4. Prüfliste aus Abschnitt 1 durchgehen.
-5. Datenbank sichern (Abschnitt 2d) — der Abzug von unmittelbar vor der
+5. Prüfliste aus Abschnitt 1 durchgehen.
+6. Datenbank sichern (Abschnitt 2d) — der Abzug von unmittelbar vor der
    Änderung ist der, den man im Zweifel braucht:
 
        powershell -ExecutionPolicy Bypass -File "tools\Sichere-Datenbank.ps1"
 
-6. Erst ansehen, was gesendet würde:
+7. Erst ansehen, was gesendet würde:
 
        powershell -ExecutionPolicy Bypass -File "tools\Deploy-Blunderluck.ps1" -NurAnzeigen
 
-7. Dann senden:
+8. Dann senden:
 
        powershell -ExecutionPolicy Bypass -File "tools\Deploy-Blunderluck.ps1"
 
-8. Bei jeder durch 5 teilbaren MINOR im Dev-Ordner das Voll-Backup ziehen:
+9. Bei jeder durch 5 teilbaren MINOR im Dev-Ordner das Voll-Backup ziehen:
    `tools\Backup-Projekt.ps1 -Projekt Blunderluck`.
+
+## 7. Der Service Worker — was beim Ausliefern zu beachten ist
+
+Seit v0.106.0 liegt in der Wurzel ein **Service Worker** ([../sw.js](../sw.js)).
+Er legt alle Dateien der App im Browser ab: Danach startet Blunderluck **ohne
+Netz**, und Handys bieten „Zum Startbildschirm hinzufügen" an. Der gemeinsame
+Spielstand bleibt davon unberührt — Firebase wird NIE zwischengespeichert,
+ohne Netz gibt es also weiterhin keine Partie mit anderen.
+
+**Die eine Regel: Die Nummer im Worker zieht mit.** Oben in `sw.js` steht
+
+    const SPEICHER_NAME = "blunderluck-v0.106.0";
+
+Diese Zeile ist der Schalter für das Auffrischen: Ändert sich der Name, baut
+jeder Browser seinen Speicher neu auf und wirft den alten weg. Bleibt sie
+stehen, sehen die Geräte tagelang die alte Fassung — **der häufigste
+Auslieferungsfehler im Haus.** `tests\test-syntax.js` vergleicht die Nummer
+mit `js\konfig.js` und dem `CHANGELOG.md`; vergisst man sie, ist die Testkette
+rot, bevor irgendetwas gesendet wird.
+
+**Der Worker muss mitgeliefert werden.** `tools\Deploy-Blunderluck.ps1` hat
+`sw.js` seit v0.106.0 auf seiner Freigabe-Liste (Wurzeldateien werden einzeln
+freigegeben, nicht ordnerweise). Nach dem Senden im Anzeige-Lauf
+(`-NurAnzeigen`) prüfen, dass `sw.js` bei einer geänderten Fassung wirklich
+in der Liste steht.
+
+**Kommt der neue Stand an? So sieht man es nach:**
+
+1. Die Seite `https://up-birdo.github.io/Blunderluck/sw.js` im Browser
+   aufrufen — dort muss die NEUE Nummer stehen. Steht dort die alte, hat
+   GitHub Pages noch nicht neu gebaut (ein bis zwei Minuten warten).
+2. Die App aufrufen und einmal neu laden. Der neue Worker übernimmt sofort
+   (`skipWaiting` + `clients.claim`), es braucht kein Schliessen aller Reiter.
+3. Zur Kontrolle in den Entwickler-Werkzeugen (F12): **Application ->
+   Service Workers** zeigt Fassung und Zustand, **Application -> Cache
+   Storage** den Speicher `blunderluck-v<Nummer>`. Steht dort noch ein
+   Speicher mit ALTER Nummer, hat `activate` nicht aufgeräumt.
+4. Der echte Beweis: F12 -> **Network** -> „Offline" ankreuzen und neu
+   laden. Die App muss vollständig hochkommen (nur ohne Mitspieler).
+
+**Einen hängenden Worker loswerden** (falls beim Bauen doch einmal die alte
+Fassung klebt):
+
+- **Schnell:** F12 -> Application -> Service Workers -> **Unregister**,
+  danach Application -> Storage -> **Clear site data**, dann neu laden.
+- **Ohne Werkzeuge:** die Seite mit `Strg`+`Umschalt`+`R` neu laden — das
+  umgeht den Worker für DIESEN Aufruf (nicht für die Bilder, die er später
+  nachlädt).
+- **Beim Bauen gar nicht erst:** Auf `localhost` und `127.0.0.1` schaltet
+  der Worker selbst auf „Netz zuerst" um (Schalter `BEIM_BAUEN` in `sw.js`);
+  über `tools\Blunderluck lokal starten.cmd` sieht man also immer die
+  aktuelle Fassung.
+
+**Wer die Dateiliste ändert:** Kommt eine Programm-, Stil- oder Bilddatei
+dazu, gehört sie in die Liste `DATEIEN` in `sw.js` — sonst fehlt sie offline.
+Auch das prüft `test-syntax.js`: Es vergleicht die Liste mit dem, was
+wirklich in `js\`, `css\`, `icons\` und `img\` liegt, und zwar in beide
+Richtungen.
 
 ## Was NICHT ausgeliefert wird
 

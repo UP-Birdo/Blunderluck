@@ -1,4 +1,4 @@
-# Blunderluck — Architektur / Wunsch-Weg, Fehlerfang, Wortbibliothek, Tab-Register, Konventionen, Sicherheit/Datenschutz
+# Blunderluck — Architektur / Wunsch-Weg, Fehlerfang, Service Worker, Wortbibliothek, Tab-Register, Konventionen, Sicherheit/Datenschutz
 
 ## Der Weg eines Wunsches
 
@@ -47,6 +47,47 @@ GitHub-Formular ohne Dialog und ohne Rückfrage, mit der technischen Meldung
 bereits im Text. Deshalb fangen `WUNSCH._stelle()` und `WUNSCH._fassung()` ihre
 Fehler ab: Der Melde-Weg darf nicht an demselben Schaden scheitern, den er
 melden soll.
+
+## Der Service Worker (seit v0.106.0)
+
+`sw.js` liegt in der **Wurzel** — ein Service Worker darf nur den Ordner
+bedienen, in dem er selbst liegt; aus `js\` heraus sähe er weder `index.html`
+noch die Stildateien. Angemeldet wird er in `js\app.js` (`SERVICE_WORKER`,
+direkt hinter dem Fehlerfang und ausserhalb von `APP.starten`), abgesichert
+gegen Browser ohne Unterstützung und gegen den Aufruf per `file://`; die
+Anmeldung selbst wartet auf `window.load`, damit sie nicht mit dem ersten
+Laden um die Leitung streitet. `index.html` bleibt damit frei von
+JavaScript — wie im ganzen Projekt.
+
+Er arbeitet in drei Schritten: Beim **install** legt er alle 66 eigenen
+Dateien in einem Speicher namens `blunderluck-v<Version>` ab (`addAll` —
+alles oder nichts, ein halb gefüllter Speicher wäre schlimmer als keiner).
+Beim **activate** wirft er die Speicher älterer Fassungen weg, **aber nur
+die eigenen**: Ein Zwischenspeicher gehört der Herkunft, und unter
+`up-birdo.github.io` liegen mehrere Apps des Hauses. Beim **fetch** beantwortet
+er GET-Anfragen der eigenen Herkunft aus dem Speicher; alles andere lässt er
+unangetastet ans Netz.
+
+Drei Festlegungen:
+
+- **Firebase wird NIE zwischengespeichert.** Der gemeinsame Stand muss immer
+  frisch sein — eine gespeicherte Antwort zeigte ein Brett, das es nicht mehr
+  gibt. Fremde Herkunft und Nicht-GET steigen VOR dem `respondWith` aus; der
+  Worker verhält sich dort, als gäbe es ihn nicht.
+- **Die Nummer zieht mit der App-Version mit** (Hausregel). Sie steht genau
+  einmal in `sw.js`, und `tests\test-syntax.js` vergleicht sie mit
+  `js\konfig.js` und dem `CHANGELOG.md`. Bleibt sie stehen, behalten die
+  Geräte den alten Stand.
+- **Ein neuer Stand klebt nicht:** `skipWaiting` + `clients.claim`. Das ist
+  hier unbedenklich, weil die App keinen unsichtbaren Zustand hat, den ein
+  Wechsel zerstören könnte — der gemeinsame Stand liegt in Firebase, und der
+  Worker liefert nur Dateien aus.
+
+Beim Bauen gilt das Umgekehrte: Auf `localhost` und `127.0.0.1` schaltet der
+Schalter `BEIM_BAUEN` auf „Netz zuerst", sonst sähe man nach jeder Änderung
+die alte Fassung. Die Dateiliste `DATEIEN` wird von `test-syntax.js` in beide
+Richtungen mit dem Projekt verglichen: Wer eine Datei ergänzt und den Worker
+vergisst, merkt das sonst erst als Nutzer ohne Netz.
 
 ## Die Wortbibliothek
 

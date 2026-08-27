@@ -3871,7 +3871,17 @@ function fehlerfangUmgebungBauen() {
                 return { opener: {} };
             },
             location: { reload() { } }
-        }
+        },
+        /*
+         * Seit v0.106.0 meldet `app.js` beim Übersetzen ausserdem den
+         * Service Worker an (SERVICE_WORKER.anmelden). Ohne diese beiden
+         * Stummel bräche der Fehlerfang-Test schon beim Einlesen der Datei
+         * ab („navigator is not defined") — mit ihnen steigt die Anmeldung
+         * sauber aus, weil dieser `navigator` keinen `serviceWorker` hat.
+         * Am Fehlerfang selbst ändert das nichts.
+         */
+        navigator: {},
+        location: { protocol: "http:" }
     };
 
     fangUmgebung.globalThis = fangUmgebung;

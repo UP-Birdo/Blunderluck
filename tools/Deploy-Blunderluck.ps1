@@ -58,7 +58,12 @@ $Zweig      = "main"
 # Zugriffsschluessel.
 # ---------------------------------------------------------------------
 
-$freigegebeneDateien = @("index.html", "README.md", "CHANGELOG.md",
+# "sw.js" gehoert seit v0.106.0 dazu: der Service Worker. Er MUSS in der
+# Wurzel liegen und dort auch ankommen - ein Service Worker darf nur den
+# Ordner bedienen, in dem er selbst liegt. Fehlt er auf dem Server, meldet
+# sich die App bei jedem Aufruf mit einem 404 an und bleibt ohne Netz
+# unbenutzbar; ein bereits installierter alter Worker bliebe dabei liegen.
+$freigegebeneDateien = @("index.html", "sw.js", "README.md", "CHANGELOG.md",
                          "manifest.webmanifest", "icon.svg")
 # ".github" gehoert dazu: Dort liegt die Formular-Vorlage fuer den
 # Wunsch-Knopf. Ohne sie oeffnet GitHub ein leeres Formular statt der Vorlage.

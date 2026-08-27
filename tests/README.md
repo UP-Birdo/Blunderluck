@@ -19,7 +19,7 @@ das es so nicht mehr gibt.
 | `test-bildschirm.js` | Bildschirm-Code gegen ein nachgebautes DOM: Übersicht, Brett, Partie-Fenster |
 | `test-bildschirm-anzeigen.js` | Anzeigen am Bildschirm: die drei Punkte aus v0.76, Rangliste, Zugweg, Vorrat-Zeichen |
 | `test-bildschirm-ablaeufe.js` | Abläufe am Bildschirm: Start, Abgleich, Fenster, Tabs, globaler Fehlerfang — samt der asynchronen Prüfungen |
-| `test-syntax.js` | Übersetzbarkeit, Einbindung, Aufrufe, Version |
+| `test-syntax.js` | Übersetzbarkeit, Einbindung, Aufrufe, Version, Service Worker |
 
 Dazu kommt **`bildschirm-umgebung.js`** — die gemeinsame Testumgebung der drei
 Bildschirm-Testdateien (nachgebautes DOM, echte `js\`-Dateien im vm-Kontext,
@@ -144,6 +144,7 @@ Klammern und typografische Anführungszeichen sofort ab.
 | Einbindung | jede Datei aus `js\` und jede Stildatei aus `css\` ist in `index.html` verlinkt; `stil.css` (Grundlagen) lädt als erster Teil — die Reihenfolge der fünf Stildateien ist die Kaskade |
 | Aufrufe | jedes `SPIELER.xyz`, `SCHACH.xyz`, `SCHACH_RUNDE.xyz` und `VERSIEGELUNG.xyz` im gesamten Programm gibt es wirklich — fängt umbenannte Funktionen, die anderswo unter dem alten Namen weiterleben. Das Suchmuster braucht eine Wortgrenze, sonst trifft `SCHACH` auch mitten in `TEAM_SCHACH`. |
 | Version | `APP_VERSION` aus `js\konfig.js` kommt in `CHANGELOG.md` UND in der Versionszeile der `STATUS.md` vor |
+| Service Worker (v0.106.0) | sieben Wächter über `sw.js`: übersetzbar; der Speichername nennt GENAU EINMAL dieselbe Nummer wie `konfig.js` und `CHANGELOG.md`; die Liste `DATEIEN` deckt sich **in beide Richtungen** mit dem, was in `js\`, `css\`, `icons\` und `img\` wirklich liegt; Nicht-GET und fremde Herkunft steigen VOR dem `respondWith` aus (Firebase darf nie aus dem Speicher kommen) und die Datenbank-Adresse steht nicht in `sw.js`; `BEIM_BAUEN` erkennt `localhost`/`127.0.0.1`; aufgeräumt werden nur Speicher, die mit `blunderluck-` beginnen; `js\app.js` meldet den Worker an, abgesichert gegen alte Browser und `file://` |
 
 ## Was wird geprüft (`test-versiegelung.js`)
 

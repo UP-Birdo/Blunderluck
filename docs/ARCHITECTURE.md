@@ -12,4 +12,4 @@ Einstieg: `architektur\00-INDEX.md`
 | `architektur\03-wuerfel-quizz.md` | Die geerbte Anmeldungs-Schicht: PIN-Anmeldung, Verwaltung |
 | `architektur\04-team-schach.md` | Team Schach: Regeln, Spielarten, Faehigkeiten, Bildschirm |
 | `architektur\05-rangliste.md` | Rangliste und Spielerprofil |
-| `architektur\07-querschnitt.md` | Wunsch-Weg, Tab-Register, Konventionen, Sicherheit/Datenschutz |
+| `architektur\07-querschnitt.md` | Wunsch-Weg, Fehlerfang, Service Worker, Tab-Register, Konventionen, Sicherheit/Datenschutz |

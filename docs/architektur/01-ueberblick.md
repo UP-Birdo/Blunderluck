@@ -76,7 +76,8 @@ anderer Speicher-Dienst kostet genau eine neue Klasse in `speicher.js`.
 | `js/einstellungen.js` | Der Tab **Einstellungen**: Darstellung (3D-Look) und die Karte **Spieler** (Profil, Knopf zur Verwaltung). |
 | `js/verwaltungs-bildschirm.js` | Die Spieler-Verwaltung als **eigener Bildschirm**: Tabelle aller Mitspieler (Name, Kennung, Passwort ja/nein, Freunde) mit Entfernen je Zeile; Freischaltung wird hier auch beendet. |
 | `js/wunsch.js` | Der Wunsch-Knopf im Kopf: vorbefülltes GitHub-Formular, kein Token in der App. |
-| `js/app.js` | Startpunkt (`DOMContentLoaded`), Statusanzeige, Hinweisbalken; erzeugt beide Speicher und Abgleiche, startet die Anmeldung. |
+| `js/app.js` | Startpunkt (`DOMContentLoaded`), Statusanzeige, Hinweisbalken; erzeugt beide Speicher und Abgleiche, startet die Anmeldung. Ganz oben ausserdem der globale Fehlerfang und die Anmeldung des Service Workers. |
+| `sw.js` | Der **Service Worker** (Wurzel, seit v0.106.0): legt alle Dateien der App im Browser ab — offline-fähig und installierbar. Firebase bleibt bewusst aussen vor. Siehe `architektur\07-querschnitt.md`. |
 | `img/figuren/` | Die zwölf Figuren-Bilder des 3D-Looks (aus `tools/Figuren-Blender.py`). |
 | `tests/` | Regressionstests, siehe `tests\README.md`. |
 | `tools/` | Lokaler Test-Server, Deploy, Wunsch-Abholer, Icon- und Figuren-Erzeugung, Testkette. |

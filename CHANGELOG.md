@@ -3,6 +3,22 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.106.0 — 27.08.2026
+
+**Blunderluck läuft jetzt auch ohne Netz — und lässt sich als App
+installieren.**
+
+- Beim ersten Besuch legt die Seite sich selbst auf dem Gerät ab (Brett,
+  Figuren, Lootbox-Bilder, alles). Danach startet sie auch ohne
+  Verbindung. Was zwingend frisch sein muss — die gemeinsame Partie —
+  wird weiterhin immer aus der Datenbank geholt, nie aus dem Speicher.
+- **Auf dem Handy bietet der Browser jetzt an, die Seite zum
+  Startbildschirm hinzuzufügen** — sie verhält sich dann wie eine
+  installierte App.
+- Eine neue Fassung kommt weiterhin sofort an: Beim Ausliefern zieht der
+  Speichername mit der Versionsnummer mit, und ein Test wacht darüber,
+  dass das nie vergessen wird.
+
 ## v0.105.0 — 27.08.2026
 
 **Wenn etwas schiefgeht, siehst du das jetzt — statt einer weissen Seite.**

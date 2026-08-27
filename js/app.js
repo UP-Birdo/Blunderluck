@@ -282,6 +282,61 @@ const FEHLERFANG = {
 /* Sofort beim Übersetzen dieser Datei — siehe „WARUM DIESE STELLE" oben. */
 FEHLERFANG.registrieren();
 
+/* ------------------------------------------------------------------ *
+ * DER SERVICE WORKER (seit v0.106.0)
+ *
+ * Er macht die App offline-fähig und installierbar; was er tut und was
+ * bewusst nicht, steht im Kopf von `sw.js` in der Projektwurzel.
+ *
+ * WARUM DIE ANMELDUNG HIER STEHT UND NICHT IN index.html: `index.html`
+ * enthält keine einzige Zeile JavaScript — alles Ausführbare wohnt in `js\`,
+ * und `app.js` ist der dokumentierte Startpunkt, an dem die App verdrahtet
+ * wird. Ein Skript-Block in der HTML-Datei wäre die einzige Ausnahme im
+ * ganzen Projekt und würde ausserdem am Fehlerfang vorbeilaufen.
+ *
+ * WARUM NICHT IN `APP.starten`: Die Anmeldung hat mit dem Aufbau der
+ * Bildschirme nichts zu tun. Stolpert `APP.starten`, soll der Worker
+ * trotzdem angemeldet werden — gerade dann ist ein funktionierender
+ * Offline-Stand etwas wert.
+ *
+ * WARUM ERST BEI `load`: Vorher konkurriert die Anmeldung mit dem Laden der
+ * Seite um dieselbe Leitung. Ein paar Hundert Millisekunden später kostet
+ * niemanden etwas — der Worker greift ohnehin erst beim nächsten Aufruf.
+ * ------------------------------------------------------------------ */
+
+const SERVICE_WORKER = {
+
+    anmelden() {
+        /*
+         * ZWEI SPERREN, BEIDE NÖTIG:
+         *
+         * 1. Alte Browser kennen `navigator.serviceWorker` nicht — dort ist
+         *    die App eben nur online nutzbar, aber sie startet.
+         * 2. `file://` — wer die `index.html` doppelklickt, hat KEINE
+         *    Herkunft, und `register` wirft dort („URL protocol of script
+         *    is not supported"). Zum Ausprobieren gibt es
+         *    `tools\Blunderluck lokal starten.cmd`.
+         */
+        if (!("serviceWorker" in navigator) || location.protocol === "file:") {
+            return;
+        }
+
+        window.addEventListener("load", () => {
+            navigator.serviceWorker.register("sw.js").catch((fehler) => {
+                /*
+                 * Ein Fehlschlag ist kein App-Fehler: Ohne Worker läuft
+                 * alles weiter, nur eben ohne Offline-Betrieb. Deshalb geht
+                 * er in die Konsole und NICHT in den Fehlerstreifen — der
+                 * ist für Dinge da, die der Nutzer merkt.
+                 */
+                console.error("Service Worker nicht angemeldet:", fehler);
+            });
+        });
+    }
+};
+
+SERVICE_WORKER.anmelden();
+
 const APP = {
 
     /*
