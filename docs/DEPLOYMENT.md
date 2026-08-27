@@ -157,6 +157,63 @@ Sechs Ziffern wählen, Prüfsumme rechnen (Anleitung im Kommentar in
 `verwaltung.pruefwert` eintragen. Solange der Wert leer ist, ist die
 Verwaltung gesperrt; die App läuft trotzdem.
 
+## 2d. Die Datenbank sichern
+
+**Der Projektordner wird gesichert, die Datenbank bisher nicht.** In ihr
+stehen aber die Konten, die laufenden Partien, die Chronik und damit die
+Rangliste — und sie ist offen (Abschnitt 2c). Ein einziges Löschkommando, von
+aussen oder aus Versehen beim Bauen, räumt sie endgültig leer. Das ist der
+einzige unwiederbringliche Posten des Projekts; alles andere liegt im Ordner
+und in GitHub. Ausführlich in
+[pruefung-app-standards.md](pruefung-app-standards.md), Abschnitt 2.
+
+Dagegen hilft `tools\Sichere-Datenbank.ps1`. Es holt beide Pfade über die
+REST-Schnittstelle und legt sie ab:
+
+    powershell -ExecutionPolicy Bypass -File "tools\Sichere-Datenbank.ps1"
+
+Adresse und Pfade liest das Skript aus [../js/konfig.js](../js/konfig.js) —
+wer dort etwas ändert oder einen dritten Pfad ergänzt, muss am Skript nichts
+anfassen (der dritte Pfad braucht dort allerdings einen Eintrag, damit er
+mitgesichert wird).
+
+**Wohin:** `..\..\Backup\Blunderluck\datenbank\<JJJJ-MM-TT_HHmm>\` im
+Dev-Ordner, je Lauf ein eigener Ordner mit `spieler.json` und
+`team-schach.json`, lesbar eingerückt. Es wird nie etwas überschrieben; die
+ältesten Stände fallen weg, sobald mehr als 20 dastehen (`-Behalten <N>`).
+
+**Erst nachsehen, nichts schreiben** — holt die Daten nur zum Anschauen und
+zeigt Grösse, Anzahl und das Ziel:
+
+    powershell -ExecutionPolicy Bypass -File "tools\Sichere-Datenbank.ps1" -NurAnzeigen
+
+**Wann sichern:**
+
+- **vor jeder Auslieferung** (Schritt 5 in Abschnitt 6) — dann gibt es im
+  Zweifel einen Stand von unmittelbar vor der Änderung;
+- **vor jedem Eingriff von Hand** in die Firebase-Konsole;
+- **regelmässig**, am besten täglich. Dafür in der Windows-Aufgabenplanung
+  eine Aufgabe anlegen, die genau die Zeile oben ausführt (Programm
+  `powershell.exe`, Argumente `-ExecutionPolicy Bypass -File "…\tools\Sichere-Datenbank.ps1"`,
+  „Starten in" der Projektordner).
+
+> **Meldet das Skript `LEER`, ist die Sicherung wertlos.** Firebase antwortet
+> mit `null`, wenn unter dem Pfad nichts steht — das heisst entweder, die
+> Datenbank ist an dieser Stelle wirklich leer, oder der Pfad in `konfig.js`
+> zeigt ins Nichts. Dann erst nachsehen, bevor man sich auf den Abzug verlässt.
+
+> **Kein Ersatz für ein Firebase-eigenes Backup.** Der Abzug kennt nur die zwei
+> freigegebenen Pfade, läuft nur, wenn ihn jemand startet, und liegt auf diesem
+> einen Rechner (in OneDrive). Die eingebaute Sicherung von Firebase setzt den
+> Blaze-Plan voraus — solange Spark gilt, ist dieses Skript das, was es gibt,
+> und besser als nichts.
+
+**Zurückspielen** geht heute von Hand: In der Firebase-Konsole unter
+**Realtime Database → Daten** den betroffenen Pfad wählen, im Drei-Punkte-Menü
+**JSON importieren** und die gesicherte Datei auswählen. Das ersetzt den
+Pfad vollständig — vorher unbedingt einen frischen Abzug ziehen, sonst ist der
+Stand von jetzt weg.
+
 ---
 
 ## 3. Repository anlegen (einmalig)
@@ -249,15 +306,20 @@ Stunde).
 3. Tests: `powershell -ExecutionPolicy Bypass -File "tools\Test-Blunderluck.ps1" -NurFazit`
    — erwartet `0 Fehler`.
 4. Prüfliste aus Abschnitt 1 durchgehen.
-5. Erst ansehen, was gesendet würde:
+5. Datenbank sichern (Abschnitt 2d) — der Abzug von unmittelbar vor der
+   Änderung ist der, den man im Zweifel braucht:
+
+       powershell -ExecutionPolicy Bypass -File "tools\Sichere-Datenbank.ps1"
+
+6. Erst ansehen, was gesendet würde:
 
        powershell -ExecutionPolicy Bypass -File "tools\Deploy-Blunderluck.ps1" -NurAnzeigen
 
-6. Dann senden:
+7. Dann senden:
 
        powershell -ExecutionPolicy Bypass -File "tools\Deploy-Blunderluck.ps1"
 
-7. Bei jeder durch 5 teilbaren MINOR im Dev-Ordner das Voll-Backup ziehen:
+8. Bei jeder durch 5 teilbaren MINOR im Dev-Ordner das Voll-Backup ziehen:
    `tools\Backup-Projekt.ps1 -Projekt Blunderluck`.
 
 ## Was NICHT ausgeliefert wird
