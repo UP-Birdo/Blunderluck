@@ -49,7 +49,8 @@ Zeile in `app.js`. Heute sind es drei: Würfel Quizz, Team Schach, Rangliste.
 
 ## Bewegung (seit v0.107)
 
-Alles Gleiten und Blenden steht in EINEM Block am Ende der `stil.css`, hinter
+Alles Gleiten und Blenden steht in EINEM Block am Ende der Stil-Kette (seit
+v0.93.0: am Ende von `stil-start.css`, dem letzten der fünf Teile), hinter
 `@media (prefers-reduced-motion: no-preference)` — wer weniger Bewegung
 wünscht, bekommt die App ohne. Drei Mechanismen:
 
@@ -123,7 +124,8 @@ Pfad einfach an. Aufräum-Punkt in der `ROADMAP.md`; dringend erst beim
 Umzug.
 
 **Aufräum-Reste, alle in der `ROADMAP.md` eingeordnet:** tote
-Würfel-/Imposter-Stile in `css\stil.css` samt der rund dreissig Regeln unter
+Würfel-/Imposter-Stile in den Stil-Teilen `css\stil*.css` samt der rund
+dreissig Regeln unter
 `body.design-3d` (die Klasse ist seit v0.17.0 immer gesetzt), dazu
 Quizz-Begriffe in `..\WORTLISTE.md`. Die Datei
 [03-wuerfel-quizz.md](03-wuerfel-quizz.md) bleibt bewusst stehen — der dort

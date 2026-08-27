@@ -458,7 +458,7 @@ const TEAM_SCHACH = {
      * `document.startViewTransition` ist eine eingebaute Browser-Schnittstelle
      * (keine Bibliothek): Sie macht ein Bild vom Bildschirm VOR dem Neuzeichnen
      * und blendet weich zum Stand DANACH über. Elemente mit einem
-     * `view-transition-name` (die aktiven Knöpfe der Reihen, `stil.css`)
+     * `view-transition-name` (die aktiven Knöpfe der Reihen, `stil-brett.css`)
      * wandern dabei sichtbar von der alten zur neuen Position — die Markierung
      * gleitet zum gedrückten Knopf, statt hart umzuspringen.
      *

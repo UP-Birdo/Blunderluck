@@ -1,0 +1,1367 @@
+/*
+ * stil-effekte.css — der 3D-Look (Kacheln und Figuren-Bilder), die
+ * Spur des letzten Zuges, waagerechte und senkrechte Mauern, Rahmen um
+ * Feldergruppen, die stillen Animationen und die Wirkungs-Schauspiele der
+ * Fähigkeiten.
+ *
+ * Teil 3 von 5 der Stil-Aufteilung (27.08.2026, v0.93.0) — reiner Umzug
+ * aus stil.css, kein Verhalten geändert. DIE LADE-REIHENFOLGE IN
+ * index.html IST KASKADEN-RELEVANT:
+ * lädt NACH stil-brett.css und VOR stil-auswertung.css.
+ */
+
+/* ------------------------------------------------------------------ *
+ * DER 3D-LOOK (Vorschau, seit v0.119) — Stufe 1: Pastell-Kacheln mit
+ * Tiefe. Hängt an `body.design-3d` (Tab Einstellungen, nur dieses
+ * Gerät); die weiteren Stufen (Spielzeug-Figuren, Schräg-Ansicht)
+ * docken an DERSELBEN Klasse an — ROADMAP, Bündel Z.
+ * ------------------------------------------------------------------ */
+
+/*
+ * DIE FARBEN BLEIBEN DIE GEWOHNTEN (Nutzer-Ansage 22.08., zweite Runde —
+ * die Pastell-Lila-Palette von v0.119 ist wieder raus): Der 3D-Look ändert
+ * nur die FORM der Kacheln. Die Kantenfarben sind abgedunkelte Geschwister
+ * der Feldfarben und stehen bei ihnen im :root (hell wie dunkel).
+ */
+
+/* Das Brett verliert Rahmen und Fläche — die Kacheln stehen frei wie
+   kleine Klötze; unten Platz für ihre Kanten. */
+body.design-3d .brett {
+    border-color: transparent;
+    background: transparent;
+    gap: 5px;
+    padding: 2px 2px 8px 2px;
+    overflow: visible;
+}
+
+body.design-3d .feld,
+body.design-3d .vorschau-feld {
+    border-radius: 12%;
+}
+
+/* Die „Dicke" der Kachel: eine harte Kante unten plus weicher Schatten.
+   Als Variable, damit Ziel- und Schlag-Ringe sie ERGÄNZEN können, statt
+   sie zu überschreiben. */
+body.design-3d .feld-hell {
+    --kachel-schatten: 0 5px 0 var(--feld-kante-hell),
+        0 8px 8px rgba(20, 35, 55, 0.28);
+    box-shadow: var(--kachel-schatten);
+}
+
+body.design-3d .feld-dunkel {
+    --kachel-schatten: 0 5px 0 var(--feld-kante-dunkel),
+        0 8px 8px rgba(20, 35, 55, 0.28);
+    box-shadow: var(--kachel-schatten);
+}
+
+/*
+ * DIE ZUGSPUR FÄRBT DIE GANZE KACHEL (Nutzer-Ansage 24.08.2026, v0.30.0).
+ *
+ * SO SAH ES VORHER AUS: `.feld-spur` setzt nur den `background` — also die
+ * Oberseite der Kachel. Ihre Kante entsteht aber aus `--kachel-schatten`
+ * und blieb in der Feldfarbe stehen. Ergebnis: ein grünes Blatt auf einem
+ * grauen Klotz, und zwar genau dort, wo der Blick nach einem Zug hinfällt.
+ *
+ * Weil die Kante eine Variable ist, genügt es, sie neu zu setzen — der
+ * weiche Schatten darunter bleibt unverändert. Diese Regeln stehen VOR
+ * Ziel und Schlag: Ist ein Feld beides, gewinnt deren Ring (sie kommen
+ * später), rechnet dabei aber mit der GRÜNEN Kante von hier.
+ */
+body.design-3d .feld-spur {
+    --kachel-schatten: 0 5px 0 var(--spur-kante),
+        0 8px 8px rgba(20, 35, 55, 0.28);
+    box-shadow: var(--kachel-schatten);
+}
+
+body.design-3d .feld-spur-ende {
+    --kachel-schatten: 0 5px 0 var(--spur-ende-kante),
+        0 8px 8px rgba(20, 35, 55, 0.28);
+    box-shadow: var(--kachel-schatten);
+}
+
+body.design-3d .feld-spur-pech {
+    --kachel-schatten: 0 5px 0 var(--pech-spur-kante),
+        0 8px 8px rgba(20, 35, 55, 0.28);
+    box-shadow: var(--kachel-schatten);
+}
+
+/* Ziel und Schlag leuchten als Ring AUF der Kachel — wie im Vorbild die
+   umrandeten Felder. Der Punkt bzw. Ring der klassischen Ansicht bleibt
+   zusätzlich stehen. */
+body.design-3d .feld-ziel {
+    box-shadow: var(--kachel-schatten), inset 0 0 0 3px var(--ziel-rand);
+}
+
+body.design-3d .feld-schlag {
+    box-shadow: var(--kachel-schatten), inset 0 0 0 3px #e05a52;
+}
+
+/* Die Team-Vorschläge (v0.83.0) leuchten auch hier als Ring auf der Kachel —
+   dünner als Ziel und Schlag, siehe die Basis-Regeln. */
+body.design-3d .feld-vorschlag-weg {
+    box-shadow: var(--kachel-schatten), inset 0 0 0 2px var(--spur-ende);
+}
+
+body.design-3d .feld-vorschlag-ziel {
+    box-shadow: var(--kachel-schatten), inset 0 0 0 3px var(--spur-ende-kante);
+}
+
+/*
+ * EIN RISS IST EIN LOCH — UND EIN LOCH HAT KEINE KANTE (seit v0.83.1).
+ *
+ * DER FEHLER, DEN DAS BEHEBT (gemeldet 27.08.2026: „der untere Rand der
+ * fehlenden Felder bleibt da"): `.feld-riss` weiter unten setzt zwar
+ * `background: transparent !important` — aber der `box-shadow` daneben trägt
+ * KEIN `!important`. Und dort steht die Kachelkante des 3D-Looks
+ * (`body.design-3d .feld-hell`, Spezifität 0-2-1 gegen 0-1-0): Der erhabene
+ * 5-Pixel-Streifen unter dem Feld blieb also stehen, während die Fläche
+ * verschwand — ein Loch mit Sockel. Im Browser gemessen: `rgb(151, 169, 188)
+ * 0px 5px 0px`.
+ *
+ * WARUM NICHT EINFACH `!important` DAZU: Die Loch-Optik (`inset`-Schatten von
+ * oben) und die Kachelkante stehen in DERSELBEN Eigenschaft — wer sie mit
+ * `!important` festnagelt, nimmt jeder späteren Regel die Möglichkeit, am
+ * Riss noch etwas anzuzeigen. Eine eigene 3D-Regel ist dasselbe Mittel, das
+ * die Kreuz-Ecke gleich darunter schon benutzt.
+ *
+ * SIE MUSS NACH `body.design-3d .feld-spur` STEHEN: Ein Springer setzt über
+ * Risse hinweg, sein Weg färbt also auch ein Riss-Feld. Beide Regeln wiegen
+ * gleich schwer — hier entscheidet die Reihenfolge.
+ */
+body.design-3d .feld-riss {
+    --kachel-schatten: none;
+    box-shadow: inset 0 3px 4px -2px rgba(0, 0, 0, 0.5);
+}
+
+/*
+ * DIE ECKEN EINES KREUZ-BRETTS SIND KEINE KACHELN (v0.31.0). Diese Regel
+ * steht bewusst als LETZTE der Kachel-Regeln: Sie hat dieselbe Stärke wie
+ * `.feld-hell` und `.feld-dunkel` und gewinnt nur, weil sie später kommt.
+ * Wer hier etwas einfügt, fügt es DAVOR ein.
+ */
+body.design-3d .feld-ausserhalb {
+    --kachel-schatten: none;
+    background: transparent;
+    box-shadow: none;
+}
+
+/* Auch die Beispielbretter der Anleitungen tragen den Look. */
+body.design-3d .vorschau {
+    gap: 4px;
+    border-color: transparent;
+    background: transparent;
+    overflow: visible;
+}
+
+/*
+ * Z2 — BEWEGUNG IM 3D-LOOK (seit v0.120): Die ziehende Figur hüpft mit
+ * Stauchen und Strecken, statt nur zu gleiten. `scale` und `translate`
+ * sind EIGENE Eigenschaften und mischen sich nicht in den `transform`-
+ * Übergang des Gleitens — beides läuft gleichzeitig.
+ */
+body.design-3d .figur-zieht {
+    animation: figur-hopser 260ms ease-out;
+}
+
+@keyframes figur-hopser {
+    0% {
+        scale: 1.05 0.75;
+        translate: 0 6%;
+    }
+    45% {
+        scale: 0.92 1.12;
+        translate: 0 -14%;
+    }
+    100% {
+        scale: 1 1;
+        translate: 0 0;
+    }
+}
+
+/* Und der Schlag platzt als gestrichelter Funkenkranz auf, statt nur zu
+   verpuffen. */
+body.design-3d .verpufft-schlag {
+    border-style: dashed;
+    border-width: 3px;
+    animation: verpuffen-funken 480ms ease-out;
+}
+
+@keyframes verpuffen-funken {
+    from {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(0.3) rotate(0deg);
+    }
+    to {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(1.9) rotate(60deg);
+    }
+}
+
+/*
+ * Z3 — DIE GEMALTEN FIGUREN (seit v0.121, auf die Kachel gestellt in v0.122)
+ *
+ * Im 3D-Look zeigt jede Figur ihr in Blender gerendertes Bild aus
+ * `img\figuren\` statt des Schriftzeichens. Die Bilder erzeugt
+ * `tools\Figuren-Blender.py`; gestartet wird es per Doppelklick auf
+ * `tools\Figuren rendern.cmd` (NICHT aus dem Blender-Fenster — Begründung in
+ * `docs\FIGUREN-BLENDER.md`).
+ *
+ * DAS SCHRIFTZEICHEN BLEIBT STEHEN und wird nur durchsichtig geschaltet. Es
+ * bleibt für Vorlese-Programme lesbar und ist die Rückfallebene: Fällt eine
+ * Figur durch — unbekannte Art, fehlendes Bild —, greift keine der Regeln
+ * unten und das Zeichen ist einfach wieder da. Die Rückfallebene ist nicht
+ * gebaut, sondern übrig.
+ *
+ * Die Klassen kommen aus `TEAM_SCHACH._figurKlasse`: `figur-bild` sagt „hier
+ * steht ein Bild", `figur-art-*` sagt welches. Alles hier hängt an
+ * `body.design-3d` — das gewohnte Brett bleibt Zeichen-Brett.
+ */
+body.design-3d .figur-bild {
+    color: transparent;
+    text-shadow: none;
+    background-repeat: no-repeat;
+    background-position: center bottom;
+    background-size: contain;
+}
+
+/*
+ * DIE FIGUR STEHT AUF DER KACHEL, sie sitzt nicht darin (seit v0.122, nach
+ * dem Dribbble-Vorbild).
+ *
+ * Sie wird aus dem Fluss genommen und mit ihrem Fuss an der Kachel
+ * festgemacht; nach oben darf sie über die Kachel hinausragen und die
+ * dahinterliegende überlappen. Genau das erzeugt den Eindruck von Höhe.
+ *
+ * Vier Dinge daran sind nicht beliebig:
+ *
+ *  - **`left`/`margin-left` statt `transform`.** `_zugAnimieren` schreibt
+ *    beim Ziehen ein eigenes `transform` auf die Figur. Würde die Mitte per
+ *    `transform: translateX(-50%)` gesetzt, überschriebe der Zug sie und die
+ *    Figur spränge zur Seite. `margin-left` ist die halbe Breite, von Hand.
+ *  - **`pointer-events: none`.** Die Figur überlappt die Kachel DAHINTER.
+ *    Ohne diese Zeile fingen ihre überstehenden Teile die Klicks für ein
+ *    Feld ab, das ganz woanders liegt. Ihre eigene Kachel bleibt darunter
+ *    voll anklickbar — es geht nichts verloren.
+ *  - **Die Reihenfolge stimmt von selbst.** Der Browser zeichnet die Felder
+ *    in der Reihenfolge des Quelltextes, also von hinten nach vorn. Eine
+ *    Figur aus einer vorderen Reihe deckt damit die hintere korrekt ab.
+ *  - **Der Platz oben.** Die Figuren der ersten Reihe ragen über das Brett
+ *    hinaus; ohne den zusätzlichen Rand oben würden sie abgeschnitten.
+ */
+/*
+ * DIE GRÖSSE STEHT AN EINER STELLE (seit v0.22.0, Wunsch 9: „Die
+ * Schachfiguren sind zu gross für die 3D-Platten"). Bis v0.21.0 standen
+ * 2.3em an drei Stellen — Breite, Höhe und die halbe Breite als
+ * `margin-left`; wer eine vergass, stellte die Figuren schief. Jetzt zählt
+ * nur `--figur-3d-groesse`, alles andere rechnet sich daraus.
+ *
+ * Die Zahl ist ein Vielfaches der Feldschrift und wächst mit dem Brett mit.
+ * Sie wird HIER gesetzt, an derselben Regel, die sie benutzt — `em` in einer
+ * eigenen Eigenschaft rechnet gegen die Schrift des Elements, das sie
+ * einsetzt, und das ist genau dieses.
+ *
+ * 1.85em statt 2.3em: hoch genug für den 3D-Eindruck, ohne die Kachel
+ * dahinter zuzudecken. Wer nachjustieren will, ändert nur diese Zeile — und
+ * den Faktor beim Rand oben, gleich darunter.
+ */
+body.design-3d .feld > .figur-bild,
+body.design-3d .vorschau-feld > .figur-bild {
+    --figur-3d-groesse: 1.85em;
+
+    position: absolute;
+    left: 50%;
+    margin-left: calc(var(--figur-3d-groesse) / -2);
+    bottom: 12%;
+    width: var(--figur-3d-groesse);
+    height: var(--figur-3d-groesse);
+    pointer-events: none;
+}
+
+/*
+ * IM VORSCHAUBRETT HÄNGT DIE FIGUR AN DER ZELLE, NICHT AN DER SCHRIFT
+ * (seit v0.87.0).
+ *
+ * DER FEHLER, DEN DAS BEHEBT (Nutzer-Meldung 27.08.2026: „die Grösse des
+ * Vorschau-Schachbretts im Vergleich zu den Figuren stimmt noch nicht"):
+ * Beide Bretter geben der Figur `1.85em`. Am ECHTEN Brett ist das
+ * verlässlich, weil die Feldschrift aus der GEMESSENEN Feldbreite kommt
+ * (`_figurGroesseSetzen`, 68 Prozent davon) — die Figur ist dort immer
+ * 126 Prozent der Feldbreite. Die Vorschau dagegen rechnet ihre Schrift aus
+ * einer ANGENOMMENEN Brettbreite (`min(260px, 70vw)`), und die stimmt nicht
+ * mit dem Platz überein, den sie im Dialog wirklich bekommt.
+ *
+ * Im Browser gemessen: 126 Prozent am echten Brett gegen 162 Prozent in der
+ * Vorschau am Rechner — und bis zu 199 Prozent im schmalen Fenster, weil die
+ * Annahme dort noch weiter danebenliegt. Die Figuren wuchsen der Vorschau
+ * also buchstäblich aus den Feldern.
+ *
+ * `%` LÖST DAS OHNE MESSUNG: Prozentangaben eines absolut liegenden Kindes
+ * beziehen sich auf seine Zelle. Die Rechnung steht ausgeschrieben statt als
+ * fertige Zahl — sie ist dieselbe wie am echten Brett (1,85 Schriftgrössen
+ * zu je 0,68 Feldbreiten) und bleibt damit nachvollziehbar, wenn jemand an
+ * einer der beiden Zahlen dreht. Dritter Anlauf derselben Lehre: gemessen
+ * oder relativ, nie geschätzt (`erkenntnisse.md`).
+ */
+body.design-3d .vorschau-feld > .figur-bild {
+    width: calc(1.85 * 0.68 * 100%);
+    height: calc(1.85 * 0.68 * 100%);
+    margin-left: calc(1.85 * 0.68 * -50%);
+}
+
+/* Der Platz oben wächst mit der Figur: Was über die erste Reihe hinausragt,
+   würde sonst abgeschnitten. Der Faktor gehört zur Grösse oben. */
+body.design-3d .brett {
+    padding-top: calc(var(--figur-groesse, 30px) * 1.1);
+}
+
+/*
+ * DAS VORSCHAUBRETT RECHNET IN `em`, NICHT IN PIXELN (seit v0.75.0).
+ *
+ * DER FEHLER, DEN DAS BEHEBT (Nutzer-Meldung 26.08.2026: „die Vorschaubilder
+ * der Items stimmen nicht mehr … und die Grösse der Figuren darin stimmt auch
+ * nicht mehr"): Bis v0.74.0 stand die Vorschau in derselben Regel wie das
+ * Brett und rechnete damit ebenfalls mit `--figur-groesse`. Diese Variable
+ * setzt aber `TEAM_SCHACH._figurGroesseSetzen` — und zwar AUSSCHLIESSLICH am
+ * echten Brett, aus dessen gemessener Feldbreite. Im Vorschaubrett war sie nie
+ * gesetzt, es griff also immer der Rückfall von 30 Pixeln.
+ *
+ * Reserviert waren damit feste 33 Pixel, während die Figuren dort mit der
+ * Brettgrösse mitwachsen: Bei sechs Spalten sind es rund 65 Pixel Figur auf
+ * 33 Pixel Platz. Der Überstand wurde oben abgeschnitten — und weil das nur
+ * die oberste Reihe trifft, sah es nach „das Bild stimmt nicht" aus.
+ *
+ * WARUM `em` HIER RICHTIG IST UND PIXEL DORT: Das echte Brett kennt seine
+ * Feldbreite nur gemessen, es MUSS sie als Pixelwert bekommen. Die Vorschau
+ * dagegen setzt ihre Feldgrösse selbst über `font-size` (siehe `.vorschau`) —
+ * dort ist `em` die natürliche Einheit und wächst von allein mit.
+ *
+ * WOHER DIE 0,8 KAMEN: Die Figur ist `1.85em` hoch und sitzt `12%` über dem
+ * Zellboden; die Schrift war auf 80 Prozent der Zellbreite gesetzt. Damit ragt
+ * sie 0,6 Zellen über die erste Reihe hinaus, und das sind 0,75em. Aufgerundet
+ * auf 0,8em blieb ein Rest Luft.
+ *
+ * SEIT v0.87.0 IN ZELLEN GERECHNET, NICHT IN SCHRIFTGRÖSSEN. Die Figur hängt
+ * hier nicht mehr an der Schrift, sondern an ihrer Zelle (siehe die Regel bei
+ * `.vorschau-feld > .figur-bild`) — der Platz oben muss derselben Grösse
+ * folgen, sonst deckt er den Überstand mal zu grosszügig und mal gar nicht
+ * ab. Im schmalen Fenster gemessen: 41,8 px Überstand gegen 34,1 px Reserve,
+ * also 7,7 px zu wenig; die Figuren der ersten Reihe wurden oben angeschnitten.
+ *
+ * DIE RECHNUNG: Die Figur ragt `126 % + 12 % − 100 % = 38 %` einer Zellhöhe
+ * über die oberste Reihe. Eine Zelle ist so breit wie das Brett geteilt durch
+ * seine Spalten, und ein `padding-top` in Prozent zählt von der BREITE —
+ * beides trifft sich also. Wer an der Figurengrösse dreht, dreht hier mit.
+ */
+body.design-3d .vorschau {
+    padding-top: calc(38% / var(--vorschau-spalten, 8));
+}
+
+/*
+ * Die zwölf Bilder. Farbe und Art stehen in zwei getrennten Klassen, deshalb
+ * sind es zwölf Zeilen und keine sechs. Die Namen sind der Paket-Vertrag aus
+ * `docs\FIGUREN-BLENDER.md` — wer eine Datei umbenennt, benennt sie hier mit.
+ */
+body.design-3d .figur-weiss.figur-art-bauer { background-image: url("../img/figuren/figur-bauer-weiss.png"); }
+body.design-3d .figur-weiss.figur-art-springer { background-image: url("../img/figuren/figur-springer-weiss.png"); }
+body.design-3d .figur-weiss.figur-art-laeufer { background-image: url("../img/figuren/figur-laeufer-weiss.png"); }
+body.design-3d .figur-weiss.figur-art-turm { background-image: url("../img/figuren/figur-turm-weiss.png"); }
+body.design-3d .figur-weiss.figur-art-dame { background-image: url("../img/figuren/figur-dame-weiss.png"); }
+body.design-3d .figur-weiss.figur-art-koenig { background-image: url("../img/figuren/figur-koenig-weiss.png"); }
+
+body.design-3d .figur-schwarz.figur-art-bauer { background-image: url("../img/figuren/figur-bauer-schwarz.png"); }
+body.design-3d .figur-schwarz.figur-art-springer { background-image: url("../img/figuren/figur-springer-schwarz.png"); }
+body.design-3d .figur-schwarz.figur-art-laeufer { background-image: url("../img/figuren/figur-laeufer-schwarz.png"); }
+body.design-3d .figur-schwarz.figur-art-turm { background-image: url("../img/figuren/figur-turm-schwarz.png"); }
+body.design-3d .figur-schwarz.figur-art-dame { background-image: url("../img/figuren/figur-dame-schwarz.png"); }
+body.design-3d .figur-schwarz.figur-art-koenig { background-image: url("../img/figuren/figur-koenig-schwarz.png"); }
+
+/*
+ * Die kleinen Figuren ausserhalb des Bretts (Beute-Bilanz im Abschluss,
+ * Werte-Liste in „Schach lernen") stehen in Textzeilen, nicht auf Kacheln.
+ * Sie bleiben deshalb im Fluss und bekommen nur einen passenden Kasten.
+ */
+body.design-3d .bilanz-figur,
+body.design-3d .werte-figur {
+    display: inline-block;
+    width: 1.3em;
+    height: 1.3em;
+    vertical-align: -0.25em;
+}
+
+/* ------------------------------------------------------------------ *
+ * Die Spur des letzten Zuges (seit v3.6)
+ *
+ * Bis v3.5 lag hier ein gezeichneter Pfeil über dem Brett — mit Maske, damit
+ * er unter den Figuren verschwindet. Er hatte einen Geburtsfehler: Ein Pfeil
+ * ist eine gerade Linie und passte damit zu keiner Gangart ausser der
+ * geraden. Beim schlagenden Bauern und beim Springer war die Strecke sogar zu
+ * kurz, um überhaupt gezeichnet zu werden.
+ *
+ * Jetzt wird der Weg eingefärbt, wie bei jedem anderen Schachprogramm. Die
+ * Felder liegen ohnehin da; es braucht keine zweite Zeichenebene mehr.
+ *
+ * DIE REIHENFOLGE IST PFLICHT — alle diese Regeln haben dieselbe Spezifität
+ * wie `.feld-hell`, `.feld-gewaehlt` und `.feld-ziel`, und bei Gleichstand
+ * gewinnt die SPÄTERE. Die Spur muss deshalb NACH den Feldfarben stehen
+ * (sonst wäre sie unsichtbar) und VOR den Auswahl-Markierungen (denn was
+ * gerade möglich ist, zählt mehr als die Erinnerung an den letzten Zug).
+ * ------------------------------------------------------------------ */
+
+.feld-spur {
+    background: var(--spur);
+}
+
+/* Start und Ziel kräftiger als die Felder dazwischen — man sieht so auf einen
+   Blick, WOHER und WOHIN gezogen wurde. */
+.feld-spur-ende {
+    background: var(--spur-ende);
+}
+
+/* Was ein Unglückswürfel bewegt hat, ist gelb. */
+.feld-spur-pech {
+    background: var(--pech-spur);
+}
+
+/*
+ * Wirkung ohne Bewegung (Schutzschild, Fessel, Verstärkung): kein Weg, nur
+ * ein Punkt. Deshalb ein Ring statt einer Fläche — sonst sähe es aus, als
+ * wäre dorthin gezogen worden.
+ */
+.feld-spur-wirkung::after {
+    content: "";
+    position: absolute;
+    inset: 14%;
+    border: 3px solid var(--spur-ende);
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+/* Die angetippte Figur: gelbes Feld plus dunkler Rahmen, damit sie sich auch
+   vom hellen Feld absetzt. */
+.feld-gewaehlt {
+    background: var(--feld-gewaehlt);
+    box-shadow: inset 0 0 0 3px var(--ziel-kern);
+}
+
+.feld-schach {
+    box-shadow: inset 0 0 0 3px var(--gefahr);
+}
+
+/*
+ * Mögliches Zielfeld: das ganze Feld bekommt einen Rahmen, dazu ein kräftiger
+ * Punkt in der Mitte. Beides zweifarbig — außen hell, innen dunkel —, damit es
+ * auf hellen wie auf dunklen Feldern steht. Das ist der Unterschied zu v1.5,
+ * wo ein einzelner blauer Punkt auf blauem Grund verschwand.
+ */
+.feld-ziel {
+    box-shadow:
+        inset 0 0 0 2px var(--ziel-rand),
+        inset 0 0 0 4px var(--ziel-kern);
+}
+
+.feld-ziel::after {
+    content: "";
+    position: absolute;
+    width: 32%;
+    height: 32%;
+    border-radius: 50%;
+    background: var(--ziel-kern);
+    border: 2px solid var(--ziel-rand);
+}
+
+/*
+ * `feld-rochade` gibt es seit v0.44 nicht mehr: Der Turm trägt bei der Rochade
+ * dieselbe Marke wie jedes andere Ziel (`feld-ziel`). Der Punkt in der Mitte
+ * verschwindet dort ohnehin hinter der Figur — übrig bleibt die Kontur, also
+ * genau das, was diese Regel vorher eigens gezeichnet hat.
+ */
+
+/*
+ * DER VORSCHLAG EINES TEAM-MITGLIEDS (seit v0.83.0, Fund A2-3): Laufweg und
+ * Ziel in Grün — zweifarbig wie jede Brett-Markierung (heller Rand, dunkler
+ * Kern), aber DÜNNER als die eigenen Zugpunkte und ohne deren Mittelpunkt,
+ * damit sich Vorschlag und eigene Auswahl nicht verwechseln lassen. Die
+ * Figur selbst steht als Schemen auf dem Ziel (`.figur-schemen`, dieselbe
+ * Optik wie die Gräber des Nekromanten). Nur das eigene Team sieht das.
+ */
+.feld-vorschlag-weg {
+    box-shadow:
+        inset 0 0 0 1px var(--ziel-rand),
+        inset 0 0 0 3px var(--spur-ende);
+}
+
+.feld-vorschlag-ziel {
+    box-shadow:
+        inset 0 0 0 2px var(--ziel-rand),
+        inset 0 0 0 5px var(--spur-ende-kante);
+}
+
+.erklaerung-rochade {
+    font-weight: 600;
+}
+
+/*
+ * Wirkende Fähigkeiten am Brett. Der Schild umrandet die Figur blau, die
+ * Fessel violett — beides in der Farbe der Stufe, aus der die Fähigkeit kommt.
+ */
+/* ------------------------------------------------------------------ *
+ * Mauer (seit v3.3)
+ *
+ * Ein blauer Riegel quer über drei Felder. Er liegt ÜBER dem Feld, aber
+ * unter den Figuren-Markierungen — dort steht ohnehin nichts, solange die
+ * Mauer steht.
+ *
+ * Die abgerundeten Ecken sitzen nur aussen (`mauer-anfang`/`mauer-ende`),
+ * damit drei Felder wie EIN Block aussehen und nicht wie drei Kacheln.
+ *
+ * DER HELLE RAND LIEGT NUR AUSSEN (seit v0.41). Vorher zog ein umlaufender
+ * Ring um JEDES der drei Stücke — dazwischen standen also zwei senkrechte
+ * Striche, und die Mauer sah aus wie drei aneinandergelegte Steine statt wie
+ * ein geschlossener Riegel. Gemeldet wurde das als „die Mauer ist nicht in
+ * sich geschlossen". Oben und unten bekommt jedes Stück seine Linie, links
+ * und rechts nur die beiden Enden.
+ *
+ * Dazu reicht jedes Stück ein Pixel in seinen rechten Nachbarn hinein: Die
+ * Felder sind Bruchteile der Brettbreite, und ohne diesen Überstand bleibt je
+ * nach Bildschirm ein Haarriss zwischen zwei Stücken stehen.
+ * ------------------------------------------------------------------ */
+
+.feld-mauer::after {
+    --mauer-licht: rgba(255, 255, 255, 0.35);
+
+    content: "";
+    position: absolute;
+    left: 0;
+    right: -1px;
+    top: 22%;
+    bottom: 22%;
+    background: linear-gradient(180deg, #4a8fd6 0%, #2f7fd0 55%, #1f5fa8 100%);
+    box-shadow:
+        inset 0 1px 0 var(--mauer-licht),
+        inset 0 -1px 0 var(--mauer-licht);
+    z-index: 2;
+    pointer-events: none;
+}
+
+/* ------------------------------------------------------------------ *
+ * DIE SENKRECHTE MAUER (seit v0.80)
+ *
+ * Dieselbe Leiste, um 90 Grad gekippt: Der Balken läuft von oben nach unten
+ * statt von links nach rechts, und die runden Enden sitzen oben und unten.
+ * Gesetzt wird `mauer-senkrecht` in `team-schach-brett.js`, und zwar nach der
+ * Lage IN DER ANSICHT — auf einem gedrehten Brett erscheint eine senkrechte
+ * Mauer waagerecht.
+ *
+ * Die Regeln stehen VOR `mauer-anfang`/`mauer-ende`, damit die waagerechten
+ * Enden sie nicht überschreiben; die senkrechten Fassungen weiter unten
+ * gewinnen dann über die höhere Spezifität.
+ * ------------------------------------------------------------------ */
+.feld-mauer.mauer-senkrecht::after {
+    left: 22%;
+    right: 22%;
+    top: 0;
+    bottom: -1px;
+    background: linear-gradient(90deg, #4a8fd6 0%, #2f7fd0 55%, #1f5fa8 100%);
+    box-shadow:
+        inset 1px 0 0 var(--mauer-licht),
+        inset -1px 0 0 var(--mauer-licht);
+}
+
+.feld-mauer.mauer-anfang::after {
+    left: 8%;
+    border-top-left-radius: 6px;
+    border-bottom-left-radius: 6px;
+    box-shadow:
+        inset 0 1px 0 var(--mauer-licht),
+        inset 0 -1px 0 var(--mauer-licht),
+        inset 1px 0 0 var(--mauer-licht);
+}
+
+.feld-mauer.mauer-ende::after {
+    right: 8%;
+    border-top-right-radius: 6px;
+    border-bottom-right-radius: 6px;
+    box-shadow:
+        inset 0 1px 0 var(--mauer-licht),
+        inset 0 -1px 0 var(--mauer-licht),
+        inset -1px 0 0 var(--mauer-licht);
+}
+
+/* Eine Mauer, die an beiden Enden aufhört (nur ein Feld breit): Sie braucht
+   beide senkrechten Linien. Ohne diese Regel gewänne `mauer-ende` und die
+   linke Kante bliebe offen. */
+.feld-mauer.mauer-anfang.mauer-ende::after {
+    box-shadow:
+        inset 0 1px 0 var(--mauer-licht),
+        inset 0 -1px 0 var(--mauer-licht),
+        inset 1px 0 0 var(--mauer-licht),
+        inset -1px 0 0 var(--mauer-licht);
+}
+
+/* Die senkrechten Enden — dieselben drei Regeln, um 90 Grad gedreht. Sie
+   stehen NACH den waagerechten und gewinnen über die höhere Spezifität. */
+.feld-mauer.mauer-senkrecht.mauer-anfang::after {
+    left: 22%;
+    right: 22%;
+    top: 8%;
+    border-radius: 6px 6px 0 0;
+    box-shadow:
+        inset 1px 0 0 var(--mauer-licht),
+        inset -1px 0 0 var(--mauer-licht),
+        inset 0 1px 0 var(--mauer-licht);
+}
+
+.feld-mauer.mauer-senkrecht.mauer-ende::after {
+    left: 22%;
+    right: 22%;
+    bottom: 8%;
+    border-radius: 0 0 6px 6px;
+    box-shadow:
+        inset 1px 0 0 var(--mauer-licht),
+        inset -1px 0 0 var(--mauer-licht),
+        inset 0 -1px 0 var(--mauer-licht);
+}
+
+.feld-mauer.mauer-senkrecht.mauer-anfang.mauer-ende::after {
+    box-shadow:
+        inset 1px 0 0 var(--mauer-licht),
+        inset -1px 0 0 var(--mauer-licht),
+        inset 0 1px 0 var(--mauer-licht),
+        inset 0 -1px 0 var(--mauer-licht);
+}
+
+/*
+ * Geliehene Figur (Fähigkeit „Friedhof", seit v3.3): Sie gehört dir nur
+ * auf Zeit. Der gestrichelte Rahmen sagt „nicht von Dauer" — anders als
+ * die vollen Ringe von Schild, Fessel und Frost, die einen Zustand
+ * anzeigen, der zur Figur gehört.
+ */
+.feld-geliehen::before {
+    content: "";
+    position: absolute;
+    inset: 8%;
+    border: 2px dashed #8b46c8;
+    border-radius: 6px;
+    z-index: 2;
+    pointer-events: none;
+}
+
+.feld-schild::before,
+.feld-fessel::before {
+    content: "";
+    position: absolute;
+    inset: 6%;
+    border-radius: 50%;
+    z-index: 2;
+    pointer-events: none;
+}
+
+.feld-schild::before {
+    border: 3px solid #2f7fd0;
+    box-shadow: 0 0 0 1px var(--ziel-rand), inset 0 0 6px rgba(47, 127, 208, 0.8);
+}
+
+.feld-fessel::before {
+    border: 3px dashed #8b46c8;
+    box-shadow: 0 0 0 1px var(--ziel-rand);
+}
+
+/* ------------------------------------------------------------------ *
+ * EIN RAHMEN UM EINE FELDERGRUPPE (seit v0.56, geteilt seit v0.57)
+ *
+ * Zwei Dinge zeichnen sich so: der eingefrorene 2×2-Block (`feld-frost`,
+ * blau) und der Vorschau-Kasten beim Platzieren (`feld-vorschau`, grün).
+ * Beide sollen als EINE Fläche erscheinen, nicht als Kästchen — der
+ * Strich läuft nur aussen um die Gruppe herum, innen bleibt er weg.
+ * Dieselbe Bauweise wie bei der Mauer.
+ *
+ * Dass der Vorschau-Kasten genauso gebaut ist wie der Frost, ist
+ * Absicht: Er zeigt vorher, was hinterher dasteht.
+ *
+ * WARUM DIE KANTEN AUS DEM HINTERGRUND KOMMEN UND NICHT AUS `border`:
+ * Jede Markierung auf dem Brett muss zweifarbig sein (heller Rand,
+ * dunkler Kern) — sonst verschwindet sie auf einem der beiden
+ * Feldtöne. Ein `border` kann das nicht, ein Farbverlauf schon: 1 Pixel
+ * hell, dann 3 Pixel Kern. Und weil jede Kante ihr eigenes Bild ist,
+ * lassen sich beliebige Kombinationen aus vier Klassen zusammensetzen,
+ * ohne fünfzehn Regeln zu schreiben.
+ * ------------------------------------------------------------------ */
+
+.feld-frost::before,
+.feld-vorschau::before {
+    --umriss-licht: rgba(255, 255, 255, 0.55);
+
+    /* Ohne Kante: kein Bild. Die vier Klassen unten setzen ein. */
+    --kante-oben: none;
+    --kante-unten: none;
+    --kante-links: none;
+    --kante-rechts: none;
+
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-color: var(--umriss-fuellung);
+    background-image:
+        var(--kante-oben), var(--kante-unten),
+        var(--kante-links), var(--kante-rechts);
+    background-repeat: no-repeat;
+    background-position: top left, bottom left, top left, top right;
+    background-size: 100% 4px, 100% 4px, 4px 100%, 4px 100%;
+    z-index: 2;
+    pointer-events: none;
+}
+
+.feld-frost::before {
+    --umriss-kern: #2f7fd0;
+    --umriss-fuellung: rgba(47, 127, 208, 0.28);
+}
+
+/*
+ * DER VORSCHAU-KASTEN STEHT NACH DEM FROST — und das entscheidet den
+ * Gleichstand: Liegt der Kasten gerade über einem eingefrorenen Feld,
+ * gewinnt er. Richtig so, denn in diesem Moment fragt man sich, wohin
+ * die neue Wirkung geht, nicht wo die alte liegt.
+ */
+/*
+ * NUR EIN RAND, KEINE FLÄCHE (seit v0.79.0).
+ *
+ * Nutzer-Ansage 26.08.2026: „… soll vormarkiert werden, aber NICHT mit dem
+ * grünen draufgelegten rechteckigen Feld, was gar nicht mehr in den Stil
+ * passt, sondern ein grüner Rand um die Felder, die möglich sind."
+ *
+ * Bis v0.78.0 lag über der Gruppe eine grüne Fläche mit 28 Prozent Deckung.
+ * Sie verdeckte die Kacheln und die Figuren darauf — auf einem Brett, das
+ * seit v0.17.0 wie gebaute 3D-Platten aussieht, wirkte das wie ein
+ * aufgeklebtes Rechteck aus einer anderen App.
+ *
+ * DER RAND WAR SCHON DA und musste nicht gebaut werden: `_umrissKanten`
+ * setzt die vier Kanten-Klassen nur an den AUSSENkanten der Gruppe, sodass
+ * ein zusammenhängender Umriss entsteht. Sichtbar war er nur nicht, weil die
+ * Füllung ihn erschlug. Es fällt hier also etwas weg, statt dass etwas
+ * dazukommt.
+ *
+ * KEINE RESTTÖNUNG: Naheliegend wäre gewesen, statt 28 Prozent noch 8 zu
+ * lassen — „ein bisschen sieht man ja besser". Der Nutzer hat das
+ * ausdrücklich abgelehnt („nicht mit dem grünen draufgelegten Feld"), und
+ * er hat recht: Eine schwache Tönung ist kein Kompromiss, sondern beides
+ * halb — sie stört den Stil und hilft dem Auge kaum.
+ */
+.feld-vorschau::before {
+    --umriss-kern: #2e9e52;
+    --umriss-fuellung: transparent;
+}
+
+.kante-oben::before {
+    --kante-oben: linear-gradient(180deg,
+        var(--umriss-licht) 0 1px, var(--umriss-kern) 1px 4px);
+}
+
+.kante-unten::before {
+    --kante-unten: linear-gradient(0deg,
+        var(--umriss-licht) 0 1px, var(--umriss-kern) 1px 4px);
+}
+
+.kante-links::before {
+    --kante-links: linear-gradient(90deg,
+        var(--umriss-licht) 0 1px, var(--umriss-kern) 1px 4px);
+}
+
+.kante-rechts::before {
+    --kante-rechts: linear-gradient(270deg,
+        var(--umriss-licht) 0 1px, var(--umriss-kern) 1px 4px);
+}
+
+/* Die Knöpfe unter dem Brett beim Platzieren. */
+.knopf-zeile {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+
+/* Mögliches Schlagfeld: derselbe Aufbau in Rot, dazu ein Ring um die Figur. */
+.feld-schlag {
+    box-shadow:
+        inset 0 0 0 2px var(--schlag-rand),
+        inset 0 0 0 5px var(--schlag-kern);
+}
+
+.feld-schlag::after {
+    content: "";
+    position: absolute;
+    inset: 10%;
+    border-radius: 50%;
+    border: 3px solid var(--schlag-kern);
+    box-shadow: 0 0 0 2px var(--schlag-rand);
+}
+
+/* Feld, dessen Figur gerade wandert: liegt über seinen Nachbarn. */
+.feld-zieht {
+    z-index: 2;
+}
+
+/*
+ * Feld mit einer Fähigkeit darauf: Die Lootbox liegt als SVG darin (siehe
+ * TEAM_SCHACH._wuerfelBauen — seit v0.24.0 ein gerendertes Bild aus
+ * tools\Lootbox-Blender.py, Fragezeichen eingraviert). Sie schwebt
+ * leicht, damit man sie zwischen den Figuren bemerkt.
+ */
+.wuerfel {
+    position: absolute;
+    width: 76%;
+    height: 76%;
+    pointer-events: none;
+
+    /*
+     * SIE LIEGT AUF DEM FELD, DIE FIGUR STEHT DARAUF (seit v0.83.1).
+     *
+     * DER FEHLER, DEN DAS BEHEBT (gemeldet 27.08.2026: „die Lootbox ist im
+     * Vordergrund statt hinter der Figur"): Die Box hatte `z-index: 2`, die
+     * Figur hat `1` — sie lag also vor jeder Figur, die auf ihrem Feld steht
+     * (geschoben von Erdrutsch, Nudelholz oder Bauernschub, gestellt von
+     * Friedhof und Wiedergeburt: geschoben zu werden ist kein Zug, es wird
+     * dabei nichts eingesammelt).
+     *
+     * JETZT DIESELBE STUFE WIE DIE FIGUR — und die Reihenfolge im Feld
+     * entscheidet: `_brettBauen` hängt die Box als ERSTES Kind ein, die Figur
+     * danach. Warum nicht einfach eine Stufe tiefer (`0`): Dort läge sie
+     * unter dem Zielpunkt (`.feld-ziel::after`), und der säße dann mitten auf
+     * ihr. Warum die Figur nicht höher: Schild-, Fessel- und Leihring liegen
+     * auf Stufe 2 und gehören ÜBER die Figur — die Stufen sind eng.
+     */
+    z-index: 1;
+
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.45));
+    animation: wuerfel-schweben 2.4s ease-in-out infinite;
+}
+
+/*
+ * HIER STAND BIS v0.23.0 `.wuerfel-zeichen` — das aufgemalte Fragezeichen
+ * auf der Lootbox. Seit v0.24.0 ist es in den Würfel GRAVIERT und damit
+ * Teil des Bildes (`tools\Lootbox-Blender.py`); im Bildschirm-Code gibt es
+ * kein Zeichen mehr zu färben.
+ */
+
+@keyframes wuerfel-schweben {
+    0%, 100% { transform: translateY(-3%); }
+    50% { transform: translateY(3%); }
+}
+
+/* Mögliches Ziel einer Fähigkeit, die auf ein Feld wartet. */
+.feld-wahl {
+    box-shadow:
+        inset 0 0 0 2px var(--ziel-rand),
+        inset 0 0 0 5px var(--bonus-feld);
+}
+
+/*
+ * Ein Feld, auf das eine Fähigkeit gewirkt hat: BLAU (seit v0.41) — dasselbe
+ * Pulsen wie beim Unglückswürfel, nur in der anderen Farbe. Rot heisst „gegen
+ * dich", Blau heisst „für dich"; mehr muss man aus dem Augenwinkel nicht
+ * unterscheiden können.
+ */
+.feld-wirkung {
+    animation: feld-leuchten var(--wirkung-dauer, 1600ms) ease-out;
+}
+
+@keyframes feld-leuchten {
+    0%, 45% {
+        box-shadow:
+            inset 0 0 0 2px var(--wirkung-rand),
+            inset 0 0 0 6px var(--wirkung-gut);
+    }
+    30%, 70% {
+        box-shadow:
+            inset 0 0 0 2px transparent,
+            inset 0 0 0 6px transparent;
+    }
+    100% {
+        box-shadow:
+            inset 0 0 0 2px transparent,
+            inset 0 0 0 6px transparent;
+    }
+}
+
+.feld-wirkung .figur {
+    animation: figur-glut-gut var(--wirkung-dauer, 1600ms) ease-out;
+}
+
+@keyframes figur-glut-gut {
+    0%, 45% {
+        filter:
+            drop-shadow(0 0 2px var(--wirkung-gut))
+            drop-shadow(0 0 7px var(--wirkung-gut));
+    }
+    30%, 70% { filter: none; }
+    100% { filter: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .wuerfel {
+        animation: none;
+    }
+
+    .feld-wirkung,
+    .feld-wirkung .figur {
+        animation: none;
+    }
+}
+
+/* ------------------------------------------------------------------ *
+ * DIE STILLEN ANIMATIONEN (seit v0.77)
+ *
+ * Vier kleine Bewegungen: Eine Lootbox erscheint, eine verschwindet, eine
+ * Figur kommt dazu, eine wird geschlagen. Wann sie laufen, entscheidet
+ * `TEAM_SCHACH._veraenderungen` — durch Vergleich mit dem letzten Anblick des
+ * Bretts, nicht aus dem Verlauf.
+ *
+ * OHNE FARBE, AUSDRÜCKLICH (Nutzer-Ansage 18.08.: „sie sollen keine Farben
+ * haben und sehr simpel"). Benutzt werden nur Grösse und Deckkraft; der Ring
+ * ist weiss mit einem dunklen Saum, damit er auf einem hellen wie auf einem
+ * dunklen Feld lesbar bleibt. Keine der Farben, die am Brett schon etwas
+ * BEDEUTEN, wird dabei aufgegriffen — blau ist die Wirkung, rot das Unglück,
+ * grün die Zugspur, gelb die Wirkung eines Unglücks.
+ *
+ * WARUM `scale` UND NICHT `transform: scale(…)`: Beides zusammen geht nicht.
+ * Der Würfel schwebt bereits über `transform`, und die ziehende Figur gleitet
+ * darüber (`.figur-zieht`). `scale` ist eine eigenständige Eigenschaft und
+ * rechnet sich mit einem vorhandenen `transform` zusammen, statt es zu
+ * überschreiben. Ein Browser, der sie nicht kennt, zeigt einfach keine
+ * Animation — es geht nichts dabei kaputt.
+ * ------------------------------------------------------------------ */
+
+/* Eine gerade erschienene Lootbox: Sie wächst auf und schwebt danach weiter
+   wie jede andere. Zwei Animationen nebeneinander — die eine fasst `scale`
+   und `opacity` an, die andere `transform`, sie kommen sich nicht ins Gehege. */
+.feld-bonus-neu .wuerfel {
+    animation:
+        wuerfel-auftauchen 360ms ease-out,
+        wuerfel-schweben 2.4s ease-in-out infinite;
+}
+
+@keyframes wuerfel-auftauchen {
+    from { scale: 0.2; opacity: 0; }
+    to { scale: 1; opacity: 1; }
+}
+
+/* Eine Figur, die wirklich DAZUGEKOMMEN ist — Nachschub, Spiegel,
+   Wiedergeburt, Wiederbelebung, Friedhof. Eine, die nur hingezogen ist,
+   bekommt sie nicht; das unterscheidet `_veraenderungen`. */
+.figur-erscheint {
+    animation: figur-auftauchen 320ms ease-out;
+}
+
+@keyframes figur-auftauchen {
+    from { scale: 0.3; opacity: 0; }
+    to { scale: 1; opacity: 1; }
+}
+
+/*
+ * Der Ring, der übrig bleibt: nach einem Schlag, und dort wo eine Lootbox
+ * verschwunden ist. Er wächst kurz aus der Feldmitte auf und ist weg.
+ *
+ * `pointer-events: none`, damit er den Tipp auf das Feld nicht abfängt — er
+ * liegt in der Sekunde nach dem Zug genau dort, wo man als Nächstes hinfasst.
+ */
+.verpufft {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 46%;
+    height: 46%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.45);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 3;
+    animation: verpuffen 420ms ease-out;
+}
+
+@keyframes verpuffen {
+    from {
+        opacity: 0.95;
+        transform: translate(-50%, -50%) scale(0.35);
+    }
+    to {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(1.7);
+    }
+}
+
+/* Nach einem Schlag geht er etwas weiter auf als bei der Lootbox: Dort
+   verschwindet ein Gegenstand, hier fällt eine Figur. */
+.verpufft-schlag {
+    width: 60%;
+    height: 60%;
+}
+
+/* ------------------------------------------------------------------ *
+ * Die Wirkungs-Schauspiele (seit v0.115, Bündel Y) — je Fähigkeit ein
+ * kleines Bild auf dem Brett. Erzeugt in `_wirkungSchauspiel`; das
+ * Skript unterlässt das bei „weniger Bewegung", deshalb stehen die
+ * Regeln hier und nicht im no-preference-Block.
+ * ------------------------------------------------------------------ */
+
+.wirkung-marke {
+    position: absolute;
+    inset: 4%;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 3;
+}
+
+/* Das Schutzschild: ein blauer Ring, der aufwächst und kurz glänzt. */
+.wirkung-schild {
+    border: 3px solid var(--haupt);
+    box-shadow: 0 0 12px var(--haupt), inset 0 0 10px rgba(255, 255, 255, 0.5);
+    animation: schild-glanz 0.8s ease-out forwards;
+}
+
+@keyframes schild-glanz {
+    from {
+        transform: scale(0.35);
+        opacity: 0;
+    }
+    35% {
+        opacity: 1;
+    }
+    to {
+        transform: scale(1.05);
+        opacity: 0;
+    }
+}
+
+/* Die Fessel: ein dunkler, gestrichelter Ring, der zuschnappt … */
+.wirkung-fessel {
+    border: 3px dashed var(--schrift);
+    animation: fessel-zuschnappen 0.7s ease-out forwards;
+}
+
+@keyframes fessel-zuschnappen {
+    from {
+        transform: scale(1.6) rotate(20deg);
+        opacity: 0;
+    }
+    40% {
+        opacity: 1;
+    }
+    70% {
+        transform: scale(0.95) rotate(-4deg);
+    }
+    to {
+        transform: scale(1) rotate(0deg);
+        opacity: 0;
+    }
+}
+
+/* … und die gefangene Figur rüttelt kurz. */
+.figur-ruettelt {
+    animation: figur-ruetteln 0.45s ease-in-out;
+}
+
+@keyframes figur-ruetteln {
+    0%, 100% {
+        transform: rotate(0);
+    }
+    25% {
+        transform: rotate(-8deg);
+    }
+    75% {
+        transform: rotate(8deg);
+    }
+}
+
+/* Der Frost: Eis wächst aus der Feldmitte auf und verweht. */
+.wirkung-frost {
+    inset: 0;
+    border-radius: 0;
+    background: radial-gradient(circle,
+        rgba(150, 205, 255, 0.9) 0%,
+        rgba(150, 205, 255, 0.35) 55%,
+        rgba(150, 205, 255, 0) 75%);
+    animation: frost-wachsen 0.9s ease-out forwards;
+}
+
+@keyframes frost-wachsen {
+    from {
+        transform: scale(0);
+        opacity: 0.3;
+    }
+    55% {
+        opacity: 1;
+    }
+    to {
+        transform: scale(1.2);
+        opacity: 0;
+    }
+}
+
+/*
+ * DAS ROLLENDE NUDELHOLZ: eine Holzwalze mit Griffen, die einmal über
+ * die betroffenen Spalten rollt. Lage und Grösse setzt `_nudelholzRollen`
+ * in Pixeln an den echten Zellen; die Streifen wandern während der Fahrt
+ * nach unten — das lässt die Walze sichtbar rollen.
+ */
+.nudelholz-walze {
+    position: absolute;
+    z-index: var(--ebene-schauspiel);
+    border-radius: 999px;
+    background:
+        repeating-linear-gradient(0deg,
+            rgba(70, 40, 10, 0.18) 0 3px,
+            rgba(255, 255, 255, 0.10) 3px 6px),
+        linear-gradient(180deg, #d2ab72, #aa7f47 55%, #86622f);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35);
+    pointer-events: none;
+
+    /* Dieselbe Dauer wie TEAM_SCHACH.NUDELHOLZ_ROLL_MS — daran hängen die
+       Verzögerungen der geschobenen Figuren. */
+    animation: nudelholz-rollen 0.9s ease-in-out forwards;
+}
+
+/* Die Griffe links und rechts. */
+.nudelholz-walze::before,
+.nudelholz-walze::after {
+    content: "";
+    position: absolute;
+    top: 28%;
+    height: 44%;
+    width: 10px;
+    background: #86622f;
+    border-radius: 4px;
+}
+
+.nudelholz-walze::before {
+    left: -9px;
+}
+
+.nudelholz-walze::after {
+    right: -9px;
+}
+
+/* Die QUER liegende Walze (seit v0.117): Sie rollt waagerecht über eine
+   Reihe — Holz und Streifen sind gedreht, die Griffe sitzen oben und
+   unten. */
+.nudelholz-walze-quer {
+    background:
+        repeating-linear-gradient(90deg,
+            rgba(70, 40, 10, 0.18) 0 3px,
+            rgba(255, 255, 255, 0.10) 3px 6px),
+        linear-gradient(90deg, #d2ab72, #aa7f47 55%, #86622f);
+}
+
+.nudelholz-walze-quer::before,
+.nudelholz-walze-quer::after {
+    top: auto;
+    left: 28%;
+    width: 44%;
+    height: 10px;
+}
+
+.nudelholz-walze-quer::before {
+    top: -9px;
+}
+
+.nudelholz-walze-quer::after {
+    bottom: -9px;
+}
+
+/*
+ * Der Schub durch die Walze (v0.117.1): Die Figur wartet auf ihrem alten
+ * Feld — `backwards` am Aufruf hält das erste Bild während der
+ * Verzögerung — und gleitet erst, wenn die Walze sie erreicht. Eine
+ * ANIMATION statt eines Übergangs: kein Zwischenbild, in dem die Figur
+ * schon am Ziel steht (so entstand das gemeldete Hüpfen).
+ */
+@keyframes nudelholz-schub {
+    from {
+        transform: translate(var(--schub-von, 0px, 0px));
+    }
+    to {
+        transform: translate(0px, 0px);
+    }
+}
+
+/* Start und Ziel setzt das Skript je Richtung (`--roll-von`/`--roll-bis`,
+   seit v0.117 — vorher rollte sie fest von oben nach unten). */
+@keyframes nudelholz-rollen {
+    from {
+        transform: translate(var(--roll-von, 0px, 0px));
+        opacity: 0;
+    }
+    12% {
+        opacity: 1;
+    }
+    88% {
+        opacity: 1;
+    }
+    to {
+        transform: translate(var(--roll-bis, 0px, 0px));
+        opacity: 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .feld-bonus-neu .wuerfel,
+    .figur-erscheint,
+    .verpufft {
+        animation: none;
+    }
+}
+
+/* Marke einer eingesammelten Fähigkeit — die Farbe zeigt die Seltenheit. */
+.faehigkeit-marke,
+.faehigkeit-knopf {
+    border-color: var(--stufe-farbe, var(--rahmen));
+    border-width: 2px;
+    border-style: solid;
+    color: var(--stufe-farbe, var(--schrift-leise));
+    font-weight: 600;
+    /* Platz für die beiden Zeichen dahinter (Pluszeichen, Blitz). */
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/*
+ * Eine Fähigkeit, die man gerade nicht einsetzen darf (seit v0.48).
+ *
+ * Antippen geht trotzdem — es zeigt dann nur Beschreibung und Anleitung. Sie
+ * muss sich deshalb sichtbar von einer einsatzbereiten unterscheiden, ohne
+ * auszusehen wie abgeschaltet: gestrichelter Rand statt durchgezogenem, dazu
+ * ein zurückgenommener Grund.
+ */
+.faehigkeit-knopf-fremd {
+    border-style: dashed;
+    background: transparent;
+    font-weight: 500;
+}
+
+/*
+ * Die beiden Zeichen am Vorrat (seit v3.6):
+ *
+ *     +      Danach bleibt dir dein normaler Zug.
+ *     Blitz  Geht auch, während der Gegner am Zug ist.
+ *
+ * Sie sind bewusst leise: Sie erklären eine Fähigkeit, sie sind nicht die
+ * Fähigkeit. Wer wissen will, was sie bedeuten, findet es hinter dem i.
+ */
+.faehigkeit-zeichen {
+    font-size: 0.95em;
+    font-weight: 700;
+    opacity: 0.75;
+}
+
+.faehigkeit-blitz {
+    width: 0.85em;
+    height: 0.85em;
+    fill: currentColor;
+    opacity: 0.75;
+    flex: 0 0 auto;
+}
+
+.figur {
+    position: relative;
+    z-index: 1;
+    /*
+     * Voller Umriss in der Gegenfarbe. Auf einem blau-weissen Brett steht eine
+     * weisse Figur sonst unsichtbar auf einem weissen Feld — ein weicher
+     * Schatten allein reicht dafür nicht.
+     */
+    text-shadow:
+        1px 0 0 var(--figur-umriss-dunkel),
+        -1px 0 0 var(--figur-umriss-dunkel),
+        0 1px 0 var(--figur-umriss-dunkel),
+        0 -1px 0 var(--figur-umriss-dunkel),
+        0 0 3px rgba(0, 0, 0, 0.4);
+}
+
+.figur-weiss {
+    color: var(--figur-weiss);
+}
+
+/* Unter dem vollen Glas: leicht verschwommen, damit man ahnt, dass etwas
+   nicht stimmt — ohne zu verraten, was in Wirklichkeit dort steht. */
+.figur-getruebt {
+    filter: blur(0.4px) saturate(0.85);
+    opacity: 0.92;
+}
+
+.figur-schwarz {
+    color: var(--figur-schwarz);
+    text-shadow:
+        1px 0 0 var(--figur-umriss-hell),
+        -1px 0 0 var(--figur-umriss-hell),
+        0 1px 0 var(--figur-umriss-hell),
+        0 -1px 0 var(--figur-umriss-hell);
+}
+
+/*
+ * Die Zugbewegung. team-schach.js setzt die Figur zuerst auf ihr altes Feld
+ * (transform) und nimmt die Verschiebung im nächsten Bild wieder weg — mit
+ * dieser Klasse gleitet sie dabei hinüber. Die Dauer muss zu
+ * TEAM_SCHACH.ANIMATION_MS passen.
+ */
+.figur-zieht {
+    transition: transform 260ms ease-out;
+}
+
+/* Wer keine Bewegung mag oder braucht, bekommt keine. */
+@media (prefers-reduced-motion: reduce) {
+    .figur-zieht {
+        transition: none;
+    }
+}
+
+.zug-liste {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 220px;
+    overflow-y: auto;
+}
+
+.zug-zeile {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 8px;
+    font-size: 0.9rem;
+    padding: 4px 0;
+    border-bottom: 1px solid var(--rahmen);
+}
+
+.zug-zeile:last-child {
+    border-bottom: none;
+}
+
+.zug-farbe {
+    min-width: 62px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--schrift-leise);
+}
+
+.zug-wer {
+    margin-left: auto;
+    font-size: 0.8rem;
+    color: var(--schrift-leise);
+}
+
+/*
+ * Die vergangenen Matches (seit v0.37.0 eine eigene Seite hinter dem
+ * Verlauf-Zeichen des Starts). Sie brauchen dort keinen Aufklapp-Kasten
+ * mehr — die Seite gehört ihnen allein.
+ */
+.verlauf-liste {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+

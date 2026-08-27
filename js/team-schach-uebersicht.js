@@ -883,7 +883,8 @@ Object.assign(TEAM_SCHACH, {
      * „wenig" verschmierte sichtbar zu „normal" (Nutzer-Meldung 22.08.).
      *
      * Die Pille liegt hinter dem Text (`z-index: -1`) und trägt je Reihe
-     * ihren eigenen Namen (`stil.css`). Ohne View-Transitions ist sie einfach
+     * ihren eigenen Namen (`stil-brett.css`). Ohne View-Transitions ist sie
+     * einfach
      * der Hintergrund — die Optik ist dieselbe.
      */
     _aktivPille(reihe) {

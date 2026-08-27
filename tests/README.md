@@ -123,7 +123,7 @@ Klammern und typografische Anführungszeichen sofort ab.
 | Bereich | Inhalt |
 |---|---|
 | Übersetzbarkeit | jede Datei in `js\` wird kompiliert |
-| Einbindung | jede Datei aus `js\` und `css\stil.css` ist in `index.html` verlinkt |
+| Einbindung | jede Datei aus `js\` und jede Stildatei aus `css\` ist in `index.html` verlinkt; `stil.css` (Grundlagen) lädt als erster Teil — die Reihenfolge der fünf Stildateien ist die Kaskade |
 | Aufrufe | jedes `SPIELER.xyz`, `SCHACH.xyz`, `SCHACH_RUNDE.xyz` und `VERSIEGELUNG.xyz` im gesamten Programm gibt es wirklich — fängt umbenannte Funktionen, die anderswo unter dem alten Namen weiterleben. Das Suchmuster braucht eine Wortgrenze, sonst trifft `SCHACH` auch mitten in `TEAM_SCHACH`. |
 | Version | `APP_VERSION` aus `js\konfig.js` kommt in `CHANGELOG.md` UND in der Versionszeile der `STATUS.md` vor |
 

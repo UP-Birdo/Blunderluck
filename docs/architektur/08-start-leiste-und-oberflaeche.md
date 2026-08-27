@@ -156,6 +156,7 @@ Schalter gibt es nicht mehr. Figuren UND Lootboxen kommen als gerenderte PNGs
 aus zwei Blender-Skripten in `tools\`; sie teilen Licht und Kamera. Vertrag und
 Prüfliste stehen in [../FIGUREN-BLENDER.md](../FIGUREN-BLENDER.md).
 
-**Folge fürs Aufräumen:** Die rund dreissig Regeln unter `body.design-3d` in
-`css\stil.css` sind seit v0.17.0 immer aktiv — die Klasse zu prüfen ist
+**Folge fürs Aufräumen:** Die rund dreissig Regeln unter `body.design-3d`
+(seit der Stil-Aufteilung v0.93.0 vor allem in `css\stil-effekte.css`) sind
+seit v0.17.0 immer aktiv — die Klasse zu prüfen ist
 sinnlos geworden. Der Aufräum-Punkt steht in der `ROADMAP.md`.

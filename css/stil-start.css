@@ -1,0 +1,1410 @@
+/*
+ * stil-start.css — Imposter (geerbte Reste), Dialoge, das
+ * Anmelde-Vollbild, der Startbildschirm, Runde beitreten/erstellen, die
+ * Freundesliste, die Bibliothek, die Zeichen der Fähigkeiten, das
+ * Einladungs-Banner, kleine Bildschirme und die UI-Politur.
+ *
+ * Teil 5 von 5 der Stil-Aufteilung (27.08.2026, v0.93.0) — reiner Umzug
+ * aus stil.css, kein Verhalten geändert. DIE LADE-REIHENFOLGE IN
+ * index.html IST KASKADEN-RELEVANT:
+ * lädt als LETZTER Teil — kleine Bildschirme und UI-Politur überschreiben
+ * bewusst frühere Regeln.
+ */
+
+/* ------------------------------------------------------------------ *
+ * Imposter
+ * ------------------------------------------------------------------ */
+
+/*
+ * Das Wort steht groß und allein — es ist das Einzige, was in dieser Runde
+ * zählt. Für die Imposter steht dort ihre Rolle, in Rot: Sie sollen im ersten
+ * Moment merken, dass sie etwas anderes sehen als die anderen.
+ */
+.imposter-wort {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 28px 20px;
+    margin-bottom: var(--abstand);
+    text-align: center;
+    background: var(--karte);
+    border: 2px solid var(--haupt);
+    border-radius: var(--radius);
+}
+
+.imposter-wort-rolle {
+    border-color: var(--gefahr);
+    background: var(--fehler-flaeche);
+}
+
+.imposter-wort-marke {
+    font-size: 0.8rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--schrift-leise);
+}
+
+.imposter-wort-text {
+    font-size: clamp(1.8rem, 9vw, 3rem);
+    font-weight: 700;
+    line-height: 1.1;
+    overflow-wrap: anywhere;
+}
+
+.imposter-wort-rolle .imposter-wort-text {
+    color: var(--gefahr);
+}
+
+.imposter-wort-hinweis {
+    font-size: 0.9rem;
+    color: var(--schrift-leise);
+    max-width: 32em;
+}
+
+.imposter-uhr {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.imposter-wahl {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.imposter-wahl-titel {
+    font-size: 0.9rem;
+    color: var(--schrift-leise);
+}
+
+.imposter-knopfreihe {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.imposter-zeile {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--rahmen);
+}
+
+.imposter-zeile:last-child {
+    border-bottom: none;
+}
+
+.imposter-zeile-ich {
+    background: var(--karte-leise);
+    border-radius: 6px;
+    padding: 8px;
+}
+
+.imposter-name {
+    flex: 1 1 120px;
+    min-width: 0;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.imposter-ich {
+    color: var(--haupt);
+}
+
+.imposter-treffer {
+    font-size: 0.85rem;
+    color: var(--schrift-leise);
+}
+
+.imposter-punkte {
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    color: var(--haupt);
+    margin-left: auto;
+}
+
+/* Verdächtig rot, unverdächtig grün — aber nur, wenn gewählt. */
+.knopf-haupt.imposter-stufe-imposter {
+    background: var(--gefahr);
+    color: var(--karte);
+}
+
+.knopf-haupt.imposter-stufe-save {
+    background: var(--gut);
+    color: var(--karte);
+}
+
+/* ------------------------------------------------------------------ *
+ * Dialog
+ * ------------------------------------------------------------------ */
+
+.dialog-hintergrund {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--abstand);
+    z-index: var(--ebene-dialog);
+
+    /* Wer im Dialog ans Ende rollt, rollt NICHT die Seite dahinter weiter
+       (seit v0.108, gemeldet 22.08.: „wenn man in Popups scrollt und zurück
+       geht, dann hat man dort auch gescrollt"). */
+    overscroll-behavior: contain;
+}
+
+/*
+ * Die zweite Hälfte desselben Fixes: Solange ein Dialog offen ist, ist die
+ * Seite dahinter festgehalten (`dialog.js` setzt die Klasse). Ohne das rollte
+ * ein Wisch auf dem SCHLEIER — neben dem Kasten — weiterhin die Seite.
+ */
+body.dialog-offen {
+    overflow: hidden;
+}
+
+.dialog-hintergrund[hidden] {
+    display: none;
+}
+
+/*
+ * DER KASTEN PASST IMMER AUF DEN SCHIRM (seit v0.67, Wunsch #27).
+ *
+ * Gemeldet als: „Wenn man eine Fähigkeit aus dem Inventar anklickt, kommt eine
+ * Info, und die muss man wegklicken." Genau daran lag es — der Dialog trägt
+ * seit v0.41 die abgespielte Bildanleitung mit Brett und Schrittliste, und mit
+ * sechs Bildern ist er höher als ein Handybildschirm. Der Knopf zum Wegklicken
+ * stand damit UNTER dem Bildrand: Man musste erst im Dialog nach unten
+ * scrollen, um ihn überhaupt zu sehen.
+ *
+ * Jetzt hat der Kasten eine Höchsthöhe und scrollt selbst; die Knopfleiste
+ * klebt unten fest (siehe `.dialog-knopfleiste`). Das gilt für JEDEN Dialog —
+ * ein hoher Dialog ist überall dasselbe Problem, nicht nur bei den
+ * Fähigkeiten.
+ */
+.dialog-kasten {
+    background: var(--karte);
+    border-radius: var(--radius);
+    border: 1px solid var(--rahmen);
+    padding: 20px;
+    max-width: 420px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+
+    /* Am Ende des Kastens endet auch das Rollen — nichts läuft auf die
+       Seite dahinter über (siehe `.dialog-hintergrund`). */
+    overscroll-behavior: contain;
+}
+
+.dialog-kasten h2 {
+    margin: 0 0 8px 0;
+    font-size: 1.1rem;
+}
+
+.dialog-kasten p {
+    margin: 0 0 16px 0;
+    color: var(--schrift-leise);
+    /* Zeilenumbrüche im Text zählen — die Punkteregeln kommen mehrzeilig. */
+    white-space: pre-line;
+    /* KEIN eigener Scrollbereich mehr (seit v0.67): Der Kasten scrollt jetzt
+       als Ganzes. Zwei Scrollbereiche ineinander sind auf dem Handy kaum zu
+       treffen — man erwischt beim Wischen den falschen. */
+}
+
+.dialog-feld {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 20px;
+    font: inherit;
+    color: var(--schrift);
+    background: var(--karte);
+    border: 1px solid var(--rahmen);
+    border-radius: 6px;
+}
+
+/*
+ * Das mehrzeilige Feld (seit v0.59): Es wächst mit dem Text nach unten —
+ * `dialog.js` misst dafür nach jedem Tastendruck nach. Ab `max-height` hört
+ * das Wachsen auf und das Feld scrollt selbst, sonst schöbe ein langer Wunsch
+ * die Knöpfe aus dem Bild.
+ */
+.dialog-feld-lang {
+    min-height: 6em;
+    max-height: 40vh;
+    resize: vertical;
+    line-height: 1.4;
+}
+
+/*
+ * DIE SCHWEBENDE BESCHRIFTUNG (seit v0.114): Sie steht im leeren Feld und
+ * wandert bei Eingabe oder Fokus klein an den oberen Rand — `dialog.js`
+ * setzt `dialog-feld-gefuellt`, sobald etwas im Feld steht.
+ */
+.dialog-feld-halter {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.dialog-feld-halter .dialog-feld {
+    margin-bottom: 0;
+}
+
+.dialog-feld-marke {
+    position: absolute;
+    left: 11px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--schrift-leise);
+    pointer-events: none;
+    padding: 0 4px;
+}
+
+.dialog-feld-halter:focus-within .dialog-feld-marke,
+.dialog-feld-gefuellt .dialog-feld-marke {
+    top: 0;
+    font-size: 0.72rem;
+    color: var(--haupt);
+    background: var(--karte);
+}
+
+/*
+ * DIE KURZMELDUNG (seit v0.114): kleine „hat geklappt"-Meldung am unteren
+ * Rand, geht von selbst wieder (`DIALOG.kurzmeldung`). Dunkel auf hell und
+ * umgekehrt — sie soll sich abheben, aber nichts verdecken.
+ */
+.kurzmeldung {
+    position: fixed;
+    left: 50%;
+    bottom: 24px;
+    transform: translateX(-50%);
+    background: var(--schrift);
+    color: var(--karte);
+    padding: 10px 18px;
+    border-radius: 999px;
+    font-size: 0.9rem;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+    z-index: var(--ebene-dialog);
+    max-width: calc(100vw - 32px);
+    pointer-events: none;
+}
+
+/* PIN-Eingabe: wenige Ziffern, groß und gut lesbar. */
+.dialog-feld-zahlen {
+    font-size: 1.6rem;
+    letter-spacing: 0.5em;
+    text-align: center;
+    font-family: "Consolas", "Courier New", monospace;
+}
+
+/*
+ * Das Passwort-Feld (seit v0.7.0, Bündel A Schritt 2): Feld und Zeigen-Knopf
+ * nebeneinander. Der Abstand nach unten liegt am Halter, nicht am Feld —
+ * wie beim Halter der schwebenden Beschriftung.
+ */
+.dialog-passwort-halter {
+    display: flex;
+    align-items: stretch;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.dialog-passwort-halter .dialog-feld {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin-bottom: 0;
+}
+
+.dialog-passwort-zeigen {
+    flex: 0 0 auto;
+}
+
+/* ------------------------------------------------------------------ *
+ * DAS ANMELDE-VOLLBILD (seit v0.8.0, Bündel A Schritt 3)
+ *
+ * Solange auf diesem Gerät niemand angemeldet ist, liegt es über der
+ * ganzen App — es gibt darunter nichts zu sehen und nichts wegzuklicken.
+ * Nur der Dialog liegt darüber (Ebenen am Dateianfang).
+ * ------------------------------------------------------------------ */
+
+.anmeldung-vollbild {
+    position: fixed;
+    inset: 0;
+    z-index: var(--ebene-vollbild);
+    background: var(--flaeche);
+    overflow-y: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px;
+}
+
+/* `display: flex` schlägt die eingebaute hidden-Regel des Browsers —
+   deshalb hier ausdrücklich. */
+.anmeldung-vollbild[hidden] {
+    display: none;
+}
+
+.anmeldung-kasten {
+    width: 100%;
+    max-width: 420px;
+    background: var(--karte);
+    border: 1px solid var(--rahmen);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin: auto 0;
+}
+
+.anmeldung-kasten h2 {
+    margin: 0 0 8px 0;
+}
+
+/* Die grossen Knöpfe der Weiche und der Formulare — volle Breite,
+   gut zu treffen. */
+.anmeldung-knopf {
+    display: block;
+    width: 100%;
+    padding: 14px;
+    margin-top: 12px;
+    font-size: 1rem;
+}
+
+.anmeldung-beschriftung {
+    display: block;
+    margin: 12px 0 4px 0;
+    font-size: 0.85rem;
+    color: var(--schrift-leise);
+}
+
+.anmeldung-feld {
+    width: 100%;
+    padding: 10px;
+    font: inherit;
+    color: var(--schrift);
+    background: var(--karte);
+    border: 1px solid var(--rahmen);
+    border-radius: 6px;
+}
+
+.anmeldung-feld:focus {
+    outline: 2px solid var(--haupt);
+    outline-offset: 1px;
+}
+
+.anmeldung-passwort-halter {
+    display: flex;
+    align-items: stretch;
+    gap: 8px;
+}
+
+.anmeldung-passwort-halter .anmeldung-feld {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.anmeldung-zeigen {
+    flex: 0 0 auto;
+}
+
+/* Die Fehlerzeile ist immer da und wächst bei Bedarf — so springt das
+   Formular nicht, wenn eine Meldung erscheint. */
+.anmeldung-fehler {
+    min-height: 1.2em;
+    margin: 4px 0 0 0;
+    font-size: 0.85rem;
+    color: var(--gefahr);
+}
+
+/* ------------------------------------------------------------------ *
+ * DER STARTBILDSCHIRM (seit v0.9.0, Bündel A Schritt 4)
+ *
+ * Obere Hälfte das Vorschaubild der eingestellten Spielart, untere Hälfte
+ * der Spielen-Knopf (zwei Drittel breit, für den Daumen) mit dem
+ * Pfeil-Quadrat der Match-Einstellungen daneben. Das Zahnrad sitzt oben
+ * rechts (F8) und ist der einzige Weg in die Einstellungen.
+ * ------------------------------------------------------------------ */
+
+.start {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-height: 70vh;
+    max-width: 480px;
+    margin: 0 auto;
+}
+
+/* Oben rechts stehen seit v0.19.0 (Wunsch 6) ZWEI Zeichen nebeneinander:
+   Freunde und Zahnrad. Ein kleiner Abstand hält sie auseinander, ohne dass
+   sie als getrennte Knöpfe auseinanderfallen. */
+.start-kopf {
+    display: flex;
+    justify-content: flex-end;
+    gap: 4px;
+}
+
+.start-zahnrad {
+    padding: 8px;
+    color: var(--schrift-leise);
+    background: none;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.start-zahnrad:hover {
+    color: var(--schrift);
+    background: var(--karte-leise);
+}
+
+.start-zeichen {
+    display: block;
+    width: 28px;
+    height: 28px;
+}
+
+/*
+ * Die Vorschau ist seit v0.20.0 (Wunsch 7) ein KNOPF und öffnet die Wahl
+ * der Brettform. Sie soll deshalb wie ein Knopf reagieren, aber nicht wie
+ * einer aussehen: kein Rahmen, kein Hintergrund — das Brett selbst ist die
+ * Fläche. Die Browser-Vorgaben eines `button` (Rahmen, Grund, Schriftart,
+ * mittiger Text) müssen dafür ausdrücklich zurückgenommen werden.
+ */
+.start-vorschau {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 8px;
+    font: inherit;
+    color: inherit;
+    background: none;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+}
+
+.start-vorschau:hover {
+    background: var(--karte-leise);
+}
+
+/* Das Kachel-Vorschaubrett (Klasse `vorschau`) darf hier grösser sein als
+   auf den Spielart-Kacheln. */
+.start-vorschau .vorschau {
+    width: min(70vw, 340px);
+}
+
+/* `.start-spielart` (der Name unter dem Vorschaubild) ist mit v0.38.0
+   entfallen — die Regel gleich mit, damit hier kein toter Stil liegen
+   bleibt. Der gleichnamige Speicher-Schlüssel in `start.js`
+   (`blunderluck.start-spielart`) hat damit nichts zu tun und bleibt. */
+
+/* Die untere Hälfte: Spielen zwei Drittel, daneben das Quadrat. */
+.start-spielen-zeile {
+    display: flex;
+    align-items: stretch;
+    gap: 12px;
+    padding-bottom: 8px;
+}
+
+.start-spielen {
+    flex: 2 1 0;
+    padding: 18px;
+    font-size: 1.15rem;
+    font-weight: 600;
+}
+
+.start-match {
+    flex: 0 0 auto;
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/*
+ * Der stille Weg zum Zwischenbildschirm (seit Wunsch 1, 24.08.2026). Er
+ * steht UNTER der Spielen-Zeile und trägt deren Abstand nach unten — der
+ * Innenabstand der Zeile wandert deshalb hierher, sonst klaffte zwischen
+ * beiden eine Lücke.
+ */
+/*
+ * „Zurück in deine Runde" (seit v0.34.0): zwei Zeilen — oben die Ansage,
+ * darunter kleiner, um welche Runde es geht und wie sie steht. Still
+ * gehalten wie „Runde beitreten": Die Hauptaktion bleibt „Spielen".
+ */
+.start-zurueck {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    width: 100%;
+    margin-top: 10px;
+}
+
+.start-zurueck-titel {
+    font-weight: 600;
+}
+
+.start-zurueck-lage {
+    font-size: 0.85em;
+    opacity: 0.8;
+}
+
+.start-beitreten {
+    align-self: center;
+    padding: 10px 18px;
+    margin-bottom: 24px;
+    font-size: 0.95rem;
+}
+
+/* ------------------------------------------------------------------ *
+ * DER ZWISCHENBILDSCHIRM „Runde beitreten / Runde erstellen" und der
+ * Beitritts-Code (seit v0.10.0, Bündel A Schritt 5)
+ * ------------------------------------------------------------------ */
+
+.code-zeile {
+    display: flex;
+    align-items: stretch;
+    gap: 8px;
+}
+
+/*
+ * SECHS KÄSTCHEN AUS EINEM EINZIGEN FELD (seit v0.51.0)
+ *
+ * Nutzer-Entscheidung 25.08.2026: Das Feld ist genau so breit, wie der Code
+ * lang ist — sechs Kästchen, wie man sie von Bestätigungscodes kennt. Der
+ * Hinweissatz steht darunter (`.code-hinweis`), nicht im Feld.
+ *
+ * DIE KÄSTCHEN SIND EIN HINTERGRUNDBILD, kein zweites Element und schon gar
+ * nicht sechs Eingabefelder. Alles, was der Browser bei EINEM Feld von sich
+ * aus kann — Einfügen eines kopierten Codes, Zurücklöschen, die Tastatur des
+ * Handys —, bliebe sonst zum Nachbauen übrig.
+ *
+ * DIE RECHNUNG DAHINTER, in einem Satz je Zeile:
+ *
+ *   --code-zelle   Die Breite EINER Zelle, Lücke eingerechnet.
+ *   --code-luft    Was in der Zelle neben dem Zeichen frei bleibt. `1ch` ist
+ *                  die Vorschubbreite der Schrift; weil sie fest ist
+ *                  (`monospace`), ist die Zahl für jedes Zeichen dieselbe.
+ *   letter-spacing Genau diese Luft hinter jedes Zeichen — damit rückt jedes
+ *                  Zeichen um volle Zellenbreite weiter.
+ *   padding-left   Die halbe Luft, damit jedes Zeichen in der MITTE seiner
+ *                  Zelle sitzt und nicht am linken Rand.
+ *   width          Sechs Zellen plus die halbe Luft. Die halbe Luft ist
+ *                  nicht Zierde, sondern Pflicht: `letter-spacing` setzt
+ *                  den Abstand auch hinter das SECHSTE Zeichen, und stünde
+ *                  der Schreibstrich danach ausserhalb des Feldes, würde
+ *                  der Browser den Inhalt verschieben — die Zeichen
+ *                  stünden beim letzten Buchstaben plötzlich schief in
+ *                  ihren Kästchen.
+ *   background     Sechs gefüllte Kästchen mit `--code-luecke` Abstand, das
+ *                  Bild genau sechs Zellen breit und einmalig. Was rechts
+ *                  übrig bleibt, ist durchsichtig — die halbe Luft von oben
+ *                  fällt dadurch niemandem auf.
+ *
+ * Ändert sich je die Code-Länge (`SCHACH_RUNDE.CODE_LAENGE`), stehen hier
+ * zwei Sechsen: in `width` und in `background-size`.
+ */
+.code-feld {
+    --code-zelle: 32px;
+    --code-luecke: 5px;
+    --code-luft: calc(var(--code-zelle) - 1ch);
+
+    flex: 0 0 auto;
+    width: calc(var(--code-zelle) * 6 + var(--code-luft) / 2);
+    padding: 10px 0 10px calc(var(--code-luft) / 2);
+    font: inherit;
+    font-size: 1.4rem;
+    font-family: "Consolas", "Courier New", monospace;
+    letter-spacing: var(--code-luft);
+    text-transform: uppercase;
+    color: var(--schrift);
+    background-color: transparent;
+    background-image: repeating-linear-gradient(to right,
+        transparent 0 calc(var(--code-luecke) / 2),
+        var(--karte-leise) calc(var(--code-luecke) / 2)
+            calc(var(--code-zelle) - var(--code-luecke) / 2),
+        transparent calc(var(--code-zelle) - var(--code-luecke) / 2) var(--code-zelle));
+    background-size: calc(var(--code-zelle) * 6) 100%;
+    background-repeat: no-repeat;
+    border: none;
+    border-radius: 6px;
+}
+
+.code-feld:focus {
+    outline: 2px solid var(--haupt);
+    outline-offset: 2px;
+}
+
+.code-hinweis {
+    margin-top: 8px;
+}
+
+
+/* `.beitritts-code-wert` (der Code bei den Teams) ist mit v0.40.1
+   entfallen — seit v0.40.0 steht er blass oben im Kopf (`.partie-code`),
+   und zweimal derselbe Code auf einem Bildschirm war der Fehler. Die Regel
+   gleich mit weg, damit kein toter Stil liegen bleibt. */
+
+/* ------------------------------------------------------------------ *
+ * DIE FREUNDESLISTE (seit v0.11.0, Bündel A Schritt 6)
+ * ------------------------------------------------------------------ */
+
+.freunde-zeile {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 6px 0;
+}
+
+.freunde-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.freunde-knoepfe {
+    display: flex;
+    flex: 0 0 auto;
+    gap: 6px;
+}
+
+.freunde-suche {
+    width: 100%;
+    margin-top: 8px;
+    padding: 10px;
+    font: inherit;
+    color: var(--schrift);
+    background: var(--karte);
+    border: 1px solid var(--rahmen);
+    border-radius: 6px;
+}
+
+.freunde-suche:focus {
+    outline: 2px solid var(--haupt);
+    outline-offset: 1px;
+}
+
+/* ------------------------------------------------------------------ *
+ * DAS ICON-RASTER DER BIBLIOTHEK (seit v0.12.0, Bündel A Schritt 8)
+ *
+ * Kacheln ohne Text; der Rahmen trägt die Stufenfarbe, Unglücke sind
+ * gestrichelt. Bis die echten Bilder da sind, steht der Anfangsbuchstabe
+ * als Lückenfüller in der Kachel (F4).
+ * ------------------------------------------------------------------ */
+
+.faehigkeiten-raster {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.faehigkeit-kachel {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    background: var(--karte-leise);
+    border: 3px solid var(--stufe-farbe, var(--rahmen));
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+.faehigkeit-kachel:hover {
+    background: var(--karte);
+}
+
+.kachel-pech {
+    border-style: dashed;
+}
+
+.kachel-zeichen {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--schrift-leise);
+}
+
+/* ------------------------------------------------------------------ *
+ * DIE ZEICHEN DER FÄHIGKEITEN (seit v0.63.0)
+ *
+ * 29 gezeichnete Zeichen aus `js\faehigkeit-zeichen.js`, an zwei Orten:
+ * gross in der Kachel der Bibliothek, klein vor dem Wort an der Marke am
+ * Brett. Beide erben ihre Farbe (`currentColor`) — im Raster ist das die
+ * Stufenfarbe, an der Marke die Schriftfarbe.
+ * ------------------------------------------------------------------ */
+
+/* In der Kachel füllt das Zeichen den Platz, den vorher der Buchstabe hatte.
+   Die Kachel ist quadratisch, also darf es gross sein. */
+.kachel-zeichen .faehigkeit-bild {
+    width: 2.2rem;
+    height: 2.2rem;
+    display: block;
+}
+
+/* Die Kachel färbt ihr Zeichen in der Stufenfarbe — beim Buchstaben war es
+   die leise Schriftfarbe, ein Bild verträgt mehr. */
+.faehigkeit-kachel .kachel-zeichen {
+    color: var(--stufe-farbe, var(--schrift-leise));
+}
+
+/*
+ * HIER STAND `.faehigkeit-knopf .faehigkeit-bild` MIT 1,15 em — gelöscht
+ * mit v0.71.0, und das war ein FEHLER, kein Aufräumen.
+ *
+ * Die Regel stammt aus v0.63.0, als die Marke noch das Wort trug und das
+ * Zeichen davor stand: Dann muss es der Schrifthöhe folgen, damit die Zeile
+ * nicht wächst. Mit v0.67.0 fiel das Wort weg, die Marke wurde eine Karte,
+ * und weiter oben kam `.faehigkeit-reihe .faehigkeit-knopf .faehigkeit-bild`
+ * mit 26 Pixeln dazu.
+ *
+ * NUR GEGRIFFEN HAT DIE NIE. Beide Selektoren zählten zwei Klassen, waren
+ * also gleich spezifisch — und bei Gleichstand gewinnt die spätere Regel.
+ * Das war diese hier. Das Zeichen in der Karte war seit v0.67.0 also 1,15
+ * em von 0,88 rem, rund 16 Pixel, auf einer Fläche von 44 mal 44: ein
+ * Drittel der Karte. Genau deshalb wirkte sie leer.
+ *
+ * ERSATZLOS, NICHT UMGESCHRIEBEN: `.faehigkeit-knopf` entsteht an genau
+ * einer Stelle (`_faehigkeitMarkeBauen`) und wird an genau einer Stelle
+ * eingehängt (`_faehigkeitReiheBauen`) — es gibt keinen Knopf ausserhalb
+ * der Reihe, den diese Regel noch bedienen könnte. Die Grösse des Zeichens
+ * steht damit nur noch an einer Stelle, wie es die Hausregel verlangt.
+ */
+
+/* ------------------------------------------------------------------ *
+ * DAS EINLADUNGS-BANNER (seit v0.13.0, Bündel A Schritt 7)
+ *
+ * Fährt oben herein, sobald das Gerät eine Einladung sieht, und geht
+ * nach zehn Sekunden von selbst (team-schach.js, `_bannerZeigen`). Es
+ * liegt über der App, aber unter dem Dialog.
+ * ------------------------------------------------------------------ */
+
+.einladung-banner {
+    position: fixed;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: var(--ebene-vollbild);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    max-width: min(92vw, 480px);
+    padding: 10px 14px;
+    background: var(--karte);
+    border: 1px solid var(--rahmen);
+    border-radius: 10px;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
+    animation: banner-herein 0.25s ease-out;
+}
+
+.einladung-text {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@keyframes banner-herein {
+    from {
+        transform: translateX(-50%) translateY(-120%);
+    }
+    to {
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .einladung-banner {
+        animation: none;
+    }
+}
+
+/* Auswahlliste (Bist du schon dabei?) */
+.dialog-liste {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 20px;
+    max-height: 50vh;
+    overflow-y: auto;
+}
+
+.dialog-listeneintrag {
+    appearance: none;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    width: 100%;
+    padding: 12px 14px;
+    font: inherit;
+    text-align: left;
+    color: var(--schrift);
+    background: var(--karte-leise);
+    border: 1px solid var(--rahmen);
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.dialog-listeneintrag:hover {
+    border-color: var(--haupt);
+}
+
+.dialog-listeneintrag:focus-visible {
+    outline: 2px solid var(--haupt);
+    outline-offset: 1px;
+}
+
+.dialog-listenname {
+    font-weight: 600;
+}
+
+.dialog-listenhinweis {
+    font-size: 0.8rem;
+    color: var(--schrift-leise);
+}
+
+/*
+ * DIE KNOPFLEISTE KLEBT UNTEN FEST (seit v0.67, Wunsch #27).
+ *
+ * Egal wie hoch der Inhalt ist — „Verstanden", „Abbrechen" und „Einsetzen"
+ * sind immer da, ohne Scrollen. Die negativen Ränder heben das Polster des
+ * Kastens auf, damit die Leiste bis an seine Kanten reicht; sonst bliebe
+ * darunter ein Streifen, durch den der Inhalt hindurchscrollt.
+ *
+ * UND SIE BRAUCHT IHRE EBENE (seit v0.94). Der Hintergrund allein genügt
+ * nicht: Alles im Fenster, was eine eigene Nummer trägt — die Figuren des
+ * Anleitungsbretts, die Lootbox, der Fingerabdruck, die Restzeit — wurde
+ * sonst NACH der Leiste gezeichnet und lag quer über den Knöpfen. Genau so
+ * wurde es gemeldet: eine Dame mitten im Wort „Abbrechen". Siehe den
+ * Abschnitt „DIE EBENEN" ganz oben.
+ */
+.dialog-knopfleiste {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    position: sticky;
+    bottom: -20px;
+    z-index: var(--ebene-leiste);
+    margin: 0 -20px -20px -20px;
+    padding: 12px 20px;
+    background: var(--karte);
+    border-top: 1px solid var(--rahmen);
+}
+
+/* ------------------------------------------------------------------ *
+ * Kleine Bildschirme
+ * ------------------------------------------------------------------ */
+
+@media (max-width: 600px) {
+
+    /*
+     * DIE TAB-LEISTE IST AM HANDY EIN DOCK (seit v0.113, Nutzer-Ansage
+     * 22.08.): Sie klebt am unteren Rand — dort, wo der Daumen ist —, und
+     * die Tabs teilen sich die Breite zu gleichen Teilen. Die gleitende
+     * Pille funktioniert unverändert, sie misst ja die echte Lage.
+     * `env(safe-area-inset-bottom)` hält den Streifen des iPhone-Balkens
+     * frei; dafür steht `viewport-fit=cover` in der index.html.
+     */
+    .tab-leiste {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: var(--ebene-schwebend);
+        border-bottom: none;
+        border-top: 1px solid var(--rahmen);
+        padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px)) 8px;
+        gap: 4px;
+        flex-wrap: nowrap;
+    }
+
+    .tab-knopf {
+        flex: 1 1 0;
+        min-width: 0;
+        padding: 10px 4px;
+        font-size: 0.85rem;
+        line-height: 1.2;
+        text-align: center;
+    }
+
+    /*
+     * DER RAND IST AM HANDY SCHMALER — und steht seit v0.72.0 als Variable
+     * da, damit der überstehende Team-Kasten und der Spielbereich mitziehen.
+     * Bis v0.71.0 stand hier eine feste 12, während der Kasten weiter mit
+     * `--abstand` rechnete: Er ragte vier Pixel zu weit über den Rand.
+     */
+    :root {
+        --inhalt-rand: 12px;
+    }
+
+    .tab-inhalt {
+        padding: var(--inhalt-rand);
+
+        /* Der Inhalt läuft nicht unter dem Dock hindurch. */
+        padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+    }
+
+    /* Die Kurzmeldung schwebt über dem Dock, nicht dahinter. */
+    .kurzmeldung {
+        bottom: calc(78px + env(safe-area-inset-bottom, 0px));
+    }
+
+    body.runde-offen .kurzmeldung {
+        bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    }
+
+    /* Die zwei Regeln zum Kopfbalken sind mit ihm entfallen (v0.25.0):
+       Er wurde im Runden-Fenster ausgeblendet und bekam auf schmalen
+       Schirmen weniger Innenabstand. */
+
+    body.runde-offen .tab-inhalt {
+        padding-bottom: 12px;
+    }
+
+    .wuerfel-feld-halter {
+        flex-basis: 56px;
+        min-width: 56px;
+    }
+
+    .treffer {
+        margin-left: 0;
+    }
+
+    /* -------------------------------------------------------------- *
+     * Team Schach auf dem Handy
+     *
+     * Gespielt wird unterwegs. Deshalb bekommt das Brett den Platz und
+     * alles Beiwerk wird schmaler: Die Partie steht in einer Spalte,
+     * das Brett zieht sich über die ganze Breite, und der Rand um den
+     * Inhalt fällt für das Brett weg.
+     * -------------------------------------------------------------- */
+
+    .schach .brett-halter {
+        /* Zieht das Brett bis an den Bildschirmrand. Seit v0.72.0 über die
+           Variable statt über eine feste 12 — dieselbe Zahl, aber sie zieht
+           mit, wenn der Rand sich ändert. Genau diese Kopplung fehlte der
+           Standleiste und dem Team-Kasten, und beide ragten am Handy vier
+           Pixel zu weit. */
+        margin-left: calc(var(--inhalt-rand) * -1);
+        margin-right: calc(var(--inhalt-rand) * -1);
+    }
+
+    .schach .brett {
+        border-left: none;
+        border-right: none;
+        border-radius: 0;
+    }
+
+    .schach .brett-halter .erklaerung {
+        padding: 0 12px;
+    }
+
+    /* Die Team-KARTEN sind mit v0.53.0 entfallen — an ihrer Stelle stehen
+       die zwei Spielerzeilen am Brett. Auf dem Handy wird darin nur enger
+       gerückt; schrumpfen darf allein der Name (`.spieler-name`). */
+    .schach .team-reihe {
+        gap: 8px;
+    }
+
+    .schach .spieler-zeile {
+        gap: 6px;
+        padding: 5px 8px;
+        font-size: 0.85rem;
+    }
+
+    .partie-titel {
+        font-size: 1.05rem;
+    }
+
+    /* Die Knöpfe am Fuß einer Partie sollen sich am Daumen bedienen
+       lassen, nicht mit der Lupe. */
+    .schach .fussleiste .knopf-klein {
+        padding: 10px 14px;
+        font-size: 0.92rem;
+    }
+
+    /* -------------------------------------------------------------- *
+     * Was seit v2.9 dazugekommen ist — ebenfalls für den Daumen
+     * -------------------------------------------------------------- */
+
+    /* Jeder Knopf bekommt eine Tippfläche, die man trifft. */
+    .knopf {
+        min-height: 44px;
+    }
+
+    .knopf-klein {
+        min-height: 40px;
+        padding: 8px 14px;
+    }
+
+    /* Die i-Knöpfe sind rund und klein — auf dem Handy zu klein. */
+    .info-knopf {
+        width: 32px;
+        height: 32px;
+        font-size: 1rem;
+    }
+
+    /* Die Einstellungen: großer Kasten, Text darunter statt daneben
+       gequetscht. */
+    /* Der Kipp-Schalter ist auf dem Handy etwas grösser — Fingerziel. */
+    .schalter-kasten {
+        width: 46px;
+        height: 28px;
+        border-radius: 14px;
+    }
+
+    .schalter-kasten::after {
+        width: 22px;
+        height: 22px;
+    }
+
+    .schalter-kasten:checked::after {
+        transform: translateX(18px);
+    }
+
+    .schalter-zeile {
+        padding: 10px 0;
+    }
+
+    /* Die Einrückung der Unterpunkte stand bis v0.59 NUR hier und galt
+       deshalb nur auf dem Handy. Sie steht jetzt oben bei den übrigen
+       Schalter-Regeln und gilt überall. */
+
+    /* Spielart-Kacheln: eine je Zeile, damit das Vorschaubild groß bleibt. */
+    .spielart-feld {
+        grid-template-columns: 1fr;
+    }
+
+    .vorschau {
+        font-size: calc(min(320px, 84vw) / var(--vorschau-spalten, 8) * 0.8);
+    }
+
+    /* Der Abschluss füllt den Schirm, die Zeilen bleiben lesbar. */
+    .abschluss {
+        min-height: 70vh;
+        padding: 20px 12px;
+    }
+
+    .abschluss-zeile {
+        padding: 10px;
+    }
+
+    /* Bilanz und Fähigkeiten untereinander statt nebeneinander. */
+    .bilanz-seite {
+        flex: 1 1 100%;
+    }
+
+    .faehigkeit-zeile {
+        gap: 6px;
+    }
+
+    /*
+     * DIE ITEM-KARTEN AM HANDY brauchen seit v0.81.0 KEINE eigene Breite
+     * mehr: Hoehe und Breite kommen ueberall aus der Rasterzelle plus
+     * `aspect-ratio` (Pokerkarten-Verhaeltnis 0,71) — der Handy-Fall ist
+     * damit automatisch kleiner, weil der Eck-Kasten dort niedriger ist.
+     * Bis v0.80.0 standen hier 37 px als Gegenstueck zu den 44 am Laptop.
+     */
+
+    /* Die Randbeschriftung des Bretts darf schmaler sein. */
+    .brett-rand-reihen {
+        width: 12px;
+    }
+
+    /* Friedhof und Züge: mehr Platz für den Finger am Aufklapp-Knopf. */
+    .fach-griff {
+        padding: 10px 14px;
+    }
+}
+
+/* ------------------------------------------------------------------ *
+ * UI-Politur (seit v0.107) — alles Gleiten und Blenden an einem Ort.
+ *
+ * Nutzer-Ansage 21.08.: „dass generell alles viel flüssiger wird."
+ * Vorbild sind die Bewegungsmuster moderner Komponenten-Galerien;
+ * gebaut ist alles mit Bordmitteln — CSS-Übergänge und die eingebaute
+ * View-Transitions-Schnittstelle (`TEAM_SCHACH.weichZeichnen`).
+ *
+ * ALLES BEWEGTE STEHT IM no-preference-BLOCK: Wer in den
+ * Systemeinstellungen weniger Bewegung wünscht, bekommt die App exakt
+ * wie vor v0.107. Deshalb gibt es hier kein reduce-Gegenstück — was
+ * nie anspringt, muss nicht abgeschaltet werden.
+ * ------------------------------------------------------------------ */
+
+/*
+ * Die Namen der wandernden Flächen stehen seit v0.109 an den PILLEN
+ * (siehe `.reihen-pille` bei den Knopfreihen) — der Knopf selbst wandert
+ * nicht mehr, sonst verschmierte seine Beschriftung.
+ */
+
+@media (prefers-reduced-motion: no-preference) {
+
+    /* Die gleitende Markierung braucht nur ihren Takt. */
+    ::view-transition-group(*) {
+        animation-duration: 0.22s;
+    }
+
+    /*
+     * DIE SEITE SELBST BLENDET NICHT (seit v0.109). Ohne diese Regel legt
+     * der Browser bei jedem weichen Neuzeichnen eine Ueberblendung ueber den
+     * GANZEN Bildschirm — jeder Text flackerte einmal durch. Jetzt wechselt
+     * alles Unbenannte sofort, und nur die Pillen wandern.
+     */
+    ::view-transition-old(root),
+    ::view-transition-new(root) {
+        animation: none;
+    }
+
+    /* Die Pille hinter dem aktiven Tab gleitet zum neuen Tab (`tabs.js`). */
+    .tab-marker-weich {
+        transition: left 0.25s ease, top 0.25s ease, width 0.25s ease,
+            height 0.25s ease;
+    }
+
+    /*
+     * Der Status-Punkt im Kopf atmet, solange die App lädt oder schreibt —
+     * so sieht man auf einen Blick, dass gerade etwas unterwegs ist. Der
+     * Farbwechsel zwischen den Zuständen blendet weich über.
+     */
+    .status-punkt {
+        transition: background-color 0.3s ease;
+    }
+
+    .status[data-status="laedt"] .status-punkt,
+    .status[data-status="schreibt"] .status-punkt {
+        animation: status-atmen 1.2s ease-in-out infinite;
+    }
+
+    @keyframes status-atmen {
+        50% {
+            opacity: 0.35;
+        }
+    }
+
+    /* Der frisch geöffnete Tab-Inhalt steigt kurz ein. */
+    .tab-bereich-zeigt {
+        animation: bereich-auf 0.18s ease-out;
+    }
+
+    /*
+     * AUFKLAPPEN GLEITET (seit v0.114, Bündel X5): Der Zug-Verlauf, die
+     * Bibliothekseinträge und die Regel-Kapitel (alles `details`-Elemente)
+     * öffnen und schliessen weich statt schlagartig. Browser ohne
+     * `interpolate-size` klappen einfach hart wie bisher — kein Schaden.
+     */
+    :root {
+        interpolate-size: allow-keywords;
+    }
+
+    ::details-content {
+        transition: height 0.25s ease, content-visibility 0.25s allow-discrete;
+        height: 0;
+        overflow: clip;
+    }
+
+    [open]::details-content {
+        height: auto;
+    }
+
+    /* Die Kurzmeldung steigt kurz auf und blendet am Ende aus. */
+    .kurzmeldung {
+        animation: kurzmeldung-auf 0.2s ease-out;
+    }
+
+    @keyframes kurzmeldung-auf {
+        from {
+            opacity: 0;
+            transform: translateX(-50%) translateY(10px);
+        }
+    }
+
+    .kurzmeldung-geht {
+        animation: kurzmeldung-zu 0.25s ease-in forwards;
+    }
+
+    @keyframes kurzmeldung-zu {
+        to {
+            opacity: 0;
+            transform: translateX(-50%) translateY(6px);
+        }
+    }
+
+    /* Die schwebende Beschriftung wandert weich nach oben. */
+    .dialog-feld-marke {
+        transition: top 0.15s ease, font-size 0.15s ease, color 0.15s ease;
+    }
+
+    /*
+     * Die tippende Hand der Bildanleitung tippt sichtbar (seit v0.116).
+     * Nur in der Bibliothek — die ist eine STATISCHE Ansicht, die
+     * regelmässige Abfrage zeichnet sie nicht neu (Bewegungs-Regel 3).
+     */
+    .anleitung-hand {
+        transform-origin: 50% 65%;
+        animation: hand-tippen 1.6s ease-in-out infinite;
+    }
+
+    @keyframes hand-tippen {
+        0%, 24%, 100% {
+            transform: translateY(-6%) scale(1);
+        }
+        12% {
+            transform: translateY(3%) scale(0.92);
+        }
+    }
+
+    @keyframes bereich-auf {
+        from {
+            opacity: 0;
+            transform: translateY(6px);
+        }
+    }
+
+    /*
+     * KNÖPFE REAGIEREN SPÜRBAR: Farbwechsel weich, beim Drücken ein
+     * kurzes Eindrücken. `:active` statt einer Skript-Lösung — der
+     * Browser nimmt die Hand nie zu spät weg.
+     */
+    .knopf,
+    .tab-knopf,
+    .info-knopf,
+    .dialog-listeneintrag {
+        transition: background-color 0.15s ease, color 0.15s ease,
+            border-color 0.15s ease, transform 0.08s ease;
+    }
+
+    .knopf:active:not(:disabled),
+    .info-knopf:active {
+        transform: scale(0.96);
+    }
+
+    /* Der Knopf im „Wirklich?"-Zustand (`DIALOG.zweiSchritt`, seit v0.112)
+       ploppt kurz auf — man sieht, dass sich die Frage in den Knopf gelegt
+       hat und der nächste Druck zählt. */
+    .knopf-wirklich {
+        animation: wirklich-auf 0.15s ease-out;
+    }
+
+    @keyframes wirklich-auf {
+        from {
+            transform: scale(0.9);
+        }
+    }
+
+    /* Die Spielart-Kacheln heben sich unter dem Zeiger leicht an. */
+    .spielart-kachel {
+        transition: transform 0.15s ease, border-color 0.15s ease,
+            box-shadow 0.15s ease;
+    }
+
+    .spielart-kachel:hover {
+        transform: translateY(-2px);
+    }
+
+    /*
+     * DIALOGE: Schleier blendet ein, der Kasten steigt kurz auf.
+     * Beide Animationen spielen von selbst bei jedem Öffnen, weil der
+     * Kasten jedes Mal neu gebaut wird (`DIALOG._zeigen`).
+     */
+    .dialog-hintergrund:not([hidden]) {
+        animation: dialog-schleier 0.15s ease-out;
+    }
+
+    .dialog-kasten {
+        animation: dialog-auf 0.18s cubic-bezier(0.2, 0.9, 0.3, 1.1);
+    }
+
+    @keyframes dialog-schleier {
+        from {
+            opacity: 0;
+        }
+    }
+
+    @keyframes dialog-auf {
+        from {
+            opacity: 0;
+            transform: scale(0.95) translateY(10px);
+        }
+    }
+
+    /*
+     * Beim Schliessen blendet alles kurz aus — die Klassen setzt
+     * `DIALOG.schliessen`, nach 100 ms räumt es auf. `forwards` hält
+     * das Endbild, sonst spränge der Dialog fürs letzte Einzelbild
+     * zurück.
+     */
+    .dialog-geht {
+        animation: dialog-zu 0.1s ease-in forwards;
+    }
+
+    /* Gleiche Stärke wie die Einblende-Regel oben — bei Gleichstand
+       gewinnt die spätere, also diese. */
+    .dialog-hintergrund.dialog-geht-hintergrund {
+        animation: dialog-schleier-zu 0.1s ease-in forwards;
+    }
+
+    @keyframes dialog-zu {
+        to {
+            opacity: 0;
+            transform: scale(0.97);
+        }
+    }
+
+    @keyframes dialog-schleier-zu {
+        to {
+            opacity: 0;
+        }
+    }
+
+    /*
+     * Die Einträge einer Dialog-Liste (Anmeldung, Item-Übersicht)
+     * treten kurz nacheinander ein — `backwards` hält jeden unsichtbar,
+     * bis seine Verzögerung abgelaufen ist. Ab dem sechsten Eintrag
+     * kommt alles gleichzeitig, sonst wartete man bei langen Listen.
+     */
+    .dialog-listeneintrag {
+        animation: eintrag-auf 0.18s ease-out backwards;
+    }
+
+    .dialog-listeneintrag:nth-child(2) { animation-delay: 0.03s; }
+    .dialog-listeneintrag:nth-child(3) { animation-delay: 0.06s; }
+    .dialog-listeneintrag:nth-child(4) { animation-delay: 0.09s; }
+    .dialog-listeneintrag:nth-child(5) { animation-delay: 0.12s; }
+
+    @keyframes eintrag-auf {
+        from {
+            opacity: 0;
+            transform: translateY(4px);
+        }
+    }
+
+    /* Der Knubbel des Kipp-Schalters gleitet, die Pille färbt weich um
+       (seit v0.108 — der Schalter selbst steht bei `.schalter-kasten`). */
+    .schalter-kasten {
+        transition: background-color 0.18s ease, border-color 0.18s ease;
+    }
+
+    .schalter-kasten::after {
+        transition: transform 0.18s ease, background-color 0.18s ease;
+    }
+
+    /*
+     * Der Inhalt eines Aufklappers der BIBLIOTHEK und der Anleitung tritt
+     * weich ein (seit v0.108). Nur dort: Diese Ansichten stehen still, sobald
+     * sie gebaut sind. Die Verlaufs-Kästen baut die regelmässige Abfrage neu —
+     * eine Animation dort spielte bei jedem fremden Zug erneut.
+     */
+    details.stufen-eintrag[open] > :not(summary) {
+        animation: bereich-auf 0.16s ease-out;
+    }
+}

@@ -790,7 +790,8 @@ Object.assign(TEAM_SCHACH, {
          *
          * WIE SIE AUSSIEHT, STEHT IN DER STILDATEI, nicht hier — seit
          * v0.67.0 als Quadrat, seit v0.70.0 in der Form einer Spielkarte
-         * (`.faehigkeit-reihe .faehigkeit-knopf` in `css\stil.css`). Diese
+         * (`.faehigkeit-reihe .faehigkeit-knopf` in
+         * `css\stil-auswertung.css`). Diese
          * Funktion baut nur den Knopf und hängt Zeichen, Zahl und die zwei
          * Kosten-Zeichen hinein; sie kennt keine Masse.
          *

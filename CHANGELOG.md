@@ -3,6 +3,20 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.93.0 — 27.08.2026
+
+**Innerer Umbau, Teil 2: Auch die grosse Stil-Datei ist aufgeteilt — die
+App sieht exakt gleich aus.**
+
+- `css\stil.css` (198 KB) ist jetzt fünf Dateien: Grundlagen (`stil.css`),
+  Brett (`stil-brett.css`), Effekte (`stil-effekte.css`), Auswertung
+  (`stil-auswertung.css`) und Start/Dialoge (`stil-start.css`).
+- Geschnitten wurde nur an Abschnittsgrenzen, keine Regel wurde
+  umsortiert — die Verkettung der fünf Teile ist Byte für Byte dieselbe
+  Datei wie vorher (per Prüfsumme belegt). Die Ladereihenfolge in
+  `index.html` ist fest und darf nicht geändert werden.
+- Zweiter Schritt des Datei-Umbaus aus ROADMAP-Gruppe J (Punkt 33).
+
 ## v0.92.0 — 27.08.2026
 
 **Innerer Umbau: Die grösste Code-Datei ist in zwei Hälften geteilt — am

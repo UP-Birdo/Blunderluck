@@ -116,12 +116,39 @@ for (const name of dateien) {
     }
 }
 
-/* Die Stildatei ebenfalls. */
-pruefe("css/stil.css ist in index.html eingebunden", () => {
-    if (seite.indexOf("css/stil.css") === -1) {
-        throw new Error("kein Verweis auf css/stil.css in index.html");
+/*
+ * DIE STILDATEIEN EBENFALLS — seit dem 27.08.2026 ist das Aussehen in fünf
+ * Dateien geteilt (reiner Umzug, ROADMAP-Gruppe J, Punkt 33). Die Reihenfolge
+ * der link-Zeilen in index.html IST die Kaskade: Wer sie umstellt, ändert das
+ * Aussehen, ohne eine Regel anzufassen. Geprüft wird deshalb, dass jede
+ * Stildatei eingebunden ist und die Grundlagen (Variablen) zuerst laden.
+ *
+ * Für die Inhalts-Prüfungen weiter unten werden die Teile in genau dieser
+ * Ladereihenfolge zu EINEM Text verkettet (`stil`) — für sie bleibt das
+ * Aussehen eine Datei, egal wie viele Teile es sind.
+ */
+const stilNamen = [...seite.matchAll(/<link rel="stylesheet" href="css\/([^"]+)">/g)]
+    .map((treffer) => treffer[1]);
+
+pruefe("Ordner css und index.html nennen dieselben Stildateien", () => {
+    const vorhanden = dateisystem.readdirSync(pfad.join(projekt, "css"))
+        .filter((name) => name.endsWith(".css")).sort();
+    const eingebunden = [...stilNamen].sort();
+    if (vorhanden.join(", ") !== eingebunden.join(", ")) {
+        throw new Error("Ordner css: " + vorhanden.join(", ")
+            + " — index.html: " + eingebunden.join(", "));
     }
 });
+
+pruefe("stil.css (Grundlagen) lädt als erster Teil", () => {
+    if (stilNamen[0] !== "stil.css") {
+        throw new Error("erster Stylesheet-Verweis ist " + stilNamen[0]
+            + " — die Grundlagen mit den Variablen müssen zuerst laden");
+    }
+});
+
+const stil = stilNamen.map((name) => dateisystem.readFileSync(
+    pfad.join(projekt, "css", name), "utf8")).join("");
 
 /* Die Version muss an genau einer Stelle stehen und im CHANGELOG auftauchen. */
 pruefe("Version aus konfig.js steht im CHANGELOG", () => {
@@ -248,8 +275,6 @@ pruefe("Der Schriftzug im Kopf ist unsichtbar (Wunsch 3, v0.16.0)", () => {
      * Anfassen der Kopfzeile lautlos zurueck.
      */
     const seite = dateisystem.readFileSync(pfad.join(projekt, "index.html"), "utf8");
-    const stil = dateisystem.readFileSync(
-        pfad.join(projekt, "css", "stil.css"), "utf8");
 
     if (seite.indexOf("<h1 class=\"nur-vorlesen\">Blunderluck</h1>") === -1) {
         throw new Error("die Ueberschrift im Kopf ist wieder sichtbar");
@@ -273,12 +298,10 @@ pruefe("Der Schriftzug im Kopf ist unsichtbar (Wunsch 3, v0.16.0)", () => {
  * Stildatei und sieht nach, ob jede Datei da ist.
  */
 pruefe("Die zwoelf Figuren-Bilder des 3D-Looks liegen alle da (v0.121)", () => {
-    const stil = dateisystem.readFileSync(
-        pfad.join(projekt, "css", "stil.css"), "utf8");
     const verweise = stil.match(/url\("\.\.\/img\/figuren\/[^"]+"\)/g) || [];
 
     if (verweise.length !== 12) {
-        throw new Error("stil.css nennt " + verweise.length
+        throw new Error("die Stildateien nennen " + verweise.length
             + " Figuren-Bilder, erwartet sind 12"
             + " (6 Arten mal 2 Farben, Paket-Vertrag in"
             + " docs/FIGUREN-BLENDER.md)");
@@ -287,7 +310,7 @@ pruefe("Die zwoelf Figuren-Bilder des 3D-Looks liegen alle da (v0.121)", () => {
     for (const verweis of verweise) {
         const datei = verweis.slice("url(\"../".length, -2);
         if (!dateisystem.existsSync(pfad.join(projekt, datei))) {
-            throw new Error(datei + " wird in stil.css genannt, fehlt aber");
+            throw new Error(datei + " wird in den Stildateien genannt, fehlt aber");
         }
     }
 });
@@ -360,8 +383,6 @@ pruefe("Die zehn Lootbox-Bilder liegen alle da (v0.24.0)", () => {
 pruefe("_figurKlasse vergibt Marker- und Art-Klasse (v0.121, erweitert v0.122)", () => {
     const quelle = dateisystem.readFileSync(
         pfad.join(jsOrdner, "team-schach-brett.js"), "utf8");
-    const stil = dateisystem.readFileSync(
-        pfad.join(projekt, "css", "stil.css"), "utf8");
 
     for (const art of ["bauer", "springer", "laeufer", "turm", "dame", "koenig"]) {
         if (quelle.indexOf("\"" + art + "\"") === -1) {
@@ -369,7 +390,7 @@ pruefe("_figurKlasse vergibt Marker- und Art-Klasse (v0.121, erweitert v0.122)",
                 + " nicht — _figurKlasse muss sie vergeben");
         }
         if (stil.indexOf(".figur-art-" + art) === -1) {
-            throw new Error("stil.css hat keine Regel fuer .figur-art-" + art);
+            throw new Error("die Stildateien haben keine Regel fuer .figur-art-" + art);
         }
     }
 
@@ -383,7 +404,7 @@ pruefe("_figurKlasse vergibt Marker- und Art-Klasse (v0.121, erweitert v0.122)",
             + " nicht mehr — ohne sie greift keine Bild-Regel");
     }
     if (stil.indexOf(".figur-bild") === -1) {
-        throw new Error("stil.css hat keine Regel fuer .figur-bild");
+        throw new Error("die Stildateien haben keine Regel fuer .figur-bild");
     }
 });
 /*
@@ -399,8 +420,6 @@ pruefe("_figurKlasse vergibt Marker- und Art-Klasse (v0.121, erweitert v0.122)",
  * paar Werte zur Laufzeit, etwa `--wirkung-dauer`).
  */
 pruefe("Jede benutzte CSS-Variable ohne Ausweichwert ist auch definiert", () => {
-    const stil = dateisystem.readFileSync(
-        pfad.join(projekt, "css", "stil.css"), "utf8");
 
     const definiert = new Set();
     for (const treffer of stil.matchAll(/(--[a-z0-9-]+)\s*:/g)) {
@@ -415,7 +434,7 @@ pruefe("Jede benutzte CSS-Variable ohne Ausweichwert ist auch definiert", () => 
     }
 
     if (fehlend.size > 0) {
-        throw new Error("stil.css benutzt Variablen, die es nicht gibt: "
+        throw new Error("die Stildateien benutzen Variablen, die es nicht gibt: "
             + [...fehlend].join(", "));
     }
 });
@@ -430,8 +449,6 @@ pruefe("Jede benutzte CSS-Variable ohne Ausweichwert ist auch definiert", () => 
  * Fehler. Geprueft wird deshalb an allen drei Stellen zugleich.
  */
 pruefe("Die Kreuz-Ecken tragen feld-ausserhalb (v0.31.0)", () => {
-    const stil = dateisystem.readFileSync(
-        pfad.join(projekt, "css", "stil.css"), "utf8");
 
     for (const datei of ["team-schach-brett.js", "team-schach-uebersicht.js"]) {
         const quelle = dateisystem.readFileSync(pfad.join(jsOrdner, datei), "utf8");
@@ -442,10 +459,10 @@ pruefe("Die Kreuz-Ecken tragen feld-ausserhalb (v0.31.0)", () => {
     }
 
     if (stil.indexOf(".feld-ausserhalb") === -1) {
-        throw new Error("stil.css hat keine Regel fuer .feld-ausserhalb");
+        throw new Error("die Stildateien haben keine Regel fuer .feld-ausserhalb");
     }
     if (stil.indexOf("body.design-3d .feld-ausserhalb") === -1) {
-        throw new Error("stil.css nimmt der Ecke im 3D-Look die Kachel nicht"
+        throw new Error("die Stildateien nehmen der Ecke im 3D-Look die Kachel nicht"
             + " — ohne body.design-3d .feld-ausserhalb bleibt die Kante stehen");
     }
 });
@@ -462,15 +479,13 @@ pruefe("Die Kreuz-Ecken tragen feld-ausserhalb (v0.31.0)", () => {
 pruefe("Die drei Beitritts-Knoepfe teilen sich eine Klasse (v0.41.0)", () => {
     const quelle = dateisystem.readFileSync(
         pfad.join(jsOrdner, "team-schach.js"), "utf8");
-    const stil = dateisystem.readFileSync(
-        pfad.join(projekt, "css", "stil.css"), "utf8");
 
     for (const klasse of ["team-knopf", "team-knopf-zufall"]) {
         if (quelle.indexOf(klasse) === -1) {
             throw new Error("team-schach.js vergibt " + klasse + " nicht mehr");
         }
         if (stil.indexOf("." + klasse) === -1) {
-            throw new Error("stil.css hat keine Regel fuer ." + klasse);
+            throw new Error("die Stildateien haben keine Regel fuer ." + klasse);
         }
     }
 
@@ -478,7 +493,7 @@ pruefe("Die drei Beitritts-Knoepfe teilen sich eine Klasse (v0.41.0)", () => {
        ("team-knopf-" + farbe) — geprueft wird deshalb die Stildatei. */
     for (const farbe of ["weiss", "schwarz"]) {
         if (stil.indexOf(".team-knopf-" + farbe) === -1) {
-            throw new Error("stil.css hat keine Regel fuer .team-knopf-" + farbe);
+            throw new Error("die Stildateien haben keine Regel fuer .team-knopf-" + farbe);
         }
     }
 });
@@ -501,15 +516,13 @@ pruefe("Die drei Beitritts-Knoepfe teilen sich eine Klasse (v0.41.0)", () => {
  *     prueft genau diese Klasse) — es faellt also niemandem auf.
  */
 pruefe("Die feste Seite haengt an genau einer Stelle (v0.52.0)", () => {
-    const stil = dateisystem.readFileSync(
-        pfad.join(projekt, "css", "stil.css"), "utf8");
     const tabs = dateisystem.readFileSync(pfad.join(jsOrdner, "tabs.js"), "utf8");
 
     if (tabs.indexOf("classList.toggle(\"partie-fest\"") === -1) {
         throw new Error("tabs.js setzt die Klasse partie-fest nicht mehr");
     }
     if (stil.indexOf("body.partie-fest") === -1) {
-        throw new Error("stil.css hat keine Regel fuer body.partie-fest —"
+        throw new Error("die Stildateien haben keine Regel fuer body.partie-fest —"
             + " das Match rollt wieder");
     }
 

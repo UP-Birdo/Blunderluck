@@ -39,7 +39,8 @@ const EINSTELLUNGEN = {
      * Bis v0.16.0 war er eine Geräte-Einstellung (`blunderluck-design` im
      * Gerätespeicher, Vorgabe „klassisch"). Beides ist weg: Der Schalter
      * aus dieser Karte und die Wahl selbst. Die Klasse `design-3d` am body
-     * BLEIBT — an ihr hängen rund dreissig Regeln in `css\stil.css`, und
+     * BLEIBT — an ihr hängen rund dreissig Regeln in den Stildateien
+     * (vor allem `css\stil-effekte.css`), und
      * sie herauszuschneiden wäre viel Risiko für nichts. Sie wird jetzt
      * einmal beim Start gesetzt und nie wieder angefasst.
      *

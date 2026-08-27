@@ -1,0 +1,1604 @@
+/*
+ * stil-auswertung.css — Abschluss einer Partie, Auswahl der
+ * Spielart, Bildanleitungen zu den Fähigkeiten, Figurenwerte der
+ * Schachregel-Anleitung, Konfettiregen, Übersicht der Partien, die Anordnung
+ * der Nutzer-Skizze und die Fähigkeiten als Symbol-Stapel.
+ *
+ * Teil 4 von 5 der Stil-Aufteilung (27.08.2026, v0.93.0) — reiner Umzug
+ * aus stil.css, kein Verhalten geändert. DIE LADE-REIHENFOLGE IN
+ * index.html IST KASKADEN-RELEVANT:
+ * lädt NACH stil-effekte.css und VOR stil-start.css.
+ */
+
+/* ------------------------------------------------------------------ *
+ * Abschluss einer Partie (Sieg, Niederlage, Punktestand)
+ *
+ * Nimmt den ganzen Bereich ein — das Ende einer Partie, an der tagelang
+ * gespielt wurde, ist kein Nebensatz.
+ * ------------------------------------------------------------------ */
+
+.abschluss {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    min-height: 60vh;
+    padding: 28px 20px;
+    border-radius: var(--radius);
+
+    /* Bezugsrahmen für den Konfettiregen (seit v0.116). */
+    position: relative;
+    overflow: hidden;
+    text-align: center;
+}
+
+.abschluss-sieg {
+    background: var(--gut-flaeche);
+    border: 2px solid var(--gut);
+}
+
+.abschluss-niederlage {
+    background: var(--fehler-flaeche);
+    border: 2px solid var(--gefahr);
+}
+
+.abschluss-remis,
+.abschluss-stand {
+    background: var(--karte);
+    border: 2px solid var(--rahmen);
+}
+
+.abschluss-marke {
+    margin: 0;
+    font-size: 0.85rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--schrift-leise);
+}
+
+.abschluss-titel {
+    margin: 0;
+    font-size: clamp(1.8rem, 9vw, 3rem);
+    line-height: 1.1;
+}
+
+.abschluss-sieg .abschluss-titel {
+    color: var(--gut);
+}
+
+.abschluss-niederlage .abschluss-titel {
+    color: var(--gefahr);
+}
+
+/*
+ * DER AUSGANG ALS ÜBERSCHRIFT DER RÜCKSCHAU (seit v0.46.0): „Schachmatt"
+ * grün oder rot, „Patt" grau. Die Farbe hängt hier NICHT an der Fläche
+ * (`.abschluss-sieg` und Geschwister gibt es auf der Rückschau nicht),
+ * sondern kommt als eigene Klasse mit — deshalb die drei Regeln.
+ */
+.abschluss-ausgang-sieg {
+    color: var(--gut);
+}
+
+.abschluss-ausgang-niederlage {
+    color: var(--gefahr);
+}
+
+.abschluss-ausgang-remis {
+    color: var(--schrift-leise);
+}
+
+.abschluss-text {
+    margin: 0;
+    font-size: 1.05rem;
+}
+
+.abschluss-grund {
+    margin: 0;
+    color: var(--schrift-leise);
+    font-size: 0.92rem;
+}
+
+.abschluss-punkte {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    margin-top: 8px;
+    padding: 14px 22px;
+    background: var(--karte);
+    border: 1px solid var(--rahmen);
+    border-radius: var(--radius);
+}
+
+.abschluss-zahl {
+    font-size: 2rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--haupt);
+}
+
+.abschluss-punkte-text {
+    font-size: 0.82rem;
+    color: var(--schrift-leise);
+}
+
+.abschluss-leiste {
+    margin-top: 12px;
+}
+
+.abschluss-tabelle {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    width: 100%;
+    max-width: 420px;
+    max-height: 45vh;
+    overflow-y: auto;
+}
+
+.abschluss-zeile {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    background: var(--karte-leise);
+}
+
+.abschluss-ich {
+    background: var(--haupt);
+    color: var(--haupt-schrift);
+    font-weight: 600;
+}
+
+.abschluss-platz {
+    min-width: 28px;
+    text-align: right;
+    color: var(--schrift-leise);
+    font-variant-numeric: tabular-nums;
+}
+
+.abschluss-ich .abschluss-platz {
+    color: inherit;
+}
+
+.abschluss-name {
+    flex: 1 1 auto;
+    text-align: left;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.abschluss-gesamt {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+}
+
+/* ------------------------------------------------------------------ *
+ * Auswahl der Spielart
+ * ------------------------------------------------------------------ */
+
+.spielart-feld {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 12px;
+    margin-top: var(--abstand);
+}
+
+.spielart-kachel {
+    appearance: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+    font: inherit;
+    text-align: left;
+    color: var(--schrift);
+    background: var(--karte);
+    border: 1px solid var(--rahmen);
+    border-radius: var(--radius);
+    cursor: pointer;
+}
+
+.spielart-kachel:hover {
+    border-color: var(--haupt);
+}
+
+.spielart-kachel:focus-visible {
+    outline: 2px solid var(--haupt);
+    outline-offset: 1px;
+}
+
+.spielart-kopf {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.spielart-titel {
+    font-weight: 600;
+    font-size: 1.05rem;
+}
+
+.spielart-masse {
+    font-size: 0.8rem;
+    color: var(--schrift-leise);
+    white-space: nowrap;
+}
+
+/*
+ * Wie viele Figuren je Seite (seit v0.83). Sie steht unter dem Kopf und nicht
+ * daneben: In der Kopfzeile drängelt sie sich mit dem Titel um den Platz, und
+ * auf dem Handy bricht dann der Titel um.
+ */
+.spielart-anzahl,
+.spielart-dauer {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 0.8rem;
+    color: var(--schrift-leise);
+}
+
+.spielart-text {
+    font-size: 0.85rem;
+    color: var(--schrift-leise);
+}
+
+/*
+ * Das Vorschaubild. Dieselben Feldfarben und Figurenzeichen wie das echte
+ * Brett — nur klein und ohne Bedienung. Die Spaltenzahl kommt aus der Spielart,
+ * deshalb sieht man dem Bild die Brettform sofort an (6 mal 6 quadratisch,
+ * Doppelbrett breit).
+ */
+.vorschau {
+    display: grid;
+    grid-template-columns: repeat(var(--vorschau-spalten, 8), 1fr);
+    width: 100%;
+    border: 1px solid var(--rahmen);
+    border-radius: 4px;
+    overflow: hidden;
+    /* Bezugspunkt für die Pfeile, die über dem ganzen Brett liegen. */
+    position: relative;
+    /* Die Figuren sollen im Kleinen noch erkennbar bleiben. */
+    font-size: calc(min(260px, 70vw) / var(--vorschau-spalten, 8) * 0.8);
+    line-height: 1;
+}
+
+.vorschau-feld {
+    aspect-ratio: 1 / 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+/* Im Vorschaubild bleibt der Würfel ruhig — dort geht es um die Brettform. */
+.vorschau .wuerfel {
+    animation: none;
+}
+
+/* ------------------------------------------------------------------ *
+ * Die Bildanleitung zu einer Fähigkeit (seit v0.41)
+ *
+ * Zwei Bretter nebeneinander — vorher und nachher. Auf dem Handy passen sie
+ * nebeneinander, weil sie klein sind; wird es zu eng, rutscht das zweite
+ * darunter (`flex-wrap`). Ein waagerechter Balken darf dabei nie entstehen.
+ * ------------------------------------------------------------------ */
+
+.anleitung {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.anleitung-bild {
+    flex: 1 1 140px;
+    min-width: 130px;
+    max-width: 220px;
+}
+
+/*
+ * Ein Riss im Boden (seit v0.54, Unglückswürfel „Erdbeben").
+ *
+ * Er trägt die Hintergrundfarbe der Seite statt einer Feldfarbe — das Feld
+ * sieht aus, als wäre es weggebrochen. Anders als die Mauer bekommt er keine
+ * Ränder: Eine Mauer ist ein Riegel und gehört zusammen, Risse sind einzelne
+ * Löcher.
+ */
+/*
+ * EIN RISS SIEHT AUS WIE EIN LOCH (v0.57 nachgeschärft).
+ *
+ * Bis v0.56 lag ein kräftiger Schatten darüber — das wirkte wie ein dunkles
+ * Feld, nicht wie fehlendes Brett. Jetzt trägt das Feld GENAU die Farbe der
+ * Fläche hinter dem Brett, und ein zarter Schatten liegt nur an der Oberkante:
+ * So sieht man Tiefe, aber die Farbe bleibt die des Untergrundes.
+ *
+ * Ein Riss darf ausserdem NICHTS mehr darüber bekommen — keine Spur, keine
+ * Auswahlmarke, keinen Zugpunkt. Er ist kein Feld mehr, auf das man zieht,
+ * und jede Markierung darauf wäre eine Einladung ins Leere.
+ */
+/*
+ * EIN RISS IST EIN LOCH — also DURCHSICHTIG (seit v0.73, Meldung I7).
+ *
+ * Seit v0.57 trug das Feld die Hintergrundfarbe der Seite. Das ist fast
+ * dasselbe, aber eben nur fast: Das Brett liegt in einer Karte, und deren Grund
+ * ist eine Spur heller — der Riss sah dadurch aus wie ein eingefärbtes Feld mit
+ * Rahmen, nicht wie ein Loch. Gemeldet als „eingerahmte Felder, wo man die
+ * Feldfarbe noch sieht". Durchsichtig lässt wirklich das durchscheinen, worauf
+ * das Brett liegt.
+ */
+.feld-riss {
+    background: transparent !important;
+    box-shadow: inset 0 3px 4px -2px rgba(0, 0, 0, 0.5);
+    cursor: default;
+}
+
+.feld-riss::before,
+.feld-riss::after {
+    content: none !important;
+}
+
+/*
+ * AUSSERHALB DES BRETTS (seit v0.31.0): die vier Ecken eines Kreuz-Bretts.
+ * Sie sehen aus wie ein Riss, sind aber keiner — ein Riss ist eine kaputte
+ * Kachel, die Ecke ist gar keine. Deshalb faellt hier auch die letzte Spur
+ * einer Kachel weg; im 3D-Look erledigt das die Regel im design-3d-Block,
+ * die spaeter steht und die Kachel-Kante mit abraeumt.
+ */
+.feld-ausserhalb {
+    box-shadow: none;
+    cursor: default;
+}
+
+/*
+ * Eine gefallene Figur, blass gezeigt (seit v0.54, seit v0.57 für beide
+ * Fähigkeiten).
+ *
+ * Nur solange der Friedhof oder die Wiederbelebung auf ihr Zielfeld warten:
+ * Dann sieht man, WO jemand gefallen ist — beim Friedhof, um den 2×2-Kasten
+ * gut zu legen, bei der Wiederbelebung, um die richtige Figur zu wählen.
+ * Solange sie liegen, sind die Würfel ausgeblendet; beides übereinander wäre
+ * nicht lesbar.
+ */
+.figur-schemen {
+    opacity: 0.3;
+    filter: grayscale(0.6);
+    pointer-events: none;
+}
+
+/*
+ * Die Aufschlüsselung im Abschluss-Bildschirm (seit v0.53): links wofür,
+ * rechts wie viel. Die grosse Summe steht darüber.
+ */
+.abschluss-aufschluesselung {
+    width: 100%;
+    max-width: 320px;
+    margin: 10px auto 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.abschluss-posten {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    font-size: 0.9rem;
+}
+
+.abschluss-posten-was {
+    color: inherit;
+    opacity: 0.85;
+}
+
+.abschluss-posten-wert {
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+/* Eine leere Zeile als Trenner vor der Beute-Aufstellung. */
+.abschluss-posten-still {
+    height: 4px;
+}
+
+/*
+ * Der Zuwachs aus dieser Partie im Punktestand (seit v0.53): grüner Pfeil und
+ * die Zahl daneben, zwischen Name und Gesamtstand.
+ */
+.abschluss-zuwachs {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    color: #2e9e52;
+    font-weight: 700;
+    font-size: 0.85rem;
+    margin-left: auto;
+    margin-right: 10px;
+}
+
+.zuwachs-pfeil {
+    width: 0.8em;
+    height: 0.8em;
+    fill: currentColor;
+    flex: 0 0 auto;
+}
+
+/*
+ * Die Restzeit an einem Feld (seit v0.53).
+ *
+ * Klein und in der Ecke, damit sie die Figur nicht verdeckt — sie ist eine
+ * Nebenauskunft, keine Beschriftung. Zweifarbig wie jede Markierung auf dem
+ * Brett (heller Rand, dunkler Kern): Das Brett hat helle UND dunkle Felder,
+ * eine einzelne Farbe verschwindet immer auf einer der beiden.
+ */
+.feld-restzeit {
+    position: absolute;
+    top: 1px;
+    right: 2px;
+    z-index: 5;
+    font-size: 0.5em;
+    font-weight: 700;
+    line-height: 1;
+    padding: 1px 3px;
+    border-radius: 6px;
+    color: #fff;
+    background: rgba(20, 24, 32, 0.82);
+    border: 1px solid rgba(255, 255, 255, 0.75);
+    pointer-events: none;
+}
+
+/*
+ * Eine Einstellungszeile mit i daneben (seit v0.52).
+ *
+ * Die Zeile selbst ist ein `label` und schaltet den Haken um; das i muss
+ * deshalb NEBEN ihr stehen, nicht darin — sonst löst ein Tipp auf das i beides
+ * gleichzeitig aus.
+ */
+.schalter-halter {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.schalter-halter > .schalter-zeile {
+    flex: 1 1 auto;
+}
+
+.schalter-halter > .info-knopf {
+    flex: 0 0 auto;
+    margin-top: 2px;
+}
+
+/*
+ * Der Griff an den Vorrat (seit v0.50).
+ *
+ * In einem Bild wird nicht das Brett angetippt, sondern die Fähigkeit. Sie
+ * steht dann UNTER dem Brett, an der Stelle, an der sie auch im Spiel steht —
+ * mit demselben Fingerabdruck, den das Brett sonst trägt. Das Brett bleibt
+ * dabei stehen und behält seine Grösse: Sonst hüpfte das Bild bei jedem Takt.
+ */
+.anleitung-mitknopf {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.anleitung-vorrat {
+    display: flex;
+    justify-content: center;
+}
+
+/*
+ * DAS NACHGESTELLTE FENSTER IN DER ANLEITUNG (seit v0.75, Meldung I6).
+ *
+ * Es soll wie der echte Dialog AUSSEHEN, ohne einer zu sein: derselbe Grund,
+ * derselbe Rahmen, dieselben zwei Knöpfe rechts unten — nur kleiner und ohne
+ * Funktion. Ein echter Dialog liesse sich hier gar nicht zeigen, er liegt über
+ * der ganzen Seite.
+ */
+.anleitung-fenster {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px 10px;
+    border: 1px solid var(--rahmen);
+    border-radius: 8px;
+    background: var(--karte);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
+}
+
+.anleitung-fenster-titel {
+    font-weight: 700;
+    font-size: 0.82rem;
+}
+
+.anleitung-fenster-text {
+    margin: 0;
+    font-size: 0.74rem;
+    line-height: 1.35;
+    color: var(--schrift-leise);
+    white-space: pre-line;
+}
+
+.anleitung-fenster-knoepfe {
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.anleitung-knopf {
+    position: relative;
+    --stufe-farbe: var(--haupt);
+}
+
+/*
+ * Die Marke steht seit v0.58 in JEDEM Bild, damit die Anleitung nicht mit
+ * jedem Takt in der Höhe springt. In den Bildern, in denen gerade nicht
+ * gedrückt wird, tritt sie zurück — sichtbar, aber ohne sich anzubieten.
+ */
+.anleitung-knopf-ruht {
+    opacity: 0.45;
+}
+
+/*
+ * Auf dem Brett füllt der Abdruck ein Feld; auf der Marke sitzt er daneben.
+ *
+ * DER ABDRUCK BRAUCHT PLATZ NACH UNTEN (seit v0.73, Meldung I5: „der
+ * Fingerabdruck am Vorrat-Knopf ist abgeschnitten"). Die Marke ist eine Pille,
+ * deren Höhe der Text bestimmt — ein quadratisches Zeichen von 1,1em stiess
+ * dort oben und unten an den Rand, und die äusseren Bögen lagen genau auf der
+ * Kante. Jetzt bekommt die Pille etwas mehr Höhe, das Zeichen darf nicht
+ * schrumpfen (`flex: none`, sonst quetscht der Flex-Kasten es schmal), und ein
+ * kleiner Abstand hält es von der Rundung weg.
+ */
+.anleitung-knopf {
+    padding-top: 5px;
+    padding-bottom: 5px;
+    padding-right: 8px;
+    overflow: visible;
+}
+
+.anleitung-knopf .anleitung-finger {
+    position: static;
+    flex: none;
+    width: 1.15em;
+    height: 1.15em;
+    margin-left: 5px;
+}
+
+.anleitung-marke {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--schrift-leise);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 4px;
+}
+
+.anleitung-text {
+    margin: 6px 0 0 0;
+    font-size: 0.82rem;
+    line-height: 1.35;
+    color: var(--schrift-leise);
+}
+
+/*
+ * Das markierte Feld: worauf es in DIESEM Bild ankommt. Zweifarbig wie jede
+ * Markierung auf dem Brett — heller Rand, dunkler Kern —, sonst verschwände
+ * es auf einer der beiden Feldfarben.
+ */
+.vorschau-marke {
+    box-shadow:
+        inset 0 0 0 2px var(--ziel-rand),
+        inset 0 0 0 4px var(--ziel-kern);
+}
+
+/* ------------------------------------------------------------------ *
+ * Die Figurenwerte in der Schachregel-Anleitung (seit v0.96)
+ *
+ * Links das Zeichen, in der Mitte Name und Satz, rechts die Zahl. Die Zahl
+ * steht rechtsbündig und in gleichen Ziffernbreiten, damit die Spalte eine
+ * Spalte bleibt — daran liest man die Reihenfolge ab, und genau darum geht es.
+ * ------------------------------------------------------------------ */
+
+.werte-liste {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 10px;
+}
+
+.werte-zeile {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 10px;
+    background: var(--karte-leise);
+    border: 1px solid var(--rahmen);
+    border-radius: 8px;
+}
+
+.werte-figur {
+    flex: 0 0 auto;
+    font-size: 1.7rem;
+    line-height: 1;
+}
+
+.werte-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.werte-name {
+    font-weight: 600;
+}
+
+.werte-satz {
+    font-size: 0.82rem;
+    line-height: 1.35;
+    color: var(--schrift-leise);
+}
+
+.werte-zahl {
+    flex: 0 0 auto;
+    font-size: 1.2rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--haupt);
+    min-width: 1.6em;
+    text-align: right;
+}
+
+/* Die Kapitel klappen auf wie die Eintraege der Fähigkeiten-Bibliothek und
+   teilen sich deren Stil (`stufen-eintrag`). Eigen ist nur der Abstand: Hier
+   stehen mehrere Kapitel direkt untereinander in EINER Karte. */
+.grundlagen-eintrag + .grundlagen-eintrag {
+    margin-top: 6px;
+}
+
+/*
+ * DAS BRETT DER SCHACHREGELN IST BREITER (seit v0.97).
+ *
+ * Es hat acht Spalten statt sechs wie die Fähigkeits-Anleitung. Bei gleicher
+ * Breite wäre jedes Feld ein Viertel kleiner — und hier ist das Brett die
+ * Sache selbst, nicht der Rahmen für eine Wirkung. Nach oben begrenzt bleibt
+ * es trotzdem: Auf dem Handy soll neben ihm kein Rand entstehen, über den man
+ * waagerecht scrollen müsste.
+ */
+.grundlagen-brett {
+    flex: 0 1 360px;
+    max-width: min(360px, 100%);
+}
+
+/*
+ * DIE GANZE BESCHREIBUNG UNTER DEN BILDERN (seit v0.94).
+ *
+ * Ein Aufklapper, zu wie jeder Aufklapper. Oben im Fenster steht ein Satz,
+ * dann kommen die Bilder — wer die Feinheiten lesen will, tippt hier. Vorher
+ * stand der ganze Text über den Bildern und schob sie aus dem Sichtfeld.
+ */
+.anleitung-mitbeschreibung {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.mehr-text {
+    margin-top: 4px;
+    border-top: 1px solid var(--rahmen);
+    padding-top: 8px;
+}
+
+.mehr-text > summary {
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--haupt);
+    /* Der Griff ist klein — die Fläche zum Treffen darf es nicht sein. */
+    padding: 4px 0;
+}
+
+.mehr-text > summary:focus-visible {
+    outline: 2px solid var(--haupt);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+.mehr-text-satz {
+    margin: 6px 0 0 0;
+    font-size: 0.88rem;
+    line-height: 1.45;
+    color: var(--schrift-leise);
+}
+
+/*
+ * Der abgespielte Ablauf: EIN Brett, das die Schritte durchläuft. Es steht in
+ * der Mitte und darf grösser sein als die ruhigen Einzelbilder — es ist ja das
+ * einzige.
+ */
+.anleitung-film {
+    justify-content: center;
+}
+
+.anleitung-film .anleitung-bild {
+    flex: 0 1 260px;
+    max-width: 260px;
+}
+
+/*
+ * Die Schrittliste unter dem Bild (seit v0.44).
+ *
+ * ALLE Sätze stehen gleichzeitig da, der laufende ist hervorgehoben. Vorher
+ * wechselte EIN Satz mit dem Bild — und weil die Sätze verschieden lang sind,
+ * hüpfte alles darunter im Sekundentakt.
+ */
+.anleitung-schritte {
+    list-style: none;
+    margin: 8px 0 0 0;
+    padding: 0;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.anleitung-schritt {
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+    font-size: 0.82rem;
+    line-height: 1.35;
+    color: var(--schrift-leise);
+    opacity: 0.7;
+}
+
+.anleitung-schritt-jetzt {
+    opacity: 1;
+    color: var(--schrift);
+}
+
+.anleitung-nummer {
+    flex: 0 0 auto;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--schrift-leise);
+}
+
+.anleitung-schritt-jetzt .anleitung-nummer {
+    color: var(--haupt);
+}
+
+/*
+ * Der Fingerabdruck: HIER wird getippt. Er liegt über allem anderen im Feld —
+ * über der Figur, über dem Würfel —, denn er ist die Aussage des Bildes.
+ */
+.anleitung-finger {
+    position: absolute;
+    width: 78%;
+    height: 78%;
+    z-index: 4;
+    pointer-events: none;
+    filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.55));
+}
+
+/*
+ * DIE TIPPENDE HAND (seit v0.116, sie ersetzt den Fingerabdruck von v0.45):
+ * weisse Fläche mit dunklem Umriss — so bleibt sie auf hellen wie dunklen
+ * Feldern lesbar, in beiden Farbwelten.
+ */
+.anleitung-hand-flaeche {
+    fill: #ffffff;
+    stroke: #1c1f23;
+    stroke-width: 1.1;
+    stroke-linejoin: round;
+}
+
+/* Die Funken-Bögen über der Kuppe sind seit 22.08. wieder raus (Nutzer:
+   „der Strich vorne weg") — die Tipp-Bewegung der Hand sagt schon alles. */
+
+/* ------------------------------------------------------------------ *
+ * Der Konfettiregen zum Sieg (seit v0.116). Erzeugt in
+ * `_konfettiStreuen`; das Skript unterlässt das bei „weniger Bewegung",
+ * deshalb stehen die Regeln ausserhalb des no-preference-Blocks.
+ * ------------------------------------------------------------------ */
+
+.konfetti-regen {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.konfetti-stueck {
+    position: absolute;
+    top: -14px;
+    width: 8px;
+    height: 12px;
+    border-radius: 2px;
+    opacity: 0;
+    animation: konfetti-fallen 2.6s ease-in forwards;
+}
+
+/* Sechs feste Farben — die Rot-, Blau-, Gelb- und Grüntöne des Hauses. */
+.konfetti-0 { background: #e05a52; }
+.konfetti-1 { background: #1f5fa8; }
+.konfetti-2 { background: #e0b458; }
+.konfetti-3 { background: #4cb87a; }
+.konfetti-4 { background: #9a6fd0; }
+.konfetti-5 { background: #4a8fd6; }
+
+@keyframes konfetti-fallen {
+    0% {
+        opacity: 0;
+        transform: translateY(0) rotate(0);
+    }
+    8% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(70vh) rotate(540deg);
+    }
+}
+
+/*
+ * Die Bewegungspfeile. Zweifarbig wie jede Markierung auf dem Brett: der
+ * helle Rand liegt unten und ist dicker, der dunkle Kern darüber — sonst
+ * verschwände der Pfeil auf einer der beiden Feldfarben.
+ */
+.anleitung-pfeile {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 3;
+    pointer-events: none;
+}
+
+.anleitung-pfeil-rand {
+    stroke: var(--ziel-rand);
+    stroke-width: 0.16;
+    stroke-linecap: round;
+}
+
+.anleitung-spitze-rand {
+    fill: var(--ziel-rand);
+    stroke: var(--ziel-rand);
+    stroke-width: 0.12;
+    stroke-linejoin: round;
+}
+
+.anleitung-pfeil-kern {
+    stroke: var(--ziel-kern);
+    stroke-width: 0.08;
+    stroke-linecap: round;
+}
+
+.anleitung-spitze-kern {
+    fill: var(--ziel-kern);
+}
+
+/* ------------------------------------------------------------------ *
+ * Übersicht der Partien
+ * ------------------------------------------------------------------ */
+
+.partie-karte .karte-fuss {
+    justify-content: flex-start;
+}
+
+.partie-zeile {
+    margin: 0 0 4px 0;
+    font-size: 0.92rem;
+}
+
+/*
+ * Die Herkunftszeile einer Partie (seit v0.77): mit welcher App-Version sie
+ * angelegt wurde. Sie steht nur da, wenn es eine ANDERE als die laufende ist —
+ * eine Auskunft für den Fall, dass etwas gemeldet wird, kein Teil des Spiels.
+ * Deshalb leise: kleiner und in der stillen Schriftfarbe.
+ */
+.partie-herkunft {
+    font-size: 0.82rem;
+    color: var(--schrift-leise);
+}
+
+/* Kopfzeile einer geöffneten Partie: Zurück, Name, Spielart. */
+.partie-kopf {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: var(--abstand);
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--rahmen);
+}
+
+/*
+ * DIE EINSTELLUNGEN DIESER PARTIE (seit v0.48.0): Das Zahnrad in der
+ * Fussleiste bekommt das Zeichen in Textgrösse, und das Aufgeben steht in
+ * seinem Fenster ganz unten — gross und rot, wie angesagt.
+ */
+.spiel-zahnrad .start-zeichen {
+    width: 1.2em;
+    height: 1.2em;
+    display: block;
+}
+
+.spiel-einstellungen-fuss {
+    margin-top: calc(var(--abstand) * 2);
+}
+
+.aufgeben-gross {
+    width: 100%;
+    min-height: 52px;
+    font-size: 1.05rem;
+    font-weight: 600;
+}
+
+/*
+ * EIN LEERER KOPF IST KEINE ZEILE (seit v0.47.0). Seit der Code in die
+ * Stand-Leiste gezogen ist, bleibt der Partie-Kopf leer, wenn die Partie
+ * keinen festen Item-Vorrat hat — ohne diese Regel stünde dort eine leere
+ * Zeile mit Trennlinie. Das Element bleibt trotzdem im Baum: Die
+ * Bildschirm-Tests zählen die Bereiche der Partie.
+ */
+.partie-kopf:empty {
+    display: none;
+}
+
+/*
+ * DER BEITRITTS-CODE (seit v0.40.0, seit v0.47.0 in der Stand-Leiste):
+ * blass in der Ecke,
+ * ohne Beschriftung. Er soll da sein, wenn man ihn weitergeben will, und
+ * sonst nicht auffallen — deshalb `margin-left: auto` (rechte Ecke), leise
+ * Farbe und Schreibmaschinenschrift, damit sich die sechs Zeichen sauber
+ * abschreiben lassen. `user-select` bleibt an: Markieren und Kopieren ist
+ * genau das, wofür er dasteht.
+ */
+.partie-code {
+    margin-left: auto;
+    color: var(--schrift-leise);
+    font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+    font-size: 0.85rem;
+    letter-spacing: 0.12em;
+    opacity: 0.65;
+}
+
+/*
+ * IN LANGEN ANSICHTEN KLEBT DIE KOPFZEILE (seit v0.110): Bibliothek und
+ * „Schach lernen" tragen diese Klasse, damit der EINE Zurück-Knopf beim
+ * Rollen erreichbar bleibt — er ersetzt den schwebenden Zweitknopf von
+ * v0.59 bis v0.109. Die Fläche dahinter deckt den rollenden Text ab.
+ */
+.partie-kopf-klebt {
+    position: sticky;
+    top: 0;
+    z-index: var(--ebene-schwebend);
+    background: var(--flaeche);
+    padding-top: 8px;
+}
+
+.partie-titel {
+    margin: 0;
+    font-size: 1.15rem;
+    /* Nimmt den Platz zwischen Zurück-Knopf und Spielart ein. */
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.faehigkeit-zeile {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+    border-top: 1px solid var(--rahmen);
+}
+
+/*
+ * DIE FÄHIGKEITS-KARTENREIHE EINER SEITE (seit v0.57.0, Nutzer-Skizze)
+ *
+ * Sie steht am Brett, nicht in einer Karte — deshalb kein Trennstrich oben.
+ * EIN Streifen (kein Umbruch): Bei vielen Fähigkeiten wischt man seitlich,
+ * statt eine zweite Zeile aufzumachen. Das hält die Höhe klein — wichtig,
+ * seit das Match auf eine feste Seite passen soll (v0.52).
+ */
+.faehigkeit-reihe {
+    border-top: none;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 6px;
+
+    /*
+     * KEIN INNENABSTAND OBEN UND UNTEN (seit v0.71.0). Jeder Pixel hier
+     * machte die Karten NIEDRIGER als die Team-Karte, denn sie füllen die
+     * Reihe abzüglich ihres Innenabstands. Bis v0.70.0 standen hier 2 px
+     * plus 7 px für die überstehende Anzahl-Blase — die ist mit v0.71.0
+     * nach innen gerückt, eben damit hier nichts mehr stehen muss.
+     */
+    padding: 0;
+
+    /* Die Karten füllen die Reihe, die Reihe füllt die Zeile — so kommt die
+       Höhe der Team-Karte bei der Karte an (siehe `.seiten-reihe`). */
+    align-items: stretch;
+
+    /* Der Streifen schiebt beim Rollen nicht die ganze Seite mit. */
+    overscroll-behavior-x: contain;
+
+    /*
+     * OHNE SICHTBAREN ROLLBALKEN (seit v0.79.2). Sobald die Sammlung
+     * breiter wird als die Reihe, zeichnet der Desktop-Browser einen
+     * waagerechten Balken IN die Reihe — und der nimmt seine rund 10 px
+     * von den Karten: Sie schrumpften von 52 auf 42 und waren damit nicht
+     * mehr so hoch wie die Team-Karte (genau das war die Zusage von
+     * v0.71.0). Am Handy liegt der Balken über dem Inhalt und kostet
+     * nichts; gemessen 26.08.2026 im Browser.
+     *
+     * Rollen geht weiter — mit dem Finger, mit dem Rad, mit der Tastatur.
+     * Dass rechts mehr wartet, zeigt die angeschnittene letzte Karte.
+     */
+    scrollbar-width: none;
+}
+
+.faehigkeit-reihe::-webkit-scrollbar {
+    display: none;
+}
+
+/* Was in der Reihe KEINE Karte ist, wird nicht gestreckt: „noch keine" und
+   die Warte-Zeile mit ihrem Abbrechen-Knopf stehen weiter mittig. */
+.faehigkeit-reihe-ziel {
+    align-items: center;
+}
+
+.faehigkeit-reihe .faehigkeit-leer {
+    align-self: center;
+}
+
+/* Die Karten behalten im Streifen ihre Breite, statt zusammengedrückt zu
+   werden. */
+.faehigkeit-reihe .faehigkeit-knopf {
+    flex: 0 0 auto;
+}
+
+/* Die Reihe des Gegners steht oben, meine unten — heute nur als Haken zum
+   späteren Feinschliff (etwa eigene Karten stärker hervorheben). */
+.faehigkeit-reihe-gegner,
+.faehigkeit-reihe-meine {
+    min-height: 0;
+}
+
+/* ------------------------------------------------------------------ *
+ * DIE ANORDNUNG DER ZWEITEN NUTZER-SKIZZE (seit v0.64.0)
+ *
+ * Je Seite EINE Zeile aus Kartenreihe und Banner, dazu eine Knopfspalte am
+ * Rand. Punktsymmetrisch um das Brett:
+ *
+ *     [Karten Gegner ........]  [ Banner Gegner ]
+ *                                            [F]
+ *                    B R E T T
+ *     [Zahnrad] [Z] [F]  (untereinander)
+ *     [ Banner ich ]  [........ Karten ich ]
+ *
+ * WARUM FLEXBOX UND KEIN RASTER: Die Kartenreihe ist mal da und mal nicht
+ * (Fähigkeiten aus), und ihre Breite hängt davon ab, wie viele Karten man
+ * gesammelt hat. Ein Raster mit festen Spalten müsste beide Fälle kennen;
+ * `space-between` braucht sie nicht zu kennen — der Banner sitzt in seiner
+ * Ecke, ob neben ihm etwas steht oder nicht.
+ * ------------------------------------------------------------------ */
+
+/*
+ * `stretch` STATT `center` (seit v0.71.0) — daran hängt, dass die
+ * Item-Karten GENAU so hoch sind wie die Team-Karte (Nutzer-Ansage
+ * 25.08.2026).
+ *
+ * Die Team-Karte hat keine feste Höhe: Am Laptop ist sie rund 54 px, unter
+ * 600 px Breite rund 52 px (kleinerer Innenabstand), und im Team-Modus rund
+ * 68 px, sobald ein „+2" als dritte Zeile im Stapel steht. Eine Zahl in
+ * dieser Datei träfe also immer nur einen dieser Fälle und liefe beim
+ * nächsten Eingriff an der Schriftgrösse davon.
+ *
+ * `stretch` streckt beide Kinder auf die Höhe des höheren. Der Banner ist
+ * IMMER der höhere — die Karten haben von sich aus nur die Höhe ihres
+ * Zeichens —, also gibt er die Höhe vor und die Karten nehmen sie an. Das
+ * gilt ohne Nachrechnen für jede Breite, jeden Innenabstand und auch für
+ * die dritte Zeile im Team-Modus.
+ *
+ * WER HIER `center` ZURÜCKSETZT, macht die Karten wieder kleiner als den
+ * Banner — und zwar lautlos, ohne dass ein Test anspringt.
+ */
+/*
+ * SEIT v0.80.0 IST DIE ZEILE EIN RASTER (dritte Nutzer-Skizze): Der
+ * Namens-Kasten bekommt an seiner Brettseite den Friedhof-Streifen, und
+ * BEIDE Zusagen müssen zugleich halten — die Karten sind genau so hoch wie
+ * der Kasten (v0.71.0, sie teilen sich seine Raster-Zeile), und der
+ * Streifen ist genau so breit wie der Kasten (er teilt sich seine
+ * Raster-Spalte). In einer Flexbox ginge nur eines von beiden.
+ *
+ * Die `minmax(0, 1fr)`-Spalte der Karten übernimmt, was vorher
+ * `min-width: 0` tat: Ein voller Kartenstreifen rollt in sich, statt die
+ * Zeile zu sprengen (siehe die Kette in `erkenntnisse.md`, v0.79.2).
+ */
+.seiten-reihe {
+    display: grid;
+    column-gap: 10px;
+
+    /* Der Streifen KLEBT am Kasten — die Lücke dazwischen wäre eine
+       Einladung, beide für getrennte Dinge zu halten. */
+    row-gap: 2px;
+    min-width: 0;
+    margin-bottom: 6px;
+}
+
+/* Oben: Karten links (nehmen den Restplatz), Kasten rechts aussen in der
+   Ecke, der Streifen unter dem Kasten — zum Brett hin. */
+.seiten-reihe-oben {
+    grid-template-columns: minmax(0, 1fr) auto;
+}
+
+/* Die Karten spannen BEIDE Zeilen (seit v0.81.0, Nutzer-Ansage: „so hoch
+   wie die beiden Knöpfe zusammen") — sie sind damit so hoch wie Kasten
+   plus Streifen. */
+.seiten-reihe-oben .faehigkeit-zeile { grid-column: 1; grid-row: 1 / 3; }
+.seiten-reihe-oben .spieler-zeile { grid-column: 2; grid-row: 1; }
+.seiten-reihe-oben .friedhof-streifen { grid-column: 2; grid-row: 2; }
+
+/* Unten gespiegelt: Streifen ÜBER dem Kasten (zum Brett hin), Kasten links
+   aussen, Karten rechts. */
+.seiten-reihe-unten {
+    grid-template-columns: auto minmax(0, 1fr);
+
+    /* Bleibt als Schutz gegen Überstand: Was eine Zeile höher wird als ihre
+       beiden Rasterzeilen, schneidet hier ab, statt das Brett zu schieben.
+       Bis v0.84.0 hing daran das absichtliche Verschlucken des unteren
+       Kartenviertels — siehe darunter. */
+    overflow: hidden;
+}
+
+.seiten-reihe-unten .friedhof-streifen { grid-column: 1; grid-row: 1; }
+.seiten-reihe-unten .spieler-zeile { grid-column: 1; grid-row: 2; }
+.seiten-reihe-unten .faehigkeit-zeile { grid-column: 2; grid-row: 1 / 3; }
+
+/*
+ * HIER STAND VON v0.81.0 BIS v0.84.0 EIN `transform: translateY(25%)` auf
+ * der eigenen und der gegnerischen Kartenreihe — „sichtbar bleiben drei
+ * Viertel, der Rest verschwindet im Bildschirmrand".
+ *
+ * ZURÜCKGENOMMEN AUF NUTZER-ANSAGE (27.08.2026: „nimm das 3/4-1/4-Ding aus
+ * dem Inventar heraus"), nachdem er es zum ersten Mal am Gerät gesehen hat.
+ * Die Karten stehen jetzt wieder vollständig da.
+ *
+ * ES KOSTET KEINEN PLATZ, sie ganz zu zeigen: `transform` verschiebt nur
+ * die Darstellung, nie das Layout — die Zeile war schon vorher so hoch wie
+ * Kasten plus Streifen zusammen. Weg ist damit nur das Abschneiden.
+ */
+
+/* Die ungeschobenen Sonderzeilen stehen mittig in ihrer hohen Zelle. */
+.seiten-reihe .faehigkeit-reihe-leer,
+.seiten-reihe .faehigkeit-reihe-ziel {
+    align-self: center;
+}
+
+/* Die untere Reihe steht unter dem Brett und braucht ihren Abstand oben
+   statt unten. */
+.seiten-reihe-unten {
+    margin-top: 6px;
+    margin-bottom: 0;
+}
+
+/*
+ * DIE KARTENREIHE ROLLT IN SICH, STATT DIE ZEILE ZU SPRENGEN. Ihre Spalte
+ * ist `minmax(0, 1fr)` — das Gegenstück zum alten `min-width: 0` der
+ * Flex-Fassung; ohne die 0 drängte ein voller Streifen den Kasten aus der
+ * Zeile (v0.79.2, `erkenntnisse.md`).
+ *
+ * `height: 0` PLUS `min-height: 100%` (seit v0.81.0): Die Karten leiten
+ * ihre Breite aus ihrer Höhe ab (`aspect-ratio`), und OHNE diese zwei
+ * Zeilen liefe das rückwärts — die Wunschgrösse der Karten ginge in die
+ * Zeilen-Messung des Rasters ein, und die Ecke wüchse auf Karten- statt
+ * auf Kastenmass (gemessen: 428 statt 98 px). Mit `height: 0` trägt die
+ * Reihe NICHTS zur Zeilenhöhe bei; die messen allein Kasten und
+ * Streifen, und `min-height: 100%` streckt die Reihe danach auf das
+ * fertige Mass.
+ */
+.seiten-reihe .faehigkeit-reihe {
+    min-width: 0;
+    margin: 0;
+    height: 0;
+    min-height: 100%;
+}
+
+/*
+ * EINE LEERE REIHE BLEIBT BEIM KASTEN (seit v0.72.0; seit v0.80.0 über
+ * `justify-self` statt der automatischen Ränder der Flex-Fassung): Solange
+ * eine Seite nichts gesammelt hat, soll „noch keine" AM Kasten stehen,
+ * nicht am anderen Bildschirmrand — der Satz gehört zu ihm.
+ */
+.seiten-reihe-oben .faehigkeit-reihe-leer {
+    justify-self: end;
+}
+
+.seiten-reihe-unten .faehigkeit-reihe-leer {
+    justify-self: start;
+}
+
+/* Der Namens-Kasten bestimmt seine Spalte: Das Raster misst sie an ihm
+   (`auto`), gestaucht wird er nie — der Kartenstreifen weicht (v0.79.2). */
+.seiten-reihe .spieler-zeile {
+    margin: 0;
+}
+
+/*
+ * DER FRIEDHOF-STREIFEN (seit v0.80.0, dritte Nutzer-Skizze) — der breite,
+ * flache Knopf an der Brettseite des Namens-Kastens: Totenkopf, Zahl,
+ * Pfeil. Seine BREITE steht hier absichtlich nicht: Er teilt sich die
+ * Raster-Spalte mit dem Kasten und wird von ihr gestreckt.
+ *
+ * `display: flex` gehört zu `justify-content` — ohne das wäre die
+ * Zentrierung stumm (v0.79.2, `erkenntnisse.md`).
+ *
+ * HIER STAND BIS v0.79 DIE KNOPFSPALTE AM RAND (`.steuer-spalte`, zweite
+ * Skizze) — ihre Regeln sind mit ihr gegangen.
+ */
+.friedhof-streifen {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 3px 8px;
+    min-height: 24px;
+}
+
+.friedhof-streifen .start-zeichen {
+    width: 1.1em;
+    height: 1.1em;
+    display: block;
+}
+
+.friedhof-streifen .friedhof-zahl {
+    font-weight: 700;
+    font-size: 0.85rem;
+    line-height: 1;
+}
+
+.klapp-pfeil {
+    width: 0.9em;
+    height: 0.6em;
+    display: block;
+    opacity: 0.7;
+}
+
+/*
+ * DIE AUFGEKLAPPTE FRIEDHOF-ZEILE — seit v0.81.0 EIN flacher Streifen
+ * ohne Text (Nutzer-Ansage): links die Bilanz-Zahl, rechts die
+ * gefallenen Figuren, gruppiert und von rechts gelesen. Sie ist
+ * standardmaessig offen und fuellt die Flaeche zwischen Eck-Kasten und
+ * Brett, statt etwas zu verschieben.
+ */
+.friedhof-klappe {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--karte);
+    border: 1px solid var(--rahmen);
+    border-radius: var(--radius);
+    padding: 3px 10px;
+    margin-bottom: 6px;
+}
+
+/* Die Bilanz ganz links: gruen heisst vorn, rot heisst hinten, eine 0
+   bleibt leise stehen. */
+.friedhof-bilanz {
+    flex: 0 0 auto;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--schrift-leise);
+}
+
+.friedhof-bilanz-gut {
+    color: var(--gut);
+}
+
+.friedhof-bilanz-schlecht {
+    color: var(--gefahr);
+}
+
+/* Die Figuren fuellen den Rest und lehnen sich RECHTS an — die
+   wertvollste steht am rechten Rand, gelesen wird von rechts nach
+   links. Werden es zu viele, rollt die Reihe in sich (ohne sichtbaren
+   Balken, siehe die Kartenreihe). */
+.friedhof-klappe .friedhof-figuren {
+    flex: 1 1 auto;
+    min-width: 0;
+    justify-content: flex-end;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    margin-bottom: 0;
+    gap: 8px;
+}
+
+.friedhof-klappe .friedhof-figuren::-webkit-scrollbar {
+    display: none;
+}
+
+/* Eine Saeule je Figurenart: das Zeichen, darunter „2x". */
+.friedhof-saeule {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 0 0 auto;
+    line-height: 1;
+}
+
+.friedhof-anzahl {
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: var(--schrift-leise);
+    margin-top: 1px;
+}
+
+
+/* ------------------------------------------------------------------ *
+ * DIE FÄHIGKEITEN ALS SYMBOL-STAPEL (seit v0.67.0)
+ *
+ * Nutzer-Ansage 25.08.2026: „Nicht das alte Item-Rechteck mit Schrift,
+ * sondern nur das Symbol mit der Umrandung — gruppiert hintereinander
+ * gestapelt."
+ *
+ * Aus der breiten Marke mit Wort wird eine Karte. Gleiche Fähigkeiten
+ * zählt `_faehigkeitReiheBauen` zusammen (die Zahl in der Ecke), und die
+ * Karten schieben sich zusätzlich halb übereinander — beides zusammen
+ * macht aus acht Karten einen handbreiten Streifen.
+ *
+ * SEIT v0.70.0 IST ES DIE FORM EINER SPIELKARTE, nicht mehr das Quadrat
+ * (Nutzer-Ansage 25.08.2026). Die Eckenrundung fällt dafür von 10 auf 6
+ * Pixel, weil eine hochkante Karte mit stark gerundeten Ecken wie eine
+ * Pille aussieht statt wie eine Karte.
+ *
+ * SEIT v0.71.0 KOMMT DIE HÖHE NICHT MEHR AUS DIESER DATEI, sondern von
+ * der Team-Karte daneben (Nutzer-Ansage 25.08.2026: „genau so hoch wie
+ * die Team-Karte"). Wie das zugeht, steht bei `.seiten-reihe` — in einem
+ * Satz: `align-items: stretch`, und der Banner ist immer der höhere.
+ * Deshalb steht hier KEIN `height` mehr. Wer eines einträgt, koppelt die
+ * beiden wieder ab.
+ *
+ * DIE BREITE BLEIBT EINE ZAHL, weil das Seitenverhältnis sonst mitwandern
+ * würde: 44 Pixel zu den 62 der Team-Karte sind 0,71 — das Verhältnis
+ * einer Pokerkarte (63 zu 88 Millimeter). Unter 600 Pixel
+ * Bildschirmbreite ist die Team-Karte 52 hoch, dort stehen deshalb 37
+ * (siehe Handy-Abschnitt am Dateiende).
+ *
+ * DIE ZWEI HÖHEN SIND GEMESSEN, NICHT GERECHNET (26.08.2026, im echten
+ * Browser). v0.71.0 stand hier 38 zu „rund 54" — die 54 waren aus den
+ * Schriftgrössen hergeleitet und falsch, weil `.seiten-reihe
+ * .spieler-zeile` den Innenabstand des Kastens auf 10 Pixel hebt. Die
+ * Karte war damit zu schmal für ihre Höhe. Wer diese Zahlen anfasst,
+ * misst nach, statt zu rechnen: Die Testkette rendert nicht.
+ *
+ * WARUM NICHT `aspect-ratio` STATT DER ZWEI ZAHLEN: Damit hätte die Karte
+ * eine eigene Höhe, und die Zeile nähme bei `stretch` die GRÖSSERE von
+ * beiden. Am Handy wäre das die Karte — dann würde plötzlich sie den
+ * Banner strecken statt umgekehrt. Ohne `aspect-ratio` ist die Karte von
+ * sich aus nur so hoch wie ihr Zeichen, also immer die kleinere, und der
+ * Banner behält die Führung.
+ *
+ * DAS ZEICHEN BLEIBT 26 PIXEL GROSS — es ist der Grund, warum es die
+ * Karte gibt, und darf durch die Formänderung nicht schrumpfen.
+ *
+ * WAS ES KOSTET: nichts mehr. v0.70.0 hatte die Reihe 9 Pixel höher
+ * gemacht als die Team-Karte (56 Karte plus 7 Innenabstand gegen 54
+ * Banner), und weil `_brettEinpassen` die Brettbreite aus der übrigen
+ * Höhe zurückrechnet, fehlten dem Brett rund 18 Pixel. Mit v0.71.0 ist
+ * die Zeile wieder genau so hoch wie der Banner — das Brett ist damit so
+ * gross wie zu Quadrat-Zeiten.
+ * ------------------------------------------------------------------ */
+
+.faehigkeit-reihe .faehigkeit-knopf {
+    position: relative;
+
+    /*
+     * DIE BREITE FOLGT SEIT v0.81.0 DER HOEHE (`aspect-ratio` im
+     * Pokerkarten-Verhaeltnis 44 zu 62 = 0,71): Die Karten spannen jetzt
+     * BEIDE Rasterzeilen (Kasten plus Streifen, Nutzer-Ansage „so hoch
+     * wie die beiden Knöpfe zusammen") — eine feste Breite passte immer
+     * nur zu einer Hoehe. `aspect-ratio` war bei v0.71.0 ausdruecklich
+     * verboten, weil die Karte damals ihre Hoehe selbst bestimmt haette;
+     * heute kommt die Hoehe von der Rasterzelle, das Verhaeltnis liefert
+     * nur noch die Breite dazu.
+     */
+    width: auto;
+    min-width: 0;
+    aspect-ratio: 44 / 62;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    /*
+     * DIE HÖHE KOMMT VON DER TEAM-KARTE (seit v0.71.0) — hier steht nur,
+     * dass die Karte sie annimmt. `align-self` wiederholt, was die Zeile
+     * ohnehin vorgibt; es steht trotzdem da, weil sonst nicht zu sehen
+     * wäre, dass die fehlende Höhenangabe Absicht ist.
+     */
+    align-self: stretch;
+    height: auto;
+
+    /*
+     * DER FUSS DER KARTE GEHÖRT DEN KOSTEN-ZEICHEN (seit v0.70.0). Die
+     * Innenkante unten nimmt dem Zeichen diese 11 Pixel weg, also sitzt es
+     * mittig im oberen Teil — darunter bleibt der Streifen frei, in dem
+     * Pluszeichen und Blitz stehen.
+     */
+    padding: 0 0 11px 0;
+
+    /*
+     * DAS ÜBEREINANDERSCHIEBEN. Ein negativer linker Rand zieht jede Karte
+     * unter ihre Vorgängerin; die erste bleibt, wo sie ist. Der Schatten
+     * trennt sie optisch, sonst verschwämmen die Umrandungen ineinander.
+     *
+     * ES SIND 10 PIXEL STATT 12 (seit v0.70.0): Die Karte ist schmaler
+     * geworden, das Zeichen darin aber nicht. Bei den alten 12 verschwände
+     * ein Stück mehr davon unter der Nachbarkarte — so bleibt sichtbar, was
+     * vorher sichtbar war. Nachgerechnet mit den 6 Pixeln Abstand der
+     * Reihe: Jede weitere Karte rückt um 38 minus 10 plus 6 gleich 34
+     * Pixel vor, verdeckt wird also nur der 4 Pixel breite Rand links —
+     * das 26 Pixel breite Zeichen beginnt erst bei 6.
+     */
+    margin-left: -10px;
+    background: var(--flaeche);
+    box-shadow: -2px 0 4px rgba(0, 0, 0, 0.35);
+}
+
+.faehigkeit-reihe .faehigkeit-knopf:first-child {
+    margin-left: 0;
+    box-shadow: none;
+}
+
+/*
+ * DIE UNGLÜCKS-KARTE DER HAND (seit v0.82.0, Fund A2-1): Ein abbekommenes
+ * Unglück liegt als Karte hinter den Fähigkeiten — gestrichelt gerahmt wie
+ * seine Kachel in der Bibliothek, auf dem roten Fehler-Grund, damit sie auch
+ * in der GEGNER-Reihe (dort sind alle Fähigkeiten gestrichelt) als Unglück
+ * zu erkennen ist. Der Rahmen behält die Stufenfarbe wie jede andere Karte.
+ */
+.faehigkeit-reihe .unglueck-knopf {
+    border-style: dashed;
+    background: var(--fehler-flaeche);
+}
+
+/*
+ * EINE IM TEAM VORGESCHLAGENE FÄHIGKEIT (seit v0.83.0, Fund A2-3): Die Karte
+ * trägt einen blauen Aussenring, bis sich das Team einig ist. `outline`
+ * statt `box-shadow`, weil der Schatten schon das Übereinanderschieben der
+ * Karten trennt; die Karte hebt sich zusätzlich nach vorn (`z-index`, wie
+ * beim Antippen), damit der Ring nicht unter der Nachbarkarte verschwindet.
+ */
+.faehigkeit-reihe .faehigkeit-vorgeschlagen {
+    outline: 2px solid var(--haupt);
+    outline-offset: 1px;
+    z-index: 1;
+}
+
+/*
+ * WER OBEN LIEGT, IST DIE VORDERSTE. Ohne diese Zeile läge jede Karte unter
+ * der davor — dann verdeckte die erste alle anderen statt umgekehrt. Beim
+ * Antippen kommt die getroffene ganz nach vorn, damit man sieht, was man
+ * gerade trifft.
+ *
+ * SIE RUTSCHT DABEI NICHT MEHR NACH OBEN (bis v0.70.0 drei Pixel): Die
+ * Reihe hat seit v0.71.0 keinen Innenabstand mehr, an dem sich das
+ * Herausheben abspielen könnte — es würde am oberen Rand abgeschnitten.
+ * Den Zweck erfüllt das Aufhellen genauso, und auf dem Handy, wo mit dem
+ * Finger gezielt wird, gab es den Effekt ohnehin nie zu sehen.
+ */
+.faehigkeit-reihe .faehigkeit-knopf:hover,
+.faehigkeit-reihe .faehigkeit-knopf:focus {
+    z-index: 2;
+    filter: brightness(1.18);
+    box-shadow: -2px 0 8px rgba(0, 0, 0, 0.5);
+}
+
+/*
+ * DAS ZEICHEN AUF DER KARTE — die einzige Stelle, an der seine Grösse
+ * steht (seit v0.71.0; bis dahin wurde diese Regel von einer gleich
+ * spezifischen weiter unten geschlagen, siehe dort).
+ *
+ * SEIT v0.81.0 IN PROZENT DER KARTENBREITE statt in Pixeln: Die Karten
+ * wachsen jetzt mit der Hoehe des Eck-Kastens mit (`aspect-ratio`), und
+ * ein 26-Pixel-Zeichen saehe auf einer doppelt so grossen Karte verloren
+ * aus. 58 Prozent entsprechen dem alten Verhaeltnis (26 von 44 sind 59).
+ * Der Selektor nennt bewusst alle drei Klassen: Damit ist er spezifischer
+ * als alles, was mit zwei Klassen dazwischenfunken könnte.
+ */
+.faehigkeit-reihe .faehigkeit-knopf .faehigkeit-bild {
+    width: 58%;
+    height: auto;
+    aspect-ratio: 1 / 1;
+    flex: 0 0 auto;
+}
+
+/*
+ * DIE ANZAHL IN DER ECKE — oben rechts, wie der Wert auf einer Spielkarte.
+ * Sie steht auf einem eigenen Grund, damit sie auch über einem Zeichen
+ * lesbar bleibt.
+ *
+ * SIE STEHT SEIT v0.71.0 INNERHALB DER KARTE (vorher `top: -5px;
+ * right: -5px`, also über die Ecke hinaus). Der Grund ist nicht Optik,
+ * sondern Höhe: Solange sie überstand, brauchte die Reihe 7 Pixel
+ * Innenabstand oben, damit sie nicht abgeschnitten wird — und genau diese
+ * 7 Pixel machten die Karte niedriger als die Team-Karte. Innen kostet sie
+ * nichts.
+ *
+ * SIE ÜBERLAPPT DABEI DIE OBERE RECHTE ECKE DES ZEICHENS. Das ist in Kauf
+ * genommen und nicht zu vermeiden: Anzahl, Zeichen und die zwei
+ * Kosten-Zeichen brauchen zusammen rund 58 Pixel Höhe, die Karte hat rund
+ * 54. Verdeckt wird eine Ecke, nie die Mitte, an der man das Zeichen
+ * erkennt — und der Ring in Kartenfarbe trennt beide sauber. Die
+ * Alternative wäre ein kleineres Zeichen gewesen, und das ist der Grund,
+ * warum es die Karte gibt.
+ */
+.faehigkeit-anzahl {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 3px;
+    border-radius: 8px;
+    background: var(--stufe-farbe, var(--rahmen));
+    color: var(--flaeche);
+    font-size: 0.66rem;
+    font-weight: 700;
+    line-height: 16px;
+    text-align: center;
+
+    /* Der Ring in der Kartenfarbe hebt die Blase vom Zeichen darunter ab. */
+    box-shadow: 0 0 0 1.5px var(--flaeche);
+}
+
+/* Die zwei Kosten-Zeichen rücken in die untere Zeile der Karte — klein, aber
+   an einem festen Platz, damit das Auge sie nicht suchen muss.
+
+   SEIT v0.70.0 STEHEN SIE INNEN (vorher `bottom: -3px`, also halb über dem
+   Rand): Auf dem Quadrat war unten kein Platz, auf der Spielkarte schon.
+   Auf einer echten Spielkarte steht auch alles innerhalb des Rands. */
+.faehigkeit-ecke-plus,
+.faehigkeit-ecke-blitz {
+    position: absolute;
+    bottom: 2px;
+    font-size: 0.7rem;
+    line-height: 1;
+}
+
+.faehigkeit-ecke-plus {
+    right: 4px;
+}
+
+.faehigkeit-ecke-blitz {
+    left: 4px;
+    width: 12px;
+    height: 12px;
+}
+
+/* Der Streifen brauchte bis v0.70.0 rundum Luft, weil die Anzahl-Blase über
+   den Rand der Karte ragte. Seit v0.71.0 steht sie innen — und der
+   Innenabstand ist ersatzlos weg, weil er die Karte niedriger machte als die
+   Team-Karte. Die Regel steht als Rest hier, damit niemand sie aus alter
+   Gewohnheit wieder einträgt. */
+
+
+.faehigkeit-leer {
+    opacity: 0.7;
+}
+

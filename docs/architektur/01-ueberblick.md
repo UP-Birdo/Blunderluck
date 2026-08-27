@@ -49,7 +49,7 @@ anderer Speicher-Dienst kostet genau eine neue Klasse in `speicher.js`.
 | Datei | Zweck |
 |---|---|
 | `index.html` | Gerüst: Kopf mit Version und Status, Tab-Leiste, Inhaltsbereich, Dialog-Ebene. Lädt die Skripte in fester Reihenfolge. |
-| `css/stil.css` | Gesamtes Aussehen (geerbt aus dem Quizz, trägt noch tote Würfel-/Imposter-Stile — Aufräum-Punkt in der ROADMAP). |
+| `css/stil*.css` | Gesamtes Aussehen — seit v0.93.0 fünf Dateien in fester Ladereihenfolge (stil, -brett, -effekte, -auswertung, -start; die Reihenfolge ist kaskaden-relevant, siehe Kopf von `stil.css`). Geerbt aus dem Quizz, trägt noch tote Würfel-/Imposter-Stile — Aufräum-Punkt in der ROADMAP. |
 | `js/konfig.js` | `APP_VERSION` und alle Speicher-Einstellungen (Modus, Firebase-Adresse, Pfade, Zeitabstände), Verwaltungs-Prüfwert. |
 | `js/spieler.js` | Reine Datenlogik der Spielerliste: `normalisieren()`, Suchen, Hinzufügen/Entfernen, PIN, `zusammenfuehren()`, `inhaltGleich()`. |
 | `js/versiegelung.js` | Prüfsummen: Salz erzeugen, PIN- und Verwaltungs-Prüfwert bilden und prüfen. |
