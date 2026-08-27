@@ -27,18 +27,21 @@ dem ersten Zug geschrieben wird, lief ungeschuetzt.
 
 > **Die Regel:** Wer vor dem ersten Zug schreibt, setzt seine Aenderung auf
 > den FRISCH geladenen Stand auf, nie auf den lokalen — seit v0.89.1 macht
-> `TEAM_SCHACH._bereitSenden` das fuer beide Bereitschaften, nach dem Muster
+> der Sendeweg `_aufFrischemSenden` (bei Bau: `_bereitSenden`, umbenannt in
+> v0.90.0) das fuer beide Bereitschaften, nach dem Muster
 > von `_faehigkeitImGegenzugSenden` (zusammenfuehren statt ueberschreiben).
 > Der Regressionstest stellt genau das Rennen nach (test-bildschirm.js,
 > „Der zweite Bereit-Druck loescht die Zusage der Gegenseite nicht").
 
-**Nebenbefund, noch offen:** Dasselbe Muster — lokal gerechnete Partie wird
-vor dem ersten Zug ueber `_sendenMitPruefung` geschrieben — steckt auch in
-`einladen`, `teamBeitreten`-Wegen, `armeeNeuWuerfeln` und den Regel-Aenderungen.
-Dort ist das Fenster kleiner (seltener gleichzeitig gedrueckt) und der Schaden
-geringer (kein haengendes Spiel), aber ein gleichzeitiger Beitritt und ein
-Bereit-Druck koennen sich weiterhin gegenseitig ueberschreiben. Bei Gelegenheit
-auf `_bereitSenden`-Art umstellen — als eigener Auftrag, nicht nebenbei.
+**Nebenbefund — erledigt in v0.90.0:** Dasselbe Muster — lokal gerechnete
+Partie wird vor dem ersten Zug ueber `_sendenMitPruefung` geschrieben —
+steckte auch in `einladen`, `teamBeitreten`, `teamVerlassen`,
+`_seiteZulosenWennNoetig`, `armeeNeuWuerfeln` und `neuAufstellen`. Seit
+v0.90.0 laufen alle sechs ueber den umbenannten Sendeweg
+`_aufFrischemSenden` (vorher `_bereitSenden`); die Aenderungs-Funktion darf
+dort `null` liefern fuer „nichts zu tun", und der Laufend-Schutz wohnt bei
+den Bereit-Aufrufern, nicht im Sendeweg (Einladen und Verlassen muessen auch
+im laufenden Spiel gehen, die Revanche auf beendeten Partien).
 
 ### Ein Fehler, der nur GEMELDET wird, ist fuer den Aufrufer kein Fehler (v0.89.0)
 

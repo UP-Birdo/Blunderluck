@@ -5947,8 +5947,9 @@ async function zeitlimitPruefen() {
              * das Geraet die Zusage der Gegenseite noch nicht per Abgleich
              * erhalten, ueberschrieb der Schreibvorgang sie — der Zugzaehler
              * schuetzt hier nicht, denn Bereit-Druecken aendert ihn nicht.
-             * Seit v0.89.1 wendet `_bereitSenden` die Aenderung auf den
-             * FRISCH geladenen Stand an.
+             * Seit v0.89.1 wird die Aenderung auf den FRISCH geladenen
+             * Stand angewandt (`_aufFrischemSenden`; bis v0.90.0 hiess der
+             * Sendeweg `_bereitSenden`).
              *
              * NACHGESTELLT WIRD GENAU DAS RENNEN: Auf dem Server liegt die
              * Zusage von Weiss, das Geraet von Schwarz haelt noch den Stand
@@ -6026,6 +6027,67 @@ async function zeitlimitPruefen() {
                     throw new Error(
                         "die Runde erreicht die Aufstellung nicht, obwohl beide"
                             + " Seiten zugesagt haben");
+                }
+            } finally {
+                TEAM_SCHACH.abgleich.daten = echteDaten;
+                TEAM_SCHACH.abgleich.speicher = echterSpeicher;
+                TEAM_SCHACH.offeneId = echteOffene;
+            }
+        });
+
+    await pruefeMitWarten("Vor-Spiel-Schreibwege raeumen fremde Zusagen nicht ab (v0.90.0)",
+        async () => {
+            /*
+             * DIE VERALLGEMEINERUNG DES BEREIT-FEHLERS (Nebenbefund v0.89.1):
+             * Auch Einladen, Beitritt, Zulosung, Wuerfeln und Revanche
+             * schrieben die lokal gerechnete Partie und konnten so vor dem
+             * ersten Zug fremde Aenderungen ueberschreiben — der Zugzaehler
+             * schuetzt dort nicht. Seit v0.90.0 laufen sie ueber
+             * `_aufFrischemSenden`.
+             *
+             * GEPRUEFT WIRD STELLVERTRETEND `einladen`: Auf dem Server liegt
+             * die erste Zusage von Weiss, das einladende Geraet haelt noch
+             * den Stand davor. Die Einladung muss ankommen, OHNE die Zusage
+             * zu loeschen.
+             */
+            const echteDaten = TEAM_SCHACH.abgleich.daten;
+            const echterSpeicher = TEAM_SCHACH.abgleich.speicher;
+            const echteOffene = TEAM_SCHACH.offeneId;
+
+            try {
+                const angelegt = SCHACH_TAFEL.partieAnlegen(
+                    SCHACH_TAFEL.leereTafel(9900), "standard", "Einlade-Rennen", 9910);
+                let partie = SCHACH_RUNDE.teamBeitreten(
+                    angelegt.partie, "id-anna", "weiss", 9920);
+                partie = SCHACH_RUNDE.teamBeitreten(partie, "id-bert", "schwarz", 9920);
+
+                /* Der Server kennt die Zusage von Weiss schon … */
+                let serverTafel = SCHACH_TAFEL.partieEinsetzen(
+                    SCHACH_TAFEL.leereTafel(9900),
+                    SCHACH_RUNDE.bereitSetzen(partie, "weiss", true, 9930),
+                    9930);
+
+                /* … das einladende Geraet noch nicht. */
+                TEAM_SCHACH.abgleich.daten = SCHACH_TAFEL.partieEinsetzen(
+                    SCHACH_TAFEL.leereTafel(9900), partie, 9920);
+                TEAM_SCHACH.abgleich.speicher = {
+                    art: "gemeinsam",
+                    async laden() { return serverTafel; },
+                    async speichern(tafel) { serverTafel = tafel; return true; }
+                };
+                TEAM_SCHACH.offeneId = partie.id;
+
+                await TEAM_SCHACH.einladen(
+                    SCHACH_TAFEL.partie(TEAM_SCHACH.abgleich.daten, partie.id),
+                    "id-cem");
+
+                const geschrieben = SCHACH_TAFEL.partie(serverTafel, partie.id);
+                if (geschrieben.eingeladen.indexOf("id-cem") === -1) {
+                    throw new Error("die Einladung ist nicht angekommen");
+                }
+                if (geschrieben.bereit.weiss !== true) {
+                    throw new Error("die Einladung hat die Zusage von Weiss"
+                        + " ueberschrieben");
                 }
             } finally {
                 TEAM_SCHACH.abgleich.daten = echteDaten;

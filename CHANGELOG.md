@@ -3,6 +3,24 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.90.0 — 27.08.2026
+
+**Robuster vor dem Spielstart: Gleichzeitige Klicks löschen einander nichts
+mehr weg.**
+
+- **Was dahintersteckt:** Der Bereit-Fehler aus v0.89.1 hatte Verwandte.
+  Auch Beitreten, Einladen, das Zulosen der Seite, „Neu würfeln" und die
+  Revanche schrieben bisher den Stand, den das eigene Gerät gerade kannte —
+  klickten zwei Leute kurz nacheinander, konnte der zweite Klick die
+  Änderung des ersten überschreiben (etwa eine eben gegebene
+  Bereit-Zusage oder einen Beitritt).
+- **Jetzt:** Alle diese Aktionen holen zuerst den aktuellen Stand und
+  tragen ihre Änderung dort ein — wie seit v0.89.1 schon die beiden
+  Bereit-Knöpfe. Was andere in der Zwischenzeit gemacht haben, bleibt
+  stehen.
+- Für dich ändert sich an der Bedienung nichts; es gehen nur keine
+  Aktionen mehr verloren, wenn mehrere Leute gleichzeitig klicken.
+
 ## v0.89.1 — 27.08.2026
 
 **Behoben: Das Spiel startete nicht, obwohl beide Seiten bereit gedrückt

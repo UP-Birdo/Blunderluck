@@ -1133,13 +1133,15 @@ const TEAM_SCHACH = {
      * Seiten sie gegeben haben. Das Modell entscheidet, wann es losgeht
      * (`SCHACH_RUNDE.aufstellungBereitSetzen`); hier wird nichts gerechnet.
      *
-     * Gesendet wird über `_bereitSenden`, nicht `_sendenMitPruefung`: Die
-     * Zusage muss auf dem FRISCHEN Stand landen, sonst löscht sie die der
-     * Gegenseite — der Bereit-Fehler von v0.89.1, Begründung dort.
+     * Gesendet wird über `_aufFrischemSenden`, nicht `_sendenMitPruefung`:
+     * Die Zusage muss auf dem FRISCHEN Stand landen, sonst löscht sie die
+     * der Gegenseite — der Bereit-Fehler von v0.89.1, Begründung dort.
      */
     async aufstellungBereitUmschalten(partie, farbe, bereit) {
-        await TEAM_SCHACH._bereitSenden(partie, (frisch) =>
-            SCHACH_RUNDE.aufstellungBereitSetzen(frisch, farbe, bereit));
+        await TEAM_SCHACH._aufFrischemSenden(partie, (frisch) =>
+            (frisch.laeuft || frisch.ergebnis)
+                ? null
+                : SCHACH_RUNDE.aufstellungBereitSetzen(frisch, farbe, bereit));
     },
 
     /*
@@ -1156,10 +1158,9 @@ const TEAM_SCHACH = {
      * keine Meinung.
      */
     async armeeNeuWuerfeln(partie, farbe) {
-        const neu = SCHACH_BOT.aufstellungBestaetigen(
-            SCHACH_RUNDE.armeeNeuWuerfeln(partie, farbe));
-
-        await TEAM_SCHACH._sendenMitPruefung(neu, partie.zugZaehler);
+        await TEAM_SCHACH._aufFrischemSenden(partie, (frisch) =>
+            SCHACH_BOT.aufstellungBestaetigen(
+                SCHACH_RUNDE.armeeNeuWuerfeln(frisch, farbe)));
     },
 
     /*
@@ -2318,18 +2319,26 @@ const TEAM_SCHACH = {
             return;
         }
 
-        let neu = SCHACH_RUNDE.seiteZulosen(partie, person.id);
-        if (!SCHACH_RUNDE.teamVon(neu, person.id)) {
+        /* Erst der billige Blick auf den LOKALEN Stand: Ist hier nichts
+           zuzuteilen, wird gar nicht erst gesendet. Ob wirklich zugeteilt
+           wird, entscheidet dieselbe Rechnung dann noch einmal auf dem
+           frischen Stand (v0.90.0). */
+        const probe = SCHACH_RUNDE.seiteZulosen(partie, person.id);
+        if (!SCHACH_RUNDE.teamVon(probe, person.id)) {
             return;
         }
         if (SCHACH_RUNDE.teamVon(partie, person.id)) {
             return;
         }
 
-        neu = SCHACH_BOT.beiBereitDazuholen(neu, person.id);
-        neu = SCHACH_BOT.aufstellungBestaetigen(neu);
-
-        TEAM_SCHACH._sendenMitPruefung(neu, partie.zugZaehler);
+        TEAM_SCHACH._aufFrischemSenden(partie, (frisch) => {
+            let neu = SCHACH_RUNDE.seiteZulosen(frisch, person.id);
+            if (!SCHACH_RUNDE.teamVon(neu, person.id)) {
+                return null;
+            }
+            neu = SCHACH_BOT.beiBereitDazuholen(neu, person.id);
+            return SCHACH_BOT.aufstellungBestaetigen(neu);
+        });
     },
 
     /*
@@ -3671,10 +3680,8 @@ const TEAM_SCHACH = {
         }
 
         TEAM_SCHACH._auswahlAufheben();
-        await TEAM_SCHACH._sendenMitPruefung(
-            SCHACH_RUNDE.teamBeitreten(partie, person.id, farbe),
-            partie.zugZaehler
-        );
+        await TEAM_SCHACH._aufFrischemSenden(partie, (frisch) =>
+            SCHACH_RUNDE.teamBeitreten(frisch, person.id, farbe));
     },
 
     /*
@@ -3709,7 +3716,8 @@ const TEAM_SCHACH = {
             return;
         }
 
-        await TEAM_SCHACH._sendenMitPruefung(danach, partie.zugZaehler);
+        await TEAM_SCHACH._aufFrischemSenden(partie, (frisch) =>
+            SCHACH_RUNDE.teamVerlassen(frisch, person.id));
 
         /*
          * UND DANN AUF DEN STARTBILDSCHIRM (seit v0.69.0).
@@ -3789,31 +3797,36 @@ const TEAM_SCHACH = {
     },
 
     /*
-     * EINE BEREITSCHAFT WIRD AUF DEN FRISCHEN STAND GESETZT, NIE AUF DEN
-     * LOKALEN (v0.89.1, der Bereit-Fehler).
+     * EINE ÄNDERUNG VOR DEM ERSTEN ZUG WIRD AUF DEN FRISCHEN STAND GESETZT,
+     * NIE AUF DEN LOKALEN (v0.89.1 für die Bereitschaften, v0.90.0 für alle
+     * übrigen Vor-Spiel-Schreibwege).
      *
      * `_sendenMitPruefung` setzt die LOKAL gerechnete Partie in die frisch
      * geladene Tafel. Für Züge ist das sicher — der Zugzähler weist
-     * Überholtes ab. Ein Bereit-Druck ändert den Zähler aber NICHT: Drückten
-     * beide Seiten kurz nacheinander, schrieb die zweite ihren veralteten
-     * Stand über die Zusage der ersten, und die Partie startete nie
-     * (nachgemessen 27.08.2026, `erkenntnisse.md`).
+     * Überholtes ab. Alles, was VOR dem ersten Zug geschrieben wird
+     * (Bereitschaften, Beitritt, Zulosung, Einladung, Würfeln, Revanche),
+     * ändert den Zähler aber NICHT: Schrieben zwei Geräte kurz nacheinander,
+     * überschrieb das zweite mit seinem veralteten Stand die Änderung des
+     * ersten. So startete die Partie nie, obwohl beide bereit gedrückt
+     * hatten (der Bereit-Fehler, nachgemessen 27.08.2026, `erkenntnisse.md`).
      *
-     * Deshalb läuft die Bereitschaft wie die Fähigkeit im Gegenzug
+     * Deshalb laufen diese Wege wie die Fähigkeit im Gegenzug
      * (`_faehigkeitImGegenzugSenden`): Der Stand wird frisch geholt und die
      * Änderung auf IHN angewandt — `aenderung` bekommt die frische Partie
-     * und liefert die neue. Angezeigt wird trotzdem sofort (Hausregel,
-     * v3.8), auf dem lokalen Stand; nach dem Schreiben zeichnet der wahre.
-     *
-     * Läuft die frische Partie schon oder ist sie vorbei, gibt es nichts
-     * mehr zuzusagen oder zurückzunehmen — dann gilt der fremde Stand.
+     * und liefert die neue, oder `null` für „nichts zu tun" (dann gilt der
+     * fremde Stand und es wird nichts geschrieben; die Bereit-Wege sagen so
+     * ab, wenn die Partie inzwischen läuft). Angezeigt wird trotzdem sofort
+     * (Hausregel, v3.8), auf dem lokalen Stand; nach dem Schreiben zeichnet
+     * der wahre.
      */
-    async _bereitSenden(partie, aenderung) {
+    async _aufFrischemSenden(partie, aenderung) {
         const abgleich = TEAM_SCHACH.abgleich;
 
         const vorher = abgleich.daten;
-        const sofort = SCHACH_TAFEL.partieEinsetzen(
-            abgleich.daten, aenderung(partie));
+        const lokal = aenderung(partie);
+        const sofort = lokal
+            ? SCHACH_TAFEL.partieEinsetzen(abgleich.daten, lokal)
+            : abgleich.daten;
 
         abgleich.daten = sofort;
         TEAM_SCHACH.zeichnen(sofort);
@@ -3835,12 +3848,18 @@ const TEAM_SCHACH = {
                         "Die Runde gibt es nicht mehr.");
                     return false;
                 }
-                if (frisch.laeuft || frisch.ergebnis) {
+
+                const neu = aenderung(frisch);
+                if (!neu) {
                     abgleich.daten = fremd;
                     TEAM_SCHACH.zeichnen(fremd);
                     return true;
                 }
-                tafel = SCHACH_TAFEL.partieEinsetzen(fremd, aenderung(frisch));
+                tafel = SCHACH_TAFEL.partieEinsetzen(fremd, neu);
+            } else if (!lokal) {
+                /* Im lokalen Betrieb gibt es keinen fremden Stand — ohne
+                   Änderung ist schlicht nichts zu tun. */
+                return true;
             }
 
             await abgleich.speicher.speichern(tafel);
@@ -3863,7 +3882,13 @@ const TEAM_SCHACH = {
     async bereitUmschalten(partie, farbe, bereit) {
         const person = TEAM_SCHACH._ich();
 
-        await TEAM_SCHACH._bereitSenden(partie, (frisch) => {
+        await TEAM_SCHACH._aufFrischemSenden(partie, (frisch) => {
+            /* Läuft die Partie inzwischen oder ist sie vorbei, gibt es
+               keine Bereitschaft mehr zu setzen oder zurückzunehmen. */
+            if (frisch.laeuft || frisch.ergebnis) {
+                return null;
+            }
+
             let neu = SCHACH_RUNDE.bereitSetzen(frisch, farbe, bereit);
 
             /*
@@ -3907,10 +3932,8 @@ const TEAM_SCHACH = {
 
     /* Einen Freund in die Runde einladen (seit v0.13.0, Schritt 7). */
     async einladen(partie, spielerId) {
-        await TEAM_SCHACH._sendenMitPruefung(
-            SCHACH_RUNDE.einladen(partie, spielerId),
-            partie.zugZaehler
-        );
+        await TEAM_SCHACH._aufFrischemSenden(partie, (frisch) =>
+            SCHACH_RUNDE.einladen(frisch, spielerId));
     },
 
     /* ---------------------------------------------------------------- *
@@ -4411,10 +4434,8 @@ const TEAM_SCHACH = {
             return;
         }
         TEAM_SCHACH._auswahlAufheben();
-        await TEAM_SCHACH._sendenMitPruefung(
-            SCHACH_RUNDE.neuePartie(partie),
-            partie.zugZaehler
-        );
+        await TEAM_SCHACH._aufFrischemSenden(partie, (frisch) =>
+            SCHACH_RUNDE.neuePartie(frisch));
     },
 
     /* ---------------------------------------------------------------- *
