@@ -3,6 +3,20 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.97.0 — 27.08.2026
+
+**Steht ein König im Schach, leuchtet sein Feld orange.**
+
+- Das Feld unter einem bedrohten König färbt sich orange — bei jedem
+  König, egal welcher Seite. So siehst du auf einen Blick, wer gerade in
+  Gefahr ist. Beim Antippen des Königs gewinnt weiterhin die
+  Auswahl-Markierung.
+- Der fette „Schach"-Schriftzug im Spieler-Kasten unten ist dafür raus —
+  er hat dieselbe Information schlechter transportiert.
+- Bei Doppelbrett und Zufallsarmee-Leben zählt der König wie bisher als
+  gewöhnliche Figur — dort gibt es regelkonform kein Schach und darum
+  auch keine Färbung.
+
 ## v0.96.0 — 27.08.2026
 
 **Das aufgeklappte Spieler-Menü schliesst sich von selbst.**

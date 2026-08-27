@@ -85,6 +85,17 @@ body.design-3d .feld-spur-pech {
     box-shadow: var(--kachel-schatten);
 }
 
+/* Das Feld eines bedrohten Königs färbt die GANZE Kachel um: die orange
+   Fläche kommt aus der Basis-Regel (`.feld-schach`), die Kante von hier —
+   dasselbe Mittel wie bei der Zugspur direkt darüber. Steht NACH der Spur
+   (das Schach ist die wichtigere Auskunft) und VOR Ziel und Schlag (deren
+   Ring rechnet mit dieser Kante weiter). */
+body.design-3d .feld-schach {
+    --kachel-schatten: 0 5px 0 var(--schach-feld-kante),
+        0 8px 8px rgba(20, 35, 55, 0.28);
+    box-shadow: var(--kachel-schatten);
+}
+
 /* Ziel und Schlag leuchten als Ring AUF der Kachel — wie im Vorbild die
    umrandeten Felder. Der Punkt bzw. Ring der klassischen Ansicht bleibt
    zusätzlich stehen. */
@@ -436,15 +447,25 @@ body.design-3d .werte-figur {
     pointer-events: none;
 }
 
+/*
+ * DAS FELD UNTER EINEM BEDROHTEN KÖNIG IST ORANGE (Nutzer-Wunsch 27.08.2026):
+ * ganze Fläche statt des früheren roten Rings, damit das Schach auch aus dem
+ * Augenwinkel auffällt — bei JEDEM König im Schach, egal welcher Seite.
+ * Zweifarbig wie jede Brett-Markierung: orange Fläche, dunklere Kante.
+ * Welche Felder das sind, sagt allein `SCHACH.schachFelder`. Die Regel steht
+ * VOR `.feld-gewaehlt`: Wer seinen bedrohten König antippt, soll die
+ * Auswahl-Marke sehen — bei gleicher Stärke entscheidet die Reihenfolge.
+ */
+.feld-schach {
+    background: var(--schach-feld);
+    box-shadow: inset 0 0 0 3px var(--schach-feld-kante);
+}
+
 /* Die angetippte Figur: gelbes Feld plus dunkler Rahmen, damit sie sich auch
    vom hellen Feld absetzt. */
 .feld-gewaehlt {
     background: var(--feld-gewaehlt);
     box-shadow: inset 0 0 0 3px var(--ziel-kern);
-}
-
-.feld-schach {
-    box-shadow: inset 0 0 0 3px var(--gefahr);
 }
 
 /*

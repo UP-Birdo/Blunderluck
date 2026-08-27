@@ -1842,9 +1842,13 @@ const TEAM_SCHACH = {
 
         const lage = TEAM_SCHACH._element("span", "spieler-lage");
 
-        if (amZug && SCHACH.imSchach(partie.stand, farbe)) {
-            lage.appendChild(TEAM_SCHACH._element("span", "chip chip-fehler", "Schach"));
-        }
+        /*
+         * HIER STAND DER FETTE „Schach"-SCHRIFTZUG (Chip im Kasten). Weg auf
+         * Nutzer-Ansage 27.08.2026: „somit wird der Schriftzug im
+         * Benutzer/Team unten nicht fetter gemacht — der kann raus." Dass ein
+         * König bedroht ist, zeigt jetzt das orange Königsfeld auf dem Brett
+         * (`feld-schach`, gerechnet in `SCHACH.schachFelder`).
+         */
         /*
          * DAS WORT „am Zug" IST WEG (v0.81.0, Nutzer-Ansage 26.08.2026):
          * „das kann übrigens raus, nur die Färbung vom Profil soll bleiben —

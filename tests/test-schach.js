@@ -226,6 +226,37 @@ pruefe("Ein Schach wird erkannt", () => {
     wahr(!SCHACH.imSchach(stand, SCHACH.SCHWARZ), "Schwarz nicht");
 });
 
+/*
+ * `schachFelder` sagt dem Brett, WELCHE Felder orange werden — beide Farben,
+ * alle Könige. Es muss dieselbe Weiche nehmen wie `imSchach`: Wo Könige als
+ * gewöhnliche Figuren zählen (mehrere Leben), gibt es kein Schach.
+ */
+pruefe("schachFelder nennt genau die Felder bedrohter Koenige", () => {
+    const namen = (stand) => SCHACH.schachFelder(stand)
+        .map((feld) => SCHACH.feldName(feld))
+        .join(",");
+
+    /* Weiss im Schach: genau sein Feld — der schwarze König fehlt in der
+       Liste, obwohl beide Farben gefragt werden. */
+    const schach = standAus({ "e1": "K", "e8": "t", "a1": "k" });
+    gleich(namen(schach), "e1", "nur der bedrohte weisse Koenig");
+
+    /* Ohne Schach ist die Liste leer. */
+    const ruhig = standAus({ "e1": "K", "a3": "t", "h8": "k" });
+    gleich(namen(ruhig), "", "ohne Schach kein Feld");
+
+    /* Zwei weisse Koenige, nur einer bedroht: genau der wird genannt —
+       nicht bloss der erste auf dem Brett. */
+    const zwei = standAus({ "e1": "K", "h5": "K", "h8": "t", "a8": "k" });
+    gleich(namen(zwei), "h5", "nur der bedrohte der beiden Koenige");
+
+    /* Mit mehreren Leben (Zufallsarmee) sind zwei Koenige gewoehnliche
+       Figuren — kein Schach, kein orangenes Feld. */
+    const leben = standAus({ "e1": "K", "h5": "K", "h8": "t", "a8": "k" },
+        SCHACH.WEISS, { koenigeAlsLeben: true });
+    gleich(namen(leben), "", "mehrere Leben: kein Schach");
+});
+
 pruefe("Eine gefesselte Figur darf die Fesselung nicht verlassen", () => {
     /* Der Läufer auf e2 steht zwischen König e1 und Turm e8. */
     const stand = standAus({ "e1": "K", "e2": "L", "e8": "t", "a8": "k" });

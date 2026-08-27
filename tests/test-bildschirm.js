@@ -3419,6 +3419,60 @@ pruefe("Ein Team-Vorschlag steht als Schemen mit gruenem Weg am Brett (v0.83.0)"
     TEAM_SCHACH.abgleich.daten = vorher;
 });
 
+/*
+ * DAS FELD UNTER EINEM BEDROHTEN KOENIG WIRD ORANGE (Nutzer-Wunsch
+ * 27.08.2026). Gerechnet wird im Modell (`SCHACH.schachFelder`, eigene Tests
+ * in test-schach.js) — hier steht nur: Das gezeichnete Brett traegt die
+ * Klasse auf dem richtigen Feld, und der alte „Schach"-Schriftzug im
+ * Spieler-Kasten ist weg.
+ */
+pruefe("Das Feld unter einem bedrohten Koenig traegt feld-schach", () => {
+    const vorher = TEAM_SCHACH.abgleich.daten;
+
+    const angelegt = SCHACH_TAFEL.partieAnlegen(
+        TEAM_SCHACH.abgleich.daten, "standard", "Schachfeld", 9700);
+
+    let partie = SCHACH_RUNDE.teamBeitreten(angelegt.partie, "id-anna", "weiss", 9700);
+    partie = SCHACH_RUNDE.teamBeitreten(partie, "id-bert", "schwarz", 9700);
+    partie = bereitUndAufgestellt(partie, "weiss", 9700);
+    partie = bereitUndAufgestellt(partie, "schwarz", 9700);
+
+    /* Eine Stellung mit Schach, direkt ins Brett gebaut: Der schwarze Turm
+       auf e5 zielt auf den weissen Koenig e1. */
+    let brett = "";
+    for (let feld = 0; feld < partie.stand.brett.length; feld++) {
+        brett += ".";
+    }
+    brett = SCHACH._brettMit(brett, SCHACH.feldNummer("e1"), "K");
+    brett = SCHACH._brettMit(brett, SCHACH.feldNummer("e5"), "t");
+    brett = SCHACH._brettMit(brett, SCHACH.feldNummer("a8"), "k");
+    partie.stand.brett = brett;
+
+    TEAM_SCHACH.abgleich.daten = SCHACH_TAFEL.partieEinsetzen(angelegt.tafel, partie, 9700);
+    TEAM_SCHACH.partieOeffnen(partie.id);
+
+    const koenig = TEAM_SCHACH.wurzelEl.querySelector(
+        "[data-feld=\"" + SCHACH.feldNummer("e1") + "\"]");
+    if (!koenig || !koenig.classList.contains("feld-schach")) {
+        throw new Error("das Feld des bedrohten Koenigs ist nicht markiert");
+    }
+
+    const gegner = TEAM_SCHACH.wurzelEl.querySelector(
+        "[data-feld=\"" + SCHACH.feldNummer("a8") + "\"]");
+    if (!gegner || gegner.classList.contains("feld-schach")) {
+        throw new Error("der unbedrohte schwarze Koenig ist faelschlich markiert");
+    }
+
+    /* Der fette „Schach"-Schriftzug im Spieler-Kasten ist dafuer entfallen
+       (Nutzer-Ansage 27.08.2026) — er darf nicht wieder auftauchen. */
+    if (TEAM_SCHACH.wurzelEl.querySelector(".chip-fehler")) {
+        throw new Error("der alte Schach-Schriftzug steht wieder im Kasten");
+    }
+
+    TEAM_SCHACH.offeneId = "";
+    TEAM_SCHACH.abgleich.daten = vorher;
+});
+
 pruefe("Zug und Unglueck haben getrennte Spurfarben (v0.76)", () => {
     /*
      * DER GEMELDETE FEHLER: „Kann es sein, dass sich die gruene Farbe meiner

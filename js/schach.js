@@ -2558,6 +2558,36 @@ const SCHACH = {
         return SCHACH._feldBedroht(stand, koenig, SCHACH.gegner(farbe));
     },
 
+    /*
+     * Die Felder, auf denen ein bedrohter König steht — BEIDE Farben, ALLE
+     * Könige. Das Brett färbt genau diese Felder orange (`feld-schach`);
+     * gerechnet wird hier, nicht am Bildschirm.
+     *
+     * Wo der König als gewöhnliche Figur zählt (`koenigSchlagbarFuer`:
+     * Doppelbrett, mehrere Leben der Zufallsarmee), gibt es kein Schach und
+     * darum auch kein Feld — dieselbe Weiche wie in `imSchach`. Mit mehreren
+     * Königen JE FARBE wird trotzdem gerechnet: Sollte je eine Stellung mit
+     * zwei richtigen Königen einer Seite entstehen, nennt die Liste jeden
+     * bedrohten davon.
+     */
+    schachFelder(stand) {
+        const felder = [];
+
+        for (const farbe of [SCHACH.WEISS, SCHACH.SCHWARZ]) {
+            if (SCHACH.koenigSchlagbarFuer(stand, farbe)) {
+                continue;
+            }
+            const gegner = SCHACH.gegner(farbe);
+
+            for (const feld of SCHACH.koenigFelder(stand, farbe)) {
+                if (SCHACH._feldBedroht(stand, feld, gegner)) {
+                    felder.push(feld);
+                }
+            }
+        }
+        return felder;
+    },
+
     /* ---------------------------------------------------------------- *
      * Ziehen
      * ---------------------------------------------------------------- */

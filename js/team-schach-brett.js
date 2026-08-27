@@ -480,6 +480,10 @@ Object.assign(TEAM_SCHACH, {
            merkt sich den neuen Anblick, ein zweiter fände nichts mehr. */
         const anders = TEAM_SCHACH._veraenderungen(partie);
 
+        /* Die Felder bedrohter Könige — beider Farben, aller Könige. Das
+           Modell rechnet, das Brett färbt nur (`SCHACH.schachFelder`). */
+        const schachFelder = partie.laeuft ? SCHACH.schachFelder(stand) : [];
+
         for (let anzeige = 0; anzeige < felder; anzeige++) {
             const feld = TEAM_SCHACH._feldZuAnzeige(stand, drehung,
                 Math.floor(anzeige / zeigeSpalten), anzeige % zeigeSpalten);
@@ -870,10 +874,13 @@ Object.assign(TEAM_SCHACH, {
                als Zugpunkt schon oben in `moeglicheZiele`. */
 
 
-            /* Königsfeld hervorheben, wenn es im Schach steht. */
-            if (partie.laeuft && SCHACH.artVon(figur) === "K"
-                && SCHACH.farbeVon(figur) === stand.amZug
-                && SCHACH.imSchach(stand, stand.amZug)) {
+            /*
+             * DAS FELD UNTER EINEM BEDROHTEN KÖNIG WIRD ORANGE (Nutzer-Wunsch
+             * 27.08.2026) — bei JEDEM König im Schach, egal welcher Seite.
+             * Bis dahin galt das nur für den König der Seite am Zug, und die
+             * Bedingung stand hier statt im Modell.
+             */
+            if (schachFelder.indexOf(feld) !== -1) {
                 zelle.classList.add("feld-schach");
             }
 
