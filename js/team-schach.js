@@ -2268,6 +2268,14 @@ const TEAM_SCHACH = {
         TEAM_SCHACH.friedhofOffen = { weiss: true, schwarz: true };
         TEAM_SCHACH.eckMenueOffen = false;
 
+        /*
+         * Die eingefrorene Brettgrösse gilt je Partie (seit v0.88.0): Wer
+         * eine andere öffnet, rechnet neu. Sonst erbte eine Partie mit
+         * grossem Team die Zahl einer mit kleinem — die Team-Kästen sind
+         * dann höher, und die alte Zahl passte nicht mehr.
+         */
+        TEAM_SCHACH._brettLage = "";
+
         /* Beim Öffnen wird nicht animiert: Der letzte Zug liegt womöglich
            Stunden zurück. */
         const partie = SCHACH_TAFEL.partie(TEAM_SCHACH.abgleich.daten, id);

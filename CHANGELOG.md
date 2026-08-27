@@ -3,6 +3,24 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.88.0 — 27.08.2026
+
+**Das Brett hat jetzt eine feste Grösse und einen festen Platz.**
+
+- **Es springt nicht mehr.** Bisher bekam das Brett den Platz, der nach
+  allen Nachbarn übrig blieb — jede Marke, jede Meldung, jede Karte, die
+  kam oder ging, veränderte damit seine Grösse. Jetzt wird die Grösse
+  einmal bestimmt und nur noch dann neu gerechnet, wenn du das Gerät
+  drehst, das Fenster änderst oder eine andere Partie öffnest.
+- **Und es bleibt, wo es ist:** Was während des Spiels unter dem Brett
+  erscheint (die Platzier-Leiste, das laufende Zugmuster), wächst nach
+  unten, statt das Brett nach oben zu schieben.
+- **Der Grund für die Umstellung:** Bisher wurde jeder einzelne Störer
+  gesucht und abgestellt — fünf waren es seit v0.52.0. Die Reihenfolge ist
+  jetzt umgedreht: Erst steht das Brett, dann ordnet sich alles andere
+  darunter. Wird es doch einmal zu eng, lässt sich der Spielbereich
+  rollen.
+
 ## v0.87.0 — 27.08.2026
 
 **Die Figuren in den Bildanleitungen haben jetzt die richtige Grösse.**

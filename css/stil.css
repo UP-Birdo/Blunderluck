@@ -385,6 +385,24 @@ body.partie-fest .schach {
     overflow-y: auto;
 
     /*
+     * DER PLATZ DES ROLLBALKENS BLEIBT RESERVIERT (seit v0.88.0).
+     *
+     * Im Browser gemessen: Sobald die Platzier-Leiste erscheint, wird der
+     * Inhalt höher als das Fenster, dieser Bereich bekommt seinen eigenen
+     * Rollbalken — und der nimmt 10 px Breite weg. `.brett` ist auf
+     * `min(--brett-max, 100%)` begrenzt, also schrumpfte es genau um diese
+     * 10 px, obwohl die eingefrorene Zahl unverändert dastand (nachgemessen:
+     * `_brettBreite` blieb 506, die Anzeige ging von 470 auf 460).
+     *
+     * Dieselbe Lehre wie bei der Marke „Wird gesendet" (v0.79.1): Platz
+     * freihalten schlägt wegnehmen. Und dieselbe Falle wie in v0.79.2, nur
+     * an einem anderen Element — der Rollbalken IST ein Bauteil mit Grösse.
+     * Die Seite selbst hat den Schutz seit v0.108 (`html`); dieser Bereich
+     * rollt aber für sich und braucht ihn deshalb noch einmal.
+     */
+    scrollbar-gutter: stable;
+
+    /*
      * DER BEREICH REICHT BIS AN DIE KANTE DES INHALTS (seit v0.72.0) — und
      * holt sich den Rand als eigenen Innenabstand zurück.
      *
@@ -428,7 +446,22 @@ body.partie-fest .schach > .brett-halter {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+
+    /*
+     * DAS BRETT KLEBT OBEN, ES SCHWEBT NICHT IN DER MITTE (seit v0.88.0,
+     * Nutzer-Entscheidung 27.08.2026 „Brett zuerst").
+     *
+     * Bis v0.87.0 stand hier `center`. Damit rutschte das Brett jedes Mal
+     * nach oben, sobald unter ihm etwas erschien — die Platzier-Leiste, das
+     * laufende Zugmuster —, und beim Verschwinden wieder zurück. Die
+     * GRÖSSE steht seit v0.88.0 fest (`_brettEinpassen` friert sie ein);
+     * die LAGE tut sie erst mit dieser Zeile.
+     *
+     * Sichtbar ist der Unterschied nur, wenn Platz übrig bleibt — und das
+     * ist selten, weil die Brettgrösse genau aus diesem Platz gerechnet
+     * wird. Wächst der Inhalt darüber hinaus, rollt der Spielbereich.
+     */
+    justify-content: flex-start;
 }
 
 /* Auf der festen Seite ist jeder Zwischenraum Brettgrösse. Gestrichen wird

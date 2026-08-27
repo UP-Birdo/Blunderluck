@@ -1861,10 +1861,48 @@ Object.assign(TEAM_SCHACH, {
             return;
         }
 
-        /* Alles im Halter, was nicht der Rahmen ist. */
+        /*
+         * DIE GRÖSSE STEHT FEST, SOBALD SIE EINMAL GERECHNET IST (seit
+         * v0.88.0, Nutzer-Entscheidung 27.08.2026 „Brett zuerst, der Rest
+         * ordnet sich unter").
+         *
+         * BIS v0.87.0 wurde bei JEDEM Zeichnen neu gerechnet — aus dem Platz,
+         * der gerade übrig war. Damit war die Brettgrösse eine Folge ihrer
+         * Nachbarn: Jede Marke, jede Meldung, jede Karte, die kam oder ging,
+         * verschob sie. Die Familie „das Brett springt" hat uns seit v0.52.0
+         * fünf einzelne Funde gekostet (Wird-gesendet-Marke, Unglücksmeldung,
+         * Abstimmung, Chip-Umbruch, Erklärtexte), und jeder war nur das
+         * Symptom.
+         *
+         * JETZT ist die Reihenfolge umgedreht: Gerechnet wird nur, wenn sich
+         * die Bedingungen ändern, unter denen die Zahl entstanden ist —
+         * Fenstergrösse und Brettmasse der Spielart. Alles andere bekommt,
+         * was übrig bleibt. Passt es nicht mehr, rollt der Spielbereich
+         * (`overflow-y: auto` an `.schach`); das ist die bewusst gewählte
+         * Kehrseite.
+         */
+        const lage = window.innerWidth + "x" + window.innerHeight
+            + "@" + spalten + "x" + reihen;
+
+        if (TEAM_SCHACH._brettLage === lage && TEAM_SCHACH._brettBreite > 0) {
+            brett.style.setProperty("--brett-max", TEAM_SCHACH._brettBreite + "px");
+            rahmen.style.setProperty("--brett-max", TEAM_SCHACH._brettBreite + "px");
+            return;
+        }
+
+        /*
+         * Alles im Halter, was nicht der Rahmen ist — aber NUR das, was
+         * dauerhaft dasteht. Die Platzier-Leiste und das laufende Zugmuster
+         * kommen und gehen; zählte man sie mit, hinge die eingefrorene Zahl
+         * davon ab, ob beim Rechnen gerade eine Fähigkeit platziert wurde.
+         */
         let daneben = 0;
         for (const kind of halter.children || []) {
-            if (kind !== rahmen) {
+            const fluechtig = kind.classList
+                && (kind.classList.contains("platzieren")
+                    || kind.classList.contains("karte"));
+
+            if (kind !== rahmen && !fluechtig) {
                 daneben += kind.offsetHeight || 0;
             }
         }
@@ -1882,9 +1920,20 @@ Object.assign(TEAM_SCHACH, {
         const breite = Math.max(TEAM_SCHACH.BRETT_MINDESTBREITE,
             Math.min(obergrenze, ausDerHoehe));
 
+        TEAM_SCHACH._brettLage = lage;
+        TEAM_SCHACH._brettBreite = breite;
+
         brett.style.setProperty("--brett-max", breite + "px");
         rahmen.style.setProperty("--brett-max", breite + "px");
     },
+
+    /*
+     * Unter welchen Bedingungen die gemerkte Brettbreite entstanden ist —
+     * Fenstergrösse und Brettmasse als Zeichenkette (seit v0.88.0). Stimmt
+     * sie noch, wird die Zahl wiederverwendet statt neu gerechnet.
+     */
+    _brettLage: "",
+    _brettBreite: 0,
 
     _figurGroesseSetzen() {
         const brett = TEAM_SCHACH.brettEl;
