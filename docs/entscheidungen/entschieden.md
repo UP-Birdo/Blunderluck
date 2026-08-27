@@ -1,5 +1,39 @@
 # Blunderluck - Entscheidungen / Entschieden - und warum
 
+## Der Vorschau-Kasten wird gezogen — UND weiter getippt (27.08.2026, v0.84.0)
+
+**Nutzer-Wunsch (26.08.2026, Gruppe C der ROADMAP):** „Beim Frost und den
+anderen Gebiets-Fähigkeiten konnte man bisher nicht sehen, wohin die Felder
+fallen. Künftig zieht man den Bereich mit Finger oder Maus frei über das
+Brett — nichts passiert, bis man bestätigt."
+
+**Das steht gegen eine frühere Entscheidung (08.08.2026, Quizz-Zeit):** Damals
+wurde das Ziehen ausdrücklich VERWORFEN, mit zwei Begründungen — „echtes
+Ziehen kämpft auf dem Handy mit dem Scrollen der Seite" und „der Finger
+verdeckt genau das Feld, das man treffen will". Beide Sätze stimmen weiterhin.
+
+**Aufgelöst wird das nicht durch Umkehren, sondern durch NEBENEINANDER:**
+
+- **Der Tipp bleibt unverändert der erste Weg** (seit v0.57: antippen, dann
+  „Einsetzen"). Damit läuft der Einwand „der Finger verdeckt das Feld" ins
+  Leere — niemand MUSS ziehen, und wer tippt, merkt von v0.84.0 nichts.
+- **Das Scrollen ist eine Zeile:** `touch-action: none` am Brett, aber NUR
+  solange platziert wird (Klasse `brett-platzieren`). Ausserhalb dieses
+  Zustands muss man am Handy über das Brett hinweg rollen können, sonst ist
+  der Verlauf darunter nicht mehr erreichbar.
+- **Beide Wege rechnen dasselbe:** `TEAM_SCHACH.vorschauSetzen` ist die eine
+  Stelle, die den Kasten versetzt; den Umriss liefert weiterhin
+  `SCHACH_RUNDE.zielUmriss` — dieselbe Rechnung, die hinterher wirklich
+  läuft. Zwei Wege mit zwei Rechnungen wären zwei Wahrheiten.
+
+**Zwei Fallen, die im Code stehen und hier nur genannt werden:** Beim Ziehen
+wird NICHT neu gezeichnet (ein Neubau mitten in der Bewegung nimmt dem Zeiger
+das Element unter dem Finger weg — deshalb `_vorschauUmsetzen`, das nur
+Klassen tauscht), und der Klick, den der Browser nach dem Loslassen noch
+schickt, wird verschluckt, wenn der Kasten dabei gewandert ist
+(`ziehenVerbrauchtKlick`) — sonst gilt er als zweiter Tipp auf dasselbe Feld,
+und der setzt ein.
+
 ## Zustimmen heisst denselben Zug machen (26.08.2026, v0.83.0)
 
 **Nutzer-Ansage:** „Das Abstimmen geht anders: Jeder im Team kann einen Move

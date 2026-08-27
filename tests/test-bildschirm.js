@@ -245,7 +245,50 @@ function neuesElement(tag) {
             return suchen(this);
         },
 
-        querySelectorAll() { return []; },
+        /*
+         * SEIT v0.84.0 SUCHT SIE WIRKLICH (vorher immer eine leere Liste).
+         *
+         * Gebraucht vom freien Ziehen: `_vorschauUmsetzen` holt sich damit
+         * alle Felder des Brettes und tauscht ihre Rahmen-Klassen, ohne das
+         * Brett neu zu bauen. Mit der leeren Liste von früher wäre genau
+         * dieser Teil im Test unsichtbar geblieben — er hätte nichts getan
+         * und trotzdem bestanden.
+         *
+         * Sie versteht dieselben zwei Sucharten wie `querySelector` und
+         * zusätzlich den blossen Attributnamen (`[data-feld]`).
+         */
+        querySelectorAll(wahl) {
+            const feld = wahl.match(/data-feld="(\d+)"/);
+            const alleFelder = /^\[data-feld\]$/.test(wahl);
+            const klasse = wahl.match(/^\.([a-z-]+)$/);
+
+            const passt = (element) => {
+                if (alleFelder) {
+                    return element.dataset && element.dataset.feld !== undefined;
+                }
+                if (feld) {
+                    return element.dataset && element.dataset.feld === feld[1];
+                }
+                if (klasse) {
+                    return typeof element.className === "string"
+                        && element.className.split(" ").indexOf(klasse[1]) !== -1;
+                }
+                return false;
+            };
+
+            const treffer = [];
+            const suchen = (element) => {
+                for (const kind of element.kinder || []) {
+                    if (passt(kind)) {
+                        treffer.push(kind);
+                    }
+                    suchen(kind);
+                }
+            };
+
+            suchen(this);
+            return treffer;
+        },
 
         set innerHTML(wert) { this.kinder = []; },
         get innerHTML() { return ""; }
@@ -3124,6 +3167,92 @@ pruefe("Ein Tipp setzt den Vorschau-Kasten, statt sofort einzusetzen (v0.57)", (
     }
     if (links.classList.contains("kante-rechts")) {
         throw new Error("innen darf keine Kante stehen");
+    }
+
+    TEAM_SCHACH._auswahlAufheben();
+    TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
+});
+
+pruefe("Der Vorschau-Kasten laesst sich ziehen, ohne das Brett neu zu bauen (v0.84.0)", () => {
+    /*
+     * NUTZER-WUNSCH 26.08.2026: „Künftig zieht man den Bereich mit Finger
+     * oder Maus frei über das Brett — nichts passiert, bis man bestätigt."
+     *
+     * Geprueft wird der Kern, den die Zeige-Ereignisse benutzen: Der Kasten
+     * wandert auf ein anderes Feld (`vorschauSetzen`), und die Klassen am
+     * BESTEHENDEN Brett ziehen mit (`_vorschauUmsetzen`) — ohne `zeichnen`,
+     * denn ein Neubau mitten in der Bewegung nimmt dem Zeiger das Element
+     * unter dem Finger weg.
+     */
+    const angelegt = SCHACH_TAFEL.partieAnlegen(
+        TEAM_SCHACH.abgleich.daten, "faehigkeiten", "Ziehen", 9550);
+
+    let partie = SCHACH_RUNDE.teamBeitreten(angelegt.partie, "id-anna", "weiss", 9550);
+    partie = SCHACH_RUNDE.teamBeitreten(partie, "id-bert", "schwarz", 9550);
+    partie = bereitUndAufgestellt(partie, "weiss", 9550);
+    partie = bereitUndAufgestellt(partie, "schwarz", 9550);
+    partie.faehigkeiten.weiss.push("mauer");
+
+    TEAM_SCHACH.abgleich.daten = SCHACH_TAFEL.partieEinsetzen(angelegt.tafel, partie, 9550);
+    TEAM_SCHACH.partieOeffnen(partie.id);
+
+    const person = { id: "id-anna", name: "Anna" };
+    TEAM_SCHACH.zielFaehigkeit = "mauer";
+    TEAM_SCHACH.zielFelder = SCHACH_RUNDE.zielFelder(partie, "id-anna", "mauer");
+    TEAM_SCHACH.auswahlZaehler = partie.zugZaehler;
+
+    /* Erst wie gehabt antippen — das ist der Griff an den Rahmen. */
+    TEAM_SCHACH.feldAngetippt(partie, person, SCHACH.feldNummer("d4"));
+
+    const vorher = TEAM_SCHACH.wurzelEl.querySelector(
+        "[data-feld=\"" + SCHACH.feldNummer("d4") + "\"]");
+    if (!vorher || !vorher.classList.contains("feld-vorschau")) {
+        throw new Error("der Kasten liegt nach dem Tipp nicht auf d4");
+    }
+
+    /* Und jetzt gezogen: dasselbe, was `pointermove` tut. */
+    const ziel = SCHACH.feldNummer("d5");
+    if (TEAM_SCHACH.zielFelder.indexOf(ziel) === -1) {
+        throw new Error("d5 ist gar kein gueltiges Ziel, der Fall waere nicht nachgebaut");
+    }
+
+    if (!TEAM_SCHACH.vorschauSetzen(partie, person, ziel)) {
+        throw new Error("der Kasten ist nicht auf d5 gewandert");
+    }
+    TEAM_SCHACH._vorschauUmsetzen(partie);
+
+    /* Der Rahmen liegt jetzt dort — und NICHT mehr auf dem alten Platz. */
+    const jetzt = TEAM_SCHACH.wurzelEl.querySelector(
+        "[data-feld=\"" + ziel + "\"]");
+    if (!jetzt || !jetzt.classList.contains("feld-vorschau")) {
+        throw new Error("das gezogene Feld traegt keinen Rahmen");
+    }
+    if (vorher.classList.contains("feld-vorschau")) {
+        throw new Error("der alte Rahmen klebt auf d4 fest");
+    }
+    if (vorher.classList.contains("kante-oben")) {
+        throw new Error("die alten Kanten wurden nicht abgeraeumt");
+    }
+
+    /* Eingesetzt wurde dabei NICHTS — die Faehigkeit liegt noch im Vorrat. */
+    const stand = SCHACH_TAFEL.partie(TEAM_SCHACH.abgleich.daten, partie.id);
+    if (stand.faehigkeiten.weiss.indexOf("mauer") === -1) {
+        throw new Error("das Ziehen hat die Faehigkeit verbraucht");
+    }
+
+    /*
+     * DER KLICK NACH DEM ZIEHEN WIRD VERSCHLUCKT: Sonst gilt er als zweiter
+     * Tipp auf dasselbe Feld — und der setzt ein.
+     */
+    TEAM_SCHACH.ziehenVerbrauchtKlick = true;
+    TEAM_SCHACH.feldAngetippt(partie, person, ziel);
+
+    if (TEAM_SCHACH.ziehenVerbrauchtKlick) {
+        throw new Error("der Merker wurde nicht zurueckgesetzt");
+    }
+    const danach = SCHACH_TAFEL.partie(TEAM_SCHACH.abgleich.daten, partie.id);
+    if (danach.faehigkeiten.weiss.indexOf("mauer") === -1) {
+        throw new Error("der Klick nach dem Ziehen hat die Faehigkeit eingesetzt");
     }
 
     TEAM_SCHACH._auswahlAufheben();

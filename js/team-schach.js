@@ -233,9 +233,28 @@ const TEAM_SCHACH = {
      * Warum antippen und nicht ziehen (Nutzer-Entscheidung 08.08.): Echtes
      * Ziehen kämpft auf dem Handy mit dem Scrollen der Seite, und der Finger
      * verdeckt genau das Feld, das man treffen will.
+     *
+     * **SEIT v0.84.0 GEHT BEIDES** (Nutzer-Wunsch 26.08.: „künftig zieht man
+     * den Bereich mit Finger oder Maus frei über das Brett"). Der Tipp bleibt
+     * unverändert der erste Weg — die zwei Einwände von oben gelten ja
+     * weiter, sie sprechen nur nicht mehr dagegen, das Ziehen DANEBEN
+     * anzubieten. Gegen das Scrollen hilft `touch-action: none`, solange
+     * platziert wird; gegen den verdeckenden Finger hilft, dass niemand
+     * ziehen MUSS. Ausgeführt wird so oder so erst mit „Einsetzen".
      */
     zielVorschau: -1,
     zielUmriss: [],
+
+    /*
+     * Wird der Vorschau-Kasten gerade GEZOGEN (seit v0.84.0)?
+     *
+     * `ziehtVorschau` läuft von `pointerdown` bis `pointerup`;
+     * `ziehenVerbrauchtKlick` merkt sich, dass der Kasten dabei wirklich
+     * gewandert ist — der Klick, den der Browser danach noch schickt, wird
+     * dann verschluckt (Begründung in `feldAngetippt`).
+     */
+    ziehtVorschau: false,
+    ziehenVerbrauchtKlick: false,
 
     /*
      * DIE LAGE DER MAUER (seit v0.80): "waagerecht" oder "senkrecht".
@@ -2413,6 +2432,23 @@ const TEAM_SCHACH = {
             return;
         }
 
+        /*
+         * EIN ZIEHEN ENDET NICHT IN EINEM TIPP (seit v0.84.0).
+         *
+         * Nach dem Loslassen schickt der Browser noch ein `click` auf das
+         * Feld, auf dem das Ziehen begonnen hat. Wer den Rahmen verschoben
+         * und wieder zurückgezogen hat, träfe damit auf DASSELBE Feld — und
+         * unten gilt der zweite Tipp auf dasselbe Feld als Bestätigung. Die
+         * Fähigkeit wäre eingesetzt, ohne dass jemand „Einsetzen" gedrückt
+         * hat. Der Merker wird nur gesetzt, wenn der Rahmen beim Ziehen
+         * wirklich gewandert ist; ein Ziehen ohne Bewegung IST ein Tipp und
+         * soll auch einer bleiben.
+         */
+        if (TEAM_SCHACH.ziehenVerbrauchtKlick) {
+            TEAM_SCHACH.ziehenVerbrauchtKlick = false;
+            return;
+        }
+
         /* Wartet eine Fähigkeit auf ihr Ziel, gilt jeder Tipp ihr. */
         if (TEAM_SCHACH.zielFaehigkeit) {
             if (TEAM_SCHACH.zielFelder.indexOf(feld) === -1) {
@@ -2444,11 +2480,7 @@ const TEAM_SCHACH = {
                 return;
             }
 
-            TEAM_SCHACH.zielVorschau = feld;
-            TEAM_SCHACH.zielUmriss = SCHACH_RUNDE.zielUmriss(
-                partie, person.id, TEAM_SCHACH.zielFaehigkeit, feld,
-                TEAM_SCHACH._zusatzWahl());
-
+            TEAM_SCHACH.vorschauSetzen(partie, person, feld);
             TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
             return;
         }
@@ -2534,6 +2566,37 @@ const TEAM_SCHACH = {
         TEAM_SCHACH.mauerRichtung = "waagerecht";
         TEAM_SCHACH.tauschRichtung = "vor";
         TEAM_SCHACH.auswahlZaehler = -1;
+        TEAM_SCHACH.ziehtVorschau = false;
+        TEAM_SCHACH.ziehenVerbrauchtKlick = false;
+    },
+
+    /*
+     * DEN VORSCHAU-KASTEN AUF EIN FELD SETZEN (seit v0.84.0 an EINER Stelle).
+     *
+     * Zwei Wege führen hierher — der Tipp (seit v0.57) und das Ziehen (seit
+     * v0.84.0) —, und beide müssen dasselbe rechnen: Der Umriss kommt aus
+     * `SCHACH_RUNDE.zielUmriss`, also aus derselben Rechnung, die hinterher
+     * wirklich läuft. Vorher stand sie nur in `feldAngetippt`; ein zweiter
+     * Aufrufer hätte sie kopiert, und Kopien driften.
+     *
+     * ZEICHNEN TUT SIE NICHT — das entscheidet der Aufrufer: Der Tipp lässt
+     * den ganzen Bildschirm neu bauen (die Platzier-Leiste ändert ihren
+     * Text), das Ziehen setzt nur die Klassen am Brett um. Liefert `true`,
+     * wenn sich etwas geändert hat.
+     */
+    vorschauSetzen(partie, person, feld) {
+        if (!TEAM_SCHACH.zielFaehigkeit
+            || TEAM_SCHACH.zielFelder.indexOf(feld) === -1
+            || TEAM_SCHACH.zielVorschau === feld) {
+            return false;
+        }
+
+        TEAM_SCHACH.zielVorschau = feld;
+        TEAM_SCHACH.zielUmriss = SCHACH_RUNDE.zielUmriss(
+            partie, person.id, TEAM_SCHACH.zielFaehigkeit, feld,
+            TEAM_SCHACH._zusatzWahl());
+
+        return true;
     },
 
     /*

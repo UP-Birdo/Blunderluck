@@ -3,6 +3,22 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.84.0 — 27.08.2026
+
+**Den Wirkungs-Bereich kannst du jetzt frei über das Brett ziehen.**
+
+- **Mauer, Frost, Friedhof und die anderen Gebiets-Fähigkeiten:** Fass den
+  grünen Rahmen an und zieh ihn mit dem Finger (oder der Maus) dorthin, wo
+  er hin soll. Er wandert mit, solange er auf ein erlaubtes Feld passt — über
+  einem verbotenen bleibt er einfach stehen, statt zu verschwinden.
+- **Passieren tut dabei nichts.** Wie bisher wirkt die Fähigkeit erst mit
+  „Einsetzen"; „Abbrechen" legt sie zurück in den Vorrat. Auch ein Ziehen,
+  das wieder auf dem Ausgangsfeld endet, setzt nichts ein.
+- **Antippen geht weiter genau wie vorher** — das Ziehen kommt dazu, es
+  ersetzt nichts. Wer lieber tippt, merkt von der Änderung nichts.
+- **Am Handy schiebt der Finger dabei den Rahmen, nicht die Seite.** Solange
+  platziert wird, rollt das Brett nicht mit; danach wieder wie gewohnt.
+
 ## v0.83.2 — 27.08.2026
 
 **Nachzügler zu v0.83.1: dieselbe Reihenfolge auch im Spielart-Vorschaubild.**

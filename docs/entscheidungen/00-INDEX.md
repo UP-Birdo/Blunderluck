@@ -25,6 +25,11 @@ wird. Die Liste dessen, was noch kommt, steht in [../ROADMAP.md](../ROADMAP.md).
 
 ## entschieden.md - Blunderluck-Eintraege
 
+- **Der Vorschau-Kasten wird gezogen — UND weiter getippt** (27.08.2026,
+  v0.84.0, Gruppe C — **loest den Widerspruch zur Entscheidung vom
+  08.08.2026 auf, die das Ziehen verworfen hatte**: nebeneinander statt
+  umgekehrt; `touch-action` nur waehrend des Platzierens, eine Setz-Stelle
+  fuer beide Wege, kein Neuzeichnen waehrend der Bewegung)
 - **Zustimmen heisst denselben Zug machen** (26.08.2026, v0.83.0 —
   Gestalt-Entscheidung zu Fund A2-3: Abstimmungs-Karte und Knoepfe ersatzlos
   weg, je Spieler SEIN Vorschlag (`vorschlaege`), Schemen + gruener Laufweg

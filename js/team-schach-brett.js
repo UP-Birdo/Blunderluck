@@ -67,6 +67,181 @@ Object.assign(TEAM_SCHACH, {
     },
 
     /* ---------------------------------------------------------------- *
+     * DAS FREIE ZIEHEN DES VORSCHAU-KASTENS (seit v0.84.0)
+     *
+     * Nutzer-Wunsch vom 26.08.2026: „Künftig zieht man den Bereich mit
+     * Finger oder Maus frei über das Brett — nichts passiert, bis man
+     * bestätigt." Der Tipp aus v0.57 bleibt daneben stehen; warum, steht bei
+     * `zielVorschau` in `team-schach.js`.
+     *
+     * DREI DINGE, DIE NICHT BELIEBIG SIND:
+     *
+     *  - **Beim Ziehen wird NICHT der ganze Bildschirm neu gebaut.** Jede
+     *    Fingerbewegung schickt Dutzende Ereignisse; `zeichnen` erzeugt
+     *    dabei jedes Mal neue Feld-Elemente, und der Zeiger verlöre das
+     *    Element unter sich. Gezogen wird deshalb über `_vorschauUmsetzen`,
+     *    das nur Klassen tauscht. Erst beim Loslassen wird einmal voll
+     *    gezeichnet — dann ändert die Platzier-Leiste ihren Text.
+     *  - **Das Feld kommt aus `elementFromPoint`, nicht aus `event.target`.**
+     *    Mit `setPointerCapture` melden ALLE Bewegungen das Start-Element;
+     *    ohne Capture verliert man den Finger, sobald er das Brett verlässt.
+     *    Gefragt wird deshalb, was WIRKLICH unter dem Zeiger liegt.
+     *  - **Ein ungültiges Feld lässt den Kasten stehen**, statt ihn
+     *    verschwinden zu lassen. Wer über eine besetzte Ecke zieht, soll
+     *    seinen Rahmen nicht verlieren — er wandert einfach nicht mit.
+     * ---------------------------------------------------------------- */
+
+    _ziehenAnmelden(brett, partie, person) {
+        if (!brett || typeof brett.addEventListener !== "function") {
+            return;
+        }
+
+        /* Das Ende des Ziehens — von drei Seiten gerufen: Loslassen,
+           Abbruch durch das System, und der Rückfall im `pointermove`. */
+        const beenden = () => {
+            if (!TEAM_SCHACH.ziehtVorschau) {
+                return;
+            }
+            TEAM_SCHACH.ziehtVorschau = false;
+
+            /* Jetzt einmal voll: Die Platzier-Leiste nennt das Feld beim
+               Namen und zeigt „Einsetzen". */
+            TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
+        };
+
+        brett.addEventListener("pointerdown", (ereignis) => {
+            if (!TEAM_SCHACH.zielFaehigkeit) {
+                return;
+            }
+
+            const feld = TEAM_SCHACH._feldUnterZeiger(ereignis);
+            if (feld < 0 || TEAM_SCHACH.zielFelder.indexOf(feld) === -1) {
+                return;
+            }
+
+            TEAM_SCHACH.ziehtVorschau = true;
+            TEAM_SCHACH.ziehenVerbrauchtKlick = false;
+
+            /* Damit die Bewegung auch dann ankommt, wenn der Finger das
+               Brett verlässt. Ältere Browser kennen es nicht — dann zieht
+               man eben nur innerhalb des Brettes. */
+            if (typeof brett.setPointerCapture === "function"
+                && ereignis.pointerId !== undefined) {
+                brett.setPointerCapture(ereignis.pointerId);
+            }
+
+            if (TEAM_SCHACH.vorschauSetzen(partie, person, feld)) {
+                TEAM_SCHACH._vorschauUmsetzen(partie);
+            }
+        });
+
+        brett.addEventListener("pointermove", (ereignis) => {
+            if (!TEAM_SCHACH.ziehtVorschau || !TEAM_SCHACH.zielFaehigkeit) {
+                return;
+            }
+
+            /*
+             * IST ÜBERHAUPT NOCH ETWAS GEDRÜCKT? (`buttons === 0` heisst
+             * losgelassen.) Der Rückfall für den Fall, dass das `pointerup`
+             * nie ankommt — ohne `setPointerCapture` bleibt es aus, wenn
+             * ausserhalb des Brettes losgelassen wird, und der Rahmen folgte
+             * danach jeder Mausbewegung.
+             */
+            if (ereignis.buttons === 0) {
+                beenden();
+                return;
+            }
+
+            const feld = TEAM_SCHACH._feldUnterZeiger(ereignis);
+            if (feld < 0) {
+                return;
+            }
+
+            if (TEAM_SCHACH.vorschauSetzen(partie, person, feld)) {
+                TEAM_SCHACH._vorschauUmsetzen(partie);
+
+                /* Der Kasten ist gewandert — der Klick nach dem Loslassen
+                   ist damit kein Tipp mehr, sondern der Rest des Ziehens. */
+                TEAM_SCHACH.ziehenVerbrauchtKlick = true;
+            }
+        });
+
+        brett.addEventListener("pointerup", beenden);
+        brett.addEventListener("pointercancel", beenden);
+    },
+
+    /*
+     * Welches Brettfeld liegt unter dem Zeiger? Liefert die Feldnummer oder
+     * -1. Läuft vom getroffenen Element nach oben, bis eines eine Feldnummer
+     * trägt — `closest` gibt es im Test-DOM nicht, und die Schleife ist
+     * genauso deutlich.
+     */
+    _feldUnterZeiger(ereignis) {
+        if (typeof document.elementFromPoint !== "function") {
+            return -1;
+        }
+
+        let element = document.elementFromPoint(ereignis.clientX, ereignis.clientY);
+
+        while (element) {
+            const wert = element.dataset ? element.dataset.feld : undefined;
+            if (wert !== undefined && wert !== "") {
+                const feld = Number(wert);
+                return Number.isInteger(feld) ? feld : -1;
+            }
+            element = element.parentElement;
+        }
+
+        return -1;
+    },
+
+    /*
+     * Setzt den Vorschau-Kasten am BESTEHENDEN Brett um — ohne Neubau.
+     * Räumt die Kanten aller Felder ab und zeichnet sie dort neu, wo der
+     * Umriss jetzt liegt. Mehr ändert sich beim Ziehen nicht: Figuren,
+     * Boxen und Marken bleiben, wo sie sind.
+     */
+    _vorschauUmsetzen(partie) {
+        const brett = TEAM_SCHACH.brettEl;
+        if (!brett || typeof brett.querySelectorAll !== "function") {
+            return;
+        }
+
+        const kanten = ["kante-oben", "kante-unten", "kante-links", "kante-rechts"];
+
+        for (const zelle of brett.querySelectorAll("[data-feld]")) {
+            const feld = Number(zelle.dataset.feld);
+            const dabei = (TEAM_SCHACH.zielUmriss.indexOf(feld) !== -1);
+
+            /*
+             * Die Kanten gehören ZWEI Nutzern: dem Vorschau-Kasten und dem
+             * eingefrorenen Frost-Block. Sie werden deshalb nur dort
+             * abgeräumt, wo kein Frost liegt — sonst zöge ein Ziehen dem
+             * Frost seinen Rahmen weg.
+             */
+            const frost = zelle.classList.contains("feld-frost");
+
+            if (dabei) {
+                zelle.classList.add("feld-vorschau");
+                if (!frost) {
+                    for (const kante of kanten) {
+                        zelle.classList.remove(kante);
+                    }
+                }
+                TEAM_SCHACH._umrissKanten(partie.stand, feld,
+                    TEAM_SCHACH.zielUmriss, zelle);
+            } else {
+                zelle.classList.remove("feld-vorschau");
+                if (!frost) {
+                    for (const kante of kanten) {
+                        zelle.classList.remove(kante);
+                    }
+                }
+            }
+        }
+    },
+
+    /* ---------------------------------------------------------------- *
      * WAS SICH SEIT DEM LETZTEN ZEICHNEN GEÄNDERT HAT (seit v0.77)
      *
      * Grundlage der kleinen Animationen: Eine Lootbox, die erscheint, eine,
@@ -196,7 +371,15 @@ Object.assign(TEAM_SCHACH, {
         /* Bei einer Vierteldrehung tauschen Breite und Höhe der ANSICHT. */
         const zeigeSpalten = quer ? hoehe : breite;
 
-        const brett = TEAM_SCHACH._element("div", "brett");
+        /*
+         * Solange eine Fähigkeit platziert wird, trägt das Brett eine eigene
+         * Klasse (seit v0.84.0): Die Stildatei schaltet darüber das Scrollen
+         * per Finger ab (`touch-action: none`) — sonst schiebt jeder Zieh-
+         * Versuch am Handy die Seite, statt den Rahmen. Genau dieser Einwand
+         * stand hinter der Entscheidung vom 08.08. gegen das Ziehen.
+         */
+        const brett = TEAM_SCHACH._element("div",
+            "brett" + (TEAM_SCHACH.zielFaehigkeit ? " brett-platzieren" : ""));
 
         /*
          * Spaltenzahl und Höchstbreite gehen als Stil-Variablen an die
@@ -706,6 +889,12 @@ Object.assign(TEAM_SCHACH, {
             brett.appendChild(zelle);
         }
 
+        /* Das freie Ziehen des Vorschau-Kastens (seit v0.84.0) — die drei
+           Ereignisse hängen am BRETT, nicht an jedem Feld: einer statt
+           vierundsechzig, und nur so bekommt man die Bewegung ÜBER die
+           Feldgrenzen hinweg mit. */
+        TEAM_SCHACH._ziehenAnmelden(brett, partie, person);
+
         /*
          * Die Beschriftung am Rand (a, b, c … und 8, 7, 6 …). Sie entsteht aus
          * denselben Maßen wie das Brett — auf dem 6er-Brett steht a bis f, auf
@@ -832,9 +1021,11 @@ Object.assign(TEAM_SCHACH, {
             gesetzt
                 ? ("Der grüne Rahmen zeigt, was passiert — auf "
                     + SCHACH.feldName(TEAM_SCHACH.zielVorschau, breite, hoehe)
-                    + ". Ein anderes helles Feld antippen verschiebt ihn.")
-                : "Tippe eines der hell umrandeten Felder an. Der grüne Rahmen "
-                    + "zeigt dann, wohin die Wirkung wirklich geht."));
+                    + ". Du kannst ihn verschieben: ein anderes helles Feld "
+                    + "antippen oder den Rahmen einfach hinziehen.")
+                : "Tippe eines der hell umrandeten Felder an — oder ziehe mit "
+                    + "dem Finger über das Brett. Der grüne Rahmen zeigt dann, "
+                    + "wohin die Wirkung wirklich geht."));
 
         const leiste = TEAM_SCHACH._element("div", "knopf-zeile");
 
