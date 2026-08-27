@@ -2208,6 +2208,125 @@ pruefe("Der Team-Kasten: Farbe gross, erster Name klein, Rest hinter einem Tipp 
     }
 });
 
+pruefe("Das Eck-Menue schliesst bei Klick ausserhalb des Kastens", () => {
+    /*
+     * NUTZER-WUNSCH: „im match wenn man den benutzer ausklappt mit den zwei
+     * knoepfen soll auch wieder zugehen wenn man wo anders hinklickt ausser
+     * wenn man auf einen der zwei knoepfe drueckt".
+     *
+     * WAS DIESER TEST WIRKLICH PRUEFT: Das Test-DOM feuert keine echten
+     * document-Ereignisse — `document.addEventListener` ist ein Stummel.
+     * Deshalb werden Anmelden und Abmelden hier MITGESCHRIEBEN (die zwei
+     * Stummel unten) und der angemeldete Horcher (`_eckMenueAussenklick`)
+     * direkt mit einem nachgestellten Ereignis aufgerufen: Klick IM Kasten
+     * laesst das Menue offen, Klick ausserhalb klappt es zu und meldet den
+     * Horcher wieder ab. Dass der Browser den Horcher bei einem Klick auch
+     * wirklich ruft, kann diese Umgebung nicht zeigen.
+     */
+    const person = umgebung.ICH.person();
+    const partie = SCHACH_RUNDE.kopieren(
+        SCHACH_TAFEL.partie(TEAM_SCHACH.abgleich.daten, kennungen.standard));
+
+    const dokument = umgebung.document;
+    const echtesAnmelden = dokument.addEventListener;
+    const hatteAbmelden = Object.prototype.hasOwnProperty.call(
+        dokument, "removeEventListener");
+    const echtesAbmelden = dokument.removeEventListener;
+    const echterHinweis = umgebung.DIALOG.hinweis;
+
+    let angemeldet = null;
+    let abgemeldet = null;
+    try {
+        dokument.addEventListener = (art, horcher) => {
+            angemeldet = { art: art, horcher: horcher };
+        };
+        dokument.removeEventListener = (art, horcher) => {
+            abgemeldet = { art: art, horcher: horcher };
+        };
+
+        /* Fruehere Tests klappen das Menue per Klick auf und setzen nur
+           `eckMenueOffen` zurueck — der Merker bliebe sonst haengen. */
+        TEAM_SCHACH.eckMenueOffen = false;
+        TEAM_SCHACH._eckMenueHorcherAktiv = false;
+
+        /* Aufklappen: Der Tipp auf den eigenen Kasten oeffnet das Menue und
+           meldet den Aussenklick-Horcher am document an. */
+        const kasten = TEAM_SCHACH._spielerZeileBauen(partie, person, "weiss");
+        kasten.ausloesen("click");
+        if (TEAM_SCHACH.eckMenueOffen !== true) {
+            throw new Error("der Tipp auf den Kasten oeffnet das Menue nicht");
+        }
+        if (!angemeldet || angemeldet.art !== "click") {
+            throw new Error("beim Aufklappen wird kein Klick-Horcher angemeldet");
+        }
+
+        /* Klick IM Kasten (er traegt die Marke): Das Menue bleibt offen. */
+        const offenerKasten = TEAM_SCHACH._spielerZeileBauen(partie, person, "weiss");
+        if (offenerKasten.dataset.eckKasten !== "1") {
+            throw new Error("der eigene Kasten traegt die Aussenklick-Marke nicht");
+        }
+        angemeldet.horcher({ target: offenerKasten });
+        if (TEAM_SCHACH.eckMenueOffen !== true) {
+            throw new Error("ein Klick IM Kasten klappt das Menue faelschlich zu");
+        }
+
+        /* Klick auf einen der zwei Knoepfe: Die Aktion laeuft (Zugverlauf
+           oeffnet sein Fenster), das Menue schliesst dabei NICHT — die
+           Knoepfe stoppen ihr Ereignis, der Horcher sieht sie nie. */
+        let gezeigt = null;
+        umgebung.DIALOG.hinweis = async (titel) => {
+            gezeigt = titel;
+            return true;
+        };
+        const alleKnoepfe = [];
+        const einsammeln = (kind) => {
+            if (kind.tagName === "button") {
+                alleKnoepfe.push(kind);
+            }
+            for (const enkel of kind.kinder || []) {
+                einsammeln(enkel);
+            }
+        };
+        einsammeln(offenerKasten);
+        const verlaufKnopf = alleKnoepfe.find((kind) =>
+            String((kind.attribute || {})["aria-label"] || "")
+                .indexOf("Zugverlauf") !== -1);
+        if (!verlaufKnopf) {
+            throw new Error("im offenen Kasten fehlt der Zugverlauf-Knopf");
+        }
+        verlaufKnopf.ausloesen("click");
+        if (!gezeigt || String(gezeigt).indexOf("Züge") === -1) {
+            throw new Error("der Zugverlauf-Knopf oeffnet sein Fenster nicht");
+        }
+        if (TEAM_SCHACH.eckMenueOffen !== true) {
+            throw new Error("der Knopf-Klick schliesst das Menue, obwohl er es nicht soll");
+        }
+
+        /* Klick irgendwo anders: Das Menue klappt zu, und der Horcher wird
+           wieder abgemeldet — kein dauerhafter globaler Horcher. */
+        angemeldet.horcher({ target: dokument.createElement("div") });
+        if (TEAM_SCHACH.eckMenueOffen !== false) {
+            throw new Error("ein Klick ausserhalb klappt das Menue nicht zu");
+        }
+        if (!abgemeldet || abgemeldet.horcher !== angemeldet.horcher) {
+            throw new Error("der Horcher wird beim Zuklappen nicht abgemeldet");
+        }
+        if (TEAM_SCHACH._eckMenueHorcherAktiv !== false) {
+            throw new Error("der Horcher gilt nach dem Zuklappen noch als angemeldet");
+        }
+    } finally {
+        dokument.addEventListener = echtesAnmelden;
+        if (hatteAbmelden) {
+            dokument.removeEventListener = echtesAbmelden;
+        } else {
+            delete dokument.removeEventListener;
+        }
+        umgebung.DIALOG.hinweis = echterHinweis;
+        TEAM_SCHACH.eckMenueOffen = false;
+        TEAM_SCHACH._eckMenueHorcherAktiv = false;
+    }
+});
+
 pruefe("Gleiche Faehigkeiten stehen als EIN Stapel mit Anzahl (v0.67.0)", () => {
     /*
      * NUTZER-ANSAGE 25.08.2026: „Nicht das alte Item-Rechteck mit Schrift,

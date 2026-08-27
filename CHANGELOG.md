@@ -3,6 +3,16 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.96.0 — 27.08.2026
+
+**Das aufgeklappte Spieler-Menü schliesst sich von selbst.**
+
+- Tippst du im Match auf deinen Namens-Kasten, klappen die Knöpfe
+  (Einstellungen, Zugverlauf) auf. Bisher blieben sie offen stehen, bis
+  man den Kasten erneut antippte. Jetzt schliessen sie sich auch, wenn du
+  einfach woanders hintippst — aufs Brett, ins Leere, egal wohin.
+- Ein Tipp auf einen der Knöpfe selbst funktioniert unverändert.
+
 ## v0.95.0 — 27.08.2026
 
 **Schneller ins Spiel: weniger Bildschirme vor dem Match, und der Code ist

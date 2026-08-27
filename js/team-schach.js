@@ -357,6 +357,18 @@ const TEAM_SCHACH = {
     eckMenueOffen: false,
 
     /*
+     * DAS ECK-MENUE SCHLIESST BEI KLICK AUSSERHALB (Nutzer-Wunsch: „soll
+     * auch wieder zugehen wenn man wo anders hinklickt ausser wenn man auf
+     * einen der zwei knoepfe drueckt"). Solange das Menue offen ist, haengt
+     * am `document` ein Klick-Horcher (`_eckMenueAussenklick`); dieser
+     * Merker sagt, ob er gerade angemeldet ist. Angemeldet wird NUR beim
+     * Aufklappen, abgemeldet beim Zuklappen — kein dauerhafter globaler
+     * Horcher. Die Knoepfe im Menue selbst stoppen ihr Ereignis ohnehin
+     * (`stopPropagation` in `_spielerZeileBauen`), der Horcher sieht sie nie.
+     */
+    _eckMenueHorcherAktiv: false,
+
+    /*
      * Bis zu welchem Zugzähler eine Partie schon animiert wurde, je Kennung.
      * Ohne diesen Merker liefe die Bewegung bei jedem Neuzeichnen erneut —
      * und die Abfrage zeichnet oft.
@@ -1809,6 +1821,11 @@ const TEAM_SCHACH = {
             zeile.className += " spieler-zeile-tippbar";
             zeile.setAttribute("role", "button");
             zeile.setAttribute("tabindex", "0");
+            /* Die Marke, an der der Aussenklick-Horcher (`_eckMenueAussenklick`)
+               den Kasten erkennt: Klicks IN ihm lassen das Menue in Ruhe. Sie
+               ueberlebt das Neuzeichnen, weil sie bei jedem Bauen neu gesetzt
+               wird — der Horcher merkt sich kein Element. */
+            zeile.dataset.eckKasten = "1";
             zeile.setAttribute("aria-expanded",
                 TEAM_SCHACH.eckMenueOffen ? "true" : "false");
             zeile.title = "Einstellungen und Zugverlauf";
@@ -2009,7 +2026,70 @@ const TEAM_SCHACH = {
 
     eckMenueUmschalten() {
         TEAM_SCHACH.eckMenueOffen = !TEAM_SCHACH.eckMenueOffen;
+        if (TEAM_SCHACH.eckMenueOffen) {
+            TEAM_SCHACH._eckMenueHorcherAnmelden();
+        } else {
+            TEAM_SCHACH._eckMenueHorcherAbmelden();
+        }
         TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
+    },
+
+    /*
+     * Meldet den Aussenklick-Horcher am `document` an bzw. ab. Beide Wege
+     * sind gegen die Testumgebung abgesichert: Dort ist `document` ein
+     * Stummel, dessen `addEventListener` nichts tut und dem
+     * `removeEventListener` ganz fehlt — der Code darf also nie davon
+     * abhaengen, dass Ereignisse wirklich feuern.
+     */
+    _eckMenueHorcherAnmelden() {
+        if (TEAM_SCHACH._eckMenueHorcherAktiv) {
+            return;
+        }
+        if (typeof document === "undefined"
+            || typeof document.addEventListener !== "function") {
+            return;
+        }
+        document.addEventListener("click", TEAM_SCHACH._eckMenueAussenklick);
+        TEAM_SCHACH._eckMenueHorcherAktiv = true;
+    },
+
+    _eckMenueHorcherAbmelden() {
+        if (!TEAM_SCHACH._eckMenueHorcherAktiv) {
+            return;
+        }
+        if (typeof document !== "undefined"
+            && typeof document.removeEventListener === "function") {
+            document.removeEventListener("click", TEAM_SCHACH._eckMenueAussenklick);
+        }
+        TEAM_SCHACH._eckMenueHorcherAktiv = false;
+    },
+
+    /*
+     * Der Aussenklick selbst: Trifft der Klick den Namens-Kasten (Marke
+     * `data-eck-kasten` aus `_spielerZeileBauen`), passiert nichts — das
+     * Umschalten erledigt der Kasten-Knopf, und die Menue-Knoepfe stoppen
+     * ihr Ereignis, bevor es hier ankommt. Jeder andere Klick klappt das
+     * Menue zu. Gelaufen wird vom getroffenen Element nach oben — `closest`
+     * gibt es im Test-DOM nicht, und die Schleife ist genauso deutlich
+     * (dasselbe Muster wie `_feldUnterZeiger` im Brett).
+     */
+    _eckMenueAussenklick(ereignis) {
+        let element = ereignis ? ereignis.target : null;
+        while (element) {
+            if (element.dataset && element.dataset.eckKasten === "1") {
+                return;
+            }
+            element = element.parentElement;
+        }
+
+        /* Immer abmelden — auch wenn das Menue anderweitig schon zu ist
+           (z. B. durch `partieOeffnen`): Ein verwaister Horcher bliebe
+           sonst haengen. Neu gezeichnet wird nur, wenn es offen war. */
+        TEAM_SCHACH._eckMenueHorcherAbmelden();
+        if (TEAM_SCHACH.eckMenueOffen) {
+            TEAM_SCHACH.eckMenueOffen = false;
+            TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
+        }
     },
 
     friedhofUmschalten(farbe) {
@@ -2345,9 +2425,11 @@ const TEAM_SCHACH = {
         TEAM_SCHACH._auswahlAufheben();
 
         /* Die Eck-Klappen (v0.80.0) starten zu: Was in der VORIGEN Partie
-           aufgeklappt war, hat in dieser nichts verloren. */
+           aufgeklappt war, hat in dieser nichts verloren. Der
+           Aussenklick-Horcher geht mit dem Menue — sonst verwaiste er. */
         TEAM_SCHACH.friedhofOffen = { weiss: true, schwarz: true };
         TEAM_SCHACH.eckMenueOffen = false;
+        TEAM_SCHACH._eckMenueHorcherAbmelden();
 
         /*
          * Die eingefrorene Brettgrösse gilt je Partie (seit v0.88.0): Wer
