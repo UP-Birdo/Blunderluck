@@ -204,6 +204,30 @@ nicht trennen kann, sieht immer noch Kreis gegen Ring.
 
 ## 7. Empfehlung und Fragen
 
+> **NACHGETRAGEN am 27.08.2026 abends — die Vorschläge sind gerendert und
+> angesehen worden** (Edge kopflos, echte Stildateien, echte Figuren, vier
+> Brett-Ausschnitte nebeneinander: heute / A / B / Empfehlung). Das
+> Ergebnis ändert die Gewichtung:
+>
+> - **Vorschlag A trägt.** Türkis (Zugziel) und Dunkelrot (Schlagziel)
+>   sind auch ohne Kreis und Ring sofort unterscheidbar und verwechseln
+>   sich weder mit dem gelben „gewählt"-Feld noch mit der grünen Zugspur.
+>   Trotz fünf gleichzeitiger Farben wirkt das Brett nicht überladen.
+> - **Vorschlag B fällt praktisch aus.** Das angehobene Zugziel ist am
+>   Bildschirm kaum von einem normalen Feld zu unterscheiden (gemessen
+>   nur 3 bis 8 Helligkeitspunkte Unterschied — die 1,08-fache
+>   Aufhellung aus Abschnitt 4), das abgesenkte Schlagziel wirkt eher wie
+>   ein angeschmutztes helles Feld als wie eine Markierung. Die Warnung
+>   in Abschnitt 4 hat sich damit bestätigt.
+> - **Die Absenkung in der Empfehlung ist kaum sichtbar** — sie schadet
+>   nicht, trägt aber auch weniger bei als erhofft. Wer die
+>   Form-Unterscheidung für Farbenblinde wirklich will, braucht ein
+>   stärkeres Mittel als 1,08.
+> - Die grüne Zugspur bleibt in allen Varianten gleich gut sichtbar.
+>
+> **Damit spitzt sich Frage 1 zu: A oder A mit Absenkung — B ist keine
+> ernsthafte Option mehr.**
+
 **Empfehlung: Vorschlag A, ergänzt um die Absenkung des Schlagziels aus
 Vorschlag B.** A spricht dieselbe Sprache wie die vier Markierungen, die du
 behalten willst — das Brett bekommt damit eine Regel statt zwei —, und er
