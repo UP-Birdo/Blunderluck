@@ -3,6 +3,20 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.92.0 — 27.08.2026
+
+**Innerer Umbau: Die grösste Code-Datei ist in zwei Hälften geteilt — am
+Spiel ändert sich nichts.**
+
+- Die Spielregeln-Datei (`schach-runde.js`, 237 KB) war die grösste des
+  Projekts und wurde bei jeder Pflege teurer. Sie ist jetzt entlang ihrer
+  natürlichen Naht geteilt: Rundenverwaltung (Anlegen, Teams, Ziehen,
+  Abstimmung) bleibt, alles zu Fähigkeiten, Lootboxen und dem Händler
+  wohnt neu in `schach-runde-faehigkeiten.js` (109 KB).
+- Es ist ein reiner Umzug: Beide Hälften zusammen sind Byte für Byte
+  derselbe Code wie vorher, alle Prüfungen laufen unverändert grün.
+  Erster Schritt des Datei-Umbaus aus ROADMAP-Gruppe J (Punkt 32).
+
 ## v0.91.0 — 27.08.2026
 
 **Ein neues Konto ist sofort gesichert — auch wenn du die Seite gleich

@@ -15,6 +15,8 @@ const pfad = require("path");
 globalThis.SCHACH_VARIANTEN = require(pfad.join(__dirname, "..", "js", "schach-varianten.js"));
 globalThis.SCHACH = require(pfad.join(__dirname, "..", "js", "schach.js"));
 globalThis.SCHACH_RUNDE = require(pfad.join(__dirname, "..", "js", "schach-runde.js"));
+/* Ergänzt SCHACH_RUNDE (Fähigkeiten, Lootboxen, Händler) — NACH schach-runde.js. */
+require(pfad.join(__dirname, "..", "js", "schach-runde-faehigkeiten.js"));
 
 const SCHACH_VARIANTEN = globalThis.SCHACH_VARIANTEN;
 const SCHACH = globalThis.SCHACH;

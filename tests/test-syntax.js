@@ -75,6 +75,8 @@ globalThis.SPIELER = require(pfad.join(jsOrdner, "spieler.js"));
 globalThis.SCHACH_VARIANTEN = require(pfad.join(jsOrdner, "schach-varianten.js"));
 globalThis.SCHACH = require(pfad.join(jsOrdner, "schach.js"));
 globalThis.SCHACH_RUNDE = require(pfad.join(jsOrdner, "schach-runde.js"));
+/* Ergänzt SCHACH_RUNDE (Fähigkeiten, Lootboxen, Händler) — NACH schach-runde.js. */
+require(pfad.join(jsOrdner, "schach-runde-faehigkeiten.js"));
 globalThis.SCHACH_TAFEL = require(pfad.join(jsOrdner, "schach-tafel.js"));
 globalThis.SCHACH_BOT = require(pfad.join(jsOrdner, "schach-bot.js"));
 
