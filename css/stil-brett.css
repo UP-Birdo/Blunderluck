@@ -35,9 +35,13 @@
      * Das Feld unter einem bedrohten König (`feld-schach`): Orange — deutlich
      * neben dem Gelb der angetippten Figur und dem Rot des Schlagrings. Die
      * Kante ist das abgedunkelte Geschwister für Kontur und 3D-Kachelkante.
+     * Bei Schachmatt wird das Feld ROT (`feld-matt`) — dieselbe Familie wie
+     * `--gefahr`, als Fläche mit dunklerer Kante.
      */
     --schach-feld: #f09d4a;
     --schach-feld-kante: #c1701f;
+    --matt-feld: #e2574a;
+    --matt-feld-kante: #a52a20;
 
     --figur-weiss: #ffffff;
     --figur-schwarz: #16181c;
@@ -104,6 +108,8 @@
         --feld-gewaehlt: #d9b64a;
         --schach-feld: #c98136;
         --schach-feld-kante: #935b1c;
+        --matt-feld: #a03328;
+        --matt-feld-kante: #6f1f17;
         --figur-weiss: #ffffff;
         --figur-schwarz: #14161a;
         --figur-umriss-hell: #e9ebef;

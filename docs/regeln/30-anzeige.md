@@ -41,10 +41,12 @@ Zug bedient wird, die Wortwahl am Bildschirm.
   auf einer der beiden. Genau so ging in v1.5 die Zugvorhersage verloren (blauer
   Punkt auf blauem Feld). Gilt für Zielfelder, Schlagfelder und die Pfeile der
   Bildanleitung.
-- **Das Feld unter einem bedrohten König ist orange** (`feld-schach`) — bei
-  JEDEM König im Schach, egal welcher Seite. Welche Felder das sind, sagt
-  allein `SCHACH.schachFelder` (beide Farben, alle Könige); der frühere
-  „Schach"-Schriftzug im Spieler-Kasten ist dafür entfallen.
+- **Das Feld unter einem bedrohten König ist orange, bei Schachmatt rot**
+  (`feld-schach` / `feld-matt`) — bei JEDEM König im Schach, egal welcher
+  Seite; das rote Matt-Feld steht auch auf dem End-Brett und in der
+  Rückschau. Welche Felder das sind, sagt allein `SCHACH.schachFelder` bzw.
+  `SCHACH.mattFelder`; der frühere „Schach"-Schriftzug im Spieler-Kasten ist
+  dafür entfallen.
 - **Ein Zug wird immer gleich bedient:** Figur antippen, Zugpunkt antippen —
   auch die Rochade (König antippen, Zugpunkt antippen). Der zweite Weg über das
   Turmfeld ist in v0.44 auf Nutzer-Entscheidung ausgebaut worden; wer ihn

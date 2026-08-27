@@ -96,6 +96,14 @@ body.design-3d .feld-schach {
     box-shadow: var(--kachel-schatten);
 }
 
+/* Und beim Schachmatt in Rot — direkt nach dem orangen Geschwister, damit
+   das Rot bei gleicher Stärke gewinnt. */
+body.design-3d .feld-matt {
+    --kachel-schatten: 0 5px 0 var(--matt-feld-kante),
+        0 8px 8px rgba(20, 35, 55, 0.28);
+    box-shadow: var(--kachel-schatten);
+}
+
 /* Ziel und Schlag leuchten als Ring AUF der Kachel — wie im Vorbild die
    umrandeten Felder. Der Punkt bzw. Ring der klassischen Ansicht bleibt
    zusätzlich stehen. */
@@ -459,6 +467,14 @@ body.design-3d .werte-figur {
 .feld-schach {
     background: var(--schach-feld);
     box-shadow: inset 0 0 0 3px var(--schach-feld-kante);
+}
+
+/* Bei SCHACHMATT wird das Feld rot — dieselbe Bauart, direkt NACH dem
+   orangen Schachfeld: Trüge ein Feld je beide Klassen, gewönne das Rot. Zu
+   sehen auf dem End-Brett und in der Rückschau (`SCHACH.mattFelder`). */
+.feld-matt {
+    background: var(--matt-feld);
+    box-shadow: inset 0 0 0 3px var(--matt-feld-kante);
 }
 
 /* Die angetippte Figur: gelbes Feld plus dunkler Rahmen, damit sie sich auch

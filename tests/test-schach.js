@@ -257,6 +257,30 @@ pruefe("schachFelder nennt genau die Felder bedrohter Koenige", () => {
     gleich(namen(leben), "", "mehrere Leben: kein Schach");
 });
 
+/*
+ * `mattFelder` sagt dem Brett, welches Feld ROT wird — nur bei Schachmatt,
+ * und nur fuer die matte Seite am Zug. Blosses Schach bleibt Sache von
+ * `schachFelder` (orange).
+ */
+pruefe("mattFelder nennt das Koenigsfeld nur bei Schachmatt", () => {
+    const namen = (stand) => SCHACH.mattFelder(stand)
+        .map((feld) => SCHACH.feldName(feld))
+        .join(",");
+
+    /* Das Turmmatt aus dem Matt-Test: Schwarz am Zug ist matt. */
+    const matt = standAus({ "a8": "k", "h8": "T", "g7": "T", "e1": "K" }, SCHACH.SCHWARZ);
+    gleich(namen(matt), "a8", "das Feld des matten Koenigs");
+
+    /* Schach ohne Matt: mattFelder bleibt leer, das Feld gehoert schachFelder. */
+    const schach = standAus({ "e1": "K", "e8": "t", "a1": "k" });
+    gleich(namen(schach), "", "blosses Schach ist kein Matt");
+    gleich(SCHACH.schachFelder(schach).length, 1, "orange bleibt Sache von schachFelder");
+
+    /* Patt: kein Schach, kein Matt — nichts wird rot. */
+    const patt = standAus({ "a8": "k", "b6": "D", "e1": "K" }, SCHACH.SCHWARZ);
+    gleich(namen(patt), "", "Patt ist kein Matt");
+});
+
 pruefe("Eine gefesselte Figur darf die Fesselung nicht verlassen", () => {
     /* Der Läufer auf e2 steht zwischen König e1 und Turm e8. */
     const stand = standAus({ "e1": "K", "e2": "L", "e8": "t", "a8": "k" });

@@ -3,6 +3,18 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.98.0 — 27.08.2026
+
+**Bei Schachmatt wird das Königsfeld rot.**
+
+- Steht ein König im Schach, ist sein Feld seit v0.97.0 orange — ist es
+  Schachmatt, wird es jetzt rot. Das Rot bleibt auch auf dem End-Brett
+  nach der Partie stehen und erscheint im kleinen „So stand es am
+  Ende"-Brett der Auswertung.
+- Rot gibt es nur beim echten Matt: Endet eine Partie, weil kein König
+  mehr da ist (Doppelbrett, Zufallsarmee-Leben), färbt sich nichts —
+  dort gab es keinen bedrohten König.
+
 ## v0.97.0 — 27.08.2026
 
 **Steht ein König im Schach, leuchtet sein Feld orange.**

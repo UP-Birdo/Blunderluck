@@ -2588,6 +2588,32 @@ const SCHACH = {
         return felder;
     },
 
+    /*
+     * Die Felder, auf denen ein MATT gesetzter König steht — die rote
+     * Steigerung des orangen Schachfelds (`feld-matt`). Matt ist eine
+     * Eigenschaft der Seite am Zug (`SCHACH.lage`); genannt werden ihre
+     * bedrohten Königsfelder, dieselbe Rechnung wie `schachFelder`.
+     *
+     * Der Sieger-Vergleich grenzt auf „die Seite am Zug ist matt" ein: `lage`
+     * meldet auch das Ende „kein König mehr" (Doppelbrett, Zufallsarmee) als
+     * Matt — dort gibt es keinen bedrohten König, und der Sieger kann sogar
+     * die Seite am Zug selbst sein. Rot wird davon nichts.
+     */
+    mattFelder(stand) {
+        if (SCHACH.koenigSchlagbarFuer(stand, stand.amZug)) {
+            return [];
+        }
+
+        const lage = SCHACH.lage(stand);
+        if (lage.art !== "matt" || lage.sieger !== SCHACH.gegner(stand.amZug)) {
+            return [];
+        }
+        const gegner = SCHACH.gegner(stand.amZug);
+
+        return SCHACH.koenigFelder(stand, stand.amZug)
+            .filter((feld) => SCHACH._feldBedroht(stand, feld, gegner));
+    },
+
     /* ---------------------------------------------------------------- *
      * Ziehen
      * ---------------------------------------------------------------- */

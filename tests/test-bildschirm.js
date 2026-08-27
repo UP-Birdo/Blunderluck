@@ -3473,6 +3473,84 @@ pruefe("Das Feld unter einem bedrohten Koenig traegt feld-schach", () => {
     TEAM_SCHACH.abgleich.daten = vorher;
 });
 
+/*
+ * BEI SCHACHMATT WIRD DAS KOENIGSFELD ROT (Nutzer-Wunsch 27.08.2026) — auf
+ * dem End-Brett der beendeten Partie UND auf dem kleinen Brett der
+ * Rueckschau. Gerechnet wird im Modell (`SCHACH.mattFelder`, eigene Tests in
+ * test-schach.js).
+ */
+pruefe("Bei Schachmatt traegt das Koenigsfeld feld-matt, auch in der Rueckschau", () => {
+    const vorher = TEAM_SCHACH.abgleich.daten;
+    const echterAbschluss = TEAM_SCHACH.abschluss;
+
+    const angelegt = SCHACH_TAFEL.partieAnlegen(
+        TEAM_SCHACH.abgleich.daten, "standard", "Mattfeld", 9710);
+
+    let partie = SCHACH_RUNDE.teamBeitreten(angelegt.partie, "id-anna", "weiss", 9710);
+    partie = SCHACH_RUNDE.teamBeitreten(partie, "id-bert", "schwarz", 9710);
+    partie = bereitUndAufgestellt(partie, "weiss", 9710);
+    partie = bereitUndAufgestellt(partie, "schwarz", 9710);
+
+    /* Das Turmmatt direkt ins Brett gebaut, danach ist die Partie zu Ende:
+       Schwarz am Zug ist matt, Weiss hat gewonnen. */
+    let brett = "";
+    for (let feld = 0; feld < partie.stand.brett.length; feld++) {
+        brett += ".";
+    }
+    brett = SCHACH._brettMit(brett, SCHACH.feldNummer("a8"), "k");
+    brett = SCHACH._brettMit(brett, SCHACH.feldNummer("h8"), "T");
+    brett = SCHACH._brettMit(brett, SCHACH.feldNummer("g7"), "T");
+    brett = SCHACH._brettMit(brett, SCHACH.feldNummer("e1"), "K");
+    partie.stand.brett = brett;
+    partie.stand.amZug = "schwarz";
+    partie.laeuft = false;
+    partie.ergebnis = "weiss";
+
+    TEAM_SCHACH.abgleich.daten = SCHACH_TAFEL.partieEinsetzen(angelegt.tafel, partie, 9710);
+
+    /* Alle beendeten Partien als gesehen abhaken, damit das Zeichnen das
+       END-BRETT zeigt und nicht den Abschluss-Bildschirm irgendeiner. */
+    for (const eintrag of SCHACH_TAFEL.liste(TEAM_SCHACH.abgleich.daten)) {
+        if (eintrag.ergebnis) {
+            umgebung.ICH.abschlussMerken(eintrag.id);
+        }
+    }
+    TEAM_SCHACH.abschluss = null;
+    TEAM_SCHACH.partieOeffnen(partie.id);
+
+    const koenig = TEAM_SCHACH.wurzelEl.querySelector(
+        "[data-feld=\"" + SCHACH.feldNummer("a8") + "\"]");
+    if (!koenig || !koenig.classList.contains("feld-matt")) {
+        throw new Error("das Feld des matten Koenigs ist auf dem End-Brett nicht rot");
+    }
+    if (koenig.classList.contains("feld-schach")) {
+        throw new Error("rot und orange stehen zugleich auf dem Feld");
+    }
+
+    const sieger = TEAM_SCHACH.wurzelEl.querySelector(
+        "[data-feld=\"" + SCHACH.feldNummer("e1") + "\"]");
+    if (!sieger || sieger.classList.contains("feld-matt")) {
+        throw new Error("der Koenig des Siegers ist faelschlich rot");
+    }
+
+    /* Und dieselbe Marke auf dem kleinen Brett der Rueckschau. */
+    TEAM_SCHACH.abschluss = { id: partie.id, schritt: 0 };
+    TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
+
+    if (!TEAM_SCHACH.wurzelEl.kinder[0].classList.contains("abschluss-rueckschau")) {
+        throw new Error("die Rueckschau wird gar nicht gezeichnet");
+    }
+    const rueckschauFeld = TEAM_SCHACH.wurzelEl.querySelector(
+        "[data-feld=\"" + SCHACH.feldNummer("a8") + "\"]");
+    if (!rueckschauFeld || !rueckschauFeld.classList.contains("feld-matt")) {
+        throw new Error("das Matt-Feld fehlt auf dem Rueckschau-Brett");
+    }
+
+    TEAM_SCHACH.abschluss = echterAbschluss;
+    TEAM_SCHACH.offeneId = "";
+    TEAM_SCHACH.abgleich.daten = vorher;
+});
+
 pruefe("Zug und Unglueck haben getrennte Spurfarben (v0.76)", () => {
     /*
      * DER GEMELDETE FEHLER: „Kann es sein, dass sich die gruene Farbe meiner

@@ -255,16 +255,20 @@ Object.assign(TEAM_SCHACH, {
         const brettSpalte = TEAM_SCHACH._element("div", "rueckschau-brett");
         brettSpalte.appendChild(TEAM_SCHACH._element("span", "rueckschau-marke",
             "So stand es am Ende"));
-        /* Ein Bild ohne jede Markierung: kein Tipp, kein Pfeil, kein Zielfeld —
-           die Stellung, wie sie stehen geblieben ist. Die leeren Listen sind
-           Pflicht, `_beispielBrettBauen` fragt sie ohne Umweg ab. */
+        /* Ein Bild fast ohne Markierung: kein Tipp, kein Pfeil, kein
+           Zielfeld — die Stellung, wie sie stehen geblieben ist. Nur das rote
+           Matt-Feld bleibt stehen (Nutzer-Wunsch 27.08.2026): Es GEHÖRT zur
+           Schlussstellung, gerechnet im Modell (`SCHACH.mattFelder`). Die
+           leeren Listen sind Pflicht, `_beispielBrettBauen` fragt sie ohne
+           Umweg ab. */
         brettSpalte.appendChild(TEAM_SCHACH._beispielBrettBauen({
             runde: partie,
             marken: [],
             wahl: [],
             ziele: [],
             wege: [],
-            tipp: -1
+            tipp: -1,
+            matt: SCHACH.mattFelder(partie.stand)
         }));
         spalten.appendChild(brettSpalte);
 
@@ -1415,6 +1419,12 @@ Object.assign(TEAM_SCHACH, {
             /* Damit die Wirkungs-Schauspiele (v0.116) ihre Felder finden —
                dieselbe Adresse wie am echten Brett. */
             zelle.dataset.feld = String(feld);
+
+            /* Das rote Matt-Feld — nur wo der Aufrufer es mitgibt (die
+               Rückschau); die Anleitungen geben keines mit. */
+            if (schritt.matt && schritt.matt.indexOf(feld) !== -1) {
+                zelle.classList.add("feld-matt");
+            }
 
             const figur = SCHACH.figurAuf(stand, feld);
             if (figur !== ".") {
