@@ -225,11 +225,17 @@ const DIALOG = {
      * Auswahl aus einer Liste. `eintraege` ist eine Liste aus
      * { beschriftung, hinweis, wert }. Liefert den gewählten Wert oder null.
      * Für die Frage beim ersten Besuch: Bist du einer dieser Spieler?
+     *
+     * `zusatz` ist wahlfrei und wirkt wie bei `frage`/`hinweis`: ein
+     * fertiges Element zwischen Text und Liste — gebraucht für den gross
+     * angezeigten Beitritts-Code im Fenster „Freunde einladen" (Punkt 8,
+     * 27.08.2026). Wer nichts übergibt, bekommt genau den Dialog von vorher.
      */
-    liste(titel, text, eintraege, abbrechenText) {
+    liste(titel, text, eintraege, abbrechenText, zusatz) {
         return DIALOG._zeigen({
             titel: titel,
             text: text,
+            zusatz: zusatz || null,
             liste: eintraege,
             knoepfe: [
                 { beschriftung: abbrechenText || "Abbrechen", wert: null, stil: "knopf-still" }

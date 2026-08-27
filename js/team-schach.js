@@ -731,10 +731,13 @@ const TEAM_SCHACH = {
          */
         if (!partie.laeuft && !partie.ergebnis) {
             /*
-             * ZWEI START-BILDSCHIRME, NICHT EINER (seit v0.62.0). Solange
-             * noch jemand fehlt oder eine Seite ihre Wahl nicht bestätigt
-             * hat, ist die Seitenwahl dran; sobald beide Seiten besetzt und
-             * einverstanden sind, kommt die Aufstellung mit dem Brett.
+             * ZWEI START-BILDSCHIRME MIT ZUFALLSARMEE, EINER OHNE (seit
+             * Punkt 8, 27.08.2026; zwei seit v0.62.0). Solange noch jemand
+             * fehlt oder eine Seite ihre Wahl nicht bestätigt hat, ist die
+             * Seitenwahl dran; MIT Zufallsarmee folgt danach die Aufstellung
+             * mit Brett und Würfel. OHNE Zufallsarmee sagt `inAufstellung`
+             * immer nein — die letzte erste Zusage pfeift direkt an, das
+             * entscheidet das Modell (`bereitSetzen` → `kannAnpfeifen`).
              */
             if (SCHACH_RUNDE.inAufstellung(partie, person.id)) {
                 TEAM_SCHACH._aufstellungZeichnen(wurzel, partie, person);
@@ -869,7 +872,9 @@ const TEAM_SCHACH = {
      *
      * Er zeigt genau vier Dinge: den Ausgang oben links, wer schon auf
      * welcher Seite sitzt, die Wahl Weiss/Schwarz/Zufall — und unten den
-     * Beitritts-Code samt Einladen-Knopf.
+     * Beitritts-Code als Knopf zum Freunde-Einladen. SEIT Punkt 8
+     * (27.08.2026) IST DER TIPP AUF DIE SEITE ZUGLEICH DIE ERSTE ZUSAGE;
+     * ein eigener „Bereit"-Knopf steht nicht mehr da.
      *
      * WARUM DAS BRETT HIER FEHLT: Vor dem Anpfiff war es nie zu gebrauchen.
      * Ziehen kann niemand, und was man wirklich tut — eine Seite aussuchen,
@@ -884,9 +889,9 @@ const TEAM_SCHACH = {
      * 5 gebaut ist, lässt sich eine Zufallsarmee also nicht neu würfeln —
      * die Regel dafür steht unberührt in `_darfNeuWuerfeln`.
      *
-     * DIE REIHENFOLGE IST DIE DES BLICKS: erst wer da ist, dann die Wahl,
-     * dann die eine Hauptaktion, und ganz unten das Einladen — das braucht
-     * nur, wer noch auf jemanden wartet.
+     * DIE REIHENFOLGE IST DIE DES BLICKS: erst wer da ist, dann die Wahl
+     * (sie ist seit Punkt 8 die Hauptaktion), und ganz unten das Einladen —
+     * das braucht nur, wer noch auf jemanden wartet.
      */
     _seitenwahlZeichnen(wurzel, partie, person) {
         const meinTeam = SCHACH_RUNDE.teamVon(partie, person.id);
@@ -922,9 +927,9 @@ const TEAM_SCHACH = {
             wurzel.appendChild(TEAM_SCHACH._element("p", "erklaerung",
                 meinTeam
                     ? "Der Computer setzt sich auf die andere Seite, sobald "
-                        + "du auf „Bereit“ drückst."
+                        + "du deine Seite antippst."
                     : "Such dir eine Seite aus — der Computer nimmt die "
-                        + "andere, sobald du bereit bist."));
+                        + "andere."));
         }
 
         /* Die drei Knöpfe sind hier die Hauptsache und deshalb gross
@@ -938,21 +943,13 @@ const TEAM_SCHACH = {
         }
 
         /*
-         * „BEREIT" IST DIE HAUPTAKTION DIESES BILDSCHIRMS (seit v0.61.0).
-         *
-         * Bis v0.60.0 war es ein kleiner Knopf am Ende der eigenen
-         * Spielerzeile — dort war er richtig, solange die Zeile am Brett
-         * klebte und jeder Millimeter dem Brett gehörte. Hier gibt es kein
-         * Brett, und „Bereit" ist das Einzige, was die Runde weiterbringt.
+         * EIN EIGENER „BEREIT"-KNOPF STAND HIER VON v0.61.0 BIS Punkt 8
+         * (27.08.2026, Nutzer: „man drückt ja schon eine Seite an"). Seither
+         * ist der Tipp auf die Seite selbst die Zusage — `teamBeitreten`
+         * setzt sie im selben Schritt. Wer es sich anders überlegt, verlässt
+         * die Runde über das „Zurück" oben links; einen Seitenwechsel
+         * verbietet das Modell ohnehin.
          */
-        if (meinTeam) {
-            wurzel.appendChild(TEAM_SCHACH._knopf(
-                partie.bereit[meinTeam] ? "Doch nicht bereit" : "Bereit",
-                (partie.bereit[meinTeam] ? "knopf-still" : "knopf-haupt")
-                    + " seitenwahl-bereit",
-                () => TEAM_SCHACH.bereitUmschalten(
-                    partie, meinTeam, !partie.bereit[meinTeam])));
-        }
 
         wurzel.appendChild(TEAM_SCHACH._einladungBlockBauen(partie, person));
     },
@@ -1200,11 +1197,14 @@ const TEAM_SCHACH = {
     },
 
     /*
-     * CODE UND EINLADEN STEHEN ZUSAMMEN (seit v0.61.0).
+     * DER CODE IST DER EINLADEN-KNOPF (seit Punkt 8, 27.08.2026; Block seit
+     * v0.61.0).
      *
-     * Beides ist dieselbe Sache — jemanden dazuholen —, nur einmal für
-     * Fremde (der Code zum Weitergeben) und einmal für Freunde (der Knopf).
-     * Deshalb eine Zeile statt zwei Orte.
+     * Bis Punkt 8 standen hier zwei Teile nebeneinander: der Code als
+     * blosser Text und daneben ein Zeichen-Knopf für die Freunde. Beides ist
+     * dieselbe Sache — jemanden dazuholen —, deshalb ist der Code jetzt
+     * SELBST der Knopf: Antippen öffnet das Fenster „Freunde einladen"
+     * (`_einladenFensterOeffnen`), das Code und Freundesliste zusammen zeigt.
      *
      * DER CODE STEHT HIER GROSS, nicht blass wie im Match (`partie-code` in
      * der Standleiste, v0.47.0). Im Spiel ist er eine Randnotiz; hier ist er
@@ -1214,15 +1214,101 @@ const TEAM_SCHACH = {
     _einladungBlockBauen(partie, person) {
         const block = TEAM_SCHACH._element("div", "einladung-block");
 
-        block.appendChild(TEAM_SCHACH._element("span", "einladung-code",
-            SCHACH_RUNDE.beitrittsCode(partie.id)));
-
-        const einladen = TEAM_SCHACH._einladenKnopfBauen(partie, person);
-        if (einladen) {
-            block.appendChild(einladen);
-        }
+        block.appendChild(TEAM_SCHACH._codeKnopfBauen(
+            partie, person, "einladung-code code-knopf"));
 
         return block;
+    },
+
+    /*
+     * DER BEITRITTS-CODE ALS KNOPF (Punkt 8, 27.08.2026). Nutzer-Ansage:
+     * Der Code soll ÜBERALL, wo er steht, antippbar sein und das Fenster
+     * „Freunde einladen" öffnen — auch oben rechts im laufenden Match, ohne
+     * dass der Klick das Match verlässt (es ist ein Dialog, kein
+     * Bildschirmwechsel). Die Klasse bestimmt das Aussehen je Ort
+     * (`einladung-code` gross, `partie-code` blass); `code-knopf` schaltet
+     * nur die Knopf-Optik des Browsers ab.
+     */
+    _codeKnopfBauen(partie, person, klasse) {
+        const knopf = document.createElement("button");
+        knopf.type = "button";
+        knopf.className = klasse;
+        knopf.textContent = SCHACH_RUNDE.beitrittsCode(partie.id);
+        knopf.setAttribute("aria-label", "Freunde einladen");
+        knopf.title = "Freunde einladen";
+        knopf.addEventListener("click",
+            () => TEAM_SCHACH._einladenFensterOeffnen(partie, person));
+        return knopf;
+    },
+
+    /*
+     * WEN MAN EINLADEN KANN, UND WER SCHON WARTET — die eine Stelle für die
+     * Regeln seit v0.61.0, mit Punkt 8 aus `_einladenKnopfBauen`
+     * herausgezogen, weil jetzt auch das Fenster hinter dem Code-Knopf sie
+     * braucht: Nur Freunde („erst befreunden, dann einladen", F17), die
+     * weder mitspielen noch schon eingeladen sind noch in einer anderen
+     * laufenden Partie stecken (F16d).
+     */
+    _einladbareErmitteln(partie, person) {
+        if (typeof ANMELDUNG === "undefined" || !ANMELDUNG.abgleich) {
+            return { einladbare: [], wartend: [] };
+        }
+
+        const einladbare = SPIELER.freundeVon(
+            ANMELDUNG.abgleich.daten, person.id).freunde.filter((freund) =>
+                !SCHACH_RUNDE.teamVon(partie, freund.id)
+                && !SCHACH_RUNDE.istEingeladen(partie, freund.id)
+                && SCHACH_TAFEL.eigeneLaufende(
+                    TEAM_SCHACH.abgleich.daten, freund.id).length === 0);
+
+        const wartend = SCHACH_RUNDE.normalisieren(partie).eingeladen
+            .filter((id) => SCHACH_RUNDE.istEingeladen(partie, id));
+
+        return { einladbare: einladbare, wartend: wartend };
+    },
+
+    /*
+     * DAS FENSTER „FREUNDE EINLADEN" (Punkt 8, 27.08.2026) — geöffnet vom
+     * Code-Knopf auf jedem Bildschirm und vom Zeichen-Knopf im Match. Es
+     * zeigt den Beitritts-Code GROSS (zum Vorlesen und Abtippen) und
+     * darunter die einladbaren Freunde, jeder als eigener Knopf
+     * (`DIALOG.liste`).
+     *
+     * Einladen darf nur, wer selbst mitspielt (F17) und solange die Runde
+     * nicht vorbei ist — wer das nicht darf (Zuschauer, beendete Partie),
+     * sieht trotzdem den Code samt Hinweis zum Weitergeben: Der Code gilt
+     * unabhängig von der Freundesliste.
+     */
+    _einladenFensterOeffnen(partie, person) {
+        const darfEinladen = !partie.ergebnis
+            && !!SCHACH_RUNDE.teamVon(partie, person.id);
+        const listen = darfEinladen
+            ? TEAM_SCHACH._einladbareErmitteln(partie, person)
+            : { einladbare: [], wartend: [] };
+
+        const text = (listen.wartend.length > 0)
+            ? "Eingeladen: " + listen.wartend.map(
+                (id) => TEAM_SCHACH._nameVon(id)).join(", ")
+            : "Der Eingeladene findet die Runde unter „Runde beitreten“.";
+
+        const eintraege = listen.einladbare.map((freund) => ({
+            beschriftung: freund.name,
+            wert: freund.id
+        }));
+
+        /* Der Code gross im Fenster — dieselbe Schrift wie auf den
+           Start-Bildschirmen (`einladung-code`), mittig gestellt
+           (`dialog-code`). */
+        const zusatz = TEAM_SCHACH._element("div",
+            "einladung-code dialog-code",
+            SCHACH_RUNDE.beitrittsCode(partie.id));
+
+        DIALOG.liste("Freunde einladen", text, eintraege, "Schliessen", zusatz)
+            .then((id) => {
+                if (id) {
+                    TEAM_SCHACH.einladen(partie, id);
+                }
+            });
     },
 
     /*
@@ -1252,20 +1338,10 @@ const TEAM_SCHACH = {
             return null;
         }
 
-        /* Nur Freunde („erst befreunden, dann einladen", F17), die weder
-           mitspielen noch schon eingeladen sind noch in einer anderen
-           laufenden Partie stecken (F16d). */
-        const einladbare = SPIELER.freundeVon(
-            ANMELDUNG.abgleich.daten, person.id).freunde.filter((freund) =>
-                !SCHACH_RUNDE.teamVon(partie, freund.id)
-                && !SCHACH_RUNDE.istEingeladen(partie, freund.id)
-                && SCHACH_TAFEL.eigeneLaufende(
-                    TEAM_SCHACH.abgleich.daten, freund.id).length === 0);
-
-        const wartend = SCHACH_RUNDE.normalisieren(partie).eingeladen
-            .filter((id) => SCHACH_RUNDE.istEingeladen(partie, id));
-
-        if (einladbare.length === 0 && wartend.length === 0) {
+        /* Wen es zu zeigen gäbe, entscheidet dieselbe Stelle wie beim
+           Fenster (`_einladbareErmitteln`, F17/F16d). */
+        const listen = TEAM_SCHACH._einladbareErmitteln(partie, person);
+        if (listen.einladbare.length === 0 && listen.wartend.length === 0) {
             return null;
         }
 
@@ -1284,24 +1360,10 @@ const TEAM_SCHACH = {
             knopf.textContent = "Einladen";
         }
 
-        knopf.addEventListener("click", () => {
-            const text = (wartend.length > 0)
-                ? "Eingeladen: " + wartend.map(
-                    (id) => TEAM_SCHACH._nameVon(id)).join(", ")
-                : "Der Eingeladene findet die Runde unter „Runde beitreten“.";
-
-            const eintraege = einladbare.map((freund) => ({
-                beschriftung: freund.name,
-                wert: freund.id
-            }));
-
-            DIALOG.liste("Freunde einladen", text, eintraege, "Schliessen")
-                .then((id) => {
-                    if (id) {
-                        TEAM_SCHACH.einladen(partie, id);
-                    }
-                });
-        });
+        /* Das Fenster ist seit Punkt 8 (27.08.2026) für Code-Knopf und
+           Zeichen-Knopf DASSELBE — es rechnet beim Öffnen frisch. */
+        knopf.addEventListener("click",
+            () => TEAM_SCHACH._einladenFensterOeffnen(partie, person));
 
         return knopf;
     },
@@ -1629,13 +1691,17 @@ const TEAM_SCHACH = {
          * meinte — sie klebt beim Rollen oben fest (`.stand-leiste`,
          * `position: sticky`), also läuft der Code im Spiel immer mit.
          *
+         * SEIT Punkt 8 (27.08.2026) IST ER EIN KNOPF: Antippen öffnet das
+         * Fenster „Freunde einladen" (`_codeKnopfBauen`), ohne das Match zu
+         * verlassen — Nachzügler dürfen herein (F19).
+         *
          * NUR AN OFFENEN PARTIEN: Eine beendete hat keinen gültigen Code
          * mehr (`SCHACH_TAFEL.partieZuCode` findet sie nicht) — eine Zahl,
          * die nirgends hinführt, ist schlimmer als keine.
          */
         if (!partie.ergebnis) {
-            leiste.appendChild(TEAM_SCHACH._element("span", "partie-code",
-                SCHACH_RUNDE.beitrittsCode(partie.id)));
+            leiste.appendChild(TEAM_SCHACH._codeKnopfBauen(
+                partie, person, "partie-code code-knopf"));
         }
 
         return leiste;
@@ -2014,8 +2080,10 @@ const TEAM_SCHACH = {
      * Knopf tut, sagt weiterhin sein `aria-label`, damit Vorleseprogramme
      * nicht nur „Weiss" hören.
      *
-     * WER SCHON BEREIT IST, BEKOMMT KEINE WAHL MEHR (v0.44.0, unverändert):
-     * Erst wer seine Bereitschaft zurücknimmt, darf die Seite wechseln.
+     * WER SCHON BEREIT IST, BEKOMMT KEINE WAHL MEHR (v0.44.0, unverändert) —
+     * die ganze Reihe bleibt dann weg. Seit Punkt 8 (27.08.2026) ist die
+     * Zusage im Tipp enthalten; ein Mitglied OHNE Zusage (Anleger, alte
+     * Runde) sieht nur noch seine eigene Seite, siehe unten.
      */
     _beitrittReiheBauen(partie, person) {
         if (partie.laeuft || partie.ergebnis) {
@@ -2030,10 +2098,18 @@ const TEAM_SCHACH = {
         const reihe = TEAM_SCHACH._element("div", "beitritt-reihe");
         let knoepfe = 0;
 
-        for (const farbe of ["weiss", "schwarz"]) {
-            if (meinTeam === farbe) {
-                continue;
-            }
+        /*
+         * DER TIPP AUF DIE SEITE IST ZUGLEICH DIE ERSTE ZUSAGE (Punkt 8,
+         * 27.08.2026, `teamBeitreten`). Wer schon in einem Team sitzt — der
+         * Anleger im weissen, oder eine wartende Runde von vor dem Update —
+         * sieht deshalb nur noch SEINE Seite und gibt mit dem Tipp die
+         * Zusage: Einen Wechsel verbietet das Modell ohnehin
+         * (`SCHACH_RUNDE.teamBeitreten`), und ein Knopf, der nichts bewirken
+         * kann, wäre eine Lüge.
+         */
+        const farben = meinTeam ? [meinTeam] : ["weiss", "schwarz"];
+
+        for (const farbe of farben) {
             const knopf = TEAM_SCHACH._knopf(
                 (farbe === "weiss") ? "Weiss" : "Schwarz",
                 "team-knopf team-knopf-" + farbe,
@@ -3681,8 +3757,36 @@ const TEAM_SCHACH = {
         }
 
         TEAM_SCHACH._auswahlAufheben();
-        await TEAM_SCHACH._aufFrischemSenden(partie, (frisch) =>
-            SCHACH_RUNDE.teamBeitreten(frisch, person.id, farbe), true);
+
+        /*
+         * BEITRITT UND ERSTE ZUSAGE IN EINEM SCHRITT (Punkt 8, 27.08.2026,
+         * Nutzer: „mit dem Antippen einer Seite ist die Wahl schon
+         * getroffen"). Der separate Bereit-Knopf der Seitenwahl ist
+         * entfallen; deshalb passiert hier alles, was bis dahin
+         * `bereitUmschalten` tat: die Zusage setzen, den Computer auf die
+         * andere Seite holen (v0.29.0) und seine Aufstellungs-Zusage
+         * erneuern (v0.64.1). Ob damit schon angepfiffen wird, entscheidet
+         * das Modell (`bereitSetzen` → `kannAnpfeifen` — ohne Zufallsarmee
+         * ja, mit ihr folgt die Aufstellung).
+         *
+         * ZWEI AUSNAHMEN: In einer LAUFENDEN Runde (Nachzügler, F19) wird
+         * weiter nur beigetreten. Und die Zusage gibt es nur, wenn der
+         * Beitritt zur getippten Seite GEGRIFFEN hat — das Modell verweigert
+         * den Seitenwechsel, und dann darf hier auch keine Zusage für die
+         * falsche Seite entstehen.
+         */
+        await TEAM_SCHACH._aufFrischemSenden(partie, (frisch) => {
+            let neu = SCHACH_RUNDE.teamBeitreten(frisch, person.id, farbe);
+
+            if (!neu.laeuft && !neu.ergebnis
+                    && SCHACH_RUNDE.teamVon(neu, person.id) === farbe) {
+                neu = SCHACH_RUNDE.bereitSetzen(neu, farbe, true);
+                neu = SCHACH_BOT.beiBereitDazuholen(neu, person.id);
+                neu = SCHACH_BOT.aufstellungBestaetigen(neu);
+            }
+
+            return neu;
+        }, true);
     },
 
     /*
@@ -3951,6 +4055,12 @@ const TEAM_SCHACH = {
         }
     },
 
+    /*
+     * SEIT Punkt 8 (27.08.2026) GIBT ES KEINEN BEREIT-KNOPF MEHR: Die Zusage
+     * kommt mit dem Tipp auf die Seite (`teamBeitreten`). Diese Funktion
+     * bleibt für die RÜCKNAHME — das „Zurück" der Aufstellung ruft sie mit
+     * `false` (`_aufstellungVerlassen`).
+     */
     async bereitUmschalten(partie, farbe, bereit) {
         const person = TEAM_SCHACH._ich();
 

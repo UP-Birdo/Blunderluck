@@ -1,96 +1,115 @@
 # Wortliste — die Begriffe dieses Projekts
 
 Wozu diese Datei: Damit Nutzer und Claude über dieselben Dinge mit denselben
-Wörtern reden. Wer einen Wunsch meldet oder einen Fehler beschreibt, trifft mit
-diesen Wörtern genau die Stelle im Code.
+Wörtern reden — wer einen Wunsch oder Fehler meldet, trifft damit die Stelle
+im Code.
 
-**Zwei Ebenen, die auseinandergehalten werden:** Was der NUTZER liest, und wie
-es im CODE heisst. Die zweite Spalte ist die, nach der man greppt.
+**Drei Spalten:** Was der NUTZER liest, wie es im CODE heisst (danach wird
+gegrept), und WO es wohnt (Datei + Objekt-/Funktionsname, keine Zeilennummern
+— Namen veralten kaum). Stile: `css\stil.css` plus vier `css\stil-*.css`.
+Versionsangaben „seit v…" aus der Quizz-Zeit sind entfernt — sie kollidieren
+mit Blunderlucks eigener Zählung.
 
 ## Die Partie und ihre Teile
 
-| Wort | Im Code | Was gemeint ist |
-|---|---|---|
-| **Stand** | `stand` | Das Brett samt allem, was zur Stellung gehört: Figuren, wer am Zug ist, Mauern, Risse, Fesseln. Kennt keine Spieler. |
-| **Runde / Partie** | `SCHACH_RUNDE`, `runde` | Eine Partie mit Teams, Verlauf, Lootboxen und Fähigkeiten. Liegt über dem Stand. |
-| **Tafel** | `SCHACH_TAFEL`, `tafel` | Alle Partien nebeneinander, plus die **Chronik**. |
-| **Chronik** | `tafel.chronik` | Je beendeter Partie EIN festgeschriebener Eintrag mit dem Ergebnis. Die Rangliste rechnet nur daraus — deshalb kostet das Löschen einer Partie niemandem Punkte. |
-| **Spielart / Variante** | `SCHACH_VARIANTEN`, `variante` | Brettgrösse, Aufstellung und Sonderregeln. Steht nach dem Anlegen fest. |
-| **Brettform** | `form` | Quadratisch, Rechteckig oder Kreuz — die Auswahl VOR der Spielart (seit v0.63). |
-| **Verlauf** | `runde.verlauf` | Die Liste dessen, was passiert ist. Achtung: Der LETZTE Eintrag ist nicht immer der letzte Zug — Erscheinen und Einsammeln hängen sich hinten an. |
-| **Zugzähler / Takt** | `zugZaehler`, `stand.takt` | Zählen Halbzüge. Daran hängen alle Fristen und die Sicherung, dass sich zwei Züge aus einem Team nicht überholen. |
-| **Halbzug** | — | Ein Zug einer Seite. Zwei Halbzüge sind ein Zug. |
+| Wort | Im Code | Wohnt in | Was gemeint ist |
+|---|---|---|---|
+| **Stand** | `stand` | `js\schach.js`, `SCHACH` | Das Brett samt Stellung: Figuren, wer am Zug ist, Mauern, Risse, Fesseln. Kennt keine Spieler. |
+| **Runde / Partie** | `runde` | `js\schach-runde.js`, `SCHACH_RUNDE` | Eine Partie mit Teams, Verlauf, Lootboxen, Fähigkeiten. Liegt über dem Stand. Die Fähigkeiten-/Lootbox-Hälfte wohnt getrennt in `js\schach-runde-faehigkeiten.js`. |
+| **Tafel** | `tafel` | `js\schach-tafel.js`, `SCHACH_TAFEL` | Alle Partien nebeneinander, plus die **Chronik**. |
+| **Chronik** | `tafel.chronik` | `js\schach-tafel.js` | Je beendeter Partie EIN festgeschriebener Eintrag mit dem Ergebnis. Die Rangliste rechnet nur daraus — Partie löschen kostet niemandem Punkte. |
+| **Spielart / Variante** | `variante` | `js\schach-varianten.js`, `SCHACH_VARIANTEN` | Brettgrösse, Aufstellung, Sonderregeln. Steht nach dem Anlegen fest. |
+| **Brettform** | `variante.form` | `js\schach-varianten.js` | Quadratisch, Rechteckig oder Kreuz — die Auswahl VOR der Spielart. |
+| **Verlauf** | `runde.verlauf` | `js\schach-runde.js` | Was passiert ist. Achtung: Der LETZTE Eintrag ist nicht immer der letzte Zug — Erscheinen und Einsammeln hängen sich hinten an. |
+| **Zugzähler / Takt** | `runde.zugZaehler`, `stand.takt` | `js\schach-runde.js` bzw. `js\schach.js` | Zählen Halbzüge. Daran hängen alle Fristen und die Überhol-Sicherung im Team. |
+| **Halbzug** | — | — | Ein Zug einer Seite. Zwei Halbzüge sind ein Zug. |
+| **Bildschirm** | `TEAM_SCHACH` | `js\team-schach.js` | Alles Sichtbare. Teil-Dateien: `team-schach-uebersicht` / `-brett` / `-auswertung` / `-grundlagen.js`. |
+| **Bob (der Bot)** | `SCHACH_BOT` | `js\schach-bot.js` | Der Computer-Mitspieler („Bob der Bot"). Sagt zu jeder Aufstellung Ja, zieht sobald ein Mensch dran war. |
+| **Abgleich** | `Abgleich` | `js\abgleich.js` | Der Firebase-Abgleich zwischen den Geräten. |
+| **Rangliste** | `RANGLISTE` | `js\rangliste.js` | Rechnet die Punkte — ausschliesslich aus der Chronik. |
 
 ## Die Lootboxen
 
-| Wort | Im Code | Was gemeint ist |
-|---|---|---|
-| **Lootbox** | `bonus`, `wuerfel` | Die Box, die auf freien Feldern erscheint. Für den Nutzer seit v0.68 überall „Lootbox" — die Bezeichner im Code heissen weiter `wuerfel`/`bonus`, weil sie in jeder laufenden Partie und in den Firebase-Daten stecken. |
-| **Fähigkeit** | `FAEHIGKEITEN` | Was Gutes in einer Lootbox stecken kann. |
-| **Unglücks-Lootbox** | `PECH`, `pech: true` | Was Schlechtes darin stecken kann. Wirkt sofort beim Einsammeln — und darf seit v0.73 eine Partie beenden. |
-| **Halluzination** | `vollesGlas` | Der Unglückswürfel, der die gegnerischen Figuren falsch aussehen lässt. Hiess bis v0.72 „Volles Glas"; die Kennung im Code bleibt. |
-| **Stufe / Seltenheit** | `STUFEN` | Gewöhnlich, Ungewöhnlich, Episch, Legendär — sichtbar an der Farbe, wenn der Haken es zulässt. |
-| **Versteckte Fähigkeit** | `versteckt: true` | Kommt in keiner neuen Lootbox und in keiner Liste mehr vor, bleibt aber im Vorrat einsetzbar. Gefiltert in `faehigkeitenDerStufe`. Bisher **Ausweichen** (seit v0.78) und **Wiedergeburt** (seit v0.92). Nicht mit dem Löschen verwechseln — Gelöschtes fliegt beim nächsten Laden aus jedem Vorrat. |
-| **Schubs** | `SCHACH.schubs` | Gewöhnliche Fähigkeit seit v0.79: Eine gegnerische Figur neben einer eigenen weicht ein Feld zurück. Die Ein-Feld-Fassung des Nudelholzes; kein Schlag, keine Könige, der Zug bleibt. |
-| **Platztausch** | `SCHACH.platztausch` | Gewöhnliche Fähigkeit seit v0.79: Zwei eigene Figuren tauschen die Plätze — die angetippte mit der direkt davor. Kein König, der Zug bleibt. |
-| **Vorrat** | `runde.faehigkeiten[farbe]` | Die gesammelten Fähigkeiten eines Teams, die Marken unter dem Brett. |
-| **Stufe der Menge** | `regeln.lootboxMenge` | Wie viele Lootboxen erscheinen: **wenig / normal / viele / Regen** (seit v0.71, vier Kästchen unter dem Lootbox-Haken). Tabelle: `SCHACH_VARIANTEN.LOOTBOX_MENGEN`. |
-| **Lootbox-Regen** | `regeln.regen`, `regenStufe` | Die zwei Einstellungen von v0.50/v0.60, die die Stufe abgelöst hat. Sie stehen noch in jeder Partie: Fehlt die Stufe, wird sie daraus gerechnet. Sichtbar sind sie nicht mehr. |
-| **Item-Vorrat** | `regeln.itemVorrat`, `regeln.itemPool` | Welche Fähigkeiten es in DIESER Partie überhaupt gibt: **wenig / viele / alle / selbst wählen** (`SCHACH_VARIANTEN.ITEM_VORRAETE`; die Stufe „10" ist mit v0.105 entfallen). Die Stufe ist die Einstellung, `itemPool` die daraus entstandene Liste. Leerer Pool heisst „keine Einschränkung". |
-| **Selbst gewählte Items** | `regeln.itemAuswahl` | Die angehakte Liste aus dem Modus „selbst wählen" (seit v0.100, seit v0.105 in einem Popup statt in einer Rollliste) — die EINGABE, aus der `itemPool` entsteht. Mindestens ein Item; gefiltert wird beim Auslosen noch einmal gegen die Bedingungen der Partie. |
-| **Figurenzahl / Regler** | `regeln.armeeStaerke`, `armeeFassung` | Wie viele Figuren je Seite stehen: **wenig / normal / viel / voll**. Seit v0.100 gilt der Regler in JEDER Partie, nicht nur bei Zufallsarmee — `armeeFassung: 1` sagt, dass diese Partie schon so rechnet. **Seit v0.104 ist „normal" die gewohnte Aufstellung** (vorher hiess die „voll"); darüber wächst der Block in die Tiefe. |
-| **Block / Tiefe** | `SCHACH_VARIANTEN.armeeFelderBlock`, `armeeTiefe` | Die Felder EINER Startseite samt ihrer Tiefe: 0 ist die Grundreihe, dann die Offiziersreihe, davor die Bauern. Die eine Quelle für Zufallsarmee, feste Aufstellung und die angekündigte Zahl. |
-| **Offiziersreihe** | `SCHACH_RUNDE._aufstellungArt` | Die Reihe, die ab „viel" zwischen Grundreihe und Bauern entsteht: die Grundreihe ohne Krone — König und Dame werden zum Springer. |
+| Wort | Im Code | Wohnt in | Was gemeint ist |
+|---|---|---|---|
+| **Lootbox** | `runde.bonus`, Kennung `wuerfel` | Feld: `js\schach-runde.js`; Logik: `js\schach-runde-faehigkeiten.js` (`_bonusNachziehen`, `_bonusEinsammeln`) | Die Box auf freien Feldern. Für den Nutzer überall „Lootbox" — `wuerfel`/`bonus` bleiben, weil sie in Partien und Firebase-Daten stecken. |
+| **Fähigkeit** | `SCHACH_VARIANTEN.FAEHIGKEITEN` | Tabelle: `js\schach-varianten.js`; Einsetzen: `js\schach-runde-faehigkeiten.js`, `faehigkeitEinsetzen` | Was Gutes in einer Lootbox stecken kann. Nicht verwechseln: das globale `FAEHIGKEITEN` in `js\faehigkeiten.js` ist der Bibliotheks-TAB. |
+| **Unglücks-Lootbox** | `SCHACH_VARIANTEN.PECH`, `pech: true` | `js\schach-varianten.js` | Was Schlechtes darin stecken kann. Wirkt sofort beim Einsammeln — darf eine Partie beenden. |
+| **Halluzination** | Kennung `vollesGlas` | `js\schach-varianten.js` (in `PECH`) | Lässt gegnerische Figuren falsch aussehen. Hiess früher „Volles Glas"; die Kennung bleibt. |
+| **Stufe / Seltenheit** | `SCHACH_VARIANTEN.STUFEN` | `js\schach-varianten.js` | Gewöhnlich, Ungewöhnlich, Episch, Legendär — sichtbar an der Farbe, wenn der Haken es zulässt. |
+| **Versteckte Fähigkeit** | `versteckt: true` | `js\schach-varianten.js`, gefiltert in `faehigkeitenDerStufe` | Kommt in keine neue Lootbox und keine Liste mehr, bleibt im Vorrat einsetzbar (**Ausweichen**, **Wiedergeburt**). Gelöschtes fliegt dagegen aus jedem Vorrat. |
+| **Schubs** | `SCHACH.schubs` | `js\schach.js` | Eine gegnerische Figur neben einer eigenen weicht ein Feld zurück. Kein Schlag, keine Könige, der Zug bleibt. |
+| **Platztausch** | `SCHACH.platztausch` | `js\schach.js` | Zwei eigene Figuren tauschen die Plätze — die angetippte mit der davor. Kein König, der Zug bleibt. |
+| **Vorrat** | `runde.faehigkeiten[farbe]` | `js\schach-runde.js` | Die gesammelten Fähigkeiten eines Teams, die Marken unter dem Brett. |
+| **Stufe der Menge** | `regeln.lootboxMenge`, Tabelle `LOOTBOX_MENGEN` | `js\schach-varianten.js` | Wie viele Lootboxen erscheinen: **wenig / normal / viele / Regen**. |
+| **Lootbox-Regen** | `regeln.regen`, `regenStufe` | `js\schach-runde.js` (nur Lese-Rückfall) | Die zwei alten Einstellungen vor der Stufe. Stehen noch in alten Partien: Fehlt die Stufe, wird sie daraus gerechnet. Sichtbar nicht mehr. |
+| **Item-Vorrat** | `regeln.itemVorrat`, `regeln.itemPool`, Tabelle `ITEM_VORRAETE` | `js\schach-varianten.js` | Welche Fähigkeiten es in DIESER Partie gibt: **wenig / viele / alle / selbst wählen**. Die Stufe ist die Einstellung, `itemPool` die Liste daraus; leer heisst „keine Einschränkung". |
+| **Selbst gewählte Items** | `regeln.itemAuswahl` | Popup: `js\team-schach-uebersicht.js` | Die angehakte Liste aus „selbst wählen" — die EINGABE zu `itemPool`. Mindestens ein Item; beim Auslosen noch gegen die Partie-Bedingungen gefiltert. |
+| **Figurenzahl / Regler** | `regeln.armeeStaerke`, `armeeFassung` | `js\schach-runde.js` | Figuren je Seite: **wenig / normal / viel / voll**, gilt in JEDER Partie; „normal" ist die gewohnte Aufstellung. `armeeFassung: 1` heisst, die Partie rechnet schon so. |
+| **Block / Tiefe** | `armeeFelderBlock`, `armeeTiefe` | `js\schach-varianten.js` | Die Felder EINER Startseite samt Tiefe: 0 Grundreihe, dann Offiziersreihe, davor Bauern. Die eine Quelle für Zufallsarmee, feste Aufstellung und angekündigte Zahl. |
+| **Offiziersreihe** | `SCHACH_RUNDE._aufstellungArt` | `js\schach-runde.js` | Die Reihe ab „viel" zwischen Grundreihe und Bauern: die Grundreihe ohne Krone — König und Dame werden zum Springer. |
 
 ## Regeln und Wirkungen
 
-| Wort | Im Code | Was gemeint ist |
-|---|---|---|
-| **Sperre** | `SCHACH.gesperrt` | Ein Feld, das niemand betreten darf. Zwei Ursachen: **Mauer** (läuft ab) und **Riss / Loch** (bleibt die ganze Partie). |
-| **Sichtlinie / Strahl** | `_strahl`, `_feldBedroht` | Die Linie, die Turm, Läufer und Dame entlangziehen. Eine Sperre bricht sie ab — beim Ziehen UND beim Drohen. |
-| **Lage der Ansicht** | `TEAM_SCHACH._drehungVon`, `_feldZuAnzeige` | Wie herum dieses Gerät das Brett zeigt: 0 bis 3 Vierteldrehungen, sodass eine eigene Armee unten steht (seit v0.72). Steht in keinem Spielstand. |
-| **Startseite eines Teams** | `stand.startSeiten` | Von welcher Seite eine FARBE gestartet ist (beim Kreuz zwei). Daran hängt die Lage der Ansicht. |
-| **Kreuz-Duell** | `variante.kreuzEinzeln` | Ein Kreuz mit nur einer Armee je Team, Startseite ausgelost (seit v0.72). |
-| **Startseite** | `stand.bauernSeiten` | Von welcher Seite ein Bauer kommt. Er läuft geradewegs zur gegenüberliegenden; dort wandelt er um. Ohne Eintrag gilt die Farbregel (Weiss unten, Schwarz oben). |
-| **Gefallen** | `runde.gefallen` | Merkt sich **wo** eine Figur starb (`{art, feld}`). Dafür der Nekromant (Kennung `friedhof`) und die Wiederbelebung. |
-| **Verloren** | `runde.verloren` | Merkt sich nur **was** verloren ging. Dafür die Wiedergeburt (seit v0.92 ausgeblendet) und die Bilanz. |
-| **Zwei Leben** | `koenigeAlsLeben` | Wer mehr als einen König hat, dessen Könige sind gewöhnliche Figuren; beim letzten gelten wieder Schach und Matt. |
-| **Saat** | `_zufallsWert(saat)` | Der Text, aus dem der gerechnete Zufall entsteht. Statt `Math.random()` — sonst sähe jedes Gerät ein anderes Brett. Was sich unterscheidet, gehört an den ANFANG der Saat. |
-| **Enttarnen** | `FAEHIGKEITEN.enttarnen`, `sichtWirkung: "zeigen"` | Fähigkeit seit v0.88: gibt es nur, wenn eine Partie die Seltenheit der Lootboxen VERBIRGT (`nurOhneSeltenheit`) — zeigt sie dir selbst für 6 Halbzüge trotzdem. |
-| **Verstecken** | `FAEHIGKEITEN.verstecken`, `sichtWirkung: "verbergen"` | Das Gegenstück seit v0.98: gibt es nur, wenn eine Partie die Seltenheit ZEIGT (`nurMitSeltenheit`) — nimmt sie dem GEGNER für 6 Halbzüge weg. Enttarnen und Verstecken schliessen einander aus, in jeder Partie gibt es genau eine von beiden. |
+| Wort | Im Code | Wohnt in | Was gemeint ist |
+|---|---|---|---|
+| **Sperre** | `SCHACH.gesperrt` | `js\schach.js` | Ein Feld, das niemand betritt. Ursachen: **Mauer** (läuft ab) und **Riss / Loch** (bleibt, `SCHACH.risse`). |
+| **Sichtlinie / Strahl** | `_strahlzuege`, `_feldBedroht` | `js\schach.js` | Die Linie von Turm, Läufer, Dame. Eine Sperre bricht sie ab — beim Ziehen UND beim Drohen. |
+| **Lage der Ansicht** | `_drehungVon`, `_feldZuAnzeige` | `js\team-schach-brett.js` | Wie herum dieses Gerät das Brett zeigt (0–3 Vierteldrehungen, eigene Armee unten). Steht in keinem Spielstand. |
+| **Startseite eines Teams** | `stand.startSeiten` | `js\schach.js` | Von welcher Seite eine FARBE gestartet ist (beim Kreuz zwei). Daran hängt die Lage der Ansicht. |
+| **Kreuz-Duell** | `variante.kreuzEinzeln` | `js\schach-varianten.js` | Ein Kreuz mit nur einer Armee je Team, Startseite ausgelost. |
+| **Startseite (Bauer)** | `stand.bauernSeiten` | `js\schach.js` | Woher ein Bauer kommt; er läuft zur gegenüberliegenden Seite und wandelt dort um. Ohne Eintrag gilt die Farbregel. |
+| **Gefallen** | `runde.gefallen` | `js\schach-runde.js` | Merkt sich **wo** eine Figur starb (`{art, feld}`). Dafür der Nekromant (Kennung `friedhof`). |
+| **Verloren** | `runde.verloren` | `js\schach-runde.js` | Merkt sich nur **was** verloren ging. Dafür Wiedergeburt (ausgeblendet) und Bilanz. |
+| **Zwei Leben** | `koenigeAlsLeben` | Wirkung: `js\schach.js`; gesetzt: `js\schach-runde.js` | Bei mehreren Königen sind sie gewöhnliche Figuren; beim letzten gelten wieder Schach und Matt. |
+| **Saat** | `SCHACH_RUNDE._zufallsWert(saat)` | `js\schach-runde-faehigkeiten.js` | Der Text für den gerechneten Zufall statt `Math.random()` — sonst sähe jedes Gerät ein anderes Brett. Was sich unterscheidet, gehört an den ANFANG der Saat. |
+| **Enttarnen** | `enttarnen`, `sichtWirkung: "zeigen"` | `js\schach-varianten.js` (in `FAEHIGKEITEN`) | Nur in Partien, die die Seltenheit VERBERGEN (`nurOhneSeltenheit`) — zeigt sie dir selbst für 6 Halbzüge. |
+| **Verstecken** | `verstecken`, `sichtWirkung: "verbergen"` | `js\schach-varianten.js` (in `FAEHIGKEITEN`) | Das Gegenstück, nur in Partien, die sie ZEIGEN (`nurMitSeltenheit`) — nimmt sie dem GEGNER für 6 Halbzüge. Je Partie gibt es genau eine von beiden. |
+| **Bereitschaft** | `bereitSetzen`, `aufstellungBereitSetzen` | `js\schach-runde.js` | ZWEI Zusagen vor dem Start: zur Seite und zur AUFSTELLUNG. Erst wenn beide Seiten beides gegeben haben, läuft die Partie. |
+| **Zulosung** | `SCHACH_RUNDE.seiteZulosen` | `js\schach-runde.js` | Die Seite wird zugelost statt ausgesucht (Haken beim Anlegen, Vorgabe AN). |
+| **Abstimmung** | `runde.vorschlaege` | `js\schach-runde.js` | Zug-Vorschläge im Team, wenn `regeln.einigkeit` gesetzt ist; wer abstimmt, verkürzt die Frist. |
+| **Beitritts-Code** | `SCHACH_RUNDE.beitrittsCode` | `js\schach-runde.js` | Aus der Partie-Kennung GERECHNET, nie gespeichert; Zeichensatz ohne 0/O und 1/I/L, weil er vorgelesen wird. |
+| **Freundschaft** | `SPIELER.freundschaft` | Daten: `js\spieler.js`; Karte: `js\freunde.js` | Suchen, Anfrage, Annehmen, Ablehnen, Entfernen. Die Karte hängt am Freunde-Zeichen des Starts (`START.freundeOeffnen`, `js\start.js`). |
 
 ## Am Bildschirm
 
-| Wort | Im Code | Was gemeint ist |
-|---|---|---|
-| **Spur** | `_letzteSpur` | Die eingefärbten Felder des letzten Zuges. |
-| **Anleitung / Vorschau** | `SCHACH_VORSCHAU` | Die abgespielte Bilderfolge zu jeder Fähigkeit. Wird mit den echten Regeln **gerechnet**, nie gezeichnet. |
-| **Bibliothek** | `faehigkeitenOeffnen` | Die Übersicht aller Fähigkeiten hinter dem i-Knopf. |
-| **Rückschau** | `SCHACH_RUNDE.rueckschau` | „Wie es dazu kam" — der Bildschirm vor Sieg oder Niederlage. |
-| **Vorschau-Kasten** | `zielVorschau`, `zielUmriss` | Der grüne Rahmen beim Platzieren einer Fähigkeit mit Zielfeld. |
-| **Laufendes Item** | `laufendesZugmuster` | Eine Fähigkeit, die IHR Zug ist (Sprung, Teleport) und auf ihre Figur wartet. Lässt sich seit v0.76 abbrechen — dann kommt sie zurück in den Vorrat. |
-| **Figurenzähler** | `materialVorsprung` | Das `+N` unter dem Brett. Gerechnet aus der STELLUNG, nicht aus den Verlusten; nur die führende Seite trägt eine Zahl (seit v0.76). |
-| **Wer zuerst zieht, hat gezogen** | `regeln.einigkeit` (umgekehrt) | Der Haken beim Anlegen. **Aus** heisst: Das Team stimmt ab — das ist seit v0.76 die Vorgabe. Im Stand steht weiter `einigkeit`, unverändert in seiner Bedeutung. |
-| **Abschluss** | `TEAM_SCHACH.abschluss` | Der Bildschirm am Ende einer Partie, in drei Schritten: Rückschau, Ergebnis, Punktestand. |
+| Wort | Im Code | Wohnt in | Was gemeint ist |
+|---|---|---|---|
+| **Spur** | `_letzteSpur` | `js\team-schach-brett.js` | Die eingefärbten Felder des letzten Zuges. |
+| **Anleitung / Vorschau** | `SCHACH_VORSCHAU` | `js\schach-vorschau.js` | Die Bilderfolge zu jeder Fähigkeit. Mit den echten Regeln **gerechnet**, nie gezeichnet. |
+| **Bibliothek** | `faehigkeitenOeffnen` | `js\team-schach-auswertung.js`; Tab: `js\faehigkeiten.js` | Die Übersicht aller Fähigkeiten hinter dem i-Knopf — und als eigene Seite in der Tab-Leiste. |
+| **Rückschau** | `SCHACH_RUNDE.rueckschau` | Rechnung: `js\schach-runde-faehigkeiten.js`; Anzeige: `js\team-schach-auswertung.js` | „Wie es dazu kam" — der Bildschirm vor Sieg oder Niederlage. |
+| **Vorschau-Kasten** | `zielVorschau`, `zielUmriss` | Zustand: `js\team-schach.js`; Umriss gerechnet: `js\schach-runde-faehigkeiten.js` | Der grüne Rahmen beim Platzieren einer Fähigkeit mit Zielfeld. |
+| **Laufendes Item** | `SCHACH_RUNDE.laufendesZugmuster` | `js\schach-runde-faehigkeiten.js` | Eine Fähigkeit, die IHR Zug ist (Sprung, Teleport) und auf ihre Figur wartet. Abbrechen legt sie zurück in den Vorrat. |
+| **Figurenzähler** | `SCHACH_RUNDE.materialVorsprung` | `js\schach-runde-faehigkeiten.js` | Das `+N` unter dem Brett. Aus der STELLUNG gerechnet, nicht aus den Verlusten; nur die führende Seite trägt eine Zahl. |
+| **Wer zuerst zieht, hat gezogen** | `regeln.einigkeit` (umgekehrt) | `js\schach-runde.js` | Der Haken beim Anlegen. **Aus** heisst: Das Team stimmt ab — die Vorgabe. |
+| **Abschluss** | `TEAM_SCHACH.abschluss` | Zustand: `js\team-schach.js`; Bildschirm: `js\team-schach-auswertung.js`, `abschlussZeigen` | Das Ende einer Partie in drei Schritten: Rückschau, Ergebnis, Punktestand. |
+| **Nachkontrolle** | `TEAM_SCHACH._nachkontrolle` | `js\team-schach.js` | Nach dem Senden den Stand erneut holen und die eigene Änderung prüfen — gegen den Wettlauf „bereit geht manchmal noch verloren". |
 
 ## Umbenannte Fähigkeiten — Anzeigename gegen Kennung
 
-Vier Namen sind seit v0.92 anders, als sie im Code heissen. Die KENNUNG bleibt
-in allen Fällen unverändert: Sie steht in gespeicherten Partien, und ein
-Umbenennen würde die Fähigkeit aus jedem Vorrat entfernen.
+Die KENNUNG bleibt immer unverändert: Sie steht in gespeicherten Partien;
+Umbenennen würde die Fähigkeit aus jedem Vorrat entfernen. Beide Tabellen:
+`js\schach-varianten.js`.
 
-| Der Nutzer liest | Im Code | Seit |
-|---|---|---|
-| **Nekromant** | `friedhof` | v0.92 |
-| **Spalt** (Unglücks-Lootbox) | `erdbeben` | v0.103 |
+| Der Nutzer liest | Im Code |
+|---|---|
+| **Nekromant** | `friedhof` (in `FAEHIGKEITEN`) |
+| **Spalt** (Unglücks-Lootbox) | `erdbeben` (in `PECH`) |
 
-**Spalt und Riss sind zwei verschiedene Dinge** (seit v0.103): Der **Spalt** ist
-die Unglücks-Lootbox, die **Risse** sind die gesperrten Felder, die sie
-hinterlässt (`SCHACH.risse`). Von v0.92 bis v0.102 hiess beides „Riss" — das
-war der Anlass für die zweite Umbenennung. Der Name „Erdbeben" (bis v0.92) ist
-nur noch die Kennung im Code.
+**Spalt und Riss sind zwei verschiedene Dinge:** Der **Spalt** ist die
+Unglücks-Lootbox, die **Risse** sind die gesperrten Felder, die sie
+hinterlässt (`SCHACH.risse`). In der Quizz-Zeit hiess beides „Riss" — der
+Anlass für die Umbenennung.
 
-Ausgeblendet (nicht gelöscht, `versteckt: true` — wer sie im Vorrat hat, darf
-sie aufbrauchen): **Ausweichen** (v0.78), **Wiedergeburt** (v0.92).
-Ganz aus dem Spiel, auch aus laufenden Partien: **Ausdehnung** und
-**Einsturz** (v0.84, Unglückswürfel — siehe `entschieden-ab-v0-41.md`).
+## Geerbt, hier ohne Bedeutung (Archiv)
+
+Aus dem Quizz mitgekommen; hier benennt das nichts Lebendes mehr. Bleibt als
+Begründungs-Archiv, damit alte Stände und Doku lesbar bleiben.
+
+- **Würfel** — alter Nutzer-Name der Lootbox; nur noch Kennung `wuerfel`.
+- **Volles Glas** — alter Name der Halluzination; nur noch Kennung `vollesGlas`.
+- **Erdbeben** — alter Name des Spalts; nur noch Kennung `erdbeben`.
+- **Ausdehnung** — Unglückswürfel, ganz aus dem Spiel (auch aus laufenden Partien); Kennung nur beim Lesen alter Stände.
+- **Einsturz** — wie Ausdehnung: ganz entfernt, Kennung nur für alte Stände.
+- **Team Schach** — alter Tab-Name im Quizz; das Spiel heisst hier Blunderluck, der Modulname `TEAM_SCHACH` bleibt.

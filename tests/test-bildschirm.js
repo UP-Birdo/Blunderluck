@@ -2021,6 +2021,13 @@ pruefe("Gegen den Computer startet die Partie auch nach einem Hin und Her (v0.64
      * GEPRUEFT WIRD DER GANZE WEG ueber `bereitUmschalten`, nicht nur die
      * Modellfunktion: Der Fehler sass genau in der Naht zwischen Bildschirm
      * und Bot, und ein Test am Modell allein haette ihn nie gesehen.
+     *
+     * MIT ZUFALLSARMEE, seit Punkt 8 (27.08.2026): Das Hin und Her um die
+     * Aufstellung gibt es nur noch, wo gewuerfelt wird — ohne Zufallsarmee
+     * pfiffe schon die Seitenwahl an, und der v0.64.1-Fehler sass genau in
+     * der Aufstellung. `bereitUmschalten(true)` gibt es am Bildschirm nicht
+     * mehr (der Tipp auf die Seite setzt die Zusage), die Funktion selbst
+     * bleibt fuer die Ruecknahme — und genau die prueft dieser Test mit.
      */
     const person = umgebung.ICH.person();
     const echteDaten = TEAM_SCHACH.abgleich.daten;
@@ -2030,7 +2037,8 @@ pruefe("Gegen den Computer startet die Partie auch nach einem Hin und Her (v0.64
         const angelegt = SCHACH_TAFEL.partieAnlegen(
             SCHACH_TAFEL.leereTafel(9300), "standard", "Bot-Start", 9310);
         let partie = angelegt.partie;
-        partie.regeln = Object.assign({}, partie.regeln, { botStufe: "leicht" });
+        partie.regeln = Object.assign({}, partie.regeln,
+            { botStufe: "leicht", zufallsArmee: true });
         partie = SCHACH_RUNDE.teamBeitreten(partie, person.id, "weiss", 9320);
 
         TEAM_SCHACH.abgleich.daten = SCHACH_TAFEL.partieEinsetzen(

@@ -376,9 +376,11 @@ async function zeitlimitPruefen() {
              * auswaehlen koennen und sobald ich auf bereit klicke soll der
              * Bot in die andere Gruppe joinen."
              *
-             * Geprueft wird die ganze Kette in drei Schritten: Spielen legt
-             * eine LEERE Runde an, der Mensch waehlt Schwarz, und erst
-             * „Bereit" holt den Computer nach Weiss.
+             * Geprueft wird die ganze Kette in zwei Schritten (seit Punkt 8,
+             * 27.08.2026): Spielen legt eine LEERE Runde an; der TIPP auf
+             * Schwarz ist Beitritt UND Zusage in einem und holt den Computer
+             * nach Weiss — den frueheren dritten Schritt („Bereit") gibt es
+             * nicht mehr.
              */
             const START = umgebung.START;
             const echteDaten = TEAM_SCHACH.abgleich.daten;
@@ -425,53 +427,37 @@ async function zeitlimitPruefen() {
                     throw new Error("die Abstimmung ist in der Bot-Runde noch an");
                 }
 
-                /* 2) Der Mensch waehlt SCHWARZ — nicht die Vorgabe von frueher. */
+                /*
+                 * 2) Der Mensch waehlt SCHWARZ — nicht die Vorgabe von
+                 * frueher.
+                 *
+                 * SEIT Punkt 8 (27.08.2026) IST DER TIPP AUF DIE SEITE
+                 * ZUGLEICH DIE ERSTE ZUSAGE: `teamBeitreten` setzt sie mit,
+                 * holt den Computer auf die andere Seite (bis dahin tat das
+                 * `bereitUmschalten`) — und weil die Standard-Runde KEINE
+                 * Zufallsarmee hat, pfeift das Modell direkt an: Den
+                 * Aufstellungs-Bildschirm und den separaten Bereit-Schritt
+                 * gibt es hier nicht mehr.
+                 */
                 await TEAM_SCHACH.teamBeitreten(hole(), "schwarz");
 
                 partie = hole();
                 if (SCHACH_RUNDE.teamVon(partie, "id-anna") !== "schwarz") {
                     throw new Error("die gewaehlte Seite kam nicht an");
                 }
-                if (SCHACH_BOT.istBotPartie(partie)) {
-                    throw new Error("der Computer steigt schon beim Beitreten ein");
+                if (partie.bereit.schwarz !== true) {
+                    throw new Error("der Tipp auf die Seite gilt nicht als Zusage");
                 }
-                if (partie.laeuft) {
-                    throw new Error("die Partie laeuft, bevor jemand bereit ist");
-                }
-
-                /* 3) „Bereit" holt den Computer auf die ANDERE Seite. */
-                await TEAM_SCHACH.bereitUmschalten(hole(), "schwarz", true);
-
-                partie = hole();
                 if (SCHACH_RUNDE.teamVon(partie, SCHACH_BOT.KENNUNG) !== "weiss") {
                     throw new Error("der Computer sitzt nicht gegenueber");
                 }
                 if (partie.bereit.weiss !== true) {
                     throw new Error("der Computer meldet sich nicht bereit");
                 }
-
-                /*
-                 * SEIT v0.62.0 IST DAMIT ERST DIE HALBE MIETE. Der Mensch
-                 * steht jetzt auf dem zweiten Start-Bildschirm und sieht
-                 * seine Aufstellung an; angepfiffen wird erst mit seiner
-                 * zweiten Zusage. Der Computer hat seine schon gegeben — er
-                 * hat zum Brett keine Meinung.
-                 */
-                if (partie.laeuft) {
-                    throw new Error("die Partie laeuft schon vor der Aufstellung");
-                }
-                if (partie.aufstellungBereit.weiss !== true) {
-                    throw new Error("der Computer bestaetigt die Aufstellung nicht");
-                }
-                if (!SCHACH_RUNDE.inAufstellung(partie)) {
-                    throw new Error("die Runde steht nicht in der Aufstellung");
-                }
-
-                await TEAM_SCHACH.aufstellungBereitUmschalten(hole(), "schwarz", true);
-
-                partie = hole();
-                if (!partie.laeuft) {
-                    throw new Error("die Partie beginnt nicht, obwohl beide zugesagt haben");
+                if (partie.laeuft !== true) {
+                    throw new Error("ohne Zufallsarmee muss die Partie mit dem"
+                        + " Seiten-Tipp starten - einen Aufstellungs-Bildschirm"
+                        + " gibt es nicht mehr");
                 }
 
                 /* Und der Computer heisst am Bildschirm nicht Unbekannt. */
@@ -854,6 +840,10 @@ async function zeitlimitPruefen() {
                 let partie = SCHACH_RUNDE.teamBeitreten(
                     angelegt.partie, "id-anna", "weiss", 9820);
                 partie = SCHACH_RUNDE.teamBeitreten(partie, "id-bert", "schwarz", 9820);
+                /* Die zweite Zusage gibt es seit Punkt 8 (27.08.2026) nur
+                   noch MIT Zufallsarmee — ohne sie liefe die Partie nach den
+                   zwei ersten Zusagen laengst. */
+                partie.regeln.zufallsArmee = true;
                 partie = SCHACH_RUNDE.bereitSetzen(partie, "weiss", true, 9830);
                 partie = SCHACH_RUNDE.bereitSetzen(partie, "schwarz", true, 9830);
 
@@ -915,6 +905,14 @@ async function zeitlimitPruefen() {
                     throw new Error(
                         "die Runde erreicht die Aufstellung nicht, obwohl beide"
                             + " Seiten zugesagt haben");
+                }
+                /* Seit Punkt 8 (27.08.2026) pfeift die zweite erste Zusage
+                   ohne Zufallsarmee direkt an — auch das darf das Rennen
+                   nicht verschlucken. */
+                if (beideBereit.laeuft !== true) {
+                    throw new Error(
+                        "die Partie startet nicht, obwohl beide erste Zusagen"
+                            + " zusammengekommen sind");
                 }
             } finally {
                 TEAM_SCHACH.abgleich.daten = echteDaten;
@@ -1012,6 +1010,10 @@ async function zeitlimitPruefen() {
                 let partie = SCHACH_RUNDE.teamBeitreten(
                     angelegt.partie, "id-anna", "weiss", 9960);
                 partie = SCHACH_RUNDE.teamBeitreten(partie, "id-bert", "schwarz", 9960);
+                /* Die zweite Zusage gibt es seit Punkt 8 (27.08.2026) nur
+                   noch MIT Zufallsarmee — ohne sie liefe die Partie nach den
+                   zwei ersten Zusagen laengst. */
+                partie.regeln.zufallsArmee = true;
                 partie = SCHACH_RUNDE.bereitSetzen(partie, "weiss", true, 9965);
                 partie = SCHACH_RUNDE.bereitSetzen(partie, "schwarz", true, 9965);
 
@@ -2003,9 +2005,11 @@ pruefe("Die wartende Partie ist der Seitenwahl-Bildschirm (v0.61.0)", () => {
      *   - keine Fussleiste,
      *   - oben links ein „Zurueck",
      *   - kein „Runde verlassen", kein „Umbenennen" (v0.14.0),
-     *   - die drei Beitritts-Knoepfe gross,
-     *   - „Bereit" als eigener grosser Knopf,
-     *   - der Beitritts-Code.
+     *   - die Beitritts-Knoepfe gross,
+     *   - KEIN eigener „Bereit"-Knopf mehr (Punkt 8, 27.08.2026: der Tipp
+     *     auf die Seite ist die Zusage),
+     *   - der Beitritts-Code — seit Punkt 8 als KNOPF, der das Fenster
+     *     „Freunde einladen" oeffnet.
      */
     let partie = SCHACH_TAFEL.partie(TEAM_SCHACH.abgleich.daten,
         kennungen[SCHACH_VARIANTEN.liste[0].id]);
@@ -2074,18 +2078,22 @@ pruefe("Die wartende Partie ist der Seitenwahl-Bildschirm (v0.61.0)", () => {
                 + imKopf.join(", "));
         }
 
-        /* Die Wahl steht gross da, „Bereit" ebenfalls. */
+        /* Die Wahl steht gross da — ein eigener „Bereit"-Knopf nicht mehr:
+           Seit Punkt 8 (27.08.2026) ist der Tipp auf die Seite die Zusage. */
         if (mitKlasse("beitritt-reihe-gross").length === 0) {
-            throw new Error("die drei Beitritts-Knoepfe stehen nicht gross da");
+            throw new Error("die Beitritts-Knoepfe stehen nicht gross da");
         }
-        if (mitKlasse("seitenwahl-bereit").length === 0) {
-            throw new Error("der grosse Bereit-Knopf fehlt");
+        if (mitKlasse("seitenwahl-bereit").length > 0) {
+            throw new Error("der alte Bereit-Knopf steht noch da");
         }
 
-        /* Und der Code zum Weitergeben. */
+        /* Und der Code zum Weitergeben — seit Punkt 8 ein KNOPF. */
         const code = mitKlasse("einladung-code")[0];
         if (!code) {
             throw new Error("der Beitritts-Code fehlt");
+        }
+        if (code.tagName !== "button") {
+            throw new Error("der Code ist kein Knopf, sondern " + code.tagName);
         }
         if (String(code.textContent || "")
                 !== SCHACH_RUNDE.beitrittsCode(partie.id)) {
@@ -2166,11 +2174,19 @@ pruefe("Die Aufstellung ist der zweite Start-Bildschirm (v0.62.0)", () => {
     }
 });
 
-pruefe("Ohne Zufallsarmee steht in der Aufstellung kein Wuerfel (v0.62.0)", () => {
+pruefe("Ohne Zufallsarmee gibt es keinen Aufstellungs-Bildschirm (Punkt 8)", () => {
     /*
-     * Die Regel von v0.42.0 gilt unveraendert weiter, nur an einem neuen Ort:
-     * Ohne Zufallsarmee wuerfelt der Knopf nichts — er stellte dieselbe feste
-     * Aufstellung wieder hin. Dann bleibt die Zusage allein stehen.
+     * BIS Punkt 8 (27.08.2026) HIESS DIESER TEST „Ohne Zufallsarmee steht
+     * in der Aufstellung kein Wuerfel" (v0.62.0). NUTZER-ANSAGE 27.08.2026:
+     * „man muss ja das Feld nicht davor sehen, wenn man eh nichts mehr
+     * aendern kann" — ohne Zufallsarmee entfaellt der Bildschirm jetzt GANZ
+     * (`inAufstellung` sagt nein).
+     *
+     * DIE NACHGESTELLTE LAGE ist eine ALTE wartende Runde von vor dem
+     * Update: beide erste Zusagen liegen, angepfiffen ist noch nicht. Sie
+     * zeigt die Seitenwahl als Warte-Bildschirm (ohne Brett, ohne Wuerfel,
+     * ohne zweite Zusage); anpfeifen wird sie das Modell beim naechsten
+     * Schreiben (`kannAnpfeifen`, eigener Modell-Test).
      */
     let partie = SCHACH_TAFEL.partie(TEAM_SCHACH.abgleich.daten,
         kennungen[SCHACH_VARIANTEN.liste[0].id]);
@@ -2203,8 +2219,16 @@ pruefe("Ohne Zufallsarmee steht in der Aufstellung kein Wuerfel (v0.62.0)", () =
         if (mitKlasse("wuerfel-knopf").length > 0) {
             throw new Error("ohne Zufallsarmee steht ein Wuerfel da");
         }
-        if (mitKlasse("aufstellung-bereit").length === 0) {
-            throw new Error("die Zusage fehlt");
+        if (mitKlasse("aufstellung-bereit").length > 0) {
+            throw new Error("die zweite Zusage steht noch da, obwohl es den"
+                + " Aufstellungs-Bildschirm ohne Zufallsarmee nicht mehr gibt");
+        }
+        if (mitKlasse("brett-halter").length > 0) {
+            throw new Error("vor dem Anpfiff steht ein Brett da");
+        }
+        /* Der Warte-Bildschirm traegt weiter Code und Einladen. */
+        if (mitKlasse("einladung-block").length === 0) {
+            throw new Error("der Einladungs-Block fehlt auf dem Warte-Bildschirm");
         }
     } finally {
         TEAM_SCHACH.abgleich.daten = vorher;
@@ -2653,6 +2677,75 @@ pruefe("Einladen in der Partie und die Einladung beim Eingeladenen (v0.13.0)", (
         umgebung.ICH.person = echtePerson;
         ANMELDUNG.abgleich.daten = standVorher;
         TEAM_SCHACH.abgleich.daten = tafelVorher;
+        TEAM_SCHACH.uebersichtOeffnen();
+    }
+});
+
+pruefe("Der Code im Match ist ein Knopf und oeffnet das Einladen-Fenster (Punkt 8)", () => {
+    /*
+     * NUTZER-ANSAGE 27.08.2026: Der Code soll UEBERALL, wo er steht, ein
+     * klickbarer Knopf zum Freunde-Einladen sein — auch oben rechts im
+     * laufenden Match, OHNE dass der Klick das Match schliesst. Geprueft
+     * wird am gezeichneten Match: Der Code in der Standleiste ist ein
+     * Knopf, sein Klick oeffnet das Fenster „Freunde einladen" mit dem
+     * Code GROSS darin (Zusatz-Element von `DIALOG.liste`), und die
+     * offene Partie bleibt offen — es ist ein Dialog, kein
+     * Bildschirmwechsel.
+     */
+    const einsammeln = (element, passt, treffer) => {
+        for (const kind of element.kinder || []) {
+            if (passt(kind)) {
+                treffer.push(kind);
+            }
+            einsammeln(kind, passt, treffer);
+        }
+        return treffer;
+    };
+
+    const partieId = kennungen[SCHACH_VARIANTEN.liste[0].id];
+    TEAM_SCHACH.partieOeffnen(partieId);
+
+    try {
+        const code = einsammeln(TEAM_SCHACH.wurzelEl, (kind) =>
+            String(kind.className || "").indexOf("partie-code") !== -1, [])[0];
+        if (!code) {
+            throw new Error("kein Beitritts-Code an der laufenden Partie");
+        }
+        if (code.tagName !== "button") {
+            throw new Error("der Code im Match ist kein Knopf, sondern "
+                + code.tagName);
+        }
+        if (String(code.textContent || "")
+                !== SCHACH_RUNDE.beitrittsCode(partieId)) {
+            throw new Error("dort steht ein anderer Code: " + code.textContent);
+        }
+
+        const echteListe = umgebung.DIALOG.liste;
+        let titel = null;
+        let zusatz = null;
+        try {
+            umgebung.DIALOG.liste = async (t, text, eintraege, abbrechen, z) => {
+                titel = t;
+                zusatz = z;
+                return null;
+            };
+            code.ausloesen("click");
+        } finally {
+            umgebung.DIALOG.liste = echteListe;
+        }
+
+        if (titel !== "Freunde einladen") {
+            throw new Error("der Klick oeffnet nicht das Einladen-Fenster: "
+                + titel);
+        }
+        if (!zusatz || String(zusatz.textContent || "")
+                !== SCHACH_RUNDE.beitrittsCode(partieId)) {
+            throw new Error("im Fenster fehlt der gross angezeigte Code");
+        }
+        if (TEAM_SCHACH.offeneId !== partieId) {
+            throw new Error("der Klick auf den Code hat das Match verlassen");
+        }
+    } finally {
         TEAM_SCHACH.uebersichtOeffnen();
     }
 });

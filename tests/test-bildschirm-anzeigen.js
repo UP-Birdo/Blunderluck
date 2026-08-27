@@ -304,16 +304,23 @@ pruefe("Die drei Beitritts-Knoepfe stehen beisammen (v0.55.0)", () => {
         }
     }
 
-    /* Mit eigenem Team: nur noch der Wechsel auf die andere Seite. */
+    /*
+     * Mit eigenem Team: nur noch die EIGENE Seite (seit Punkt 8,
+     * 27.08.2026). Bis dahin stand hier die andere Seite als „Wechsel" —
+     * ein Knopf, den das Modell ohnehin verweigerte
+     * (`SCHACH_RUNDE.teamBeitreten` laesst niemanden wechseln). Seit der
+     * Tipp auf die Seite die erste Zusage mitsetzt, ist der Knopf der
+     * eigenen Seite der Weg, die Zusage nachzuholen (Anleger, alte Runden).
+     */
     const alsWeiss = SCHACH_RUNDE.teamBeitreten(
         angelegt.partie, person.id, "weiss", 9220);
     const zwei = TEAM_SCHACH._beitrittReiheBauen(alsWeiss, person);
     if (!zwei || zwei.kinder.length !== 1) {
-        throw new Error("mit eigenem Team muesste genau der Wechsel dastehen, da sind "
+        throw new Error("mit eigenem Team muesste genau die eigene Seite dastehen, da sind "
             + (zwei ? zwei.kinder.length : 0));
     }
-    if (String(zwei.kinder[0].className || "").indexOf("team-knopf-schwarz") === -1) {
-        throw new Error("der uebrige Knopf ist nicht die andere Seite");
+    if (String(zwei.kinder[0].className || "").indexOf("team-knopf-weiss") === -1) {
+        throw new Error("der uebrige Knopf ist nicht die eigene Seite");
     }
 });
 

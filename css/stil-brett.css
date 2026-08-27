@@ -436,6 +436,28 @@
     color: var(--schrift);
 }
 
+/*
+ * DER CODE IST EIN KNOPF (Punkt 8, 27.08.2026): Antippen öffnet das Fenster
+ * „Freunde einladen" — überall, wo der Code steht (Seitenwahl, Aufstellung,
+ * Standleiste im Match). `code-knopf` schaltet nur die Knopf-Optik des
+ * Browsers ab; das Aussehen kommt weiter von `einladung-code` bzw.
+ * `partie-code`.
+ */
+.code-knopf {
+    background: none;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+}
+
+/* Derselbe Code noch einmal GROSS im Einladen-Fenster: mittig zwischen dem
+   Hinweistext und der Freundesliste (`DIALOG.liste`, Zusatz-Element). */
+.dialog-code {
+    display: block;
+    text-align: center;
+    margin: 12px 0 4px;
+}
+
 /* Das Freunde-Zeichen im Einladen-Knopf, in derselben Grösse wie das Zahnrad
    am Spieler (`.spiel-zahnrad .start-zeichen`). */
 .einladen-knopf .start-zeichen {

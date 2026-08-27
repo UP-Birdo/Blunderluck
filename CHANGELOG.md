@@ -3,6 +3,25 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.95.0 — 27.08.2026
+
+**Schneller ins Spiel: weniger Bildschirme vor dem Match, und der Code ist
+überall ein Knopf zum Freunde-Einladen.**
+
+- **Eine Seite antippen genügt.** Auf der Seitenwahl war das Antippen der
+  Seite bisher nur der erste Schritt, danach kam noch ein eigener
+  „Bereit"-Knopf. Jetzt ist das Antippen zugleich die Zusage — ein
+  Bildschirm, ein Tipp.
+- **Ohne Zufallsarmee startet das Spiel direkt**, sobald beide Seiten
+  gewählt haben. Den Zwischen-Bildschirm mit dem Brett und dem zweiten
+  „Bereit" gibt es nur noch MIT Zufallsarmee — dort hat er einen Zweck
+  (Armee ansehen, neu würfeln). Bei der festen Aufstellung gibt es nichts
+  zu entscheiden, also auch nichts zu bestätigen.
+- **Der Beitritts-Code ist jetzt überall ein Knopf** — auf der Seitenwahl,
+  auf dem Aufstellungs-Bildschirm und oben rechts im laufenden Match.
+  Antippen öffnet ein Fenster mit dem Code in gross und deiner
+  Freundesliste zum direkten Einladen, ohne das Match zu verlassen.
+
 ## v0.94.0 — 27.08.2026
 
 **Nachgebessert: Auch exakt gleichzeitige Bereit-Klicks starten das Spiel

@@ -1690,9 +1690,14 @@ const SCHACH_RUNDE = {
     /*
      * DIE ERSTE BEREITSCHAFT: Ich bin mit meiner SEITE einverstanden.
      *
-     * BIS v0.61.0 FING DIE PARTIE HIER AN. Seit v0.62.0 führt sie nur noch in
-     * die AUFSTELLUNG (`inAufstellung`) — angepfiffen wird erst, wenn beide
-     * Seiten auch das Brett bestätigt haben (`aufstellungBereitSetzen`).
+     * BIS v0.61.0 FING DIE PARTIE HIER AN, seit v0.62.0 führte sie nur noch
+     * in die AUFSTELLUNG. Seit Punkt 8 (27.08.2026) gilt: MIT
+     * Zufallsarmee führt sie in die Aufstellung (`inAufstellung`), und erst
+     * die zweite Zusage pfeift an (`aufstellungBereitSetzen`). OHNE
+     * Zufallsarmee gibt es den Aufstellungs-Bildschirm nicht mehr („man muss
+     * ja das Feld nicht davor sehen, wenn man eh nichts mehr ändern kann") —
+     * dann pfeift die LETZTE ERSTE Zusage an, und zwar hier: `kannAnpfeifen`
+     * verlangt ohne Zufallsarmee keine zweiten Zusagen mehr.
      *
      * WER SEINE ZUSAGE ZURÜCKNIMMT, NIMMT BEIDEN DIE ZWEITE (Zeile unten).
      * Sonst stünde folgender Fall offen: Weiss geht zurück zur Seitenwahl,
@@ -1710,6 +1715,24 @@ const SCHACH_RUNDE = {
 
         if (bereit !== true) {
             neu.aufstellungBereit = { weiss: false, schwarz: false };
+        }
+
+        /*
+         * DER ANPFIFF OHNE ZUFALLSARMEE (Punkt 8, 27.08.2026): Sind beide
+         * Seiten besetzt und einverstanden und gibt es kein Brett zu
+         * bestätigen, geht es HIER los — dieselbe Logik wie in
+         * `aufstellungBereitSetzen`. Mit Zufallsarmee ändert der Block
+         * nichts: Dort fehlen die zweiten Zusagen noch, und `kannAnpfeifen`
+         * bleibt falsch.
+         */
+        if (SCHACH_RUNDE.kannAnpfeifen(neu)) {
+            neu.laeuft = true;
+
+            /* Nur beim ERSTEN Start setzen — wie in `aufstellungBereitSetzen`:
+               die Spieldauer soll nicht zurückgedreht werden. */
+            if (!neu.gestartetAm) {
+                neu.gestartetAm = (zeitpunkt === undefined) ? Date.now() : zeitpunkt;
+            }
         }
 
         neu.geaendertAm = (zeitpunkt === undefined) ? Date.now() : zeitpunkt;
@@ -1815,8 +1838,27 @@ const SCHACH_RUNDE = {
     /* Beide haben auch das Brett bestätigt — jetzt wird angepfiffen. */
     kannAnpfeifen(runde) {
         const stand = SCHACH_RUNDE.normalisieren(runde);
-        return SCHACH_RUNDE.kannStarten(stand)
-            && stand.aufstellungBereit.weiss
+
+        if (!SCHACH_RUNDE.kannStarten(stand)) {
+            return false;
+        }
+
+        /*
+         * OHNE ZUFALLSARMEE GIBT ES KEINE ZWEITE ZUSAGE (Punkt 8,
+         * 27.08.2026): Die Aufstellung ist fest, es gibt nichts anzusehen
+         * und nichts zu würfeln — die beiden ersten Zusagen genügen.
+         *
+         * DER DATENVERTRAG DAZU: Eine ALTE wartende Runde ohne Zufallsarmee,
+         * in der beide erste Zusagen schon liegen, gilt damit ab sofort als
+         * anpfeifbar — sie startet beim nächsten Schreiben. Das ist gewollt
+         * (festes Brett, es war nichts mehr zu entscheiden); LAUFENDE
+         * Partien berührt die Änderung nicht, sie tragen `laeuft` längst.
+         */
+        if (!SCHACH_RUNDE.armeeAn(stand)) {
+            return true;
+        }
+
+        return stand.aufstellungBereit.weiss
             && stand.aufstellungBereit.schwarz;
     },
 
@@ -1824,6 +1866,8 @@ const SCHACH_RUNDE = {
      * Steht die Runde gerade auf dem zweiten Start-Bildschirm? Beide Seiten
      * besetzt und mit ihrer Seite einverstanden, das Brett aber noch nicht
      * angepfiffen. Der Bildschirm fragt genau das (`_partieZeichnen`).
+     * DEN BILDSCHIRM GIBT ES NUR MIT ZUFALLSARMEE (seit Punkt 8, 27.08.2026)
+     * — ohne sie ist die Antwort immer nein, siehe unten.
      *
      * MIT ZUGELOSTER SEITE GENÜGT DIE EIGENE (seit v0.66.0): Dann gibt es
      * keinen Seitenwahl-Bildschirm, auf den man zurückfallen könnte — wer
@@ -1837,6 +1881,17 @@ const SCHACH_RUNDE = {
         if (stand.laeuft || stand.ergebnis) {
             return false;
         }
+
+        /*
+         * OHNE ZUFALLSARMEE GIBT ES DEN BILDSCHIRM NICHT (Punkt 8,
+         * 27.08.2026, Nutzer: „man muss ja das Feld nicht davor sehen, wenn
+         * man eh nichts mehr ändern kann"). Die letzte erste Zusage pfeift
+         * dann direkt an (`bereitSetzen` → `kannAnpfeifen`).
+         */
+        if (!SCHACH_RUNDE.armeeAn(stand)) {
+            return false;
+        }
+
         if (SCHACH_RUNDE.kannStarten(stand)) {
             return true;
         }
