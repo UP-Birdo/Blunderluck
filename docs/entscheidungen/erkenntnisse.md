@@ -2,6 +2,52 @@
 
 ## Teuer erkaufte Erkenntnisse
 
+### Ein Fehler, der nur GEMELDET wird, ist fuer den Aufrufer kein Fehler (v0.89.0)
+
+**Dringende Nutzer-Meldung 27.08.2026:** „Jemand hat sich angemeldet, das
+Spiel geschlossen — und ist in seinen Account nicht wieder reingekommen."
+
+**Der erste Verdacht war falsch, und das ist die halbe Geschichte.** Naheliegend
+war der Quizz-v0.8-Fehler („Mitspieler verschwanden wieder aus der Runde"):
+ein Geraet mit altem Stand ueberschreibt die Liste. Gemessen wurde deshalb
+zuerst `SPIELER.zusammenfuehren`, in beiden Reihenfolgen und mit fehlender
+eigener Person — **es arbeitet sauber, kein Eintrag geht verloren.** Auch
+`normalisieren` verwirft keinen gueltigen Datensatz, und die PIN-Kette laesst
+sich ueber normale Bedienung nicht zerreissen.
+
+**Die echte Kette sass im START:**
+
+1. `Abgleich.starten` faengt einen Ladefehler ab, MELDET ihn („Laden
+   fehlgeschlagen") — und loest sein Versprechen trotzdem auf. Absichtlich:
+   Die App soll auch ohne Netz hochkommen.
+2. `app.js` haengt an genau diesem Versprechen die Anmeldung. Sie lief also
+   auch nach einem Fehlstart an, mit dem LEEREN Anfangsstand.
+3. In einer leeren Liste steht die eigene Kennung nicht — das Anmelde-Vollbild
+   erschien, als gaebe es das Konto nicht.
+4. Kam der echte Stand Sekunden spaeter, half er nichts:
+   `ANMELDUNG.datenAktualisiert` stieg ganz oben aus, solange `ichId` null
+   war. Das Bild blieb stehen.
+5. Wer dort „Neues Konto" drueckte, bekam eine ZWEITE Kennung. Sein altes
+   Konto lag unveraendert in der Datenbank — nur nicht mehr auffindbar.
+
+> **Die Regel:** Wer einen Fehler abfaengt und nur meldet, muss dem AUFRUFER
+> sagen, dass etwas fehlt — sonst arbeitet der mit einem Anfangswert weiter
+> und haelt ihn fuer ein Ergebnis. `starten` liefert seit v0.89.0 `true` oder
+> `false`, und `app.js` fragt nur im ersten Fall nach dem Konto.
+>
+> **Und die zweite Regel, die hier mehr wert ist als die erste:** Ein
+> Zustand, der auf Daten wartet, braucht einen Weg ZURUECK, wenn die Daten
+> spaeter doch kommen. Schritt 4 war die billigste Stelle zum Reissen der
+> Kette — das Geraet meldet sich jetzt selbst an, sobald ein Stand mit
+> seiner gemerkten Kennung eintrifft. Damit heilt sich der Fall auch dann,
+> wenn eine kuenftige Aenderung Schritt 1 bis 3 wieder einbaut.
+
+**Nebenbefund, noch offen:** Ein frisch angelegtes Konto wird erst nach
+`schreibVerzoegerungMs` (500 ms) geschrieben, und es gibt keinen
+`pagehide`-Handler, der das beim Schliessen der Seite nachholt. Wer die Seite
+im selben Augenblick schliesst, verliert es. Getrennt zu bauen — die
+Selbstheilung oben hilft dort nicht, weil nie etwas geschrieben wurde.
+
 ### Eine ANGENOMMENE Groesse ist ein Fehler mit Ansage — dritter Anlauf (v0.87.0)
 
 **Nutzer-Meldung 27.08.2026:** „Die Groesse des Vorschau-Schachbretts im

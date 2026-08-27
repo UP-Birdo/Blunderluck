@@ -74,6 +74,12 @@ wird. Die Liste dessen, was noch kommt, steht in [../ROADMAP.md](../ROADMAP.md).
   Play-Store-Umbau braeuchte - Referenz: docs\uebergabe-schach-app.md)
 
 ## erkenntnisse.md - Teuer erkaufte Erkenntnisse
+- **Ein Fehler, der nur GEMELDET wird, ist fuer den Aufrufer kein Fehler**
+  (v0.89.0, dringende Meldung „komme nicht mehr in meinen Account": nicht
+  das Zusammenfuehren war schuld, sondern ein Fehlstart, nach dem die
+  Anmeldung mit dem LEEREN Stand lief; enthaelt die zweite Regel — ein
+  wartender Zustand braucht einen Weg zurueck, wenn die Daten nachkommen —
+  und den offenen Nebenbefund „Konto wird erst nach 500 ms geschrieben")
 - **Eine ANGENOMMENE Groesse ist ein Fehler mit Ansage — dritter Anlauf**
   (v0.87.0, Vorschaubretter der Bildanleitungen: Figur 162 bis 199 % statt
   126 % der Feldbreite, weil die Schrift gegen `min(260px, 70vw)` rechnete
