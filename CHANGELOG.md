@@ -3,6 +3,21 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.86.0 — 27.08.2026
+
+**Der Fähigkeiten-Tab zeigt nur noch die Zeichen — alles Textliche liegt
+hinter dem i.**
+
+- **Die beiden Erklär-Absätze über dem Raster sind weg**, ebenso die Karte
+  „Die Zeichen am Vorrat" und die Stufen-Skala darunter. Übrig bleibt das
+  Raster selbst: jede Kachel öffnet wie bisher Beschreibung und abgespielte
+  Anleitung.
+- **Ein i oben rechts** zeigt auf Wunsch alles Weggeräumte — wie die
+  Lootboxen wirken, was Pluszeichen und Blitz bedeuten, und welche Farbe
+  welche Seltenheitsstufe ist.
+- **Gilt auch für die Bibliothek im Spiel** (das i in der Fussleiste einer
+  Partie): Sie zeigt denselben Inhalt und ist damit genauso aufgeräumt.
+
 ## v0.85.0 — 27.08.2026
 
 **Die Item-Karten stehen wieder vollständig da.**

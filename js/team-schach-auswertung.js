@@ -990,15 +990,22 @@ Object.assign(TEAM_SCHACH, {
      * ist dort der Weg zurück).
      */
     _infoInhaltBauen(wurzel) {
-        wurzel.appendChild(TEAM_SCHACH._element("p", "erklaerung",
-            "Wer mit einer Figur über eine Lootbox oder auf sie zieht, sammelt ein, "
-            + "was darin steckt — vorher sieht man es nie. Nur der Springer sammelt "
-            + "unterwegs nichts ein. Manche Lootboxen bringen nichts Gutes und wirken "
-            + "sofort; ob man ihnen das ansieht, entscheidet ein Haken beim Anlegen."));
-
-        wurzel.appendChild(TEAM_SCHACH._element("p", "erklaerung",
-            "Nachschub kommt, solange ein Feld frei ist; liegen gelassene bleiben "
-            + "liegen. Was du schon im Vorrat hast, kommt seltener nach."));
+        /*
+         * NUR NOCH DIE ZEICHEN (seit v0.86.0, Nutzer-Ansage 27.08.2026:
+         * „Auf dem Fähigkeiten-Tab links sollen die Texte verschwinden und
+         * die Seltenheitsskala soll hinter das i verschwinden").
+         *
+         * Bis v0.85.0 standen hier zwei Erklär-Absätze, darunter das Raster,
+         * darunter zwei Text-Karten. Der Tab war damit eine Textseite mit
+         * Bildern darin — dabei ist das Raster die Sache selbst: Jede Kachel
+         * öffnet ohnehin Beschreibung und abgespielte Anleitung.
+         *
+         * VERLOREN GEHT NICHTS: Alles Textliche steht hinter dem i oben
+         * rechts, in derselben Reihenfolge wie vorher.
+         */
+        const zeile = TEAM_SCHACH._element("div", "info-zeile");
+        zeile.appendChild(TEAM_SCHACH._erklaerKnopfBauen());
+        wurzel.appendChild(zeile);
 
         /*
          * DAS ICON-RASTER (seit v0.12.0, Bündel A Schritt 8): alle
@@ -1015,9 +1022,46 @@ Object.assign(TEAM_SCHACH, {
          * Abschnitt 4.2).
          */
         wurzel.appendChild(TEAM_SCHACH._iconRasterBauen());
+    },
 
-        /* Die beiden Zeichen aus dem Vorrat erklären — dort ist kein Platz
-           für Text, hier schon. */
+    /*
+     * DAS i ÜBER DEM RASTER (seit v0.86.0): Dahinter steht alles, was bis
+     * v0.85.0 als Text auf der Seite stand — wie die Lootboxen wirken, was
+     * die zwei Zeichen am Vorrat bedeuten, und die Seltenheits-Skala.
+     *
+     * Die Stufen-Legende hat DARIN ihre eigenen i-Knöpfe („wie oft kommt
+     * Episch?"). Zwei Ebenen i sind eine mehr als schön — aber die Zahlen
+     * dahinter sind eine Frage, die noch seltener gestellt wird als die
+     * Skala selbst, und die Legende ist genau dafür schon gebaut.
+     */
+    _erklaerKnopfBauen() {
+        const knopf = document.createElement("button");
+        knopf.type = "button";
+        knopf.className = "info-knopf";
+        knopf.textContent = "i";
+        knopf.setAttribute("aria-label", "Wie Lootboxen wirken, und die Stufen");
+        knopf.title = "Wie Lootboxen wirken, und die Stufen";
+
+        knopf.addEventListener("click", () => DIALOG.hinweis(
+            "Lootboxen und Stufen",
+            "Wer mit einer Figur über eine Lootbox oder auf sie zieht, sammelt "
+            + "ein, was darin steckt — vorher sieht man es nie. Nur der Springer "
+            + "sammelt unterwegs nichts ein. Manche Lootboxen bringen nichts "
+            + "Gutes und wirken sofort; ob man ihnen das ansieht, entscheidet "
+            + "ein Haken beim Anlegen."
+            + "\n\nNachschub kommt, solange ein Feld frei ist; liegen gelassene "
+            + "bleiben liegen. Was du schon im Vorrat hast, kommt seltener nach.",
+            TEAM_SCHACH._erklaerInhaltBauen()));
+
+        return knopf;
+    },
+
+    /* Der Inhalt hinter dem i: die zwei Zeichen am Vorrat und die Stufen. */
+    _erklaerInhaltBauen() {
+        const halter = TEAM_SCHACH._element("div", "");
+
+        /* Die beiden Zeichen aus dem Vorrat erklären — am Vorrat selbst ist
+           kein Platz für Text, hier schon. */
         const legende = TEAM_SCHACH._element("section", "karte");
         legende.appendChild(TEAM_SCHACH._element("h3", "", "Die Zeichen am Vorrat"));
 
@@ -1035,7 +1079,7 @@ Object.assign(TEAM_SCHACH, {
             + "drückt, war zuerst."));
         legende.appendChild(blitzZeile);
 
-        wurzel.appendChild(legende);
+        halter.appendChild(legende);
 
         /*
          * DIE STUFEN-LISTEN SIND SEIT v0.18.0 WEG (Wunsch 5, 24.08.2026:
@@ -1047,10 +1091,12 @@ Object.assign(TEAM_SCHACH, {
          * Anleitung stecken hinter jeder Raster-Kachel
          * (`faehigkeitAnsehen` bzw. der Pech-Hinweis). Was NUR in den
          * Karten stand, war die Auskunft „wie oft kommt diese Stufe" —
-         * dafür steht jetzt die Stufen-Legende hier, vier Zeilen statt
-         * vier Karten.
+         * dafür steht die Stufen-Legende, vier Zeilen statt vier Karten.
+         * **Seit v0.86.0 steht auch sie hinter dem i** statt auf der Seite.
          */
-        wurzel.appendChild(TEAM_SCHACH._stufenLegendeBauen());
+        halter.appendChild(TEAM_SCHACH._stufenLegendeBauen());
+
+        return halter;
     },
 
     /*

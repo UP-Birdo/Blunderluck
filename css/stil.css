@@ -1062,6 +1062,17 @@ body.partie-fest .phasen-leiste {
     outline-offset: 1px;
 }
 
+/*
+ * Die Zeile über dem Icon-Raster (seit v0.86.0): Sie trägt nichts als das i
+ * am rechten Rand — dahinter steht alles, was bis v0.85.0 als Text auf dem
+ * Fähigkeiten-Tab stand (Nutzer-Ansage 27.08.2026).
+ */
+.info-zeile {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 8px;
+}
+
 /* ------------------------------------------------------------------ *
  * Knöpfe
  * ------------------------------------------------------------------ */

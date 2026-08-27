@@ -3389,8 +3389,27 @@ pruefe("Die Bibliothek zeigt das Raster und die Stufen-Legende (Wunsch 5)", () =
         throw new Error("das Raster zeigt " + kacheln.length + " statt " + erwartet);
     }
 
-    /* Und je Stufe eine Zeile in der Legende, mit dem i fuer die Zahlen. */
-    const zeilen = einsammeln(TEAM_SCHACH.wurzelEl, (kind) =>
+    /*
+     * DIE SKALA STEHT SEIT v0.86.0 HINTER DEM i (Nutzer-Ansage 27.08.2026)
+     * — auf der Seite selbst darf sie nicht mehr auftauchen.
+     */
+    const offen = einsammeln(TEAM_SCHACH.wurzelEl, (kind) =>
+        String(kind.className || "").indexOf("stufen-legende-zeile") !== -1, []);
+    if (offen.length !== 0) {
+        throw new Error("die Stufen-Skala steht noch offen auf der Seite ("
+            + offen.length + " Zeilen)");
+    }
+
+    /* Dafuer traegt die Seite das i, das sie zeigt. */
+    const iKnoepfe = einsammeln(TEAM_SCHACH.wurzelEl, (kind) =>
+        String(kind.className || "").indexOf("info-knopf") !== -1, []);
+    if (iKnoepfe.length === 0) {
+        throw new Error("kein i ueber dem Raster");
+    }
+
+    /* Und dahinter steht sie vollstaendig, je Stufe eine Zeile mit ihrem
+       eigenen i fuer die Zahlen. */
+    const zeilen = einsammeln(TEAM_SCHACH._erklaerInhaltBauen(), (kind) =>
         String(kind.className || "").indexOf("stufen-legende-zeile") !== -1, []);
     if (zeilen.length !== SCHACH_VARIANTEN.STUFEN.length) {
         throw new Error("die Legende hat " + zeilen.length + " Zeilen statt "
@@ -6644,11 +6663,25 @@ pruefe("Der Faehigkeiten-Tab zeichnet die Bibliothek ohne Zurueck (v0.9.0)", () 
         throw new Error("im Tab haengen noch " + karten.length + " Stufen-Karten");
     }
 
+    /* Seit v0.86.0 steht im Tab NUR das Raster — Skala und Texte liegen
+       hinter dem i (Nutzer-Ansage 27.08.2026). */
     const zeilen = einsammeln(FAEHIGKEITEN.wurzelEl, (kind) =>
         String(kind.className || "").indexOf("stufen-legende-zeile") !== -1, []);
-    if (zeilen.length !== umgebung.SCHACH_VARIANTEN.STUFEN.length) {
-        throw new Error("erwartet " + umgebung.SCHACH_VARIANTEN.STUFEN.length
-            + " Legenden-Zeilen, sind " + zeilen.length);
+    if (zeilen.length !== 0) {
+        throw new Error("die Stufen-Skala steht noch offen im Tab ("
+            + zeilen.length + " Zeilen)");
+    }
+
+    const texte = einsammeln(FAEHIGKEITEN.wurzelEl, (kind) =>
+        String(kind.className || "").indexOf("erklaerung") !== -1, []);
+    if (texte.length !== 0) {
+        throw new Error("im Tab stehen noch " + texte.length + " Erklaer-Texte");
+    }
+
+    const iKnoepfe = einsammeln(FAEHIGKEITEN.wurzelEl, (kind) =>
+        String(kind.className || "").indexOf("info-knopf") !== -1, []);
+    if (iKnoepfe.length !== 1) {
+        throw new Error("erwartet genau EIN i im Tab, sind " + iKnoepfe.length);
     }
 
     /* Im Tab ist die Leiste der Weg zurueck — kein eigener Knopf. */
