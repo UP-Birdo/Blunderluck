@@ -2,6 +2,44 @@
 
 ## Teuer erkaufte Erkenntnisse
 
+### Ein Schutz, der an einem Zaehler haengt, schuetzt nur, was den Zaehler bewegt (v0.89.1)
+
+**Nutzer-Meldung 27.08.2026:** „Wenn auf beiden Seiten alle Spieler, die in
+der Runde sind, bereit gedrueckt haben, soll das Spiel starten — derzeit
+nicht der Fall."
+
+**Die Ursache, nachgemessen gegen die echten Dateien:** Die Bereit-Zusage
+wurde auf dem LOKALEN Stand gerechnet und ueber `_sendenMitPruefung` in die
+frisch geladene Tafel gesetzt — `partieEinsetzen` ersetzt dabei die GANZE
+Partie. Hatte das Geraet des zweiten Drueckers die Zusage der Gegenseite noch
+nicht per Abgleich erhalten (das Fenster ist das Abfrage-Intervall, also
+Sekunden), ueberschrieb sein Schreibvorgang sie mit `false`. Danach fehlte
+immer eine Zusage, `kannAnpfeifen` blieb falsch, die Partie startete nie —
+und jeder erneute Druck konnte wieder die Zusage des anderen loeschen. Beide
+Bereitschaften (Seitenwahl und Aufstellung) waren betroffen.
+
+**Warum der vorhandene Schutz nicht griff:** Die Zugzaehler-Pruefung in
+`_sendenMitPruefung` weist veraltete Schreibvorgaenge ab — aber nur, wenn der
+Zaehler sich bewegt hat. Bereit-Druecken aendert ihn nicht (gemessen: bleibt
+0), also sah die Pruefung zwei „gleich aktuelle" Staende, wo einer veraltet
+war. Der Schutz war fuer Zuege gebaut und schuetzte genau die; alles, was VOR
+dem ersten Zug geschrieben wird, lief ungeschuetzt.
+
+> **Die Regel:** Wer vor dem ersten Zug schreibt, setzt seine Aenderung auf
+> den FRISCH geladenen Stand auf, nie auf den lokalen — seit v0.89.1 macht
+> `TEAM_SCHACH._bereitSenden` das fuer beide Bereitschaften, nach dem Muster
+> von `_faehigkeitImGegenzugSenden` (zusammenfuehren statt ueberschreiben).
+> Der Regressionstest stellt genau das Rennen nach (test-bildschirm.js,
+> „Der zweite Bereit-Druck loescht die Zusage der Gegenseite nicht").
+
+**Nebenbefund, noch offen:** Dasselbe Muster — lokal gerechnete Partie wird
+vor dem ersten Zug ueber `_sendenMitPruefung` geschrieben — steckt auch in
+`einladen`, `teamBeitreten`-Wegen, `armeeNeuWuerfeln` und den Regel-Aenderungen.
+Dort ist das Fenster kleiner (seltener gleichzeitig gedrueckt) und der Schaden
+geringer (kein haengendes Spiel), aber ein gleichzeitiger Beitritt und ein
+Bereit-Druck koennen sich weiterhin gegenseitig ueberschreiben. Bei Gelegenheit
+auf `_bereitSenden`-Art umstellen — als eigener Auftrag, nicht nebenbei.
+
 ### Ein Fehler, der nur GEMELDET wird, ist fuer den Aufrufer kein Fehler (v0.89.0)
 
 **Dringende Nutzer-Meldung 27.08.2026:** „Jemand hat sich angemeldet, das

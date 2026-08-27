@@ -3,6 +3,24 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.89.1 — 27.08.2026
+
+**Behoben: Das Spiel startete nicht, obwohl beide Seiten bereit gedrückt
+hatten.**
+
+- **Was passiert ist:** Drückten beide Seiten kurz nacheinander auf
+  „Bereit", löschte die zweite Zusage die erste wieder aus. Das Gerät des
+  zweiten Spielers wusste in dem Moment noch nichts von der Zusage der
+  Gegenseite und schrieb seinen — veralteten — Stand darüber. Beide sassen
+  dann vor einem Spiel, das nie anfing; wer erneut drückte, löschte damit
+  oft wieder die Zusage des anderen.
+- **Jetzt:** Beim Bereit-Drücken holt die App zuerst den aktuellen Stand
+  und trägt die eigene Zusage DORT ein. Die Zusage der Gegenseite bleibt
+  stehen, und sobald die letzte fehlende dazukommt, startet das Spiel —
+  egal, in welcher Reihenfolge und wie schnell hintereinander gedrückt
+  wird. Das gilt für beide Bereit-Knöpfe: den bei der Seitenwahl und den
+  vor dem Brett.
+
 ## v0.89.0 — 27.08.2026
 
 **Behoben: Man kam nach dem Schliessen nicht mehr in sein Konto.**

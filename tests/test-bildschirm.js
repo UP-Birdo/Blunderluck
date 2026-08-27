@@ -5934,6 +5934,106 @@ async function zeitlimitPruefen() {
             umgebung.TABS.gewechseltZu = "";
         }
         });
+
+    await pruefeMitWarten("Der zweite Bereit-Druck loescht die Zusage der Gegenseite nicht (v0.89.1)",
+        async () => {
+            /*
+             * DER GEMELDETE FEHLER (27.08.2026): „Wenn auf beiden Seiten alle
+             * Spieler bereit gedrueckt haben, soll das Spiel starten —
+             * derzeit nicht der Fall."
+             *
+             * URSACHE: Die Zusage wurde auf dem LOKALEN Stand gerechnet und
+             * ueber `_sendenMitPruefung` in die frische Tafel gesetzt. Hatte
+             * das Geraet die Zusage der Gegenseite noch nicht per Abgleich
+             * erhalten, ueberschrieb der Schreibvorgang sie — der Zugzaehler
+             * schuetzt hier nicht, denn Bereit-Druecken aendert ihn nicht.
+             * Seit v0.89.1 wendet `_bereitSenden` die Aenderung auf den
+             * FRISCH geladenen Stand an.
+             *
+             * NACHGESTELLT WIRD GENAU DAS RENNEN: Auf dem Server liegt die
+             * Zusage von Weiss, das Geraet von Schwarz haelt noch den Stand
+             * davor — fuer BEIDE Bereitschaften.
+             */
+            const echteDaten = TEAM_SCHACH.abgleich.daten;
+            const echterSpeicher = TEAM_SCHACH.abgleich.speicher;
+            const echteOffene = TEAM_SCHACH.offeneId;
+
+            try {
+                /* FALL 1: die zweite Bereitschaft (der Anpfiff). */
+                const angelegt = SCHACH_TAFEL.partieAnlegen(
+                    SCHACH_TAFEL.leereTafel(9800), "standard", "Bereit-Rennen", 9810);
+                let partie = SCHACH_RUNDE.teamBeitreten(
+                    angelegt.partie, "id-anna", "weiss", 9820);
+                partie = SCHACH_RUNDE.teamBeitreten(partie, "id-bert", "schwarz", 9820);
+                partie = SCHACH_RUNDE.bereitSetzen(partie, "weiss", true, 9830);
+                partie = SCHACH_RUNDE.bereitSetzen(partie, "schwarz", true, 9830);
+
+                /* Der Server kennt die zweite Zusage von Weiss schon … */
+                let serverTafel = SCHACH_TAFEL.partieEinsetzen(
+                    SCHACH_TAFEL.leereTafel(9800),
+                    SCHACH_RUNDE.aufstellungBereitSetzen(partie, "weiss", true, 9840),
+                    9840);
+
+                /* … das Geraet von Schwarz noch nicht. */
+                TEAM_SCHACH.abgleich.daten = SCHACH_TAFEL.partieEinsetzen(
+                    SCHACH_TAFEL.leereTafel(9800), partie, 9830);
+                TEAM_SCHACH.abgleich.speicher = {
+                    art: "gemeinsam",
+                    async laden() { return serverTafel; },
+                    async speichern(tafel) { serverTafel = tafel; return true; }
+                };
+                TEAM_SCHACH.offeneId = partie.id;
+
+                await TEAM_SCHACH.aufstellungBereitUmschalten(
+                    SCHACH_TAFEL.partie(TEAM_SCHACH.abgleich.daten, partie.id),
+                    "schwarz", true);
+
+                const geschrieben = SCHACH_TAFEL.partie(serverTafel, partie.id);
+                if (geschrieben.aufstellungBereit.weiss !== true) {
+                    throw new Error("die Zusage von Weiss wurde ueberschrieben");
+                }
+                if (geschrieben.laeuft !== true) {
+                    throw new Error(
+                        "die Partie startet nicht, obwohl beide zugesagt haben");
+                }
+
+                /* FALL 2: die erste Bereitschaft (die Seitenwahl) — dasselbe
+                   Rennen einen Bildschirm frueher. */
+                const zweite = SCHACH_TAFEL.partieAnlegen(
+                    SCHACH_TAFEL.leereTafel(9850), "standard", "Seiten-Rennen", 9860);
+                let fruehe = SCHACH_RUNDE.teamBeitreten(
+                    zweite.partie, "id-anna", "weiss", 9870);
+                fruehe = SCHACH_RUNDE.teamBeitreten(fruehe, "id-bert", "schwarz", 9870);
+
+                serverTafel = SCHACH_TAFEL.partieEinsetzen(
+                    SCHACH_TAFEL.leereTafel(9850),
+                    SCHACH_RUNDE.bereitSetzen(fruehe, "weiss", true, 9880),
+                    9880);
+                TEAM_SCHACH.abgleich.daten = SCHACH_TAFEL.partieEinsetzen(
+                    SCHACH_TAFEL.leereTafel(9850), fruehe, 9870);
+                TEAM_SCHACH.offeneId = fruehe.id;
+
+                await TEAM_SCHACH.bereitUmschalten(
+                    SCHACH_TAFEL.partie(TEAM_SCHACH.abgleich.daten, fruehe.id),
+                    "schwarz", true);
+
+                const beideBereit = SCHACH_TAFEL.partie(serverTafel, fruehe.id);
+                if (beideBereit.bereit.weiss !== true) {
+                    throw new Error(
+                        "die erste Zusage von Weiss wurde ueberschrieben");
+                }
+                if (!SCHACH_RUNDE.kannStarten(beideBereit)) {
+                    throw new Error(
+                        "die Runde erreicht die Aufstellung nicht, obwohl beide"
+                            + " Seiten zugesagt haben");
+                }
+            } finally {
+                TEAM_SCHACH.abgleich.daten = echteDaten;
+                TEAM_SCHACH.abgleich.speicher = echterSpeicher;
+                TEAM_SCHACH.offeneId = echteOffene;
+            }
+        });
+
     console.log(anzahlOk + " ok, " + anzahlFehler + " Fehler");
     process.exit(anzahlFehler === 0 ? 0 : 1);
 }

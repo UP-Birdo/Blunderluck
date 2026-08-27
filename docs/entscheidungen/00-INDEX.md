@@ -74,6 +74,12 @@ wird. Die Liste dessen, was noch kommt, steht in [../ROADMAP.md](../ROADMAP.md).
   Play-Store-Umbau braeuchte - Referenz: docs\uebergabe-schach-app.md)
 
 ## erkenntnisse.md - Teuer erkaufte Erkenntnisse
+- **Ein Schutz, der an einem Zaehler haengt, schuetzt nur, was den Zaehler
+  bewegt** (v0.89.1, „Bereit gedrueckt, Spiel startet nicht": der zweite
+  Bereit-Druck ueberschrieb mit seinem veralteten Lokalstand die Zusage der
+  Gegenseite; die Zugzaehler-Pruefung griff nicht, weil Bereit den Zaehler
+  nicht bewegt. Seit v0.89.1 setzt `_bereitSenden` die Zusage auf den frisch
+  geladenen Stand; enthaelt den offenen Nebenbefund zu `einladen` und Co.)
 - **Ein Fehler, der nur GEMELDET wird, ist fuer den Aufrufer kein Fehler**
   (v0.89.0, dringende Meldung „komme nicht mehr in meinen Account": nicht
   das Zusammenfuehren war schuld, sondern ein Fehlstart, nach dem die

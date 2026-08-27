@@ -1132,11 +1132,14 @@ const TEAM_SCHACH = {
      * Die zweite Bereitschaft umschalten — und damit anpfeifen, sobald beide
      * Seiten sie gegeben haben. Das Modell entscheidet, wann es losgeht
      * (`SCHACH_RUNDE.aufstellungBereitSetzen`); hier wird nichts gerechnet.
+     *
+     * Gesendet wird über `_bereitSenden`, nicht `_sendenMitPruefung`: Die
+     * Zusage muss auf dem FRISCHEN Stand landen, sonst löscht sie die der
+     * Gegenseite — der Bereit-Fehler von v0.89.1, Begründung dort.
      */
     async aufstellungBereitUmschalten(partie, farbe, bereit) {
-        await TEAM_SCHACH._sendenMitPruefung(
-            SCHACH_RUNDE.aufstellungBereitSetzen(partie, farbe, bereit),
-            partie.zugZaehler);
+        await TEAM_SCHACH._bereitSenden(partie, (frisch) =>
+            SCHACH_RUNDE.aufstellungBereitSetzen(frisch, farbe, bereit));
     },
 
     /*
@@ -3785,48 +3788,121 @@ const TEAM_SCHACH = {
         }
     },
 
+    /*
+     * EINE BEREITSCHAFT WIRD AUF DEN FRISCHEN STAND GESETZT, NIE AUF DEN
+     * LOKALEN (v0.89.1, der Bereit-Fehler).
+     *
+     * `_sendenMitPruefung` setzt die LOKAL gerechnete Partie in die frisch
+     * geladene Tafel. Für Züge ist das sicher — der Zugzähler weist
+     * Überholtes ab. Ein Bereit-Druck ändert den Zähler aber NICHT: Drückten
+     * beide Seiten kurz nacheinander, schrieb die zweite ihren veralteten
+     * Stand über die Zusage der ersten, und die Partie startete nie
+     * (nachgemessen 27.08.2026, `erkenntnisse.md`).
+     *
+     * Deshalb läuft die Bereitschaft wie die Fähigkeit im Gegenzug
+     * (`_faehigkeitImGegenzugSenden`): Der Stand wird frisch geholt und die
+     * Änderung auf IHN angewandt — `aenderung` bekommt die frische Partie
+     * und liefert die neue. Angezeigt wird trotzdem sofort (Hausregel,
+     * v3.8), auf dem lokalen Stand; nach dem Schreiben zeichnet der wahre.
+     *
+     * Läuft die frische Partie schon oder ist sie vorbei, gibt es nichts
+     * mehr zuzusagen oder zurückzunehmen — dann gilt der fremde Stand.
+     */
+    async _bereitSenden(partie, aenderung) {
+        const abgleich = TEAM_SCHACH.abgleich;
+
+        const vorher = abgleich.daten;
+        const sofort = SCHACH_TAFEL.partieEinsetzen(
+            abgleich.daten, aenderung(partie));
+
+        abgleich.daten = sofort;
+        TEAM_SCHACH.zeichnen(sofort);
+
+        abgleich.eigenerVorgangBeginnt();
+
+        try {
+            let tafel = sofort;
+
+            if (abgleich.speicher.art === "gemeinsam") {
+                const fremd = SCHACH_TAFEL.normalisieren(
+                    await abgleich.speicher.laden());
+                const frisch = fremd.partien[partie.id];
+
+                if (!frisch) {
+                    abgleich.daten = fremd;
+                    TEAM_SCHACH.zeichnen(fremd);
+                    await DIALOG.hinweis("Partie nicht gefunden",
+                        "Die Runde gibt es nicht mehr.");
+                    return false;
+                }
+                if (frisch.laeuft || frisch.ergebnis) {
+                    abgleich.daten = fremd;
+                    TEAM_SCHACH.zeichnen(fremd);
+                    return true;
+                }
+                tafel = SCHACH_TAFEL.partieEinsetzen(fremd, aenderung(frisch));
+            }
+
+            await abgleich.speicher.speichern(tafel);
+            abgleich.daten = tafel;
+            TEAM_SCHACH.zeichnen(tafel);
+            return true;
+        } catch (fehler) {
+            abgleich.daten = vorher;
+            TEAM_SCHACH.zeichnen(vorher);
+
+            await DIALOG.hinweis("Nicht gespeichert",
+                "Die Änderung konnte nicht gesendet werden: " + fehler.message
+                    + "\n\nSie wurde deshalb zurückgenommen.");
+            return false;
+        } finally {
+            abgleich.eigenerVorgangEndet();
+        }
+    },
+
     async bereitUmschalten(partie, farbe, bereit) {
         const person = TEAM_SCHACH._ich();
-        let neu = SCHACH_RUNDE.bereitSetzen(partie, farbe, bereit);
 
-        /*
-         * JETZT STEIGT DER COMPUTER EIN (seit v0.29.0) — auf der Seite
-         * gegenüber. Er wartete darauf, dass der Mensch sich eine Seite
-         * ausgesucht hat; deshalb steht dieser Aufruf hier und nicht beim
-         * Anlegen. Wer „Doch nicht bereit" drückt, holt niemanden dazu.
-         *
-         * Das Modell entscheidet, ob überhaupt etwas zu tun ist — hier wird
-         * nichts geprüft.
-         */
-        if (bereit && person) {
-            neu = SCHACH_BOT.beiBereitDazuholen(neu, person.id);
-        }
+        await TEAM_SCHACH._bereitSenden(partie, (frisch) => {
+            let neu = SCHACH_RUNDE.bereitSetzen(frisch, farbe, bereit);
 
-        /*
-         * UND ER BESTÄTIGT DIE AUFSTELLUNG ERNEUT (seit v0.64.1) — das ist
-         * die Behebung eines Fehlers, den v0.62.0 eingebaut hat.
-         *
-         * SO SAH ER AUS: „Manchmal beginnt das Spiel nicht, obwohl wir beide
-         * auf bereit gedrückt haben" (Nutzer, 25.08.2026, gegen den
-         * Computer). Nachgemessen und bestätigt.
-         *
-         * WARUM: `bereitSetzen(false)` streicht seit v0.62.0 die
-         * Aufstellungs-Zusage BEIDER Seiten — richtig so, sonst startete
-         * eine Partie mit einem Brett, das eine Seite nie gesehen hat. Der
-         * Computer erneuerte seine aber nur beim EINSTEIGEN
-         * (`beiBereitDazuholen` → `inRundeSetzen`), und einsteigen tut er
-         * genau einmal. Wer also einmal „Doch nicht bereit" drückte oder vom
-         * Aufstellungs-Bildschirm zurückging, hatte einen Computer, der nie
-         * wieder zusagte — und ein Spiel, das nie begann.
-         *
-         * DER AUFRUF STEHT AUSSERHALB DES `if`: Auch die Rücknahme muss ihn
-         * durchlaufen, denn sie ist es ja, die streicht. Angepfiffen wird
-         * dadurch nichts Falsches — `kannAnpfeifen` verlangt weiterhin, dass
-         * beide Seiten ihre erste Zusage stehen haben.
-         */
-        neu = SCHACH_BOT.aufstellungBestaetigen(neu);
+            /*
+             * JETZT STEIGT DER COMPUTER EIN (seit v0.29.0) — auf der Seite
+             * gegenüber. Er wartete darauf, dass der Mensch sich eine Seite
+             * ausgesucht hat; deshalb steht dieser Aufruf hier und nicht beim
+             * Anlegen. Wer „Doch nicht bereit" drückt, holt niemanden dazu.
+             *
+             * Das Modell entscheidet, ob überhaupt etwas zu tun ist — hier
+             * wird nichts geprüft.
+             */
+            if (bereit && person) {
+                neu = SCHACH_BOT.beiBereitDazuholen(neu, person.id);
+            }
 
-        await TEAM_SCHACH._sendenMitPruefung(neu, partie.zugZaehler);
+            /*
+             * UND ER BESTÄTIGT DIE AUFSTELLUNG ERNEUT (seit v0.64.1) — das ist
+             * die Behebung eines Fehlers, den v0.62.0 eingebaut hat.
+             *
+             * SO SAH ER AUS: „Manchmal beginnt das Spiel nicht, obwohl wir
+             * beide auf bereit gedrückt haben" (Nutzer, 25.08.2026, gegen den
+             * Computer). Nachgemessen und bestätigt.
+             *
+             * WARUM: `bereitSetzen(false)` streicht seit v0.62.0 die
+             * Aufstellungs-Zusage BEIDER Seiten — richtig so, sonst startete
+             * eine Partie mit einem Brett, das eine Seite nie gesehen hat. Der
+             * Computer erneuerte seine aber nur beim EINSTEIGEN
+             * (`beiBereitDazuholen` → `inRundeSetzen`), und einsteigen tut er
+             * genau einmal. Wer also einmal „Doch nicht bereit" drückte oder
+             * vom Aufstellungs-Bildschirm zurückging, hatte einen Computer,
+             * der nie wieder zusagte — und ein Spiel, das nie begann.
+             *
+             * DER AUFRUF STEHT AUSSERHALB DES `if`: Auch die Rücknahme muss
+             * ihn durchlaufen, denn sie ist es ja, die streicht. Angepfiffen
+             * wird dadurch nichts Falsches — `kannAnpfeifen` verlangt
+             * weiterhin, dass beide Seiten ihre erste Zusage stehen haben.
+             */
+            return SCHACH_BOT.aufstellungBestaetigen(neu);
+        });
     },
 
     /* Einen Freund in die Runde einladen (seit v0.13.0, Schritt 7). */
