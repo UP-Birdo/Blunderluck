@@ -69,6 +69,10 @@ wird. Die Liste dessen, was noch kommt, steht in [../ROADMAP.md](../ROADMAP.md).
   Play-Store-Umbau braeuchte - Referenz: docs\uebergabe-schach-app.md)
 
 ## erkenntnisse.md - Teuer erkaufte Erkenntnisse
+- **Eine ANGENOMMENE Groesse ist ein Fehler mit Ansage — dritter Anlauf**
+  (v0.87.0, Vorschaubretter der Bildanleitungen: Figur 162 bis 199 % statt
+  126 % der Feldbreite, weil die Schrift gegen `min(260px, 70vw)` rechnete
+  statt gegen den echten Platz; Regel: gemessen ODER relativ, nie geschaetzt)
 - **Ein `!important` schuetzt nur SEINE Eigenschaft — und ein z-index sagt
   nichts ohne seine Nachbarn** (v0.83.1, zwei Nutzer-Meldungen vom
   27.08.2026: Riss mit stehengebliebener Kachelkante, Lootbox vor der Figur;

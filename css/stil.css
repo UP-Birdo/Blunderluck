@@ -2724,6 +2724,37 @@ body.design-3d .vorschau-feld > .figur-bild {
     pointer-events: none;
 }
 
+/*
+ * IM VORSCHAUBRETT HÄNGT DIE FIGUR AN DER ZELLE, NICHT AN DER SCHRIFT
+ * (seit v0.87.0).
+ *
+ * DER FEHLER, DEN DAS BEHEBT (Nutzer-Meldung 27.08.2026: „die Grösse des
+ * Vorschau-Schachbretts im Vergleich zu den Figuren stimmt noch nicht"):
+ * Beide Bretter geben der Figur `1.85em`. Am ECHTEN Brett ist das
+ * verlässlich, weil die Feldschrift aus der GEMESSENEN Feldbreite kommt
+ * (`_figurGroesseSetzen`, 68 Prozent davon) — die Figur ist dort immer
+ * 126 Prozent der Feldbreite. Die Vorschau dagegen rechnet ihre Schrift aus
+ * einer ANGENOMMENEN Brettbreite (`min(260px, 70vw)`), und die stimmt nicht
+ * mit dem Platz überein, den sie im Dialog wirklich bekommt.
+ *
+ * Im Browser gemessen: 126 Prozent am echten Brett gegen 162 Prozent in der
+ * Vorschau am Rechner — und bis zu 199 Prozent im schmalen Fenster, weil die
+ * Annahme dort noch weiter danebenliegt. Die Figuren wuchsen der Vorschau
+ * also buchstäblich aus den Feldern.
+ *
+ * `%` LÖST DAS OHNE MESSUNG: Prozentangaben eines absolut liegenden Kindes
+ * beziehen sich auf seine Zelle. Die Rechnung steht ausgeschrieben statt als
+ * fertige Zahl — sie ist dieselbe wie am echten Brett (1,85 Schriftgrössen
+ * zu je 0,68 Feldbreiten) und bleibt damit nachvollziehbar, wenn jemand an
+ * einer der beiden Zahlen dreht. Dritter Anlauf derselben Lehre: gemessen
+ * oder relativ, nie geschätzt (`erkenntnisse.md`).
+ */
+body.design-3d .vorschau-feld > .figur-bild {
+    width: calc(1.85 * 0.68 * 100%);
+    height: calc(1.85 * 0.68 * 100%);
+    margin-left: calc(1.85 * 0.68 * -50%);
+}
+
 /* Der Platz oben wächst mit der Figur: Was über die erste Reihe hinausragt,
    würde sonst abgeschnitten. Der Faktor gehört zur Grösse oben. */
 body.design-3d .brett {
@@ -2751,13 +2782,25 @@ body.design-3d .brett {
  * dagegen setzt ihre Feldgrösse selbst über `font-size` (siehe `.vorschau`) —
  * dort ist `em` die natürliche Einheit und wächst von allein mit.
  *
- * WOHER DIE 0,8 KOMMEN: Die Figur ist `1.85em` hoch und sitzt `12%` über dem
- * Zellboden; die Schrift ist auf 80 Prozent der Zellbreite gesetzt. Damit ragt
+ * WOHER DIE 0,8 KAMEN: Die Figur ist `1.85em` hoch und sitzt `12%` über dem
+ * Zellboden; die Schrift war auf 80 Prozent der Zellbreite gesetzt. Damit ragt
  * sie 0,6 Zellen über die erste Reihe hinaus, und das sind 0,75em. Aufgerundet
- * auf 0,8em bleibt ein Rest Luft.
+ * auf 0,8em blieb ein Rest Luft.
+ *
+ * SEIT v0.87.0 IN ZELLEN GERECHNET, NICHT IN SCHRIFTGRÖSSEN. Die Figur hängt
+ * hier nicht mehr an der Schrift, sondern an ihrer Zelle (siehe die Regel bei
+ * `.vorschau-feld > .figur-bild`) — der Platz oben muss derselben Grösse
+ * folgen, sonst deckt er den Überstand mal zu grosszügig und mal gar nicht
+ * ab. Im schmalen Fenster gemessen: 41,8 px Überstand gegen 34,1 px Reserve,
+ * also 7,7 px zu wenig; die Figuren der ersten Reihe wurden oben angeschnitten.
+ *
+ * DIE RECHNUNG: Die Figur ragt `126 % + 12 % − 100 % = 38 %` einer Zellhöhe
+ * über die oberste Reihe. Eine Zelle ist so breit wie das Brett geteilt durch
+ * seine Spalten, und ein `padding-top` in Prozent zählt von der BREITE —
+ * beides trifft sich also. Wer an der Figurengrösse dreht, dreht hier mit.
  */
 body.design-3d .vorschau {
-    padding-top: 0.8em;
+    padding-top: calc(38% / var(--vorschau-spalten, 8));
 }
 
 /*

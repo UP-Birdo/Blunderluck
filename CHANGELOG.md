@@ -3,6 +3,20 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.87.0 — 27.08.2026
+
+**Die Figuren in den Bildanleitungen haben jetzt die richtige Grösse.**
+
+- In den kleinen Brettern hinter jeder Fähigkeit waren die Figuren **zu
+  gross für ihre Felder** — am Rechner rund ein Viertel, auf schmalen
+  Bildschirmen bis zur Hälfte. Jetzt füllen sie ihr Feld genau so wie am
+  echten Brett.
+- **Der Grund:** Die Anleitung rechnete ihre Figuren gegen eine
+  angenommene Brettbreite, statt gegen die, die sie im Fenster wirklich
+  bekommt. Deshalb wuchs der Fehler mit, je schmaler der Bildschirm war.
+- **Nebenbei behoben:** Im schmalen Fenster wurden die Figuren der obersten
+  Reihe oben angeschnitten — der reservierte Platz war zu knapp berechnet.
+
 ## v0.86.0 — 27.08.2026
 
 **Der Fähigkeiten-Tab zeigt nur noch die Zeichen — alles Textliche liegt

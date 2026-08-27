@@ -2,6 +2,56 @@
 
 ## Teuer erkaufte Erkenntnisse
 
+### Eine ANGENOMMENE Groesse ist ein Fehler mit Ansage — dritter Anlauf (v0.87.0)
+
+**Nutzer-Meldung 27.08.2026:** „Die Groesse des Vorschau-Schachbretts im
+Vergleich zu den Figuren stimmt noch nicht." Gemeint sind die kleinen Bretter
+der Bildanleitungen.
+
+**Gemessen (Edge kopflos, echte Dateien, echter Dialog-Pfad):**
+
+| Ansicht | Anteil Figur an der Feldbreite |
+|---|---|
+| echtes Brett, Rechner | 126,2 % |
+| echtes Brett, schmal | 124,8 % |
+| Vorschaubrett, Rechner | **161,6 %** |
+| Vorschaubrett, schmal | **198,9 %** |
+
+**Warum das echte Brett stimmt und die Vorschau nicht:** Beide geben der
+Figur `1.85em`. Am echten Brett kommt die Feldschrift aus der GEMESSENEN
+Feldbreite (`_figurGroesseSetzen`, 68 Prozent davon) — das Verhaeltnis ist
+deshalb ueber jede Fenstergroesse stabil. Die Vorschau rechnet ihre Schrift
+dagegen aus einer ANGENOMMENEN Brettbreite (`min(260px, 70vw)`), und die
+stimmt nicht mit dem Platz ueberein, den sie im Dialog wirklich bekommt
+(gemessen 226 bis 247 px). Je schmaler das Fenster, desto weiter liegt die
+Annahme daneben — deshalb wuchs der Fehler von einem Viertel auf die Haelfte.
+
+**Es ist derselbe Fehler wie schon zweimal**, nur an einer dritten Stelle:
+
+1. Quizz-v0.88, Brett: geschriebene Pixel nach dem Drehen veraltet.
+2. Blunderluck v0.74.0, Tab-Pille: dieselbe Ursache, weil die Lehre nur als
+   Kommentar an der ersten Fundstelle stand.
+3. Hier: keine veraltete Messung, sondern gar keine — eine Schaetzung an
+   ihrer Stelle.
+
+> **Die Regel:** Eine Groesse ist entweder GEMESSEN oder RELATIV — geschaetzt
+> ist sie nie. Wo `%`, `em` oder `aspect-ratio` sich auf das beziehen, was
+> wirklich da ist, braucht es keine Messung und kein Nachfuehren; wo eine
+> Zahl wie `min(260px, 70vw)` behauptet, wie breit etwas sein WIRD, ist der
+> Fehler nur eine Fenstergroesse entfernt. Behoben wurde es hier mit dem
+> ersten Weg: Die Figur haengt jetzt in Prozent an ihrer Zelle, und die
+> Rechnung (`1.85 * 0.68`) steht ausgeschrieben im Stil statt als fertige
+> Zahl — wer an einem der beiden Werte dreht, sieht den anderen daneben.
+
+**Nebenbefund, gleiche Wurzel:** Der Platz oben (`padding-top: 0.8em`) war
+aus derselben Annahme gerechnet und deckte im schmalen Fenster nur 34,1 von
+41,8 px Ueberstand — die oberste Figurenreihe wurde angeschnitten. Er rechnet
+jetzt in Zellen (`38% / Spalten`) und folgt der Figurengroesse von selbst.
+
+**Und die Testkette kann davon nichts sehen** — sie rendert nicht. Gefunden
+hat es der Blick des Nutzers, belegt die Browser-Messung; dieselbe
+Feststellung wie beim Riss und der Lootbox einen Tag zuvor.
+
 ### Ein `!important` schuetzt nur SEINE Eigenschaft — und ein z-index sagt nichts ohne seine Nachbarn (v0.83.1)
 
 **Zwei Meldungen des Nutzers am 27.08.2026, ein gemeinsamer Boden:** „Der
