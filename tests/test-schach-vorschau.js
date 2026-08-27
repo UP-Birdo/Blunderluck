@@ -184,6 +184,39 @@ pruefe("Faehigkeiten mit Zielfeld zeigen den Handgriff als eigenen Schritt", () 
     }
 });
 
+pruefe("Die Zielwahl nennt Rahmen, Ziehen und den Einsetzen-Knopf (Punkt 11)", () => {
+    /*
+     * ROADMAP Punkt 11 (nach v0.84.0): Der Tipp setzt nur den gruenen
+     * Rahmen, der Rahmen laesst sich auch ziehen, und eingesetzt wird erst
+     * ueber den Knopf unter dem Brett. Die Anleitung muss diese Handgriffe
+     * nennen — vorher las sich der Satz so, als wirke der Tipp sofort.
+     * Geprueft wird der Wortlaut nur grob (je ein Schluesselwort), damit
+     * der Test keine spaetere Textpflege blockiert.
+     */
+    const mitZiel = Object.keys(SCHACH_VARIANTEN.FAEHIGKEITEN)
+        .filter((art) => SCHACH_VARIANTEN.FAEHIGKEITEN[art].art === "ziel");
+
+    for (const art of mitZiel) {
+        const schritte = SCHACH_VORSCHAU.schritte(art);
+        const zielSchritt = schritte.filter((schritt) => schritt.tipp >= 0)[0];
+
+        wahr(zielSchritt.text.indexOf("verschieben") !== -1,
+            art + ": das Ziehen des Rahmens wird genannt");
+        wahr(zielSchritt.text.indexOf("Einsetzen") !== -1,
+            art + ": der Einsetzen-Knopf wird genannt");
+    }
+
+    /* Die Faehigkeiten mit Zusatz-Knopf (Mauer-Lage, Tausch-Richtung,
+       Nudelholz-Rand) nennen auch ihn. */
+    for (const art of Object.keys(SCHACH_VORSCHAU.PLATZIER_KNOEPFE)) {
+        const schritte = SCHACH_VORSCHAU.schritte(art);
+        const zielSchritt = schritte.filter((schritt) => schritt.tipp >= 0)[0];
+
+        wahr(zielSchritt.text.indexOf("Knopf unter dem Brett") !== -1,
+            art + ": der Zusatz-Knopf wird genannt");
+    }
+});
+
 pruefe("Der Vorrat-Knopf steht in JEDEM Bild, der Finger nur in einem (v0.58)", () => {
     /*
      * BIS v0.57 KAM DIE MARKE MIT EINEM BILD UND VERSCHWAND WIEDER — die

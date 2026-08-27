@@ -361,9 +361,12 @@ const SCHACH_VORSCHAU = {
                Zug, danach ist der Gegner dran — ein eigener Zug im Anschluss
                wäre eine Lüge im Bild. Bis v0.79 zeigte das dritte Bild genau
                das, was die Fähigkeit jetzt nicht mehr hergibt. */
+            /* Der Hinweis auf den Dreh-Knopf steht seit dem Abgleich mit
+               v0.84.0 nicht mehr hier, sondern am Zielwahl-Bild
+               (`PLATZIER_KNOEPFE`) — dort, wo der Knopf im Spiel auch
+               steht. Hier stand er doppelt. */
             vorher: "Angetippt wird ein Randfeld — von dort rollt das Holz "
-                + "über die ganze Bahn. Mit dem Knopf am Brett drehst du, von "
-                + "welchem Rand es kommt.",
+                + "über die ganze Bahn.",
             nachher: "Jede Figur in dieser Spalte rückt ein Feld weiter, "
                 + "sobald die Walze sie erreicht — die eigenen wie die "
                 + "fremden. Das Nudelholz IST dein Zug."
@@ -410,7 +413,7 @@ const SCHACH_VORSCHAU = {
             nachspiel: [19, 6],
             vorher: "Der schwarze Turm zielt die ganze Spalte hinunter auf "
                 + "deine Dame.",
-            nachher: "Die Mauer legt sich um das angetippte Feld und sperrt "
+            nachher: "Die Mauer legt sich um das gewählte Feld und sperrt "
                 + "die "
                 + "Spalte — für beide Seiten. Die Zahl zählt herunter, bis sie "
                 + "zerfällt.",
@@ -1327,9 +1330,8 @@ const SCHACH_VORSCHAU = {
                 marken: hatFigur ? [beispiel.figur] : [],
                 knopfTipp: true,
                 text: "Du tippst " + beschreibung.titel + " in deinem Vorrat an."
-                    + (hatZiel || beispiel.zug
-                        ? " Danach fragt das Brett nach dem Rest."
-                        : " Mehr ist nicht zu tun — sie wirkt sofort.")
+                    + SCHACH_VORSCHAU._vorratSatz(beschreibung, hatZiel,
+                        !!beispiel.zug)
             }));
         }
 
@@ -1387,15 +1389,30 @@ const SCHACH_VORSCHAU = {
         if (hatZiel) {
             const moeglich = SCHACH_RUNDE.zielFelder(vorher, SCHACH_VORSCHAU.SPIELER, art);
 
+            /*
+             * DER SCHRITT NENNT SEIT DEM ABGLEICH MIT v0.84.0 ALLE HANDGRIFFE
+             * (ROADMAP Punkt 11): Der Tipp setzt nur den gruenen Rahmen (seit
+             * v0.57), er laesst sich seither auch mit Finger oder Maus ziehen
+             * (v0.84.0), und eingesetzt wird erst ueber den Knopf „Einsetzen"
+             * unter dem Brett. Bis dahin las sich der Satz so, als wirke der
+             * Tipp sofort. Den Zusatz-Knopf mancher Faehigkeiten nennt
+             * `PLATZIER_KNOEPFE`.
+             */
             liste.push(SCHACH_VORSCHAU._schritt({
                 runde: vorher,
                 marken: [beispiel.ziel],
                 wahl: moeglich.filter((feld) => feld !== beispiel.ziel),
                 tipp: beispiel.ziel,
-                text: (moeglich.length > 1)
-                    ? ("Du tippst " + name(beispiel.ziel) + " an. Hell umrandet "
-                        + "sind die anderen Felder, die auch gehen.")
-                    : ("Du tippst " + name(beispiel.ziel) + " an.")
+                text: ((moeglich.length > 1)
+                    ? ("Du tippst " + name(beispiel.ziel) + " an — hell "
+                        + "umrandet sind die anderen Felder, die auch gehen.")
+                    : ("Du tippst " + name(beispiel.ziel) + " an."))
+                    + " Der grüne Rahmen zeigt, was passiert; du kannst ihn "
+                    + "auch mit Finger oder Maus verschieben."
+                    + (SCHACH_VORSCHAU.PLATZIER_KNOEPFE[art]
+                        ? " " + SCHACH_VORSCHAU.PLATZIER_KNOEPFE[art]
+                        : "")
+                    + " Erst der Knopf „Einsetzen“ unter dem Brett setzt ein."
             }));
 
         } else if (beispiel.zug) {
@@ -1511,6 +1528,82 @@ const SCHACH_VORSCHAU = {
     GRAEBER_ZEIGEN: {
         friedhof: SCHACH.SCHWARZ,
         wiederbelebung: SCHACH.WEISS
+    },
+
+    /*
+     * Der Zusatz-Knopf beim Platzieren — je Faehigkeit ein Satz (ROADMAP
+     * Punkt 11). Drei Faehigkeiten tragen unter dem Brett einen eigenen
+     * Knopf neben „Einsetzen" und „Abbrechen": die Lage der Mauer (seit
+     * v0.80), die Richtung des Platztauschs (v0.101) und der Rand des
+     * Nudelholzes (v0.117). Die Anleitung muss ihn nennen, sonst fehlt ein
+     * Handgriff, den es im Match wirklich gibt — der Satz haengt am
+     * Zielwahl-Bild, denn dort ist der Knopf auch im Spiel zu sehen.
+     */
+    PLATZIER_KNOEPFE: {
+        mauer: "Mit dem Knopf unter dem Brett legst du sie waagerecht "
+            + "oder senkrecht.",
+        platztausch: "Der Knopf unter dem Brett wechselt die Richtung: "
+            + "vor, zurück, links oder rechts.",
+        nudelholz: "Der Knopf unter dem Brett dreht, von welchem Rand "
+            + "es rollt."
+    },
+
+    /*
+     * Was nach dem Griff an den Vorrat WIRKLICH passiert — der zweite Teil
+     * des Satzes im Vorrat-Bild (ROADMAP Punkt 11).
+     *
+     * Bis zum Abgleich mit v0.84.0 gab es nur zwei Fassungen („Danach fragt
+     * das Brett nach dem Rest" / „sie wirkt sofort"), und beide verschwiegen
+     * Handgriffe, die es im Match gibt: das Fenster mit dem
+     * „Einsetzen"-Knopf, das nach JEDEM Griff an den Vorrat kommt, die
+     * Rueckfragen von Haendler und Dieb, den Pflicht-Zug nach Sprung und
+     * Teleport (`istDerZug`) und die Figuren-Wahl des Bauernschubs. Jede
+     * Art bekommt deshalb ihren eigenen Satz — aus denselben Schaltern, mit
+     * denen auch der Bildschirm entscheidet (`art`, `istDerZug`,
+     * `nurImGegenzug`).
+     */
+    _vorratSatz(beschreibung, hatZiel, hatZug) {
+        /* Haendler und Dieb oeffnen ihr Angebots-Fenster direkt — ohne das
+           allgemeine Einsetzen-Fenster (`handelAnbieten`,
+           `diebstahlAnbieten` in team-schach.js). */
+        if (beschreibung.art === "handel") {
+            return " Er zeigt dir sofort sein Angebot in einem Fenster — "
+                + "du darfst annehmen oder ablehnen.";
+        }
+        if (beschreibung.art === "diebstahl") {
+            return " Ein Fenster zeigt dir, was du dem Gegner abnimmst — "
+                + "erst wenn du zugreifst, ist er verbraucht.";
+        }
+
+        const fenster = " Ein Fenster erklärt sie — mit „Einsetzen“ "
+            + "geht es los.";
+
+        if (hatZiel) {
+            return fenster + " Danach fragt das Brett nach dem Feld.";
+        }
+        if (beschreibung.istDerZug) {
+            return fenster + " Sie ist dann dein Zug: Du tippst sofort eine "
+                + "Figur an und dann ihr Ziel — nur das neue Muster geht.";
+        }
+        if (beschreibung.nurImGegenzug) {
+            return fenster + " Das geht nur, während der Gegner am Zug ist — "
+                + "bei deinem nächsten Zug tippst du Figur und Ziel wie "
+                + "gewohnt an.";
+        }
+        if (hatZug) {
+            return fenster + " Danach ziehst du deinen Zug ganz normal.";
+        }
+
+        /* Die Art "sofort" ist heute allein der Bauernschub — nur er kann
+           Bauern auf die letzte Reihe bringen, und dann fragt ihn ein
+           Fenster nach der Figur (seit v0.56). */
+        if (beschreibung.art === "sofort") {
+            return fenster + " Bringt der Schub einen Bauern auf die letzte "
+                + "Reihe, fragt dich zuerst ein Fenster, welche Figur er "
+                + "wird.";
+        }
+
+        return fenster + " Mehr ist nicht zu tun — sie wirkt sofort.";
     },
 
     /*

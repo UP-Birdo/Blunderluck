@@ -3,6 +3,23 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.101.0 — 27.08.2026
+
+**Alle 22 Item-Anleitungen sagen jetzt, was du wirklich anklicken musst.**
+
+- Die Bildanleitungen der Fähigkeiten waren teils hinter der Bedienung
+  zurück: Sie verschwiegen das Einsetzen-Fenster, den „Einsetzen"-Knopf
+  unter dem Brett und dass sich der grüne Ziel-Rahmen seit v0.84.0 auch
+  mit dem Finger ziehen lässt.
+- Die gröbsten Richtigstellungen: Händler und Dieb behaupteten „wirkt
+  sofort" — tatsächlich öffnen beide ein Fenster, das du erst annehmen
+  musst. Sprung und Teleport verschwiegen, dass die Fähigkeit dein Zug
+  IST (nach dem Einsetzen musst du Figur und Ziel antippen). Mauer,
+  Platztausch und Nudelholz nennen jetzt ihre Zusatz-Knöpfe (Lage,
+  Richtung, Drehen), der Bauernschub die Figuren-Wahl bei der Umwandlung.
+- An den Regeln und der Bedienung selbst ändert sich nichts — nur die
+  Anleitungen sagen jetzt die Wahrheit.
+
 ## v0.100.0 — 27.08.2026
 
 **Die Spieler-Verwaltung ist ein eigener Bildschirm mit Tabelle.**
