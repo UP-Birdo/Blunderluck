@@ -85,7 +85,8 @@ wird. Die Liste dessen, was noch kommt, steht in [../ROADMAP.md](../ROADMAP.md).
   das Zusammenfuehren war schuld, sondern ein Fehlstart, nach dem die
   Anmeldung mit dem LEEREN Stand lief; enthaelt die zweite Regel — ein
   wartender Zustand braucht einen Weg zurueck, wenn die Daten nachkommen —
-  und den offenen Nebenbefund „Konto wird erst nach 500 ms geschrieben")
+  der Nebenbefund „Konto wird erst nach 500 ms geschrieben" ist seit
+  v0.91.0 erledigt: `Abgleich.sofortSchreiben`)
 - **Eine ANGENOMMENE Groesse ist ein Fehler mit Ansage — dritter Anlauf**
   (v0.87.0, Vorschaubretter der Bildanleitungen: Figur 162 bis 199 % statt
   126 % der Feldbreite, weil die Schrift gegen `min(260px, 70vw)` rechnete

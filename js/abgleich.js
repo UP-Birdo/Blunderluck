@@ -145,7 +145,44 @@ class Abgleich {
             });
         }
 
+        /*
+         * BEIM VERSCHWINDEN DER SEITE WIRD SOFORT GESCHRIEBEN (v0.91.0).
+         *
+         * Eine offene Änderung wartet sonst bis zu `schreibVerzoegerungMs`
+         * (500 ms) — wer die Seite direkt nach dem Anlegen eines Kontos
+         * schloss, verlor es (Nebenbefund v0.89.0, `erkenntnisse.md`).
+         *
+         * Der Wechsel auf „verborgen" ist der letzte Moment, in dem die
+         * Seite verlässlich noch lebt (Handy in die Tasche, Tab-Wechsel) —
+         * dort läuft der normale Schreibweg samt Zusammenführung durch.
+         * `pagehide` fängt zusätzlich das echte Schliessen, so weit der
+         * Browser die Aufrufe noch zu Ende führt. Beides gilt auch für den
+         * lokalen Speicher: Sofort schreiben schadet dort nie.
+         */
+        document.addEventListener("visibilitychange", () => {
+            if (document.hidden) {
+                this.sofortSchreiben();
+            }
+        });
+        window.addEventListener("pagehide", () => this.sofortSchreiben());
+
         return geladen;
+    }
+
+    /*
+     * Eine geplante Schreibverzögerung überspringen: Was offen ist, wird
+     * JETZT geschrieben. Für den Abgang (oben) und für Änderungen, die zu
+     * wichtig für 500 ms Wartezeit sind — das frisch angelegte Konto
+     * (`anmeldung.js`, v0.91.0).
+     */
+    sofortSchreiben() {
+        if (this.schreibZeitgeber !== null) {
+            window.clearTimeout(this.schreibZeitgeber);
+            this.schreibZeitgeber = null;
+        }
+        if (this.aenderungOffen && !this.schreibtGerade) {
+            this.schreiben();
+        }
     }
 
     /*

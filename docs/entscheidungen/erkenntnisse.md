@@ -83,11 +83,14 @@ sich ueber normale Bedienung nicht zerreissen.
 > seiner gemerkten Kennung eintrifft. Damit heilt sich der Fall auch dann,
 > wenn eine kuenftige Aenderung Schritt 1 bis 3 wieder einbaut.
 
-**Nebenbefund, noch offen:** Ein frisch angelegtes Konto wird erst nach
-`schreibVerzoegerungMs` (500 ms) geschrieben, und es gibt keinen
-`pagehide`-Handler, der das beim Schliessen der Seite nachholt. Wer die Seite
-im selben Augenblick schliesst, verliert es. Getrennt zu bauen — die
-Selbstheilung oben hilft dort nicht, weil nie etwas geschrieben wurde.
+**Nebenbefund — erledigt in v0.91.0:** Ein frisch angelegtes Konto wurde
+erst nach `schreibVerzoegerungMs` (500 ms) geschrieben, und es gab keinen
+Abgangs-Handler, der das beim Schliessen nachholte. Seit v0.91.0 gibt es
+`Abgleich.sofortSchreiben()`: gerufen direkt nach dem Konto-Anlegen und beim
+Verschwinden der Seite (`visibilitychange` auf verborgen — der letzte
+Moment, in dem die Seite verlaesslich lebt — plus `pagehide` fuers echte
+Schliessen). Restrisiko bleibt nur das harte Toeten des Browsers in der
+knappen Sekunde zwischen Klick und Schreibende.
 
 ### Eine ANGENOMMENE Groesse ist ein Fehler mit Ansage — dritter Anlauf (v0.87.0)
 

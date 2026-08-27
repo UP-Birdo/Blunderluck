@@ -451,6 +451,17 @@ const ANMELDUNG = {
             true
         );
 
+        /*
+         * DAS NEUE KONTO WARTET NICHT AUF DIE SCHREIBVERZÖGERUNG (v0.91.0).
+         *
+         * `aendern` schreibt erst nach 500 ms — wer die Seite sofort nach
+         * dem Erstellen schloss, verlor sein Konto (Nebenbefund v0.89.0).
+         * Ein frisches Konto ist die eine Änderung, die keine Sekunde
+         * unterwegs sein darf: Sie wird sofort geschrieben, über den
+         * normalen Weg samt Zusammenführung.
+         */
+        abgleich.sofortSchreiben();
+
         ANMELDUNG._vollbildSchliessen();
     },
 

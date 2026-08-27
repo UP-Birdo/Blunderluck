@@ -5344,6 +5344,58 @@ async function zeitlimitPruefen() {
             }
         });
 
+    await pruefeMitWarten("Sofort schreiben ueberspringt die Schreibverzoegerung (v0.91.0)",
+        async () => {
+            /*
+             * NEBENBEFUND v0.89.0: Ein frisch angelegtes Konto wartete bis zu
+             * 500 ms auf die Schreibverzoegerung — wer die Seite sofort
+             * schloss, verlor es. `sofortSchreiben` (gerufen nach dem
+             * Konto-Anlegen und beim Verschwinden der Seite) schreibt die
+             * offene Aenderung JETZT und raeumt den geplanten Zeitgeber weg.
+             */
+            const geschrieben = [];
+            const abgleich = new Abgleich(
+                {
+                    art: "gemeinsam",
+                    beschreibung: "Attrappe",
+                    laden: async () => ({ stand: "server" }),
+                    speichern: async (daten) => {
+                        geschrieben.push(JSON.stringify(daten));
+                        return true;
+                    }
+                },
+                { abfrageIntervallMs: 3000, schreibVerzoegerungMs: 60000 },
+                {
+                    beiDaten: () => undefined,
+                    beiStatus: () => undefined,
+                    leereDaten: () => ({ stand: "leer" }),
+                    inhaltGleich: (a, b) => JSON.stringify(a) === JSON.stringify(b)
+                }
+            );
+
+            /* Die Aenderung liegt an, der Zeitgeber der Testumgebung feuert
+               absichtlich nie — genau wie eine echte Verzoegerung, die das
+               Schliessen der Seite nicht mehr abwartet. */
+            abgleich.aendern({ stand: "neues Konto" }, false);
+            if (geschrieben.length !== 0) {
+                throw new Error("geschrieben, obwohl die Verzoegerung laeuft");
+            }
+
+            abgleich.sofortSchreiben();
+            await new Promise((fertig) => setTimeout(fertig, 0));
+
+            if (geschrieben.length !== 1
+                    || geschrieben[0].indexOf("neues Konto") === -1) {
+                throw new Error("sofortSchreiben hat die Aenderung nicht geschrieben");
+            }
+            if (abgleich.schreibZeitgeber !== null) {
+                throw new Error("der alte Zeitgeber laeuft weiter");
+            }
+            if (abgleich.aenderungOffen) {
+                throw new Error("die Aenderung gilt noch als offen");
+            }
+        });
+
     /* ---------------------------------------------------------------- *
      * Wunsch 1 (24.08.2026): „Spielen" legt die Runde an — ohne Namen
      * ---------------------------------------------------------------- */

@@ -3,6 +3,20 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.91.0 — 27.08.2026
+
+**Ein neues Konto ist sofort gesichert — auch wenn du die Seite gleich
+wieder schliesst.**
+
+- **Was dahintersteckt:** Die App sammelt Änderungen kurz (eine halbe
+  Sekunde), bevor sie speichert — das schont die Verbindung. Für ein
+  frisch angelegtes Konto war diese halbe Sekunde aber ein Risiko: Wer
+  die Seite im selben Augenblick schloss, verlor das Konto.
+- **Jetzt:** Ein neues Konto wird ohne Wartezeit gespeichert. Zusätzlich
+  speichert die App alles noch Offene, sobald die Seite in den Hintergrund
+  geht oder geschlossen wird — auf dem Handy also auch dann, wenn du nur
+  kurz in eine andere App wechselst.
+
 ## v0.90.0 — 27.08.2026
 
 **Robuster vor dem Spielstart: Gleichzeitige Klicks löschen einander nichts
