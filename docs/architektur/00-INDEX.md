@@ -92,11 +92,12 @@ Bildschirm-Abschnitte sind Vergangenheit.
     - Das Spielerprofil (seit v3.3)
     - Wer darf löschen? (seit v3.3)
 
-## 07-querschnitt.md — Wunsch-Weg, Tab-Register, Konventionen, Sicherheit/Datenschutz
+## 07-querschnitt.md — Wunsch-Weg, Fehlerfang, Tab-Register, Konventionen, Sicherheit/Datenschutz
 
 (Der Wortbibliothek-Abschnitt gehoerte zum Imposter und ist Vergangenheit.)
 
 - Der Weg eines Wunsches
+- Der globale Fehlerfang (seit v0.105.0)
 - Die Wortbibliothek (nur noch Erbe)
 - Tab-Register
 - Code-Konventionen

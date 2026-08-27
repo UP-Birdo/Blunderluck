@@ -3,6 +3,20 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.105.0 — 27.08.2026
+
+**Wenn etwas schiefgeht, siehst du das jetzt — statt einer weissen Seite.**
+
+- Bisher konnte ein Programmfehler die Seite leer lassen: kein Hinweis,
+  keine Erklärung, kein Weg, es zu melden. Jetzt erscheint oben ein
+  ruhiger Streifen mit einem verständlichen Satz und drei Knöpfen: **Neu
+  laden**, **Fehler melden** und **Schliessen**.
+- **„Fehler melden" nimmt die technische Meldung mit** — sie steht im
+  Formular schon drin, du musst nichts abtippen.
+- Der Streifen erscheint höchstens einmal; passiert mehr, zählt er still
+  mit („und 3 weitere Fehler"). Weggeklickt bleibt er weg, und das Spiel
+  läuft normal weiter.
+
 ## v0.104.0 — 27.08.2026
 
 **Hinter dem Code-Knopf: Freunde suchen und die letzten drei Mitspieler.**

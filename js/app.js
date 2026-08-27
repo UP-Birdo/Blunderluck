@@ -22,7 +22,265 @@
  *   4. Tab-Leiste zeichnen (baut die Gerüste auf),
  *   5. Daten laden,
  *   6. anmelden — erst jetzt ist bekannt, wer schon mitspielt.
+ *
+ * GANZ OBEN in dieser Datei steht der globale Fehlerfang (FEHLERFANG) — vor
+ * dem Startpunkt, weil er auch dessen Fehler auffangen soll.
  */
+
+/* ------------------------------------------------------------------ *
+ * DER GLOBALE FEHLERFANG (seit v0.105.0)
+ *
+ * WOGEGEN ER STEHT: Fliegt beim Start etwas auseinander, blieb bis dahin eine
+ * WEISSE SEITE zurück — ohne Meldung, ohne Hinweis aufs Neuladen und ohne
+ * Meldeweg. Der Nutzer konnte nicht einmal sagen, was passiert ist; der
+ * Wunsch-Knopf hängt in den Einstellungen, und die erreicht man nur, wenn die
+ * App läuft.
+ *
+ * WARUM DIESE STELLE: Der Fang wird beim ÜBERSETZEN dieser Datei angemeldet,
+ * nicht erst in `DOMContentLoaded` — sonst wäre er genau in dem Moment noch
+ * nicht da, in dem `APP.starten` stolpert. `app.js` ist das letzte Skript der
+ * Seite; ein Fehler beim LADEN einer früheren Datei entgeht ihm deshalb. In
+ * der Praxis fällt auch der auf: Fehlt danach ein Baustein, scheitert
+ * `APP.starten` daran, und dieser Fehler landet hier.
+ *
+ * WAS ER NICHT TUT: Er repariert nichts und verschluckt nichts. Jeder Fehler
+ * geht zusätzlich unverändert in die Entwickler-Konsole (`console.error`) —
+ * beim Bauen soll man ihn dort weiterhin sehen.
+ *
+ * WARUM ER SICH NICHT AUF `DIALOG` VERLÄSST: `DIALOG` ist selbst App-Code und
+ * damit ein möglicher Fehlerort. Der Streifen wird deshalb mit eigenen Klassen
+ * direkt in den `body` gehängt; gebraucht wird nur `document.body`.
+ * ------------------------------------------------------------------ */
+
+const FEHLERFANG = {
+
+    /* Wie viele Fehler seit dem Laden der Seite. Der ERSTE baut den Streifen,
+       jeder weitere erhöht nur die kleine Zahl darin. */
+    anzahl: 0,
+
+    /* Die technische Meldung des ersten Fehlers — sie geht in den Melde-Text. */
+    ersteMeldung: "",
+
+    kastenEl: null,
+    zaehlerEl: null,
+
+    /* Einmal weggeklickt, kommt der Streifen bis zum Neuladen nicht wieder.
+       Sonst wäre der Schliessen-Knopf wertlos: Ein Fehler in einer Schleife
+       baute ihn im nächsten Augenblick erneut auf. */
+    verworfen: false,
+
+    /*
+     * RÜCKFALL-SPERRE. Wirft der Fang selbst (etwa weil es noch keinen `body`
+     * gibt), meldet der Browser DIESEN Fehler wieder an genau diesen Fang —
+     * eine Endlosschleife. Die Sperre bricht sie.
+     */
+    _laeuft: false,
+
+    registrieren() {
+        window.addEventListener("error", (ereignis) => {
+            FEHLERFANG.melden(FEHLERFANG._textAusFehler(ereignis));
+        });
+
+        /* Ein Versprechen, das ablehnt und niemanden findet, der es auffängt —
+           bei dieser App der häufigere Fall, weil Laden und Speichern
+           durchgehend über `await` laufen. */
+        window.addEventListener("unhandledrejection", (ereignis) => {
+            FEHLERFANG.melden(FEHLERFANG._textAusAblehnung(ereignis));
+        });
+    },
+
+    melden(text) {
+        if (FEHLERFANG._laeuft) {
+            return;
+        }
+        FEHLERFANG._laeuft = true;
+
+        try {
+            FEHLERFANG.anzahl++;
+
+            /* NICHTS VERSCHLUCKEN — die Konsole bekommt jeden Fehler. */
+            console.error("[Blunderluck] " + text);
+
+            if (FEHLERFANG.verworfen) {
+                return;
+            }
+
+            if (FEHLERFANG.anzahl === 1) {
+                FEHLERFANG.ersteMeldung = text;
+                FEHLERFANG._kastenBauen();
+            } else {
+                FEHLERFANG._zaehlerAktualisieren();
+            }
+        } catch (eigenerFehler) {
+            console.error("[Blunderluck] Der Fehlerfang selbst ist gestolpert: "
+                + eigenerFehler);
+        } finally {
+            FEHLERFANG._laeuft = false;
+        }
+    },
+
+    /*
+     * DER STREIFEN — oben am Rand, nicht über dem Brett.
+     *
+     * WARUM OBEN und nicht unten: Bleibt die Seite weiss, sucht das Auge oben
+     * — dort steht auch sonst jede Meldung dieser App (`<p id="hinweis">`).
+     * Der untere Rand ist im Spiel besetzt (Fussleiste, am iPhone zusätzlich
+     * der Systembalken); ein Streifen dort verdeckte genau die Knöpfe, mit
+     * denen man weiterspielen soll.
+     *
+     * EINE HAUPTAKTION: „Neu laden" (blau). „Fehler melden" und „Schliessen"
+     * sind still — sie sind Nebenwege.
+     */
+    _kastenBauen() {
+        if (!document.body) {
+            return;
+        }
+
+        const kasten = document.createElement("div");
+        kasten.className = "fehler-streifen";
+        kasten.setAttribute("role", "alert");
+
+        const textTeil = document.createElement("div");
+        textTeil.className = "fehler-streifen-text";
+
+        const titel = document.createElement("p");
+        titel.className = "fehler-streifen-titel";
+        titel.textContent = "Da ist etwas schiefgegangen.";
+        textTeil.appendChild(titel);
+
+        const satz = document.createElement("p");
+        satz.className = "fehler-streifen-satz";
+        satz.textContent = "Die App hat einen Fehler gemacht — nicht du."
+            + " Meistens hilft Neu laden. Passiert es wieder, melde es bitte:"
+            + " die technische Meldung ist im Formular schon eingetragen.";
+        textTeil.appendChild(satz);
+
+        const zaehler = document.createElement("p");
+        zaehler.className = "fehler-streifen-zaehler";
+        zaehler.hidden = true;
+        textTeil.appendChild(zaehler);
+        FEHLERFANG.zaehlerEl = zaehler;
+
+        kasten.appendChild(textTeil);
+
+        const knoepfe = document.createElement("div");
+        knoepfe.className = "fehler-streifen-knoepfe";
+
+        knoepfe.appendChild(FEHLERFANG._knopfBauen(
+            "Neu laden", "knopf knopf-haupt knopf-klein",
+            () => window.location.reload()));
+
+        /*
+         * DER MELDE-WEG IST DER VORHANDENE (`js\wunsch.js`) — nur ohne Dialog:
+         * `WUNSCH.formularOeffnen` öffnet das vorbefüllte GitHub-Formular
+         * unmittelbar, mit der technischen Meldung als Text. So muss niemand
+         * eine Fehlermeldung abtippen.
+         *
+         * Gibt es `WUNSCH` nicht (die Datei kam gar nicht durch), fehlt der
+         * Knopf lieber ganz, als tot dazustehen.
+         */
+        if (typeof WUNSCH !== "undefined"
+                && typeof WUNSCH.formularOeffnen === "function") {
+            knoepfe.appendChild(FEHLERFANG._knopfBauen(
+                "Fehler melden", "knopf knopf-still knopf-klein",
+                () => WUNSCH.formularOeffnen(FEHLERFANG.meldeText())));
+        }
+
+        knoepfe.appendChild(FEHLERFANG._knopfBauen(
+            "Schliessen", "knopf knopf-still knopf-klein",
+            () => FEHLERFANG.schliessen()));
+
+        kasten.appendChild(knoepfe);
+
+        document.body.appendChild(kasten);
+        FEHLERFANG.kastenEl = kasten;
+    },
+
+    _knopfBauen(beschriftung, klasse, aktion) {
+        const knopf = document.createElement("button");
+        knopf.type = "button";
+        knopf.className = klasse;
+        knopf.textContent = beschriftung;
+        knopf.addEventListener("click", aktion);
+        return knopf;
+    },
+
+    _zaehlerAktualisieren() {
+        if (!FEHLERFANG.zaehlerEl) {
+            return;
+        }
+
+        const weitere = FEHLERFANG.anzahl - 1;
+        FEHLERFANG.zaehlerEl.textContent = (weitere === 1)
+            ? "und ein weiterer Fehler"
+            : "und " + weitere + " weitere Fehler";
+        FEHLERFANG.zaehlerEl.hidden = false;
+    },
+
+    schliessen() {
+        FEHLERFANG.verworfen = true;
+
+        if (FEHLERFANG.kastenEl && FEHLERFANG.kastenEl.parentNode) {
+            FEHLERFANG.kastenEl.parentNode.removeChild(FEHLERFANG.kastenEl);
+        }
+        FEHLERFANG.kastenEl = null;
+        FEHLERFANG.zaehlerEl = null;
+    },
+
+    /* Was im Melde-Formular stehen soll: die Bitte um einen Satz Zusammenhang
+       und darunter die technische Meldung im Wortlaut. */
+    meldeText() {
+        let text = "Automatische Fehlermeldung aus der App."
+            + "\n\nWas ich gerade gemacht habe: (bitte kurz ergänzen)"
+            + "\n\nTechnische Meldung:\n" + FEHLERFANG.ersteMeldung;
+
+        if (FEHLERFANG.anzahl > 1) {
+            text += "\n\nSeit dem Laden der Seite: " + FEHLERFANG.anzahl
+                + " Fehler.";
+        }
+        return text;
+    },
+
+    /*
+     * Aus dem Ereignis die aussagekräftigste Form ziehen: Der Stapel nennt
+     * Datei und Zeile mit, ist aber lang — vier Zeilen reichen, um die Stelle
+     * zu finden, und passen noch in ein Formular.
+     */
+    _textAusFehler(ereignis) {
+        const fehler = ereignis && ereignis.error;
+
+        if (fehler && fehler.stack) {
+            return FEHLERFANG._stapelKuerzen(fehler.stack);
+        }
+
+        const teile = [];
+        if (ereignis && ereignis.message) {
+            teile.push(String(ereignis.message));
+        }
+        if (ereignis && ereignis.filename) {
+            teile.push(ereignis.filename + ":" + ereignis.lineno
+                + ":" + ereignis.colno);
+        }
+        return teile.length > 0 ? teile.join("\n") : "Unbekannter Fehler";
+    },
+
+    _textAusAblehnung(ereignis) {
+        const grund = ereignis && ereignis.reason;
+
+        if (grund && grund.stack) {
+            return "Nicht aufgefangene Ablehnung:\n"
+                + FEHLERFANG._stapelKuerzen(grund.stack);
+        }
+        return "Nicht aufgefangene Ablehnung: " + String(grund);
+    },
+
+    _stapelKuerzen(stapel) {
+        return String(stapel).split("\n").slice(0, 4).join("\n");
+    }
+};
+
+/* Sofort beim Übersetzen dieser Datei — siehe „WARUM DIESE STELLE" oben. */
+FEHLERFANG.registrieren();
 
 const APP = {
 

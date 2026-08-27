@@ -3829,4 +3829,222 @@ pruefe("Die Match-Einstellungen tragen den Wunsch-Knopf (v0.78.0)", () => {
     }
 });
 
+/* ------------------------------------------------------------------ *
+ * DER GLOBALE FEHLERFANG (v0.105.0, ROADMAP Gruppe L, Punkt 44)
+ *
+ * Geprüft wird das ECHTE `js\app.js` samt `js\wunsch.js` in einem EIGENEN
+ * vm-Kontext. Im Haupt-Kontext der Bildschirm-Tests läuft `app.js` nicht mit
+ * (es hängt am echten Dokument), und der Fang meldet sich beim Übersetzen der
+ * Datei an — er braucht deshalb ein `window`, das die angemeldete Funktion
+ * festhält.
+ *
+ * WAS DIESER TEST WIRKLICH PRUEFT: Das Test-DOM feuert keine echten
+ * window-Ereignisse. Der angemeldete Horcher wird deshalb — wie beim
+ * Aussenklick-Test (v0.96.0) — DIREKT mit einem nachgestellten Ereignis
+ * gerufen. Dass der Browser ihn bei einem echten Fehler auch wirklich ruft,
+ * kann diese Umgebung nicht zeigen; dass er angemeldet IST, sehr wohl.
+ * ------------------------------------------------------------------ */
+
+function fehlerfangUmgebungBauen() {
+    const geloggt = [];
+    const geoeffnet = [];
+    const koerper = neuesElement("body");
+
+    const fangUmgebung = {
+        console: {
+            error(text) { geloggt.push(String(text)); },
+            log() { },
+            warn() { }
+        },
+        document: {
+            createElement: neuesElement,
+            /* Der Startpunkt hängt sich ans DOMContentLoaded — hier ein
+               Stummel, damit `APP.starten` in diesem Test NICHT läuft. */
+            addEventListener() { },
+            body: koerper
+        },
+        window: {
+            hoerer: {},
+            addEventListener(art, behandler) { this.hoerer[art] = behandler; },
+            open(adresse) {
+                geoeffnet.push(adresse);
+                return { opener: {} };
+            },
+            location: { reload() { } }
+        }
+    };
+
+    fangUmgebung.globalThis = fangUmgebung;
+    vm.createContext(fangUmgebung);
+
+    /* Beide Dateien in EINEM Lauf — `const` auf oberster Ebene gehört sonst
+       zum jeweiligen Skript und app.js sähe WUNSCH nicht (dieselbe Falle wie
+       in bildschirm-umgebung.js). */
+    vm.runInContext(
+        dateisystem.readFileSync(pfad.join(jsOrdner, "konfig.js"), "utf8")
+            + "\n;\n"
+            + dateisystem.readFileSync(pfad.join(jsOrdner, "wunsch.js"), "utf8")
+            + "\n;\n"
+            + dateisystem.readFileSync(pfad.join(jsOrdner, "app.js"), "utf8")
+            + "\nglobalThis.FEHLERFANG = FEHLERFANG;",
+        fangUmgebung,
+        { filename: "fehlerfang.js" }
+    );
+
+    return {
+        FEHLERFANG: fangUmgebung.FEHLERFANG,
+        fenster: fangUmgebung.window,
+        koerper: koerper,
+        geloggt: geloggt,
+        geoeffnet: geoeffnet
+    };
+}
+
+/* Ein nachgestelltes `error`-Ereignis, wie der Browser es liefert. */
+function fehlerEreignis(text) {
+    return { message: text, filename: "js/test.js", lineno: 1, colno: 1 };
+}
+
+/* Sucht Knöpfe im Streifen anhand ihrer Beschriftung. */
+function streifenKnopf(kasten, beschriftung) {
+    const suchen = (element) => {
+        for (const kind of element.kinder || []) {
+            if (String(kind.textContent || "") === beschriftung) {
+                return kind;
+            }
+            const tiefer = suchen(kind);
+            if (tiefer) {
+                return tiefer;
+            }
+        }
+        return null;
+    };
+    return suchen(kasten);
+}
+
+pruefe("Der Fehlerfang meldet sich fuer error UND unhandledrejection an (v0.105.0)", () => {
+    const fang = fehlerfangUmgebungBauen();
+
+    for (const art of ["error", "unhandledrejection"]) {
+        if (typeof fang.fenster.hoerer[art] !== "function") {
+            throw new Error("kein Horcher fuer " + art + " angemeldet —"
+                + " ein Fehler beim Start bliebe wieder unsichtbar");
+        }
+    }
+});
+
+pruefe("Ein Fehler erzeugt EINEN Streifen mit Neu-laden und Melde-Weg (v0.105.0)", () => {
+    const fang = fehlerfangUmgebungBauen();
+
+    fang.fenster.hoerer.error(fehlerEreignis("kaputt"));
+
+    const streifen = fang.koerper.kinder.filter(
+        (kind) => String(kind.className || "") === "fehler-streifen");
+
+    if (streifen.length !== 1) {
+        throw new Error("erwartet genau einen Streifen, gebaut wurden "
+            + streifen.length);
+    }
+
+    const kasten = streifen[0];
+
+    if (!streifenKnopf(kasten, "Neu laden")) {
+        throw new Error("im Streifen fehlt der Knopf Neu laden");
+    }
+    if (!streifenKnopf(kasten, "Fehler melden")) {
+        throw new Error("im Streifen fehlt der Melde-Weg");
+    }
+    if (!streifenKnopf(kasten, "Schliessen")) {
+        throw new Error("der Streifen laesst sich nicht schliessen —"
+            + " er wuerde das Spiel blockieren");
+    }
+
+    /* Und ein Satz in Nutzersprache, kein Technik-Kauderwelsch. */
+    const suchenText = (element, klasse) => {
+        for (const kind of element.kinder || []) {
+            if (String(kind.className || "") === klasse) {
+                return String(kind.textContent || "");
+            }
+            const tiefer = suchenText(kind, klasse);
+            if (tiefer) {
+                return tiefer;
+            }
+        }
+        return "";
+    };
+
+    if (suchenText(kasten, "fehler-streifen-titel").indexOf("schiefgegangen") === -1) {
+        throw new Error("der Streifen sagt dem Nutzer nicht, was los ist");
+    }
+});
+
+pruefe("Ein zweiter Fehler zaehlt nur hoch, statt einen Kasten zu bauen (v0.105.0)", () => {
+    const fang = fehlerfangUmgebungBauen();
+
+    /* Wie eine Schleife: viermal derselbe Fehler. */
+    fang.fenster.hoerer.error(fehlerEreignis("kaputt"));
+    fang.fenster.hoerer.error(fehlerEreignis("kaputt"));
+    fang.fenster.hoerer.unhandledrejection({ reason: "abgelehnt" });
+    fang.fenster.hoerer.error(fehlerEreignis("kaputt"));
+
+    const streifen = fang.koerper.kinder.filter(
+        (kind) => String(kind.className || "") === "fehler-streifen");
+
+    if (streifen.length !== 1) {
+        throw new Error("vier Fehler haben " + streifen.length
+            + " Streifen gebaut, erwartet ist genau einer");
+    }
+
+    const zaehler = fang.FEHLERFANG.zaehlerEl;
+    if (!zaehler || zaehler.hidden !== false) {
+        throw new Error("die kleine Zahl der weiteren Fehler wird nicht gezeigt");
+    }
+    if (String(zaehler.textContent || "").indexOf("3 weitere") === -1) {
+        throw new Error("erwartet den Hinweis auf 3 weitere Fehler, da steht: "
+            + zaehler.textContent);
+    }
+});
+
+pruefe("Der Fehlerfang verschluckt nichts — console.error bekommt jeden (v0.105.0)", () => {
+    const fang = fehlerfangUmgebungBauen();
+
+    fang.fenster.hoerer.error(fehlerEreignis("erster"));
+    fang.fenster.hoerer.unhandledrejection({ reason: "zweiter" });
+
+    if (fang.geloggt.length !== 2) {
+        throw new Error("die Konsole hat " + fang.geloggt.length
+            + " Meldungen bekommen, erwartet sind 2 —"
+            + " beim Bauen muss man die Fehler weiterhin sehen");
+    }
+    if (fang.geloggt[0].indexOf("erster") === -1
+            || fang.geloggt[1].indexOf("zweiter") === -1) {
+        throw new Error("die Konsole bekommt nicht den echten Fehlertext: "
+            + fang.geloggt.join(" | "));
+    }
+});
+
+pruefe("Der Melde-Weg traegt die technische Meldung schon in sich (v0.105.0)", () => {
+    const fang = fehlerfangUmgebungBauen();
+
+    fang.fenster.hoerer.error(fehlerEreignis("TypeError: zeichnen ist nichts"));
+
+    const kasten = fang.koerper.kinder.find(
+        (kind) => String(kind.className || "") === "fehler-streifen");
+    streifenKnopf(kasten, "Fehler melden").ausloesen("click");
+
+    if (fang.geoeffnet.length !== 1) {
+        throw new Error("der Melde-Knopf hat kein Formular geoeffnet");
+    }
+
+    const adresse = decodeURIComponent(fang.geoeffnet[0]);
+
+    if (adresse.indexOf("TypeError: zeichnen ist nichts") === -1) {
+        throw new Error("die technische Meldung steht nicht im Formular —"
+            + " der Nutzer muesste sie abtippen");
+    }
+    if (adresse.indexOf("issues/new?template=wunsch.yml") === -1) {
+        throw new Error("gemeldet wird nicht ueber den vorhandenen Wunsch-Weg");
+    }
+});
+
 zeitlimitPruefen();

@@ -1,4 +1,4 @@
-# Blunderluck — Architektur / Wunsch-Weg, Wortbibliothek, Tab-Register, Konventionen, Sicherheit/Datenschutz
+# Blunderluck — Architektur / Wunsch-Weg, Fehlerfang, Wortbibliothek, Tab-Register, Konventionen, Sicherheit/Datenschutz
 
 ## Der Weg eines Wunsches
 
@@ -13,6 +13,40 @@ Klick und braucht kein Geheimnis.
 
 Die Anfragen landen **über** dem Abschnitt „Neu", weil sie noch nicht angenommen
 sind. Doppelte Einträge verhindert die Nummer `[#12]` in jeder Zeile.
+
+## Der globale Fehlerfang (seit v0.105.0)
+
+`FEHLERFANG` wohnt **ganz oben in `js\app.js`** — vor `APP` — und meldet sich
+schon beim Übersetzen der Datei für `error` und `unhandledrejection` an, nicht
+erst in `DOMContentLoaded`. Sonst wäre er genau dann noch nicht da, wenn
+`APP.starten` stolpert. `app.js` ist das letzte Skript der Seite; ein Fehler
+beim LADEN einer früheren Datei entgeht ihm deshalb — in der Praxis scheitert
+dann aber `APP.starten` an dem fehlenden Baustein, und das fängt er.
+
+Gezeigt wird ein **Streifen am oberen Rand** (`.fehler-streifen`, Regeln in
+`css\stil.css`, Ebene `--ebene-fehler: 200` über allem): ein Satz in
+Nutzersprache, die Hauptaktion **Neu laden** (blau) sowie **Fehler melden** und
+**Schliessen** (still). Kein Vollbild und kein `alert()` — das Spiel soll
+weiterlaufen können.
+
+Drei Festlegungen, die nicht aufgeweicht werden:
+
+- **Er verlässt sich NICHT auf `DIALOG`.** Der ist selbst App-Code und damit
+  ein möglicher Fehlerort; der Streifen wird mit eigenen Klassen direkt in den
+  `body` gehängt. Aus demselben Grund stehen seine Stil-Regeln in `stil.css`
+  (den Grundlagen) und nicht in einem der vier anderen Teile.
+- **Er verschluckt nichts.** Jeder Fehler geht zusätzlich unverändert über
+  `console.error` in die Entwickler-Konsole.
+- **Er erscheint genau einmal.** Weitere Fehler erhöhen nur die kleine Zahl im
+  Streifen; weggeklickt bleibt er bis zum Neuladen weg. Eine Rückfall-Sperre
+  (`_laeuft`) verhindert die Endlosschleife, wenn der Fang selbst stolpert.
+
+Der **Melde-Weg ist der vorhandene**: `WUNSCH.formularOeffnen(text)` — seit
+v0.105.0 aus `WUNSCH.oeffnen` herausgelöst — öffnet das vorbefüllte
+GitHub-Formular ohne Dialog und ohne Rückfrage, mit der technischen Meldung
+bereits im Text. Deshalb fangen `WUNSCH._stelle()` und `WUNSCH._fassung()` ihre
+Fehler ab: Der Melde-Weg darf nicht an demselben Schaden scheitern, den er
+melden soll.
 
 ## Die Wortbibliothek
 

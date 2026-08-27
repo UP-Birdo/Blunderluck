@@ -162,6 +162,10 @@ body {
  *   100         Der Dialog. Er liegt über ALLEM — auch über dem schwebenden
  *               Knopf, der bis v0.93 mit 40 über dem Dialog lag und sich
  *               anklicken liess, während ein Fenster offen war.
+ *   200         Der Fehler-Streifen (seit v0.105.0). Er liegt über allem,
+ *               auch über dem Dialog: Der Fehler kann genau dann passieren,
+ *               während ein Fenster offen ist — dann muss die Meldung
+ *               trotzdem lesbar sein.
  *
  * Wer eine neue Ebene braucht, trägt sie hier ein, statt sich eine Zahl
  * auszudenken.
@@ -178,6 +182,9 @@ body {
        (Konto ohne Passwort, dreimal falsch). */
     --ebene-vollbild: 90;
     --ebene-dialog: 100;
+
+    /* Der Fehler-Streifen — über allem, auch über dem Dialog. */
+    --ebene-fehler: 200;
 }
 
 * {
@@ -278,6 +285,72 @@ body {
     color: var(--warnung);
     border-bottom: 1px solid var(--rahmen);
     font-size: 0.9rem;
+}
+
+/* ------------------------------------------------------------------ *
+ * Der Fehler-Streifen (seit v0.105.0)
+ *
+ * Gebaut von `FEHLERFANG` in `js\app.js` — ganz ohne `DIALOG`, denn der ist
+ * selbst App-Code und damit ein möglicher Fehlerort. Die Regeln stehen
+ * deshalb hier in den GRUNDLAGEN und nicht in einem der vier anderen
+ * Stil-Teile: Der Streifen muss auch dann richtig aussehen, wenn von der App
+ * kein einziger Bildschirm zustande gekommen ist.
+ *
+ * Ein Streifen am OBEREN Rand, kein Vollbild: Er soll die Meldung zeigen,
+ * nicht das Spiel abwürgen. Warum oben und nicht unten, steht im Kommentar
+ * bei `_kastenBauen`.
+ * ------------------------------------------------------------------ */
+
+.fehler-streifen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: var(--ebene-fehler);
+
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+
+    /* Oben zusätzlich der Systembalken des iPhones (`viewport-fit=cover`). */
+    padding: 10px var(--abstand);
+    padding-top: calc(10px + env(safe-area-inset-top));
+
+    background: var(--fehler-flaeche);
+    color: var(--schrift);
+    border-bottom: 1px solid var(--gefahr);
+    font-size: 0.9rem;
+}
+
+.fehler-streifen-text {
+    /* Wächst mit, darf aber umbrechen, statt die Knöpfe aus dem Bild zu
+       schieben. */
+    flex: 1 1 240px;
+    min-width: 0;
+}
+
+.fehler-streifen-titel {
+    margin: 0;
+    font-weight: 600;
+}
+
+.fehler-streifen-satz {
+    margin: 2px 0 0;
+    color: var(--schrift-leise);
+}
+
+.fehler-streifen-zaehler {
+    margin: 4px 0 0;
+    color: var(--gefahr);
+    font-size: 0.85rem;
+}
+
+.fehler-streifen-knoepfe {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    flex: none;
 }
 
 /* ------------------------------------------------------------------ *

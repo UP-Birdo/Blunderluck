@@ -18,7 +18,7 @@ das es so nicht mehr gibt.
 | `test-rangliste.js` | Wertung und Spielerprofil |
 | `test-bildschirm.js` | Bildschirm-Code gegen ein nachgebautes DOM: Übersicht, Brett, Partie-Fenster |
 | `test-bildschirm-anzeigen.js` | Anzeigen am Bildschirm: die drei Punkte aus v0.76, Rangliste, Zugweg, Vorrat-Zeichen |
-| `test-bildschirm-ablaeufe.js` | Abläufe am Bildschirm: Start, Abgleich, Fenster, Tabs — samt der asynchronen Prüfungen |
+| `test-bildschirm-ablaeufe.js` | Abläufe am Bildschirm: Start, Abgleich, Fenster, Tabs, globaler Fehlerfang — samt der asynchronen Prüfungen |
 | `test-syntax.js` | Übersetzbarkeit, Einbindung, Aufrufe, Version |
 
 Dazu kommt **`bildschirm-umgebung.js`** — die gemeinsame Testumgebung der drei
@@ -207,6 +207,7 @@ Prüfung VOR dem Zählen läuft).
 | Rangliste | zeichnet mit Mitspielern, ohne Mitspieler und bevor Daten da sind |
 | Einladen-Fenster | die zuletzt Bespielten stehen oben und tragen ihren Zusatz, ein Nicht-Freund taucht nicht auf (F17), schon Eingeladene fallen weg, der Code steht weiter im Fenster, ein Suchfeld wird angefordert |
 | Suche im Dialog | gegen das ECHTE `dialog.js` in eigenem Kontext: Tippen blendet aus, was nicht passt (Gross-/Kleinschreibung egal), ohne Treffer sagt es die Liste, das leere Feld bringt alle zurück — und ohne Suchtext bleibt der Dialog genau der von vorher |
+| Globaler Fehlerfang (v0.105.0) | gegen das ECHTE `app.js` samt `wunsch.js` in eigenem Kontext: beide Horcher (`error`, `unhandledrejection`) sind angemeldet, ein Fehler baut GENAU EINEN Streifen mit Neu-laden, Melde-Weg und Schliessen, weitere Fehler erhöhen nur die kleine Zahl, `console.error` bekommt trotzdem jeden — und der Melde-Knopf öffnet das Wunsch-Formular mit der technischen Meldung schon darin |
 
 **Was sie nicht können:** Sie sagen nichts über das Aussehen — keine Stildatei,
 keine echten Größen, keine Farben. Sie beantworten nur die Frage, ob der Code

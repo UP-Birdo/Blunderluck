@@ -53,11 +53,29 @@ const WUNSCH = {
             return;
         }
 
+        if (!WUNSCH.formularOeffnen(text.trim())) {
+            /* Blockiert der Browser das Fenster, bleibt der Text nicht liegen. */
+            await DIALOG.hinweis("Fenster blockiert",
+                "Der Browser hat das GitHub-Formular nicht geöffnet. Dein Text:\n\n"
+                + text.trim());
+        }
+    },
+
+    /*
+     * Öffnet das vorbefüllte GitHub-Formular mit diesem Text und meldet, ob es
+     * aufging.
+     *
+     * ABGETRENNT VON `oeffnen` SEIT v0.105.0: Der globale Fehlerfang
+     * (`js\app.js`) meldet OHNE Dialog und ohne Rückfrage — er läuft auch dann,
+     * wenn die App gar nicht aufgebaut ist und `DIALOG` deshalb nicht helfen
+     * kann. Er gibt den Text (die technische Fehlermeldung) fertig herein.
+     */
+    formularOeffnen(text) {
         const adresse = "https://github.com/" + WUNSCH.KONTO + "/" + WUNSCH.REPO
             + "/issues/new?template=wunsch.yml"
-            + "&idee=" + encodeURIComponent(text.trim())
+            + "&idee=" + encodeURIComponent(text)
             + "&stelle=" + encodeURIComponent(WUNSCH._stelle())
-            + "&fassung=" + encodeURIComponent("v" + KONFIG.APP_VERSION);
+            + "&fassung=" + encodeURIComponent(WUNSCH._fassung());
 
         /*
          * KEIN "noopener" IM DRITTEN ARGUMENT (seit v0.66).
@@ -79,19 +97,38 @@ const WUNSCH = {
          */
         const fenster = window.open(adresse, "_blank");
 
-        if (fenster) {
-            fenster.opener = null;
-        } else {
-            /* Blockiert der Browser das Fenster, bleibt der Text nicht liegen. */
-            await DIALOG.hinweis("Fenster blockiert",
-                "Der Browser hat das GitHub-Formular nicht geöffnet. Dein Text:\n\n"
-                + text.trim());
+        if (!fenster) {
+            return false;
+        }
+
+        fenster.opener = null;
+        return true;
+    },
+
+    /*
+     * Welcher Tab ist gerade offen? Hilft beim Einordnen des Wunsches.
+     *
+     * SEIT v0.105.0 MIT AUFFANG: Der Fehlerfang meldet auch dann, wenn die App
+     * beim Start auseinandergeflogen ist — dann gibt es die Tab-Leiste
+     * womöglich gar nicht. Ohne den Auffang würde ausgerechnet der Melde-Weg
+     * am selben Fehler scheitern, den er melden soll.
+     */
+    _stelle() {
+        try {
+            const tab = TABS.liste.find((eintrag) => eintrag.id === TABS.aktiveId);
+            return tab ? tab.titel : "Blunderluck";
+        } catch (fehler) {
+            return "Blunderluck";
         }
     },
 
-    /* Welcher Tab ist gerade offen? Hilft beim Einordnen des Wunsches. */
-    _stelle() {
-        const tab = TABS.liste.find((eintrag) => eintrag.id === TABS.aktiveId);
-        return tab ? tab.titel : "Blunderluck";
+    /* Dieselbe Vorsicht für die Versionsnummer: Sie steht in `konfig.js`, und
+       die kann beim Fehler-Fall ebenfalls fehlen. */
+    _fassung() {
+        try {
+            return "v" + KONFIG.APP_VERSION;
+        } catch (fehler) {
+            return "unbekannt";
+        }
     }
 };
