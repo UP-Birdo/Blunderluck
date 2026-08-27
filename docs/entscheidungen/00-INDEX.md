@@ -79,7 +79,10 @@ wird. Die Liste dessen, was noch kommt, steht in [../ROADMAP.md](../ROADMAP.md).
   Bereit-Druck ueberschrieb mit seinem veralteten Lokalstand die Zusage der
   Gegenseite; die Zugzaehler-Pruefung griff nicht, weil Bereit den Zaehler
   nicht bewegt. Seit v0.89.1 landet die Zusage auf dem frisch geladenen
-  Stand, seit v0.90.0 alle Vor-Spiel-Schreibwege: `_aufFrischemSenden`)
+  Stand, seit v0.90.0 alle Vor-Spiel-Schreibwege: `_aufFrischemSenden`;
+  Nachtrag v0.94.0: das Rest-Fenster bei exakt gleichzeitigen Druecken
+  schliesst die Nachkontrolle `_nachkontrolle` — sofort + nach 2 s, nur
+  idempotente Wege, Marke gegen das Rueckgaengigmachen neuerer Aktionen)
 - **Ein Fehler, der nur GEMELDET wird, ist fuer den Aufrufer kein Fehler**
   (v0.89.0, dringende Meldung „komme nicht mehr in meinen Account": nicht
   das Zusammenfuehren war schuld, sondern ein Fehlstart, nach dem die

@@ -33,6 +33,22 @@ dem ersten Zug geschrieben wird, lief ungeschuetzt.
 > Der Regressionstest stellt genau das Rennen nach (test-bildschirm.js,
 > „Der zweite Bereit-Druck loescht die Zusage der Gegenseite nicht").
 
+**Nachtrag v0.94.0 — das Frisch-Laden allein genuegte nicht:** „das mit
+bereit geht manchmal noch nicht" (Nutzer, 27.08.2026, nach v0.89.1). Das
+Rest-Fenster: Laden BEIDE Geraete den frischen Stand, BEVOR der jeweils
+andere geschrieben hat, ueberschreiben sie sich weiterhin — Frisch-Laden
+schuetzt nur vor Schreibern, die VOR dem Laden gelandet sind. Seit v0.94.0
+haengt an jedem idempotenten Vor-Spiel-Schreiben eine **Nachkontrolle**
+(`_nachkontrolle`): Stand erneut holen, eigene Aenderung darauf anwenden,
+bei inhaltlich Neuem (Vergleich ueber `inhaltGleich`, ohne Zeitstempel)
+genau einmal nachschreiben — einmal sofort, einmal nach 2 s
+(`_NACHKONTROLLE_MS`). Zwei Leitplanken: (1) NUR fuer Aenderungen, deren
+doppelte Anwendung dasselbe ergibt — Wuerfeln und Revanche sind draussen,
+jede Anwendung ergaebe ein neues Brett. (2) Eine Marke
+(`_nachkontrolleMarke`) entwertet ausstehende verzoegerte Kontrollen bei
+jedem neuen Sendevorgang — sonst machte die Kontrolle des ERSTEN Drucks
+ein „Doch nicht bereit" wieder rueckgaengig.
+
 **Nebenbefund — erledigt in v0.90.0:** Dasselbe Muster — lokal gerechnete
 Partie wird vor dem ersten Zug ueber `_sendenMitPruefung` geschrieben —
 steckte auch in `einladen`, `teamBeitreten`, `teamVerlassen`,

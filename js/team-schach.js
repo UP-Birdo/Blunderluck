@@ -1141,7 +1141,8 @@ const TEAM_SCHACH = {
         await TEAM_SCHACH._aufFrischemSenden(partie, (frisch) =>
             (frisch.laeuft || frisch.ergebnis)
                 ? null
-                : SCHACH_RUNDE.aufstellungBereitSetzen(frisch, farbe, bereit));
+                : SCHACH_RUNDE.aufstellungBereitSetzen(frisch, farbe, bereit),
+        true);
     },
 
     /*
@@ -2338,7 +2339,7 @@ const TEAM_SCHACH = {
             }
             neu = SCHACH_BOT.beiBereitDazuholen(neu, person.id);
             return SCHACH_BOT.aufstellungBestaetigen(neu);
-        });
+        }, true);
     },
 
     /*
@@ -3681,7 +3682,7 @@ const TEAM_SCHACH = {
 
         TEAM_SCHACH._auswahlAufheben();
         await TEAM_SCHACH._aufFrischemSenden(partie, (frisch) =>
-            SCHACH_RUNDE.teamBeitreten(frisch, person.id, farbe));
+            SCHACH_RUNDE.teamBeitreten(frisch, person.id, farbe), true);
     },
 
     /*
@@ -3717,7 +3718,7 @@ const TEAM_SCHACH = {
         }
 
         await TEAM_SCHACH._aufFrischemSenden(partie, (frisch) =>
-            SCHACH_RUNDE.teamVerlassen(frisch, person.id));
+            SCHACH_RUNDE.teamVerlassen(frisch, person.id), true);
 
         /*
          * UND DANN AUF DEN STARTBILDSCHIRM (seit v0.69.0).
@@ -3819,8 +3820,14 @@ const TEAM_SCHACH = {
      * (Hausregel, v3.8), auf dem lokalen Stand; nach dem Schreiben zeichnet
      * der wahre.
      */
-    async _aufFrischemSenden(partie, aenderung) {
+    async _aufFrischemSenden(partie, aenderung, nachkontrolle) {
         const abgleich = TEAM_SCHACH.abgleich;
+
+        /* Jeder neue Sendevorgang entwertet ausstehende verzögerte
+           Nachkontrollen — sonst machte eine alte Kontrolle eine NEUERE
+           eigene Aktion rückgängig (bereit — doch nicht bereit — die
+           Kontrolle des ersten Drucks setzte es wieder). */
+        const marke = ++TEAM_SCHACH._nachkontrolleMarke;
 
         const vorher = abgleich.daten;
         const lokal = aenderung(partie);
@@ -3865,6 +3872,30 @@ const TEAM_SCHACH = {
             await abgleich.speicher.speichern(tafel);
             abgleich.daten = tafel;
             TEAM_SCHACH.zeichnen(tafel);
+
+            /*
+             * DIE NACHKONTROLLE (v0.94.0, „bereit geht manchmal noch
+             * nicht"): Das Rest-Fenster von v0.89.1 — laden BEIDE Geräte
+             * den frischen Stand, BEVOR der jeweils andere geschrieben
+             * hat, überschreiben sie sich weiterhin. Deshalb wird nach dem
+             * Schreiben nachgesehen (einmal sofort, einmal kurz danach):
+             * `_nachkontrolle` holt den Stand erneut und wendet die eigene
+             * Änderung darauf an; nur wenn dabei etwas Neues herauskommt,
+             * wird genau einmal nachgeschrieben.
+             *
+             * NUR für Änderungen, deren doppelte Anwendung dasselbe ergibt
+             * (`nachkontrolle` setzen die Aufrufer): Würfeln und Revanche
+             * sind draussen — jede Anwendung ergäbe ein NEUES Brett, die
+             * Kontrolle würfelte doppelt.
+             */
+            if (nachkontrolle === true && abgleich.speicher.art === "gemeinsam") {
+                await TEAM_SCHACH._nachkontrolle(partie.id, aenderung);
+                window.setTimeout(() => {
+                    if (TEAM_SCHACH._nachkontrolleMarke === marke) {
+                        TEAM_SCHACH._nachkontrolle(partie.id, aenderung);
+                    }
+                }, TEAM_SCHACH._NACHKONTROLLE_MS);
+            }
             return true;
         } catch (fehler) {
             abgleich.daten = vorher;
@@ -3874,6 +3905,47 @@ const TEAM_SCHACH = {
                 "Die Änderung konnte nicht gesendet werden: " + fehler.message
                     + "\n\nSie wurde deshalb zurückgenommen.");
             return false;
+        } finally {
+            abgleich.eigenerVorgangEndet();
+        }
+    },
+
+    /* Abstand der zweiten Nachkontrolle — gross genug, dass der Schreib-
+       vorgang eines gleichzeitig drückenden Geräts gelandet ist. */
+    _NACHKONTROLLE_MS: 2000,
+
+    /* Laufende Nummer der Sendevorgänge — entwertet ausstehende verzögerte
+       Nachkontrollen (siehe `_aufFrischemSenden`). */
+    _nachkontrolleMarke: 0,
+
+    /*
+     * Ein Blick zurück auf den Server (v0.94.0, Baustein der Nachkontrolle
+     * in `_aufFrischemSenden`): Stand holen, die eigene Änderung darauf
+     * anwenden — und NUR wenn dabei inhaltlich etwas Neues entsteht
+     * (die eigene Zusage wurde überschrieben, oder die der Gegenseite kam
+     * dazwischen und jetzt kann angepfiffen werden), einmal nachschreiben.
+     * Ist die Partie weg oder die Änderung ohne Wirkung, passiert nichts —
+     * die regelmässige Abfrage rückt den Bildschirm ohnehin gerade.
+     */
+    async _nachkontrolle(partieId, aenderung) {
+        const abgleich = TEAM_SCHACH.abgleich;
+        abgleich.eigenerVorgangBeginnt();
+
+        try {
+            const tafel = SCHACH_TAFEL.normalisieren(
+                await abgleich.speicher.laden());
+            const dortige = tafel.partien[partieId];
+            const erneut = dortige ? aenderung(dortige) : null;
+
+            if (erneut && !SCHACH_RUNDE.inhaltGleich(erneut, dortige)) {
+                const neu = SCHACH_TAFEL.partieEinsetzen(tafel, erneut);
+                await abgleich.speicher.speichern(neu);
+                abgleich.daten = neu;
+                TEAM_SCHACH.zeichnen(neu);
+            }
+        } catch (fehler) {
+            /* Nur eine Kontrolle — scheitert sie, bleibt der normale Weg
+               (regelmässige Abfrage, erneuter Druck) unberührt. */
         } finally {
             abgleich.eigenerVorgangEndet();
         }
@@ -3927,13 +3999,13 @@ const TEAM_SCHACH = {
              * weiterhin, dass beide Seiten ihre erste Zusage stehen haben.
              */
             return SCHACH_BOT.aufstellungBestaetigen(neu);
-        });
+        }, true);
     },
 
     /* Einen Freund in die Runde einladen (seit v0.13.0, Schritt 7). */
     async einladen(partie, spielerId) {
         await TEAM_SCHACH._aufFrischemSenden(partie, (frisch) =>
-            SCHACH_RUNDE.einladen(frisch, spielerId));
+            SCHACH_RUNDE.einladen(frisch, spielerId), true);
     },
 
     /* ---------------------------------------------------------------- *

@@ -3,6 +3,24 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.94.0 — 27.08.2026
+
+**Nachgebessert: Auch exakt gleichzeitige Bereit-Klicks starten das Spiel
+jetzt zuverlässig.**
+
+- **Was noch offen war:** Seit v0.89.1 trägt jeder Bereit-Klick seine
+  Zusage in den frisch geholten Stand ein. Ein winziges Fenster blieb:
+  Holten BEIDE Geräte den Stand, bevor der jeweils andere geschrieben
+  hatte, löschten sie sich weiterhin gegenseitig die Zusage — „manchmal
+  geht es noch nicht" (gemeldet 27.08.2026).
+- **Jetzt:** Nach jedem Bereit-artigen Klick sieht die App zweimal kurz
+  nach (sofort und nach zwei Sekunden), ob die eigene Zusage noch da ist
+  und ob inzwischen die der Gegenseite dazukam. Fehlt etwas, trägt sie es
+  einmal nach — kamen so beide Zusagen zusammen, startet das Spiel von
+  selbst. Das gilt auch für Beitreten, Einladen und Verlassen.
+- Eine Nachkontrolle macht nie eine neuere eigene Aktion rückgängig: Wer
+  „Doch nicht bereit" drückt, bleibt es.
+
 ## v0.93.0 — 27.08.2026
 
 **Innerer Umbau, Teil 2: Auch die grosse Stil-Datei ist aufgeteilt — die

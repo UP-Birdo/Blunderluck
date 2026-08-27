@@ -9,14 +9,24 @@ das es so nicht mehr gibt.
 | `test-spieler.js` | Spielerliste: Datenvertrag, PIN, Zusammenführen |
 | `test-versiegelung.js` | PIN- und Verwaltungs-Prüfsummen |
 | `test-schach.js` | Schachregeln, auch auf den anderen Brettgrößen |
-| `test-schach-runde.js` | eine Partie: Teams, Spielarten, Fähigkeiten |
+| `test-schach-runde.js` | eine Partie: Teams, Zugrecht, Spielarten, Abstimmung, Zufallsarmee |
+| `test-schach-runde-faehigkeiten.js` | Fähigkeiten, Lootboxen, Unglückswürfel und Händler einer Partie |
 | `test-schach-tafel.js` | Sammlung der Partien und der **Umstieg** von früher |
 | `test-schach-bot.js` | Computer-Gegner: wann er zieht, was er wählt, dass er nicht spickt |
 | `test-schach-vorschau.js` | Bildanleitung: jede Fähigkeit hat ein Beispiel, und es geht auf |
 | `test-schach-grundlagen.js` | Schachregel-Anleitung: jedes Kapitel ist mit den echten Regeln gerechnet |
 | `test-rangliste.js` | Wertung und Spielerprofil |
-| `test-bildschirm.js` | Bildschirm-Code gegen ein nachgebautes DOM |
+| `test-bildschirm.js` | Bildschirm-Code gegen ein nachgebautes DOM: Übersicht, Brett, Partie-Fenster |
+| `test-bildschirm-anzeigen.js` | Anzeigen am Bildschirm: die drei Punkte aus v0.76, Rangliste, Zugweg, Vorrat-Zeichen |
+| `test-bildschirm-ablaeufe.js` | Abläufe am Bildschirm: Start, Abgleich, Fenster, Tabs — samt der asynchronen Prüfungen |
 | `test-syntax.js` | Übersetzbarkeit, Einbindung, Aufrufe, Version |
+
+Dazu kommt **`bildschirm-umgebung.js`** — die gemeinsame Testumgebung der drei
+Bildschirm-Testdateien (nachgebautes DOM, echte `js\`-Dateien im vm-Kontext,
+Ausgangslage). Sie ist bewusst **keine** Testdatei: Sie beginnt nicht mit
+`test-`, wird vom Läufer also nicht gestartet, und erzeugt selbst keine
+Prüfungen. Jede der drei Testdateien lädt sie per `require()` und bekommt so
+ihre eigene, frische Umgebung.
 
 ## Aufruf
 
@@ -61,9 +71,16 @@ Die Schachregeln — der Bereich, in dem sich Fehler am leichtesten verstecken.
 | Sonderzüge | en passant nur unmittelbar danach, Umwandlung in jede Figur |
 | Partieende | Schachmatt mit Sieger, Patt ohne |
 
-## Was wird geprüft (`test-schach-runde.js`)
+## Was wird geprüft (`test-schach-runde.js` und `test-schach-runde-faehigkeiten.js`)
 
-Teams und Ablauf einer Partie.
+Teams und Ablauf einer Partie. Seit 08/2026 sind es zwei Dateien, geteilt
+entlang derselben Naht wie der App-Code seit v0.92.0: Die **Rundenverwaltung**
+(Teams, Start, Zugrecht, Ziehen, Ende, Spielarten samt Kreuz-Brett,
+Abstimmung, Zufallsarmee, Vergleich) prüft `test-schach-runde.js`; alles zu
+**Fähigkeiten, Lootboxen, Unglückswürfeln und Händler** prüft
+`test-schach-runde-faehigkeiten.js`. Beide laden dieselbe echte Dateikette
+(`schach-varianten.js`, `schach.js`, `schach-runde.js`,
+`schach-runde-faehigkeiten.js`).
 
 | Bereich | Inhalt |
 |---|---|
@@ -72,6 +89,7 @@ Teams und Ablauf einer Partie.
 | Zugrecht | nur das Team am Zug; **innerhalb des Teams jeder** — nach dem Zug eines Teammitglieds ist das ganze Team nicht mehr dran |
 | Ziehen | Zugzähler und Verlauf, abgewiesene Züge, begrenzter Verlauf |
 | Ende | Narrenmatt beendet die Partie mit Sieger, Aufgeben, neue Partie behält die Teams |
+| Fähigkeiten (eigene Datei) | jede einzelne Fähigkeit, Item-Vorrat, Abklingzeit, Einsammeln und Restzeit, Regen und Lootbox-Menge, Dieb und Händler, Unglückswürfel, „ein Item führt nie direkt zu Schach, Matt oder Patt" |
 
 ## Was wird geprüft (`test-schach-vorschau.js`)
 
@@ -162,12 +180,21 @@ Die Sammlung aller Partien — und vor allem der Umstieg.
 | Grenzen | wer aus der Anmeldungs-Schicht entfernt wurde, verschwindet aus der Wertung |
 | Erklärung | der angezeigte Text nennt dieselben Zahlen, mit denen gerechnet wird |
 
-## Was wird geprüft (`test-bildschirm.js`)
+## Was wird geprüft (die drei Bildschirm-Testdateien)
 
-Diese Datei baut ein winziges DOM nach und lässt den Bildschirm-Code einmal
-durchlaufen. Sie fängt, was `test-syntax.js` nicht sieht: Aufrufe, die es zwar
+Sie bauen ein winziges DOM nach und lassen den Bildschirm-Code einmal
+durchlaufen. Das fängt, was `test-syntax.js` nicht sieht: Aufrufe, die es zwar
 gibt, die aber mit den falschen Daten arbeiten, und Bereiche, die gar nicht
 entstehen — der Fehler aus v1.2, bei dem ein ganzer Tab leer blieb.
+
+Seit 08/2026 sind es drei Dateien mit gemeinsamer Umgebung
+(`bildschirm-umgebung.js`, siehe oben): `test-bildschirm.js` (Übersicht,
+Brett mit seinen vier Lagen, Partie-Fenster, Fähigkeiten am Brett,
+Bibliothek, Anleitung), `test-bildschirm-anzeigen.js` (Rangliste, Weg einer
+Bewegung, Zeichen am Fähigkeiten-Vorrat) und `test-bildschirm-ablaeufe.js`
+(Start, Beitritt, Abgleich, Fenster und Tabs — **samt der asynchronen
+Prüfungen**: deren Fazit steht am Ende von `zeitlimitPruefen()`, damit jede
+Prüfung VOR dem Zählen läuft).
 
 | Bereich | Inhalt |
 |---|---|
@@ -178,9 +205,9 @@ entstehen — der Fehler aus v1.2, bei dem ein ganzer Tab leer blieb.
 | Sonderfälle | eingesammelte Fähigkeit, beendete Partie, gelöschte offene Partie, nicht angemeldet |
 | Rangliste | zeichnet mit Mitspielern, ohne Mitspieler und bevor Daten da sind |
 
-**Was sie nicht kann:** Sie sagt nichts über das Aussehen — keine Stildatei,
-keine echten Größen, keine Farben. Sie beantwortet nur die Frage, ob der Code
-durchläuft, ohne zu stolpern. Die Prüfliste in `docs\DEPLOYMENT.md` ersetzt sie
+**Was sie nicht können:** Sie sagen nichts über das Aussehen — keine Stildatei,
+keine echten Größen, keine Farben. Sie beantworten nur die Frage, ob der Code
+durchläuft, ohne zu stolpern. Die Prüfliste in `docs\DEPLOYMENT.md` ersetzen sie
 nicht.
 
 ## Eine neue Testdatei anlegen
@@ -188,7 +215,10 @@ nicht.
 Datei `tests\test-<thema>.js` — sie wird automatisch mitgelaufen (Muster
 `test-*.js`). Aufbau wie `test-spieler.js`: `pruefe(...)`-Aufrufe, am Ende
 `console.log(anzahlOk + " ok, " + anzahlFehler + " Fehler")` und
-`process.exit(anzahlFehler === 0 ? 0 : 1)`.
+`process.exit(anzahlFehler === 0 ? 0 : 1)`. **Jede Prüfung steht VOR dem
+Fazit** — was hinter `process.exit` steht, läuft nie. Gemeinsame Hilfsdateien
+ohne eigene Prüfungen (wie `bildschirm-umgebung.js`) bekommen bewusst
+**keinen** `test-`-Namen, damit der Läufer sie nicht als Test startet.
 
 ## Was die Tests NICHT prüfen
 
