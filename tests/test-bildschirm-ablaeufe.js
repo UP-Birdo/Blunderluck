@@ -4138,4 +4138,65 @@ pruefe("Der Umschalter zeigt entweder Faehigkeiten oder Ungluecke (v0.107.0)", (
     TEAM_SCHACH.infoKartenArt = "faehigkeit";
 });
 
+
+/* ------------------------------------------------------------------ *
+ * Weniger Text: die Erklaerungen stehen hinter dem i (v0.108.0)
+ * ------------------------------------------------------------------ */
+
+pruefe("Die Einstellungen tragen keine Erklaer-Absaetze mehr (v0.108.0)", () => {
+    /*
+     * NUTZER-ANSAGE 28.08.2026: „weniger Text" — und schon am 21.08.:
+     * „verstecke die Infos so, dass sie beim normalen Nutzen nicht sichtbar
+     * sind, aber nicht verschwinden."
+     *
+     * DIESER TEST IST DER WAECHTER GEGEN DEN RUECKFALL. Bis v0.107.0 stand
+     * ueber jedem Knopf ein Absatz; sie sind hinter die i-Knoepfe der
+     * Karten gewandert. Geprueft wird beides: dass die langen Absaetze weg
+     * sind UND dass die i-Knoepfe da sind — sonst waere der Text nicht
+     * versteckt, sondern geloescht.
+     */
+    const EINSTELLUNGEN = umgebung.EINSTELLUNGEN;
+
+    /* Der ICH-Stellvertreter der Umgebung meldet immer „Anna" an — die
+       Karten zeichnen also ihren angemeldeten Fall. */
+    EINSTELLUNGEN.aufbauen(neuesElement("div"));
+
+    const einsammeln = (element, passt, treffer) => {
+        for (const kind of element.kinder || []) {
+            if (passt(kind)) {
+                treffer.push(kind);
+            }
+            einsammeln(kind, passt, treffer);
+        }
+        return treffer;
+    };
+
+    const absaetze = einsammeln(EINSTELLUNGEN.wurzelEl, (kind) =>
+        kind.tagName === "p"
+        && String(kind.className || "").indexOf("erklaerung") !== -1, []);
+
+    /*
+     * Kurze Zeilen wie „Angemeldet als Anna." duerfen bleiben — sie sind
+     * die Auskunft der Karte, nicht ihre Erklaerung. Alles ueber 60 Zeichen
+     * ist ein Absatz und gehoert hinter das i.
+     */
+    const lang = absaetze.filter(
+        (absatz) => String(absatz.textContent || "").length > 60);
+
+    if (lang.length !== 0) {
+        throw new Error("es stehen noch " + lang.length
+            + " Erklaer-Absaetze auf der Seite, der erste: "
+            + String(lang[0].textContent).substring(0, 40) + " ...");
+    }
+
+    const iKnoepfe = einsammeln(EINSTELLUNGEN.wurzelEl, (kind) =>
+        String(kind.className || "").indexOf("info-knopf") !== -1, []);
+
+    /* Account, Spieler und Verbindung tragen je ein i; „Ueber die App"
+       braucht keins (dort erklaert der Knopf sich selbst). */
+    if (iKnoepfe.length !== 3) {
+        throw new Error("erwartet drei i-Knoepfe in den Einstellungen, sind "
+            + iKnoepfe.length);
+    }
+});
 zeitlimitPruefen();

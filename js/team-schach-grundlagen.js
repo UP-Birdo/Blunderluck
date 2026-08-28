@@ -53,12 +53,19 @@ Object.assign(TEAM_SCHACH, {
         kopf.appendChild(TEAM_SCHACH._knopf("Zurück", "knopf-still knopf-klein",
             () => TEAM_SCHACH.grundlagenSchliessen()));
         kopf.appendChild(TEAM_SCHACH._element("h2", "partie-titel", "Schach lernen"));
-        wurzel.appendChild(kopf);
 
-        wurzel.appendChild(TEAM_SCHACH._element("p", "erklaerung",
-            "Alles fürs normale Schach — in der "
-            + "Reihenfolge, in der man es braucht. Jedes Bild ist mit den echten "
-            + "Regeln gerechnet."));
+        /*
+         * DIE EINLEITUNG STEHT SEIT v0.108.0 HINTER DEM i (Nutzer-Ansage
+         * 28.08.2026: weniger Text). Sie stand als Absatz über den vier
+         * Karten und sagte nichts, was man zum Lesen der Seite braucht —
+         * die Reihenfolge sieht man, und dass die Bilder gerechnet sind,
+         * ist eine Zusicherung, keine Anleitung. Verloren geht sie nicht.
+         */
+        kopf.appendChild(TEAM_SCHACH._infoZeichenBauen("Schach lernen",
+            "Alles fürs normale Schach — in der Reihenfolge, in der man es "
+            + "braucht. Jedes Bild ist mit den echten Regeln gerechnet."));
+
+        wurzel.appendChild(kopf);
 
         for (const gruppe of SCHACH_GRUNDLAGEN.GRUPPEN) {
             wurzel.appendChild(TEAM_SCHACH._grundlagenGruppeBauen(gruppe));
@@ -70,11 +77,17 @@ Object.assign(TEAM_SCHACH, {
          * Lootboxen — die stehen in der anderen Bibliothek.
          */
         const abschluss = TEAM_SCHACH._element("section", "karte");
-        abschluss.appendChild(TEAM_SCHACH._element("h3", "", "Und was ist hier anders?"));
-        abschluss.appendChild(TEAM_SCHACH._element("p", "erklaerung",
-            "Team Schach spielt nach diesen Regeln, mit einer Zugabe: Lootboxen "
-            + "auf dem Brett. Ihre Fähigkeiten können Figuren zurückholen oder "
-            + "Felder sperren — schachmatt setzen können sie nicht."));
+
+        const abschlussKopf = TEAM_SCHACH._element("div", "karte-kopf");
+        abschlussKopf.appendChild(TEAM_SCHACH._element("h3", "",
+            "Und was ist hier anders?"));
+        abschlussKopf.appendChild(TEAM_SCHACH._infoZeichenBauen(
+            "Und was ist hier anders?",
+            "Blunderluck spielt nach diesen Regeln, mit einer Zugabe: "
+            + "Lootboxen auf dem Brett. Ihre Fähigkeiten können Figuren "
+            + "zurückholen oder Felder sperren — schachmatt setzen können "
+            + "sie nicht."));
+        abschluss.appendChild(abschlussKopf);
 
         const knopf = TEAM_SCHACH._knopf("Zu den Fähigkeiten", "knopf-still knopf-klein",
             () => {
@@ -87,8 +100,20 @@ Object.assign(TEAM_SCHACH, {
 
     _grundlagenGruppeBauen(gruppe) {
         const karte = TEAM_SCHACH._element("section", "karte");
-        karte.appendChild(TEAM_SCHACH._element("h3", "", gruppe.titel));
-        karte.appendChild(TEAM_SCHACH._element("p", "erklaerung", gruppe.text));
+
+        /*
+         * ÜBERSCHRIFT LINKS, i RECHTS (seit v0.108.0) — der Einleitungssatz
+         * jeder Gruppe steht dahinter statt darüber. Vier Gruppen mal ein
+         * Absatz waren vier Absätze, bevor der erste Inhalt kam.
+         *
+         * DER TEXT BLEIBT IM MODELL (`SCHACH_GRUNDLAGEN.GRUPPEN[].text`) —
+         * geändert hat sich nur, wo er auftaucht. Wer ihn dort pflegt,
+         * pflegt weiterhin die eine Wahrheit.
+         */
+        const kopf = TEAM_SCHACH._element("div", "karte-kopf");
+        kopf.appendChild(TEAM_SCHACH._element("h3", "", gruppe.titel));
+        kopf.appendChild(TEAM_SCHACH._infoZeichenBauen(gruppe.titel, gruppe.text));
+        karte.appendChild(kopf);
 
         /* Die Werte sind eine Tabelle, kein Kapitel mit Bild — sie stehen
            deshalb direkt da und nicht hinter einem Aufklapper. */

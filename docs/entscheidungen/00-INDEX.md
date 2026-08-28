@@ -74,6 +74,13 @@ wird. Die Liste dessen, was noch kommt, steht in [../ROADMAP.md](../ROADMAP.md).
   Play-Store-Umbau braeuchte - Referenz: docs\uebergabe-schach-app.md)
 
 ## erkenntnisse.md - Teuer erkaufte Erkenntnisse
+- **Wer eine Klassenzeile neu setzt, muss die Grundklasse mitschreiben**
+  (v0.107.0, beim Bibliotheks-Umschalter gefunden: `classList` fuehrt im
+  DOM-Nachbau der Tests eine eigene Liste neben `className`, und `_knopf`
+  stellt jedem Knopf `"knopf "` voran. Dazu zwei Wiederholungstaeter:
+  `hidden` verliert gegen eigenes `display: flex`, und
+  `document.querySelectorAll` gibt es im Test-Nachbau nicht — nur am
+  Element)
 - **Ein Schutz, der an einem Zaehler haengt, schuetzt nur, was den Zaehler
   bewegt** (v0.89.1, „Bereit gedrueckt, Spiel startet nicht": der zweite
   Bereit-Druck ueberschrieb mit seinem veralteten Lokalstand die Zusage der

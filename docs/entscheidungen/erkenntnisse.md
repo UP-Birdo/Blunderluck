@@ -2,6 +2,37 @@
 
 ## Teuer erkaufte Erkenntnisse
 
+### Wer eine Klassenzeile neu setzt, muss die Grundklasse mitschreiben (v0.107.0)
+
+**Gefunden beim Bau des Bibliotheks-Umschalters (Punkt 48), vor der
+Auslieferung.** Der Umschalter tauscht beim Klick die Klassen des aktiven
+Knopfs. Der erste Versuch nutzte `classList.toggle` — das schien
+naheliegend, hat aber zwei Haken:
+
+- Im DOM-Nachbau der Tests fuehrt `classList` eine EIGENE Liste neben
+  `className`. Eine Klasse, die beim Bauen in `className` steht, laesst
+  sich mit `classList.remove` gar nicht entfernen; im Browser schon. Ein
+  Test darauf ist damit gruen, ohne etwas zu beweisen.
+- Also die ganze Zeile neu setzen. Nur: `TEAM_SCHACH._knopf` stellt JEDEM
+  Knopf ein `"knopf "` voran (`className = "knopf " + klasse`). Wer die
+  Zeile ohne dieses Wort neu setzt, nimmt dem Knopf sein Grundaussehen —
+  hier waere der aktive Knopf ploetzlich mit Rahmen und Flaeche
+  dagestanden, weil die Regel `.karten-leiste .knopf` nicht mehr gegriffen
+  haette.
+
+> **Die Regel:** Klassen umschalten heisst die ganze Zeile neu setzen, und
+> zwar aus DERSELBEN Quelle wie beim Bauen — im Zweifel eine kleine
+> Funktion, die sie liefert (`_kartenKnopfKlassen`). Wer `_knopf` benutzt,
+> schreibt das `"knopf "` dabei ausdruecklich mit.
+
+**Zwei weitere Fallen aus derselben Runde, beide schon einmal dagewesen:**
+`hidden` verliert gegen ein eigenes `display: flex` (dieselbe Falle wie bei
+der Dialog-Liste in v0.104.0 — jede filterbare Sorte braucht ihre eigene
+`[hidden]`-Regel), und `document.querySelectorAll` gibt es im DOM-Nachbau
+der Tests NICHT, wohl aber `element.querySelectorAll`. Wer im Bildschirm-
+Code sucht, sucht deshalb auf einem gemerkten Element, nie auf dem
+Dokument.
+
 ### Ein Schutz, der an einem Zaehler haengt, schuetzt nur, was den Zaehler bewegt (v0.89.1)
 
 **Nutzer-Meldung 27.08.2026:** „Wenn auf beiden Seiten alle Spieler, die in

@@ -3,6 +3,27 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.108.0 — 28.08.2026
+
+**Weniger Text: Die Erklärungen stehen jetzt hinter dem i, nicht mehr
+mitten auf dem Bildschirm.**
+
+- **Einstellungen:** Statt sieben Erklärabsätzen steht je Karte eine Zeile
+  und rechts oben ein i. Alle vier Karten passen jetzt ohne Scrollen auf
+  ein Handy-Bild (vorher 104 Wörter, jetzt 22). Die beiden Knöpfe
+  „Abmelden" und „Konto löschen" stehen nebeneinander; der Unterschied
+  zwischen ihnen steht vollständig hinter dem i.
+- **Schach lernen:** Die Einleitung und die vier Gruppen-Einleitungen sind
+  hinter i gewandert — die Kapitel selbst beginnen sofort (vorher 260
+  Wörter, jetzt 145).
+- **Rangliste:** Der Absatz unter der Tabelle ist weg. Er verwies auf das
+  i, das direkt darüber sitzt.
+
+*Verloren geht nichts: Jeder Text steht weiterhin da, wo man ihn sucht —
+hinter dem i der jeweiligen Karte. Nur zwei Sätze sind ganz entfallen,
+weil sie einen sichtbaren Knopf beschrieben haben.*
+
+
 ## v0.107.0 — 28.08.2026
 
 **Die Fähigkeiten sind jetzt überall Spielkarten — und Glück und Unglück

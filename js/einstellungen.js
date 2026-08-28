@@ -109,12 +109,7 @@ const EINSTELLUNGEN = {
      * ---------------------------------------------------------------- */
 
     _ueberKarteBauen() {
-        const karte = document.createElement("section");
-        karte.className = "karte";
-
-        const kopf = document.createElement("h2");
-        kopf.textContent = "Über die App";
-        karte.appendChild(kopf);
+        const karte = EINSTELLUNGEN._karteBauen("Über die App", "", "");
 
         const zeile = document.createElement("p");
         zeile.className = "version";
@@ -122,11 +117,12 @@ const EINSTELLUNGEN = {
             + (typeof KONFIG !== "undefined" ? "v" + KONFIG.APP_VERSION : "");
         karte.appendChild(zeile);
 
-        const erklaerung = document.createElement("p");
-        erklaerung.className = "erklaerung";
-        erklaerung.textContent = "Fehlt dir etwas oder stört dich etwas? "
-            + "Schreib es auf — der Text landet in der Aufgabenliste.";
-        karte.appendChild(erklaerung);
+        /*
+         * HIER STAND „Fehlt dir etwas oder stört dich etwas? Schreib es auf
+         * …" (bis v0.107.0) — ERSATZLOS weg, nicht hinter ein i geschoben.
+         * Der Satz erklärt den Knopf, der direkt darunter steht und selbst
+         * sagt, was er tut. Ein i dafür wäre Aufwand für nichts.
+         */
 
         /* Den Knopf baut wunsch.js selbst; er hing bis v0.24.0 im Kopf der
            Seite. Im Bildschirm-Test läuft wunsch.js nicht mit. */
@@ -154,12 +150,11 @@ const EINSTELLUNGEN = {
     statusTextEl: null,
 
     _statusKarteBauen() {
-        const karte = document.createElement("section");
-        karte.className = "karte";
-
-        const kopf = document.createElement("h2");
-        kopf.textContent = "Verbindung";
-        karte.appendChild(kopf);
+        const karte = EINSTELLUNGEN._karteBauen("Verbindung",
+            "Was die Farbe bedeutet",
+            "Grün heisst: Der gemeinsame Stand ist da und aktuell. Gelb "
+            + "heisst laden oder senden, Rot heisst, dass die Datenbank "
+            + "gerade nicht erreichbar ist.");
 
         const zeile = document.createElement("div");
         zeile.className = "status status-karte";
@@ -172,13 +167,6 @@ const EINSTELLUNGEN = {
         const text = document.createElement("span");
         zeile.appendChild(text);
         karte.appendChild(zeile);
-
-        const erklaerung = document.createElement("p");
-        erklaerung.className = "erklaerung";
-        erklaerung.textContent = "Grün heisst: Der gemeinsame Stand ist da "
-            + "und aktuell. Gelb heisst laden oder senden, Rot heisst, dass "
-            + "die Datenbank gerade nicht erreichbar ist.";
-        karte.appendChild(erklaerung);
 
         EINSTELLUNGEN.statusEl = zeile;
         EINSTELLUNGEN.statusTextEl = text;
@@ -215,14 +203,28 @@ const EINSTELLUNGEN = {
      * ---------------------------------------------------------------- */
 
     _accountKarteBauen() {
-        const karte = document.createElement("section");
-        karte.className = "karte";
-
-        const kopf = document.createElement("h2");
-        kopf.textContent = "Account";
-        karte.appendChild(kopf);
-
         const person = ICH.person();
+
+        /*
+         * SEIT v0.108.0 STEHEN DIE ZWEI ERKLÄRUNGEN HINTER DEM i
+         * (Nutzer-Ansage 28.08.2026: „weniger Text", und die Ansage vom
+         * 21.08.: verstecken statt löschen). Bis v0.107.0 stand über jedem
+         * der beiden Knöpfe ein voller Absatz — sieben Zeilen Text für zwei
+         * Knöpfe, die man einmal im Leben drückt.
+         *
+         * WAS NICHT WEGFÄLLT: der Unterschied zwischen Abmelden und
+         * Löschen. Er ist die ganze Begründung dieser Karte, und wer ihn
+         * nicht kennt, drückt womöglich das Falsche — er steht deshalb
+         * vollständig im Fenster hinter dem i.
+         */
+        const karte = EINSTELLUNGEN._karteBauen("Account",
+            "Abmelden und Konto löschen",
+            "Abmelden: Dieses Gerät vergisst die Anmeldung, dein Konto "
+            + "bleibt samt Punkten und Partien bestehen. Du meldest dich "
+            + "jederzeit wieder an."
+            + "\n\nKonto löschen: Dein Eintrag verschwindet aus Spielerliste "
+            + "und Rangliste — das lässt sich nicht rückgängig machen. "
+            + "Beendete Partien bleiben in der Chronik.");
 
         if (!person) {
             const stand = document.createElement("p");
@@ -237,33 +239,20 @@ const EINSTELLUNGEN = {
         stand.textContent = "Angemeldet als " + person.name + ".";
         karte.appendChild(stand);
 
-        const abmeldenText = document.createElement("p");
-        abmeldenText.className = "erklaerung";
-        abmeldenText.textContent = "Abmelden: Dieses Gerät vergisst die "
-            + "Anmeldung, dein Konto bleibt samt Punkten und Partien "
-            + "bestehen. Du meldest dich jederzeit wieder an.";
-        karte.appendChild(abmeldenText);
+        /* Beide Knöpfe in EINER Fusszeile — bis v0.107.0 hatte jeder seine
+           eigene, weil zwischen ihnen ein Erklärabsatz stand. */
+        const leiste = document.createElement("div");
+        leiste.className = "karte-fuss";
 
-        const abmeldenLeiste = document.createElement("div");
-        abmeldenLeiste.className = "karte-fuss";
-        abmeldenLeiste.appendChild(EINSTELLUNGEN._knopf(
+        leiste.appendChild(EINSTELLUNGEN._knopf(
             "Abmelden", "knopf-still knopf-klein",
             () => ANMELDUNG.abmelden()));
-        karte.appendChild(abmeldenLeiste);
 
-        const loeschenText = document.createElement("p");
-        loeschenText.className = "erklaerung";
-        loeschenText.textContent = "Konto löschen: Dein Eintrag verschwindet "
-            + "aus Spielerliste und Rangliste — das lässt sich nicht "
-            + "rückgängig machen. Beendete Partien bleiben in der Chronik.";
-        karte.appendChild(loeschenText);
-
-        const loeschenLeiste = document.createElement("div");
-        loeschenLeiste.className = "karte-fuss";
-        loeschenLeiste.appendChild(DIALOG.zweiSchritt(
+        leiste.appendChild(DIALOG.zweiSchritt(
             EINSTELLUNGEN._knopf("Konto löschen", "knopf-gefahr knopf-klein", null),
             () => ANMELDUNG.austreten()));
-        karte.appendChild(loeschenLeiste);
+
+        karte.appendChild(leiste);
 
         return karte;
     },
@@ -277,20 +266,19 @@ const EINSTELLUNGEN = {
      * ---------------------------------------------------------------- */
 
     _spielerKarteBauen() {
-        const karte = document.createElement("section");
-        karte.className = "karte";
+        const karte = EINSTELLUNGEN._karteBauen("Spieler",
+            "Profil und Verwaltung",
+            "Profil: dein Name und dein Passwort."
+            + "\n\nVerwaltung: die Liste aller Mitspieler dieses Hauses, mit "
+            + "der Möglichkeit, einen Eintrag zu entfernen. Sie ist durch ein "
+            + "eigenes Passwort geschützt.");
 
-        const kopf = document.createElement("h2");
-        kopf.textContent = "Spieler";
-        karte.appendChild(kopf);
-
-        const person = ICH.person();
-        const stand = document.createElement("p");
-        stand.className = "erklaerung";
-        stand.textContent = person
-            ? "Angemeldet als " + person.name + "."
-            : "Auf diesem Gerät ist niemand angemeldet.";
-        karte.appendChild(stand);
+        /*
+         * DAS „ANGEMELDET ALS …" STAND HIER DOPPELT (bis v0.107.0) — die
+         * Account-Karte direkt darüber sagt denselben Satz. Zweimal
+         * dieselbe Auskunft auf einem Bildschirm ist kein Text, der etwas
+         * erklärt, sondern Text, den man überliest.
+         */
 
         const leiste = document.createElement("div");
         leiste.className = "karte-fuss";
@@ -311,6 +299,44 @@ const EINSTELLUNGEN = {
            Account-Karte darüber — hier bleiben Profil und Verwaltung. */
 
         karte.appendChild(leiste);
+
+        return karte;
+    },
+
+    /* ---------------------------------------------------------------- *
+     * EINE KARTE MIT KOPFZEILE (seit v0.108.0)
+     *
+     * Überschrift links, ein i rechts — dahinter steht, was bis v0.107.0
+     * als Absatz auf der Seite stand. Das ist dasselbe Muster wie über dem
+     * Icon-Raster der Bibliothek (v0.86.0) und über den Knopfreihen des
+     * Anlege-Bildschirms (v0.105): **Wer die Seite benutzt, sieht sie
+     * nicht; wer die Erklärung sucht, findet sie an der gewohnten Stelle.**
+     *
+     * Der i-Knopf selbst wird NICHT hier gebaut, sondern von
+     * `TEAM_SCHACH._infoZeichenBauen` geholt — er trägt seinen Text bei
+     * sich und ist genau dafür gemacht. Eine zweite Fassung desselben
+     * Knopfs wäre die zweite Wahrheit.
+     *
+     * OHNE `iText` bleibt die Kopfzeile eine schlichte Überschrift.
+     * ---------------------------------------------------------------- */
+
+    _karteBauen(titel, iTitel, iText) {
+        const karte = document.createElement("section");
+        karte.className = "karte";
+
+        const kopf = document.createElement("div");
+        kopf.className = "karte-kopf";
+
+        const ueberschrift = document.createElement("h2");
+        ueberschrift.textContent = titel;
+        kopf.appendChild(ueberschrift);
+
+        if (iText && typeof TEAM_SCHACH !== "undefined"
+            && TEAM_SCHACH._infoZeichenBauen) {
+            kopf.appendChild(TEAM_SCHACH._infoZeichenBauen(iTitel, iText));
+        }
+
+        karte.appendChild(kopf);
 
         return karte;
     },

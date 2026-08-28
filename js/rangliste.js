@@ -410,10 +410,20 @@ const RANGLISTE = {
         tabelle.appendChild(koerper);
 
         bereich.appendChild(tabelle);
-        bereich.appendChild(RANGLISTE._element("p", "erklaerung",
-            "Gezählt werden alle beendeten Partien. Die Rechnung steht hinter "
-            + "dem i — und wer auf einen Namen tippt, sieht, aus welchen Partien "
-            + "die Punkte kamen."));
+
+        /*
+         * HIER STAND EIN ERKLÄRABSATZ (bis v0.107.0): „Gezählt werden alle
+         * beendeten Partien. Die Rechnung steht hinter dem i — und wer auf
+         * einen Namen tippt, sieht, aus welchen Partien die Punkte kamen."
+         *
+         * Er ist mit v0.108.0 ersatzlos weg (Nutzer-Ansage 28.08.2026:
+         * weniger Text). Er verwies auf das i, das direkt darüber in der
+         * Kopfzeile sitzt — ein Text, der auf einen sichtbaren Knopf
+         * zeigt, erklärt nichts, sondern verdoppelt ihn. Was er sonst noch
+         * sagte (auf einen Namen tippen), ist genau das, was ein Tipp
+         * ohnehin zeigt; die Rechnung selbst stand nie hier, sondern immer
+         * hinter dem i.
+         */
 
         wurzel.appendChild(bereich);
     },
