@@ -382,6 +382,25 @@ Object.assign(TEAM_SCHACH, {
              * 21.08. Sieben Haken mit je zwei bis vier Zeilen Text waren eine
              * Wand, durch die man sich zu den Kacheln durchscrollen musste.
              */
+            /*
+             * DAS BILD VOR DEM TITEL (seit v0.110.0, Nutzer-Ansage
+             * 28.08.2026: Icons und Beispielbilder statt Texten).
+             *
+             * ES BEKOMMT NICHT JEDE ZEILE EINS, und das ist Absicht: Ein
+             * Zeichen für „Unterschiedliche Armeen" oder „Wer zuerst zieht"
+             * müsste erfunden werden und wäre dann ein Rätsel neben einem
+             * klaren Wort — schlechter als gar keines. Ein Bild steht nur
+             * dort, wo die App das Ding ohnehin ZEIGT: bei den drei
+             * Lootbox-Haken. Ihr Bild ist dieselbe Lootbox, die auf dem
+             * Brett liegt (`_wuerfelBauen`), und es zeigt genau das, was der
+             * Haken bewirkt — beim Seltenheits-Haken die farbige Box, beim
+             * Unglücks-Haken die mit dem umgedrehten Fragezeichen.
+             */
+            const bild = TEAM_SCHACH._schalterBildBauen(eintrag);
+            if (bild) {
+                zeile.appendChild(bild);
+            }
+
             const text = TEAM_SCHACH._element("span", "schalter-text");
             text.appendChild(TEAM_SCHACH._element("span", "schalter-titel", eintrag.titel));
             zeile.appendChild(text);
@@ -891,6 +910,61 @@ Object.assign(TEAM_SCHACH, {
         karte.appendChild(leiste);
 
         return karte;
+    },
+
+    /*
+     * DAS BILD VOR EINEM HAKEN (seit v0.110.0) — oder nichts.
+     *
+     * Welcher Haken welches bekommt, steht hier und nur hier. Gezeichnet
+     * wird mit `_wuerfelBauen`, also mit denselben zehn Bildern, die auf dem
+     * Brett liegen; erfunden wird nichts.
+     *
+     *   Lootboxen                    die verborgene Box (so liegt sie da,
+     *                                solange die Seltenheit aus ist)
+     *   Seltenheit anzeigen          eine Box in ihrer Stufenfarbe — genau
+     *                                das macht der Haken sichtbar
+     *   Unglücks-Lootboxen anzeigen  die Box mit dem umgedrehten
+     *                                Fragezeichen, an der man ein Unglück
+     *                                von weitem erkennt
+     *
+     * Die Farbe für den Seltenheits-Haken ist die seltenste Stufe: Sie
+     * fällt am meisten auf und ist genau der Fall, für den man den Haken
+     * setzt.
+     */
+    _schalterBildBauen(eintrag) {
+        if (!TEAM_SCHACH._wuerfelBauen) {
+            return null;
+        }
+
+        const stufen = SCHACH_VARIANTEN.STUFEN;
+        const seltenste = stufen[stufen.length - 1];
+
+        let stufe = null;
+        let pech = false;
+
+        if (eintrag.schluessel === "faehigkeiten") {
+            stufe = { id: "unbekannt" };
+        } else if (eintrag.schluessel === "seltenheitZeigen") {
+            stufe = seltenste;
+        } else if (eintrag.schluessel === "pechZeigen") {
+            stufe = { id: "unbekannt" };
+            pech = true;
+        }
+
+        const halter = TEAM_SCHACH._element("span", "schalter-bild");
+        halter.setAttribute("aria-hidden", "true");
+
+        /*
+         * OHNE BILD BLEIBT DER PLATZ TROTZDEM STEHEN. Sonst beginnt der
+         * Titel „Lootboxen" weiter rechts als „Zufallsarmee" darunter, und
+         * die Liste franst aus — im Browser gesehen, bevor dieser Zweig
+         * da war (v0.110.0).
+         */
+        if (stufe) {
+            halter.appendChild(TEAM_SCHACH._wuerfelBauen(stufe, pech));
+        }
+
+        return halter;
     },
 
     /*

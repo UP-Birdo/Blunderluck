@@ -1232,6 +1232,42 @@
     border-color: var(--haupt);
 }
 
+
+/* ------------------------------------------------------------------ *
+ * DAS BILD VOR EINEM HAKEN (seit v0.110.0)
+ *
+ * Nur die drei Lootbox-Haken tragen eins (Begründung bei
+ * `_schalterBildBauen`). Die Zeilen ohne Bild bekommen trotzdem den
+ * leeren Halter — sonst begänne ihr Titel weiter links als der von
+ * „Lootboxen", und die Liste fransste aus.
+ * ------------------------------------------------------------------ */
+
+.schalter-bild {
+    flex: 0 0 auto;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.schalter-bild .wuerfel {
+    /*
+     * DIE BOX MUSS AUS IHRER BRETT-HALTUNG GELÖST WERDEN. `.wuerfel` steht
+     * auf `position: absolute` mit 76 Prozent — gedacht für ein Brettfeld,
+     * das ihr Bezugspunkt ist. In einer Zeile ohne solchen Bezugspunkt sucht
+     * sie sich den nächsten weiter oben und wird riesig; genau so ist es
+     * beim Bau passiert (im Browser gesehen, v0.110.0). Deshalb hier
+     * ausdrücklich zurück in den Textfluss.
+     */
+    position: static;
+    width: 100%;
+    height: 100%;
+
+    /* Auf dem Brett schwebt die Box (`wuerfel-schweben`) — in einer Liste
+       wäre das Zappeln neben einem Wort nur unruhig. */
+    animation: none;
+}
 .schalter-text {
     display: flex;
     flex-direction: column;

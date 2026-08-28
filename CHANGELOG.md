@@ -3,6 +3,20 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.110.0 — 28.08.2026
+
+**Die Lootbox-Schalter zeigen ihre Lootbox.**
+
+- Beim Anlegen einer Runde steht vor „Lootboxen", „Seltenheit anzeigen"
+  und „Unglücks-Lootboxen anzeigen" jetzt genau die Box, die der Schalter
+  bewirkt: die verborgene, die farbige und die mit dem umgedrehten
+  Fragezeichen. Es ist dasselbe Bild, das auch auf dem Brett liegt.
+- Die übrigen Schalter bekommen bewusst kein Zeichen. Für „Unterschiedliche
+  Armeen" oder „Wer zuerst zieht" müsste man eines erfinden, und ein
+  erfundenes Bild neben einem klaren Wort ist ein Rätsel, keine Hilfe. Ihre
+  Titel stehen trotzdem in derselben Flucht.
+
+
 ## v0.109.0 — 28.08.2026
 
 **Bilder statt Wörter: Die Figurenzahl zeigt jetzt vier Mini-Bretter, und
