@@ -4057,4 +4057,85 @@ pruefe("Der Melde-Weg traegt die technische Meldung schon in sich (v0.105.0)", (
     }
 });
 
+
+/* ------------------------------------------------------------------ *
+ * Der Umschalter der Bibliothek (v0.107.0, Punkt 48)
+ * ------------------------------------------------------------------ */
+
+pruefe("Der Umschalter zeigt entweder Faehigkeiten oder Ungluecke (v0.107.0)", () => {
+    const FAEHIGKEITEN = umgebung.FAEHIGKEITEN;
+    const TEAM_SCHACH = umgebung.TEAM_SCHACH;
+
+    /* Der Zustand ueberlebt eine Sitzung — fuer diesen Test wird er auf die
+       Vorgabe zurueckgesetzt, damit er unabhaengig von der Reihenfolge der
+       Pruefungen laeuft. */
+    TEAM_SCHACH.infoKartenArt = "faehigkeit";
+
+    FAEHIGKEITEN.gezeichnet = false;
+    FAEHIGKEITEN.aufbauen(neuesElement("div"));
+    FAEHIGKEITEN.beimOeffnen();
+
+    const wurzel = FAEHIGKEITEN.wurzelEl;
+    const knoepfe = wurzel.querySelectorAll(".karten-knopf");
+
+    if (knoepfe.length !== 2) {
+        throw new Error("erwartet zwei Umschalt-Knoepfe, sind " + knoepfe.length);
+    }
+
+    const kacheln = wurzel.querySelectorAll(".faehigkeit-kachel");
+    const pech = kacheln.filter((kachel) => kachel.classList.contains("kachel-pech"));
+    const glueck = kacheln.filter((kachel) => !kachel.classList.contains("kachel-pech"));
+
+    if (pech.length === 0 || glueck.length === 0) {
+        throw new Error("das Raster kennt nicht beide Sorten");
+    }
+
+    /* Vorgabe: die Faehigkeiten stehen da, die Ungluecke sind ausgeblendet. */
+    if (glueck.some((kachel) => kachel.hidden === true)) {
+        throw new Error("eine Faehigkeit ist ausgeblendet, obwohl sie dran ist");
+    }
+    if (pech.some((kachel) => kachel.hidden !== true)) {
+        throw new Error("ein Unglueck steht da, obwohl die Faehigkeiten dran sind");
+    }
+
+    /* Umschalten ueber den Knopf, nicht ueber die Funktion — so wird auch
+       geprueft, dass er verdrahtet ist. */
+    const zuUnglueck = knoepfe.find(
+        (knopf) => knopf.dataset.kartenArt === "unglueck");
+    zuUnglueck.ausloesen("click");
+
+    if (pech.some((kachel) => kachel.hidden === true)) {
+        throw new Error("nach dem Umschalten fehlen die Ungluecke");
+    }
+    if (glueck.some((kachel) => kachel.hidden !== true)) {
+        throw new Error("nach dem Umschalten stehen die Faehigkeiten noch da");
+    }
+
+    /* Der aktive Knopf traegt die Pille und sagt es auch Vorleseprogrammen;
+       der andere ist wieder ein stiller Knopf. */
+    if (zuUnglueck.querySelectorAll(".reihen-pille").length !== 1) {
+        throw new Error("der aktive Knopf traegt keine Pille");
+    }
+    if (zuUnglueck.attribute["aria-pressed"] !== "true") {
+        throw new Error("der aktive Knopf meldet sich nicht als gedrueckt");
+    }
+    if (String(zuUnglueck.className).indexOf("knopf ") !== 0) {
+        throw new Error("dem aktiven Knopf fehlt die Grundklasse `knopf`");
+    }
+
+    const zuGlueck = knoepfe.find(
+        (knopf) => knopf.dataset.kartenArt === "faehigkeit");
+
+    if (zuGlueck.querySelectorAll(".reihen-pille").length !== 0) {
+        throw new Error("der stille Knopf traegt noch eine Pille");
+    }
+    if (String(zuGlueck.className).indexOf("knopf-still") === -1) {
+        throw new Error("der stille Knopf ist nicht still");
+    }
+
+    /* Zurueck auf die Vorgabe, damit spaetere Pruefungen den Tab so
+       vorfinden, wie die App ihn frisch zeichnet. */
+    TEAM_SCHACH.infoKartenArt = "faehigkeit";
+});
+
 zeitlimitPruefen();

@@ -3,6 +3,27 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.107.0 — 28.08.2026
+
+**Die Fähigkeiten sind jetzt überall Spielkarten — und Glück und Unglück
+stehen nicht mehr durcheinander.**
+
+- Im Tab „Fähigkeiten" stehen **vier Karten je Reihe** statt sechs oder
+  sieben, und jede hat das Format einer echten Spielkarte (dasselbe
+  Verhältnis wie die Karten in der Hand während der Partie). Die Karte ist
+  damit rund doppelt so gross wie die alte quadratische Kachel, das
+  Zeichen darauf entsprechend grösser.
+- **Oben ein Umschalter zwischen „Fähigkeiten" und „Unglücke".** Bis
+  jetzt lagen beide gemischt im selben Raster und waren nur am
+  gestrichelten Rahmen zu unterscheiden. Der Umschalter sieht aus und
+  bedient sich wie die Knopfreihen beim Anlegen einer Runde.
+- Am Laptop bleiben die Karten so gross wie am Handy und stehen mittig —
+  vier Spalten auf voller Bildschirmbreite wären Plakate geworden.
+
+*In der laufenden Partie war das Kartenformat schon da (seit v0.81.0) —
+dort ändert sich nichts.*
+
+
 ## v0.106.0 — 27.08.2026
 
 **Blunderluck läuft jetzt auch ohne Netz — und lässt sich als App

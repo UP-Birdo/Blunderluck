@@ -790,17 +790,38 @@ body.dialog-offen {
  * Kacheln ohne Text; der Rahmen trägt die Stufenfarbe, Unglücke sind
  * gestrichelt. Bis die echten Bilder da sind, steht der Anfangsbuchstabe
  * als Lückenfüller in der Kachel (F4).
+ *
+ * SEIT v0.107.0 SIND ES SPIELKARTEN, VIER JE REIHE (Punkt 48,
+ * Nutzer-Ansage 28.08.2026: „statt 6 in einer Reihe sollen 4 Items in
+ * einer Reihe stehen", und das Format überall auf Standard-Spielkarte).
+ *
+ * WARUM `repeat(4, 1fr)` UND NICHT MEHR `auto-fill`: Mit `auto-fill`
+ * ergab sich die Spaltenzahl aus der Breite — am Handy sechs, am Laptop
+ * sieben. Gefordert sind GENAU vier, auf jedem Gerät.
+ *
+ * WARUM DAS RASTER EINE HÖCHSTBREITE HAT: Vier Spalten auf 820 Pixeln
+ * Inhaltsbreite ergäben Karten von 190 mal 268 Pixeln — am Laptop ein
+ * Plakat statt einer Karte. Mit 460 Pixeln ist die Karte überall etwa
+ * so gross wie am Handy und steht in der Mitte; die Vorgabe „vier je
+ * Reihe" gilt trotzdem auf jeder Breite.
  * ------------------------------------------------------------------ */
 
 .faehigkeiten-raster {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
+    grid-template-columns: repeat(4, 1fr);
     gap: 8px;
+    max-width: 460px;
+    margin-left: auto;
+    margin-right: auto;
     margin-bottom: 16px;
 }
 
 .faehigkeit-kachel {
-    aspect-ratio: 1;
+    /* Pokerkarten-Verhältnis (63 zu 88 Millimeter), dieselben zwei Zahlen
+       wie die Karten in der Hand (`.faehigkeit-reihe .faehigkeit-knopf` in
+       `stil-auswertung.css`) — eine Fähigkeit sieht in der Bibliothek aus
+       wie im Spiel. */
+    aspect-ratio: 44 / 62;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -809,6 +830,17 @@ body.dialog-offen {
     border: 3px solid var(--stufe-farbe, var(--rahmen));
     border-radius: 10px;
     cursor: pointer;
+}
+
+/*
+ * AUSGEBLENDET HEISST WEG — der Umschalter über dem Raster setzt `hidden`
+ * (seit v0.107.0). Dieselbe Falle wie bei der Dialog-Liste weiter oben:
+ * Die Voreinstellung des Browsers für `[hidden]` verliert gegen das
+ * `display: flex` der Kachel, und ohne diese zwei Zeilen stünde die
+ * ausgeblendete Karte weiterhin da.
+ */
+.faehigkeit-kachel[hidden] {
+    display: none;
 }
 
 .faehigkeit-kachel:hover {
@@ -826,6 +858,27 @@ body.dialog-offen {
 }
 
 /* ------------------------------------------------------------------ *
+ * DER UMSCHALTER ÜBER DEM RASTER (seit v0.107.0, Punkt 48)
+ *
+ * Fähigkeiten oder Unglücke — bis v0.106.0 lagen beide gemischt im
+ * selben Raster und waren nur am gestrichelten Rahmen zu unterscheiden.
+ *
+ * Die Segment-Optik selbst ist NICHT hier gebaut: `.karten-leiste` und
+ * `.karten-knopf` stehen in den Sammel-Regeln der Anlege-Leisten
+ * (`css\stil-brett.css`, bei `.bot-leiste`), damit ein Umschalter in der
+ * ganzen App gleich aussieht. Hier steht nur, wie die Zeile sitzt.
+ * ------------------------------------------------------------------ */
+
+/* Die gemeinsame Zeile mit dem i: Umschalter links, i rechts. Ohne diese
+   Regel gölte `justify-content: flex-end` der `.info-zeile`, und beide
+   klebten rechts aneinander. */
+.info-zeile-karten {
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+
+/* ------------------------------------------------------------------ *
  * DIE ZEICHEN DER FÄHIGKEITEN (seit v0.63.0)
  *
  * 29 gezeichnete Zeichen aus `js\faehigkeit-zeichen.js`, an zwei Orten:
@@ -835,10 +888,13 @@ body.dialog-offen {
  * ------------------------------------------------------------------ */
 
 /* In der Kachel füllt das Zeichen den Platz, den vorher der Buchstabe hatte.
-   Die Kachel ist quadratisch, also darf es gross sein. */
+   SEIT v0.107.0 IST DIE KACHEL EINE SPIELKARTE und damit rund doppelt so
+   gross wie das alte Quadrat — das Zeichen wächst mit (2,8 statt 2,2 rem,
+   gut die Hälfte der Kartenbreite). Bliebe es stehen, sähe die Karte leer
+   aus; genau das war der Fehler an der Hand-Karte bis v0.71.0 (unten). */
 .kachel-zeichen .faehigkeit-bild {
-    width: 2.2rem;
-    height: 2.2rem;
+    width: 2.8rem;
+    height: 2.8rem;
     display: block;
 }
 

@@ -1030,7 +1030,8 @@ Object.assign(TEAM_SCHACH, {
          * VERLOREN GEHT NICHTS: Alles Textliche steht hinter dem i oben
          * rechts, in derselben Reihenfolge wie vorher.
          */
-        const zeile = TEAM_SCHACH._element("div", "info-zeile");
+        const zeile = TEAM_SCHACH._element("div", "info-zeile info-zeile-karten");
+        zeile.appendChild(TEAM_SCHACH._kartenArtLeisteBauen());
         zeile.appendChild(TEAM_SCHACH._erklaerKnopfBauen());
         wurzel.appendChild(zeile);
 
@@ -1049,6 +1050,157 @@ Object.assign(TEAM_SCHACH, {
          * Abschnitt 4.2).
          */
         wurzel.appendChild(TEAM_SCHACH._iconRasterBauen());
+
+        /*
+         * DIESE WURZEL MERKEN, damit der Umschalter sie später wiederfindet
+         * (siehe `_kartenArtAnwenden`). Es sind höchstens zwei: der Tab und
+         * die Bibliothek im Spiel. Beide zeichnen immer in dieselbe Wurzel,
+         * die Prüfung auf Identität hält die Liste deshalb kurz.
+         */
+        if (TEAM_SCHACH._kartenWurzeln.indexOf(wurzel) === -1) {
+            TEAM_SCHACH._kartenWurzeln.push(wurzel);
+        }
+
+        /* Die zuletzt gewählte Seite gilt auch für ein frisch gezeichnetes
+           Raster — sonst stünden im Tab die Fähigkeiten und im Spiel die
+           Unglücke. */
+        TEAM_SCHACH._kartenArtAnwenden();
+    },
+
+    /* ---------------------------------------------------------------- *
+     * DER UMSCHALTER ÜBER DEM RASTER (seit v0.107.0, Punkt 48)
+     *
+     * Nutzer-Ansage 28.08.2026: „oben ein Slider, wo zwischen Unglücks-
+     * karten und Glückskarten wechselt." Bis v0.106.0 lagen beide gemischt
+     * im selben Raster; die Unterscheidung gab es nur als gestrichelter
+     * Rahmen (`kachel-pech`), im Modell dagegen schon immer als zwei
+     * getrennte Listen (`faehigkeitenDerStufe` und `pechDerStufe`).
+     * ---------------------------------------------------------------- */
+
+    /*
+     * WELCHE SEITE GERADE OFFEN IST. Reines Anzeige-Gedächtnis wie
+     * `_konfettiGespielt` — es gehört zu keinem Spielstand und wird
+     * deshalb auch nirgends gespeichert.
+     */
+    infoKartenArt: "faehigkeit",
+
+    /* Die gezeichneten Bibliotheken — höchstens zwei (Tab und Spiel), siehe
+       `_infoInhaltBauen`. Kein Spielstand, nur Anzeige-Gedächtnis. */
+    _kartenWurzeln: [],
+
+    /* Die zwei Seiten des Rasters. Die Wörter sind die des Hauses
+       (`docs\WORTLISTE.md`): was man einsammelt, ist eine Fähigkeit oder
+       ein Unglück — „Glückskarte" sagt sonst nichts in der App. */
+    KARTEN_ARTEN: [
+        { id: "faehigkeit", titel: "Fähigkeiten" },
+        { id: "unglueck", titel: "Unglücke" }
+    ],
+
+    /*
+     * Gebaut aus dem Segment-Muster des Anlege-Bildschirms (`_aktivPille`,
+     * `.bot-leiste` und Geschwister) — dieselbe Optik, damit ein Umschalter
+     * in der ganzen App gleich aussieht.
+     */
+    /*
+     * Die Klassen eines Segment-Knopfs — an EINER Stelle, weil zwei Wege sie
+     * brauchen: das Bauen unten und das Umschalten in `_kartenArtAnwenden`.
+     * Das führende „knopf" fehlt hier mit Absicht: Beim Bauen setzt es
+     * `_knopf` davor, beim Umschalten wird es dort ausdrücklich ergänzt.
+     */
+    _kartenKnopfKlassen(aktiv) {
+        return "knopf-klein karten-knopf"
+            + (aktiv ? " karten-knopf-aktiv" : " knopf-still");
+    },
+
+    _kartenArtLeisteBauen() {
+        const leiste = TEAM_SCHACH._element("div", "karten-leiste");
+
+        for (const art of TEAM_SCHACH.KARTEN_ARTEN) {
+            const aktiv = (art.id === TEAM_SCHACH.infoKartenArt);
+
+            const knopf = TEAM_SCHACH._knopf(art.titel,
+                TEAM_SCHACH._kartenKnopfKlassen(aktiv),
+                () => TEAM_SCHACH._kartenArtSetzen(art.id));
+
+            /* Woran `_kartenArtAnwenden` den Knopf wiedererkennt — die
+               Beschriftung taugt dafür nicht, sie ist ein Text für Menschen. */
+            knopf.dataset.kartenArt = art.id;
+            knopf.setAttribute("aria-pressed", aktiv ? "true" : "false");
+
+            if (aktiv) {
+                knopf.appendChild(TEAM_SCHACH._aktivPille("karten"));
+            }
+
+            leiste.appendChild(knopf);
+        }
+
+        return leiste;
+    },
+
+    /*
+     * Umschalten — weich, wenn der Browser es kann und niemand weniger
+     * Bewegung eingestellt hat (dasselbe Vorgehen wie `weichZeichnen`,
+     * nur ohne Neuzeichnen des ganzen Bildschirms).
+     */
+    _kartenArtSetzen(art) {
+        TEAM_SCHACH.infoKartenArt = art;
+
+        const malen = () => TEAM_SCHACH._kartenArtAnwenden();
+
+        const ruhig = (typeof window !== "undefined" && window.matchMedia
+            && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+
+        if (ruhig || typeof document.startViewTransition !== "function") {
+            malen();
+            return;
+        }
+
+        document.startViewTransition(malen);
+    },
+
+    /*
+     * ES WIRD GEFILTERT, NICHT NEU GEZEICHNET (`hidden`, wie die Suche in
+     * `DIALOG.liste` seit v0.104.0): Das Raster hängt an keinem Spielstand,
+     * und ein Neuaufbau würde die Reihenfolge nur erneut ausrechnen.
+     *
+     * ÜBER JEDE GEMERKTE WURZEL, NICHT ÜBER `document`: Der Tab bleibt
+     * gezeichnet (`FAEHIGKEITEN.gezeichnet`), während im Spiel eine zweite
+     * Bibliothek offen sein kann — dann stehen zwei Raster da, und beide
+     * sollen dieselbe Seite zeigen. Gesucht wird auf dem Element und nicht
+     * auf dem Dokument, weil nur das Element eine Suche hat, die auch der
+     * DOM-Nachbau der Tests kennt (`tests\bildschirm-umgebung.js`).
+     *
+     * WARUM DIE PILLE HIER NICHT GLEITET wie auf dem Anlege-Bildschirm:
+     * Ein `view-transition-name` muss im Dokument einmalig sein. Bei zwei
+     * gezeichneten Bibliotheken gäbe es ihn zweimal, und der Browser bricht
+     * dann den GANZEN Übergang ab. Die Karten blenden trotzdem weich.
+     */
+    _kartenArtAnwenden() {
+        const zeigtPech = (TEAM_SCHACH.infoKartenArt === "unglueck");
+
+        for (const wurzel of TEAM_SCHACH._kartenWurzeln) {
+            for (const knopf of wurzel.querySelectorAll(".karten-knopf")) {
+                const aktiv = (knopf.dataset.kartenArt === TEAM_SCHACH.infoKartenArt);
+
+                /* Die ganze Zeile neu setzen statt einzelne Klassen zu
+                   schalten: Sie steht dann Wort für Wort so da wie beim
+                   Bauen. Das „knopf" davor ist das, was `_knopf` beim Bauen
+                   setzt — ohne es verlöre der Knopf sein Grundaussehen. */
+                knopf.className = "knopf " + TEAM_SCHACH._kartenKnopfKlassen(aktiv);
+                knopf.setAttribute("aria-pressed", aktiv ? "true" : "false");
+
+                const pille = knopf.querySelector(".reihen-pille");
+                if (aktiv && !pille) {
+                    knopf.appendChild(TEAM_SCHACH._aktivPille("karten"));
+                } else if (!aktiv && pille) {
+                    knopf.removeChild(pille);
+                }
+            }
+
+            for (const kachel of wurzel.querySelectorAll(".faehigkeit-kachel")) {
+                kachel.hidden = (kachel.classList.contains("kachel-pech") !== zeigtPech);
+            }
+        }
     },
 
     /*

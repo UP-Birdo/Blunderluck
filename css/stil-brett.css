@@ -1038,7 +1038,11 @@
 .bot-leiste,
 .vorrat-leiste,
 .armee-leiste,
-.form-leiste {
+.form-leiste,
+/* Der Umschalter der Bibliothek (seit v0.107.0, Punkt 48) — er steht
+   NICHT auf dem Anlege-Bildschirm, holt sich hier aber dieselbe Optik.
+   Wer die Segment-Optik ändert, ändert sie damit an EINER Stelle. */
+.karten-leiste {
     display: flex;
     gap: 4px;
     padding: 4px;
@@ -1065,7 +1069,8 @@
 .bot-leiste .knopf,
 .vorrat-leiste .knopf,
 .armee-leiste .knopf,
-.form-leiste .knopf {
+.form-leiste .knopf,
+.karten-leiste .knopf {
     border-color: transparent;
     background: transparent;
 }
@@ -1094,7 +1099,8 @@
 .bot-knopf-aktiv,
 .vorrat-knopf-aktiv,
 .armee-knopf-aktiv,
-.form-knopf-aktiv {
+.form-knopf-aktiv,
+.karten-knopf-aktiv {
     background: transparent;
     color: var(--haupt-schrift);
     border-color: transparent;
@@ -1105,6 +1111,7 @@
 .vorrat-knopf,
 .armee-knopf,
 .form-knopf,
+.karten-knopf,
 .vorrat-eigene {
     position: relative;
 
