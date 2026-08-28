@@ -4199,4 +4199,113 @@ pruefe("Die Einstellungen tragen keine Erklaer-Absaetze mehr (v0.108.0)", () => 
             + iKnoepfe.length);
     }
 });
+
+/* ------------------------------------------------------------------ *
+ * Bilder statt Woerter (v0.109.0)
+ * ------------------------------------------------------------------ */
+
+pruefe("Jeder Armee-Knopf zeigt SEIN eigenes Mini-Brett (v0.109.0)", () => {
+    /*
+     * NUTZER-ANSAGE 28.08.2026: „Beispielbilder statt Texten."
+     *
+     * DER EIGENTLICHE FEHLERFALL, gegen den dieser Test steht: Vier Bilder,
+     * die alle gleich aussehen. Das passiert, sobald die gewaehlte Staerke
+     * nicht mehr in die Rechnung geht — dann zeigt jeder Knopf brav ein
+     * Brett, nur eben viermal dasselbe, und niemandem faellt es auf. Der
+     * Test vergleicht deshalb die Stellungen miteinander, statt nur zu
+     * zaehlen, ob ein Bild da ist.
+     */
+    const TEAM_SCHACH = umgebung.TEAM_SCHACH;
+    const karte = TEAM_SCHACH._armeeStaerkeLeisteBauen();
+
+    const einsammeln = (element, passt, treffer) => {
+        for (const kind of element.kinder || []) {
+            if (passt(kind)) {
+                treffer.push(kind);
+            }
+            einsammeln(kind, passt, treffer);
+        }
+        return treffer;
+    };
+
+    const bilder = einsammeln(karte, (kind) =>
+        String(kind.className || "").indexOf("armee-vorschau") !== -1, []);
+
+    const staerken = umgebung.SCHACH_VARIANTEN.ARMEE_STAERKEN.length;
+
+    if (bilder.length !== staerken) {
+        throw new Error("erwartet " + staerken + " Mini-Bretter, sind "
+            + bilder.length);
+    }
+
+    /*
+     * Die Stellung eines Bildes als Zeichenkette: welche Felder eine Figur
+     * tragen, in der Reihenfolge des Bretts. Gefragt wird nach dem KIND mit
+     * der Figuren-Klasse, nicht nach `textContent` — im DOM-Nachbau reicht
+     * der Text eines Elements nicht bis in seine Kinder, und der Test war
+     * damit blind (gefunden beim Bau, v0.109.0).
+     */
+    const stellungVon = (bild) => einsammeln(bild, (kind) =>
+        String(kind.className || "").indexOf("vorschau-feld") !== -1, [])
+        .map((feld) => (feld.kinder || []).some((kind) =>
+            String(kind.className || "").indexOf("figur") !== -1) ? "x" : ".")
+        .join("");
+
+    const stellungen = bilder.map(stellungVon);
+
+    for (const stellung of stellungen) {
+        if (stellung.indexOf("x") === -1) {
+            throw new Error("ein Mini-Brett ist leer — die Aufstellung wurde"
+                + " nicht gerechnet");
+        }
+    }
+
+    /* Vier Staerken, vier verschiedene Aufstellungen. */
+    const verschiedene = stellungen.filter(
+        (stellung, stelle) => stellungen.indexOf(stellung) === stelle);
+
+    if (verschiedene.length !== stellungen.length) {
+        throw new Error("zwei Armee-Knoepfe zeigen dasselbe Brett — die"
+            + " gewaehlte Staerke geht nicht in die Rechnung");
+    }
+});
+
+pruefe("Jedes Figuren-Kapitel traegt sein Figurenbild (v0.109.0)", () => {
+    /*
+     * Bis v0.108.0 war die Liste in „Schach lernen" eine reine Wortliste,
+     * obwohl das Modell die Figur je Kapitel kennt (`KAPITEL[].figur`).
+     * Der Test zieht seine Erwartung aus dem MODELL, nicht aus einer Liste
+     * im Test: Wer ein Kapitel ergaenzt, faellt hier auf.
+     */
+    const TEAM_SCHACH = umgebung.TEAM_SCHACH;
+    const SCHACH_GRUNDLAGEN = umgebung.SCHACH_GRUNDLAGEN;
+
+    const mitFigur = SCHACH_GRUNDLAGEN.KAPITEL.filter((kapitel) => !!kapitel.figur);
+
+    if (mitFigur.length === 0) {
+        throw new Error("kein Kapitel nennt eine Figur — die Vorlage fehlt");
+    }
+
+    for (const kapitel of mitFigur) {
+        const eintrag = TEAM_SCHACH._grundlagenEintragBauen(kapitel);
+
+        const suchen = (element) => {
+            for (const kind of element.kinder || []) {
+                if (String(kind.className || "").indexOf("grundlagen-figur") !== -1) {
+                    return kind;
+                }
+                const tiefer = suchen(kind);
+                if (tiefer) {
+                    return tiefer;
+                }
+            }
+            return null;
+        };
+
+        if (!suchen(eintrag)) {
+            throw new Error("dem Kapitel „" + kapitel.titel
+                + "\u201C fehlt sein Figurenbild");
+        }
+    }
+});
 zeitlimitPruefen();

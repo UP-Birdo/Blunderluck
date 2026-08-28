@@ -3,6 +3,21 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.109.0 — 28.08.2026
+
+**Bilder statt Wörter: Die Figurenzahl zeigt jetzt vier Mini-Bretter, und
+in „Schach lernen" steht jede Figur vor ihrem Namen.**
+
+- **Beim Anlegen einer Runde** siehst du bei „Wie viele Figuren je Seite?"
+  vier kleine Bretter statt der Wörter wenig, normal, viel und voll. Jedes
+  zeigt genau die Aufstellung, die dabei herauskommt — gerechnet mit
+  denselben Regeln, die die Partie hinterher aufstellt, also nie gemalt und
+  nie veraltet. Das Wort steht klein darunter.
+- **In „Schach lernen"** trägt jedes der sechs Figuren-Kapitel sein
+  Figurenbild vor dem Namen — dasselbe Bild wie auf dem Brett. Vorher war
+  die Liste eine reine Wortliste.
+
+
 ## v0.108.0 — 28.08.2026
 
 **Weniger Text: Die Erklärungen stehen jetzt hinter dem i, nicht mehr

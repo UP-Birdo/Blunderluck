@@ -631,6 +631,23 @@
     line-height: 1;
 }
 
+
+/* ------------------------------------------------------------------ *
+ * DIE FIGUR VOR IHREM KAPITEL (seit v0.109.0)
+ *
+ * Nutzer-Ansage 28.08.2026: Bilder statt Wortlisten. Sechs Kapitel — Bauer
+ * bis König — trugen bis v0.108.0 nur ihren Namen, obwohl das Modell die
+ * Figur längst kennt. Etwas kleiner als in der Werte-Liste (1,4 statt 1,7
+ * rem): Dort ist die Figur die Zeile, hier steht sie vor einer Überschrift
+ * zum Aufklappen.
+ * ------------------------------------------------------------------ */
+
+.grundlagen-figur {
+    flex: 0 0 auto;
+    margin-right: 8px;
+    font-size: 1.4rem;
+    line-height: 1;
+}
 .werte-text {
     display: flex;
     flex-direction: column;

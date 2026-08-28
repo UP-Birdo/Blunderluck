@@ -166,6 +166,27 @@ Object.assign(TEAM_SCHACH, {
 
         const kopf = document.createElement("summary");
         kopf.className = "stufen-kopf";
+
+        /*
+         * DIE FIGUR STEHT VOR IHREM NAMEN (seit v0.109.0, Nutzer-Ansage
+         * 28.08.2026: Icons und Beispielbilder statt Texten). Bis v0.108.0
+         * war die Liste der sechs Figuren eine reine Wortliste — „Der
+         * Bauer", „Der Springer" —, obwohl das Kapitel seine Figur längst
+         * kennt (`SCHACH_GRUNDLAGEN.KAPITEL[].figur`).
+         *
+         * Genommen wird DASSELBE Bild wie auf dem Brett und in der
+         * Werte-Liste (`_figurZeichen` + `_figurKlasse`) — wer die Figur
+         * hier sieht, erkennt sie im Spiel wieder. Kapitel ohne Figur
+         * (Schach, Matt, Rochade) bekommen keins; ein Platzhalter wäre
+         * schlimmer als die Lücke.
+         */
+        if (kapitel.figur) {
+            kopf.appendChild(TEAM_SCHACH._element("span",
+                "figur figur-weiss grundlagen-figur"
+                + TEAM_SCHACH._figurKlasse(kapitel.figur),
+                TEAM_SCHACH._figurZeichen(kapitel.figur)));
+        }
+
         kopf.appendChild(TEAM_SCHACH._element("span", "stufen-name", kapitel.titel));
         eintrag.appendChild(kopf);
 

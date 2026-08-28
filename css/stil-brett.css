@@ -1083,6 +1083,49 @@
     background: var(--karte);
 }
 
+
+/* ------------------------------------------------------------------ *
+ * DIE ARMEE-KNÖPFE ZEIGEN EIN MINI-BRETT (seit v0.109.0)
+ *
+ * Nutzer-Ansage 28.08.2026: „Beispielbilder statt Texten." Vier Wörter —
+ * wenig, normal, viel, voll — sagten nichts über das Ergebnis; jetzt
+ * steht das gerechnete Brett darüber und das Wort klein darunter.
+ *
+ * DIE VIER KNÖPFE TEILEN SICH DIE BREITE GLEICH (`flex: 1 1 0`), sonst
+ * bestimmt die Wortlänge die Bildgrösse und „normal" bekäme ein
+ * grösseres Brett als „viel".
+ * ------------------------------------------------------------------ */
+
+.armee-leiste .armee-knopf {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 4px;
+}
+
+/*
+ * Die Schriftgrösse ist im Kleinen das Mass der Figuren (`.vorschau`
+ * rechnet ihre Felder daraus). Die Vorgabe dort zielt auf die grosse
+ * Spielart-Kachel — hier wird sie fest überschrieben, sonst sprengt ein
+ * Mini-Brett den Knopf.
+ */
+.armee-vorschau {
+    width: 100%;
+}
+
+.armee-vorschau .vorschau {
+    font-size: 6px;
+    border-radius: 3px;
+}
+
+/* Das Wort bleibt, ist aber nicht mehr die Hauptsache. */
+.armee-wort {
+    font-size: 0.78rem;
+    line-height: 1.1;
+}
 .vorrat-eigene {
     width: 100%;
     margin-top: 6px;

@@ -854,13 +854,31 @@ Object.assign(TEAM_SCHACH, {
         for (const staerke of SCHACH_VARIANTEN.ARMEE_STAERKEN) {
             const aktiv = (staerke.id === TEAM_SCHACH.neueRegeln.armeeStaerke);
 
-            const knopf = TEAM_SCHACH._knopf(staerke.titel,
+            /*
+             * DER KNOPF ZEIGT SEIT v0.109.0 EIN BILD (Nutzer-Ansage
+             * 28.08.2026: „Beispielbilder statt Texten"). Vier Wörter —
+             * wenig, normal, viel, voll — sagten nichts darüber, wie das
+             * Brett hinterher aussieht; ein Mini-Brett zeigt es in einem
+             * Blick. Das Wort bleibt klein darunter stehen: Es ist der
+             * Name der Wahl und steht so auch in der Sprachausgabe.
+             */
+            const knopf = TEAM_SCHACH._knopf("",
                 "knopf-klein armee-knopf" + (aktiv ? " armee-knopf-aktiv" : " knopf-still"),
                 () => {
                     TEAM_SCHACH.neueRegeln.armeeStaerke = staerke.id;
                     TEAM_SCHACH.weichZeichnen();
                 });
 
+            const bild = TEAM_SCHACH._armeeVorschauBauen(staerke.id);
+            if (bild) {
+                knopf.appendChild(bild);
+            }
+
+            knopf.appendChild(TEAM_SCHACH._element("span", "armee-wort",
+                staerke.titel));
+
+            knopf.setAttribute("aria-label",
+                staerke.titel + " Figuren: " + staerke.hinweis);
             knopf.setAttribute("aria-pressed", aktiv ? "true" : "false");
 
             if (aktiv) {
@@ -873,6 +891,50 @@ Object.assign(TEAM_SCHACH, {
         karte.appendChild(leiste);
 
         return karte;
+    },
+
+    /*
+     * DAS MINI-BRETT AUF EINEM ARMEE-KNOPF (seit v0.109.0)
+     *
+     * GERECHNET, NICHT GEMALT — mit demselben Weg, den die Spielart-Kachel
+     * seit v0.100 geht (`kreuzAufstellen` + `aufstellungAnpassen`) und den
+     * auch die echte Partie nimmt. Ein gemaltes Beispiel wäre die zweite
+     * Wahrheit, die beim ersten Umbau der Stärken abweicht; genau daran ist
+     * v0.86/v0.87 gescheitert (`erkenntnisse.md`).
+     *
+     * IMMER AUF DEM KLASSISCHEN BRETT, auch wenn hinterher Kreuz gespielt
+     * wird: Der Knopf zeigt das MUSTER der Stärke (mittiger Block, volle
+     * Breite, eine Reihe mehr, bis zur Mitte), und das ist auf acht mal acht
+     * am deutlichsten. Welches Brett gespielt wird, sagt die Vorschau
+     * darüber — diese vier Bilder beantworten eine andere Frage.
+     *
+     * OHNE ZUFALLSARMEE, auch wenn der Haken gesetzt ist: Vier gewürfelte
+     * Bilder nebeneinander wären vier verschiedene Zufälle, und der
+     * Unterschied zwischen den Stärken ginge im Rauschen unter.
+     */
+    _armeeVorschauBauen(staerkeId) {
+        if (!SCHACH_RUNDE.kreuzAufstellen || !SCHACH_RUNDE.aufstellungAnpassen) {
+            return null;
+        }
+
+        const variante = SCHACH_VARIANTEN.holen("standard");
+
+        let runde = SCHACH_RUNDE.leereRunde(0, variante.id,
+            "vorschau-armee-" + staerkeId, "");
+
+        runde.regeln.armeeStaerke = staerkeId;
+
+        /* Wie in der Spielart-Kachel: Eine Vorschau ist immer eine NEUE
+           Partie und rechnet deshalb nach der neuen Fassung. */
+        runde.regeln.armeeFassung = 1;
+
+        runde = SCHACH_RUNDE.kreuzAufstellen(runde, "");
+        runde = SCHACH_RUNDE.aufstellungAnpassen(runde);
+
+        const halter = TEAM_SCHACH._element("div", "armee-vorschau");
+        halter.appendChild(TEAM_SCHACH._vorschauBauen(variante, runde.stand.brett));
+
+        return halter;
     },
 
     /*
