@@ -3,6 +3,24 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.111.0 — 30.08.2026
+
+**Die App verbraucht jetzt einen Bruchteil an Datenvolumen — und du merkst
+sonst nichts davon.**
+
+- Bisher hat jedes offene Gerät alle drei Sekunden den kompletten Spielstand
+  geholt: **190 Kilobyte, rund 233 Megabyte pro Stunde** — auch dann, wenn
+  überhaupt niemand gezogen hatte. Jetzt fragt die App zuerst nur nach, ob
+  sich etwas geändert hat (**13 Bytes**), und holt den vollen Stand nur,
+  wenn wirklich jemand gezogen hat.
+- **Für dich ändert sich nichts am Spiel.** Ein fremder Zug kommt weiterhin
+  in derselben Abfrage an, nur eine Zehntelsekunde später — der Rückweg für
+  die Nachfrage. Auf mobilen Daten dafür deutlich sparsamer.
+- Wenn die Nachfrage aus irgendeinem Grund nicht klappt (schlechte
+  Verbindung, Zeitüberschreitung), holt die App den vollen Stand wie vorher.
+  Sie spart nur, wenn sie sich sicher ist.
+
+
 ## v0.110.0 — 28.08.2026
 
 **Die Lootbox-Schalter zeigen ihre Lootbox.**

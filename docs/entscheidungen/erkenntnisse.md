@@ -2,6 +2,32 @@
 
 ## Teuer erkaufte Erkenntnisse
 
+### Ein Bild mit `position: absolute` gehoert seinem Bezugspunkt (v0.110.0)
+
+**Gefunden beim Einbau der Lootbox vor den Schalter-Haken, im Browser,
+VOR der Auslieferung.** Die Lootbox wurde mit derselben Funktion gebaut
+wie auf dem Brett (`_wuerfelBauen`) und in einen 30 Pixel breiten Kasten
+gehaengt. Auf dem Bild fuellte sie den halben Bildschirm.
+
+**Die Ursache:** `.wuerfel` steht auf `position: absolute` mit `width:
+76%` — gemeint sind 76 Prozent des BRETTFELDES, das ihr Bezugspunkt ist
+(`position: relative` am Feld). In einer Schalter-Zeile gibt es diesen
+Bezugspunkt nicht; dann sucht sich das Bild den naechsten weiter oben —
+hier den Bildschirm — und rechnet seine 76 Prozent davon.
+
+> **Die Regel:** Wer ein vorhandenes Bild an einen NEUEN Ort haengt,
+> prueft zuerst, ob es absolut positioniert ist. Ist es das, gehoert es
+> im neuen Kasten ausdruecklich zurueck in den Fluss (`position:
+> static`) — oder der neue Kasten wird selbst zum Bezugspunkt. Beides
+> geht; nichts zu tun geht nicht.
+
+**Warum es auffiel und nicht durchrutschte:** Weil der Bildschirm vor der
+Auslieferung gerendert und ANGESEHEN wurde (Hausregel „SEHEN GEHT VOR
+RECHNEN"). Kein Test der Kette haette es gefunden: Der DOM-Nachbau kennt
+keine Stildateien, und die Struktur war ja richtig. Aus demselben Blick
+kam der zweite Fund derselben Runde — ohne leeren Platzhalter fransen
+die Titel der Zeilen ohne Bild aus.
+
 ### Wer eine Klassenzeile neu setzt, muss die Grundklasse mitschreiben (v0.107.0)
 
 **Gefunden beim Bau des Bibliotheks-Umschalters (Punkt 48), vor der

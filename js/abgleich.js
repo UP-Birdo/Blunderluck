@@ -81,6 +81,17 @@ class Abgleich {
          * damit erkennbar; sie wird nur verglichen, nie gerechnet.
          */
         this.vorgangsZaehler = 0;
+
+        /*
+         * Die Marke des zuletzt ÜBERNOMMENEN Standes (seit v0.111.0) — siehe
+         * `fremdenStandHolen`. `null` heisst „noch keine gesehen": Dann wird
+         * geholt, ohne zu fragen. Nach jedem eigenen Schreibvorgang bleibt
+         * sie absichtlich stehen; die Marke am Server ist dann höher, und
+         * die nächste Abfrage holt einmal den vollen Stand. Das ist ein
+         * Ladevorgang zu viel je eigenem Zug — und dafür braucht es keinen
+         * Sonderweg, der die eigene Marke rät.
+         */
+        this.markeGesehen = null;
     }
 
     /* Ein eigener Schreibvorgang beginnt — bis er endet, wird kein fremder
@@ -309,12 +320,52 @@ class Abgleich {
          */
         const standVorher = this.vorgangsZaehler;
 
+        /* ---------------------------------------------------------------- *
+         * ERST NACHFRAGEN, DANN HOLEN (seit v0.111.0)
+         *
+         * GEMESSEN AM 30.08.2026: Der volle Schach-Stand ist 193.800 Bytes,
+         * geholt alle drei Sekunden — rund 233 MB je Gerät und Stunde, und
+         * er wächst mit jeder gespielten Partie. In den allermeisten dieser
+         * drei Sekunden hat sich nichts geändert.
+         *
+         * Die Marke (`speicher.marke`) ist der Änderungs-Zeitstempel allein,
+         * 13 Bytes. Ist sie dieselbe wie beim letzten übernommenen Stand,
+         * kann es keine fremde Änderung geben — dann wird nichts geholt.
+         *
+         * DIE REIHENFOLGE IST DIE GANZE SICHERHEIT: Die Marke wird VOR dem
+         * Laden geholt, nie danach. Ändert sich der Stand zwischen beiden
+         * Aufrufen, gehört zur gemerkten (älteren) Marke ein NEUERER Stand —
+         * die nächste Abfrage sieht dann eine Abweichung und lädt einmal zu
+         * viel. Andersherum wäre es umgekehrt: Man merkte sich eine neuere
+         * Marke zu einem älteren Stand und würde eine Änderung nie wieder
+         * bemerken. Ein Zug, der nicht ankommt, ist der schlimmste denkbare
+         * Fehler dieser App — die Ersparnis irrt deshalb immer nach der
+         * teuren Seite.
+         *
+         * Liefert die Marke `null` (Fehler, Zeitüberschreitung, altes
+         * Datenformat, lokaler Speicher ohne Marke), läuft alles wie vor
+         * v0.111.0.
+         * ---------------------------------------------------------------- */
+        let marke = null;
+
+        if (typeof this.speicher.marke === "function") {
+            marke = await this.speicher.marke();
+
+            if (marke !== null && marke === this.markeGesehen) {
+                this.melden("bereit", this.speicher.beschreibung);
+                return;
+            }
+        }
+
         try {
             const fremd = await this.speicher.laden();
 
             if (this.schreibtGerade || this.aenderungOffen
                 || this.schreibZeitgeber !== null || this.eigeneVorgaenge > 0
                 || this.vorgangsZaehler !== standVorher) {
+                /* Die Antwort wird verworfen — dann darf auch die Marke NICHT
+                   gemerkt werden. Sonst gälte ein Stand als gesehen, der nie
+                   übernommen wurde. */
                 this.melden("bereit", this.speicher.beschreibung);
                 return;
             }
@@ -323,6 +374,10 @@ class Abgleich {
                 this.daten = fremd;
                 this.beiDaten(this.daten);
             }
+
+            /* Erst JETZT gilt die Marke als gesehen: Der Stand, der zu ihr
+               gehört, steht hier wirklich. */
+            this.markeGesehen = marke;
             this.melden("bereit", this.speicher.beschreibung);
         } catch (fehler) {
             this.melden("fehler", "Keine Verbindung: " + fehler.message);

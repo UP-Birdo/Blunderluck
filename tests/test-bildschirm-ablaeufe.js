@@ -180,6 +180,148 @@ async function zeitlimitPruefen() {
             }
         });
 
+
+    /* ------------------------------------------------------------------ *
+     * DIE MARKE: erst nachfragen, dann holen (v0.111.0)
+     *
+     * GEMESSEN AM 30.08.2026: Der volle Schach-Stand ist 193.800 Bytes und
+     * wurde alle drei Sekunden geholt — auch wenn sich nichts geaendert
+     * hatte. Die Marke ist der Zeitstempel allein (13 Bytes).
+     *
+     * DIESE VIER PRUEFUNGEN SIND DER WAECHTER GEGEN DEN SCHLIMMSTEN FEHLER,
+     * den diese Ersparnis machen koennte: einen Zug NICHT zu bemerken. Sie
+     * pruefen deshalb nicht nur, dass gespart wird, sondern vor allem, dass
+     * in jedem Zweifelsfall der volle Stand geholt wird.
+     * ------------------------------------------------------------------ */
+
+    const markenAbgleichBauen = (marken, laden, uebernahmen, zaehler) => new Abgleich(
+        {
+            art: "gemeinsam",
+            beschreibung: "Attrappe mit Marke",
+            marke: async () => {
+                zaehler.marken++;
+                return marken.wert;
+            },
+            laden: async () => {
+                zaehler.laden++;
+                return laden();
+            },
+            speichern: async () => true
+        },
+        { abfrageIntervallMs: 3000, schreibVerzoegerungMs: 10 },
+        {
+            beiDaten: () => { uebernahmen.anzahl++; },
+            beiStatus: () => { /* nichts zu melden */ },
+            leereDaten: () => ({ stand: "leer" }),
+            inhaltGleich: (a, b) => JSON.stringify(a) === JSON.stringify(b)
+        }
+    );
+
+    await pruefeMitWarten("Unveraenderte Marke spart den vollen Stand (v0.111.0)",
+        async () => {
+            const zaehler = { marken: 0, laden: 0 };
+            const uebernahmen = { anzahl: 0 };
+            const marken = { wert: 5000 };
+            const abgleich = markenAbgleichBauen(
+                marken, () => ({ stand: "server" }), uebernahmen, zaehler);
+
+            /* Erste Abfrage: Marke unbekannt, also wird geholt. */
+            await abgleich.fremdenStandHolen();
+            if (zaehler.laden !== 1) {
+                throw new Error("die erste Abfrage hat nicht geladen");
+            }
+
+            /* Zweite Abfrage, gleiche Marke: kein zweiter Ladevorgang. */
+            await abgleich.fremdenStandHolen();
+            if (zaehler.laden !== 1) {
+                throw new Error("bei gleicher Marke wurde erneut geladen ("
+                    + zaehler.laden + " Ladevorgaenge)");
+            }
+            if (zaehler.marken !== 2) {
+                throw new Error("die Marke wurde nicht jedes Mal gefragt");
+            }
+        });
+
+    await pruefeMitWarten("Geaenderte Marke holt den vollen Stand (v0.111.0)",
+        async () => {
+            const zaehler = { marken: 0, laden: 0 };
+            const uebernahmen = { anzahl: 0 };
+            const marken = { wert: 5000 };
+            let stand = { stand: "erst" };
+            const abgleich = markenAbgleichBauen(
+                marken, () => stand, uebernahmen, zaehler);
+
+            await abgleich.fremdenStandHolen();
+
+            /* Jemand zieht: Stand und Marke wandern weiter. */
+            marken.wert = 6000;
+            stand = { stand: "nach dem Zug" };
+            await abgleich.fremdenStandHolen();
+
+            if (zaehler.laden !== 2) {
+                throw new Error("die geaenderte Marke hat kein Laden ausgeloest");
+            }
+            if (JSON.stringify(abgleich.daten) !== JSON.stringify({ stand: "nach dem Zug" })) {
+                throw new Error("der neue Stand kam nicht an");
+            }
+        });
+
+    await pruefeMitWarten("Ohne brauchbare Marke laeuft alles wie vorher (v0.111.0)",
+        async () => {
+            const zaehler = { marken: 0, laden: 0 };
+            const uebernahmen = { anzahl: 0 };
+
+            /* `null` heisst „ich weiss es nicht" — Netzfehler, Zeitlimit,
+               fehlendes Feld. Dann MUSS jedes Mal voll geladen werden. */
+            const marken = { wert: null };
+            const abgleich = markenAbgleichBauen(
+                marken, () => ({ stand: "server" }), uebernahmen, zaehler);
+
+            await abgleich.fremdenStandHolen();
+            await abgleich.fremdenStandHolen();
+
+            if (zaehler.laden !== 2) {
+                throw new Error("ohne Marke wurde nicht jedes Mal geladen ("
+                    + zaehler.laden + ")");
+            }
+        });
+
+    await pruefeMitWarten("Ein verworfener Stand merkt seine Marke NICHT (v0.111.0)",
+        async () => {
+            /*
+             * DER GEFAEHRLICHSTE FALL. Laeuft waehrend der Abfrage ein eigener
+             * Vorgang, wird die Antwort verworfen (v0.76, siehe oben). Wuerde
+             * die Marke trotzdem als gesehen gelten, gaelte ein Stand als
+             * bekannt, der nie uebernommen wurde — und die naechste Abfrage
+             * spraenge ihn ueber. Der fremde Zug kaeme dann NIE an.
+             */
+            const zaehler = { marken: 0, laden: 0 };
+            const uebernahmen = { anzahl: 0 };
+            const marken = { wert: 5000 };
+            const abgleich = markenAbgleichBauen(
+                marken, () => ({ stand: "fremd" }), uebernahmen, zaehler);
+
+            abgleich.daten = { stand: "eigen" };
+
+            const laeuft = abgleich.fremdenStandHolen();
+            abgleich.eigenerVorgangBeginnt();
+            abgleich.eigenerVorgangEndet();
+            await laeuft;
+
+            if (uebernahmen.anzahl !== 0) {
+                throw new Error("der ueberholte Stand wurde uebernommen");
+            }
+            if (abgleich.markeGesehen !== null) {
+                throw new Error("die Marke des verworfenen Standes gilt als"
+                    + " gesehen — der naechste fremde Zug wuerde uebersprungen");
+            }
+
+            /* Und die naechste Abfrage holt ihn dann auch wirklich. */
+            await abgleich.fremdenStandHolen();
+            if (uebernahmen.anzahl !== 1) {
+                throw new Error("der fremde Stand kam auch beim zweiten Anlauf nicht an");
+            }
+        });
     await pruefeMitWarten("Sofort schreiben ueberspringt die Schreibverzoegerung (v0.91.0)",
         async () => {
             /*

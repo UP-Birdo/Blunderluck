@@ -74,6 +74,58 @@ class SpeicherGemeinsam {
         return this.basis + "/" + this.pfad + ".json";
     }
 
+    /* ---------------------------------------------------------------- *
+     * DIE MARKE (seit v0.111.0) — 13 Bytes statt 190 Kilobyte
+     *
+     * WAS SIE LÖST, GEMESSEN AM 30.08.2026: Die regelmässige Abfrage holte
+     * alle drei Sekunden den GANZEN Stand — beim Schach 193.800 Bytes, also
+     * rund 233 MB je Gerät und Stunde. Dabei ändert sich in den allermeisten
+     * dieser drei Sekunden gar nichts: Man denkt nach, der Gegner ist noch
+     * nicht dran, die Seite liegt offen daneben.
+     *
+     * Die Marke ist der Zeitstempel `geaendertAm` GANZ OBEN im Stand, einzeln
+     * gelesen. Jeder Schreibweg pflegt ihn — nachgemessen für Anlegen,
+     * Einsetzen, Entfernen, den Weg ohne Zeitangabe und das Normalisieren
+     * beim Lesen. Ist er unverändert, muss der volle Stand nicht geholt
+     * werden.
+     *
+     * SIE LIEFERT NULL STATT ZU WERFEN: Jeder Zweifel — kein Zahlenwert,
+     * HTTP-Fehler, Zeitüberschreitung — bedeutet „ich weiss es nicht", und
+     * der Abgleich holt dann den vollen Stand wie vor v0.111.0. Ein
+     * verpasster Zug wäre der teuerste Fehler, den diese Ersparnis machen
+     * könnte; sie ist deshalb in JEDEM Zweifelsfall die teure Variante.
+     *
+     * DAS ZEITLIMIT IST KURZ (halbe Sekunde): Die Marke ist eine
+     * Beschleunigung. Antwortet sie nicht sofort, ist der volle Weg richtig,
+     * statt auf sie zu warten.
+     * ---------------------------------------------------------------- */
+
+    get markenAdresse() {
+        return this.basis + "/" + this.pfad + "/"
+            + SpeicherGemeinsam.MARKEN_FELD + ".json";
+    }
+
+    async marke() {
+        try {
+            const antwort = await this._rufen({ cache: "no-store" },
+                SpeicherGemeinsam.ZEITLIMIT_MARKE_MS, "Die Nachfrage",
+                this.markenAdresse);
+
+            if (!antwort.ok) {
+                return null;
+            }
+
+            const wert = await antwort.json();
+
+            /* `null` heisst hier: Das Feld gibt es (noch) nicht — etwa in
+               einer frisch angelegten Datenbank. Auch dann wird voll
+               geladen. */
+            return (typeof wert === "number" && isFinite(wert)) ? wert : null;
+        } catch (fehler) {
+            return null;
+        }
+    }
+
     /*
      * Ruft die Datenbank auf — MIT ZEITLIMIT (seit v3.9).
      *
@@ -94,20 +146,25 @@ class SpeicherGemeinsam {
      * Mit Zeitlimit wird daraus ein normaler Fehler: Er wird gemeldet, der Zug
      * wird zurückgenommen, und man kann es sofort noch einmal versuchen.
      */
-    async _rufen(einstellungen, zeitlimit, was) {
+    async _rufen(einstellungen, zeitlimit, was, adresse) {
+        /* Ohne Angabe der ganze Stand — das ist der Normalfall und war bis
+           v0.110.0 der einzige. Seit v0.111.0 fragt die Marke einen
+           Unterpfad (siehe `marke`). */
+        const ziel = adresse || this.adresse;
+
         /*
          * Ältere Browser ohne AbortController bekommen den Aufruf wie bisher —
          * lieber ohne Zeitlimit als gar nicht.
          */
         if (typeof AbortController === "undefined") {
-            return fetch(this.adresse, einstellungen);
+            return fetch(ziel, einstellungen);
         }
 
         const abbruch = new AbortController();
         const uhr = window.setTimeout(() => abbruch.abort(), zeitlimit);
 
         try {
-            return await fetch(this.adresse,
+            return await fetch(ziel,
                 Object.assign({}, einstellungen, { signal: abbruch.signal }));
         } catch (fehler) {
             /* Ein Abbruch durch das Zeitlimit ist etwas anderes als „Server
@@ -157,6 +214,21 @@ class SpeicherGemeinsam {
  */
 SpeicherGemeinsam.ZEITLIMIT_LADEN_MS = 8000;
 SpeicherGemeinsam.ZEITLIMIT_SPEICHERN_MS = 12000;
+
+/*
+ * Die Marke (seit v0.111.0) bekommt bewusst WENIG Zeit: Sie ist eine
+ * Abkürzung, kein Weg. Antwortet sie nicht in einer halben Sekunde, wird der
+ * volle Stand geholt — das ist langsamer, aber immer richtig.
+ */
+SpeicherGemeinsam.ZEITLIMIT_MARKE_MS = 500;
+
+/*
+ * WELCHES FELD DIE MARKE IST. Es steht ganz oben in beiden Ständen
+ * (`SCHACH_TAFEL.leereTafel`, `SPIELER.leereDaten`) und wird von jedem
+ * Schreibweg hochgezogen. Wer es umbenennt, macht die Marke wirkungslos —
+ * ein Test hält deshalb fest, dass Name und Pflege zusammenpassen.
+ */
+SpeicherGemeinsam.MARKEN_FELD = "geaendertAm";
 
 /* ------------------------------------------------------------------ *
  * Auswahl der Rückwand

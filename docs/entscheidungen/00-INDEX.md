@@ -74,6 +74,10 @@ wird. Die Liste dessen, was noch kommt, steht in [../ROADMAP.md](../ROADMAP.md).
   Play-Store-Umbau braeuchte - Referenz: docs\uebergabe-schach-app.md)
 
 ## erkenntnisse.md - Teuer erkaufte Erkenntnisse
+- **Ein Bild mit `position: absolute` gehoert seinem Bezugspunkt**
+  (v0.110.0, Lootbox vor den Schalter-Haken: `.wuerfel` rechnet 76 Prozent
+  ihres BRETTFELDES; ohne solchen Bezugspunkt nimmt sie den Bildschirm und
+  wird riesig. Im Browser gesehen, kein Test der Kette haette es gefunden)
 - **Wer eine Klassenzeile neu setzt, muss die Grundklasse mitschreiben**
   (v0.107.0, beim Bibliotheks-Umschalter gefunden: `classList` fuehrt im
   DOM-Nachbau der Tests eine eigene Liste neben `className`, und `_knopf`
