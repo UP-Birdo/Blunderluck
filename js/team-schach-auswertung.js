@@ -611,10 +611,25 @@ Object.assign(TEAM_SCHACH, {
          * Reihe nur ihren Text breit sein soll; ohne sie nimmt sie den
          * ganzen Platz (`flex: 1 1 auto`), den ein voller Streifen braucht.
          */
+        /*
+         * OHNE ITEMS STEHT DA GAR NICHTS MEHR (seit v0.112.0, Nutzer-Ansage
+         * 30.08.2026: „wenn man keine Items hat soll nicht ‚noch keine‘ da
+         * stehen, das soll raus").
+         *
+         * Bis v0.111.0 stand „noch keine" an der Stelle, an der sonst die
+         * Karten liegen. Der Satz sagte nichts, was das leere Feld nicht
+         * selbst sagt — und er stand bei JEDER Partie am Anfang da, also
+         * genau dann, wenn man aufs Brett schaut.
+         *
+         * DIE KLASSE BLEIBT (`faehigkeit-reihe-leer`): An ihr hängen drei
+         * Regeln in `stil-auswertung.css`, die dafür sorgen, dass die leere
+         * Reihe sich NICHT über die ganze Breite zieht und am Kasten ihrer
+         * Seite bleibt statt am Bildschirmrand (v0.72.0, am Rechner
+         * gesehen). Ohne Inhalt gilt das weiterhin — die Reihe ist dann nur
+         * eine Zelle ohne Höhe, und die Zeile darüber behält ihr Mass.
+         */
         if (koennen.length === 0 && abbekommen.length === 0) {
             reihe.className += " faehigkeit-reihe-leer";
-            reihe.appendChild(TEAM_SCHACH._element("span", "erklaerung faehigkeit-leer",
-                "noch keine"));
             return reihe;
         }
 

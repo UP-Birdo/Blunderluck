@@ -2,6 +2,41 @@
 
 ## Teuer erkaufte Erkenntnisse
 
+### Wer eine Abfrage abkuerzt, holt die Marke VOR den Daten (v0.111.0)
+
+**Anlass:** Die regelmaessige Abfrage holte alle drei Sekunden den vollen
+Stand — gemessen 193.800 Bytes, rund 233 MB je Geraet und Stunde. Seit
+v0.111.0 wird zuerst nur der Aenderungs-Zeitstempel geholt (13 Bytes) und
+der volle Stand nur bei Abweichung.
+
+**Die eine Stelle, an der so etwas kippt, ist die REIHENFOLGE.** Es gibt
+zwei Moeglichkeiten, und nur eine ist sicher:
+
+- **Marke VOR dem Laden** (so gebaut): Aendert sich der Stand zwischen
+  beiden Aufrufen, gehoert zur gemerkten — aelteren — Marke ein NEUERER
+  Stand. Die naechste Abfrage sieht eine Abweichung und laedt einmal zu
+  viel. Kostet einen Ladevorgang, verliert nichts.
+- **Marke NACH dem Laden**: Dann gehoert zur gemerkten — neueren — Marke
+  ein AELTERER Stand. Die naechste Abfrage haelt ihn faelschlich fuer
+  bekannt und ueberspringt ihn. **Der fremde Zug kaeme nie an**, und zwar
+  dauerhaft, bis zufaellig etwas anderes die Marke bewegt.
+
+> **Die Regel:** Eine Abkuerzung, die auf einem Merkmal beruht, merkt sich
+> das Merkmal IMMER aus der Zeit VOR den Daten — und nur dann, wenn die
+> Daten auch wirklich uebernommen wurden. Wird die Antwort verworfen (hier:
+> der v0.76-Fall mit dem eigenen Vorgang), darf auch das Merkmal nicht
+> gemerkt werden.
+
+**Zweiter Punkt, gleiche Denkart:** Die Abkuerzung irrt immer nach der
+teuren Seite. Kein Zahlenwert, Zeitlimit, fehlendes Feld — jeder Zweifel
+bedeutet „voll laden wie vorher". Eine Ersparnis, die im Zweifel spart,
+waere ein Datenverlust-Werkzeug.
+
+**Vorher nachgemessen statt angenommen:** dass alle fuenf Wege, die die
+Tafel aendern, den Zeitstempel wirklich hochziehen (Anlegen, Einsetzen,
+Entfernen, ohne Zeitangabe, Normalisieren beim Lesen) — haette EIN Weg ihn
+vergessen, waere genau dieser Zug unsichtbar geworden.
+
 ### Ein Bild mit `position: absolute` gehoert seinem Bezugspunkt (v0.110.0)
 
 **Gefunden beim Einbau der Lootbox vor den Schalter-Haken, im Browser,

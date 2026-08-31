@@ -74,6 +74,10 @@ wird. Die Liste dessen, was noch kommt, steht in [../ROADMAP.md](../ROADMAP.md).
   Play-Store-Umbau braeuchte - Referenz: docs\uebergabe-schach-app.md)
 
 ## erkenntnisse.md - Teuer erkaufte Erkenntnisse
+- **Wer eine Abfrage abkuerzt, holt die Marke VOR den Daten** (v0.111.0,
+  Spar-Umbau der regelmaessigen Abfrage: 13 Bytes statt 193.800. Andersherum
+  gehoerte zu einer neueren Marke ein aelterer Stand — der fremde Zug kaeme
+  dauerhaft nie an. Und: im Zweifel immer voll laden)
 - **Ein Bild mit `position: absolute` gehoert seinem Bezugspunkt**
   (v0.110.0, Lootbox vor den Schalter-Haken: `.wuerfel` rechnet 76 Prozent
   ihres BRETTFELDES; ohne solchen Bezugspunkt nimmt sie den Bildschirm und

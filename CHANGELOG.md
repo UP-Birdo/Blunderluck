@@ -3,6 +3,15 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.112.0 — 31.08.2026
+
+**„noch keine" steht nicht mehr am Brett.**
+
+- Wer noch keine Fähigkeiten gesammelt hat, sieht an der Stelle jetzt
+  einfach nichts — vorher stand dort „noch keine", und zwar bei jeder
+  Partie am Anfang, also genau dann, wenn man aufs Brett schaut.
+
+
 ## v0.111.0 — 30.08.2026
 
 **Die App verbraucht jetzt einen Bruchteil an Datenvolumen — und du merkst
