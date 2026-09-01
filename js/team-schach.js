@@ -880,30 +880,53 @@ const TEAM_SCHACH = {
      * ---------------------------------------------------------------- */
 
     /*
-     * DER ERSTE VON ZWEI START-BILDSCHIRMEN (Nutzer-Ansage 25.08.2026).
+     * DER ERSTE VON ZWEI START-BILDSCHIRMEN (Nutzer-Ansage 25.08.2026),
+     * ZWEISPALTIG SEIT PUNKT 49 (Nutzer-Ansage 28.08.2026).
      *
-     * Er zeigt genau vier Dinge: den Ausgang oben links, wer schon auf
-     * welcher Seite sitzt, die Wahl Weiss/Schwarz/Zufall — und unten den
-     * Beitritts-Code als Knopf zum Freunde-Einladen. SEIT Punkt 8
-     * (27.08.2026) IST DER TIPP AUF DIE SEITE ZUGLEICH DIE ERSTE ZUSAGE;
-     * ein eigener „Bereit"-Knopf steht nicht mehr da.
+     * Der Wortlaut: „ganz oben links der zurück knopf / dann über die ganze
+     * länge zuffall knopf daruter / 50 % des screens Weiß wo der alte knopf
+     * zum auswählen ist darunter eine große liste die leer ist bis sich
+     * jemand einträgt / das selbe rechts neben dran mit Schwarz / Der Raum
+     * Code soll oben in der spalte bei zurück rechts stehen so wie in der
+     * richtigen matches."
+     *
+     * VON OBEN NACH UNTEN: Ausgang links und Code rechts im Kopf, darunter
+     * der Zufall-Knopf über die volle Breite, darunter die zwei Seiten
+     * nebeneinander — jede mit ihrem Auswahl-Knopf oben und der Liste derer,
+     * die schon darauf sitzen.
+     *
+     * DREI DINGE ÄNDERN SICH DAMIT GEGENÜBER v0.61.0:
+     *
+     *   - DIE ZWEI SPIELERZEILEN FALLEN HIER WEG. Sie sagten, wer auf
+     *     welcher Seite sitzt — genau das sagen jetzt die zwei Listen, und
+     *     zwar an der Seite, zu der sie gehören. Im Match und in der
+     *     Aufstellung (`_aufstellungZeichnen`) bleiben sie unangetastet:
+     *     Dort flankieren sie das Brett, und dafür sind sie gebaut.
+     *   - DIE REIHE DER DREI KNÖPFE IST AUSEINANDERGEZOGEN. Zufall steht
+     *     allein oben, weil er zu keiner Seite gehört, sondern gerade
+     *     entscheidet, welche es wird; Weiss und Schwarz stehen als Kopf
+     *     IHRER Spalte. Farbe und Form bleiben die von v0.41.0 — es sind
+     *     dieselben Knöpfe, nur an einem anderen Ort.
+     *   - DER CODE STEHT IM KOPF RECHTS statt am Fuss, dieselbe Ecke wie im
+     *     laufenden Match. Blass wie dort (`partie-code`) ist er hier aber
+     *     NICHT: Auf diesem Bildschirm ist er der Grund, warum man wartet —
+     *     man liest ihn jemandem vor. Er bleibt deshalb gross genug zum
+     *     Vorlesen (`seitenwahl-code`).
+     *
+     * DIE SEITE, DIE MAN GERADE NICHT WÄHLEN KANN, TRÄGT TROTZDEM IHREN
+     * KOPF — dann als Schild statt als Knopf. Ohne ihn wüsste man auf einem
+     * Bildschirm ohne Wahl (schon beigetreten, schon bereit) nicht mehr,
+     * welche Spalte welche ist.
+     *
+     * SEIT PUNKT 8 (27.08.2026) IST DER TIPP AUF DIE SEITE ZUGLEICH DIE
+     * ERSTE ZUSAGE; ein eigener „Bereit"-Knopf steht nicht mehr da. Wer es
+     * sich anders überlegt, verlässt die Runde über das „Zurück" oben links
+     * — einen Seitenwechsel verbietet das Modell ohnehin.
      *
      * WARUM DAS BRETT HIER FEHLT: Vor dem Anpfiff war es nie zu gebrauchen.
      * Ziehen kann niemand, und was man wirklich tut — eine Seite aussuchen,
-     * auf den zweiten Spieler warten, jemanden einladen — stand darunter
-     * gedrängt. Das Brett kommt mit dem ZWEITEN Start-Bildschirm zurück
-     * (noch nicht gebaut, `ROADMAP.md` Punkt 5); dort hat es dann eine
-     * Aufgabe: die Aufstellung ansehen und bei Zufallsarmee neu würfeln.
-     *
-     * WAS DAMIT VORÜBERGEHEND FEHLT: „Neu aufstellen". Der Knopf gehört auf
-     * den zweiten Bildschirm, und der Nutzer hat am 25.08.2026 ausdrücklich
-     * entschieden, ihn nicht übergangsweise hier stehen zu lassen. Bis Punkt
-     * 5 gebaut ist, lässt sich eine Zufallsarmee also nicht neu würfeln —
-     * die Regel dafür steht unberührt in `_darfNeuWuerfeln`.
-     *
-     * DIE REIHENFOLGE IST DIE DES BLICKS: erst wer da ist, dann die Wahl
-     * (sie ist seit Punkt 8 die Hauptaktion), und ganz unten das Einladen —
-     * das braucht nur, wer noch auf jemanden wartet.
+     * warten, jemanden einladen — stand darunter gedrängt. Es kommt mit dem
+     * ZWEITEN Start-Bildschirm zurück; dort hat es eine Aufgabe.
      */
     _seitenwahlZeichnen(wurzel, partie, person) {
         const meinTeam = SCHACH_RUNDE.teamVon(partie, person.id);
@@ -912,21 +935,13 @@ const TEAM_SCHACH = {
             TEAM_SCHACH._knopf("Zurück", "knopf-still knopf-klein",
                 () => TEAM_SCHACH._seitenwahlVerlassen(partie, person)));
         kopf.className += " partie-kopf-klebt";
+
+        /* Der Code sitzt seit Punkt 49 im Kopf rechts; dorthin schiebt ihn
+           die Stildatei (`margin-left: auto`), damit er auch neben dem
+           Item-Zeichen des Kopfes in der Ecke bleibt. */
+        kopf.appendChild(TEAM_SCHACH._codeKnopfBauen(
+            partie, person, "seitenwahl-code code-knopf"));
         wurzel.appendChild(kopf);
-
-        /*
-         * Gegner oben, ich unten — dieselbe Zuordnung wie am Brett
-         * (`_farbeObenAmBrett`), damit der Sprung ins Match nichts
-         * umsortiert. Die Zeilen sind dieselben wie dort; sie sagen hier
-         * schon, wer mitspielt und wer bereit ist.
-         */
-        const obenFarbe = TEAM_SCHACH._farbeObenAmBrett(partie, person);
-        const untenFarbe = (obenFarbe === "weiss") ? "schwarz" : "weiss";
-
-        const seiten = TEAM_SCHACH._element("div", "seitenwahl-seiten");
-        seiten.appendChild(TEAM_SCHACH._spielerZeileBauen(partie, person, obenFarbe));
-        seiten.appendChild(TEAM_SCHACH._spielerZeileBauen(partie, person, untenFarbe));
-        wurzel.appendChild(seiten);
 
         /*
          * IN EINER COMPUTER-RUNDE VOR DER SEITENWAHL sagt ein Satz, was zu
@@ -944,26 +959,132 @@ const TEAM_SCHACH = {
                         + "andere."));
         }
 
-        /* Die drei Knöpfe sind hier die Hauptsache und deshalb gross
-           (`beitritt-reihe-gross`); gebaut werden sie unverändert von
-           `_beitrittReiheBauen`, das auch entscheidet, welche davon in der
-           jeweiligen Lage überhaupt dastehen. */
-        const beitritt = TEAM_SCHACH._beitrittReiheBauen(partie, person);
-        if (beitritt) {
-            beitritt.className += " beitritt-reihe-gross";
-            wurzel.appendChild(beitritt);
+        const wahl = TEAM_SCHACH._beitrittsWahlErmitteln(partie, person);
+
+        if (wahl.zufall) {
+            const zufall = TEAM_SCHACH._knopf("Zufall",
+                "team-knopf team-knopf-zufall seitenwahl-zufall",
+                () => TEAM_SCHACH.zufaelligBeitreten(partie));
+            zufall.setAttribute("aria-label", "Zufällig einer Seite zuteilen");
+            wurzel.appendChild(zufall);
         }
 
-        /*
-         * EIN EIGENER „BEREIT"-KNOPF STAND HIER VON v0.61.0 BIS Punkt 8
-         * (27.08.2026, Nutzer: „man drückt ja schon eine Seite an"). Seither
-         * ist der Tipp auf die Seite selbst die Zusage — `teamBeitreten`
-         * setzt sie im selben Schritt. Wer es sich anders überlegt, verlässt
-         * die Runde über das „Zurück" oben links; einen Seitenwechsel
-         * verbietet das Modell ohnehin.
-         */
+        const spalten = TEAM_SCHACH._element("div", "seitenwahl-spalten");
+        for (const farbe of ["weiss", "schwarz"]) {
+            spalten.appendChild(TEAM_SCHACH._seitenwahlSpalteBauen(
+                partie, person, farbe, wahl.farben.indexOf(farbe) !== -1));
+        }
+        wurzel.appendChild(spalten);
+    },
 
-        wurzel.appendChild(TEAM_SCHACH._einladungBlockBauen(partie, person));
+    /*
+     * WER WAS WÄHLEN DARF — die EINE Stelle für diese Regel.
+     *
+     * Bis Punkt 49 steckte sie in `_beitrittReiheBauen`, das die Knöpfe
+     * zugleich in eine Reihe hängte. Seit die drei an drei verschiedenen
+     * Orten stehen (Zufall oben, die Seiten je als Kopf ihrer Spalte), wäre
+     * das zweierlei in einer Funktion: Die Entscheidung bleibt an einer
+     * Stelle, das Bauen macht der Bildschirm.
+     *
+     * DREI FÄLLE, alle unverändert:
+     *
+     *   - Läuft die Partie oder ist sie vorbei, gibt es nichts zu wählen.
+     *   - WER SCHON BEREIT IST, BEKOMMT KEINE WAHL MEHR (v0.44.0,
+     *     Nutzer-Entscheidung 24.08.2026).
+     *   - WER SCHON IN EINEM TEAM SITZT, sieht nur noch SEINE Seite (Punkt
+     *     8, 27.08.2026): Der Tipp darauf holt die Zusage nach — für den
+     *     Anleger und für Runden von vor dem Update. Einen Wechsel verbietet
+     *     `SCHACH_RUNDE.teamBeitreten` ohnehin, und ein Knopf, der nichts
+     *     bewirken kann, wäre eine Lüge. Würfeln lassen kann sich nur, wer
+     *     noch gar keine Seite hat: sonst wäre es kein Zufall, sondern ein
+     *     Wechsel.
+     */
+    _beitrittsWahlErmitteln(partie, person) {
+        const keine = { farben: [], zufall: false };
+
+        if (partie.laeuft || partie.ergebnis) {
+            return keine;
+        }
+
+        const meinTeam = SCHACH_RUNDE.teamVon(partie, person.id);
+        if (meinTeam && partie.bereit[meinTeam]) {
+            return keine;
+        }
+
+        return {
+            farben: meinTeam ? [meinTeam] : ["weiss", "schwarz"],
+            zufall: !meinTeam
+        };
+    },
+
+    /*
+     * EINE SEITE ALS KNOPF (seit v0.41.0, mit Punkt 49 eigene Funktion).
+     *
+     * GLEICHE FORM, unterschiedliche Farbe — die Nutzer-Entscheidung vom
+     * 24.08.2026. Die Farben sind die der FIGUREN (`--figur-weiss` /
+     * `--figur-schwarz`), nicht die der Felder: Der Knopf sagt, mit welchen
+     * Steinen man spielt.
+     *
+     * DIE BESCHRIFTUNG IST DIE FARBE, nicht „Mitspielen". Bis v0.52.0 stand
+     * der Knopf IN einer Karte mit der Überschrift „Weiss" — dort war
+     * „Mitspielen" der fehlende Satzteil. Was der Knopf tut, sagt weiterhin
+     * sein `aria-label`, damit Vorleseprogramme nicht nur „Weiss" hören.
+     */
+    _teamKnopfBauen(partie, farbe) {
+        const knopf = TEAM_SCHACH._knopf(
+            (farbe === "weiss") ? "Weiss" : "Schwarz",
+            "team-knopf team-knopf-" + farbe,
+            () => TEAM_SCHACH.teamBeitreten(partie, farbe));
+        knopf.setAttribute("aria-label",
+            ((farbe === "weiss") ? "Bei Weiss" : "Bei Schwarz") + " mitspielen");
+        return knopf;
+    },
+
+    /*
+     * EINE SPALTE DES SEITENWAHL-BILDSCHIRMS (Punkt 49): oben der Kopf der
+     * Seite, darunter die Liste derer, die schon darauf sitzen.
+     *
+     * DIE LISTE BLEIBT LEER, BIS SICH JEMAND EINTRÄGT — so hat der Nutzer es
+     * beschrieben, und so bleibt es: kein Ersatztext, kein „noch niemand"
+     * (dieselbe Entscheidung wie bei den Fähigkeiten, v0.112.0). Ihre Höhe
+     * steht in der Stildatei, damit der Bildschirm nicht springt, sobald der
+     * erste Name erscheint.
+     *
+     * „bereit" STEHT AN DER SPALTE, nicht am Namen: Zugesagt hat die SEITE
+     * (`partie.bereit`), nicht der einzelne Spieler — im Match sagt dasselbe
+     * der Chip in der Spielerzeile. Auf dem Warte-Bildschirm (beide bereit,
+     * ohne Zufallsarmee) ist dieser Chip das Einzige, was noch etwas sagt.
+     */
+    _seitenwahlSpalteBauen(partie, person, farbe, wahlbar) {
+        const meinTeam = SCHACH_RUNDE.teamVon(partie, person.id);
+
+        const spalte = TEAM_SCHACH._element("div",
+            "seitenwahl-spalte"
+            + ((meinTeam === farbe) ? " seitenwahl-spalte-meine" : ""));
+
+        spalte.appendChild(wahlbar
+            ? TEAM_SCHACH._teamKnopfBauen(partie, farbe)
+            : TEAM_SCHACH._element("div",
+                "team-knopf team-knopf-" + farbe + " team-knopf-schild",
+                (farbe === "weiss") ? "Weiss" : "Schwarz"));
+
+        const liste = TEAM_SCHACH._element("div", "seitenwahl-liste");
+        for (const id of partie.teams[farbe]) {
+            liste.appendChild(TEAM_SCHACH._element("div",
+                "seitenwahl-eintrag"
+                + ((id === person.id) ? " seitenwahl-eintrag-ich" : ""),
+                TEAM_SCHACH._nameVon(id)));
+        }
+        spalte.appendChild(liste);
+
+        if (!partie.laeuft && !partie.ergebnis && partie.bereit[farbe]) {
+            const lage = TEAM_SCHACH._element("div", "seitenwahl-lage");
+            lage.appendChild(TEAM_SCHACH._element("span",
+                "chip chip-fertig", "bereit"));
+            spalte.appendChild(lage);
+        }
+
+        return spalte;
     },
 
     /* ---------------------------------------------------------------- *
@@ -1989,7 +2110,7 @@ const TEAM_SCHACH = {
          * bedeutet unverändert dasselbe.
          *
          * DIE SEITENWAHL STEHT SEIT v0.55.0 NICHT MEHR HIER (siehe
-         * `_beitrittReiheBauen`). Mit v0.53.0 sass sie kurzzeitig in der
+         * `_seitenwahlZeichnen`). Mit v0.53.0 sass sie kurzzeitig in der
          * Zeile der ANDEREN Seite — und weil die eine Zeile über und die
          * andere unter dem Brett steht, lagen Weiss und Schwarz plötzlich
          * einen halben Bildschirm auseinander. Nutzer-Ansage 25.08.2026:
@@ -1997,11 +2118,12 @@ const TEAM_SCHACH = {
          * Zufall beisammen stehen."
          */
         /*
-         * „BEREIT" STEHT SEIT v0.61.0 NICHT MEHR HIER, sondern gross auf dem
-         * Seitenwahl-Bildschirm (`_seitenwahlZeichnen`). Diese Zeile wird vor
-         * dem Anpfiff nur noch DORT gezeichnet — sie sagt jetzt, wer auf
-         * welcher Seite sitzt und wer schon bereit ist, und trägt keinen
-         * Knopf mehr, der die Runde weiterbringt.
+         * „BEREIT" STEHT SEIT v0.61.0 NICHT MEHR HIER, sondern vor dem
+         * Anpfiff auf den zwei Start-Bildschirmen: als Chip an der Spalte
+         * der Seitenwahl (`_seitenwahlSpalteBauen`, Punkt 49) und als Knopf
+         * in der Aufstellung. Diese Zeile flankiert seit Punkt 49 nur noch
+         * das BRETT — im Match und in der Aufstellung; auf dem Seitenwahl-
+         * Bildschirm sagen die zwei Spalten, wer auf welcher Seite sitzt.
          */
 
         return zeile;
@@ -2192,80 +2314,6 @@ const TEAM_SCHACH = {
         const meinTeam = SCHACH_RUNDE.teamVon(partie, person.id);
         const unten = meinTeam || "weiss";
         return (unten === "weiss") ? "schwarz" : "weiss";
-    },
-
-    /*
-     * DIE DREI BEITRITTS-KNÖPFE STEHEN BEISAMMEN (wieder, seit v0.55.0).
-     *
-     * Nutzer-Ansage 25.08.2026: „Besser an dem Punkt wie zuvor machen, dass
-     * Schwarz, Weiss und Zufall beisammen stehen." Mit v0.53.0 waren sie
-     * auseinandergerissen — Weiss und Schwarz sassen je in der Zeile IHRER
-     * Seite, und zwischen den beiden Zeilen liegt das Brett. Man musste
-     * daran vorbeischauen, um zu vergleichen, was man wählen kann.
-     *
-     * SIE SEHEN GLEICH AUS UND UNTERSCHEIDEN SICH NUR IN DER FARBE — das ist
-     * die Nutzer-Entscheidung vom 24.08.2026 (v0.41.0), und beisammen
-     * stehend ist sie erst wirklich zu sehen.
-     *
-     * DIE BESCHRIFTUNG IST DIE FARBE, nicht mehr „Mitspielen". Bis v0.52.0
-     * stand der Knopf IN einer Karte mit der Überschrift „Weiss" — dort war
-     * „Mitspielen" der fehlende Satzteil. Nebeneinander stünde dreimal fast
-     * dasselbe Wort, und die Farbe wäre der einzige Unterschied. Was der
-     * Knopf tut, sagt weiterhin sein `aria-label`, damit Vorleseprogramme
-     * nicht nur „Weiss" hören.
-     *
-     * WER SCHON BEREIT IST, BEKOMMT KEINE WAHL MEHR (v0.44.0, unverändert) —
-     * die ganze Reihe bleibt dann weg. Seit Punkt 8 (27.08.2026) ist die
-     * Zusage im Tipp enthalten; ein Mitglied OHNE Zusage (Anleger, alte
-     * Runde) sieht nur noch seine eigene Seite, siehe unten.
-     */
-    _beitrittReiheBauen(partie, person) {
-        if (partie.laeuft || partie.ergebnis) {
-            return null;
-        }
-
-        const meinTeam = SCHACH_RUNDE.teamVon(partie, person.id);
-        if (meinTeam && partie.bereit[meinTeam]) {
-            return null;
-        }
-
-        const reihe = TEAM_SCHACH._element("div", "beitritt-reihe");
-        let knoepfe = 0;
-
-        /*
-         * DER TIPP AUF DIE SEITE IST ZUGLEICH DIE ERSTE ZUSAGE (Punkt 8,
-         * 27.08.2026, `teamBeitreten`). Wer schon in einem Team sitzt — der
-         * Anleger im weissen, oder eine wartende Runde von vor dem Update —
-         * sieht deshalb nur noch SEINE Seite und gibt mit dem Tipp die
-         * Zusage: Einen Wechsel verbietet das Modell ohnehin
-         * (`SCHACH_RUNDE.teamBeitreten`), und ein Knopf, der nichts bewirken
-         * kann, wäre eine Lüge.
-         */
-        const farben = meinTeam ? [meinTeam] : ["weiss", "schwarz"];
-
-        for (const farbe of farben) {
-            const knopf = TEAM_SCHACH._knopf(
-                (farbe === "weiss") ? "Weiss" : "Schwarz",
-                "team-knopf team-knopf-" + farbe,
-                () => TEAM_SCHACH.teamBeitreten(partie, farbe));
-            knopf.setAttribute("aria-label",
-                ((farbe === "weiss") ? "Bei Weiss" : "Bei Schwarz") + " mitspielen");
-            reihe.appendChild(knopf);
-            knoepfe++;
-        }
-
-        /* Würfeln lassen kann sich nur, wer noch gar keine Seite hat — sonst
-           wäre es kein Zufall, sondern ein Wechsel. */
-        if (!meinTeam) {
-            const zufall = TEAM_SCHACH._knopf("Zufall",
-                "team-knopf team-knopf-zufall",
-                () => TEAM_SCHACH.zufaelligBeitreten(partie));
-            zufall.setAttribute("aria-label", "Zufällig einer Seite zuteilen");
-            reihe.appendChild(zufall);
-            knoepfe++;
-        }
-
-        return (knoepfe > 0) ? reihe : null;
     },
 
     /*

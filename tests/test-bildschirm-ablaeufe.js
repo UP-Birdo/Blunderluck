@@ -2844,11 +2844,13 @@ pruefe("Die wartende Partie ist der Seitenwahl-Bildschirm (v0.61.0)", () => {
      *   - keine Fussleiste,
      *   - oben links ein „Zurueck",
      *   - kein „Runde verlassen", kein „Umbenennen" (v0.14.0),
-     *   - die Beitritts-Knoepfe gross,
+     *   - die Wahl in ZWEI SPALTEN (Punkt 49, 28.08.2026): je Seite ein
+     *     Kopf und darunter eine Liste, die leer bleibt, bis sich jemand
+     *     eintraegt,
      *   - KEIN eigener „Bereit"-Knopf mehr (Punkt 8, 27.08.2026: der Tipp
      *     auf die Seite ist die Zusage),
-     *   - der Beitritts-Code — seit Punkt 8 als KNOPF, der das Fenster
-     *     „Freunde einladen" oeffnet.
+     *   - der Beitritts-Code oben rechts IM KOPF (Punkt 49) — seit Punkt 8
+     *     als KNOPF, der das Fenster „Freunde einladen" oeffnet.
      */
     let partie = SCHACH_TAFEL.partie(TEAM_SCHACH.abgleich.daten,
         kennungen[SCHACH_VARIANTEN.liste[0].id]);
@@ -2917,17 +2919,42 @@ pruefe("Die wartende Partie ist der Seitenwahl-Bildschirm (v0.61.0)", () => {
                 + imKopf.join(", "));
         }
 
-        /* Die Wahl steht gross da — ein eigener „Bereit"-Knopf nicht mehr:
-           Seit Punkt 8 (27.08.2026) ist der Tipp auf die Seite die Zusage. */
-        if (mitKlasse("beitritt-reihe-gross").length === 0) {
-            throw new Error("die Beitritts-Knoepfe stehen nicht gross da");
+        /*
+         * DIE WAHL STEHT IN ZWEI SPALTEN (Punkt 49, 28.08.2026). Vorher war
+         * es EINE Reihe mit drei Knoepfen (`beitritt-reihe-gross`, v0.55.0);
+         * jetzt traegt jede Seite ihren Kopf und darunter ihre Liste. Ein
+         * eigener „Bereit"-Knopf steht seit Punkt 8 nicht mehr da — der Tipp
+         * auf die Seite ist die Zusage.
+         *
+         * `mitKlasse` sucht als TEILZEICHENKETTE — der Halter
+         * `seitenwahl-spalten` traegt „seitenwahl-spalte" also mit. Er wird
+         * deshalb herausgefiltert, sonst zaehlte er als dritte Spalte.
+         */
+        if (mitKlasse("seitenwahl-spalten").length === 0) {
+            throw new Error("die zwei Spalten der Seitenwahl fehlen");
+        }
+        const spalten = mitKlasse("seitenwahl-spalte").filter((element) =>
+            String(element.className || "").indexOf("seitenwahl-spalten") === -1);
+        if (spalten.length !== 2) {
+            throw new Error("es stehen " + spalten.length + " Spalten da statt zwei");
+        }
+        if (mitKlasse("seitenwahl-liste").length !== 2) {
+            throw new Error("jede Spalte braucht ihre Liste, da sind "
+                + mitKlasse("seitenwahl-liste").length);
+        }
+        if (mitKlasse("beitritt-reihe").length > 0) {
+            throw new Error("die alte Knopfreihe steht noch da");
         }
         if (mitKlasse("seitenwahl-bereit").length > 0) {
             throw new Error("der alte Bereit-Knopf steht noch da");
         }
 
-        /* Und der Code zum Weitergeben — seit Punkt 8 ein KNOPF. */
-        const code = mitKlasse("einladung-code")[0];
+        /*
+         * DER CODE STEHT SEIT Punkt 49 OBEN RECHTS IM KOPF statt am Fuss
+         * (Nutzer-Ansage: „so wie in der richtigen matches") — und er ist
+         * seit Punkt 8 ein KNOPF, der das Einladen-Fenster oeffnet.
+         */
+        const code = mitKlasse("seitenwahl-code")[0];
         if (!code) {
             throw new Error("der Beitritts-Code fehlt");
         }
@@ -2937,6 +2964,15 @@ pruefe("Die wartende Partie ist der Seitenwahl-Bildschirm (v0.61.0)", () => {
         if (String(code.textContent || "")
                 !== SCHACH_RUNDE.beitrittsCode(partie.id)) {
             throw new Error("dort steht ein anderer Code: " + code.textContent);
+        }
+        const codeImKopf = einsammeln(kopf, (kind) =>
+            String(kind.className || "").indexOf("seitenwahl-code") !== -1, []);
+        if (codeImKopf.length === 0) {
+            throw new Error("der Code haengt nicht im Kopf neben dem Zurueck");
+        }
+        if (mitKlasse("einladung-block").length > 0) {
+            throw new Error("der Code steht doppelt — unten haengt noch der"
+                + " Einladungs-Block");
         }
     } finally {
         TEAM_SCHACH.abgleich.daten = vorher;
@@ -2992,8 +3028,10 @@ pruefe("Die Aufstellung ist der zweite Start-Bildschirm (v0.62.0)", () => {
             throw new Error("die zweite Zusage fehlt");
         }
 
-        /* Die Seitenwahl ist vorbei — und eingeladen wird auch nicht mehr. */
-        if (mitKlasse("beitritt-reihe").length > 0) {
+        /* Die Seitenwahl ist vorbei — und eingeladen wird auch nicht mehr.
+           Geprueft wird seit Punkt 49 an den zwei Spalten (vorher an der
+           Knopfreihe `beitritt-reihe`, die es nicht mehr gibt). */
+        if (mitKlasse("seitenwahl-spalten").length > 0) {
             throw new Error("die Seitenwahl steht noch da");
         }
         if (mitKlasse("einladung-block").length > 0) {
@@ -3065,9 +3103,14 @@ pruefe("Ohne Zufallsarmee gibt es keinen Aufstellungs-Bildschirm (Punkt 8)", () 
         if (mitKlasse("brett-halter").length > 0) {
             throw new Error("vor dem Anpfiff steht ein Brett da");
         }
-        /* Der Warte-Bildschirm traegt weiter Code und Einladen. */
-        if (mitKlasse("einladung-block").length === 0) {
-            throw new Error("der Einladungs-Block fehlt auf dem Warte-Bildschirm");
+        /*
+         * Der Warte-Bildschirm traegt weiter den Code zum Weitergeben —
+         * seit Punkt 49 oben rechts im Kopf statt unten im Einladungs-Block.
+         * Hier ist er besonders wichtig: Auf diesem Bildschirm gibt es
+         * sonst nichts zu tun als zu warten.
+         */
+        if (mitKlasse("seitenwahl-code").length === 0) {
+            throw new Error("der Beitritts-Code fehlt auf dem Warte-Bildschirm");
         }
     } finally {
         TEAM_SCHACH.abgleich.daten = vorher;

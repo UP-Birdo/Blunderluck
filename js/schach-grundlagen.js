@@ -45,8 +45,9 @@ const SCHACH_GRUNDLAGEN = {
      * derselben Tabelle, mit der die Bilanz am Ende der Partie rechnet. Zwei
      * Listen von Figurenwerten würden auseinanderlaufen.
      *
-     * Der König trägt dort 0 und steht hier trotzdem oben: Er ist nicht
-     * wertvoll, er ist unersetzlich. Genau das sagt der Satz bei ihm.
+     * DER KÖNIG STEHT OBEN UND ZEIGT SEIT PUNKT 50 EINE 15. Im Modell trägt
+     * er weiterhin 0 — die Zahl fürs Auge steht daneben in `ANZEIGE_WERT`
+     * und wird nirgends verrechnet.
      */
     FIGUREN: ["K", "D", "T", "L", "S", "B"],
 
@@ -371,20 +372,26 @@ const SCHACH_GRUNDLAGEN = {
         }
     ],
 
-    /* Die Gruppen in der Reihenfolge, in der sie am Bildschirm stehen. */
+    /*
+     * Die Gruppen in der Reihenfolge, in der sie am Bildschirm stehen.
+     *
+     * SEIT PUNKT 50 SIND ES DREI STATT VIER. „Die Figuren und wie sie
+     * ziehen" und „Was ist wie viel wert?" waren zwei Listen mit denselben
+     * sechs Figuren; die zweite sagte nichts, was nicht in die erste
+     * gepasst hätte. Nutzer-Ansage 28.08.2026: „schach lernen die ersten
+     * punkt wo die basis züge funktionieren dieses hinter mneü soll auch bei
+     * dem tab drunter angezeigt werden wo vorschau bilder der figutrn und
+     * derren wert gezeigt werden … über den vorschau bilder kann ja dann
+     * weg", bestätigt am 01.09.2026 („dinge bei schach lernen
+     * zusammenführen").
+     */
     GRUPPEN: [
         {
             id: "figuren",
-            titel: "Die Figuren und wie sie ziehen",
-            text: "Jede Figur hat ihre eigene Gangart. Die farbigen Punkte "
-                + "zeigen, wohin sie von dort aus ziehen könnte."
-        },
-        {
-            id: "werte",
-            titel: "Was ist wie viel wert?",
-            text: "Eine Faustregel, mit der auch die Auswertung rechnet: Turm "
-                + "gegen Läufer ist ein Gewinn, Dame gegen Springer ein "
-                + "Verlust."
+            titel: "Die Figuren, ihr Wert und ihre Gangart",
+            text: "Von der wertvollsten Figur zur kleinsten. Die Zahl ist die "
+                + "Faustregel, mit der auch die Auswertung rechnet; hinter "
+                + "jeder Figur steht, wohin sie ziehen kann."
         },
         {
             id: "ausgang",
@@ -411,12 +418,36 @@ const SCHACH_GRUNDLAGEN = {
     },
 
     /*
+     * DER ANZEIGE-WERT DES KÖNIGS (Punkt 50, Nutzer-Ansage 01.09.2026:
+     * „könig = 15 punkte").
+     *
+     * ER GEHÖRT HIERHER UND NIEMALS IN `SCHACH_RUNDE.FIGUR_WERT`. Dort
+     * trägt der König 0, und mit dieser 0 rechnen Material-Bilanz, Beute
+     * und der Computer-Gegner. Eine 15 in jener Tabelle würde jede Bilanz um
+     * 15 verschieben und alle Punktestände mitziehen — sie steht deshalb
+     * hier daneben und wird ausschliesslich angezeigt. Ein Test hält beides
+     * fest: die 0 im Modell und die 15 am Bildschirm.
+     *
+     * Warum überhaupt eine Zahl: Bis Punkt 50 stand beim König ein „—".
+     * Das beantwortete die Frage nicht, die man an dieser Liste stellt —
+     * „was ist mehr wert" —, sondern wich ihr aus. 15 ist mehr als Dame
+     * plus Läufer und sagt damit dasselbe wie das Wort „unersetzlich", nur
+     * in der Sprache der Liste.
+     */
+    ANZEIGE_WERT: { K: 15 },
+
+    /*
      * Die Figurenwerte als fertige Liste für den Bildschirm — Zeichen, Name,
-     * Wert und ein Satz dazu. Der Wert kommt aus `SCHACH_RUNDE.FIGUR_WERT`.
+     * Wert, Satz und das Gangart-Kapitel.
+     *
+     * ZWEI ZAHLEN JE FIGUR: `wert` ist die des Modells
+     * (`SCHACH_RUNDE.FIGUR_WERT`), mit der gerechnet wird; `anzeigeWert` die,
+     * die dasteht. Bei fünf der sechs Figuren sind sie gleich, beim König
+     * gehen sie auseinander.
      */
     WERT_SATZ: {
-        K: "Unbezahlbar. Er wird nie geschlagen — geht er verloren, ist die "
-            + "Partie aus.",
+        K: "Mehr als jede andere Figur — und trotzdem nicht zu ersetzen: "
+            + "Geht er verloren, ist die Partie aus.",
         D: "Die stärkste Figur. Sie allein wiegt zwei Türme fast auf.",
         T: "Stark auf freien Linien. Zwei Türme sind mehr wert als eine Dame.",
         L: "So viel wie ein Springer — aber nur auf seiner Farbe.",
@@ -429,8 +460,22 @@ const SCHACH_GRUNDLAGEN = {
             art: art,
             name: SCHACH.artName(art),
             wert: SCHACH_RUNDE.FIGUR_WERT[art],
-            satz: SCHACH_GRUNDLAGEN.WERT_SATZ[art] || ""
+            anzeigeWert: (SCHACH_GRUNDLAGEN.ANZEIGE_WERT[art] !== undefined)
+                ? SCHACH_GRUNDLAGEN.ANZEIGE_WERT[art]
+                : SCHACH_RUNDE.FIGUR_WERT[art],
+            satz: SCHACH_GRUNDLAGEN.WERT_SATZ[art] || "",
+            kapitel: SCHACH_GRUNDLAGEN.kapitelZuFigur(art)
         }));
+    },
+
+    /*
+     * Das Gangart-Kapitel einer Figur — die Verbindung, aus der seit Punkt 50
+     * die EINE gemeinsame Liste entsteht. Jede der sechs Figuren hat eines;
+     * ein Test hält das fest, damit der Bildschirm sich darauf verlassen darf.
+     */
+    kapitelZuFigur(art) {
+        return SCHACH_GRUNDLAGEN.KAPITEL.find((eintrag) =>
+            eintrag.gruppe === "figuren" && eintrag.figur === art) || null;
     },
 
     /*

@@ -601,73 +601,42 @@
 }
 
 /* ------------------------------------------------------------------ *
- * Die Figurenwerte in der Schachregel-Anleitung (seit v0.96)
+ * DIE FIGUR UND IHR WERT IN „Schach lernen" (seit v0.96, zusammengeführt
+ * mit Punkt 50)
  *
- * Links das Zeichen, in der Mitte Name und Satz, rechts die Zahl. Die Zahl
- * steht rechtsbündig und in gleichen Ziffernbreiten, damit die Spalte eine
- * Spalte bleibt — daran liest man die Reihenfolge ab, und genau darum geht es.
+ * Eine Zeile je Figur: links das Zeichen, daneben der Name, rechts die Zahl.
+ * Die Zeile IST seit Punkt 50 die Kopfzeile des Aufklappers (`stufen-kopf`) —
+ * dahinter liegen der Satz zur Figur und ihre Gangart.
+ *
+ * HIER STANDEN BIS Punkt 50 `.werte-liste`, `.werte-zeile`, `.werte-figur`,
+ * `.werte-text`, `.werte-name` und `.werte-satz`: die eigene Tabelle der
+ * Gruppe „Was ist wie viel wert?". Sie ist mit der Gruppe entfallen; von ihr
+ * geblieben ist die Zahl.
  * ------------------------------------------------------------------ */
 
-.werte-liste {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    margin-top: 10px;
-}
-
-.werte-zeile {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 8px 10px;
-    background: var(--karte-leise);
-    border: 1px solid var(--rahmen);
-    border-radius: 8px;
-}
-
-.werte-figur {
-    flex: 0 0 auto;
-    font-size: 1.7rem;
-    line-height: 1;
-}
-
-
-/* ------------------------------------------------------------------ *
+/*
  * DIE FIGUR VOR IHREM KAPITEL (seit v0.109.0)
  *
  * Nutzer-Ansage 28.08.2026: Bilder statt Wortlisten. Sechs Kapitel — Bauer
  * bis König — trugen bis v0.108.0 nur ihren Namen, obwohl das Modell die
- * Figur längst kennt. Etwas kleiner als in der Werte-Liste (1,4 statt 1,7
- * rem): Dort ist die Figur die Zeile, hier steht sie vor einer Überschrift
- * zum Aufklappen.
- * ------------------------------------------------------------------ */
-
+ * Figur längst kennt.
+ */
 .grundlagen-figur {
     flex: 0 0 auto;
     margin-right: 8px;
     font-size: 1.4rem;
     line-height: 1;
 }
-.werte-text {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    flex: 1 1 auto;
-    min-width: 0;
-}
 
-.werte-name {
-    font-weight: 600;
-}
-
-.werte-satz {
-    font-size: 0.82rem;
-    line-height: 1.35;
-    color: var(--schrift-leise);
-}
-
+/*
+ * DIE ZAHL RECHTS. Rechtsbündig und in gleichen Ziffernbreiten, damit die
+ * Spalte eine Spalte bleibt — daran liest man die Reihenfolge ab, und genau
+ * darum geht es. `margin-left: auto` schiebt sie ans Ende der Kopfzeile,
+ * gleichgültig wie lang der Name davor ist.
+ */
 .werte-zahl {
     flex: 0 0 auto;
+    margin-left: auto;
     font-size: 1.2rem;
     font-weight: 700;
     font-variant-numeric: tabular-nums;

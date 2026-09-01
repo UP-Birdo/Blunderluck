@@ -1259,24 +1259,19 @@ pruefe("Wer bereit ist, sieht die andere Seite nicht mehr als Angebot (v0.44.0)"
     const person = umgebung.ICH.person();
 
     /*
-     * WO DER KNOPF WOHNT, HAT SICH ZWEIMAL GEAENDERT — die Frage nicht.
+     * WO DER KNOPF WOHNT, HAT SICH DREIMAL GEAENDERT — die Frage nicht.
      * Bis v0.52.0 sass er im Fuss der Team-Karte, mit v0.53.0 kurz in der
-     * Spielerzeile der anderen Seite, seit v0.55.0 steht er mit den anderen
-     * beiden zusammen in der Beitritts-Reihe.
+     * Spielerzeile der anderen Seite, ab v0.55.0 mit den anderen beiden
+     * zusammen in der Beitritts-Reihe — und seit Punkt 49 (28.08.2026) am
+     * Kopf seiner eigenen Spalte.
      *
-     * Gesucht wird deshalb nach der KLASSE und nicht nach der Beschriftung:
-     * Die hiess erst „Mitspielen" und heisst jetzt schlicht „Weiss" bzw.
-     * „Schwarz". Die Klasse traegt die Bedeutung, das Wort nur den Anlass.
+     * GEFRAGT WIRD DESHALB DIE ENTSCHEIDUNG, NICHT DER ORT:
+     * `_beitrittsWahlErmitteln` sagt, welche Seiten ueberhaupt offenstehen —
+     * das ist die eine Stelle fuer diese Regel, und sie ueberlebt den
+     * naechsten Umbau des Bildschirms.
      */
-    const mitspielenDa = (partie) => {
-        const reihe = TEAM_SCHACH._beitrittReiheBauen(partie, person);
-        if (!reihe) {
-            return false;
-        }
-        return (reihe.kinder || []).some((knopf) =>
-            String(knopf.className || "").indexOf("team-knopf-weiss") !== -1
-            || String(knopf.className || "").indexOf("team-knopf-schwarz") !== -1);
-    };
+    const mitspielenDa = (partie) =>
+        TEAM_SCHACH._beitrittsWahlErmitteln(partie, person).farben.length > 0;
 
     const angelegt = SCHACH_TAFEL.partieAnlegen(
         SCHACH_TAFEL.leereTafel(8400), "standard", "Bereit", 8410);
@@ -2921,20 +2916,47 @@ pruefe("Ein Kapitel klappt sein Brett erst beim Antippen auf (v0.96)", () => {
     TEAM_SCHACH.grundlagenSchliessen();
 });
 
-pruefe("Die Werte-Tabelle nennt jede Figur mit ihrer Zahl (v0.96)", () => {
+pruefe("Jede Figur steht mit ihrer Zahl in der Liste (v0.96, Punkt 50)", () => {
+    /*
+     * BIS Punkt 50 WAR DAS EINE EIGENE TABELLE (`werte-liste`) in einer
+     * eigenen Gruppe „Was ist wie viel wert?". Seit der Zusammenfuehrung
+     * (Nutzer-Ansage 01.09.2026) ist jede Figur ein Aufklapper, und ihre
+     * Zahl steht in dessen Kopfzeile — geprueft wird deshalb nicht mehr die
+     * Tabelle, sondern die Reihe der Zahlen am gezeichneten Bildschirm.
+     *
+     * DIE ERSTE ZAHL IST DIE 15 DES KOENIGS. Sie ist der Punkt, an dem
+     * Anzeige und Modell absichtlich auseinandergehen (im Modell 0) — steht
+     * dort ploetzlich eine 0 oder ein Strich, ist genau das gebrochen.
+     */
     TEAM_SCHACH.grundlagenOeffnen();
 
-    const liste = TEAM_SCHACH.wurzelEl.querySelector(".werte-liste");
-    const anzahl = liste ? liste.kinder.length : 0;
+    const zahlen = [];
+    const einsammeln = (element) => {
+        for (const kind of element.kinder || []) {
+            if (hatKlasse(kind, "werte-zahl")) {
+                zahlen.push(String(kind.textContent || ""));
+            }
+            einsammeln(kind);
+        }
+    };
+    einsammeln(TEAM_SCHACH.wurzelEl);
 
     TEAM_SCHACH.grundlagenSchliessen();
 
-    if (!liste) {
-        throw new Error("die Werte-Tabelle fehlt");
+    const erwartet = SCHACH_GRUNDLAGEN.werte().map(
+        (eintrag) => String(eintrag.anzeigeWert));
+
+    if (zahlen.length !== erwartet.length) {
+        throw new Error("es stehen " + zahlen.length + " Zahlen da statt "
+            + erwartet.length);
     }
-    if (anzahl !== SCHACH_GRUNDLAGEN.werte().length) {
-        throw new Error("es stehen " + anzahl + " Zeilen statt "
-            + SCHACH_GRUNDLAGEN.werte().length);
+    if (zahlen.join(",") !== erwartet.join(",")) {
+        throw new Error("die Zahlen stehen anders da als im Modell: "
+            + zahlen.join(",") + " statt " + erwartet.join(","));
+    }
+    if (zahlen[0] !== "15") {
+        throw new Error("oben muesste die 15 des Koenigs stehen, da steht: "
+            + zahlen[0]);
     }
 });
 

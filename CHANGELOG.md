@@ -3,6 +3,54 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.114.0 — 01.09.2026
+
+**„Schach lernen": Die Figuren stehen nur noch einmal da — mit ihrem Wert
+und ihrer Gangart.**
+
+- Bisher kamen dieselben sechs Figuren zweimal untereinander vor: oben „Die
+  Figuren und wie sie ziehen", darunter noch einmal „Was ist wie viel wert?".
+  Jetzt ist es **eine Liste**: Bild, Name und Zahl in einer Zeile, und wer sie
+  antippt, sieht die Gangart der Figur wie bisher.
+- **Der König hat jetzt einen Wert: 15.** Vorher stand dort ein Strich, weil
+  er nie geschlagen wird — das beantwortete die Frage nicht, die man an so
+  eine Liste stellt. 15 ist mehr als Dame plus Läufer und sagt damit dasselbe
+  wie „unersetzlich", nur in der Sprache der Liste.
+- **An den Punkteständen ändert sich dadurch nichts.** Die 15 ist eine reine
+  Anzeige; Material-Bilanz, Beute und der Computer-Gegner rechnen unverändert
+  weiter.
+- Die Liste steht vom Wertvollsten zum Kleinsten — mit der 15 stimmt diese
+  Reihenfolge jetzt durchgehend, der König steht oben, weil er oben hingehört.
+
+## v0.113.0 — 01.09.2026
+
+**Die Seitenwahl vor dem Spiel steht jetzt in zwei Spalten.**
+
+- **Links Weiss, rechts Schwarz** — jede Seite mit ihrem Knopf oben und
+  darunter einer grossen Liste, in der steht, wer schon auf dieser Seite
+  mitspielt. Die Liste bleibt leer, bis sich jemand einträgt.
+- **„Zufall" steht allein über den beiden Spalten**, über die volle Breite:
+  Er gehört zu keiner der beiden Seiten, sondern entscheidet gerade, welche
+  es wird.
+  Seine weiss-schwarze Teilung läuft dabei fast senkrecht statt diagonal —
+  über die volle Breite gezogen hätte die alte Diagonale nur noch eine
+  kleine Ecke abgeschnitten, und der Knopf wäre weiss mit einem schwarzen
+  Zipfel gewesen. Im Browser nachgesehen.
+- **Schwarze Knöpfe haben im dunklen Modus jetzt eine sichtbare Kante.**
+  Vorher lag die schwarze Fläche auf fast ebenso dunklem Grund — die rechte
+  Hälfte des Zufall-Knopfes verschwand im Hintergrund, und der Knopf schien
+  in der Mitte zu enden. Gilt überall, wo ein schwarzer Knopf steht; im
+  hellen Modus ändert sich nichts.
+- **Der Raum-Code steht oben rechts neben dem Zurück-Knopf** — dieselbe Ecke
+  wie in der laufenden Partie. Er bleibt gross genug zum Vorlesen und öffnet
+  weiterhin mit einem Tipp das Fenster „Freunde einladen".
+- Die zwei Spielerzeilen über der Wahl entfallen hier. Was sie sagten — wer
+  auf welcher Seite sitzt —, sagt jetzt die Liste der jeweiligen Spalte. Am
+  Brett und auf dem Aufstellungs-Bildschirm bleiben sie unverändert.
+- Wer schon eine Seite hat oder schon zugesagt hat, sieht die andere Spalte
+  weiterhin, dann ohne Knopf und nur mit ihrem Namen — sonst wüsste man
+  nicht mehr, welche Spalte welche ist.
+
 ## v0.112.0 — 31.08.2026
 
 **„noch keine" steht nicht mehr am Brett.**

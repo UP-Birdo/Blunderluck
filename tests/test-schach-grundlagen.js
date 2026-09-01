@@ -66,11 +66,9 @@ pruefe("Jede Gruppe hat Kapitel, und jedes Kapitel gehoert zu einer Gruppe", () 
         wahr(kapitel.text.length > 40, kapitel.id + ": hat einen Text");
     }
 
-    /* Die Gruppe "werte" hat bewusst keine Kapitel — sie ist eine Tabelle. */
+    /* Seit Punkt 50 hat JEDE Gruppe Kapitel — die frueher kapitellose
+       Tabelle „Was ist wie viel wert" ist in der Figuren-Gruppe aufgegangen. */
     for (const gruppe of gruppen) {
-        if (gruppe === "werte") {
-            continue;
-        }
         wahr(SCHACH_GRUNDLAGEN.kapitelDerGruppe(gruppe).length > 0,
             gruppe + ": hat mindestens ein Kapitel");
     }
@@ -366,6 +364,78 @@ pruefe("Die Reihenfolge geht vom Wertvollsten zum Kleinsten", () => {
     for (let stelle = 2; stelle < werte.length; stelle++) {
         wahr(werte[stelle].wert <= werte[stelle - 1].wert,
             werte[stelle].name + " ist nicht mehr wert als " + werte[stelle - 1].name);
+    }
+});
+
+pruefe("Der Koenig zeigt 15 und rechnet weiter mit 0 (Punkt 50)", () => {
+    /*
+     * NUTZER-ANSAGE 01.09.2026: „koenig = 15 punkte".
+     *
+     * DIE FALLE, DIE DIESER TEST BEWACHT: Mit `SCHACH_RUNDE.FIGUR_WERT.K`
+     * rechnen Material-Bilanz, Beute und der Computer-Gegner. Wer die 15
+     * dorthin schreibt, verschiebt jede Bilanz um 15 und alle Punktestaende
+     * mit. Die Anzeige-Zahl gehoert deshalb in `ANZEIGE_WERT` — und dass
+     * beide auseinanderliegen, ist Absicht und wird hier festgehalten.
+     */
+    gleich(SCHACH_RUNDE.FIGUR_WERT.K, 0,
+        "im Modell traegt der Koenig weiterhin 0");
+    gleich(SCHACH_GRUNDLAGEN.ANZEIGE_WERT.K, 15,
+        "am Bildschirm zeigt der Koenig 15");
+
+    const werte = SCHACH_GRUNDLAGEN.werte();
+    const koenig = werte.find((eintrag) => eintrag.art === "K");
+
+    gleich(koenig.wert, 0, "der Rechenwert des Koenigs bleibt 0");
+    gleich(koenig.anzeigeWert, 15, "der Anzeigewert des Koenigs ist 15");
+
+    /* Bei allen anderen sind die zwei Zahlen dieselbe. */
+    for (const eintrag of werte) {
+        if (eintrag.art === "K") {
+            continue;
+        }
+        gleich(eintrag.anzeigeWert, eintrag.wert,
+            eintrag.art + ": Anzeige und Rechnung sind dieselbe Zahl");
+    }
+});
+
+pruefe("Mit der 15 stimmt auch die Reihenfolge der Anzeige (Punkt 50)", () => {
+    /*
+     * Bis Punkt 50 stand beim Koenig ein „—", und die Reihenfolge liess sich
+     * nur ab der Dame pruefen (er trug 0 und stand trotzdem oben). Mit einer
+     * Zahl, die groesser ist als die der Dame, faellt diese Ausnahme weg:
+     * Die Liste ist jetzt durchgehend absteigend, und genau das macht sie
+     * lesbar.
+     */
+    const werte = SCHACH_GRUNDLAGEN.werte();
+
+    gleich(werte[0].art, "K", "der Koenig steht oben");
+
+    /* Der Koenig steht ECHT ueber der Dame — das ist der ganze Zweck der
+       15. Darunter darf gleichauf stehen, was gleich viel wert ist:
+       Laeufer und Springer tragen beide 3. */
+    wahr(werte[0].anzeigeWert > werte[1].anzeigeWert,
+        "der Koenig zeigt mehr als die Dame");
+
+    for (let stelle = 1; stelle < werte.length; stelle++) {
+        wahr(werte[stelle].anzeigeWert <= werte[stelle - 1].anzeigeWert,
+            werte[stelle].name + " zeigt nicht mehr als " + werte[stelle - 1].name);
+    }
+});
+
+pruefe("Jede Figur der Liste bringt ihr Gangart-Kapitel mit (Punkt 50)", () => {
+    /*
+     * Seit Punkt 50 sind Wert-Liste und Gangart-Kapitel EINE Liste: Der
+     * Bildschirm baut sie aus `werte()` und haengt die Bilder an das
+     * `kapitel` jedes Eintrags. Fehlt eines, stuende dort eine Figur ohne
+     * Inhalt hinter dem Aufklapper — deshalb wird es hier festgehalten und
+     * im Bildschirm nicht noch einmal abgefragt.
+     */
+    for (const eintrag of SCHACH_GRUNDLAGEN.werte()) {
+        wahr(!!eintrag.kapitel, eintrag.art + ": hat ein Gangart-Kapitel");
+        gleich(eintrag.kapitel.figur, eintrag.art,
+            eintrag.art + ": das Kapitel gehoert zu dieser Figur");
+        gleich(eintrag.kapitel.gruppe, "figuren",
+            eintrag.art + ": das Kapitel steht in der Figuren-Gruppe");
     }
 });
 

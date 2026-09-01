@@ -115,10 +115,29 @@ Object.assign(TEAM_SCHACH, {
         kopf.appendChild(TEAM_SCHACH._infoZeichenBauen(gruppe.titel, gruppe.text));
         karte.appendChild(kopf);
 
-        /* Die Werte sind eine Tabelle, kein Kapitel mit Bild — sie stehen
-           deshalb direkt da und nicht hinter einem Aufklapper. */
-        if (gruppe.id === "werte") {
-            karte.appendChild(TEAM_SCHACH._grundlagenWerteBauen());
+        /*
+         * DIE FIGUREN-GRUPPE IST SEIT PUNKT 50 DIE ZUSAMMENGEFÜHRTE LISTE
+         * (Nutzer-Ansage 01.09.2026: „dann dinge bei schach lernen
+         * zusammenführen"; ausführlich 28.08.2026).
+         *
+         * Bis dahin standen dieselben sechs Figuren ZWEIMAL untereinander:
+         * oben die Gangart hinter dem Aufklapper, darunter noch einmal Bild,
+         * Name und Zahl. Jetzt ist es EINE Zeile je Figur — Bild, Name,
+         * Wert — und die Gangart liegt dahinter. Die Überschrift „Was ist
+         * wie viel wert?" ist damit entfallen; es gibt nichts mehr, was sie
+         * von der Liste darüber unterscheiden würde.
+         *
+         * SIE ENTSTEHT AUS `SCHACH_GRUNDLAGEN.werte()` und steht damit in
+         * der Reihenfolge des WERTES (König zuoberst), nicht in der des
+         * Lernens. Das Gangart-Kapitel hängt als `kapitel` an jedem Eintrag.
+         * Gebaut wird beides von `_grundlagenEintragBauen` — der zweite Wert
+         * schaltet Zahl und Satz hinzu.
+         */
+        if (gruppe.id === "figuren") {
+            for (const eintrag of SCHACH_GRUNDLAGEN.werte()) {
+                karte.appendChild(TEAM_SCHACH._grundlagenEintragBauen(
+                    eintrag.kapitel, eintrag));
+            }
             return karte;
         }
 
@@ -130,37 +149,12 @@ Object.assign(TEAM_SCHACH, {
     },
 
     /*
-     * Die Figurenwerte als Reihe: Zeichen, Name, Wert, Satz. Die Zahl kommt
-     * aus `SCHACH_GRUNDLAGEN.werte()` und damit aus derselben Tabelle, mit der
-     * die Bilanz am Ende der Partie rechnet.
+     * EIN KAPITEL ALS AUFKLAPPER. Der zweite Wert ist der Eintrag aus
+     * `SCHACH_GRUNDLAGEN.werte()` und steht nur bei den Figuren da (Punkt
+     * 50): Er bringt die Zahl in die Kopfzeile und den Satz in den Inhalt.
+     * Ohne ihn — Schach, Matt, Rochade — bleibt alles wie seit v0.96.
      */
-    _grundlagenWerteBauen() {
-        const liste = TEAM_SCHACH._element("div", "werte-liste");
-
-        for (const eintrag of SCHACH_GRUNDLAGEN.werte()) {
-            const zeile = TEAM_SCHACH._element("div", "werte-zeile");
-
-            zeile.appendChild(TEAM_SCHACH._element("span", "figur figur-weiss werte-figur"
-                + TEAM_SCHACH._figurKlasse(eintrag.art),
-                TEAM_SCHACH._figurZeichen(eintrag.art)));
-
-            const text = TEAM_SCHACH._element("div", "werte-text");
-            text.appendChild(TEAM_SCHACH._element("span", "werte-name", eintrag.name));
-            text.appendChild(TEAM_SCHACH._element("span", "werte-satz", eintrag.satz));
-            zeile.appendChild(text);
-
-            /* Der König trägt 0 und ist trotzdem der wichtigste — die Zahl
-               wäre dort eine falsche Auskunft. */
-            zeile.appendChild(TEAM_SCHACH._element("span", "werte-zahl",
-                (eintrag.art === "K") ? "—" : String(eintrag.wert)));
-
-            liste.appendChild(zeile);
-        }
-
-        return liste;
-    },
-
-    _grundlagenEintragBauen(kapitel) {
+    _grundlagenEintragBauen(kapitel, wert) {
         const eintrag = document.createElement("details");
         eintrag.className = "stufen-eintrag grundlagen-eintrag";
 
@@ -188,6 +182,20 @@ Object.assign(TEAM_SCHACH, {
         }
 
         kopf.appendChild(TEAM_SCHACH._element("span", "stufen-name", kapitel.titel));
+
+        /*
+         * DIE ZAHL STEHT RECHTS IN DERSELBEN ZEILE (Punkt 50). Sie ist der
+         * Grund, warum die Liste in dieser Reihenfolge steht — rechtsbündig
+         * und in gleichen Ziffernbreiten bleibt die Spalte eine Spalte.
+         *
+         * BEIM KÖNIG IST ES NICHT DIE ZAHL DES MODELLS: Er trägt dort 0
+         * (damit Bilanz, Beute und Bot richtig rechnen) und zeigt hier 15
+         * (`SCHACH_GRUNDLAGEN.ANZEIGE_WERT`, Nutzer-Ansage 01.09.2026).
+         */
+        if (wert) {
+            kopf.appendChild(TEAM_SCHACH._element("span", "werte-zahl",
+                String(wert.anzeigeWert)));
+        }
         eintrag.appendChild(kopf);
 
         /*
@@ -209,6 +217,13 @@ Object.assign(TEAM_SCHACH, {
             }
 
             const inhalt = TEAM_SCHACH._element("div", "stufen-inhalt");
+
+            /* Der Satz zur Figur steht VOR den Brettern (Punkt 50) — er
+               ordnet die Zahl ein, die in der Kopfzeile steht. */
+            if (wert && wert.satz) {
+                inhalt.appendChild(TEAM_SCHACH._element("p", "stufen-text",
+                    wert.satz));
+            }
 
             for (const bild of SCHACH_GRUNDLAGEN.bilder(kapitel.id)) {
                 /* `grundlagen-brett` gibt dem Bild mehr Breite als die

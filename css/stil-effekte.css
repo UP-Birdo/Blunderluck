@@ -396,11 +396,10 @@ body.design-3d .figur-schwarz.figur-art-koenig { background-image: url("../img/f
 
 /*
  * Die kleinen Figuren ausserhalb des Bretts (Beute-Bilanz im Abschluss,
- * Werte-Liste in „Schach lernen") stehen in Textzeilen, nicht auf Kacheln.
+ * die Figuren in „Schach lernen") stehen in Textzeilen, nicht auf Kacheln.
  * Sie bleiben deshalb im Fluss und bekommen nur einen passenden Kasten.
  */
 body.design-3d .bilanz-figur,
-body.design-3d .werte-figur,
 /* Die Figur vor ihrem Kapitel in „Schach lernen" (seit v0.109.0) —
    derselbe Fall: ein Bild in einer Textzeile, kein Brettfeld. */
 body.design-3d .grundlagen-figur {

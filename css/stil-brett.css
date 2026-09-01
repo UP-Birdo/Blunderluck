@@ -335,6 +335,28 @@
 }
 
 /*
+ * SCHWARZ AUF DUNKEL BRAUCHT EINE KANTE (01.09.2026, im Browser gesehen).
+ *
+ * Die Knopffarben sind die der FIGUREN, nicht die der Oberfläche — das ist
+ * die Entscheidung von v0.41.0 und bleibt so: Der Knopf sagt, mit welchen
+ * Steinen man spielt. Im dunklen Modus liegt die schwarze Fläche damit aber
+ * auf einem fast ebenso dunklen Grund (`--figur-schwarz` auf `--flaeche`),
+ * und der Rahmen in `--rahmen` ist zu leise, um sie abzugrenzen. Aufgefallen
+ * ist es an der breiten Zufall-Taste des Seitenwahl-Bildschirms: Ihre rechte
+ * Hälfte verschwand im Hintergrund, der Knopf schien in der Mitte zu enden.
+ *
+ * NUR IM DUNKLEN MODUS und NUR am Rand: Fläche und Schrift bleiben, wie sie
+ * sind. Im hellen Modus hebt sich Schwarz von selbst ab; dort wäre eine
+ * hellere Kante ein Fremdkörper.
+ */
+@media (prefers-color-scheme: dark) {
+    .team-knopf-schwarz,
+    .seitenwahl-zufall {
+        border-color: var(--schrift-leise);
+    }
+}
+
+/*
  * DIE TRENNLINIE LÄUFT VON UNTEN LINKS NACH OBEN RECHTS. Der Verlauf zeigt
  * senkrecht dazu (135deg = nach unten rechts), sonst stünde die Kante
  * andersherum. Oben links weiss wie der erste Knopf, unten rechts schwarz.
@@ -354,80 +376,161 @@
         0 0 9px var(--figur-weiss);
 }
 
-/*
- * ALLE DREI IN EINER REIHE (seit v0.55.0)
- *
- * Nutzer-Ansage 25.08.2026: „Besser an dem Punkt wie zuvor machen, dass
- * Schwarz, Weiss und Zufall beisammen stehen." Gleiche Breite für alle drei
- * (`flex: 1 1 0`), damit keiner wichtiger aussieht als die anderen — die
- * Entscheidung von v0.41.0 („alle drei gleich, nur die Farbe unterscheidet")
- * ist erst nebeneinander wirklich zu sehen.
- *
- * Es sind nicht immer drei: Wer schon in einem Team sitzt, sieht nur die
- * andere Seite (der Wechsel), und „Zufall" fällt weg. Zwei gleich breite
- * Knöpfe sehen genauso richtig aus wie drei.
- */
-.beitritt-reihe {
-    display: flex;
-    gap: 8px;
-    margin-top: 12px;
-}
-
-.beitritt-reihe .team-knopf {
-    flex: 1 1 0;
-    min-width: 0;
-}
-
 /* ------------------------------------------------------------------ *
- * DER SEITENWAHL-BILDSCHIRM (seit v0.61.0)
+ * DER SEITENWAHL-BILDSCHIRM (seit v0.61.0, zweispaltig seit Punkt 49)
  *
- * Der erste von zwei Start-Bildschirmen (Nutzer-Ansage 25.08.2026): oben
- * links Zurück, die Wahl gross in der Mitte, unten Code und Einladen. Kein
- * Brett — es kommt mit dem zweiten Bildschirm zurück.
+ * Der erste von zwei Start-Bildschirmen. Nutzer-Ansage 28.08.2026: oben
+ * links Zurück und oben rechts der Raum-Code, darunter der Zufall-Knopf über
+ * die volle Breite, darunter zwei Spalten zu je der Hälfte — links Weiss,
+ * rechts Schwarz, jede mit ihrem Knopf oben und einer grossen Liste
+ * darunter. Kein Brett; es kommt mit dem zweiten Bildschirm zurück.
  *
- * ALLES STEHT UNTEREINANDER UND MITTIG, mit einer Höchstbreite: Auf einem
- * breiten Fenster liefe die Wahl sonst über die ganze Seite auseinander,
- * und die drei Knöpfe wären dreimal so breit wie hoch.
+ * ALLES BLEIBT MITTIG UND GEDECKELT (460 px, die Breite seit v0.61.0): Auf
+ * einem breiten Fenster liefen die zwei Spalten sonst über die ganze Seite
+ * auseinander. Auf dem Handy ist der Deckel wirkungslos — dort sind es
+ * wirklich zwei halbe Bildschirme, wie angesagt.
+ *
+ * HIER STANDEN BIS Punkt 49 `.beitritt-reihe`, `.beitritt-reihe-gross` und
+ * `.seitenwahl-seiten`: die drei Knöpfe in EINER Reihe (v0.55.0) und die
+ * zwei Spielerzeilen darüber. Beide gibt es auf diesem Bildschirm nicht
+ * mehr — die Knöpfe stehen jetzt an drei Orten, die Zeilen sagt die Liste
+ * ihrer Spalte. `.seitenwahl-bereit` (der eigene Bereit-Knopf) war schon
+ * seit Punkt 8 ohne Aufrufer und ist mitgegangen.
  * ------------------------------------------------------------------ */
 
-.seitenwahl-seiten {
+/*
+ * DER CODE OBEN RECHTS IM KOPF, dieselbe Ecke wie im laufenden Match
+ * (`.partie-code` in der Standleiste) — dorthin schiebt ihn `margin-left:
+ * auto`, auch wenn links daneben noch das Item-Zeichen des Kopfes steht.
+ *
+ * ANDERS ALS IM MATCH IST ER NICHT BLASS: Dort ist er eine Randnotiz, hier
+ * der Grund, warum man auf diesem Bildschirm wartet — man liest ihn jemandem
+ * vor oder tippt ihn ab. Schreibmaschinenschrift mit weitem Zeichenabstand,
+ * damit sich Null und O nicht streiten; `user-select` bleibt an, Markieren
+ * und Kopieren ist erwünscht.
+ */
+.seitenwahl-code {
+    margin-left: auto;
+    font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+    font-size: 1.15rem;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    color: var(--schrift);
+}
+
+/*
+ * ZUFALL STEHT ÜBER DEN SPALTEN und über die volle Breite: Er gehört zu
+ * keiner Seite, sondern entscheidet gerade, welche es wird.
+ *
+ * ER BRAUCHT DABEI EINEN ANDEREN WINKEL ALS SEINE GESCHWISTER (am
+ * 01.09.2026 im Browser gesehen). Die Trennlinie von `.team-knopf-zufall`
+ * läuft bei 135 Grad diagonal durch die Mitte; in einem fast quadratischen
+ * Knopf — so stand er bis v0.112.0 als einer von dreien in einer Reihe — ist
+ * das eine saubere Hälfte/Hälfte-Teilung. Über die volle Breite gezogen
+ * (358 mal 56 Pixel am Handy) schneidet dieselbe Linie nur noch eine kleine
+ * Ecke oben rechts ab: Der Knopf sah weiss aus mit einem schwarzen Zipfel,
+ * und die Aussage „eine Seite weiss, eine schwarz" war weg.
+ *
+ * Bei 100 Grad steht die Kante fast senkrecht und bleibt trotzdem geneigt —
+ * links weiss, rechts schwarz, die Neigung weiterhin von unten links nach
+ * oben rechts (Nutzer-Ansage 24.08.2026). Nur DIESER Knopf bekommt das;
+ * `.team-knopf-zufall` bleibt überall sonst unverändert.
+ */
+.seitenwahl-zufall {
+    display: block;
+    width: 100%;
+    max-width: 460px;
+    margin: 0 auto 10px;
+    min-height: 56px;
+    font-size: 1.05rem;
+    border-radius: 12px;
+    background: linear-gradient(100deg,
+        var(--figur-weiss) 0 calc(50% - 1px),
+        var(--rahmen) calc(50% - 1px) calc(50% + 1px),
+        var(--figur-schwarz) calc(50% + 1px) 100%);
+}
+
+.seitenwahl-spalten {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
     max-width: 460px;
     margin: 0 auto;
 }
 
-/* Die zwei Spielerzeilen stehen hier ohne Brett dazwischen — der Abstand
-   der Zeile selbst (`margin-bottom: 10px`) reicht dafür aus. */
-
-.beitritt-reihe-gross {
-    max-width: 460px;
-    margin-left: auto;
-    margin-right: auto;
-    gap: 10px;
+.seitenwahl-spalte {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
 }
 
 /* GROSS heisst hier: hoch genug, dass ein Daumen sie ohne Zielen trifft, und
-   mit einer Schrift, die man aus Armlänge liest. Die Farben und die Form
-   bleiben die von v0.41.0 — es sind dieselben Knöpfe, nur in der Lage, in
-   der sie die Hauptsache sind. */
-.beitritt-reihe-gross .team-knopf {
+   mit einer Schrift, die man aus Armlänge liest — die Masse von v0.61.0.
+   Farbe und Form bleiben die von v0.41.0. */
+.seitenwahl-spalte .team-knopf {
     min-height: 72px;
     font-size: 1.05rem;
     border-radius: 12px;
 }
 
-.seitenwahl-bereit {
-    display: block;
-    width: 100%;
-    max-width: 460px;
-    margin: 18px auto 0;
-    min-height: 52px;
-    font-size: 1.05rem;
+/*
+ * DIE SEITE, DIE MAN GERADE NICHT WÄHLEN KANN, TRÄGT DENSELBEN KOPF ALS
+ * SCHILD: gleiche Farbe, gleiche Form, aber kein Knopf. Ohne ihn wüsste man
+ * auf einem Bildschirm ohne Wahl nicht mehr, welche Spalte welche ist.
+ */
+.team-knopf-schild {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: default;
+}
+
+/*
+ * DIE LISTE IST GROSS UND BLEIBT LEER, bis sich jemand einträgt (Ansage
+ * 28.08.2026) — kein Ersatztext. Die feste Mindesthöhe ist der Grund, warum
+ * der Bildschirm beim ersten Namen nicht springt.
+ */
+.seitenwahl-liste {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-height: 160px;
+    padding: 8px;
+    border: 1px solid var(--rahmen);
+    border-radius: 10px;
+    background: var(--karte-leise);
+}
+
+/* Die eigene Seite trägt den kräftigeren Rahmen — dasselbe Mittel wie an der
+   Spielerzeile (`.spieler-zeile-meine`). */
+.seitenwahl-spalte-meine .seitenwahl-liste {
+    border-color: var(--haupt);
+}
+
+.seitenwahl-eintrag {
+    font-size: 0.92rem;
+    overflow-wrap: anywhere;
+}
+
+.seitenwahl-eintrag-ich {
     font-weight: 600;
+    color: var(--haupt);
+}
+
+/* „bereit" gehört der SEITE, nicht dem Namen — deshalb unter der Liste und
+   mittig, nicht in einer der Zeilen. */
+.seitenwahl-lage {
+    display: flex;
+    justify-content: center;
+    min-height: 22px;
 }
 
 /*
  * CODE UND EINLADEN AM FUSS: eine Zeile, mittig, mit Abstand nach oben — sie
- * gehören nicht zur Wahl, sondern zum Warten auf den zweiten Spieler.
+ * gehören nicht zur Wahl, sondern zum Warten auf den zweiten Spieler. SEIT
+ * Punkt 49 nur noch auf dem AUFSTELLUNGS-Bildschirm; auf der Seitenwahl
+ * steht der Code oben rechts im Kopf.
  */
 .einladung-block {
     display: flex;
@@ -522,8 +625,9 @@
 }
 
 /* `.team-zufall-zeile` ist mit v0.55.0 ohne Nutzer geworden — der Zufall
-   steht jetzt in `.beitritt-reihe` neben den beiden anderen. Nachgesehen am
-   25.08.2026 mit einer Suche über `js\`, `css\` und `tests\`: keine
+   steht seit Punkt 49 als `.seitenwahl-zufall` allein über den zwei Spalten
+   (bis dahin in `.beitritt-reihe` neben den beiden anderen). Nachgesehen am
+   25.08.2026 mit einer Suche über `js`, `css` und `tests`: keine
    Fundstelle mehr. Deshalb hier gestrichen und nicht auskommentiert. */
 
 /* ------------------------------------------------------------------ *

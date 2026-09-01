@@ -776,5 +776,50 @@ pruefe("app.js meldet den Service Worker abgesichert an", () => {
     }
 });
 
+/*
+ * `innerHTML` DARF NUR LEEREN — NIEMALS TEXT SETZEN (seit 01.09.2026).
+ *
+ * DER FALL, DEN DAS VERHINDERT (Stored XSS): Ein Spieler nennt sich
+ * `<img src=x onerror=...>`. Landet dieser Name irgendwo über `innerHTML` im
+ * Baum, führt JEDES fremde Gerät den Code aus, das die Rangliste oder eine
+ * Partie öffnet — die Namen kommen aus der gemeinsamen Datenbank. Über
+ * `textContent` (bzw. `_element(...)`, das nichts anderes tut) kann derselbe
+ * Name nichts anrichten: Dort ist er Text und bleibt Text.
+ *
+ * WARUM ALS TEST UND NICHT ALS DURCHSICHT: Am 30.08.2026 wurde genau das
+ * einmal von Hand geprüft (Prüfliste aus der Reel-Sammlung, Ergebnis sauber).
+ * Eine Durchsicht gilt aber nur für den Tag, an dem sie stattfand; seither
+ * sind neun Versionen dazugekommen. Diese Prüfung gilt für jede weitere.
+ *
+ * ERLAUBT BLEIBT `element.innerHTML = ""` — das Leeren eines Behälters vor
+ * dem Neuzeichnen. Es setzt nichts ein und ist im ganzen Projekt die einzige
+ * Verwendung (heute 15 Stellen in 11 Dateien).
+ */
+pruefe("innerHTML leert nur, es setzt nichts ein (Stored XSS)", () => {
+    const erlaubt = /\.innerHTML\s*=\s*""\s*;/;
+    const funde = [];
+
+    for (const name of dateien) {
+        const quelle = dateisystem.readFileSync(
+            pfad.join(jsOrdner, name), "utf8");
+
+        quelle.split("\n").forEach((zeile, nummer) => {
+            if (zeile.indexOf("innerHTML") === -1) {
+                return;
+            }
+            if (erlaubt.test(zeile)) {
+                return;
+            }
+            funde.push(name + ":" + (nummer + 1) + "  " + zeile.trim());
+        });
+    }
+
+    if (funde.length > 0) {
+        throw new Error("innerHTML wird nicht nur zum Leeren benutzt — jeder"
+            + " Nutzertext gehoert ueber textContent in den Baum:\n        "
+            + funde.join("\n        "));
+    }
+});
+
 console.log(anzahlOk + " ok, " + anzahlFehler + " Fehler");
 process.exit(anzahlFehler === 0 ? 0 : 1);

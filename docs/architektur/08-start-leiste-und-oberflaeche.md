@@ -115,14 +115,28 @@ Bereitschaft** — es bleibt nur noch die zweite, die anpfeift.
 
 **Eine wartende Partie zeigt kein Brett.** `_partieZeichnen` verzweigt bei
 `!laeuft && !ergebnis` sofort nach `_seitenwahlZeichnen` — dem ersten von zwei
-Start-Bildschirmen der Nutzer-Skizze (der zweite, Brett plus Neu-Aufstellen,
-ist noch nicht gebaut; `ROADMAP.md` Punkt 5).
+Start-Bildschirmen der Nutzer-Skizze; der zweite (Brett plus Neu-Aufstellen)
+ist seit v0.62.0 gebaut und steht im nächsten Abschnitt.
 
-Was dort steht, in dieser Reihenfolge: Kopf mit „Zurück" (der einzige Ausgang),
-die zwei Spielerzeilen ohne Brett dazwischen, der Computer-Hinweis, die drei
-Beitritts-Knöpfe gross, „Bereit" als Hauptaktion, und am Fuss der Beitritts-Code
-samt Einladen-Knopf.
+**SEIT PUNKT 49 (v0.113.0) STEHT ER ZWEISPALTIG.** Was dort steht, von oben
+nach unten: der Kopf mit „Zurück" links (der einzige Ausgang) und dem
+Beitritts-Code rechts (`seitenwahl-code` — ein Knopf, der „Freunde einladen"
+öffnet); der Computer-Hinweis; der Zufall-Knopf über die volle Breite; und
+darunter zwei Spalten zu je der Hälfte — links Weiss, rechts Schwarz, jede mit
+ihrem Auswahl-Knopf oben und einer Liste darunter, die leer bleibt, bis sich
+jemand einträgt.
 
+- **Wer was wählen darf, entscheidet `_beitrittsWahlErmitteln`** — eine Stelle
+  für drei Fälle: laufende oder beendete Partie gar nichts, wer schon bereit
+  ist nichts mehr (v0.44.0), wer schon in einem Team sitzt nur noch seine
+  eigene Seite und keinen Zufall (Punkt 8). Gebaut werden die Knöpfe an drei
+  Orten, entschieden wird an einem.
+- **Die Seite, die man nicht wählen kann, trägt ihren Kopf als Schild** statt
+  als Knopf (`team-knopf-schild`) — sonst wäre nicht mehr erkennbar, welche
+  Spalte welche ist.
+- **Die zwei Spielerzeilen stehen hier nicht mehr** (bis v0.112.0 taten sie
+  es): Wer auf welcher Seite sitzt, sagt jetzt die Liste ihrer Spalte. Am
+  Brett und in der Aufstellung sind sie unverändert.
 - **„Zurück" ist „Runde verlassen"** (`_seitenwahlVerlassen`) — mit Rückfrage
   über `DIALOG.frage`, nicht über `DIALOG.zweiSchritt`: Der zweite Schritt
   schreibt seine Frage IN den Knopf, und ein Knopf, der „Zurück" heisst, darf

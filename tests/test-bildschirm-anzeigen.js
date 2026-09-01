@@ -268,34 +268,47 @@ pruefe("Die Spieler stehen als Zeilen am Brett, richtig herum (v0.53.0)", () => 
             + (namen ? namen.textContent : "gar nicht"));
     }
 });
-pruefe("Die drei Beitritts-Knoepfe stehen beisammen (v0.55.0)", () => {
+pruefe("Die Seitenwahl steht in zwei Spalten (Punkt 49)", () => {
     /*
-     * NUTZER-ANSAGE 25.08.2026: „Besser an dem Punkt wie zuvor machen, dass
-     * Schwarz, Weiss und Zufall beisammen stehen."
+     * NUTZER-ANSAGE 28.08.2026 (Punkt 49): „50 % des screens Weiß wo der
+     * alte knopf zum auswählen ist darunter eine große liste die leer ist
+     * bis sich jemand einträgt / das selbe rechts neben dran mit Schwarz."
      *
-     * Mit v0.53.0 sassen Weiss und Schwarz je in der Zeile IHRER Seite — und
-     * zwischen den beiden Zeilen liegt das Brett. Geprueft wird deshalb
-     * genau das, was schiefging: dass alle drei in EINEM Element haengen und
-     * KEINER mehr in einer Spielerzeile steht.
+     * DIESER TEST LOEST „Die drei Beitritts-Knoepfe stehen beisammen
+     * (v0.55.0)" AB. Die Frage von damals bleibt dieselbe — WELCHE Knoepfe
+     * in welcher Lage dastehen —, nur haengen sie jetzt nicht mehr in EINER
+     * Reihe, sondern je am Kopf ihrer Spalte; der Zufall steht allein
+     * darueber. Entschieden wird das an einer Stelle
+     * (`_beitrittsWahlErmitteln`), gebaut an dreien.
      */
     const person = umgebung.ICH.person();
     const angelegt = SCHACH_TAFEL.partieAnlegen(
-        SCHACH_TAFEL.leereTafel(9200), "standard", "Beisammen", 9210);
+        SCHACH_TAFEL.leereTafel(9200), "standard", "Zwei Spalten", 9210);
 
-    /* Ohne Team: alle drei. */
-    const reihe = TEAM_SCHACH._beitrittReiheBauen(angelegt.partie, person);
-    if (!reihe || reihe.kinder.length !== 3) {
-        throw new Error("es stehen " + (reihe ? reihe.kinder.length : 0)
-            + " Knoepfe beisammen statt drei");
-    }
-    for (const klasse of ["team-knopf-weiss", "team-knopf-schwarz", "team-knopf-zufall"]) {
-        if (!reihe.kinder.some((knopf) =>
-                String(knopf.className || "").indexOf(klasse) !== -1)) {
-            throw new Error(klasse + " fehlt in der Reihe");
-        }
+    /* Ohne Team: beide Seiten waehlbar, dazu der Zufall. */
+    const offen = TEAM_SCHACH._beitrittsWahlErmitteln(angelegt.partie, person);
+    if (offen.farben.join(",") !== "weiss,schwarz" || offen.zufall !== true) {
+        throw new Error("ohne Team muessten beide Seiten und der Zufall"
+            + " offenstehen, offen ist: " + JSON.stringify(offen));
     }
 
-    /* Und in den Spielerzeilen steht keiner mehr. */
+    /* Die waehlbare Seite traegt einen KNOPF, und ihre Liste ist leer. */
+    const weiss = TEAM_SCHACH._seitenwahlSpalteBauen(
+        angelegt.partie, person, "weiss", true);
+    const knopf = klasseSuchen(weiss, "team-knopf-weiss");
+    if (!knopf || knopf.tagName !== "button") {
+        throw new Error("die waehlbare Seite traegt keinen Knopf");
+    }
+    const liste = klasseSuchen(weiss, "seitenwahl-liste");
+    if (!liste) {
+        throw new Error("der Spalte fehlt ihre Liste");
+    }
+    if ((liste.kinder || []).length !== 0) {
+        throw new Error("die Liste ist nicht leer, obwohl niemand drin sitzt: "
+            + liste.kinder.length);
+    }
+
+    /* Und in den Spielerzeilen steht keiner mehr (die Frage von v0.55.0). */
     for (const farbe of ["weiss", "schwarz"]) {
         const zeile = TEAM_SCHACH._spielerZeileBauen(angelegt.partie, person, farbe);
         if (klasseSuchen(zeile, "team-knopf")) {
@@ -305,22 +318,44 @@ pruefe("Die drei Beitritts-Knoepfe stehen beisammen (v0.55.0)", () => {
     }
 
     /*
-     * Mit eigenem Team: nur noch die EIGENE Seite (seit Punkt 8,
-     * 27.08.2026). Bis dahin stand hier die andere Seite als „Wechsel" —
-     * ein Knopf, den das Modell ohnehin verweigerte
-     * (`SCHACH_RUNDE.teamBeitreten` laesst niemanden wechseln). Seit der
-     * Tipp auf die Seite die erste Zusage mitsetzt, ist der Knopf der
-     * eigenen Seite der Weg, die Zusage nachzuholen (Anleger, alte Runden).
+     * MIT EIGENEM TEAM: nur noch die EIGENE Seite, kein Zufall (seit Punkt
+     * 8, 27.08.2026) — ein Wechsel ist ohnehin verboten. Die andere Spalte
+     * verschwindet deshalb NICHT, sie traegt ihren Kopf als Schild: sonst
+     * wuesste niemand mehr, welche Spalte welche ist.
      */
     const alsWeiss = SCHACH_RUNDE.teamBeitreten(
         angelegt.partie, person.id, "weiss", 9220);
-    const zwei = TEAM_SCHACH._beitrittReiheBauen(alsWeiss, person);
-    if (!zwei || zwei.kinder.length !== 1) {
-        throw new Error("mit eigenem Team muesste genau die eigene Seite dastehen, da sind "
-            + (zwei ? zwei.kinder.length : 0));
+    const wahl = TEAM_SCHACH._beitrittsWahlErmitteln(alsWeiss, person);
+    if (wahl.farben.join(",") !== "weiss" || wahl.zufall !== false) {
+        throw new Error("mit eigenem Team muesste genau die eigene Seite"
+            + " offenstehen, offen ist: " + JSON.stringify(wahl));
     }
-    if (String(zwei.kinder[0].className || "").indexOf("team-knopf-weiss") === -1) {
-        throw new Error("der uebrige Knopf ist nicht die eigene Seite");
+
+    const schwarz = TEAM_SCHACH._seitenwahlSpalteBauen(
+        alsWeiss, person, "schwarz", false);
+    const schild = klasseSuchen(schwarz, "team-knopf-schwarz");
+    if (!schild) {
+        throw new Error("der Spalte Schwarz fehlt ihr Kopf");
+    }
+    if (schild.tagName === "button") {
+        throw new Error("die nicht waehlbare Seite ist ein Knopf geblieben");
+    }
+    if (String(schild.textContent || "") !== "Schwarz") {
+        throw new Error("am Schild steht nicht die Farbe, sondern: "
+            + schild.textContent);
+    }
+
+    /* Wer eingetreten ist, steht in der Liste SEINER Spalte — und die Spalte
+       ist als die eigene ausgezeichnet. */
+    const meine = TEAM_SCHACH._seitenwahlSpalteBauen(
+        alsWeiss, person, "weiss", true);
+    const eintrag = klasseSuchen(meine, "seitenwahl-eintrag");
+    if (!eintrag || String(eintrag.textContent || "") !== person.name) {
+        throw new Error("der Name steht nicht in der Liste: "
+            + (eintrag ? eintrag.textContent : "gar nicht"));
+    }
+    if (!hatKlasse(meine, "seitenwahl-spalte-meine")) {
+        throw new Error("die eigene Spalte ist nicht als eigene ausgezeichnet");
     }
 });
 
