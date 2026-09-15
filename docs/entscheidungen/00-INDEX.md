@@ -74,6 +74,24 @@ wird. Die Liste dessen, was noch kommt, steht in [../ROADMAP.md](../ROADMAP.md).
   Play-Store-Umbau braeuchte - Referenz: docs\uebergabe-schach-app.md)
 
 ## erkenntnisse.md - Teuer erkaufte Erkenntnisse
+- **Wer gesetzt wird, statt zu waehlen, gibt keine Zusage — und kann sie
+  nie nachholen** (v0.66.0, gemeldet 15.09.2026, behoben v0.114.1: Der
+  Anleger kam nach Weiss OHNE erste Zusage, die Zulosung uebersprang ihn,
+  und mit zugeloster Seite gab es keinen Bildschirm zum Nachholen — beide
+  drueckten „Bereit", die Partie startete nie. Gefunden ueber einen
+  Datenbank-Abzug, nicht im Code; der Anleger wird jetzt zugelost)
+- **Eine diagonale Zweiteilung gilt nur fuer ein fast quadratisches Feld**
+  (v0.113.0, gefunden im ersten Blick im Browser: der 135-Grad-Verlauf des
+  Zufall-Knopfes teilte bei voller Breite nur noch eine Ecke ab statt zweier
+  Haelften — der Winkel eines Verlaufs haengt am Seitenverhaeltnis, jetzt 100
+  Grad)
+- **Figurenfarben sind keine Oberflaechenfarben** (v0.113.0, gefunden im
+  selben Blick: die schwarze Flaeche des Zufall-Knopfes verschwand im
+  dunklen Modus im Hintergrund; `.team-knopf-schwarz` und
+  `.seitenwahl-zufall` bekommen dort seither eine Kante in `--schrift-leise`)
+- **`--window-size` ist nicht die Layout-Breite** (01.09.2026, ein
+  Bildschirmfoto zeigte nur einen Ausschnitt, nicht die Umbruchbreite;
+  verlaesslich misst eine Wegwerf-Seite mit `iframe` fester Breite)
 - **Wer eine Abfrage abkuerzt, holt die Marke VOR den Daten** (v0.111.0,
   Spar-Umbau der regelmaessigen Abfrage: 13 Bytes statt 193.800. Andersherum
   gehoerte zu einer neueren Marke ein aelterer Stand — der fremde Zug kaeme

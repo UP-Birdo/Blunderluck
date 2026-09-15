@@ -198,6 +198,10 @@ bereit klicke soll der Bot in die andere Gruppe joinen."
 - **Partien unter Menschen bleiben unverändert:** Wer anlegt, kommt gleich
   ins weisse Team. Dort gibt es nichts zu wählen — die Seite ist frei, bis
   jemand sie nimmt, und der Anlegende soll sich um nichts kümmern müssen.
+  **Eingeschränkt seit v0.114.1:** Das gilt nur noch OHNE den Haken „Seite
+  zulosen". Mit ihm wird auch der Anleger zugelost (`seiteZulosen` vor dem
+  ersten Schreiben) und ist damit bereit — das Setzen nach Weiss ohne
+  Zusage liess Partien zu zweit nie beginnen (`erkenntnisse.md`).
 - **Eine angelegte, nie betretene Runde räumt sich beim Verlassen weg**
   (`TEAM_SCHACH.selbstAngelegt`). Diese Lücke ist mit der Seitenwahl erst
   entstanden: Ohne Team gibt es nichts zu verlassen, also griff der

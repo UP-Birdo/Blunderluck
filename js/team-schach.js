@@ -3807,11 +3807,45 @@ const TEAM_SCHACH = {
          *
          * Partien unter Menschen bleiben, wie sie waren: Wer anlegt, kommt
          * gleich ins weisse Team und muss sich um nichts kümmern.
+         *
+         * MIT ZUGELOSTER SEITE WIRD DER ANLEGER ZUGELOST, NICHT GESETZT
+         * (v0.114.1). SO SAH DER FEHLER AUS: „Wenn zwei spielen wollen und
+         * auf Bereit drücken, beginnt das Spiel nicht" (Nutzer, 15.09.2026;
+         * eine hängende Runde vom 14.09. lag in der Datenbank). Der Anleger
+         * sass durch die Zeile darunter schon in Weiss, aber OHNE die erste
+         * Zusage (`bereit.weiss` blieb falsch). Die Zulosung beim Öffnen
+         * (`_seiteZulosenWennNoetig`) übersprang ihn dann — „wer drin
+         * sitzt, sitzt drin" —, und weil es mit zugeloster Seite keinen
+         * Bildschirm gibt, auf dem man eine Seite antippt, konnte er sie
+         * nie nachholen: Der Mitspieler wurde zugelost UND bereit, beide
+         * drückten auf dem Aufstellungs-Bildschirm „Bereit", und
+         * `kannAnpfeifen` wartete auf eine erste Zusage, die niemand mehr
+         * geben konnte. Betroffen war JEDE Menschen-Runde mit der Vorgabe
+         * (die Zulosung ist seit v0.66.0 ab Werk an).
+         *
+         * Deshalb geht der Anleger hier denselben Weg wie jeder, der die
+         * Runde betritt: `seiteZulosen` teilt ihm eine Seite zu (bei zwei
+         * leeren Seiten gerechnet aus Kennung und Person, kein
+         * `Math.random`) und setzt dabei die erste Zusage — die Regel „wer
+         * zugelost wird, ist damit bereit" gilt damit auch für ihn. Das
+         * geschieht VOR dem ersten Schreiben: eine Fassung auf dem Server,
+         * kein Bildschirm, der einen Lidschlag lang Weiss/Schwarz/Zufall
+         * zeigt. Der Aufruf beim Öffnen findet ihn danach im Team und tut
+         * nichts. Dieselbe Regel wie beim Computer: Wer nicht wählen soll,
+         * wird nicht gesetzt — und wer zugelost werden soll, auch nicht.
+         *
+         * OB zugelost wird, entscheidet das Modell (`seiteZulosen` liefert
+         * die Runde unverändert, wenn der Haken aus ist) — hier wird nur
+         * nachgesehen, ob er danach eine Seite hat; sonst Weiss wie bisher.
          */
         let partie = ergebnis.partie;
 
         if (!gegenComputer) {
-            partie = SCHACH_RUNDE.teamBeitreten(partie, person.id, "weiss");
+            partie = SCHACH_RUNDE.seiteZulosen(partie, person.id);
+
+            if (!SCHACH_RUNDE.teamVon(partie, person.id)) {
+                partie = SCHACH_RUNDE.teamBeitreten(partie, person.id, "weiss");
+            }
         }
 
         ergebnis.tafel = SCHACH_TAFEL.partieEinsetzen(ergebnis.tafel, partie);

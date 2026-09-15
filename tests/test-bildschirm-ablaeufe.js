@@ -439,6 +439,90 @@ async function zeitlimitPruefen() {
             }
         });
 
+    await pruefeMitWarten("Mit zugeloster Seite ist der Anleger sofort bereit (v0.114.1)",
+        async () => {
+            /*
+             * NUTZER-MELDUNG 15.09.2026: „Wenn zwei spielen wollen und auf
+             * Bereit druecken, beginnt das Spiel nicht." In der Datenbank lag
+             * eine Runde vom 14.09.: Anleger in Weiss, `bereit.weiss` falsch.
+             *
+             * DIE URSACHE: `rundeStarten` setzte den Anleger nach Weiss OHNE
+             * erste Zusage; die Zulosung beim Oeffnen uebersprang ihn (er
+             * sass ja schon), und mit zugeloster Seite gibt es keinen
+             * Bildschirm, auf dem man seine Seite antippt. Der Zweite wurde
+             * zugelost UND bereit, beide drueckten „Bereit" — und
+             * `kannAnpfeifen` wartete auf die erste Zusage des Anlegers.
+             *
+             * Geprueft wird der ECHTE Weg (`START.spielen` -> `rundeStarten`)
+             * mit der Vorgabe (Zulosung an) und Zufallsarmee, damit der
+             * Aufstellungs-Bildschirm mit seinem „Bereit" dran ist.
+             */
+            const START = umgebung.START;
+            const echteDaten = TEAM_SCHACH.abgleich.daten;
+
+            try {
+                TEAM_SCHACH.abgleich.daten = SCHACH_TAFEL.leereTafel(9040);
+                START.spielartMerken(SCHACH_VARIANTEN.liste[0].id);
+                START.regelnMerken(Object.assign(TEAM_SCHACH._regelnVorgabe(),
+                    { gegenComputer: false, seiteZufaellig: true, zufallsArmee: true }));
+
+                await START.spielen();
+
+                const partie = SCHACH_TAFEL.partie(
+                    TEAM_SCHACH.abgleich.daten, TEAM_SCHACH.offeneId);
+                if (!partie) {
+                    throw new Error("Spielen hat keine Runde angelegt");
+                }
+
+                const farbe = SCHACH_RUNDE.teamVon(partie, "id-anna");
+                if (!farbe) {
+                    throw new Error("der Anleger sitzt in keinem Team");
+                }
+                if (partie.bereit[farbe] !== true) {
+                    throw new Error("der Anleger sitzt in " + farbe + ", aber"
+                        + " ohne erste Zusage — der Fehler vom 14.09.2026");
+                }
+
+                /* Der Zweite wird zugelost, beide bestaetigen die
+                   Aufstellung — und es geht los. */
+                let zuZweit = SCHACH_RUNDE.seiteZulosen(partie, "id-bert", 9050);
+                if (!SCHACH_RUNDE.teamVon(zuZweit, "id-bert")) {
+                    throw new Error("der Zweite wurde nicht zugelost");
+                }
+                zuZweit = SCHACH_RUNDE.aufstellungBereitSetzen(zuZweit, "weiss", true, 9060);
+                zuZweit = SCHACH_RUNDE.aufstellungBereitSetzen(zuZweit, "schwarz", true, 9060);
+                if (zuZweit.laeuft !== true) {
+                    throw new Error("beide haben Bereit gedrueckt, die Partie"
+                        + " startet trotzdem nicht");
+                }
+
+                /* OHNE den Haken bleibt alles wie bisher: Der Anleger kommt
+                   nach Weiss und holt die Zusage mit dem Tipp auf seine
+                   Seite nach (Punkt 8) — sie darf hier NICHT schon stehen,
+                   sonst waere der Tipp ein Knopf ohne Wirkung. */
+                TEAM_SCHACH.abgleich.daten = SCHACH_TAFEL.leereTafel(9070);
+                TEAM_SCHACH.offeneId = "";
+                START.regelnMerken(Object.assign(TEAM_SCHACH._regelnVorgabe(),
+                    { gegenComputer: false, seiteZufaellig: false }));
+
+                await START.spielen();
+
+                const ohne = SCHACH_TAFEL.partie(
+                    TEAM_SCHACH.abgleich.daten, TEAM_SCHACH.offeneId);
+                if (!ohne || SCHACH_RUNDE.teamVon(ohne, "id-anna") !== "weiss") {
+                    throw new Error("ohne Zulosung kommt der Anleger nicht nach Weiss");
+                }
+                if (ohne.bereit.weiss !== false) {
+                    throw new Error("ohne Zulosung hat der Anleger schon zugesagt");
+                }
+            } finally {
+                TEAM_SCHACH.abgleich.daten = echteDaten;
+                TEAM_SCHACH.offeneId = "";
+                umgebung.TABS.gewechseltZu = "";
+                START.regelnMerken(TEAM_SCHACH._regelnVorgabe());
+            }
+        });
+
     /* ---------------------------------------------------------------- *
      * Wer allein war, schliesst die Runde beim Verlassen (v0.26.0)
      * ---------------------------------------------------------------- */

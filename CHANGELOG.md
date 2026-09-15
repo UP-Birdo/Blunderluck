@@ -3,6 +3,27 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.114.1 — 15.09.2026
+
+**Behoben: Zu zweit begann die Partie nicht, obwohl beide „Bereit" gedrückt
+hatten.**
+
+- Betroffen war jede Runde unter Menschen mit dem Haken „Seite zulosen" — und
+  der ist ab Werk gesetzt. Wer die Runde anlegte, sass zwar sofort in Weiss,
+  galt aber nie als bereit; und weil mit zugeloster Seite kein Bildschirm zum
+  Antippen der eigenen Seite kommt, konnte er das auch nicht nachholen. Der
+  Mitspieler wurde zugelost und war bereit, beide drückten „Bereit" auf dem
+  Aufstellungs-Bildschirm — und es passierte nichts.
+- Jetzt wird auch der Anleger **zugelost** wie jeder andere: Er bekommt seine
+  Seite beim Anlegen (mit zwei leeren Seiten entscheidet der Zufall, nicht
+  mehr immer Weiss) und gilt damit sofort als bereit. Sobald der zweite
+  Spieler da ist, geht es los — ohne Zufallsarmee sofort, mit Zufallsarmee
+  nach dem „Bereit" beider Seiten.
+- Ohne den Haken ändert sich nichts: Wer anlegt, kommt nach Weiss und tippt
+  seine Seite an, wie bisher.
+- Eine Runde, die vor dieser Version hängen geblieben ist, startet auch jetzt
+  nicht von selbst — beide verlassen sie über „Zurück" und legen eine neue an.
+
 ## v0.114.0 — 01.09.2026
 
 **„Schach lernen": Die Figuren stehen nur noch einmal da — mit ihrem Wert

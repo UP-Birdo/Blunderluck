@@ -2,6 +2,66 @@
 
 ## Teuer erkaufte Erkenntnisse
 
+### Eine diagonale Zweiteilung gilt nur fuer ein fast quadratisches Feld (v0.113.0)
+
+**Gefunden beim ersten Blick im Browser, 01.09.2026, VOR der Auslieferung.**
+Der Zufall-Knopf teilt sich seit v0.41.0 diagonal in Weiss und Schwarz
+(`linear-gradient(135deg, ...)` in `css\stil-brett.css`) — die Aussage „eine
+Seite weiss, eine schwarz" (Nutzer-Ansage 24.08.2026). Als der Knopf mit
+Punkt 49 ueber die volle Breite gezogen wurde, sass er am Handy bei 358 mal
+56 Pixel: dieselbe Linie schnitt jetzt nur noch eine kleine Ecke oben rechts
+ab. Der Knopf sah weiss aus, mit einem schwarzen Zipfel — die Aussage war
+verschwunden, obwohl am CSS selbst nichts Falsches stand.
+
+**Die Ursache:** Der Winkel eines linearen Verlaufs ist an das
+Seitenverhaeltnis seines Elements gebunden, nicht an eine feste Richtung im
+Raum. 135 Grad auf einem fast quadratischen Knopf teilt ihn diagonal von
+Ecke zu Ecke; derselbe Winkel auf einem breiten Rechteck schneidet nur eine
+schmale Ecke ab.
+
+> **Die Regel:** Wer ein Element mit einem diagonalen Verlauf breiter oder
+> schmaler macht, aendert damit auch, was der Verlauf zeigt — der Winkel
+> muss beim neuen Seitenverhaeltnis neu geprueft werden, nicht nur die
+> Farben. Der breite Zufall-Knopf steht seit v0.113.0 auf 100 Grad (Kante
+> fast senkrecht, weiterhin leicht geneigt); `.team-knopf-zufall` blieb
+> sonst unveraendert. Kein Test haette das gefunden — nur der erste Blick
+> im Browser.
+
+### Figurenfarben sind keine Oberflaechenfarben (v0.113.0)
+
+**Gefunden im selben Blick, 01.09.2026.** Die Knoepfe Weiss und Schwarz
+tragen seit v0.41.0 die Farben der FIGUREN (`--figur-weiss` /
+`--figur-schwarz`), bewusst nicht die Farben der Oberflaeche — der Knopf
+sagt, mit welchen Steinen man spielt, nicht wie hell oder dunkel der
+Bildschirm gerade ist. Im dunklen Modus liegt die schwarze Flaeche damit
+aber auf fast ebenso dunklem Grund, und `--rahmen` ist zu leise, um sie
+abzugrenzen. Beim breiten Zufall-Knopf aus Punkt 49 verschwand dadurch die
+rechte (schwarze) Haelfte im Hintergrund — der Knopf schien in der Mitte zu
+enden.
+
+> **Die Regel:** Eine Flaeche in Figurenfarbe bleibt richtig, auch im
+> dunklen Modus — sie braucht dort aber eine eigene, deutlich sichtbare
+> Kante. Seit v0.113.0 bekommen `.team-knopf-schwarz` und
+> `.seitenwahl-zufall` im dunklen Modus eine Kante in `--schrift-leise`. Wer
+> eine weitere Flaeche in Figurenfarbe baut, prueft sie im dunklen Modus
+> gegen ihren Hintergrund.
+
+### `--window-size` ist nicht die Layout-Breite (01.09.2026)
+
+**Gefunden beim Nachmessen der zweispaltigen Seitenwahl.** Ein
+Bildschirmfoto mit `--window-size=390,900` zeigte einen 390 Pixel breiten
+AUSSCHNITT — die Seite selbst war aber breiter umbrochen. Die zwei Spalten
+sahen dadurch abgeschnitten aus, obwohl das Layout in Wirklichkeit stimmte;
+fast waere daraufhin ein Fehler „repariert" worden, den es nicht gab.
+
+> **Die Regel:** `--window-size` bestimmt nur den sichtbaren Ausschnitt des
+> Browserfensters, nicht die Breite, mit der die Seite rechnet.
+> Verlaesslich wird die Handy-Breite ueber eine Wegwerf-Seite mit einem
+> `iframe` fester Breite, das die echte Ansicht einbettet — dann rechnet
+> der Browser tatsaechlich mit z. B. 390 Pixeln. Wer nach einem Foto etwas
+> aendern will, prueft zuerst die Messung selbst, bevor er dem Befund
+> traut.
+
 ### Wer eine Abfrage abkuerzt, holt die Marke VOR den Daten (v0.111.0)
 
 **Anlass:** Die regelmaessige Abfrage holte alle drei Sekunden den vollen
@@ -2199,3 +2259,60 @@ laufend, beendet), darf sein Layout an EINEN davon binden — aber dann muss
 die Bindung auch an diesen Zustand geknüpft sein und nicht an den Bildschirm.
 Der dritte Wert von `TABS.rundeSetzen` hängt seit v0.55.0 an `laeuft`, nicht
 mehr an „diese Partie ist offen".
+
+## Wer gesetzt wird, statt zu wählen, gibt keine Zusage — und kann sie nie nachholen (v0.66.0, gemeldet 15.09.2026, behoben v0.114.1)
+
+**Was der Nutzer meldete:** „Wenn zwei spielen wollen und auf Bereit
+drücken, beginnt das Spiel nicht." Erster echter Gerätetest zu zweit seit
+v0.82.0 — und er blieb vor dem Anpfiff stecken.
+
+**Wie es gefunden wurde:** Nicht im Code, sondern in der Datenbank. Ein
+Abzug (`tools\Sichere-Datenbank.ps1`) zeigte eine wartende Runde vom
+Vortag: Weiss besetzt, `bereit.weiss: false`, `seiteZufaellig: true`. Das
+Modell sagt aber „wer zugelost wird, ist damit bereit" — der Widerspruch
+war die Spur. Danach am echten Modell nachgestellt (Wegwerf-Skript, drei
+Regelsätze): Mit Zulosung und Zufallsarmee standen beide zweiten Zusagen
+da, `laeuft` blieb falsch.
+
+**Die Ursache:** Drei Stellen waren für sich richtig und passten zusammen
+nicht.
+
+1. `rundeStarten` SETZTE den Anleger einer Menschen-Runde nach Weiss
+   (Entscheidung v0.29.0: „Wer anlegt, kommt gleich ins weisse Team") —
+   ohne erste Zusage, denn die holte er sich seit Punkt 8 mit dem Tipp
+   auf seine Seite nach.
+2. `seiteZulosen` (v0.66.0) teilt nur zu, wer noch in keinem Team sitzt —
+   richtig, sonst würde ein Wechsel daraus. Den Anleger übersprang es
+   deshalb, und mit ihm die Zusage, die es sonst mitbringt.
+3. Mit zugeloster Seite gibt es keinen Seitenwahl-Bildschirm mehr
+   (v0.66.0: „der erste Screen fällt komplett raus"). Den Tipp, der die
+   Zusage nachgeholt hätte, konnte der Anleger also nirgends geben.
+
+Der Mitspieler wurde zugelost UND bereit, beide drückten „Bereit" auf
+dem Aufstellungs-Bildschirm, `aufstellungBereit` stand auf true/true —
+und `kannAnpfeifen` wartete auf `bereit.weiss`. Ohne Zufallsarmee zeigte
+der Anleger-Bildschirm zwar einen „Weiss"-Knopf (die Seitenwahl als
+Rückfall), aber niemand erwartet, seine eigene Seite noch einmal
+anzutippen, wenn er schon darunter steht.
+
+**Warum es kein Test fand:** Die Modell-Tests zur Zulosung begannen mit
+einer LEEREN Runde; die Bildschirm-Tests zu `rundeStarten` prüften nur
+„sitzt im Team", nie „ist bereit". Der Anleger-Weg mit der Vorgabe
+(Zulosung an, seit v0.66.0 ab Werk) war in keiner Kette — obwohl er der
+häufigste Weg in eine Partie ist.
+
+**Die Behebung:** `rundeStarten` ruft `SCHACH_RUNDE.seiteZulosen` VOR dem
+ersten Schreiben; nur wer danach keine Seite hat (Haken aus), kommt wie
+bisher nach Weiss. Das Modell entscheidet, der Bildschirm sieht nur nach.
+Der Anleger bekommt mit zwei leeren Seiten eine gerechnete Zufallsseite —
+das ist, was der Haken verspricht. Neuer Test über den echten Weg
+`START.spielen()`, mit beiden Haken-Stellungen.
+
+**Die Regel dahinter:** Wer eine Person am gewöhnlichen Eintrittsweg
+vorbei in einen Zustand SETZT, muss alles mitgeben, was der Eintrittsweg
+mitgegeben hätte — oder ihn den Eintrittsweg gehen lassen. Dieselbe
+Lehre wie beim Computer (v0.29.0: „Wer die Wahl haben soll, darf gar
+nicht erst gesetzt werden"), nur spiegelverkehrt: Wer zugelost werden
+soll, auch nicht. Und: **Ein Widerspruch zwischen Datenbank und
+Modellregel ist eine Fehlerspur** — der Abzug war schneller als jedes
+Lesen.
