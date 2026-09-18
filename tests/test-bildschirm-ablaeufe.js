@@ -1209,10 +1209,21 @@ async function zeitlimitPruefen() {
                 if (partie.bereit.weiss !== true) {
                     throw new Error("der Computer meldet sich nicht bereit");
                 }
+                /* SEIT v0.115.0 (Vorraum) startet auch die Computer-Runde erst
+                   mit dem Bereit des Menschen - der Computer hat seine
+                   Aufstellung schon bestaetigt. */
+                if (partie.laeuft === true) {
+                    throw new Error("die Partie startet mit dem Seiten-Tipp,"
+                        + " ohne das Bereit im Vorraum");
+                }
+                if (partie.aufstellungBereit.weiss !== true) {
+                    throw new Error("der Computer hat seine Aufstellung nicht bestaetigt");
+                }
+                await TEAM_SCHACH.aufstellungBereitUmschalten(hole(), "schwarz", true);
+                partie = hole();
                 if (partie.laeuft !== true) {
-                    throw new Error("ohne Zufallsarmee muss die Partie mit dem"
-                        + " Seiten-Tipp starten - einen Aufstellungs-Bildschirm"
-                        + " gibt es nicht mehr");
+                    throw new Error("nach dem Bereit des Menschen startet die"
+                        + " Computer-Runde nicht");
                 }
 
                 /* Und der Computer heisst am Bildschirm nicht Unbekannt. */
@@ -1659,13 +1670,11 @@ async function zeitlimitPruefen() {
                         "die Runde erreicht die Aufstellung nicht, obwohl beide"
                             + " Seiten zugesagt haben");
                 }
-                /* Seit Punkt 8 (27.08.2026) pfeift die zweite erste Zusage
-                   ohne Zufallsarmee direkt an — auch das darf das Rennen
-                   nicht verschlucken. */
-                if (beideBereit.laeuft !== true) {
-                    throw new Error(
-                        "die Partie startet nicht, obwohl beide erste Zusagen"
-                            + " zusammengekommen sind");
+                /* Seit v0.115.0 (Vorraum) pfeifen die ersten Zusagen NICHT
+                   mehr an - die Runde steht danach im Vorraum und wartet auf
+                   das Bereit beider Seiten. */
+                if (beideBereit.laeuft === true) {
+                    throw new Error("die ersten Zusagen haben angepfiffen");
                 }
             } finally {
                 TEAM_SCHACH.abgleich.daten = echteDaten;
@@ -3493,11 +3502,19 @@ pruefe("Die wartende Partie ist der Seitenwahl-Bildschirm (v0.61.0)", () => {
         const mitKlasse = (klasse) => einsammeln(TEAM_SCHACH.wurzelEl, (kind) =>
             String(kind.className || "").indexOf(klasse) !== -1, []);
 
-        if (mitKlasse("brett-halter").length > 0) {
-            throw new Error("vor dem Anpfiff steht ein Brett da");
+        /* SEIT v0.115.0 zeigt der Vorraum das Brett als Vorschau - man
+           sieht, was einen erwartet (docs/entwurf-vorraum.md). */
+        if (mitKlasse("brett-halter").length === 0) {
+            throw new Error("im Vorraum fehlt die Brett-Vorschau");
         }
         if (mitKlasse("fussleiste").length > 0) {
             throw new Error("die wartende Partie hat noch eine Fussleiste");
+        }
+        if (mitKlasse("vorraum-zustand").length === 0) {
+            throw new Error("die Zustandszeile des Vorraums fehlt");
+        }
+        if (mitKlasse("vorraum-regeln").length === 0) {
+            throw new Error("die Regel-Schildchen des Vorraums fehlen");
         }
 
         const texte = einsammeln(TEAM_SCHACH.wurzelEl, (kind) =>
@@ -3537,13 +3554,12 @@ pruefe("Die wartende Partie ist der Seitenwahl-Bildschirm (v0.61.0)", () => {
          * `seitenwahl-spalten` traegt „seitenwahl-spalte" also mit. Er wird
          * deshalb herausgefiltert, sonst zaehlte er als dritte Spalte.
          */
-        if (mitKlasse("seitenwahl-spalten").length === 0) {
-            throw new Error("die zwei Spalten der Seitenwahl fehlen");
+        if (mitKlasse("vorraum-plaetze").length === 0) {
+            throw new Error("die zwei Plaetze des Vorraums fehlen");
         }
-        const spalten = mitKlasse("seitenwahl-spalte").filter((element) =>
-            String(element.className || "").indexOf("seitenwahl-spalten") === -1);
+        const spalten = mitKlasse("vorraum-platz ");
         if (spalten.length !== 2) {
-            throw new Error("es stehen " + spalten.length + " Spalten da statt zwei");
+            throw new Error("es stehen " + spalten.length + " Plaetze da statt zwei");
         }
         if (mitKlasse("seitenwahl-liste").length !== 2) {
             throw new Error("jede Spalte braucht ihre Liste, da sind "
@@ -3561,25 +3577,13 @@ pruefe("Die wartende Partie ist der Seitenwahl-Bildschirm (v0.61.0)", () => {
          * (Nutzer-Ansage: „so wie in der richtigen matches") — und er ist
          * seit Punkt 8 ein KNOPF, der das Einladen-Fenster oeffnet.
          */
-        const code = mitKlasse("seitenwahl-code")[0];
-        if (!code) {
-            throw new Error("der Beitritts-Code fehlt");
-        }
-        if (code.tagName !== "button") {
-            throw new Error("der Code ist kein Knopf, sondern " + code.tagName);
-        }
-        if (String(code.textContent || "")
-                !== SCHACH_RUNDE.beitrittsCode(partie.id)) {
-            throw new Error("dort steht ein anderer Code: " + code.textContent);
-        }
-        const codeImKopf = einsammeln(kopf, (kind) =>
-            String(kind.className || "").indexOf("seitenwahl-code") !== -1, []);
-        if (codeImKopf.length === 0) {
-            throw new Error("der Code haengt nicht im Kopf neben dem Zurueck");
-        }
-        if (mitKlasse("einladung-block").length > 0) {
-            throw new Error("der Code steht doppelt — unten haengt noch der"
-                + " Einladungs-Block");
+        /*
+         * DER CODE STEHT SEIT v0.115.0 IM EINLADEN-BLOCK - gross, mit Teilen
+         * und Kopieren (Befund B2) - und NUR, solange ein Platz frei ist.
+         * Hier sind beide Seiten besetzt: kein Einladen-Block, kein Code.
+         */
+        if (mitKlasse("vorraum-einladen").length > 0) {
+            throw new Error("der Einladen-Block steht da, obwohl beide Seiten besetzt sind");
         }
     } finally {
         TEAM_SCHACH.abgleich.daten = vorher;
@@ -3638,11 +3642,11 @@ pruefe("Die Aufstellung ist der zweite Start-Bildschirm (v0.62.0)", () => {
         /* Die Seitenwahl ist vorbei — und eingeladen wird auch nicht mehr.
            Geprueft wird seit Punkt 49 an den zwei Spalten (vorher an der
            Knopfreihe `beitritt-reihe`, die es nicht mehr gibt). */
-        if (mitKlasse("seitenwahl-spalten").length > 0) {
-            throw new Error("die Seitenwahl steht noch da");
+        if (mitKlasse("vorraum-plaetze").length === 0) {
+            throw new Error("die Plaetze des Vorraums fehlen");
         }
-        if (mitKlasse("einladung-block").length > 0) {
-            throw new Error("der Einladungs-Block steht noch da");
+        if (mitKlasse("vorraum-einladen").length > 0) {
+            throw new Error("der Einladen-Block steht da, obwohl die Runde voll ist");
         }
 
         /* Und oben links das Zurueck, wie ueberall. */
@@ -3658,19 +3662,12 @@ pruefe("Die Aufstellung ist der zweite Start-Bildschirm (v0.62.0)", () => {
     }
 });
 
-pruefe("Ohne Zufallsarmee gibt es keinen Aufstellungs-Bildschirm (Punkt 8)", () => {
+pruefe("Ohne Zufallsarmee: der Vorraum ohne Wuerfel, aber mit Bereit (v0.115.0)", () => {
     /*
-     * BIS Punkt 8 (27.08.2026) HIESS DIESER TEST „Ohne Zufallsarmee steht
-     * in der Aufstellung kein Wuerfel" (v0.62.0). NUTZER-ANSAGE 27.08.2026:
-     * „man muss ja das Feld nicht davor sehen, wenn man eh nichts mehr
-     * aendern kann" — ohne Zufallsarmee entfaellt der Bildschirm jetzt GANZ
-     * (`inAufstellung` sagt nein).
-     *
-     * DIE NACHGESTELLTE LAGE ist eine ALTE wartende Runde von vor dem
-     * Update: beide erste Zusagen liegen, angepfiffen ist noch nicht. Sie
-     * zeigt die Seitenwahl als Warte-Bildschirm (ohne Brett, ohne Wuerfel,
-     * ohne zweite Zusage); anpfeifen wird sie das Modell beim naechsten
-     * Schreiben (`kannAnpfeifen`, eigener Modell-Test).
+     * BIS v0.114.3 gab es ohne Zufallsarmee keinen Aufstellungs-Bildschirm
+     * (Punkt 8) - die zweite erste Zusage pfiff direkt an. SEIT v0.115.0
+     * ist der Vorraum in jeder Runde derselbe: Brett-Vorschau, Regeln,
+     * Bereit - nur der Wuerfel fehlt, weil es nichts zu wuerfeln gibt.
      */
     let partie = SCHACH_TAFEL.partie(TEAM_SCHACH.abgleich.daten,
         kennungen[SCHACH_VARIANTEN.liste[0].id]);
@@ -3703,21 +3700,14 @@ pruefe("Ohne Zufallsarmee gibt es keinen Aufstellungs-Bildschirm (Punkt 8)", () 
         if (mitKlasse("wuerfel-knopf").length > 0) {
             throw new Error("ohne Zufallsarmee steht ein Wuerfel da");
         }
-        if (mitKlasse("aufstellung-bereit").length > 0) {
-            throw new Error("die zweite Zusage steht noch da, obwohl es den"
-                + " Aufstellungs-Bildschirm ohne Zufallsarmee nicht mehr gibt");
+        if (mitKlasse("aufstellung-bereit").length === 0) {
+            throw new Error("das Bereit des Vorraums fehlt ohne Zufallsarmee");
         }
-        if (mitKlasse("brett-halter").length > 0) {
-            throw new Error("vor dem Anpfiff steht ein Brett da");
+        if (mitKlasse("brett-halter").length === 0) {
+            throw new Error("die Brett-Vorschau fehlt");
         }
-        /*
-         * Der Warte-Bildschirm traegt weiter den Code zum Weitergeben —
-         * seit Punkt 49 oben rechts im Kopf statt unten im Einladungs-Block.
-         * Hier ist er besonders wichtig: Auf diesem Bildschirm gibt es
-         * sonst nichts zu tun als zu warten.
-         */
-        if (mitKlasse("seitenwahl-code").length === 0) {
-            throw new Error("der Beitritts-Code fehlt auf dem Warte-Bildschirm");
+        if (mitKlasse("vorraum-einladen").length > 0) {
+            throw new Error("die volle Runde zeigt noch den Einladen-Block");
         }
     } finally {
         TEAM_SCHACH.abgleich.daten = vorher;

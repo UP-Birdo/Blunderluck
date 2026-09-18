@@ -2407,3 +2407,61 @@ Antwort auf „was hat sich geändert" die BILLIGER ist als das Ganze — und
 sie muss vom Schreiber gepflegt werden, nicht vom Leser geraten. Und:
 Erst am echten Server messen, was die Schnittstelle hergibt, dann
 entwerfen — der `orderBy`-Entwurf wäre sonst gebaut und gescheitert.
+
+## Die echte App lässt sich kopflos gegen die echte Datenbank fahren (18.09.2026, Testlauf zu v0.114.3)
+
+**Was gefragt war:** „Mache ein Testlauf, ob alles geht, also Match und so."
+Die Testkette prüft Regeln und Bildschirm-Code gegen einen Nachbau — ob
+Anlegen, Beitritt, Züge und Abschluss ZUSAMMEN über die echte Datenbank
+laufen, prüft sie nicht. Dafür gab es bisher nur den Nutzer am Handy.
+
+**Wie es ging — der Fahrer (Wegwerf, Scratchpad, nicht im Projekt):**
+
+1. Eine HTML-Seite mit demselben Gerüst wie `index.html` (dieselben
+   Elemente, dieselben `css\`- und `js\`-Dateien über absolute
+   `file:///`-Pfade, `sw.js` fällt unter `file:` von selbst weg).
+2. Ein Skript VOR den App-Dateien: `blunderluck.ich` im Gerätespeicher auf
+   ein Testkonto setzen, `blunderluck.start-regeln` je Stufe, alle anderen
+   `blunderluck.*`-Schlüssel löschen, `document.hidden` auf `false`
+   festnageln (sonst ruht die Abfrage im kopflosen Browser), `fetch`
+   umhüllen und Anfragen/Bytes zählen, `error`/`unhandledrejection`
+   mitschreiben.
+3. Ein Skript NACH `app.js`: wartet, bis `ANMELDUNG.ichId` das Testkonto
+   ist, und ruft dann die ECHTEN Bildschirm-Funktionen — `START.spielen()`,
+   `TEAM_SCHACH.zugAusfuehren`, `aufstellungBereitUmschalten`, `aufgeben`.
+   Der zweite Spieler ist ein simuliertes Gerät: Modell (`seiteZulosen`,
+   `ziehen`) plus `speicher.teilSchreiben` (Partie, Übersichts-Eintrag,
+   Marke) — NICHT `SCHACH_SPEICHER.schreiben`, das setzt `_gesehen` und
+   dann sähe Spieler A seine eigene Änderung als schon gesehen. Danach
+   `abgleich.fremdenStandHolen()` und warten, bis A den Stand hat.
+4. Ein Protokoll-Feld unten auf der Seite; Edge kopflos mit
+   `--screenshot`, `--virtual-time-budget=60000` bis `90000`,
+   `--allow-file-access-from-files`, Stufe im `#hash`. Für Handy-Breite
+   eine Rahmen-Seite mit `iframe` von 390 px (`--window-size` ist nicht
+   die Layout-Breite, siehe oben).
+5. Zwei Testkonten am ENDE der Spielerliste anlegen und danach vom Ende
+   her entfernen (Felder bleiben dicht); Testpartien, ihre Übersichts-
+   Einträge und Chronik-Einträge am Ende mit Testspielern ebenfalls
+   entfernen — ein PowerShell-Skript mit `-Anlegen`/`-Aufraeumen`, Adresse
+   aus `konfig.js`.
+
+**Drei Fallen, alle gemessen:**
+
+- **Unter virtueller Zeit steht `Date.now()` während Netzaufrufen still.**
+  Zwei Schreibvorgänge des simulierten Geräts bekamen dieselbe Marke, und
+  A sah die zweite Änderung nie. Der Fahrer zählt seine Marke deshalb
+  monoton hoch. (Am echten Gerät liegt Netzverkehr dazwischen — dort
+  passiert das nicht.)
+- **Die App macht, was sie soll — der Fahrer muss es wissen.** Eine
+  wartende Runde mit Mitspieler vom vorigen Lauf wurde beim nächsten
+  „Spielen" geöffnet statt neu angelegt (v0.114.2), eine laufende beim
+  Start wiedereingestiegen, eine beendete als Abschluss gezeigt. Jede
+  Stufe braucht deshalb vorher `-Aufraeumen`.
+- **Bilder ohne Log:** Das Protokoll-Feld deckt das untere Viertel — für
+  Gestaltungs-Bilder ein Schalter, der es ausblendet.
+
+**Die Regel dahinter:** Ein „geht alles?" beantwortet nur ein Lauf durch
+die echten Schichten — Bildschirm, Modell, Speicher, Server. Der Nachbau in
+den Tests hält Regressionen fern; ob die Teile zusammenpassen, sieht man
+nur, wenn sie zusammen laufen. Der Fahrer ist in einer Stunde nachgebaut;
+die fünf Schritte oben reichen dafür.

@@ -292,8 +292,9 @@ pruefe("Die Seitenwahl steht in zwei Spalten (Punkt 49)", () => {
             + " offenstehen, offen ist: " + JSON.stringify(offen));
     }
 
-    /* Die waehlbare Seite traegt einen KNOPF, und ihre Liste ist leer. */
-    const weiss = TEAM_SCHACH._seitenwahlSpalteBauen(
+    /* Die waehlbare Seite traegt einen KNOPF, und ihr Platz sagt „frei“
+       (seit v0.115.0, Vorraum — bis dahin blieb die Liste leer). */
+    const weiss = TEAM_SCHACH._vorraumPlatzBauen(
         angelegt.partie, person, "weiss", true);
     const knopf = klasseSuchen(weiss, "team-knopf-weiss");
     if (!knopf || knopf.tagName !== "button") {
@@ -301,10 +302,10 @@ pruefe("Die Seitenwahl steht in zwei Spalten (Punkt 49)", () => {
     }
     const liste = klasseSuchen(weiss, "seitenwahl-liste");
     if (!liste) {
-        throw new Error("der Spalte fehlt ihre Liste");
+        throw new Error("dem Platz fehlt seine Liste");
     }
-    if ((liste.kinder || []).length !== 0) {
-        throw new Error("die Liste ist nicht leer, obwohl niemand drin sitzt: "
+    if ((liste.kinder || []).length !== 1 || !hatKlasse(liste.kinder[0], "vorraum-platz-frei")) {
+        throw new Error("der leere Platz sagt nicht frei: "
             + liste.kinder.length);
     }
 
@@ -331,31 +332,38 @@ pruefe("Die Seitenwahl steht in zwei Spalten (Punkt 49)", () => {
             + " offenstehen, offen ist: " + JSON.stringify(wahl));
     }
 
-    const schwarz = TEAM_SCHACH._seitenwahlSpalteBauen(
+    /* SEIT v0.115.0 (Vorraum) heisst die Spalte Platz: Die nicht waehlbare
+       Seite traegt keinen knopfartigen Kopf mehr, sondern eine Beschriftung
+       mit Farbpunkt (Befund B3) — und ein leerer Platz sagt „frei". */
+    const schwarz = TEAM_SCHACH._vorraumPlatzBauen(
         alsWeiss, person, "schwarz", false);
-    const schild = klasseSuchen(schwarz, "team-knopf-schwarz");
-    if (!schild) {
-        throw new Error("der Spalte Schwarz fehlt ihr Kopf");
+    if (klasseSuchen(schwarz, "team-knopf-schwarz")) {
+        throw new Error("die nicht waehlbare Seite traegt noch den Knopf-Kopf");
     }
-    if (schild.tagName === "button") {
-        throw new Error("die nicht waehlbare Seite ist ein Knopf geblieben");
+    const name = klasseSuchen(schwarz, "vorraum-platz-name");
+    if (!name || String(name.textContent || "") !== "Schwarz") {
+        throw new Error("am Platz steht nicht die Farbe, sondern: "
+            + (name ? name.textContent : "gar nichts"));
     }
-    if (String(schild.textContent || "") !== "Schwarz") {
-        throw new Error("am Schild steht nicht die Farbe, sondern: "
-            + schild.textContent);
+    if (!klasseSuchen(schwarz, "vorraum-platz-frei")) {
+        throw new Error("der leere Platz sagt nicht frei");
     }
 
-    /* Wer eingetreten ist, steht in der Liste SEINER Spalte — und die Spalte
-       ist als die eigene ausgezeichnet. */
-    const meine = TEAM_SCHACH._seitenwahlSpalteBauen(
+    /* Wer eingetreten ist, steht in der Liste SEINES Platzes — und der Platz
+       ist als der eigene ausgezeichnet; ein waehlbarer Platz traegt den Knopf. */
+    const meine = TEAM_SCHACH._vorraumPlatzBauen(
         alsWeiss, person, "weiss", true);
     const eintrag = klasseSuchen(meine, "seitenwahl-eintrag");
     if (!eintrag || String(eintrag.textContent || "") !== person.name) {
         throw new Error("der Name steht nicht in der Liste: "
             + (eintrag ? eintrag.textContent : "gar nicht"));
     }
-    if (!hatKlasse(meine, "seitenwahl-spalte-meine")) {
-        throw new Error("die eigene Spalte ist nicht als eigene ausgezeichnet");
+    if (!hatKlasse(meine, "vorraum-platz-meine")) {
+        throw new Error("der eigene Platz ist nicht als eigener ausgezeichnet");
+    }
+    const platzKnopf = klasseSuchen(meine, "team-knopf-weiss");
+    if (!platzKnopf || platzKnopf.tagName !== "button") {
+        throw new Error("der waehlbare Platz traegt keinen Knopf");
     }
 });
 

@@ -828,11 +828,7 @@ const TEAM_SCHACH = {
              * immer nein — die letzte erste Zusage pfeift direkt an, das
              * entscheidet das Modell (`bereitSetzen` → `kannAnpfeifen`).
              */
-            if (SCHACH_RUNDE.inAufstellung(partie, person.id)) {
-                TEAM_SCHACH._aufstellungZeichnen(wurzel, partie, person);
-            } else {
-                TEAM_SCHACH._seitenwahlZeichnen(wurzel, partie, person);
-            }
+            TEAM_SCHACH._vorraumZeichnen(wurzel, partie, person);
             return;
         }
 
@@ -953,80 +949,57 @@ const TEAM_SCHACH = {
     },
 
     /* ---------------------------------------------------------------- *
-     * Vor dem Anpfiff: der Seitenwahl-Bildschirm (seit v0.61.0)
+     * Vor dem Anpfiff: der Vorraum (seit v0.115.0)
+     *
+     * EIN Bildschirm statt zwei. Bis v0.114.3 gab es die Seitenwahl (seit
+     * v0.61.0, zweispaltig seit Punkt 49) und danach die Aufstellung (seit
+     * v0.62.0, nur mit Zufallsarmee). Der Testlauf vom 18.09.2026 hat
+     * sieben Befunde daran gemessen (docs\entwurf-vorraum.md): Der
+     * Wartende sah nicht, dass er wartet; der Code war der unauffälligste
+     * Knopf; die „Seitenwahl" zeigte mit zugeloster Seite eine Wahl, die
+     * keine war; der Eingeladene landete ohne Blick auf die Regeln im
+     * Match; zwei Wege zum Anpfiff fühlten sich verschieden an; wer allein
+     * war, hatte keinen Ausweg; das eine Schildchen „bereit" sagte nicht,
+     * wer noch fehlt.
+     *
+     * DER VORRAUM HAT IMMER DENSELBEN AUFBAU, von oben nach unten:
+     *   1. Kopf: Zurück, Titel der Spielart
+     *   2. Zustandszeile: was gerade passiert und worauf gewartet wird
+     *   3. Einladen-Block: Code gross, Teilen, Kopieren, Freund einladen —
+     *      nur solange ein Platz frei ist
+     *   4. Zwei Plätze: Weiss und Schwarz mit den Namen, „frei" wenn leer;
+     *      antippbar nur, wenn man wählen darf (ohne Zulosung)
+     *   5. Brett-Vorschau, fest oder gewürfelt
+     *   6. Die Regeln dieser Runde als Schildchen
+     *   7. Fuss: EINE Hauptaktion — „Bereit" (dazu der Würfel bei
+     *      Zufallsarmee), oder „Gegen den Computer spielen", solange man
+     *      allein wartet
+     *
+     * Die zweite Zusage („Bereit") gilt seit v0.115.0 in JEDER Runde
+     * (`SCHACH_RUNDE.kannAnpfeifen`) — ein Tipp mehr als bis v0.114.3 ohne
+     * Zufallsarmee, dafür sieht der Eingeladene vorher, was gespielt wird,
+     * und beide haben den Moment „Beide bereit — es geht los".
      * ---------------------------------------------------------------- */
 
-    /*
-     * DER ERSTE VON ZWEI START-BILDSCHIRMEN (Nutzer-Ansage 25.08.2026),
-     * ZWEISPALTIG SEIT PUNKT 49 (Nutzer-Ansage 28.08.2026).
-     *
-     * Der Wortlaut: „ganz oben links der zurück knopf / dann über die ganze
-     * länge zuffall knopf daruter / 50 % des screens Weiß wo der alte knopf
-     * zum auswählen ist darunter eine große liste die leer ist bis sich
-     * jemand einträgt / das selbe rechts neben dran mit Schwarz / Der Raum
-     * Code soll oben in der spalte bei zurück rechts stehen so wie in der
-     * richtigen matches."
-     *
-     * VON OBEN NACH UNTEN: Ausgang links und Code rechts im Kopf, darunter
-     * der Zufall-Knopf über die volle Breite, darunter die zwei Seiten
-     * nebeneinander — jede mit ihrem Auswahl-Knopf oben und der Liste derer,
-     * die schon darauf sitzen.
-     *
-     * DREI DINGE ÄNDERN SICH DAMIT GEGENÜBER v0.61.0:
-     *
-     *   - DIE ZWEI SPIELERZEILEN FALLEN HIER WEG. Sie sagten, wer auf
-     *     welcher Seite sitzt — genau das sagen jetzt die zwei Listen, und
-     *     zwar an der Seite, zu der sie gehören. Im Match und in der
-     *     Aufstellung (`_aufstellungZeichnen`) bleiben sie unangetastet:
-     *     Dort flankieren sie das Brett, und dafür sind sie gebaut.
-     *   - DIE REIHE DER DREI KNÖPFE IST AUSEINANDERGEZOGEN. Zufall steht
-     *     allein oben, weil er zu keiner Seite gehört, sondern gerade
-     *     entscheidet, welche es wird; Weiss und Schwarz stehen als Kopf
-     *     IHRER Spalte. Farbe und Form bleiben die von v0.41.0 — es sind
-     *     dieselben Knöpfe, nur an einem anderen Ort.
-     *   - DER CODE STEHT IM KOPF RECHTS statt am Fuss, dieselbe Ecke wie im
-     *     laufenden Match. Blass wie dort (`partie-code`) ist er hier aber
-     *     NICHT: Auf diesem Bildschirm ist er der Grund, warum man wartet —
-     *     man liest ihn jemandem vor. Er bleibt deshalb gross genug zum
-     *     Vorlesen (`seitenwahl-code`).
-     *
-     * DIE SEITE, DIE MAN GERADE NICHT WÄHLEN KANN, TRÄGT TROTZDEM IHREN
-     * KOPF — dann als Schild statt als Knopf. Ohne ihn wüsste man auf einem
-     * Bildschirm ohne Wahl (schon beigetreten, schon bereit) nicht mehr,
-     * welche Spalte welche ist.
-     *
-     * SEIT PUNKT 8 (27.08.2026) IST DER TIPP AUF DIE SEITE ZUGLEICH DIE
-     * ERSTE ZUSAGE; ein eigener „Bereit"-Knopf steht nicht mehr da. Wer es
-     * sich anders überlegt, verlässt die Runde über das „Zurück" oben links
-     * — einen Seitenwechsel verbietet das Modell ohnehin.
-     *
-     * WARUM DAS BRETT HIER FEHLT: Vor dem Anpfiff war es nie zu gebrauchen.
-     * Ziehen kann niemand, und was man wirklich tut — eine Seite aussuchen,
-     * warten, jemanden einladen — stand darunter gedrängt. Es kommt mit dem
-     * ZWEITEN Start-Bildschirm zurück; dort hat es eine Aufgabe.
-     */
-    _seitenwahlZeichnen(wurzel, partie, person) {
+    _vorraumZeichnen(wurzel, partie, person) {
         const meinTeam = SCHACH_RUNDE.teamVon(partie, person.id);
+        const vollstaendig = partie.teams.weiss.length > 0
+            && partie.teams.schwarz.length > 0;
 
+        /* 1. Kopf: Zurück (mit Rückfrage, wer eine Seite hat) und der Titel
+           der Spielart — der Item-Hinweis des Kopfes bleibt, wo er war. */
         const kopf = TEAM_SCHACH._partieKopfBauen(partie,
             TEAM_SCHACH._knopf("Zurück", "knopf-still knopf-klein",
                 () => TEAM_SCHACH._seitenwahlVerlassen(partie, person)));
         kopf.className += " partie-kopf-klebt";
-
-        /* Der Code sitzt seit Punkt 49 im Kopf rechts; dorthin schiebt ihn
-           die Stildatei (`margin-left: auto`), damit er auch neben dem
-           Item-Zeichen des Kopfes in der Ecke bleibt. */
-        kopf.appendChild(TEAM_SCHACH._codeKnopfBauen(
-            partie, person, "seitenwahl-code code-knopf"));
+        kopf.appendChild(TEAM_SCHACH._element("span", "vorraum-titel", partie.titel));
         wurzel.appendChild(kopf);
 
-        /*
-         * IN EINER COMPUTER-RUNDE VOR DER SEITENWAHL sagt ein Satz, was zu
-         * tun ist (seit v0.29.0, mit v0.61.0 aus `_teamExtrasBauen` hierher
-         * gezogen). Ohne ihn stünde der Computer nirgends — man müsste
-         * raten, ob überhaupt einer kommt. Er verschwindet, sobald er wahr
-         * geworden ist.
-         */
+        /* 2. Die Zustandszeile. */
+        wurzel.appendChild(TEAM_SCHACH._vorraumZustandBauen(partie, person));
+
+        /* Gegen den Computer wählt der Mensch seine Seite selbst — der Satz
+           dazu steht seit v0.29.0 hier und bleibt. */
         if (SCHACH_BOT.botVorgesehen(partie) && !SCHACH_BOT.istBotPartie(partie)) {
             wurzel.appendChild(TEAM_SCHACH._element("p", "erklaerung",
                 meinTeam
@@ -1036,6 +1009,14 @@ const TEAM_SCHACH = {
                         + "andere."));
         }
 
+        /* 3. Einladen — nur solange jemand fehlt und es kein Computer ist,
+           der den Platz nimmt. */
+        if (!vollstaendig && !SCHACH_BOT.botVorgesehen(partie)) {
+            wurzel.appendChild(TEAM_SCHACH._vorraumEinladenBauen(partie, person));
+        }
+
+        /* 4. Die Plätze. Der Zufall-Knopf steht über ihnen, wenn beide Seiten
+           wählbar sind (ohne Zulosung, noch ohne eigene Seite). */
         const wahl = TEAM_SCHACH._beitrittsWahlErmitteln(partie, person);
 
         if (wahl.zufall) {
@@ -1046,35 +1027,255 @@ const TEAM_SCHACH = {
             wurzel.appendChild(zufall);
         }
 
-        const spalten = TEAM_SCHACH._element("div", "seitenwahl-spalten");
+        const plaetze = TEAM_SCHACH._element("div", "vorraum-plaetze");
         for (const farbe of ["weiss", "schwarz"]) {
-            spalten.appendChild(TEAM_SCHACH._seitenwahlSpalteBauen(
+            plaetze.appendChild(TEAM_SCHACH._vorraumPlatzBauen(
                 partie, person, farbe, wahl.farben.indexOf(farbe) !== -1));
         }
-        wurzel.appendChild(spalten);
+        wurzel.appendChild(plaetze);
+
+        /* 5. Das Brett — fest oder gewürfelt; man sieht, was einen erwartet.
+           Ohne Team ist es die Vorschau, mit Team die eigene Aufstellung
+           (Gegner oben, wie im Match). */
+        wurzel.appendChild(TEAM_SCHACH._brettBauen(partie, person));
+
+        /* 6. Die Regeln dieser Runde. */
+        wurzel.appendChild(TEAM_SCHACH._regelSchildchenBauen(partie));
+
+        /* 7. Der Fuss: eine Hauptaktion. */
+        const fuss = TEAM_SCHACH._element("div", "vorraum-fuss aufstellung-reihe");
+        let fussGefuellt = false;
+
+        if (meinTeam && vollstaendig && partie.bereit[meinTeam]) {
+            if (TEAM_SCHACH._darfNeuWuerfeln(partie, person)) {
+                fuss.appendChild(TEAM_SCHACH._wuerfelKnopfBauen(partie, meinTeam));
+            }
+            const gesagt = partie.aufstellungBereit[meinTeam];
+            fuss.appendChild(TEAM_SCHACH._knopf(
+                gesagt ? "Doch nicht bereit" : "Bereit",
+                (gesagt ? "knopf-still" : "knopf-haupt") + " aufstellung-bereit",
+                () => TEAM_SCHACH.aufstellungBereitUmschalten(
+                    partie, meinTeam, !gesagt)));
+            fussGefuellt = true;
+        } else if (meinTeam && !SCHACH_BOT.botVorgesehen(partie)) {
+            /*
+             * NIEMAND DA? Der Ausweg (Befund B6): Die wartende Runde wird
+             * durch eine Computer-Runde mit denselben Reglern ersetzt.
+             * Still, nicht blau — die Hauptsache bleibt das Einladen.
+             */
+            if (TEAM_SCHACH._darfNeuWuerfeln(partie, person)) {
+                fuss.appendChild(TEAM_SCHACH._wuerfelKnopfBauen(partie, meinTeam));
+            }
+            fuss.appendChild(TEAM_SCHACH._knopf(
+                "Niemand da? Gegen den Computer spielen",
+                "knopf-still vorraum-computer",
+                () => TEAM_SCHACH.gegenComputerWechseln(partie)));
+            fussGefuellt = true;
+        }
+
+        if (fussGefuellt) {
+            wurzel.appendChild(fuss);
+        }
+
+        /* Erst wenn das Brett im Bildschirm steht, lässt sich die Feldgrösse
+           messen — wie im Match (`_partieZeichnen`). Animiert wird hier
+           nichts: Es ist noch kein Zug geschehen. */
+        TEAM_SCHACH._brettEinpassen();
+        TEAM_SCHACH._figurGroesseSetzen();
+        TEAM_SCHACH._groessenWaechterStarten();
     },
 
     /*
-     * WER WAS WÄHLEN DARF — die EINE Stelle für diese Regel.
+     * DIE ZUSTANDSZEILE (Befunde B1 und B7): ein Satz, der sagt, was gerade
+     * passiert und worauf gewartet wird — mit einem leise pulsierenden
+     * Punkt, solange gewartet wird. Der Gegner wird beim Namen genannt;
+     * der Computer heisst „der Computer".
+     */
+    _vorraumZustandBauen(partie, person) {
+        const meinTeam = SCHACH_RUNDE.teamVon(partie, person.id);
+        const gegnerFarbe = meinTeam ? SCHACH.gegner(meinTeam) : "";
+        const gegner = gegnerFarbe ? partie.teams[gegnerFarbe] : [];
+        const gegnerName = (gegner.length === 0)
+            ? ""
+            : (SCHACH_BOT.istBot(gegner[0]) ? "Der Computer" : TEAM_SCHACH._nameVon(gegner[0]));
+
+        let text;
+        let wartet = false;
+
+        if (!meinTeam) {
+            const frei = ["weiss", "schwarz"].some(
+                (farbe) => partie.teams[farbe].length === 0);
+            text = frei
+                ? "Such dir eine Seite aus."
+                : "Beide Seiten sind besetzt — du schaust zu.";
+        } else if (gegner.length === 0) {
+            text = "Warte auf einen Mitspieler …";
+            wartet = true;
+        } else if (partie.aufstellungBereit[meinTeam] !== true) {
+            text = partie.aufstellungBereit[gegnerFarbe]
+                ? gegnerName + " ist bereit — und du?"
+                : gegnerName + " ist da — bereit?";
+        } else if (partie.aufstellungBereit[gegnerFarbe] !== true) {
+            text = "Warte auf " + gegnerName + " …";
+            wartet = true;
+        } else {
+            text = "Beide bereit — es geht los.";
+        }
+
+        const zeile = TEAM_SCHACH._element("div",
+            "vorraum-zustand" + (wartet ? " vorraum-zustand-wartet" : ""));
+        if (wartet) {
+            zeile.appendChild(TEAM_SCHACH._element("span", "vorraum-punkt", ""));
+        }
+        zeile.appendChild(TEAM_SCHACH._element("span", "vorraum-zustand-text", text));
+        zeile.setAttribute("role", "status");
+        return zeile;
+    },
+
+    /*
+     * DER EINLADEN-BLOCK (Befund B2): der Code gross in der Mitte, darunter
+     * „Teilen" (das Teilen-Menü des Handys — WhatsApp, Nachrichten; am PC
+     * gibt es das Menü nicht, dann fehlt der Knopf), „Kopieren" und
+     * „Freund einladen" (das Fenster mit der Freundesliste, nur mit eigener
+     * Seite — F17). Der Code selbst bleibt ein Knopf zum Fenster, wie seit
+     * Punkt 8.
+     */
+    _vorraumEinladenBauen(partie, person) {
+        const block = TEAM_SCHACH._element("div", "vorraum-einladen");
+
+        block.appendChild(TEAM_SCHACH._element("div", "vorraum-einladen-text",
+            "Gib den Code weiter — oder lade jemanden ein."));
+        block.appendChild(TEAM_SCHACH._codeKnopfBauen(
+            partie, person, "einladung-code vorraum-code code-knopf"));
+
+        const knoepfe = TEAM_SCHACH._element("div", "vorraum-einladen-knoepfe");
+
+        if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
+            knoepfe.appendChild(TEAM_SCHACH._knopf("Teilen", "knopf-haupt knopf-klein",
+                () => TEAM_SCHACH._codeTeilen(partie)));
+        }
+        knoepfe.appendChild(TEAM_SCHACH._knopf("Kopieren", "knopf-still knopf-klein",
+            () => TEAM_SCHACH._codeKopieren(partie)));
+
+        if (TEAM_SCHACH._einladenKnopfBauen(partie, person)) {
+            knoepfe.appendChild(TEAM_SCHACH._knopf("Freund einladen", "knopf-still knopf-klein",
+                () => TEAM_SCHACH._einladenFensterOeffnen(partie, person)));
+        }
+
+        block.appendChild(knoepfe);
+        return block;
+    },
+
+    /* Der Text, der geteilt wird: Code und Adresse der App — die Adresse
+       ist die, unter der die Seite gerade läuft (GitHub Pages oder lokal). */
+    _einladungsText(partie) {
+        const adresse = (typeof window !== "undefined" && window.location)
+            ? String(window.location.href).split("#")[0].split("?")[0]
+            : "";
+        return "Spiel mit mir Blunderluck — Code "
+            + SCHACH_RUNDE.beitrittsCode(partie.id)
+            + (adresse ? ": " + adresse : "");
+    },
+
+    _codeTeilen(partie) {
+        if (typeof navigator === "undefined" || typeof navigator.share !== "function") {
+            TEAM_SCHACH._codeKopieren(partie);
+            return;
+        }
+        navigator.share({ text: TEAM_SCHACH._einladungsText(partie) })
+            .catch(() => { /* Abgebrochen — dann eben nicht. */ });
+    },
+
+    _codeKopieren(partie) {
+        const code = SCHACH_RUNDE.beitrittsCode(partie.id);
+        const zeigen = (gelungen) => DIALOG.kurzmeldung(
+            gelungen ? "Code kopiert: " + code : "Code: " + code);
+
+        if (typeof navigator !== "undefined" && navigator.clipboard
+                && typeof navigator.clipboard.writeText === "function") {
+            navigator.clipboard.writeText(TEAM_SCHACH._einladungsText(partie))
+                .then(() => zeigen(true), () => zeigen(false));
+        } else {
+            zeigen(false);
+        }
+    },
+
+    /*
+     * DIE REGELN DIESER RUNDE ALS SCHILDCHEN (Befund B4): Wer beitritt,
+     * sieht VOR dem Anpfiff, was gespielt wird. Nur anzeigen, nicht ändern
+     * — geändert wird vor dem Anlegen (Pfeil-Quadrat am Start). Die Quelle
+     * ist `partie.regeln`, dieselbe wie im Spiel.
+     */
+    _regelSchildchenBauen(partie) {
+        const regeln = SCHACH_RUNDE.normalisieren(partie).regeln;
+        const texte = [];
+
+        if (regeln.faehigkeiten) {
+            texte.push("Lootboxen " + SCHACH_VARIANTEN.mengeVon(regeln.lootboxMenge).titel);
+            if (regeln.itemVorrat === "auswahl") {
+                const vorrat = SCHACH_RUNDE.itemVorrat(partie);
+                texte.push("Items: Auswahl" + (vorrat ? " (" + vorrat.length + ")" : ""));
+            }
+        } else {
+            texte.push("Ohne Lootboxen");
+        }
+
+        texte.push(regeln.zufallsArmee
+            ? ("Zufallsarmee" + (regeln.armeeUnterschiedlich ? ", getrennt" : ""))
+            : "Feste Aufstellung");
+
+        const staerke = SCHACH_VARIANTEN.armeeStaerkeVon(regeln.armeeStaerke);
+        if (staerke && staerke.id !== "normal") {
+            texte.push("Armee " + staerke.titel);
+        }
+
+        texte.push(regeln.seiteZufaellig ? "Seiten zugelost" : "Seite wählbar");
+
+        if (regeln.einigkeit) {
+            texte.push("Team-Einigkeit");
+        }
+
+        if (SCHACH_BOT.botVorgesehen(partie) || SCHACH_BOT.istBotPartie(partie)) {
+            const stufe = SCHACH_BOT.stufe(regeln.botStufe);
+            texte.push("Computer" + (stufe ? " " + stufe.titel : ""));
+        }
+
+        const leiste = TEAM_SCHACH._element("div", "vorraum-regeln");
+        leiste.setAttribute("aria-label", "Regeln dieser Runde");
+        for (const text of texte) {
+            leiste.appendChild(TEAM_SCHACH._element("span", "chip vorraum-regel", text));
+        }
+        return leiste;
+    },
+
+    /*
+     * NIEMAND DA? GEGEN DEN COMPUTER (Befund B6). Die wartende Runde wird
+     * NICHT von Hand geschlossen: `rundeStarten` räumt eine eigene wartende
+     * Runde, in der nur man selbst sitzt, seit v0.114.2 selbst weg. Es
+     * braucht also nur eine neue Runde mit denselben Reglern und dem
+     * Haken „gegen den Computer" — die Stufe kommt aus der Erinnerung des
+     * Starts, sonst die Vorgabe.
+     */
+    async gegenComputerWechseln(partie) {
+        const stand = SCHACH_RUNDE.normalisieren(partie);
+        const gemerkt = (typeof START !== "undefined") ? START.regeln() : TEAM_SCHACH._regelnVorgabe();
+        const regeln = Object.assign({}, gemerkt, stand.regeln, {
+            gegenComputer: true,
+            botStufe: gemerkt.botStufe
+        });
+        await TEAM_SCHACH.rundeStarten(stand.variante, regeln);
+    },
+
+    /*
+     * WELCHE SEITEN MAN GERADE ANTIPPEN DARF — und ob der Zufall dazu
+     * gehört (seit Punkt 49 eine eigene Frage, weil zwei Orte sie stellen).
      *
-     * Bis Punkt 49 steckte sie in `_beitrittReiheBauen`, das die Knöpfe
-     * zugleich in eine Reihe hängte. Seit die drei an drei verschiedenen
-     * Orten stehen (Zufall oben, die Seiten je als Kopf ihrer Spalte), wäre
-     * das zweierlei in einer Funktion: Die Entscheidung bleibt an einer
-     * Stelle, das Bauen macht der Bildschirm.
-     *
-     * DREI FÄLLE, alle unverändert:
-     *
-     *   - Läuft die Partie oder ist sie vorbei, gibt es nichts zu wählen.
-     *   - WER SCHON BEREIT IST, BEKOMMT KEINE WAHL MEHR (v0.44.0,
-     *     Nutzer-Entscheidung 24.08.2026).
-     *   - WER SCHON IN EINEM TEAM SITZT, sieht nur noch SEINE Seite (Punkt
-     *     8, 27.08.2026): Der Tipp darauf holt die Zusage nach — für den
-     *     Anleger und für Runden von vor dem Update. Einen Wechsel verbietet
-     *     `SCHACH_RUNDE.teamBeitreten` ohnehin, und ein Knopf, der nichts
-     *     bewirken kann, wäre eine Lüge. Würfeln lassen kann sich nur, wer
-     *     noch gar keine Seite hat: sonst wäre es kein Zufall, sondern ein
-     *     Wechsel.
+     *   - Läuft die Partie oder ist sie vorbei: nichts.
+     *   - Sitzt man schon in einem Team UND hat zugesagt: nichts — die
+     *     Wahl ist getroffen (der Tipp war die Zusage, Punkt 8).
+     *   - Sitzt man in einem Team OHNE Zusage (nur ohne Zulosung möglich):
+     *     nur die eigene Seite, als Tipp zum Zusagen.
+     *   - Sonst: beide Seiten und der Zufall.
      */
     _beitrittsWahlErmitteln(partie, person) {
         const keine = { farben: [], zufall: false };
@@ -1102,10 +1303,8 @@ const TEAM_SCHACH = {
      * `--figur-schwarz`), nicht die der Felder: Der Knopf sagt, mit welchen
      * Steinen man spielt.
      *
-     * DIE BESCHRIFTUNG IST DIE FARBE, nicht „Mitspielen". Bis v0.52.0 stand
-     * der Knopf IN einer Karte mit der Überschrift „Weiss" — dort war
-     * „Mitspielen" der fehlende Satzteil. Was der Knopf tut, sagt weiterhin
-     * sein `aria-label`, damit Vorleseprogramme nicht nur „Weiss" hören.
+     * DIE BESCHRIFTUNG IST DIE FARBE, nicht „Mitspielen". Was der Knopf tut,
+     * sagt sein `aria-label`, damit Vorleseprogramme nicht nur „Weiss" hören.
      */
     _teamKnopfBauen(partie, farbe) {
         const knopf = TEAM_SCHACH._knopf(
@@ -1118,154 +1317,57 @@ const TEAM_SCHACH = {
     },
 
     /*
-     * EINE SPALTE DES SEITENWAHL-BILDSCHIRMS (Punkt 49): oben der Kopf der
-     * Seite, darunter die Liste derer, die schon darauf sitzen.
+     * EIN PLATZ DES VORRAUMS (aus der Spalte der Seitenwahl, Punkt 49):
+     * oben der Kopf der Seite — als KNOPF, wenn man sie wählen darf, sonst
+     * als schlichte Beschriftung mit Farbpunkt (Befund B3: kein Kopf, der
+     * wie ein Knopf aussieht und keiner ist) —, darunter die Namen derer,
+     * die dort sitzen, oder „frei".
      *
-     * DIE LISTE BLEIBT LEER, BIS SICH JEMAND EINTRÄGT — so hat der Nutzer es
-     * beschrieben, und so bleibt es: kein Ersatztext, kein „noch niemand"
-     * (dieselbe Entscheidung wie bei den Fähigkeiten, v0.112.0). Ihre Höhe
-     * steht in der Stildatei, damit der Bildschirm nicht springt, sobald der
-     * erste Name erscheint.
-     *
-     * „bereit" STEHT AN DER SPALTE, nicht am Namen: Zugesagt hat die SEITE
-     * (`partie.bereit`), nicht der einzelne Spieler — im Match sagt dasselbe
-     * der Chip in der Spielerzeile. Auf dem Warte-Bildschirm (beide bereit,
-     * ohne Zufallsarmee) ist dieser Chip das Einzige, was noch etwas sagt.
+     * DAS SCHILDCHEN „bereit" MEINT SEIT v0.115.0 DIE ZWEITE ZUSAGE
+     * (`aufstellungBereit`) — die, die im Vorraum mit dem Knopf gegeben
+     * wird. Die erste (die Seite) ist mit dem Sitzen erledigt und braucht
+     * kein Schildchen mehr.
      */
-    _seitenwahlSpalteBauen(partie, person, farbe, wahlbar) {
+    _vorraumPlatzBauen(partie, person, farbe, wahlbar) {
         const meinTeam = SCHACH_RUNDE.teamVon(partie, person.id);
+        const mitglieder = partie.teams[farbe];
 
-        const spalte = TEAM_SCHACH._element("div",
-            "seitenwahl-spalte"
-            + ((meinTeam === farbe) ? " seitenwahl-spalte-meine" : ""));
+        const platz = TEAM_SCHACH._element("div",
+            "vorraum-platz vorraum-platz-" + farbe
+            + ((meinTeam === farbe) ? " vorraum-platz-meine" : ""));
 
-        spalte.appendChild(wahlbar
-            ? TEAM_SCHACH._teamKnopfBauen(partie, farbe)
-            : TEAM_SCHACH._element("div",
-                "team-knopf team-knopf-" + farbe + " team-knopf-schild",
+        if (wahlbar) {
+            platz.appendChild(TEAM_SCHACH._teamKnopfBauen(partie, farbe));
+        } else {
+            const kopf = TEAM_SCHACH._element("div", "vorraum-platz-kopf");
+            kopf.appendChild(TEAM_SCHACH._element("span",
+                "vorraum-platz-punkt vorraum-platz-punkt-" + farbe, ""));
+            kopf.appendChild(TEAM_SCHACH._element("span", "vorraum-platz-name",
                 (farbe === "weiss") ? "Weiss" : "Schwarz"));
+            platz.appendChild(kopf);
+        }
 
         const liste = TEAM_SCHACH._element("div", "seitenwahl-liste");
-        for (const id of partie.teams[farbe]) {
+        for (const id of mitglieder) {
             liste.appendChild(TEAM_SCHACH._element("div",
                 "seitenwahl-eintrag"
                 + ((id === person.id) ? " seitenwahl-eintrag-ich" : ""),
-                TEAM_SCHACH._nameVon(id)));
+                SCHACH_BOT.istBot(id) ? "Computer" : TEAM_SCHACH._nameVon(id)));
         }
-        spalte.appendChild(liste);
-
-        if (!partie.laeuft && !partie.ergebnis && partie.bereit[farbe]) {
-            const lage = TEAM_SCHACH._element("div", "seitenwahl-lage");
-            lage.appendChild(TEAM_SCHACH._element("span",
-                "chip chip-fertig", "bereit"));
-            spalte.appendChild(lage);
+        if (mitglieder.length === 0) {
+            liste.appendChild(TEAM_SCHACH._element("div",
+                "seitenwahl-eintrag vorraum-platz-frei", "frei"));
         }
+        platz.appendChild(liste);
 
-        return spalte;
-    },
-
-    /* ---------------------------------------------------------------- *
-     * Vor dem Anpfiff, zweiter Schritt: die Aufstellung (seit v0.62.0)
-     * ---------------------------------------------------------------- */
-
-    /*
-     * DER ZWEITE START-BILDSCHIRM (Nutzer-Ansage 25.08.2026).
-     *
-     * „Sobald beide Seiten einen Spieler haben und beide bereit sind, gehts
-     * ein Screen weiter, wo das Spielfeld gezeigt wird — wo aber beide noch
-     * die Möglichkeit haben, neu aufzustellen … wenn beide nochmal auf
-     * Bereit klicken, kommen sie ins Spiel."
-     *
-     * HIER KOMMT DAS BRETT ZURÜCK, das der Seitenwahl-Bildschirm nicht hat —
-     * und diesmal mit einer Aufgabe: Man sieht seine Aufstellung an und
-     * entscheidet, ob man sie behält. Deshalb steht das Brett gross in der
-     * Mitte, darunter der Würfel und die Zusage.
-     *
-     * WAS ES HIER NICHT GIBT: die Seitenwahl (die ist getroffen, sonst wäre
-     * man nicht hier), das Einladen (die Runde ist voll) und den Friedhof
-     * (es ist noch niemand gefallen). Das „Zurück" oben links führt eine
-     * Stufe zurück zur Seitenwahl, nicht aus der Runde heraus — hinaus kommt
-     * man von dort.
-     */
-    _aufstellungZeichnen(wurzel, partie, person) {
-        const meinTeam = SCHACH_RUNDE.teamVon(partie, person.id);
-
-        const kopf = TEAM_SCHACH._partieKopfBauen(partie,
-            TEAM_SCHACH._knopf("Zurück", "knopf-still knopf-klein",
-                () => TEAM_SCHACH._aufstellungVerlassen(partie, person)));
-        kopf.className += " partie-kopf-klebt";
-        wurzel.appendChild(kopf);
-
-        /* Gegner oben, ich unten — dieselbe Anordnung wie im Match, damit der
-           Anpfiff nichts verschiebt. */
-        const obenFarbe = TEAM_SCHACH._farbeObenAmBrett(partie, person);
-        const untenFarbe = (obenFarbe === "weiss") ? "schwarz" : "weiss";
-
-        wurzel.appendChild(TEAM_SCHACH._spielerZeileBauen(partie, person, obenFarbe));
-        wurzel.appendChild(TEAM_SCHACH._brettBauen(partie, person));
-        wurzel.appendChild(TEAM_SCHACH._spielerZeileBauen(partie, person, untenFarbe));
-
-        /*
-         * DIE ZWEI KNÖPFE DIESES BILDSCHIRMS: neu würfeln und zusagen.
-         *
-         * Der Würfel steht NUR bei Zufallsarmee da (`_darfNeuWuerfeln`, die
-         * Regel von v0.42.0) — ohne sie stellte er nur dieselbe feste
-         * Aufstellung wieder hin. Ohne ihn bleibt die Zusage allein stehen,
-         * und das ist richtig so: Dann gibt es an der Aufstellung nichts zu
-         * entscheiden, nur zu bestätigen.
-         */
-        const reihe = TEAM_SCHACH._element("div", "aufstellung-reihe");
-
-        if (TEAM_SCHACH._darfNeuWuerfeln(partie, person)) {
-            reihe.appendChild(TEAM_SCHACH._wuerfelKnopfBauen(partie, meinTeam));
+        const lage = TEAM_SCHACH._element("div", "seitenwahl-lage");
+        if (!partie.laeuft && !partie.ergebnis && mitglieder.length > 0
+                && partie.aufstellungBereit[farbe]) {
+            lage.appendChild(TEAM_SCHACH._element("span", "chip chip-fertig", "bereit"));
         }
+        platz.appendChild(lage);
 
-        /*
-         * NUR WER MITSPIELT, SAGT ZU. Ein Zuschauer ohne Seite kann hier
-         * nichts bestätigen — er sieht die Aufstellung und wartet, wie die
-         * beiden Spielerzeilen es ihm zeigen.
-         *
-         * UND NUR, WENN JEMAND GEGENÜBER SITZT (seit v0.66.0): Bei
-         * zugeloster Seite steht man schon vor dem Brett, während die andere
-         * Seite noch leer ist. Ein „Bereit", das nichts bewirken kann, wäre
-         * dort eine Lüge — deshalb sagt an seiner Stelle ein Satz, worauf
-         * gewartet wird.
-         */
-        const vollstaendig = partie.teams.weiss.length > 0
-            && partie.teams.schwarz.length > 0;
-
-        if (meinTeam && vollstaendig) {
-            const gesagt = partie.aufstellungBereit[meinTeam];
-            reihe.appendChild(TEAM_SCHACH._knopf(
-                gesagt ? "Doch nicht bereit" : "Bereit",
-                (gesagt ? "knopf-still" : "knopf-haupt") + " aufstellung-bereit",
-                () => TEAM_SCHACH.aufstellungBereitUmschalten(
-                    partie, meinTeam, !gesagt)));
-        } else if (meinTeam) {
-            reihe.appendChild(TEAM_SCHACH._element("p",
-                "erklaerung aufstellung-warten",
-                "Wartet auf einen Mitspieler — gib den Code weiter oder lade "
-                + "jemanden ein."));
-        }
-
-        wurzel.appendChild(reihe);
-
-        /*
-         * CODE UND EINLADEN STEHEN AUCH HIER (seit v0.66.0), denn mit
-         * zugeloster Seite ist dies der ERSTE Bildschirm — und wer wartet,
-         * braucht genau die beiden. Steht der Gegner schon am Brett, ist
-         * nichts mehr weiterzugeben; dann bleibt der Block weg.
-         */
-        if (!vollstaendig) {
-            wurzel.appendChild(TEAM_SCHACH._einladungBlockBauen(partie, person));
-        }
-
-        /* Erst wenn das Brett im Bildschirm steht, lässt sich die Feldgrösse
-           messen — wie im Match (`_partieZeichnen`). Animiert wird hier
-           nichts: Es ist noch kein Zug geschehen. */
-        TEAM_SCHACH._brettEinpassen();
-        TEAM_SCHACH._figurGroesseSetzen();
-        TEAM_SCHACH._groessenWaechterStarten();
+        return platz;
     },
 
     /*
@@ -1292,47 +1394,6 @@ const TEAM_SCHACH = {
         knopf.addEventListener("click",
             () => TEAM_SCHACH.armeeNeuWuerfeln(partie, meinTeam));
         return knopf;
-    },
-
-    /*
-     * ZURÜCK HEISST HIER EINE STUFE ZURÜCK (seit v0.62.0).
-     *
-     * Anders als auf dem Seitenwahl-Bildschirm verlässt dieses „Zurück" die
-     * Runde NICHT — es nimmt die Zusage zur eigenen Seite zurück und führt
-     * damit beide auf den ersten Bildschirm. Das ist der ehrliche Weg: Wer
-     * hierher gekommen ist, hat zugesagt; wer zurück will, nimmt genau das
-     * zurück. Hinaus kommt man eine Stufe weiter vorne, wo auch „Runde
-     * verlassen" wohnt.
-     *
-     * Ein Zuschauer ohne Seite hat nichts zurückzunehmen — für ihn führt der
-     * Knopf zur Übersicht, wie überall.
-     */
-    async _aufstellungVerlassen(partie, person) {
-        const meinTeam = SCHACH_RUNDE.teamVon(partie, person.id);
-
-        if (!meinTeam) {
-            await TEAM_SCHACH.uebersichtOeffnen();
-            return;
-        }
-
-        /*
-         * MIT ZUGELOSTER SEITE FÜHRT ZURÜCK AUS DER RUNDE (seit v0.66.0).
-         *
-         * Der Grund ist zwingend: Ohne Seitenwahl gibt es keinen Bildschirm
-         * mehr, auf den man zurückfallen könnte — die erste Bereitschaft
-         * zurückzunehmen führte in ein Nichts, aus dem die Zuteilung einen
-         * sofort wieder herausholt. Beim ersten Bau war genau das der Fall,
-         * und ein Test hat es gefangen: Eine angelegte Runde räumte sich
-         * nicht mehr weg, weil niemand sie je verliess.
-         *
-         * Ohne den Haken bleibt es beim Schritt zurück zur Seitenwahl.
-         */
-        if (SCHACH_RUNDE.normalisieren(partie).regeln.seiteZufaellig === true) {
-            await TEAM_SCHACH._seitenwahlVerlassen(partie, person);
-            return;
-        }
-
-        await TEAM_SCHACH.bereitUmschalten(partie, meinTeam, false);
     },
 
     /*
@@ -1406,29 +1467,6 @@ const TEAM_SCHACH = {
         }
     },
 
-    /*
-     * DER CODE IST DER EINLADEN-KNOPF (seit Punkt 8, 27.08.2026; Block seit
-     * v0.61.0).
-     *
-     * Bis Punkt 8 standen hier zwei Teile nebeneinander: der Code als
-     * blosser Text und daneben ein Zeichen-Knopf für die Freunde. Beides ist
-     * dieselbe Sache — jemanden dazuholen —, deshalb ist der Code jetzt
-     * SELBST der Knopf: Antippen öffnet das Fenster „Freunde einladen"
-     * (`_einladenFensterOeffnen`), das Code und Freundesliste zusammen zeigt.
-     *
-     * DER CODE STEHT HIER GROSS, nicht blass wie im Match (`partie-code` in
-     * der Standleiste, v0.47.0). Im Spiel ist er eine Randnotiz; hier ist er
-     * der Grund, warum man auf diesem Bildschirm wartet — man will ihn
-     * vorlesen oder abtippen können.
-     */
-    _einladungBlockBauen(partie, person) {
-        const block = TEAM_SCHACH._element("div", "einladung-block");
-
-        block.appendChild(TEAM_SCHACH._codeKnopfBauen(
-            partie, person, "einladung-code code-knopf"));
-
-        return block;
-    },
 
     /*
      * DER BEITRITTS-CODE ALS KNOPF (Punkt 8, 27.08.2026). Nutzer-Ansage:

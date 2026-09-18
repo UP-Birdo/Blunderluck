@@ -3,6 +3,36 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.115.0 — 18.09.2026
+
+**Der Vorraum: ein Bildschirm vor dem Match statt zwei — und du siehst,
+worauf du wartest.**
+
+- **Ein Vorraum für alle Runden.** Seitenwahl und Aufstellung sind zu EINEM
+  Bildschirm geworden, der immer gleich aufgebaut ist: oben ein Satz, der
+  sagt, was gerade passiert („Warte auf einen Mitspieler …", „fr3ddy ist da
+  — bereit?", „Warte auf fr3ddy …"), darunter die Einladung, die zwei
+  Plätze Weiss und Schwarz, das Brett so, wie es beim Anpfiff steht, die
+  Regeln dieser Runde als Schildchen, und unten genau ein Knopf.
+- **Einladen ist jetzt die Hauptsache, solange jemand fehlt:** Der Code
+  steht gross in der Mitte, daneben **Teilen** (öffnet das Teilen-Menü des
+  Handys — WhatsApp, Nachrichten), **Kopieren** und **Freund einladen**.
+  Vorher war der Code ein unauffälliger Text oben rechts.
+- **Beide drücken „Bereit"** — auch ohne Zufallsarmee. Bis jetzt startete
+  die Partie ohne Zufallsarmee in der Sekunde, in der der Zweite beitrat;
+  wer eingeladen war, stand ohne einen Blick auf die Regeln vor dem Brett.
+  Jetzt sieht jeder vorher, was gespielt wird, und drückt dann „Bereit".
+  Das ist ein Tipp mehr als bisher — dafür fühlt sich jede Runde gleich an.
+  Gegen den Computer gilt dasselbe: Seite antippen, „Bereit", los.
+- **Niemand da? Gegen den Computer spielen.** Wer allein wartet, hat unten
+  einen Ausweg: Die wartende Runde wird durch eine Computer-Runde mit
+  denselben Reglern ersetzt.
+- **Die Plätze sagen „frei"**, wenn dort niemand sitzt, und tragen bei
+  zugeloster Seite keine Köpfe mehr, die wie Knöpfe aussehen und keine
+  sind. Das grüne „bereit" meint jetzt das „Bereit" des Vorraums.
+- Grundlage: der Testlauf und der Entwurf vom 18.09.2026
+  (`docs\entwurf-vorraum.md`), Ist-Bilder in `docs\bilder\`.
+
 ## v0.114.3 — 18.09.2026
 
 **Schneller und sparsamer: Die App holt und schreibt nur noch, was gerade

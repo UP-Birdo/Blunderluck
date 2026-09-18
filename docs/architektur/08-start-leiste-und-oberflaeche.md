@@ -101,65 +101,75 @@ Bereitschaft** — es bleibt nur noch die zweite, die anpfeift.
   Runde hereinschaut, bleibt Zuschauer.
 - **Gelost wird gerechnet, nicht gewürfelt** (`_zufallsWert` aus Partie-Kennung
   und Person) — eiserne Regel, sonst sähe jedes Gerät etwas anderes.
-- **Wer wartet, wartet am BRETT:** `inAufstellung(runde, spielerId)` ist mit
-  dem Haken schon wahr, sobald die eigene Seite steht. Der
-  Aufstellungs-Bildschirm trägt dann Code und Einladen, und statt „Bereit"
-  einen Satz — ein Knopf, der nichts bewirken kann, wäre eine Lüge.
-- **Das „Zurück" führt dort aus der Runde**, nicht eine Stufe zurück: Es gibt
-  keinen Bildschirm mehr davor. Ohne diese Ausnahme räumte sich eine
+- **Wer wartet, wartet im Vorraum am Brett:** `inAufstellung(runde,
+  spielerId)` ist mit dem Haken schon wahr, sobald die eigene Seite steht.
+  Der Vorraum zeigt dann Einladen-Block und Brett, und statt „Bereit" den
+  Computer-Ausweg — ein „Bereit", das nichts bewirken kann, wäre eine Lüge.
+- **Das „Zurück" führt aus der Runde** (seit v0.115.0 in jeder Runde): Es
+  gibt keinen Bildschirm mehr davor. Ohne diese Regel räumte sich eine
   angelegte Runde nie wieder weg (ein Test hat es gefangen).
 - **Alte Partien gelten als AUS** (`=== true` beim Normalisieren) und behalten
   ihren Ablauf.
 
-## Vor dem Anpfiff: der Seitenwahl-Bildschirm (seit v0.61.0, nur ohne den Haken)
+## Vor dem Anpfiff: der Vorraum (seit v0.115.0 — ein Bildschirm statt zwei)
 
-**Eine wartende Partie zeigt kein Brett.** `_partieZeichnen` verzweigt bei
-`!laeuft && !ergebnis` sofort nach `_seitenwahlZeichnen` — dem ersten von zwei
-Start-Bildschirmen der Nutzer-Skizze; der zweite (Brett plus Neu-Aufstellen)
-ist seit v0.62.0 gebaut und steht im nächsten Abschnitt.
+**Eine wartende Partie ist der Vorraum.** `_partieZeichnen` verzweigt bei
+`!laeuft && !ergebnis` nach `_vorraumZeichnen`. Bis v0.114.3 waren das zwei
+Bildschirme — die Seitenwahl (v0.61.0, zweispaltig seit Punkt 49) und die
+Aufstellung (v0.62.0, nur mit Zufallsarmee). Der Testlauf vom 18.09.2026
+mass sieben Befunde daran (`docs\entwurf-vorraum.md`), der Nutzer liess
+alle fünf Empfehlungen bauen. Bilder vorher/nachher: `docs\bilder\`.
 
-**SEIT PUNKT 49 (v0.113.0) STEHT ER ZWEISPALTIG.** Was dort steht, von oben
-nach unten: der Kopf mit „Zurück" links (der einzige Ausgang) und dem
-Beitritts-Code rechts (`seitenwahl-code` — ein Knopf, der „Freunde einladen"
-öffnet); der Computer-Hinweis; der Zufall-Knopf über die volle Breite; und
-darunter zwei Spalten zu je der Hälfte — links Weiss, rechts Schwarz, jede mit
-ihrem Auswahl-Knopf oben und einer Liste darunter, die leer bleibt, bis sich
-jemand einträgt.
+**Der Aufbau ist in jedem Zustand derselbe**, von oben nach unten:
 
-- **Wer was wählen darf, entscheidet `_beitrittsWahlErmitteln`** — eine Stelle
-  für drei Fälle: laufende oder beendete Partie gar nichts, wer schon bereit
-  ist nichts mehr (v0.44.0), wer schon in einem Team sitzt nur noch seine
-  eigene Seite und keinen Zufall (Punkt 8). Gebaut werden die Knöpfe an drei
-  Orten, entschieden wird an einem.
-- **Die Seite, die man nicht wählen kann, trägt ihren Kopf als Schild** statt
-  als Knopf (`team-knopf-schild`) — sonst wäre nicht mehr erkennbar, welche
-  Spalte welche ist.
-- **Die zwei Spielerzeilen stehen hier nicht mehr** (bis v0.112.0 taten sie
-  es): Wer auf welcher Seite sitzt, sagt jetzt die Liste ihrer Spalte. Am
-  Brett und in der Aufstellung sind sie unverändert.
-- **„Zurück" ist „Runde verlassen"** (`_seitenwahlVerlassen`) — mit Rückfrage
-  über `DIALOG.frage`, nicht über `DIALOG.zweiSchritt`: Der zweite Schritt
-  schreibt seine Frage IN den Knopf, und ein Knopf, der „Zurück" heisst, darf
-  seine Beschriftung nicht unter dem Finger ändern. Ohne eigenes Team führt er
-  ohne Rückfrage zur Übersicht.
-- **Der Einladen-Knopf gilt auch im Match** (`_einladenKnopfBauen`, F19:
-  Nachzügler dürfen herein) und ist deshalb ein eigener Baustein; er liefert
-  `null`, wenn es weder einzuladende Freunde noch Wartende gibt.
-- **„Neu aufstellen" steht nicht hier, sondern auf dem zweiten Bildschirm**
-  (Nutzer-Entscheidung 25.08.2026).
+1. **Kopf:** „Zurück" links, der Titel der Spielart (`vorraum-titel`), der
+   Item-Hinweis wie gehabt.
+2. **Zustandszeile** (`_vorraumZustandBauen`, `vorraum-zustand`): ein Satz,
+   worauf gewartet wird — „Warte auf einen Mitspieler …", „fr3ddy ist da —
+   bereit?", „fr3ddy ist bereit — und du?", „Warte auf fr3ddy …" — mit
+   einem leise pulsierenden Punkt, solange gewartet wird
+   (`vorraum-punkt`, still bei `prefers-reduced-motion`).
+3. **Einladen-Block** (`_vorraumEinladenBauen`, `vorraum-einladen`), NUR
+   solange ein Platz frei ist und kein Computer ihn nimmt: Code gross
+   (`vorraum-code`, weiter ein Knopf zum Fenster „Freunde einladen"),
+   darunter **Teilen** (`navigator.share`, nur wo es das Menü gibt),
+   **Kopieren** (`navigator.clipboard`, Rückfall: Kurzmeldung mit dem
+   Code) und **Freund einladen** (nur mit eigener Seite, F17; nur wenn
+   `_einladenKnopfBauen` etwas anzubieten hätte). Der geteilte Text ist
+   `_einladungsText`: Code plus die Adresse, unter der die Seite läuft.
+4. **Zwei Plätze** (`_vorraumPlatzBauen`, `vorraum-plaetze`): Weiss links,
+   Schwarz rechts. Wählbar (ohne Zulosung, ohne eigene Seite) trägt der
+   Platz den Team-Knopf wie bisher, sonst eine Beschriftung mit Farbpunkt
+   (`vorraum-platz-kopf`) — kein Kopf, der wie ein Knopf aussieht und
+   keiner ist. Leer sagt der Platz „frei" (`vorraum-platz-frei`); das
+   Schildchen „bereit" meint die ZWEITE Zusage (`aufstellungBereit`).
+   Wer was wählen darf, entscheidet weiter `_beitrittsWahlErmitteln`; der
+   Zufall-Knopf steht über den Plätzen, wenn beide wählbar sind.
+5. **Brett** (`_brettBauen`): fest oder gewürfelt — man sieht, was einen
+   erwartet. Ohne Zufallsarmee war das Brett vor dem Anpfiff bis v0.114.3
+   nie zu sehen.
+6. **Regel-Schildchen** (`_regelSchildchenBauen`, `vorraum-regeln`):
+   Lootboxen und Menge (oder „Ohne Lootboxen"), Items-Auswahl,
+   Zufallsarmee/Feste Aufstellung, Armeestärke (wenn nicht normal), Seiten
+   zugelost/wählbar, Team-Einigkeit, Computer und Stufe. Nur anzeigen —
+   geändert wird VOR dem Anlegen (Pfeil-Quadrat am Start).
+7. **Fuss** (`vorraum-fuss`): mit eigener Seite und vollem Raum der Würfel
+   (nur bei Zufallsarmee, `_darfNeuWuerfeln`) und **„Bereit"** /
+   „Doch nicht bereit" (`aufstellung-bereit`); allein wartend der Würfel und
+   **„Niemand da? Gegen den Computer spielen"** (`gegenComputerWechseln`:
+   `rundeStarten` mit denselben Reglern und `gegenComputer: true` — die
+   eigene wartende Runde räumt `rundeStarten` seit v0.114.2 selbst weg).
 
-## Vor dem Anpfiff, zweiter Schritt: die Aufstellung (seit v0.62.0)
+**Zwei Zusagen je Seite — in JEDER Runde.** `bereit` heisst „ich bin mit
+meiner Seite einverstanden" (mit Zulosung gibt sie die Zuteilung, sonst der
+Tipp auf die Seite); `aufstellungBereit` heisst „ich bin auch mit dem Brett
+einverstanden" und pfeift an (`aufstellungBereitSetzen` → `kannAnpfeifen`).
+**Seit v0.115.0 verlangt `kannAnpfeifen` die zweite Zusage auch ohne
+Zufallsarmee** — von Punkt 8 (27.08.2026) bis v0.114.3 pfiff dort die zweite
+erste Zusage an, und der Eingeladene stand ohne Blick auf die Regeln vor dem
+Brett. `inAufstellung` sagt entsprechend in jeder Runde ja, sobald beide
+Seiten besetzt sind (mit Zulosung schon, sobald die eigene steht).
 
-Sobald beide Seiten besetzt und mit ihrer Seite einverstanden sind
-(`SCHACH_RUNDE.inAufstellung`), zeichnet `_aufstellungZeichnen` das BRETT
-zwischen den zwei Spielerzeilen, darunter den Würfel und die zweite Zusage.
-
-- **Es gibt ZWEI Bereitschaften je Seite.** `bereit` heisst „ich bin mit
-  meiner Seite einverstanden" und führt in die Aufstellung; `aufstellungBereit`
-  heisst „ich bin auch mit dem Brett einverstanden" und pfeift an
-  (`aufstellungBereitSetzen` → `kannAnpfeifen`). **`bereitSetzen` startet seit
-  v0.62.0 keine Partie mehr** — wer das übersieht, sucht den Anpfiff an der
-  falschen Stelle.
 - **Wer die erste Zusage zurücknimmt, streicht BEIDEN die zweite.** Sonst
   pfiffe eine stehengebliebene Zusage später zu einem Brett an, das die
   andere Seite nie gesehen hat.
@@ -171,9 +181,23 @@ zwischen den zwei Spielerzeilen, darunter den Würfel und die zweite Zusage.
   ihre Aufstellung behält.
 - **Jedes Neu-Würfeln streicht beiden die zweite Zusage** — und der Computer
   erneuert seine sofort (`SCHACH_BOT.aufstellungBestaetigen`), denn er hat
-  zum Brett keine Meinung.
-- **Das „Zurück" führt hier eine Stufe zurück**, nicht aus der Runde: Es
-  nimmt die erste Zusage zurück. Hinaus kommt man auf dem Bildschirm davor.
+  zum Brett keine Meinung. Der Computer bestätigt seine Aufstellung in
+  jeder Runde beim Dazukommen — der Mensch drückt danach „Bereit".
+- **„Zurück" ist „Runde verlassen"** (`_seitenwahlVerlassen`, Name geblieben)
+  — mit Rückfrage über `DIALOG.frage`, nicht über `DIALOG.zweiSchritt`: Der
+  zweite Schritt schreibt seine Frage IN den Knopf, und ein Knopf, der
+  „Zurück" heisst, darf seine Beschriftung nicht unter dem Finger ändern.
+  Ohne eigenes Team führt er ohne Rückfrage zur Übersicht. Eine Stufe
+  zurück gibt es nicht mehr — es gibt nur noch einen Bildschirm.
+- **Der Einladen-Knopf gilt auch im Match** (`_einladenKnopfBauen`, F19:
+  Nachzügler dürfen herein) und ist deshalb ein eigener Baustein; er liefert
+  `null`, wenn es weder einzuladende Freunde noch Wartende gibt.
+- **Was von der Seitenwahl weiterlebt:** `_beitrittsWahlErmitteln`,
+  `_teamKnopfBauen`, `zufaelligBeitreten`, die Listen-Klassen
+  `seitenwahl-liste`/`-eintrag`/`-lage` und `seitenwahl-zufall`. Entfallen:
+  `_seitenwahlZeichnen`, `_seitenwahlSpalteBauen`, `_aufstellungZeichnen`,
+  `_aufstellungVerlassen`, `_einladungBlockBauen`, `team-knopf-schild`,
+  `seitenwahl-code`.
 
 ## Die Fussleiste — zwei Lagen (v0.26.0, stark gekürzt in v0.61.0)
 

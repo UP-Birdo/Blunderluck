@@ -2429,13 +2429,12 @@ pruefe("Der Anpfiff braucht BEIDE Bereitschaften je Seite (v0.62.0)", () => {
     wahr(!SCHACH_RUNDE.inAufstellung(runde), "die Aufstellung ist vorbei");
 });
 
-pruefe("Ohne Zufallsarmee pfeift die zweite ERSTE Zusage an (Punkt 8)", () => {
+pruefe("Ohne Zufallsarmee fuehren die ersten Zusagen in den Vorraum, erst die zweiten pfeifen an (v0.115.0)", () => {
     /*
-     * NUTZER-ANSAGE 27.08.2026: „man muss ja das Feld nicht davor sehen,
-     * wenn man eh nichts mehr aendern kann." Ohne Zufallsarmee ist die
-     * Aufstellung fest — es gibt keinen Aufstellungs-Bildschirm und keine
-     * zweite Zusage mehr; die letzte erste Zusage startet die Partie
-     * (`bereitSetzen` → `kannAnpfeifen`).
+     * BIS v0.114.3 (Punkt 8, 27.08.2026) pfiff ohne Zufallsarmee die zweite
+     * ERSTE Zusage direkt an — der Eingeladene stand ohne Blick auf die
+     * Regeln vor dem Brett. SEIT v0.115.0 (der Vorraum) gilt der
+     * Zwei-Stufen-Weg in JEDER Runde: Seite, dann „Bereit" von beiden.
      */
     let runde = SCHACH_RUNDE.leereRunde(1000, "standard", "p-fix", "Fester Start");
     runde.regeln.zufallsArmee = false;
@@ -2444,25 +2443,31 @@ pruefe("Ohne Zufallsarmee pfeift die zweite ERSTE Zusage an (Punkt 8)", () => {
 
     runde = SCHACH_RUNDE.bereitSetzen(runde, "weiss", true, 1010);
     gleich(runde.laeuft, false, "eine Zusage allein startet nichts");
-    wahr(!SCHACH_RUNDE.inAufstellung(runde, "id-anna"),
-        "einen Aufstellungs-Bildschirm gibt es ohne Zufallsarmee nicht");
 
     runde = SCHACH_RUNDE.bereitSetzen(runde, "schwarz", true, 1020);
-    gleich(runde.laeuft, true, "mit der zweiten ersten Zusage geht es los");
-    gleich(runde.gestartetAm, 1020, "und die Spieldauer laeuft ab jetzt");
+    gleich(runde.laeuft, false, "die ersten Zusagen pfeifen nicht mehr an");
+    wahr(SCHACH_RUNDE.inAufstellung(runde, "id-anna"),
+        "ohne Zufallsarmee steht die Aufstellung (der Vorraum) an");
+    wahr(!SCHACH_RUNDE.kannAnpfeifen(runde), "ohne zweite Zusagen kein Anpfiff");
+
+    runde = SCHACH_RUNDE.aufstellungBereitSetzen(runde, "weiss", true, 1030);
+    gleich(runde.laeuft, false, "eine zweite Zusage reicht nicht");
+    runde = SCHACH_RUNDE.aufstellungBereitSetzen(runde, "schwarz", true, 1040);
+    gleich(runde.laeuft, true, "mit beiden zweiten Zusagen geht es los");
+    gleich(runde.gestartetAm, 1040, "und die Spieldauer laeuft ab jetzt");
 
     /*
-     * DER DATENVERTRAG: Eine ALTE wartende Runde ohne Zufallsarmee, in der
-     * beide erste Zusagen schon liegen (angelegt vor Punkt 8), gilt ab
-     * sofort als anpfeifbar — sie startet beim naechsten Schreiben. Gewollt:
-     * festes Brett, es war nichts mehr zu entscheiden.
+     * DER DATENVERTRAG: Eine wartende Runde ohne Zufallsarmee, in der beide
+     * erste Zusagen liegen, startet NICHT mehr von selbst — sie wartet im
+     * Vorraum auf die zweiten. Am 18.09.2026 lag keine solche Runde in der
+     * Datenbank.
      */
     let alt = SCHACH_RUNDE.leereRunde(1000, "standard", "p-alt3", "Alte Wartende");
     alt = SCHACH_RUNDE.teamBeitreten(alt, "id-anna", "weiss", 1000);
     alt = SCHACH_RUNDE.teamBeitreten(alt, "id-bert", "schwarz", 1000);
     alt.bereit = { weiss: true, schwarz: true };
-    wahr(SCHACH_RUNDE.kannAnpfeifen(alt),
-        "die alte wartende Runde startet beim naechsten Schreiben");
+    wahr(!SCHACH_RUNDE.kannAnpfeifen(alt),
+        "die alte wartende Runde wartet auf die zweiten Zusagen");
 });
 
 pruefe("Wer seine Seite zurueckzieht, streicht BEIDEN die Aufstellung (v0.62.0)", () => {
@@ -2640,13 +2645,20 @@ pruefe("Zugeloste Seite: zuteilen, sofort bereit, kein Seitenwahl-Schirm (v0.66.
     }
 
     /*
-     * Jetzt sind beide da und bereit — und weil die Standard-Runde KEINE
-     * Zufallsarmee hat, ist damit schon angepfiffen (Punkt 8, 27.08.2026):
-     * Es gibt nichts anzusehen und nichts zu wuerfeln, der
-     * Aufstellungs-Bildschirm existiert ohne Zufallsarmee nicht mehr.
+     * Jetzt sind beide da und mit ihrer Seite einverstanden. Bis v0.114.3
+     * pfiff das ohne Zufallsarmee direkt an (Punkt 8); seit v0.115.0
+     * (Vorraum) fehlen noch die zweiten Zusagen — von beiden.
      */
-    if (zuZweit.laeuft !== true) {
-        throw new Error("die Partie startet nicht, obwohl beide zugelost sind");
+    if (zuZweit.laeuft === true) {
+        throw new Error("die Partie startet ohne die zweiten Zusagen");
+    }
+    if (!SCHACH_RUNDE.inAufstellung(zuZweit, "id-anna")) {
+        throw new Error("nach der Zulosung beider steht die Aufstellung nicht an");
+    }
+    let los = SCHACH_RUNDE.aufstellungBereitSetzen(zuZweit, farbe, true, 2250);
+    los = SCHACH_RUNDE.aufstellungBereitSetzen(los, zweite, true, 2260);
+    if (los.laeuft !== true) {
+        throw new Error("die Partie startet nicht, obwohl beide zweimal zugesagt haben");
     }
 
     /* Ein Dritter wird NICHT einsortiert — beide Seiten sind besetzt. */

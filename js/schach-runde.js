@@ -1844,20 +1844,20 @@ const SCHACH_RUNDE = {
         }
 
         /*
-         * OHNE ZUFALLSARMEE GIBT ES KEINE ZWEITE ZUSAGE (Punkt 8,
-         * 27.08.2026): Die Aufstellung ist fest, es gibt nichts anzusehen
-         * und nichts zu würfeln — die beiden ersten Zusagen genügen.
+         * DIE ZWEITE ZUSAGE GILT IMMER (v0.115.0, der Vorraum). Von Punkt 8
+         * (27.08.2026) bis v0.114.3 genügten OHNE Zufallsarmee die beiden
+         * ersten Zusagen — die Partie pfiff im Moment des Beitritts an, und
+         * wer eingeladen war, stand ohne einen Blick auf die Regeln vor dem
+         * Brett (Befund B4 in docs\entwurf-vorraum.md). Seit dem Vorraum
+         * drücken beide Seiten „Bereit", mit fester wie mit gewürfelter
+         * Aufstellung: ein Weg, ein Gefühl, ein Moment „Beide bereit".
          *
-         * DER DATENVERTRAG DAZU: Eine ALTE wartende Runde ohne Zufallsarmee,
-         * in der beide erste Zusagen schon liegen, gilt damit ab sofort als
-         * anpfeifbar — sie startet beim nächsten Schreiben. Das ist gewollt
-         * (festes Brett, es war nichts mehr zu entscheiden); LAUFENDE
-         * Partien berührt die Änderung nicht, sie tragen `laeuft` längst.
+         * DER DATENVERTRAG DAZU: Eine wartende Runde ohne Zufallsarmee, in
+         * der beide erste Zusagen liegen, startet nicht mehr von selbst —
+         * sie wartet auf die zweiten. Am 18.09.2026 lag keine solche Runde
+         * in der Datenbank (alle offenen waren am selben Tag geschlossen
+         * worden); LAUFENDE Partien berührt es nicht, sie tragen `laeuft`.
          */
-        if (!SCHACH_RUNDE.armeeAn(stand)) {
-            return true;
-        }
-
         return stand.aufstellungBereit.weiss
             && stand.aufstellungBereit.schwarz;
     },
@@ -1883,15 +1883,11 @@ const SCHACH_RUNDE = {
         }
 
         /*
-         * OHNE ZUFALLSARMEE GIBT ES DEN BILDSCHIRM NICHT (Punkt 8,
-         * 27.08.2026, Nutzer: „man muss ja das Feld nicht davor sehen, wenn
-         * man eh nichts mehr ändern kann"). Die letzte erste Zusage pfeift
-         * dann direkt an (`bereitSetzen` → `kannAnpfeifen`).
+         * SEIT v0.115.0 AUCH OHNE ZUFALLSARMEE: Der Vorraum zeigt das Brett
+         * und verlangt die zweite Zusage in jeder Runde (siehe
+         * `kannAnpfeifen`). Von Punkt 8 bis v0.114.3 antwortete diese
+         * Funktion ohne Zufallsarmee immer nein.
          */
-        if (!SCHACH_RUNDE.armeeAn(stand)) {
-            return false;
-        }
-
         if (SCHACH_RUNDE.kannStarten(stand)) {
             return true;
         }

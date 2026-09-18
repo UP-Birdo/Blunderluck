@@ -74,6 +74,13 @@ wird. Die Liste dessen, was noch kommt, steht in [../ROADMAP.md](../ROADMAP.md).
   Play-Store-Umbau braeuchte - Referenz: docs\uebergabe-schach-app.md)
 
 ## erkenntnisse.md - Teuer erkaufte Erkenntnisse
+- **Die echte App laesst sich kopflos gegen die echte Datenbank fahren**
+  (18.09.2026, Testlauf zu v0.114.3: Wegwerf-Fahrer-Seite mit dem Geruest
+  von index.html, Testkonto im Geraetespeicher, `document.hidden` festnageln,
+  echte Bildschirm-Funktionen fuer Spieler A, simuliertes Geraet fuer B ueber
+  `teilSchreiben`; Testkonten und -partien am Ende anlegen und vom Ende her
+  entfernen. Fallen: `Date.now()` steht unter virtueller Zeit still, die App
+  findet Runden voriger Laeufe wieder — vorher aufraeumen)
 - **Geholt wird, was man ansieht — drei Fallen beim Umbau auf Teile**
   (v0.114.3: die Sicherungsdatei ist nicht die Leitung (596 gegen 192 KB);
   „beendet" heisst nicht „unveraenderlich" (Revanche behaelt die Kennung) —
