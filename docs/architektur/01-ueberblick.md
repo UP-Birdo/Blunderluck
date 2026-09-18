@@ -41,6 +41,7 @@ Das Schach hängt als eigener Turm daneben, nach demselben Muster:
     schach-runde.js      eine Partie: Teams, Zugrecht, Verlauf, Fähigkeiten
         |
     schach-tafel.js      alle Partien nebeneinander
+    schach-speicher.js   WAS davon geholt und geschrieben wird: je Partie, nie die ganze Tafel (v0.114.3)
 
 Der Gewinn: Spiellogik und Spielerliste sind ohne Browser testbar, und ein
 anderer Speicher-Dienst kostet genau eine neue Klasse in `speicher.js`.
@@ -65,6 +66,7 @@ anderer Speicher-Dienst kostet genau eine neue Klasse in `speicher.js`.
 | `js/schach.js` | Reine Schachregeln: Brett **beliebiger Größe**, Zugerzeugung, Bedrohung, Matt und Patt, Wirkung der Fähigkeiten. Ohne Browser testbar. |
 | `js/schach-runde.js` | EINE Partie mit ihren Teams: beitreten, bereit, Zugrecht, Verlauf, Fähigkeiten, Ergebnis. Ohne Browser testbar. |
 | `js/schach-tafel.js` | Die Sammlung aller Partien samt Chronik: anlegen, einsetzen, entfernen, sortieren. Ohne Browser testbar. |
+| `js/schach-speicher.js` | Seit v0.114.3: WAS vom Schach-Stand geholt und geschrieben wird — die Übersicht (5 KB) statt der Tafel (192 KB), je Partie laden und schreiben (Mehrpfad-PATCH), Vorrat eigener beendeter Partien im Gerät. Ohne Browser testbar (`test-schach-speicher.js`). Einzelheiten: `02-datenmodell-und-speicher.md`, „In Teilen statt als Ganzes". |
 | `js/schach-vorschau.js` | Die Bildanleitung der Fähigkeiten — rechnet mit den echten Regeln. |
 | `js/schach-grundlagen.js` | „Schach lernen": die Grundregeln, mit den echten Regeln gerechnet. |
 | `js/team-schach.js` | Der Tab **Team Schach**, Kern: Zustand, Zeichnen, Partie-Kopf, Teams, Bedienung, Zugversand mit Zugzähler-Prüfung. |

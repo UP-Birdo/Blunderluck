@@ -3,6 +3,24 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.115.1 — 18.09.2026
+
+**„Wie viele Figuren je Seite?" zeigt jetzt die Zahl — und ein Muster, das
+man auf dem Handy erkennt.**
+
+- Die vier Knöpfe unter der Frage trugen bisher je ein komplettes
+  Mini-Schachbrett. Auf dem Handy war jeder Knopf rund 75 Pixel breit, ein
+  Feld also 9 Pixel und eine Figur 6: Das Brett wurde zu einem Strichcode,
+  die Figuren zu Flecken, und ob 16 oder 24 Figuren aufgestellt sind, sah
+  man nicht — alle vier sahen gleich aus.
+- Jetzt steht auf jedem Knopf groß die **Zahl** (8, 16, 24, 30 Figuren je
+  Seite), darunter die eigene Bretthälfte als flaches Muster aus belegten
+  und freien Feldern — ein Block, zwei Reihen, drei Reihen, fast alles.
+  Das Wort (wenig, normal, viel, voll) bleibt klein darunter.
+- Zahl und Muster werden aus derselben Aufstellung gerechnet, die die
+  Partie hinterher wirklich anlegt — es kann also nichts Falsches
+  versprechen.
+
 ## v0.115.0 — 18.09.2026
 
 **Der Vorraum: ein Bildschirm vor dem Match statt zwei — und du siehst,

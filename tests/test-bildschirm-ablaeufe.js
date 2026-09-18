@@ -4986,16 +4986,21 @@ pruefe("Die Einstellungen tragen keine Erklaer-Absaetze mehr (v0.108.0)", () => 
  * Bilder statt Woerter (v0.109.0)
  * ------------------------------------------------------------------ */
 
-pruefe("Jeder Armee-Knopf zeigt SEIN eigenes Mini-Brett (v0.109.0)", () => {
+pruefe("Jeder Armee-Knopf zeigt SEINE Zahl und SEIN Muster (v0.109.0, Zahl seit v0.115.1)", () => {
     /*
-     * NUTZER-ANSAGE 28.08.2026: „Beispielbilder statt Texten."
+     * NUTZER-ANSAGE 28.08.2026: „Beispielbilder statt Texten." — und am
+     * 18.09.2026: „die Anzahl-Ansicht oben sieht nicht gut aus". Seit
+     * v0.115.1 traegt der Knopf die Figurenzahl und die eigene Brett-
+     * Haelfte als flaches Belegungs-Muster statt eines ganzen Mini-Bretts.
      *
      * DER EIGENTLICHE FEHLERFALL, gegen den dieser Test steht: Vier Bilder,
      * die alle gleich aussehen. Das passiert, sobald die gewaehlte Staerke
      * nicht mehr in die Rechnung geht — dann zeigt jeder Knopf brav ein
-     * Brett, nur eben viermal dasselbe, und niemandem faellt es auf. Der
-     * Test vergleicht deshalb die Stellungen miteinander, statt nur zu
-     * zaehlen, ob ein Bild da ist.
+     * Muster, nur eben viermal dasselbe, und niemandem faellt es auf. Der
+     * Test vergleicht deshalb die Muster miteinander, statt nur zu
+     * zaehlen, ob ein Bild da ist. Und er rechnet die Zahl nach: Sie muss
+     * so viele belegte Felder nennen, wie das Muster der EINEN Haelfte
+     * zeigt — sonst sagt der Knopf eine Zahl und malt eine andere.
      */
     const TEAM_SCHACH = umgebung.TEAM_SCHACH;
     const karte = TEAM_SCHACH._armeeStaerkeLeisteBauen();
@@ -5016,38 +5021,55 @@ pruefe("Jeder Armee-Knopf zeigt SEIN eigenes Mini-Brett (v0.109.0)", () => {
     const staerken = umgebung.SCHACH_VARIANTEN.ARMEE_STAERKEN.length;
 
     if (bilder.length !== staerken) {
-        throw new Error("erwartet " + staerken + " Mini-Bretter, sind "
+        throw new Error("erwartet " + staerken + " Armee-Bilder, sind "
             + bilder.length);
     }
 
     /*
-     * Die Stellung eines Bildes als Zeichenkette: welche Felder eine Figur
-     * tragen, in der Reihenfolge des Bretts. Gefragt wird nach dem KIND mit
-     * der Figuren-Klasse, nicht nach `textContent` — im DOM-Nachbau reicht
-     * der Text eines Elements nicht bis in seine Kinder, und der Test war
-     * damit blind (gefunden beim Bau, v0.109.0).
+     * Das Muster eines Bildes als Zeichenkette: welche Felder belegt sind,
+     * in der Reihenfolge des Bretts. Gefragt wird nach der Klasse des
+     * Feldes, nicht nach `textContent` — im DOM-Nachbau reicht der Text
+     * eines Elements nicht bis in seine Kinder (gefunden beim Bau, v0.109.0).
      */
-    const stellungVon = (bild) => einsammeln(bild, (kind) =>
-        String(kind.className || "").indexOf("vorschau-feld") !== -1, [])
-        .map((feld) => (feld.kinder || []).some((kind) =>
-            String(kind.className || "").indexOf("figur") !== -1) ? "x" : ".")
+    const musterVon = (bild) => einsammeln(bild, (kind) =>
+        String(kind.className || "").indexOf("armee-muster-feld") !== -1, [])
+        .map((feld) => (String(feld.className || "")
+            .indexOf("armee-muster-belegt") !== -1) ? "x" : ".")
         .join("");
 
-    const stellungen = bilder.map(stellungVon);
+    const zahlVon = (bild) => {
+        const zahl = einsammeln(bild, (kind) =>
+            String(kind.className || "").indexOf("armee-zahl") !== -1, [])[0];
+        return zahl ? String(zahl.textContent) : "";
+    };
 
-    for (const stellung of stellungen) {
-        if (stellung.indexOf("x") === -1) {
-            throw new Error("ein Mini-Brett ist leer — die Aufstellung wurde"
+    const muster = bilder.map(musterVon);
+
+    for (let stelle = 0; stelle < bilder.length; stelle++) {
+        if (muster[stelle].indexOf("x") === -1) {
+            throw new Error("ein Armee-Muster ist leer — die Aufstellung wurde"
                 + " nicht gerechnet");
+        }
+
+        /* Eine Haelfte, also 8 mal 4 Felder — nie das ganze Brett. */
+        if (muster[stelle].length !== 32) {
+            throw new Error("das Muster zeigt " + muster[stelle].length
+                + " Felder statt der 32 einer Brett-Haelfte");
+        }
+
+        const belegt = muster[stelle].split("x").length - 1;
+        if (zahlVon(bilder[stelle]) !== String(belegt)) {
+            throw new Error("Knopf " + stelle + " nennt \"" + zahlVon(bilder[stelle])
+                + "\", sein Muster zeigt aber " + belegt + " belegte Felder");
         }
     }
 
-    /* Vier Staerken, vier verschiedene Aufstellungen. */
-    const verschiedene = stellungen.filter(
-        (stellung, stelle) => stellungen.indexOf(stellung) === stelle);
+    /* Vier Staerken, vier verschiedene Muster. */
+    const verschiedene = muster.filter(
+        (eintrag, stelle) => muster.indexOf(eintrag) === stelle);
 
-    if (verschiedene.length !== stellungen.length) {
-        throw new Error("zwei Armee-Knoepfe zeigen dasselbe Brett — die"
+    if (verschiedene.length !== muster.length) {
+        throw new Error("zwei Armee-Knoepfe zeigen dasselbe Muster — die"
             + " gewaehlte Staerke geht nicht in die Rechnung");
     }
 });

@@ -1372,15 +1372,19 @@
 
 
 /* ------------------------------------------------------------------ *
- * DIE ARMEE-KNÖPFE ZEIGEN EIN MINI-BRETT (seit v0.109.0)
+ * DIE ARMEE-KNÖPFE ZEIGEN ZAHL UND MUSTER (seit v0.115.1)
  *
  * Nutzer-Ansage 28.08.2026: „Beispielbilder statt Texten." Vier Wörter —
- * wenig, normal, viel, voll — sagten nichts über das Ergebnis; jetzt
- * steht das gerechnete Brett darüber und das Wort klein darunter.
+ * wenig, normal, viel, voll — sagten nichts über das Ergebnis. v0.109.0
+ * setzte ein ganzes Mini-Brett auf den Knopf; auf Handy-Breite wurde das
+ * ein Strichcode aus 9-Pixel-Kacheln (Nutzer-Meldung 18.09.2026, Befund
+ * in `_armeeVorschauBauen`). Jetzt steht oben die Zahl der Figuren,
+ * darunter die eigene Brett-Hälfte als flaches Belegungs-Muster, und das
+ * Wort klein darunter.
  *
  * DIE VIER KNÖPFE TEILEN SICH DIE BREITE GLEICH (`flex: 1 1 0`), sonst
  * bestimmt die Wortlänge die Bildgrösse und „normal" bekäme ein
- * grösseres Brett als „viel".
+ * grösseres Muster als „viel".
  * ------------------------------------------------------------------ */
 
 .armee-leiste .armee-knopf {
@@ -1393,19 +1397,45 @@
     padding: 6px 4px;
 }
 
-/*
- * Die Schriftgrösse ist im Kleinen das Mass der Figuren (`.vorschau`
- * rechnet ihre Felder daraus). Die Vorgabe dort zielt auf die grosse
- * Spielart-Kachel — hier wird sie fest überschrieben, sonst sprengt ein
- * Mini-Brett den Knopf.
- */
 .armee-vorschau {
     width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
 }
 
-.armee-vorschau .vorschau {
-    font-size: 6px;
-    border-radius: 3px;
+/* Die Zahl ist die Hauptsache — sie beantwortet die Frage über der Reihe. */
+.armee-zahl {
+    font-size: 1.35rem;
+    font-weight: 700;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+
+/*
+ * Das Belegungs-Muster: acht Spalten, vier Reihen, flache Quadrate. Belegt
+ * heisst Schriftfarbe, frei heisst dieselbe Farbe fast durchsichtig — so
+ * passt es ohne eigene Farbwerte auf den hellen, den dunklen und den
+ * blauen (aktiven) Knopf.
+ */
+.armee-muster {
+    display: grid;
+    grid-template-columns: repeat(var(--muster-spalten, 8), 1fr);
+    gap: 1px;
+    width: 100%;
+    max-width: 64px;
+}
+
+.armee-muster-feld {
+    aspect-ratio: 1 / 1;
+    border-radius: 1px;
+    background: currentColor;
+    opacity: 0.18;
+}
+
+.armee-muster-belegt {
+    opacity: 1;
 }
 
 /* Das Wort bleibt, ist aber nicht mehr die Hauptsache. */

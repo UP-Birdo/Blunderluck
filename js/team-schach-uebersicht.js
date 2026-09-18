@@ -877,9 +877,11 @@ Object.assign(TEAM_SCHACH, {
              * DER KNOPF ZEIGT SEIT v0.109.0 EIN BILD (Nutzer-Ansage
              * 28.08.2026: „Beispielbilder statt Texten"). Vier Wörter —
              * wenig, normal, viel, voll — sagten nichts darüber, wie das
-             * Brett hinterher aussieht; ein Mini-Brett zeigt es in einem
-             * Blick. Das Wort bleibt klein darunter stehen: Es ist der
-             * Name der Wahl und steht so auch in der Sprachausgabe.
+             * Brett hinterher aussieht. Seit v0.115.1 ist das Bild die
+             * Zahl plus das Belegungs-Muster (`_armeeVorschauBauen` sagt,
+             * warum das Mini-Brett nicht taugte). Das Wort bleibt klein
+             * darunter stehen: Es ist der Name der Wahl und steht so auch
+             * in der Sprachausgabe.
              */
             const knopf = TEAM_SCHACH._knopf("",
                 "knopf-klein armee-knopf" + (aktiv ? " armee-knopf-aktiv" : " knopf-still"),
@@ -968,13 +970,33 @@ Object.assign(TEAM_SCHACH, {
     },
 
     /*
-     * DAS MINI-BRETT AUF EINEM ARMEE-KNOPF (seit v0.109.0)
+     * ZAHL UND MUSTER AUF EINEM ARMEE-KNOPF (seit v0.115.1; v0.109.0 bis
+     * v0.115.0 ein ganzes Mini-Brett)
      *
      * GERECHNET, NICHT GEMALT — mit demselben Weg, den die Spielart-Kachel
      * seit v0.100 geht (`kreuzAufstellen` + `aufstellungAnpassen`) und den
      * auch die echte Partie nimmt. Ein gemaltes Beispiel wäre die zweite
      * Wahrheit, die beim ersten Umbau der Stärken abweicht; genau daran ist
      * v0.86/v0.87 gescheitert (`erkenntnisse.md`).
+     *
+     * WARUM NICHT MEHR DAS GANZE MINI-BRETT (Nutzer-Meldung 18.09.2026:
+     * „die Anzahl-Ansicht oben sieht nicht gut aus"): Im Browser
+     * nachgesehen — auf Handy-Breite ist jeder Knopf rund 75 Pixel breit,
+     * ein Feld also 9 Pixel und eine Figur 6. Das Brett wurde zu einem
+     * Strichcode aus 64 Kacheln mit Plattenrand, die Figuren zu Flecken,
+     * und die vier Bilder sahen gleich aus: Ob 16 oder 24 Figuren, sieht
+     * man an einem Fleckenteppich nicht. Die Karte fragt „Wie viele?" —
+     * und das Bild gab keine Zahl.
+     *
+     * JETZT: oben die ZAHL (die Antwort auf die Frage, gezählt am
+     * gerechneten Brett), darunter das MUSTER der eigenen Brett-Hälfte —
+     * flache Felder, belegt oder frei, ohne Plattenrand und ohne
+     * Figurenbilder. Vier Reihen mal acht Felder bleiben auch bei 9 Pixeln
+     * je Feld lesbar, und die vier Muster unterscheiden sich auf den
+     * ersten Blick: ein Block, zwei Reihen, drei Reihen, fast alles.
+     * Gezeigt wird die Hälfte von Weiss (die unteren Reihen), so wie der
+     * Spieler sein Brett auf dem Start sieht; das Muster wächst von der
+     * Kante zur Mitte.
      *
      * IMMER AUF DEM KLASSISCHEN BRETT, auch wenn hinterher Kreuz gespielt
      * wird: Der Knopf zeigt das MUSTER der Stärke (mittiger Block, volle
@@ -1005,8 +1027,30 @@ Object.assign(TEAM_SCHACH, {
         runde = SCHACH_RUNDE.kreuzAufstellen(runde, "");
         runde = SCHACH_RUNDE.aufstellungAnpassen(runde);
 
+        const brett = runde.stand.brett;
+
         const halter = TEAM_SCHACH._element("div", "armee-vorschau");
-        halter.appendChild(TEAM_SCHACH._vorschauBauen(variante, runde.stand.brett));
+
+        /* Die Zahl: Figuren EINER Seite, dieselbe Zählung wie auf der
+           Spielart-Kachel („16 Figuren je Seite"). */
+        halter.appendChild(TEAM_SCHACH._element("span", "armee-zahl",
+            String(TEAM_SCHACH._figurenJeSeite(brett))));
+
+        /* Das Muster: die untere Hälfte des Bretts (Weiss), je Feld nur
+           „belegt" oder „frei" — keine Figur, keine Feldfarbe. */
+        const muster = TEAM_SCHACH._element("div", "armee-muster");
+        muster.style.setProperty("--muster-spalten", String(variante.breite));
+        muster.setAttribute("aria-hidden", "true");
+
+        const ersteReihe = Math.floor(variante.hoehe / 2);
+        for (let reihe = ersteReihe; reihe < variante.hoehe; reihe++) {
+            for (let spalte = 0; spalte < variante.breite; spalte++) {
+                const belegt = (brett[reihe * variante.breite + spalte] !== ".");
+                muster.appendChild(TEAM_SCHACH._element("span",
+                    "armee-muster-feld" + (belegt ? " armee-muster-belegt" : "")));
+            }
+        }
+        halter.appendChild(muster);
 
         return halter;
     },
