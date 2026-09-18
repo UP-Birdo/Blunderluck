@@ -857,6 +857,46 @@ pruefe("EIN Haken 'Seltenheit anzeigen' schreibt Farbe UND Unglueckszeichen, sei
     }
 });
 
+pruefe("Der Einladungstext traegt einen Link mit Code, und der Code laesst sich daraus lesen (v0.117.0)", () => {
+    /*
+     * NUTZER-ANSAGE 18.09.2026: „es soll auch ein Link verschickbar
+     * gemacht werden per WhatsApp oder so." Der Link ist die Adresse der
+     * App plus `?code=…`; beim Start wird der Code grosszuegig gelesen
+     * (wie im Code-Feld) — und alles, was kein Code ist, wird verworfen.
+     */
+    const partie = SCHACH_RUNDE.leereRunde(1000, "standard", "p-link-1", "");
+    const code = SCHACH_RUNDE.beitrittsCode(partie.id);
+
+    const adresse = TEAM_SCHACH.einladungsAdresse("https://beispiel.test/Blunderluck/", code);
+    if (adresse !== "https://beispiel.test/Blunderluck/?code=" + code) {
+        throw new Error("die Einladungsadresse hat nicht das Format ?code=: " + adresse);
+    }
+
+    const text = TEAM_SCHACH._einladungsText(partie);
+    if (text.indexOf(code) === -1) {
+        throw new Error("der Einladungstext nennt den Code nicht: " + text);
+    }
+
+    /* Hin und zurueck: Was die Adresse traegt, kommt als Code wieder heraus. */
+    if (TEAM_SCHACH.einladungsCodeAusAdresse(adresse) !== code) {
+        throw new Error("der Code kommt aus der Adresse nicht zurueck");
+    }
+    if (TEAM_SCHACH.einladungsCodeAusAdresse(adresse.toLowerCase() + "#start") !== code) {
+        throw new Error("Kleinschreibung und Raute muessen egal sein");
+    }
+    if (TEAM_SCHACH.einladungsCodeAusAdresse("https://x.test/?a=1&code=" + code + "&b=2") !== code) {
+        throw new Error("der Code darf zwischen anderen Parametern stehen");
+    }
+
+    /* Was kein Code ist, ist keiner. */
+    for (const falsch of ["https://x.test/", "https://x.test/?code=", "https://x.test/?code=AB",
+        "https://x.test/?code=" + code + "XX", "https://x.test/?code=%E0%A4%A", ""]) {
+        if (TEAM_SCHACH.einladungsCodeAusAdresse(falsch) !== "") {
+            throw new Error("aus \"" + falsch + "\" darf kein Code kommen");
+        }
+    }
+});
+
 pruefe("Enttarnen / Verstecken sind im Popup EIN Eintrag, der beide schaltet (v0.115.2)", () => {
     /*
      * NUTZER-ANSAGE 18.09.2026: „Seltenheit anzeigen ja/nein sollen keine

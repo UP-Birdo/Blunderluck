@@ -467,6 +467,13 @@ const APP = {
                (seit v0.114.3). Der Wiedereinstieg braucht darauf nicht zu
                warten: Laufende Partien sind immer geladen. */
             schachAbgleich.vollNachladen();
+
+            /* Ein Einladungslink (`?code=…`, seit v0.117.0) geht vor: Wer
+               ihn antippt, will in DIESE Runde — nicht in eine eigene
+               laufende. Ohne Code läuft der Wiedereinstieg wie bisher. */
+            if (TEAM_SCHACH.einladungAusAdresseAnnehmen()) {
+                return;
+            }
             START.wiedereinstieg();
         };
 

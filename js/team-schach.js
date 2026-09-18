@@ -1168,13 +1168,94 @@ const TEAM_SCHACH = {
 
     /* Der Text, der geteilt wird: Code und Adresse der App — die Adresse
        ist die, unter der die Seite gerade läuft (GitHub Pages oder lokal). */
+    /*
+     * DER EINLADUNGSTEXT TRÄGT SEIT v0.117.0 EINEN LINK MIT CODE (Nutzer-
+     * Ansage 18.09.2026: „es soll auch ein Link verschickbar gemacht
+     * werden per WhatsApp oder so"). Bis v0.116.0 standen Code und Adresse
+     * getrennt da — wer den Link antippte, landete auf dem Start und musste
+     * den Code abtippen. Jetzt hängt der Code an der Adresse (`?code=…`),
+     * und `einladungsCodeAusAdresse` liest ihn beim Start wieder heraus.
+     * Der Code steht zusätzlich als Wort im Text — für alle, die die App
+     * schon offen haben und ihn nur eintippen wollen.
+     */
     _einladungsText(partie) {
+        const code = SCHACH_RUNDE.beitrittsCode(partie.id);
         const adresse = (typeof window !== "undefined" && window.location)
             ? String(window.location.href).split("#")[0].split("?")[0]
             : "";
-        return "Spiel mit mir Blunderluck — Code "
-            + SCHACH_RUNDE.beitrittsCode(partie.id)
-            + (adresse ? ": " + adresse : "");
+        return "Spiel mit mir Blunderluck — Code " + code
+            + (adresse ? ": " + TEAM_SCHACH.einladungsAdresse(adresse, code) : "");
+    },
+
+    /* Die Adresse der App mit angehängtem Code — die eine Stelle, die
+       das Format kennt (`?code=…`); `einladungsCodeAusAdresse` ist die
+       Umkehrung. */
+    einladungsAdresse(adresse, code) {
+        return String(adresse) + "?code=" + String(code);
+    },
+
+    /*
+     * DER CODE AUS EINER AUFGERUFENEN ADRESSE (seit v0.117.0) — oder "".
+     * Grosszügig gelesen wie das Code-Feld: Gross-/Kleinschreibung egal,
+     * Leerraum egal; alles, was danach nicht die richtige Länge hat oder
+     * fremde Zeichen trägt, ist kein Code.
+     */
+    einladungsCodeAusAdresse(adresse) {
+        const treffer = String(adresse || "").match(/[?&]code=([^&#]*)/);
+        if (!treffer) {
+            return "";
+        }
+
+        let code = "";
+        try {
+            code = decodeURIComponent(treffer[1]);
+        } catch (fehler) {
+            return "";
+        }
+
+        code = code.replace(/\s/g, "").toUpperCase();
+        if (code.length !== SCHACH_RUNDE.CODE_LAENGE) {
+            return "";
+        }
+        for (const zeichen of code) {
+            if (SCHACH_RUNDE.CODE_ZEICHEN.indexOf(zeichen) === -1) {
+                return "";
+            }
+        }
+        return code;
+    },
+
+    /*
+     * DER EINLADUNGSLINK BEIM START (seit v0.117.0): Steht ein Code in
+     * der Adresse, führt er nach der Anmeldung direkt in die Runde —
+     * statt des Wiedereinstiegs, den `app.js` sonst ruft. Die Adresse
+     * wird danach bereinigt, sonst holte jedes Neuladen die Einladung
+     * noch einmal hervor (und ein Lesezeichen behielte sie für immer).
+     * Liefert wahr, wenn ein Code da war.
+     */
+    einladungAusAdresseAnnehmen() {
+        if (typeof window === "undefined" || !window.location) {
+            return false;
+        }
+
+        const code = TEAM_SCHACH.einladungsCodeAusAdresse(window.location.href);
+        if (!code) {
+            return false;
+        }
+
+        if (window.history && typeof window.history.replaceState === "function") {
+            try {
+                window.history.replaceState(null, "",
+                    String(window.location.href).split("?")[0]);
+            } catch (fehler) {
+                /* Unter file:// oder in einem Vorschau-Rahmen darf das
+                   scheitern — die Einladung gilt trotzdem. */
+            }
+        }
+
+        TABS.wechseln("team-schach");
+        TEAM_SCHACH.codeBeitreten(code);
+        return true;
     },
 
     _codeTeilen(partie) {

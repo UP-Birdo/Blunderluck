@@ -3,6 +3,20 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.117.0 — 18.09.2026
+
+**Einladen per Link: Wer ihn antippt, landet direkt in deiner Runde.**
+
+- „Teilen" und „Kopieren" im Vorraum geben jetzt einen Link mit, an dem
+  der Code schon hängt (`…/Blunderluck/?code=ABCDEF`). Per WhatsApp,
+  Nachricht oder Mail verschickt, öffnet er die App und führt nach der
+  Anmeldung ohne Umweg in die Runde — kein Abtippen mehr.
+- Der Code steht weiterhin auch als Wort im Text, für alle, die die App
+  schon offen haben.
+- Wer noch kein Konto hat, legt es wie gewohnt an und ist danach trotzdem
+  in der Runde. Ist der Code inzwischen ungültig (Runde vorbei), kommt der
+  bekannte Hinweis „Kein Treffer".
+
 ## v0.116.0 — 18.09.2026
 
 **Die Grundeinstellungen sagen oben, wie lange die Runde etwa dauert — und

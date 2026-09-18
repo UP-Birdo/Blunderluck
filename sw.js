@@ -29,7 +29,7 @@
  */
 
 /* Der Name des Zwischenspeichers. HIER STEHT DIE NUMMER GENAU EINMAL. */
-const SPEICHER_NAME = "blunderluck-v0.116.0";
+const SPEICHER_NAME = "blunderluck-v0.117.0";
 
 /*
  * BEIM BAUEN: NETZ ZUERST. IM BETRIEB: ZWISCHENSPEICHER ZUERST.
