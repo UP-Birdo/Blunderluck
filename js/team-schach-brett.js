@@ -572,6 +572,12 @@ Object.assign(TEAM_SCHACH, {
                  * ausserdem eine eiserne Regel. Getrennt lässt sich einstellen,
                  * was gemeint war: Farbe ja, Warnung nein — dann ist jeder
                  * Würfel ein Wagnis, sieht aber weiter nach seiner Stufe aus.
+                 *
+                 * SEIT v0.115.3 STELLT DER BILDSCHIRM BEIDE ZUSAMMEN (ein
+                 * Haken „Seltenheit anzeigen" schreibt `pechZeigen` mit,
+                 * Nutzer-Ansage 18.09.2026). Die zwei Felder bleiben, und
+                 * hier wird weiter jedes für sich gelesen — eine ältere
+                 * Partie mit „Farbe ja, Warnung nein" sieht aus wie damals.
                  */
                 /*
                  * ENTTARNEN (seit v0.88): Wer sie eingesetzt hat, sieht die

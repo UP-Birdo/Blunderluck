@@ -3,6 +3,25 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.115.3 — 18.09.2026
+
+**Ein Haken statt zwei: „Seltenheit anzeigen" — mit einer Vorschau, die
+durch alle Würfelfarben läuft.**
+
+- Unter „Lootboxen" gab es zwei Haken, „Seltenheit anzeigen" und
+  „Unglücks-Lootboxen anzeigen", beide unabhängig schaltbar. Das Bild des
+  zweiten war die graue Box mit Fragezeichen — und die sah aus wie die
+  verborgene Box, also wie das „Nein" zum ersten Haken. Zwei Bilder, die wie
+  Ja und Nein aussehen und trotzdem beide an sein können, waren ein Rätsel.
+- Jetzt gibt es einen Haken „Seltenheit anzeigen". An heisst: Jede Lootbox
+  trägt auf dem Brett die Farbe ihrer Stufe, und eine schlechte ihr
+  Fragezeichen. Aus heisst: Alle sehen gleich aus.
+- Das Bild neben dem Haken zeigt, was du bekommst: Ist er an, wechselt die
+  Box im Takt durch Grün, Blau, Lila, Gelb und eine Unglücks-Box. Ist er
+  aus, steht die graue Box da.
+- Laufende und alte Partien ändern sich nicht — gespeichert wird weiterhin
+  beides, nur eingestellt wird es zusammen.
+
 ## v0.115.2 — 18.09.2026
 
 **Enttarnen und Verstecken sind in der Item-Auswahl EIN Eintrag.**

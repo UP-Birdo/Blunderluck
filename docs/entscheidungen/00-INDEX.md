@@ -25,6 +25,10 @@ wird. Die Liste dessen, was noch kommt, steht in [../ROADMAP.md](../ROADMAP.md).
 
 ## entschieden.md - Blunderluck-Eintraege
 
+- **Farbe und Ungluecks-Zeichen an EINEM Haken** (18.09.2026, v0.115.3 —
+  kippt die Trennung aus v0.49: „Seltenheit anzeigen" schreibt
+  `pechZeigen` mit, sein Bild wechselt bei AN durch alle Stufenfarben;
+  die zwei Datenfelder bleiben, das Brett liest weiter jedes fuer sich)
 - **Brett zuerst, der Rest ordnet sich unter** (27.08.2026, v0.88.0 —
   **beendet die Familie „das Brett springt" an der Wurzel**: Groesse
   eingefroren (`_brettLage`), fluechtige Kinder zaehlen nicht mit, Brett
@@ -74,6 +78,14 @@ wird. Die Liste dessen, was noch kommt, steht in [../ROADMAP.md](../ROADMAP.md).
   Play-Store-Umbau braeuchte - Referenz: docs\uebergabe-schach-app.md)
 
 ## erkenntnisse.md - Teuer erkaufte Erkenntnisse
+- **Ein Beispielbild, das auf Handy-Breite nichts mehr zeigt, ist
+  schlechter als das Wort** (v0.109.0, gemeldet 18.09.2026, behoben
+  v0.115.1: das Mini-Brett auf den Figurenzahl-Knoepfen war bei 75 px
+  Knopfbreite ein Strichcode aus 9-px-Feldern; jetzt Zahl plus flaches
+  Belegungs-Muster. Regel: Bilder in der ZIELGROESSE ansehen und fragen,
+  was sie beantworten, was das Wort nicht beantwortet. Nebenbei: der
+  Bildschirm laesst sich ohne Server im Modus „lokal" ablichten, `&` im
+  OneDrive-Pfad als `%26`)
 - **Die echte App laesst sich kopflos gegen die echte Datenbank fahren**
   (18.09.2026, Testlauf zu v0.114.3: Wegwerf-Fahrer-Seite mit dem Geruest
   von index.html, Testkonto im Geraetespeicher, `document.hidden` festnageln,

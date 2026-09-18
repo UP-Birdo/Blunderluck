@@ -226,20 +226,32 @@ Object.assign(TEAM_SCHACH, {
                  */
                 bibliothek: true
             },
+            /*
+             * EIN HAKEN FÜR FARBE UND ZEICHEN (seit v0.115.3). Von v0.49 bis
+             * v0.115.2 waren es zwei: „Seltenheit anzeigen" (die Farbe der
+             * Stufe) und „Unglücks-Lootboxen anzeigen" (das Fragezeichen der
+             * schlechten). Nutzer-Ansage 18.09.2026, zweimal: „das eine
+             * grenzt das andere aus — mach aus zwei Knöpfen einen, mit einer
+             * Vorschau vom Würfel, die sich ändert, am besten durch alle
+             * Würfelfarben." Der zweite Haken trug als Bild die graue Box
+             * mit Fragezeichen — sie sah aus wie die VERBORGENE Box, also
+             * wie das „Nein" zum ersten Haken. Zwei Bilder, die wie Ja und
+             * Nein aussehen, aber beide anschaltbar sind, sind ein Rätsel.
+             *
+             * `zusammen` nennt die Felder, die der Haken MITSCHREIBT: Der
+             * Datenvertrag bleibt (jede Partie trägt `pechZeigen` weiter),
+             * nur stellt man es nicht mehr getrennt ein. Die Kombination
+             * „Farbe ja, Warnung nein" ist damit vom Bildschirm genommen —
+             * bewusst, siehe `entschieden.md`.
+             */
             {
                 schluessel: "seltenheitZeigen",
+                zusammen: ["pechZeigen"],
                 titel: "Seltenheit anzeigen",
-                hinweis: "An heisst: Die Lootbox trägt schon auf dem Brett die Farbe "
-                    + "ihrer Stufe. Aus sehen alle gleich aus, und man weiss erst "
-                    + "beim Einsammeln, wie selten es war.",
-                nurMitWuerfeln: true
-            },
-            {
-                schluessel: "pechZeigen",
-                titel: "Unglücks-Lootboxen anzeigen",
-                hinweis: "An heisst: Eine schlechte Lootbox trägt ihr Fragezeichen "
-                    + "auf dem Kopf, man erkennt sie von weitem. Aus sieht sie aus "
-                    + "wie jede andere — dann ist jede ein Wagnis.",
+                hinweis: "An heisst: Jede Lootbox trägt schon auf dem Brett die "
+                    + "Farbe ihrer Stufe, und eine schlechte ihr Fragezeichen. "
+                    + "Aus sehen alle gleich aus, und man weiss erst beim "
+                    + "Einsammeln, was es war.",
                 nurMitWuerfeln: true
             },
             {
@@ -354,6 +366,13 @@ Object.assign(TEAM_SCHACH, {
                 TEAM_SCHACH.neueRegeln[eintrag.schluessel] = eintrag.umgekehrt
                     ? !kasten.checked
                     : !!kasten.checked;
+
+                /* Mitgeschriebene Felder bekommen denselben Wert (seit
+                   v0.115.3, „Seltenheit anzeigen" schreibt `pechZeigen`). */
+                for (const weiterer of eintrag.zusammen || []) {
+                    TEAM_SCHACH.neueRegeln[weiterer] =
+                        TEAM_SCHACH.neueRegeln[eintrag.schluessel];
+                }
 
                 /*
                  * JEDER HAKEN ZEICHNET NEU (seit v0.71).
@@ -1009,34 +1028,22 @@ Object.assign(TEAM_SCHACH, {
      *
      *   Lootboxen                    die verborgene Box (so liegt sie da,
      *                                solange die Seltenheit aus ist)
-     *   Seltenheit anzeigen          eine Box in ihrer Stufenfarbe — genau
-     *                                das macht der Haken sichtbar
-     *   Unglücks-Lootboxen anzeigen  die Box mit dem umgedrehten
-     *                                Fragezeichen, an der man ein Unglück
-     *                                von weitem erkennt
+     *   Seltenheit anzeigen          DAS BILD ZEIGT DEN ZUSTAND (seit
+     *                                v0.115.3): Ist der Haken an, wechselt
+     *                                die Box im Takt durch alle Stufen-
+     *                                farben und zuletzt durch eine Unglücks-
+     *                                Box mit Fragezeichen — genau das macht
+     *                                der Haken sichtbar. Ist er aus, steht
+     *                                die graue verborgene Box da: so sieht
+     *                                dann jede aus.
      *
-     * Die Farbe für den Seltenheits-Haken ist die seltenste Stufe: Sie
-     * fällt am meisten auf und ist genau der Fall, für den man den Haken
-     * setzt.
+     * Bis v0.115.2 zeigte der Seltenheits-Haken fest die seltenste Stufe
+     * und ein zweiter Haken die graue Box mit Fragezeichen — die sah aus
+     * wie das „Nein" zum ersten (Nutzer-Meldung 18.09.2026).
      */
     _schalterBildBauen(eintrag) {
         if (!TEAM_SCHACH._wuerfelBauen) {
             return null;
-        }
-
-        const stufen = SCHACH_VARIANTEN.STUFEN;
-        const seltenste = stufen[stufen.length - 1];
-
-        let stufe = null;
-        let pech = false;
-
-        if (eintrag.schluessel === "faehigkeiten") {
-            stufe = { id: "unbekannt" };
-        } else if (eintrag.schluessel === "seltenheitZeigen") {
-            stufe = seltenste;
-        } else if (eintrag.schluessel === "pechZeigen") {
-            stufe = { id: "unbekannt" };
-            pech = true;
         }
 
         const halter = TEAM_SCHACH._element("span", "schalter-bild");
@@ -1048,11 +1055,53 @@ Object.assign(TEAM_SCHACH, {
          * die Liste franst aus — im Browser gesehen, bevor dieser Zweig
          * da war (v0.110.0).
          */
-        if (stufe) {
-            halter.appendChild(TEAM_SCHACH._wuerfelBauen(stufe, pech));
+        if (eintrag.schluessel === "faehigkeiten") {
+            halter.appendChild(TEAM_SCHACH._wuerfelBauen({ id: "unbekannt" }, false));
+        } else if (eintrag.schluessel === "seltenheitZeigen") {
+            if (TEAM_SCHACH.neueRegeln.seltenheitZeigen) {
+                /* Der Halter wird zum Fenster, in dem der Streifen fährt. */
+                halter.classList.add("schalter-bild-fenster");
+                halter.appendChild(TEAM_SCHACH._lootboxWechselBauen());
+            } else {
+                halter.appendChild(TEAM_SCHACH._wuerfelBauen({ id: "unbekannt" }, false));
+            }
         }
 
         return halter;
+    },
+
+    /*
+     * DIE WECHSELNDE BOX (seit v0.115.3): ein Streifen aus allen Stufen-
+     * Boxen plus einer Unglücks-Box in der ersten Stufenfarbe, der im
+     * Kasten des Bildes Schritt für Schritt nach links fährt — reine CSS-
+     * Animation (`lootbox-wechsel` in `css\stil-brett.css`), kein Zeitgeber,
+     * also nichts, das beim Neuzeichnen aufgeräumt werden müsste.
+     *
+     * Wie viele Bilder es sind, weiss nur diese Funktion; der Streifen
+     * bekommt Schrittzahl und Dauer deshalb von hier als Inline-Stil, die
+     * Stildatei rechnet damit. Ändert sich die Zahl der Stufen, ändert sich
+     * die Animation mit.
+     */
+    _lootboxWechselBauen() {
+        const stufen = SCHACH_VARIANTEN.STUFEN;
+        const streifen = TEAM_SCHACH._element("span", "lootbox-wechsel");
+
+        for (const stufe of stufen) {
+            streifen.appendChild(TEAM_SCHACH._wuerfelBauen(stufe, false));
+        }
+        streifen.appendChild(TEAM_SCHACH._wuerfelBauen(stufen[0], true));
+
+        const bilder = stufen.length + 1;
+        streifen.style.setProperty("--wechsel-bilder", String(bilder));
+
+        /* `steps(n, jump-none)` hat n Haltepunkte, den Anfang und das Ende
+           eingeschlossen — also genau so viele wie Bilder. (Mit bilder - 1
+           stand die Box zwischen zwei Bildern; im Browser gesehen, 18.09.) */
+        streifen.style.setProperty("animation-timing-function",
+            "steps(" + bilder + ", jump-none)");
+        streifen.style.setProperty("animation-duration", (bilder * 1.1) + "s");
+
+        return streifen;
     },
 
     /*

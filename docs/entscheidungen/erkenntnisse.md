@@ -2465,3 +2465,52 @@ die echten Schichten — Bildschirm, Modell, Speicher, Server. Der Nachbau in
 den Tests hält Regressionen fern; ob die Teile zusammenpassen, sieht man
 nur, wenn sie zusammen laufen. Der Fahrer ist in einer Stunde nachgebaut;
 die fünf Schritte oben reichen dafür.
+
+## Ein Beispielbild, das auf Handy-Breite nichts mehr zeigt, ist schlechter als das Wort (v0.109.0, gemeldet 18.09.2026, behoben v0.115.1)
+
+**Was gemeldet war:** „Oben die Anzahl-Ansicht sieht nicht gut aus — versuche
+nachzuvollziehen, warum das nicht nutzerfreundlich ist." Gemeint: die vier
+Knöpfe unter „Wie viele Figuren je Seite?" auf dem Grundeinstellungs-Bildschirm.
+
+**Was da war:** Seit v0.109.0 (Nutzer-Ansage „Beispielbilder statt Texten")
+trug jeder Knopf ein komplettes Mini-Schachbrett, gerechnet aus der echten
+Aufstellung — fachlich richtig, und im Test sind vier verschiedene Bretter
+auch nachweisbar.
+
+**Was man sah (Edge kopflos, 390 px, dreifach vergrössert):** Vier Knöpfe
+teilen sich rund 300 px, jeder ist also ~75 px breit. Ein Feld hat damit
+9 px, eine Figur 6. Dazu kommt der 3D-Plattenrand, den jedes Feld am echten
+Brett trägt — bei 9 px wird er zur Lücke zwischen Streifen. Ergebnis: vier
+Strichcodes aus 64 Kacheln mit Flecken darin. Ob 16 oder 24 Figuren stehen,
+ist nicht zu erkennen; „viel" und „voll" sind ununterscheidbar. Und die
+Karte stellt eine Zahlenfrage, das Bild gab keine Zahl.
+
+**Warum es nicht aufgefallen war:** Der Test prüft, dass die vier Bretter
+VERSCHIEDEN sind — das sind sie, auf Datenebene. Ob ein Mensch den
+Unterschied auf 75 px sieht, prüft kein Test. Und beim Bau von v0.109.0
+wurde nur die grosse Spielart-Kachel angesehen, nicht die vier kleinen.
+
+**Was es jetzt ist:** Oben die Zahl (8 / 16 / 24 / 30, gezählt am gerechneten
+Brett), darunter die eigene Bretthälfte als flaches Muster — je Feld nur
+belegt oder frei, ohne Figur, ohne Plattenrand, in `currentColor`, damit es
+auf hellem, dunklem und blauem Knopf ohne eigene Farbwerte stimmt. Vier
+Reihen mal acht Felder bleiben bei 9 px lesbar, und die Muster unterscheiden
+sich auf einen Blick: ein Block, zwei Reihen, drei Reihen, fast alles.
+
+**Die Regel dahinter:** Ein Bild, das die App an anderer Stelle gross zeigt,
+ist nicht automatisch ein gutes Bild im Kleinen. Bevor ein Bild auf einen
+Knopf kommt, wird es in der ZIELGRÖSSE angesehen (Handy-Breite, vergrössert),
+und die Frage lautet: Was beantwortet es, was das Wort nicht beantwortet?
+Antwortet es nichts mehr, gehört die Zahl oder ein vereinfachtes Zeichen hin
+— nicht das verkleinerte Original.
+
+**Nebenbei gelernt — der Bildschirm ohne Server:** Für Ansichten, die den
+Server nicht brauchen (Grundeinstellungen, Item-Auswahl, Fähigkeiten-Tab),
+reicht die Fahrer-Seite aus dem Testlauf oben mit `KONFIG.speicher.modus =
+"lokal"`, einem Testkonto in `blunderluck.spieler` und `blunderluck.ich` im
+Gerätespeicher und einem Skript nach `app.js`, das `partieAnlegen()` bzw.
+`_itemAuswahlOeffnen()` ruft. Zwei Fallen: Das `&` im OneDrive-Pfad muss in
+den `file:///`-Adressen als `%26` stehen (sonst lädt keine Stildatei), und
+`sed` darf die Adressen nicht einsetzen (`&` ist dort „der Treffer"). Ein
+`<base href>` auf den Projektordner lässt die relativen Bildpfade der App
+weiter funktionieren.

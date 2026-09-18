@@ -1,5 +1,36 @@
 # Blunderluck - Entscheidungen / Entschieden - und warum
 
+## Farbe und Unglückszeichen an EINEM Haken (18.09.2026, v0.115.3)
+
+**Nutzer-Ansage (zweimal am selben Tag):** „Seltenheit anzeigen ja/nein
+sollen keine zwei Punkte sein, das eine grenzt das andere ja aus" — und
+nach einer ersten, falsch verstandenen Runde: „ich kann beides an- und
+ausschalten, obwohl das eine das andere ausschliesst; mach aus zwei Knöpfen
+einen, mit einer Vorschau vom Würfel, die sich ändert, am besten durch alle
+Würfelfarben."
+
+**Was vorher galt (v0.49):** Zwei Haken, zwei Fragen — „Seltenheit
+anzeigen" (die Farbe der Stufe) und „Unglücks-Lootboxen anzeigen" (das
+Fragezeichen der schlechten). Der Grund damals: „Farbe ja, Warnung nein"
+sollte einstellbar sein — jeder Würfel ein Wagnis, aber nach Stufe gefärbt.
+
+**Warum das gekippt ist:** Der zweite Haken trug als Bild die graue Box mit
+Fragezeichen, und die sieht aus wie die VERBORGENE Box — also wie das „Nein"
+zum ersten Haken. Zwei Bilder, die wie Ja und Nein wirken, aber beide
+anschaltbar sind, ergeben für den Spieler keinen Sinn; die Kombination
+„Farbe ja, Warnung nein" hat in einem Monat niemand vermisst.
+
+**Was gilt:** EIN Haken „Seltenheit anzeigen". An heisst Farbe UND
+Fragezeichen, aus heisst alle gleich. Sein Bild zeigt den Zustand: an →
+ein Streifen, der durch alle Stufenfarben und eine Unglücks-Box läuft
+(reine CSS-Animation, `steps(n, jump-none)` mit n = Bilderzahl); aus → die
+graue Box. **Der Datenvertrag bleibt:** `seltenheitZeigen` und `pechZeigen`
+sind weiter zwei Felder; der Haken schreibt beide (`zusammen` in
+`_regelSchalterBauen`), das Brett liest weiter jedes für sich — eine ältere
+Partie mit „Farbe ja, Warnung nein" sieht aus wie damals. Wer die Trennung
+je wieder braucht, hängt einen zweiten Haken an dasselbe Feld und nimmt
+`zusammen` heraus.
+
 ## Brett zuerst, der Rest ordnet sich unter (27.08.2026, v0.88.0)
 
 **Nutzer-Frage:** „Was muss noch gemacht werden, dass das Schachbrett immer

@@ -352,8 +352,9 @@ pruefe("Ein Haken zeigt seine Unterpunkte SOFORT (v0.71)", () => {
 
     /* Und die Unterpunkte des Hakens sind auch da — seit v0.110 liegen sie
        in einem GRUPPEN-KASTEN statt an einem Einrueck-Strich. Geprueft wird
-       beides: Der Kasten steht da, und die abhaengigen Zeilen (Seltenheit,
-       Unglueck) stecken mit den beiden Reihen DARIN. */
+       beides: Der Kasten steht da, und die abhaengige Zeile (Seltenheit —
+       seit v0.115.3 EIN Haken fuer Farbe und Unglueckszeichen) steckt mit
+       den beiden Reihen DARIN. */
     const gruppen = suchen("schalter-gruppe");
     if (gruppen.length !== 1) {
         throw new Error("genau ein Gruppen-Kasten unter dem Lootbox-Haken, "
@@ -374,8 +375,8 @@ pruefe("Ein Haken zeigt seine Unterpunkte SOFORT (v0.71)", () => {
         return treffer;
     };
 
-    if (inGruppe("schalter-zeile").length < 2) {
-        throw new Error("Seltenheit und Unglueck gehoeren in den Kasten");
+    if (inGruppe("schalter-zeile").length < 1) {
+        throw new Error("Seltenheit gehoert in den Kasten");
     }
     if (inGruppe("vorrat-leiste").length !== 1) {
         throw new Error("die Vorrat-Reihe gehoert in den Kasten");
@@ -740,6 +741,119 @@ pruefe("Item-Vorrat: drei Mengen in einer Reihe, die eigene Wahl im Popup (v0.10
         umgebung.DIALOG.hinweis = echterHinweis;
         TEAM_SCHACH.neueRegeln.itemVorrat = gemerkterVorrat;
         TEAM_SCHACH.neueRegeln.itemAuswahl = gemerkteAuswahl;
+    }
+});
+
+pruefe("EIN Haken 'Seltenheit anzeigen' schreibt Farbe UND Unglueckszeichen, sein Bild zeigt den Zustand (v0.115.3)", () => {
+    /*
+     * NUTZER-ANSAGE 18.09.2026, zweimal: „ich kann beides an- und
+     * ausschalten, obwohl das eine das andere ausschliesst — mach aus zwei
+     * Knoepfen einen, mit einer Vorschau vom Wuerfel, die sich aendert."
+     *
+     * Geprueft: Es gibt keinen Haken „Ungluecks-Lootboxen anzeigen" mehr;
+     * der Seltenheits-Haken setzt `pechZeigen` mit (an wie aus); sein Bild
+     * ist bei AUS die eine graue Box und bei AN der Streifen mit allen
+     * Stufen plus einer Ungluecks-Box — und der Streifen sagt der
+     * Stildatei, wie viele Bilder er traegt.
+     */
+    const gemerkt = Object.assign({}, TEAM_SCHACH.neueRegeln);
+
+    /* Die Box ist ein SVG mit `setAttribute("class")` — im Nachbau steht das
+       in `attribute`, nicht in `className` (Muster aus dem Ungluecks-Test). */
+    const boxenZaehlen = (element) => {
+        let anzahl = 0;
+        for (const kind of element.kinder || []) {
+            if (kind.attribute && kind.attribute["class"] === "wuerfel") {
+                anzahl++;
+            }
+            anzahl += boxenZaehlen(kind);
+        }
+        return anzahl;
+    };
+
+    const zeilen = (wurzel) => {
+        const treffer = [];
+        const absteigen = (element) => {
+            for (const kind of element.kinder || []) {
+                if (String(kind.className || "").indexOf("schalter-zeile") !== -1) {
+                    treffer.push(kind);
+                }
+                absteigen(kind);
+            }
+        };
+        absteigen(wurzel);
+        return treffer;
+    };
+    const zeileMitTitel = (wurzel, text) => zeilen(wurzel).find((zeile) => {
+        const titel = klasseSuchen(zeile, "schalter-titel");
+        return titel && String(titel.textContent || "") === text;
+    });
+
+    try {
+        TEAM_SCHACH.neueRegeln.faehigkeiten = true;
+        TEAM_SCHACH.neueRegeln.seltenheitZeigen = false;
+        TEAM_SCHACH.neueRegeln.pechZeigen = false;
+
+        let karte = TEAM_SCHACH._regelSchalterBauen();
+
+        if (zeileMitTitel(karte, "Unglücks-Lootboxen anzeigen")) {
+            throw new Error("der zweite Haken steht noch da");
+        }
+        const zeile = zeileMitTitel(karte, "Seltenheit anzeigen");
+        if (!zeile) {
+            throw new Error("der Haken Seltenheit anzeigen fehlt");
+        }
+
+        /* AUS: genau eine Box, die graue. */
+        let bild = klasseSuchen(zeile, "schalter-bild");
+        if (!bild || boxenZaehlen(bild) !== 1) {
+            throw new Error("bei AUS steht genau EINE Box da");
+        }
+        if (klasseSuchen(bild, "lootbox-wechsel")) {
+            throw new Error("bei AUS darf nichts wechseln");
+        }
+
+        /* Anhaken schreibt BEIDE Felder. */
+        const kasten = zeile.kinder.find((kind) => kind.tagName === "input");
+        kasten.checked = true;
+        kasten.ausloesen("change");
+        if (TEAM_SCHACH.neueRegeln.seltenheitZeigen !== true
+            || TEAM_SCHACH.neueRegeln.pechZeigen !== true) {
+            throw new Error("Anhaken muss seltenheitZeigen UND pechZeigen setzen");
+        }
+
+        /* AN: der Streifen mit allen Stufen plus einer Ungluecks-Box. */
+        karte = TEAM_SCHACH._regelSchalterBauen();
+        bild = klasseSuchen(zeileMitTitel(karte, "Seltenheit anzeigen"), "schalter-bild");
+        const streifen = klasseSuchen(bild, "lootbox-wechsel");
+        if (!streifen) {
+            throw new Error("bei AN fehlt der wechselnde Streifen");
+        }
+        const erwartet = SCHACH_VARIANTEN.STUFEN.length + 1;
+        if (boxenZaehlen(streifen) !== erwartet) {
+            throw new Error("der Streifen traegt " + boxenZaehlen(streifen)
+                + " Boxen statt " + erwartet);
+        }
+        if (streifen.style["--wechsel-bilder"] !== String(erwartet)) {
+            throw new Error("der Streifen sagt der Stildatei nicht, wie viele Bilder er hat");
+        }
+        if (String(streifen.style["animation-timing-function"]).indexOf(
+            "steps(" + erwartet + ",") === -1) {
+            throw new Error("Schrittzahl passt nicht zur Bilderzahl: "
+                + streifen.style["animation-timing-function"]);
+        }
+
+        /* Abhaken nimmt beide wieder heraus. */
+        const kasten2 = zeileMitTitel(karte, "Seltenheit anzeigen").kinder
+            .find((kind) => kind.tagName === "input");
+        kasten2.checked = false;
+        kasten2.ausloesen("change");
+        if (TEAM_SCHACH.neueRegeln.seltenheitZeigen !== false
+            || TEAM_SCHACH.neueRegeln.pechZeigen !== false) {
+            throw new Error("Abhaken muss beide Felder loeschen");
+        }
+    } finally {
+        Object.assign(TEAM_SCHACH.neueRegeln, gemerkt);
     }
 });
 

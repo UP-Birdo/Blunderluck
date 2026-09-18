@@ -1585,6 +1585,48 @@
        wäre das Zappeln neben einem Wort nur unruhig. */
     animation: none;
 }
+
+/*
+ * DIE WECHSELNDE BOX AM SELTENHEITS-HAKEN (seit v0.115.3, Nutzer-Ansage
+ * 18.09.2026: „eine Vorschau vom Würfel, die sich ändert, am besten durch
+ * alle Würfelfarben"). Der Halter ist das 30-px-Fenster, der Streifen
+ * darin trägt alle Boxen nebeneinander und fährt in Schritten nach links
+ * — Schrittzahl und Dauer setzt `_lootboxWechselBauen` inline, weil nur
+ * der Code weiss, wie viele Bilder es sind (`--wechsel-bilder`).
+ */
+.schalter-bild-fenster {
+    overflow: hidden;
+    justify-content: flex-start;
+}
+
+.lootbox-wechsel {
+    display: flex;
+    flex: 0 0 auto;
+    height: 100%;
+    animation-name: lootbox-wechsel;
+    animation-iteration-count: infinite;
+}
+
+.lootbox-wechsel .wuerfel {
+    flex: 0 0 30px;
+    width: 30px;
+}
+
+@keyframes lootbox-wechsel {
+    to {
+        /* Um (Bilder - 1) Fenster nach links: Das letzte Bild steht dann
+           genau im Fenster. */
+        transform: translateX(calc((1 - var(--wechsel-bilder, 5)) * 30px));
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    /* Wer keine Bewegung will, sieht die erste Farbe stehen. */
+    .lootbox-wechsel {
+        animation: none;
+    }
+}
+
 .schalter-text {
     display: flex;
     flex-direction: column;
