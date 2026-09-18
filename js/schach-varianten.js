@@ -2507,6 +2507,37 @@ const SCHACH_VARIANTEN = {
     },
 
     /*
+     * DAS GEGENSTÜCK EINER FÄHIGKEIT (seit v0.115.2) — oder "".
+     *
+     * Enttarnen gibt es nur, wo die Seltenheit verborgen ist
+     * (`nurOhneSeltenheit`), Verstecken nur, wo sie zu sehen ist
+     * (`nurMitSeltenheit`): In jeder Partie existiert genau eine der zwei,
+     * und der Haken „Seltenheit anzeigen" entscheidet, welche. Für die
+     * Item-Auswahl sind sie deshalb EIN Eintrag (Nutzer-Ansage 18.09.2026:
+     * „das eine grenzt das andere ja aus") — wer die eine will, will die
+     * andere in der Partie mit dem anderen Haken genauso.
+     *
+     * Gerechnet, nicht als Feld je Eintrag notiert: Zwei Verweise
+     * aufeinander laufen beim nächsten Umbau auseinander (einer wird
+     * umbenannt, der andere nicht). Gegenstück ist, was die UMGEKEHRTE
+     * Bedingung trägt und in derselben Stufe steht. Versteckte zählen wie
+     * überall nicht mit.
+     */
+    gegenstueckVon(art) {
+        const eintrag = SCHACH_VARIANTEN.FAEHIGKEITEN[art];
+        if (!eintrag || (!eintrag.nurOhneSeltenheit && !eintrag.nurMitSeltenheit)) {
+            return "";
+        }
+
+        const gesucht = eintrag.nurOhneSeltenheit ? "nurMitSeltenheit" : "nurOhneSeltenheit";
+
+        return SCHACH_VARIANTEN.faehigkeitenDerStufe(eintrag.stufe)
+            .find((andere) => andere !== art
+                && SCHACH_VARIANTEN.FAEHIGKEITEN[andere][gesucht] === true)
+            || "";
+    },
+
+    /*
      * Die ERREICHBAREN Fähigkeiten einer Stufe, in fester Reihenfolge.
      *
      * VERSTECKTE ZÄHLEN NICHT MIT (seit v0.78, `versteckt: true` — bisher nur

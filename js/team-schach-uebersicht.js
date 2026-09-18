@@ -716,8 +716,14 @@ Object.assign(TEAM_SCHACH, {
         const stufe = SCHACH_VARIANTEN.ITEM_VORRAETE.find(
             (eintrag) => eintrag.eigeneWahl);
         const aktiv = (TEAM_SCHACH.neueRegeln.itemVorrat === stufe.id);
-        const gewaehlt = TEAM_SCHACH.neueRegeln.itemAuswahl.length;
-        const alle = TEAM_SCHACH._alleItems().length;
+
+        /* Gezählt werden EINTRÄGE, nicht Fähigkeiten (seit v0.115.2): Das
+           Paar Enttarnen/Verstecken ist im Popup ein Eintrag, also muss
+           der Knopf „19 von 19" sagen, nicht „20 von 20". */
+        const eintraege = TEAM_SCHACH._itemEintraege();
+        const gewaehlt = eintraege.filter((eintrag) =>
+            TEAM_SCHACH._itemEintragDrin(eintrag)).length;
+        const alle = eintraege.length;
 
         const knopf = TEAM_SCHACH._knopf(
             aktiv
@@ -773,6 +779,62 @@ Object.assign(TEAM_SCHACH, {
     },
 
     /*
+     * DIE EINTRÄGE DES POPUPS (seit v0.115.2) — je Stufe, und ein Eintrag
+     * kann ZWEI Fähigkeiten tragen.
+     *
+     * Nutzer-Ansage 18.09.2026: „Seltenheit anzeigen ja/nein sollen keine
+     * zwei Punkte sein, das eine grenzt das andere ja aus." Enttarnen und
+     * Verstecken standen als zwei Kästchen da, obwohl in einer Partie nur
+     * eins von beiden vorkommt — welches, sagt der Haken „Seltenheit
+     * anzeigen" (`SCHACH_VARIANTEN.gegenstueckVon`). Jetzt sind sie EIN
+     * Eintrag „Enttarnen / Verstecken", der beide zusammen an- und
+     * abhakt.
+     *
+     * GESPEICHERT WIRD WEITER JE FÄHIGKEIT (`itemAuswahl` trägt beide
+     * Schlüssel) — additiver Datenvertrag, und `erlaubteFaehigkeiten`
+     * siebt in der Partie ohnehin die passende heraus. Zusammengefasst
+     * wird nur, was der Bildschirm zeigt.
+     */
+    _itemEintraege(stufeId) {
+        const eintraege = [];
+        const schonDrin = [];
+
+        for (const stufe of SCHACH_VARIANTEN.STUFEN) {
+            if (stufeId && stufe.id !== stufeId) {
+                continue;
+            }
+
+            for (const art of SCHACH_VARIANTEN.faehigkeitenDerStufe(stufe.id)) {
+                if (schonDrin.indexOf(art) !== -1) {
+                    continue;
+                }
+
+                const arten = [art];
+                const gegenstueck = SCHACH_VARIANTEN.gegenstueckVon(art);
+                if (gegenstueck) {
+                    arten.push(gegenstueck);
+                }
+
+                schonDrin.push(...arten);
+                eintraege.push({
+                    arten: arten,
+                    titel: arten.map(SCHACH_VARIANTEN.faehigkeitTitel).join(" / ")
+                });
+            }
+        }
+
+        return eintraege;
+    },
+
+    /* Angehakt ist ein Eintrag, sobald EINE seiner Fähigkeiten gewählt ist —
+       so zählt auch eine Auswahl von vor v0.115.2, die nur eine der zwei
+       trug, als angehakt und wird beim nächsten Tipp vervollständigt. */
+    _itemEintragDrin(eintrag) {
+        const gewaehlt = TEAM_SCHACH.neueRegeln.itemAuswahl;
+        return eintrag.arten.some((art) => gewaehlt.indexOf(art) !== -1);
+    },
+
+    /*
      * DIE AUSWAHL STEHT IM POPUP (seit v0.105, Nutzer-Ansage 21.08.: „bei
      * selbst wählen soll statt dieser scrollbaren Liste ein Popup-Menü
      * kommen").
@@ -805,48 +867,72 @@ Object.assign(TEAM_SCHACH, {
         halter.innerHTML = "";
 
         for (const stufe of SCHACH_VARIANTEN.STUFEN) {
-            const arten = SCHACH_VARIANTEN.faehigkeitenDerStufe(stufe.id);
-            if (arten.length === 0) {
+            const eintraege = TEAM_SCHACH._itemEintraege(stufe.id);
+            if (eintraege.length === 0) {
                 continue;
             }
 
             halter.appendChild(TEAM_SCHACH._element("div",
                 "item-auswahl-stufe stufe-" + stufe.id, stufe.titel));
 
-            for (const art of arten) {
-                halter.appendChild(TEAM_SCHACH._itemHakenBauen(art, halter));
+            for (const eintrag of eintraege) {
+                halter.appendChild(TEAM_SCHACH._itemHakenBauen(eintrag, halter));
             }
         }
 
         return halter;
     },
 
-    _itemHakenBauen(art, halter) {
+    /* Ein Kästchen je EINTRAG (seit v0.115.2 statt je Fähigkeit): Der Tipp
+       hakt alle Fähigkeiten des Eintrags zusammen an oder ab. */
+    _itemHakenBauen(eintrag, halter) {
         const gewaehlt = TEAM_SCHACH.neueRegeln.itemAuswahl;
-        const drin = (gewaehlt.indexOf(art) !== -1);
+        const drin = TEAM_SCHACH._itemEintragDrin(eintrag);
 
         const knopf = TEAM_SCHACH._knopf(
-            (drin ? "[x] " : "[ ] ") + SCHACH_VARIANTEN.faehigkeitTitel(art),
+            (drin ? "[x] " : "[ ] ") + eintrag.titel,
             "knopf-klein item-haken" + (drin ? " item-haken-an" : " knopf-still"),
             () => {
                 if (!drin) {
-                    gewaehlt.push(art);
+                    for (const art of eintrag.arten) {
+                        if (gewaehlt.indexOf(art) === -1) {
+                            gewaehlt.push(art);
+                        }
+                    }
                     TEAM_SCHACH._itemAuswahlFuellen(halter);
                     return;
                 }
 
-                if (gewaehlt.length <= 1) {
+                /* Mindestens EIN Eintrag bleibt — gezählt nach Einträgen,
+                   sonst liesse sich das Paar als „zwei" abhaken und die
+                   Liste wäre leer. */
+                const bleibt = TEAM_SCHACH._itemEintraege().filter((anderer) =>
+                    anderer.titel !== eintrag.titel
+                    && TEAM_SCHACH._itemEintragDrin(anderer)).length;
+
+                if (bleibt === 0) {
                     DIALOG.hinweis("Mindestens ein Item",
                         "Sonst wäre jede Lootbox leer. Hake erst ein anderes an.");
                     return;
                 }
 
-                gewaehlt.splice(gewaehlt.indexOf(art), 1);
+                for (const art of eintrag.arten) {
+                    const stelle = gewaehlt.indexOf(art);
+                    if (stelle !== -1) {
+                        gewaehlt.splice(stelle, 1);
+                    }
+                }
                 TEAM_SCHACH._itemAuswahlFuellen(halter);
             });
 
         knopf.setAttribute("aria-pressed", drin ? "true" : "false");
-        knopf.title = SCHACH_VARIANTEN.faehigkeitKurz(art);
+
+        /* Der Mauszeiger-Text: der erste Satz jeder Fähigkeit; beim Paar
+           dazu, wer von beiden entscheidet. */
+        knopf.title = eintrag.arten.map(SCHACH_VARIANTEN.faehigkeitKurz).join(" ")
+            + ((eintrag.arten.length > 1)
+                ? " Welches von beiden es gibt, entscheidet der Haken \"Seltenheit anzeigen\"."
+                : "");
 
         return knopf;
     },

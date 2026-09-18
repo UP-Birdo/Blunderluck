@@ -3,6 +3,21 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.115.2 — 18.09.2026
+
+**Enttarnen und Verstecken sind in der Item-Auswahl EIN Eintrag.**
+
+- Im Fenster „Welche Items kommen vor?" standen Enttarnen und Verstecken
+  als zwei Kästchen. Dabei gibt es je Partie nur eins von beiden: Ist der
+  Haken „Seltenheit anzeigen" aus, gibt es Enttarnen; ist er an, gibt es
+  Verstecken. Zwei Kästchen taten so, als könne man beides wählen.
+- Jetzt gibt es einen Eintrag „Enttarnen / Verstecken", der beide zusammen
+  an- und abhakt; welches von beiden in der Partie auftaucht, entscheidet
+  weiterhin der Haken. Der Knopf zählt entsprechend „von 19" statt
+  „von 20".
+- Eine gespeicherte Auswahl von früher, in der nur eins von beiden stand,
+  gilt als angehakt und wird beim nächsten Tipp vervollständigt.
+
 ## v0.115.1 — 18.09.2026
 
 **„Wie viele Figuren je Seite?" zeigt jetzt die Zahl — und ein Muster, das

@@ -743,6 +743,102 @@ pruefe("Item-Vorrat: drei Mengen in einer Reihe, die eigene Wahl im Popup (v0.10
     }
 });
 
+pruefe("Enttarnen / Verstecken sind im Popup EIN Eintrag, der beide schaltet (v0.115.2)", () => {
+    /*
+     * NUTZER-ANSAGE 18.09.2026: „Seltenheit anzeigen ja/nein sollen keine
+     * zwei Punkte sein, das eine grenzt das andere ja aus." Vorher standen
+     * zwei Kaestchen da, obwohl je Partie nur eins von beiden vorkommt.
+     *
+     * Geprueft wird das GANZE Verhalten, nicht nur die Beschriftung: ein
+     * Kaestchen weniger als Faehigkeiten, ein Tipp hakt beide ab und
+     * wieder an, der Zaehl-Knopf zaehlt Eintraege, und eine alte Auswahl
+     * mit nur EINER der zwei gilt als angehakt.
+     */
+    const gemerkterVorrat = TEAM_SCHACH.neueRegeln.itemVorrat;
+    const gemerkteAuswahl = TEAM_SCHACH.neueRegeln.itemAuswahl;
+    const echterHinweis = umgebung.DIALOG.hinweis;
+
+    const kaestchen = (halter) => (halter.kinder || []).filter((kind) =>
+        String(kind.className || "").indexOf("item-haken") !== -1);
+    const paarKnopf = (halter) => kaestchen(halter).find((kind) =>
+        String(kind.textContent || "").indexOf("Enttarnen / Verstecken") !== -1);
+
+    try {
+        umgebung.DIALOG.hinweis = async () => true;
+
+        TEAM_SCHACH.neueRegeln.itemVorrat = "auswahl";
+        TEAM_SCHACH.neueRegeln.itemAuswahl = TEAM_SCHACH._alleItems();
+
+        const alle = TEAM_SCHACH._alleItems().length;
+        const halter = TEAM_SCHACH._itemAuswahlFuellen(neuesElement("div"));
+
+        if (kaestchen(halter).length !== alle - 1) {
+            throw new Error("erwartet " + (alle - 1) + " Kaestchen (das Paar"
+                + " als eins), sind " + kaestchen(halter).length);
+        }
+
+        const paar = paarKnopf(halter);
+        if (!paar) {
+            throw new Error("der Eintrag \"Enttarnen / Verstecken\" fehlt");
+        }
+        if (String(paar.textContent).indexOf("[x]") === -1) {
+            throw new Error("bei voller Auswahl ist das Paar angehakt");
+        }
+
+        /* Ein Tipp nimmt BEIDE heraus. */
+        paar.ausloesen("click");
+        const auswahl = TEAM_SCHACH.neueRegeln.itemAuswahl;
+        if (auswahl.indexOf("enttarnen") !== -1 || auswahl.indexOf("verstecken") !== -1) {
+            throw new Error("nach dem Abhaken sind noch nicht beide raus: "
+                + auswahl.join(","));
+        }
+        if (auswahl.length !== alle - 2) {
+            throw new Error("es duerfen nur die zwei fehlen, fehlen aber "
+                + (alle - auswahl.length));
+        }
+
+        /* Der Zaehl-Knopf zaehlt Eintraege: einer von (alle - 1) fehlt. */
+        const eigene = TEAM_SCHACH._vorratLeisteBauen().querySelector(".vorrat-eigene");
+        const erwartet = "Selbst gewählt: " + (alle - 2) + " von " + (alle - 1);
+        if (String(eigene.textContent).indexOf(erwartet) === -1) {
+            throw new Error("der Zaehl-Knopf sagt \"" + eigene.textContent
+                + "\", erwartet \"" + erwartet + " ...\"");
+        }
+
+        /* Der naechste Tipp bringt BEIDE zurueck. */
+        paarKnopf(halter).ausloesen("click");
+        if (TEAM_SCHACH.neueRegeln.itemAuswahl.indexOf("enttarnen") === -1
+            || TEAM_SCHACH.neueRegeln.itemAuswahl.indexOf("verstecken") === -1) {
+            throw new Error("nach dem Anhaken fehlt eine der zwei");
+        }
+
+        /* Eine Auswahl von vor v0.115.2 mit nur EINER der zwei: angehakt,
+           und der naechste Tipp nimmt sie sauber heraus. */
+        TEAM_SCHACH.neueRegeln.itemAuswahl = ["mauer", "enttarnen"];
+        const alt = TEAM_SCHACH._itemAuswahlFuellen(neuesElement("div"));
+        if (String(paarKnopf(alt).textContent).indexOf("[x]") === -1) {
+            throw new Error("eine halbe alte Auswahl muss als angehakt gelten");
+        }
+        paarKnopf(alt).ausloesen("click");
+        if (TEAM_SCHACH.neueRegeln.itemAuswahl.join(",") !== "mauer") {
+            throw new Error("nach dem Abhaken bleibt nur die Mauer, ist: "
+                + TEAM_SCHACH.neueRegeln.itemAuswahl.join(","));
+        }
+
+        /* Das letzte angehakte Paar laesst sich nicht abhaken. */
+        TEAM_SCHACH.neueRegeln.itemAuswahl = ["enttarnen", "verstecken"];
+        const letzte = TEAM_SCHACH._itemAuswahlFuellen(neuesElement("div"));
+        paarKnopf(letzte).ausloesen("click");
+        if (TEAM_SCHACH.neueRegeln.itemAuswahl.length !== 2) {
+            throw new Error("das letzte Paar wurde abgehakt — die Liste ist leer");
+        }
+    } finally {
+        umgebung.DIALOG.hinweis = echterHinweis;
+        TEAM_SCHACH.neueRegeln.itemVorrat = gemerkterVorrat;
+        TEAM_SCHACH.neueRegeln.itemAuswahl = gemerkteAuswahl;
+    }
+});
+
 pruefe("Jeder aktive Reihen-Knopf traegt seine Pille (v0.109)", () => {
     /*
      * SEIT v0.109 IST DER AKTIVE KNOPF SELBST DURCHSICHTIG — seine Farbe

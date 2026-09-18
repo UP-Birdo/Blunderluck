@@ -555,6 +555,32 @@ pruefe("Verstecken trifft den GEGNER und ist befristet (v0.98)", () => {
     gleich(wieder.stand.verstecktBis, 0, "und die Frist ist leer");
 });
 
+pruefe("Enttarnen und Verstecken sind einander Gegenstueck, sonst niemand (v0.115.2)", () => {
+    /*
+     * NUTZER-ANSAGE 18.09.2026: Die beiden sollen in der Item-Auswahl EIN
+     * Eintrag sein, weil der Haken „Seltenheit anzeigen" ohnehin nur eins
+     * von beiden zulaesst. Das Paar wird GERECHNET (umgekehrte Bedingung,
+     * gleiche Stufe), nicht notiert — der Test prueft, dass die Rechnung
+     * genau dieses eine Paar findet und alle anderen leer ausgehen.
+     */
+    gleich(SCHACH_VARIANTEN.gegenstueckVon("enttarnen"), "verstecken",
+        "Enttarnen hat Verstecken als Gegenstueck");
+    gleich(SCHACH_VARIANTEN.gegenstueckVon("verstecken"), "enttarnen",
+        "und umgekehrt");
+    gleich(SCHACH_VARIANTEN.gegenstueckVon("mauer"), "",
+        "eine Faehigkeit ohne Seltenheits-Bedingung hat keins");
+    gleich(SCHACH_VARIANTEN.gegenstueckVon("gibt-es-nicht"), "",
+        "eine unbekannte Art auch nicht");
+
+    let paare = 0;
+    for (const art of Object.keys(SCHACH_VARIANTEN.FAEHIGKEITEN)) {
+        if (SCHACH_VARIANTEN.gegenstueckVon(art) !== "") {
+            paare++;
+        }
+    }
+    gleich(paare, 2, "genau zwei Faehigkeiten tragen ein Gegenstueck");
+});
+
 pruefe("Jede Vorrat-Stufe liefert WENIGER als die darueber (v0.87)", () => {
     /*
      * SONST IST EIN KNOPF WIRKUNGSLOS. Genau das war beim Bauen der Fall:
