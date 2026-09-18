@@ -150,6 +150,25 @@ pruefe("nurNochBot: ein einsamer Computer haelt keine Runde am Leben", () => {
     wahr(SCHACH_BOT.nurNochBot(SCHACH_RUNDE.leereRunde(1000)), "leere Runde");
 });
 
+pruefe("nurNochBotUnd: sitzt ausser mir noch ein Mensch darin? (v0.114.2)", () => {
+    /*
+     * „Spielen" fragt das bei einer eigenen wartenden Runde: Nur ich (und
+     * allenfalls der Computer) heisst „niemand wartet auf mich" — die Runde
+     * darf ersetzt werden. Ein zweiter Mensch heisst „dorthin gehen".
+     */
+    const allein = SCHACH_RUNDE.teamBeitreten(
+        SCHACH_RUNDE.leereRunde(1000), "id-anna", "weiss", 1000);
+    wahr(SCHACH_BOT.nurNochBotUnd(allein, "id-anna"), "Anna allein");
+    wahr(!SCHACH_BOT.nurNochBotUnd(allein, "id-bert"), "Anna allein, gefragt fuer Bert");
+
+    wahr(SCHACH_BOT.nurNochBotUnd(botPartie(), "id-anna"), "Anna und der Computer");
+
+    const zuZweit = SCHACH_RUNDE.teamBeitreten(allein, "id-bert", "schwarz", 1000);
+    wahr(!SCHACH_BOT.nurNochBotUnd(zuZweit, "id-anna"), "Bert sitzt schon darin");
+
+    wahr(SCHACH_BOT.nurNochBotUnd(SCHACH_RUNDE.leereRunde(1000), "id-anna"), "leere Runde");
+});
+
 pruefe("botVorgesehen trennt die Absicht von der Tatsache (v0.29.0)", () => {
     /*
      * Zwischen „Spielen" und „Bereit" gibt es eine Computer-Runde OHNE

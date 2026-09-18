@@ -379,6 +379,21 @@ const SCHACH_BOT = {
             (mannschaft) => mannschaft.every((id) => SCHACH_BOT.istBot(id)));
     },
 
+    /*
+     * Steht in beiden Teams NIEMAND ausser dieser Person und dem Computer?
+     * (seit v0.114.2)
+     *
+     * Gebraucht, wenn „Spielen" eine eigene wartende Runde vorfindet: Sitzt
+     * dort nur der Anleger selbst (allenfalls mit dem Computer), wartet
+     * niemand auf ihn — die Runde darf durch die neue ersetzt werden. Sitzt
+     * ein anderer Mensch darin, wartet der auf ihn, und die Runde bleibt.
+     */
+    nurNochBotUnd(runde, personId) {
+        return SCHACH_BOT._teams(runde).every(
+            (mannschaft) => mannschaft.every(
+                (id) => id === personId || SCHACH_BOT.istBot(id)));
+    },
+
     /* Beide Mannschaften als Listen — auch bei halbem oder fehlendem Stand. */
     _teams(runde) {
         const teams = (runde && runde.teams) ? runde.teams : {};

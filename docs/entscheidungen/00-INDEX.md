@@ -74,6 +74,14 @@ wird. Die Liste dessen, was noch kommt, steht in [../ROADMAP.md](../ROADMAP.md).
   Play-Store-Umbau braeuchte - Referenz: docs\uebergabe-schach-app.md)
 
 ## erkenntnisse.md - Teuer erkaufte Erkenntnisse
+- **Ein Knopf, der Sekunden braucht und nichts zeigt, wird mehrfach
+  gedrueckt** (v0.14.0, gemeldet 18.09.2026, behoben v0.114.2: „Spielen"
+  hatte keine Sperre und keine Rueckmeldung — fuenf Druecke waren fuenf
+  Lade- und fuenf Schreibvorgaenge der ganzen 600-KB-Tafel; dazu legte
+  „Spielen" nach „Zurueck" eine ZWEITE wartende Runde an. Jetzt Sperre
+  `legtGeradeAn`, Knopf sagt „Wird angelegt …", eigene wartende Runde
+  wird ersetzt oder betreten. Regel: Netz-Knopf = Sperre UND sichtbares
+  „es passiert etwas")
 - **Wer gesetzt wird, statt zu waehlen, gibt keine Zusage — und kann sie
   nie nachholen** (v0.66.0, gemeldet 15.09.2026, behoben v0.114.1: Der
   Anleger kam nach Weiss OHNE erste Zusage, die Zulosung uebersprang ihn,

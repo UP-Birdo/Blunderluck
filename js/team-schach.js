@@ -318,6 +318,10 @@ const TEAM_SCHACH = {
     /* Verhindert zwei Züge gleichzeitig vom selben Gerät. */
     ziehtGerade: false,
 
+    /* Verhindert zwei Anlege-Vorgänge gleichzeitig (v0.114.2) — siehe
+       `rundeStarten`. */
+    legtGeradeAn: false,
+
     /*
      * Der Computer denkt gerade nach (seit v0.27.0) — die Sperre gegen
      * doppeltes Anstossen. Die Abfrage zeichnet alle drei Sekunden neu, und
@@ -3716,10 +3720,41 @@ const TEAM_SCHACH = {
      * Namens-Dialog in `spielartGewaehlt`.
      */
     async rundeStarten(varianteId, regelnWunsch) {
+        /*
+         * NUR EIN ANLEGEN AUF EINMAL (v0.114.2). SO SAH DER FEHLER AUS:
+         * „Wenn man oft auf Spielen hintereinander drückt, crasht alles und
+         * nichts geht" (Nutzer, 18.09.2026). Nachgemessen: Fünf Drücke
+         * waren fünf Ladevorgänge und fünf Schreibvorgänge der GANZEN Tafel
+         * (heute rund 600 KB je Richtung), jeder auf einem anderen alten
+         * Stand — am Ende lagen zwei Runden desselben Spielers auf dem
+         * Server, und am Handy kamen sechs Megabyte gleichzeitig durch die
+         * Leitung, während das Brett fünfmal gezeichnet wurde.
+         *
+         * Dieselbe Sperre wie `ziehtGerade` bei `zugAusfuehren`: Läuft ein
+         * Anlegen, wird jeder weitere Druck verschluckt. Der Startbildschirm
+         * sperrt derweil seinen Knopf und sagt es („Wird angelegt …",
+         * `START.spielenLaeuft`) — die Sperre hier gilt aber für JEDEN Weg
+         * hinein, nicht nur für den Knopf.
+         */
+        if (TEAM_SCHACH.legtGeradeAn) {
+            return;
+        }
+
         const person = TEAM_SCHACH._ich();
         if (!person || !SCHACH_VARIANTEN.gibtEs(varianteId)) {
             return;
         }
+
+        TEAM_SCHACH.legtGeradeAn = true;
+        try {
+            await TEAM_SCHACH._rundeAnlegen(person, varianteId, regelnWunsch);
+        } finally {
+            TEAM_SCHACH.legtGeradeAn = false;
+        }
+    },
+
+    /* Der Rumpf von `rundeStarten` — nur über die Sperre dort erreichbar. */
+    async _rundeAnlegen(person, varianteId, regelnWunsch) {
         if (await TEAM_SCHACH._zweitePartieVerhindern(person)) {
             return;
         }
@@ -3744,6 +3779,52 @@ const TEAM_SCHACH = {
             await DIALOG.hinweis("Nicht angelegt",
                 "Der aktuelle Stand konnte nicht geladen werden: " + fehler.message);
             return;
+        }
+
+        /*
+         * EINE EIGENE WARTENDE RUNDE WIRD NICHT VERDOPPELT (v0.114.2).
+         *
+         * Seit der Anleger beim Anlegen sofort in seinem Team sitzt
+         * (zugelost, v0.114.1; davor gesetzt), schliesst „Zurück" seine
+         * wartende Runde NICHT mehr — die Regel dort („leer → wegwerfen",
+         * v0.29.0) greift nur ohne Menschen. Der Start zeigt dann „Zurück
+         * in deine Runde"; wer stattdessen wieder „Spielen" drückt, legte
+         * bis v0.114.1 eine ZWEITE Runde an. Genau so lagen am 18.09.2026
+         * zwei wartende Runden desselben Spielers in der Datenbank (vom
+         * 14.09. und vom 17.09.), und `_eigeneOffene` sagt selbst: Mehrere
+         * sind kein gültiger Zustand. Jede vergessene Runde bleibt
+         * ausserdem für immer in der Tafel, die bei jedem Zug ganz geladen
+         * wird.
+         *
+         * Drei Fälle, geprüft auf dem FRISCHEN Stand (nicht dem lokalen —
+         * sonst sähe man eine Runde nicht, die von einem anderen Gerät aus
+         * angelegt wurde):
+         *   - Sie läuft inzwischen (jemand kam dazu, es ging los): F11 wie
+         *     gehabt — Hinweis, nichts anlegen.
+         *   - Ein anderer Mensch sitzt darin und wartet auf einen: dorthin
+         *     gehen, nichts anlegen. Ihn wegzuwerfen wäre unhöflich.
+         *   - Nur man selbst (und allenfalls der Computer): Die alte Runde
+         *     fällt weg, die neue kommt mit den heutigen Reglern. „Spielen"
+         *     heisst „ich will jetzt eine Runde", nicht „ich will noch eine".
+         */
+        const wartende = SCHACH_TAFEL.eigeneOffene(tafel, person.id);
+
+        for (const alte of wartende) {
+            if (alte.laeuft) {
+                abgleich.daten = tafel;
+                await TEAM_SCHACH._zweitePartieVerhindern(person);
+                return;
+            }
+
+            if (!SCHACH_BOT.nurNochBotUnd(alte, person.id)) {
+                abgleich.daten = tafel;
+                TABS.wechseln("team-schach");
+                TEAM_SCHACH.partieOeffnen(alte.id);
+                DIALOG.kurzmeldung("In deiner Runde wartet schon jemand auf dich");
+                return;
+            }
+
+            tafel = SCHACH_TAFEL.partieEntfernen(tafel, alte.id);
         }
 
         /*

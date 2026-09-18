@@ -524,6 +524,212 @@ async function zeitlimitPruefen() {
         });
 
     /* ---------------------------------------------------------------- *
+     * „Spielen" mehrfach gedrueckt (v0.114.2)
+     *
+     * NUTZER-MELDUNG 18.09.2026: „Wenn man oft auf Spielen hintereinander
+     * drueckt, crasht alles und nichts geht." Nachgemessen am echten Code:
+     * Fuenf Druecke waren fuenf Ladevorgaenge und fuenf Schreibvorgaenge
+     * der ganzen Tafel, und der Spieler sass danach in ZWEI wartenden
+     * Runden — genau der Zustand, der in der Datenbank lag.
+     *
+     * Die drei Pruefungen teilen sich einen Server-Nachbau MIT
+     * VERZOEGERUNG: Ohne sie waere jeder Druck fertig, bevor der naechste
+     * kommt, und die Sperre haette nichts zu tun.
+     * ---------------------------------------------------------------- */
+
+    const serverNachbau = (start) => {
+        const nachbau = {
+            stand: JSON.parse(JSON.stringify(start)),
+            geladen: 0,
+            geschrieben: 0,
+            speicher: null
+        };
+        const warte = (ms) => new Promise((weiter) => setTimeout(weiter, ms));
+        nachbau.speicher = {
+            art: "gemeinsam",
+            async laden() {
+                nachbau.geladen++;
+                await warte(30);
+                return JSON.parse(JSON.stringify(nachbau.stand));
+            },
+            async speichern(daten) {
+                nachbau.geschrieben++;
+                await warte(30);
+                nachbau.stand = JSON.parse(JSON.stringify(daten));
+                return true;
+            }
+        };
+        return nachbau;
+    };
+
+    await pruefeMitWarten("Spielen fuenfmal gedrueckt legt genau EINE Runde an (v0.114.2)",
+        async () => {
+            const START = umgebung.START;
+            const echteDaten = TEAM_SCHACH.abgleich.daten;
+            const echterSpeicher = TEAM_SCHACH.abgleich.speicher;
+            const server = serverNachbau(SCHACH_TAFEL.leereTafel(9100));
+
+            try {
+                TEAM_SCHACH.abgleich.speicher = server.speicher;
+                TEAM_SCHACH.abgleich.daten = JSON.parse(JSON.stringify(server.stand));
+                TEAM_SCHACH.offeneId = "";
+                START.aufbauen(neuesElement("div"));
+                START.spielartMerken(SCHACH_VARIANTEN.liste[0].id);
+                START.regelnMerken(Object.assign(TEAM_SCHACH._regelnVorgabe(),
+                    { gegenComputer: false, seiteZufaellig: true, zufallsArmee: false }));
+
+                const laeufe = [];
+                for (let i = 0; i < 5; i++) {
+                    laeufe.push(START.spielen());
+                }
+
+                /* WAEHREND des Anlegens: Knopf gesperrt und beschriftet. */
+                const knopfWaehrend = klasseSuchen(START.wurzelEl, "start-spielen");
+                if (!knopfWaehrend || knopfWaehrend.disabled !== true) {
+                    throw new Error("der Spielen-Knopf ist waehrend des Anlegens nicht gesperrt");
+                }
+                if (String(knopfWaehrend.textContent).indexOf("angelegt") === -1) {
+                    throw new Error("der gesperrte Knopf sagt nicht, dass angelegt wird");
+                }
+                if (knopfWaehrend.attribute["aria-busy"] !== "true") {
+                    throw new Error("der gesperrte Knopf traegt kein aria-busy");
+                }
+
+                await Promise.all(laeufe);
+
+                if (server.geladen !== 1 || server.geschrieben !== 1) {
+                    throw new Error("fuenf Druecke waren " + server.geladen
+                        + " Ladevorgaenge und " + server.geschrieben
+                        + " Schreibvorgaenge — erwartet je einer");
+                }
+                const partien = Object.keys(server.stand.partien);
+                if (partien.length !== 1) {
+                    throw new Error("auf dem Server liegen " + partien.length
+                        + " Runden statt einer");
+                }
+                if (TEAM_SCHACH.offeneId !== partien[0]) {
+                    throw new Error("die geoeffnete Runde ist nicht die auf dem Server");
+                }
+
+                /* DANACH: Knopf wieder frei. */
+                const knopfDanach = klasseSuchen(START.wurzelEl, "start-spielen");
+                if (!knopfDanach || knopfDanach.disabled === true
+                        || knopfDanach.textContent !== "Spielen") {
+                    throw new Error("nach dem Anlegen ist der Spielen-Knopf nicht wieder frei");
+                }
+                if (TEAM_SCHACH.legtGeradeAn !== false || START.spielenLaeuft !== false) {
+                    throw new Error("eine der beiden Sperren blieb stehen");
+                }
+            } finally {
+                TEAM_SCHACH.abgleich.speicher = echterSpeicher;
+                TEAM_SCHACH.abgleich.daten = echteDaten;
+                TEAM_SCHACH.offeneId = "";
+                TEAM_SCHACH.legtGeradeAn = false;
+                START.spielenLaeuft = false;
+                umgebung.TABS.gewechseltZu = "";
+                START.regelnMerken(TEAM_SCHACH._regelnVorgabe());
+            }
+        });
+
+    await pruefeMitWarten("Spielen ersetzt die eigene wartende Runde, statt eine zweite anzulegen (v0.114.2)",
+        async () => {
+            /*
+             * Der Weg dorthin im Alltag: Runde anlegen, „Zurueck", spaeter
+             * wieder „Spielen". Seit v0.114.1 sitzt der Anleger sofort in
+             * seinem Team, deshalb schliesst „Zurueck" die Runde nicht mehr
+             * — und ohne diese Pruefung laegen danach zwei Runden herum.
+             */
+            const START = umgebung.START;
+            const echteDaten = TEAM_SCHACH.abgleich.daten;
+            const echterSpeicher = TEAM_SCHACH.abgleich.speicher;
+
+            const alt = SCHACH_TAFEL.partieAnlegen(
+                SCHACH_TAFEL.leereTafel(9200), SCHACH_VARIANTEN.liste[0].id, "Alt", 9200);
+            const alleinDarin = SCHACH_RUNDE.teamBeitreten(alt.partie, "id-anna", "weiss", 9200);
+            const server = serverNachbau(SCHACH_TAFEL.partieEinsetzen(alt.tafel, alleinDarin, 9200));
+
+            try {
+                TEAM_SCHACH.abgleich.speicher = server.speicher;
+                /* Das Geraet kennt die alte Runde absichtlich NICHT — sie
+                   muss auf dem frischen Stand gefunden werden. */
+                TEAM_SCHACH.abgleich.daten = SCHACH_TAFEL.leereTafel(9200);
+                TEAM_SCHACH.offeneId = "";
+                START.aufbauen(neuesElement("div"));
+                START.spielartMerken(SCHACH_VARIANTEN.liste[0].id);
+                START.regelnMerken(Object.assign(TEAM_SCHACH._regelnVorgabe(),
+                    { gegenComputer: false, seiteZufaellig: true, zufallsArmee: false }));
+
+                await START.spielen();
+
+                const partien = Object.keys(server.stand.partien);
+                if (partien.length !== 1) {
+                    throw new Error("auf dem Server liegen " + partien.length
+                        + " Runden — die alte wurde nicht ersetzt");
+                }
+                if (partien[0] === alleinDarin.id) {
+                    throw new Error("die alte Runde blieb, die neue fehlt");
+                }
+                if (TEAM_SCHACH.offeneId !== partien[0]) {
+                    throw new Error("die neue Runde wurde nicht geoeffnet");
+                }
+            } finally {
+                TEAM_SCHACH.abgleich.speicher = echterSpeicher;
+                TEAM_SCHACH.abgleich.daten = echteDaten;
+                TEAM_SCHACH.offeneId = "";
+                umgebung.TABS.gewechseltZu = "";
+                START.regelnMerken(TEAM_SCHACH._regelnVorgabe());
+            }
+        });
+
+    await pruefeMitWarten("Spielen fuehrt in die eigene wartende Runde, wenn dort schon jemand sitzt (v0.114.2)",
+        async () => {
+            const START = umgebung.START;
+            const echteDaten = TEAM_SCHACH.abgleich.daten;
+            const echterSpeicher = TEAM_SCHACH.abgleich.speicher;
+
+            const alt = SCHACH_TAFEL.partieAnlegen(
+                SCHACH_TAFEL.leereTafel(9300), SCHACH_VARIANTEN.liste[0].id, "Alt", 9300);
+            let zuZweit = SCHACH_RUNDE.teamBeitreten(alt.partie, "id-anna", "weiss", 9300);
+            zuZweit = SCHACH_RUNDE.teamBeitreten(zuZweit, "id-bert", "schwarz", 9300);
+            if (zuZweit.laeuft) {
+                throw new Error("Vorbereitung: die Runde darf noch nicht laufen");
+            }
+            const server = serverNachbau(SCHACH_TAFEL.partieEinsetzen(alt.tafel, zuZweit, 9300));
+
+            try {
+                TEAM_SCHACH.abgleich.speicher = server.speicher;
+                TEAM_SCHACH.abgleich.daten = SCHACH_TAFEL.leereTafel(9300);
+                TEAM_SCHACH.offeneId = "";
+                START.aufbauen(neuesElement("div"));
+                START.spielartMerken(SCHACH_VARIANTEN.liste[0].id);
+                START.regelnMerken(Object.assign(TEAM_SCHACH._regelnVorgabe(),
+                    { gegenComputer: false, seiteZufaellig: true, zufallsArmee: false }));
+                umgebung.TABS.gewechseltZu = "";
+
+                await START.spielen();
+
+                if (server.geschrieben !== 0) {
+                    throw new Error("es wurde geschrieben, obwohl Bert in der alten Runde wartet");
+                }
+                if (Object.keys(server.stand.partien).length !== 1) {
+                    throw new Error("es wurde trotzdem eine zweite Runde angelegt");
+                }
+                if (TEAM_SCHACH.offeneId !== zuZweit.id) {
+                    throw new Error("die wartende Runde mit Bert wurde nicht geoeffnet");
+                }
+                if (umgebung.TABS.gewechseltZu !== "team-schach") {
+                    throw new Error("es wird nicht ins Team Schach gewechselt");
+                }
+            } finally {
+                TEAM_SCHACH.abgleich.speicher = echterSpeicher;
+                TEAM_SCHACH.abgleich.daten = echteDaten;
+                TEAM_SCHACH.offeneId = "";
+                umgebung.TABS.gewechseltZu = "";
+                START.regelnMerken(TEAM_SCHACH._regelnVorgabe());
+            }
+        });
+
+    /* ---------------------------------------------------------------- *
      * Wer allein war, schliesst die Runde beim Verlassen (v0.26.0)
      * ---------------------------------------------------------------- */
 

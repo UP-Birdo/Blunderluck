@@ -3,6 +3,28 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.114.2 — 18.09.2026
+
+**Behoben: Mehrmals auf „Spielen" gedrückt — und die App stand still.**
+
+- Jeder Druck auf „Spielen" holte den ganzen Spielstand vom Server, legte
+  eine Runde hinein und schrieb alles zurück — rund 600 KB je Richtung.
+  Weil sich dabei ein paar Sekunden lang nichts rührte, drückte man noch
+  einmal, und noch einmal: Fünf Drücke waren fünf Ladevorgänge und fünf
+  Schreibvorgänge gleichzeitig, das Brett wurde fünfmal aufgebaut, und am
+  Ende lagen zwei Runden desselben Spielers auf dem Server.
+- Jetzt nimmt „Spielen" nur EINEN Druck an: Der Knopf ist sofort gesperrt
+  und sagt **„Wird angelegt …"**, bis die Runde steht. Weitere Drücke
+  verpuffen.
+- **Eine eigene wartende Runde wird nicht mehr verdoppelt.** Wer eine Runde
+  anlegte, „Zurück" drückte und später wieder „Spielen", bekam bisher eine
+  zweite Runde — die alte blieb für immer liegen (so lagen am 18.09. zwei
+  Runden vom 14.09. und 17.09. in der Datenbank). Jetzt gilt: Sitzt in der
+  alten Runde nur man selbst, wird sie durch die neue ersetzt; wartet dort
+  schon jemand, geht es in DIESE Runde statt in eine neue.
+- Die zwei liegengebliebenen Runden räumen sich damit beim nächsten
+  „Spielen" von selbst auf.
+
 ## v0.114.1 — 15.09.2026
 
 **Behoben: Zu zweit begann die Partie nicht, obwohl beide „Bereit" gedrückt

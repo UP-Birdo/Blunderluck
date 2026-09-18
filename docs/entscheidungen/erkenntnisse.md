@@ -2316,3 +2316,53 @@ nicht erst gesetzt werden"), nur spiegelverkehrt: Wer zugelost werden
 soll, auch nicht. Und: **Ein Widerspruch zwischen Datenbank und
 Modellregel ist eine Fehlerspur** — der Abzug war schneller als jedes
 Lesen.
+
+## Ein Knopf, der Sekunden braucht und nichts zeigt, wird mehrfach gedrückt (v0.14.0, gemeldet 18.09.2026, behoben v0.114.2)
+
+**Was der Nutzer meldete:** „Wenn man oft auf Spielen hintereinander
+drückt, crasht alles und nichts geht."
+
+**Wie es gefunden wurde:** Erst der Datenbank-Abzug, dann eine Messung.
+Der Abzug zeigte zwei wartende Runden desselben Spielers (14.09. und
+17.09.), obwohl `_eigeneOffene` selbst sagt, mehrere seien kein gültiger
+Zustand. Dann ein Wegwerf-Skript gegen die echte Testumgebung mit einem
+Server-Nachbau, der 60 ms verzögert: `START.spielen()` fünfmal im Abstand
+von 10 ms — fünf Ladevorgänge, fünf Schreibvorgänge der ganzen Tafel,
+zwei Runden auf dem Server, keine Fehlermeldung. Die Tafel ist inzwischen
+rund 600 KB gross (37 Partien, davon 34 beendet): Am Handy sind das je
+Druck über eine Megabyte Verkehr und ein fünffach gezeichnetes Brett.
+
+**Die zwei Ursachen:**
+
+1. `rundeStarten` hatte keine Wiedereintritts-Sperre. Züge hatten sie
+   seit v3.9 (`ziehtGerade`), das Anlegen — seit Wunsch 1 der häufigste
+   Knopf der App — nicht. Und der Knopf zeigte während der Sekunden
+   zwischen Druck und Brett NICHTS: Wer nichts sieht, drückt noch einmal.
+2. Seit der Anleger beim Anlegen sofort in seinem Team sitzt (gesetzt
+   seit v0.29.0, zugelost seit v0.114.1), schliesst „Zurück" seine
+   wartende Runde nicht mehr — die Regel dort („leer → wegwerfen") greift
+   nur ohne Menschen. Der Start zeigt „Zurück in deine Runde"; wer
+   stattdessen wieder „Spielen" drückt, bekam eine zweite. Die zwei
+   Runden in der Datenbank kamen also NICHT vom Mehrfachklick, sondern
+   aus dem gewöhnlichen Weg „anlegen, zurück, später wieder Spielen".
+
+**Die Behebung:** `TEAM_SCHACH.legtGeradeAn` nach dem Muster von
+`ziehtGerade` (gilt für jeden Weg hinein), dazu `START.spielenLaeuft`:
+Der Knopf ist sofort gesperrt und heisst „Wird angelegt …" (`aria-busy`).
+Und `rundeStarten` sieht auf dem FRISCHEN Stand nach eigenen wartenden
+Runden: läuft eine → F11-Hinweis; sitzt dort ein anderer Mensch → dorthin
+statt neu; nur man selbst (oder der Computer) → ersetzt.
+`SCHACH_BOT.nurNochBotUnd` stellt die Frage „ausser mir noch jemand?".
+
+**Die Regel dahinter:** Jeder Knopf, hinter dem ein Netzaufruf steht,
+braucht ZWEI Dinge — eine Sperre gegen den zweiten Druck UND ein
+sichtbares „es passiert etwas". Die Sperre allein reicht nicht: Ohne
+Rückmeldung hält der Nutzer den Druck für verloren und sucht einen
+anderen Weg. Geprüft am 18.09.2026 für die übrigen Wege: Züge haben
+`ziehtGerade`, der Code-Knopf ist gesperrt bis der Code stimmt, alle
+Vor-Spiel-Wege (Bereit, Beitritt, Zulosung) laufen über
+`_aufFrischemSenden` und sind mehrfach angewandt dasselbe — nur das
+Anlegen erzeugte bei jedem Druck etwas NEUES. Und: **Die ganze Tafel je
+Aufruf zu laden und zu schreiben ist der eigentliche Kostentreiber** —
+sie wächst mit jeder beendeten Partie (siehe `STATUS.md`, „Nächste
+Schritte").

@@ -147,6 +147,14 @@ const START = {
         spielen.className = "knopf knopf-haupt start-spielen";
         spielen.textContent = "Spielen";
         spielen.addEventListener("click", () => START.spielen());
+
+        /* Während des Anlegens gesperrt und beschriftet (v0.114.2, siehe
+           `spielen`). `aria-busy` sagt es auch dem Vorleseprogramm. */
+        if (START.spielenLaeuft) {
+            spielen.textContent = "Wird angelegt …";
+            spielen.disabled = true;
+            spielen.setAttribute("aria-busy", "true");
+        }
         zeile.appendChild(spielen);
 
         const match = document.createElement("button");
@@ -557,9 +565,33 @@ const START = {
      * (`TEAM_SCHACH.rundeStarten`); wer schon in einer laufenden Partie
      * steckt, wird dort abgewiesen (F11).
      */
-    spielen() {
-        return TEAM_SCHACH.rundeStarten(START._spielart().id, START.regeln());
+    async spielen() {
+        /*
+         * SOLANGE ANGELEGT WIRD, IST DER KNOPF GESPERRT UND SAGT ES
+         * (v0.114.2). Anlegen heisst: die ganze Tafel laden, die Runde
+         * hineinsetzen, die ganze Tafel schreiben — am Handy gern ein paar
+         * Sekunden, in denen sich vorher NICHTS rührte. Wer dann noch
+         * dreimal drückt, stiess dreimal denselben Vorgang an (die Sperre
+         * dagegen sitzt in `TEAM_SCHACH.rundeStarten`); hier sieht man
+         * jetzt, dass etwas passiert, und der Knopf nimmt nichts mehr an.
+         */
+        if (START.spielenLaeuft) {
+            return;
+        }
+
+        START.spielenLaeuft = true;
+        START._zeichnen();
+
+        try {
+            return await TEAM_SCHACH.rundeStarten(START._spielart().id, START.regeln());
+        } finally {
+            START.spielenLaeuft = false;
+            START._zeichnen();
+        }
     },
+
+    /* „Spielen" legt gerade an — der Knopf ist derweil gesperrt. */
+    spielenLaeuft: false,
 
     /* Der stille Knopf darunter: der Weg zum Zwischenbildschirm, auf dem
        Einladungen, das Code-Feld und die eigenen Partien liegen. Erstellt
