@@ -1297,6 +1297,30 @@
     gap: 8px;
 }
 
+/*
+ * DIE DAUER-ZEILE IM KLEBENDEN KOPF DER GRUNDEINSTELLUNGEN (seit v0.116.0,
+ * Nutzer-Ansage 18.09.2026). Sie ist die zweite Zeile des Kopfs (volle
+ * Breite unter Zurück, Titel und i) und rollt mit ihm mit
+ * (`partie-kopf-klebt`). Die Zahl ist die Hauptsache, die Quelle steht
+ * leise dahinter — auf schmalen Schirmen bricht sie darunter um.
+ */
+.regeln-dauer {
+    flex: 1 1 100%;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 10px;
+}
+
+.regeln-dauer-wert {
+    font-weight: 600;
+}
+
+.regeln-dauer-quelle {
+    font-size: 0.82rem;
+    color: var(--schrift-leise);
+}
+
 .armee-karte h3,
 .leisten-kopf h3 {
     margin: 0;

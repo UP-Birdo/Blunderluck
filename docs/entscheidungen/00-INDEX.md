@@ -78,6 +78,11 @@ wird. Die Liste dessen, was noch kommt, steht in [../ROADMAP.md](../ROADMAP.md).
   Play-Store-Umbau braeuchte - Referenz: docs\uebergabe-schach-app.md)
 
 ## erkenntnisse.md - Teuer erkaufte Erkenntnisse
+- **Eine Messung, die nie etwas misst, faellt nicht auf — bis jemand ihre
+  Quelle sehen will** (v0.93, gefunden 18.09.2026, behoben v0.116.0: die
+  Dauer-Schaetzung bekam vom Bildschirm immer `[]`, weil `partien` eine
+  Tabelle ist und keine Liste; stiller Rueckfall auf den Richtwert. Regel:
+  Anzeigen nennen ihre Quelle, Tests setzen echte Datenformen ein)
 - **Ein Beispielbild, das auf Handy-Breite nichts mehr zeigt, ist
   schlechter als das Wort** (v0.109.0, gemeldet 18.09.2026, behoben
   v0.115.1: das Mini-Brett auf den Figurenzahl-Knoepfen war bei 75 px

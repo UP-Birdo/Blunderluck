@@ -96,7 +96,13 @@ Object.assign(TEAM_SCHACH, {
 
     /* Der Weg über den Pfeil: die Regler und Haken der nächsten Runde. */
     _regelnZeichnen(wurzel) {
-        const kopf = TEAM_SCHACH._element("div", "partie-kopf");
+        /*
+         * DER KOPF KLEBT OBEN (seit v0.116.0, Nutzer-Ansage 18.09.2026:
+         * „oben eine fixe Zeile, die beim Hoch- und Runterscrollen mitgeht,
+         * mit der geschätzten Dauer"). Dieselbe Klasse wie Bibliothek und
+         * „Schach lernen" — so bleibt auch der Zurück-Knopf erreichbar.
+         */
+        const kopf = TEAM_SCHACH._element("div", "partie-kopf partie-kopf-klebt");
         kopf.appendChild(TEAM_SCHACH._knopf("Zurück", "knopf-still knopf-klein",
             () => TEAM_SCHACH.auswahlSchliessen()));
         kopf.appendChild(TEAM_SCHACH._element("h2", "partie-titel",
@@ -106,7 +112,12 @@ Object.assign(TEAM_SCHACH, {
             "Was gilt hier?",
             "Diese Einstellungen gelten für die nächste Runde, die du mit "
             + "\"Spielen\" anlegst — dein Gerät merkt sie sich. Welches Brett "
-            + "gespielt wird, wählst du über die Vorschau darüber."));
+            + "gespielt wird, wählst du über die Vorschau darüber. Die Dauer "
+            + "oben ist eine Schätzung: die erwartete Zahl der Züge für dein "
+            + "Brett und deine Figuren, mal der Zeit je Zug aus deinen "
+            + "bisherigen Partien — je mehr du spielst, desto genauer."));
+
+        kopf.appendChild(TEAM_SCHACH._regelnDauerBauen());
 
         wurzel.appendChild(kopf);
 
@@ -120,6 +131,52 @@ Object.assign(TEAM_SCHACH, {
         wurzel.appendChild(TEAM_SCHACH._armeeStaerkeLeisteBauen());
 
         wurzel.appendChild(TEAM_SCHACH._regelSchalterBauen());
+    },
+
+    /*
+     * DIE DAUER-ZEILE IM KLEBENDEN KOPF (seit v0.116.0).
+     *
+     * Dieselbe Rechnung wie unter der Spielart-Kachel (`SCHACH_RUNDE.dauerText`,
+     * seit v0.93): erwartete Halbzüge aus Figurenzahl und Brettgrösse, mal
+     * die gemessenen Sekunden je Halbzug aus den gespielten Partien, mal
+     * der Lootbox-Zuschlag. Der Bildschirm rechnet nichts selbst — er holt
+     * das Brett, das die eingestellte Spielart mit den aktuellen Reglern
+     * WIRKLICH ergäbe (`_vorschauBrett`, also mit Armeestärke und
+     * Zufallsarmee), und fragt das Modell.
+     *
+     * Weil jeder Knopfdruck neu zeichnet (`weichZeichnen`), zieht die Zahl
+     * bei jeder Änderung mit: mehr Figuren, grösseres Brett, mehr
+     * Lootboxen — die Zeile sagt sofort, was das kostet.
+     *
+     * Darunter steht, WORAUF die Schätzung fusst: „aus 12 gespielten
+     * Partien" — oder dass es noch keine gibt und der Richtwert gilt. Ohne
+     * diesen Satz wäre die Zahl eine Behauptung.
+     */
+    _regelnDauerBauen() {
+        const variante = (typeof START !== "undefined")
+            ? START._spielart()
+            : SCHACH_VARIANTEN.holen("standard");
+        const brett = TEAM_SCHACH._vorschauBrett(variante);
+        const partien = TEAM_SCHACH._gespieltePartien();
+
+        const zeile = TEAM_SCHACH._element("div", "regeln-dauer");
+        zeile.setAttribute("aria-live", "polite");
+
+        zeile.appendChild(TEAM_SCHACH._element("span", "regeln-dauer-wert",
+            "Dauer: " + SCHACH_RUNDE.dauerText(
+                TEAM_SCHACH._figurenJeSeite(brett),
+                variante.breite * variante.hoehe,
+                TEAM_SCHACH.neueRegeln,
+                partien)));
+
+        const gezaehlt = SCHACH_RUNDE.messungVon(partien).gezaehlt;
+        zeile.appendChild(TEAM_SCHACH._element("span", "regeln-dauer-quelle",
+            (gezaehlt > 0)
+                ? ("geschätzt aus " + gezaehlt
+                    + ((gezaehlt === 1) ? " gespielten Partie" : " gespielten Partien"))
+                : "Richtwert — noch keine gespielte Partie gemessen"));
+
+        return zeile;
     },
 
     /*
@@ -1345,9 +1402,22 @@ Object.assign(TEAM_SCHACH, {
      */
     _gespieltePartien() {
         const daten = TEAM_SCHACH.abgleich && TEAM_SCHACH.abgleich.daten;
-        const partien = (daten && Array.isArray(daten.partien)) ? daten.partien : [];
+        if (!daten || !daten.partien) {
+            return [];
+        }
 
-        return partien;
+        /*
+         * `partien` IST EINE TABELLE NACH KENNUNG, KEINE LISTE — und genau
+         * daran ist die Messung von v0.93 bis v0.115.3 gescheitert: Hier
+         * stand `Array.isArray(daten.partien) ? daten.partien : []`, was
+         * bei einer Tabelle IMMER die leere Liste ergab. Die Schätzung
+         * lief damit seit ihrem ersten Tag mit dem Richtwert, ohne je zu
+         * lernen; aufgefallen am 18.09.2026, als die Dauer-Zeile ihre
+         * Quelle nennen sollte und der Test „2 gespielten Partien" an
+         * `concat is not a function` scheiterte. `SCHACH_TAFEL.liste`
+         * ist der eine Weg von der Tabelle zur Liste (v0.116.0).
+         */
+        return SCHACH_TAFEL.liste(daten);
     },
 
     /* „12 Figuren je Seite" — oder beide Zahlen, wenn sie sich unterscheiden. */

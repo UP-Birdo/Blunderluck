@@ -3135,6 +3135,125 @@ pruefe("Pfeil und Vorschau fuehren auf getrennte Bildschirme (Wunsch 8)", () => 
  * Wunsch 1 (24.08.2026): Die Kachel merkt nur, „Spielen" legt an
  * ------------------------------------------------------------------ */
 
+pruefe("Die Grundeinstellungen tragen oben eine klebende Dauer-Zeile, die mit den Reglern mitgeht (v0.116.0)", () => {
+    /*
+     * NUTZER-ANSAGE 18.09.2026: „bei den Grundeinstellungen soll oben eine
+     * fixe Zeile sein, die beim Hoch- und Runterscrollen mitgeht und die
+     * berechnete Zeit anzeigt, wie lange eine Runde mit den Einstellungen
+     * geht — anhand von echten Daten."
+     *
+     * Geprueft: Der Kopf klebt (dieselbe Klasse wie in der Bibliothek), die
+     * Zeile nennt eine Dauer und ihre Quelle, mehr Figuren heissen mehr
+     * Zeit (die Zeile geht also wirklich mit den Reglern mit), und mit
+     * gespielten Partien sagt die Quelle, wie viele es sind.
+     */
+    const einsammeln = (element, passt, treffer) => {
+        for (const kind of element.kinder || []) {
+            if (passt(kind)) {
+                treffer.push(kind);
+            }
+            einsammeln(kind, passt, treffer);
+        }
+        return treffer;
+    };
+    const text = (klasse) => {
+        const element = einsammeln(TEAM_SCHACH.wurzelEl, (kind) =>
+            String(kind.className || "").indexOf(klasse) !== -1, [])[0];
+        return element ? String(element.textContent || "") : "";
+    };
+    const minutenVon = (satz) => {
+        const treffer = satz.match(/(\d+(?:,\d+)?)\s*(Minute|Stunde)/);
+        if (!treffer) {
+            throw new Error("keine Zeitangabe in \"" + satz + "\"");
+        }
+        const zahl = Number(treffer[1].replace(",", "."));
+        return (treffer[2] === "Stunde") ? zahl * 60 : zahl;
+    };
+
+    const gemerkteRegeln = Object.assign({}, TEAM_SCHACH.neueRegeln);
+    const gemerkteDaten = TEAM_SCHACH.abgleich.daten;
+    const gemerktePartien = gemerkteDaten.partien;
+
+    try {
+        TEAM_SCHACH.partieAnlegen();
+
+        const kopf = einsammeln(TEAM_SCHACH.wurzelEl, (kind) =>
+            String(kind.className || "").indexOf("partie-kopf") !== -1, [])[0];
+        if (!kopf || String(kopf.className).indexOf("partie-kopf-klebt") === -1) {
+            throw new Error("der Kopf der Grundeinstellungen klebt nicht");
+        }
+        if (!einsammeln(kopf, (kind) =>
+            String(kind.className || "").indexOf("regeln-dauer") !== -1, []).length) {
+            throw new Error("die Dauer-Zeile steht nicht im klebenden Kopf");
+        }
+
+        if (text("regeln-dauer-wert").indexOf("Dauer: etwa") !== 0) {
+            throw new Error("die Zeile nennt keine Dauer: \"" + text("regeln-dauer-wert") + "\"");
+        }
+        if (text("regeln-dauer-quelle").indexOf("Richtwert") === -1) {
+            throw new Error("ohne gespielte Partien muss die Quelle \"Richtwert\" sagen");
+        }
+
+        /* Mehr Figuren, mehr Zeit — die Zeile geht mit dem Regler mit. */
+        TEAM_SCHACH.neueRegeln.zufallsArmee = false;
+        TEAM_SCHACH.neueRegeln.faehigkeiten = false;
+        TEAM_SCHACH.neueRegeln.armeeStaerke = "wenig";
+        TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
+        const wenig = minutenVon(text("regeln-dauer-wert"));
+
+        TEAM_SCHACH.neueRegeln.armeeStaerke = "voll";
+        TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
+        const voll = minutenVon(text("regeln-dauer-wert"));
+
+        if (!(voll > wenig)) {
+            throw new Error("voll (" + voll + " min) muesste laenger dauern als wenig ("
+                + wenig + " min)");
+        }
+
+        /* Und Lootboxen kosten obendrauf. */
+        TEAM_SCHACH.neueRegeln.faehigkeiten = true;
+        TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
+        if (!(minutenVon(text("regeln-dauer-wert")) > voll)) {
+            throw new Error("mit Lootboxen muesste es laenger dauern");
+        }
+
+        /*
+         * MIT GESPIELTEN PARTIEN NENNT DIE QUELLE IHRE ZAHL — und die
+         * Schaetzung bewegt sich. `partien` ist eine TABELLE nach Kennung;
+         * genau daran war `_gespieltePartien` von v0.93 bis v0.115.3
+         * gescheitert (es erwartete eine Liste und sah deshalb NIE eine
+         * Partie). Deshalb hier zwei echte, beendete Partien in die Tabelle
+         * setzen und pruefen, dass die Zeile sie zaehlt und die Minuten
+         * steigen (60 s je Halbzug gegen den Richtwert von 20).
+         */
+        const vorher = minutenVon(text("regeln-dauer-wert"));
+        const partien = Object.assign({}, gemerktePartien);
+        for (const nr of [1, 2]) {
+            let gespielt = SCHACH_RUNDE.leereRunde(900 + nr, "standard", "p-dauer-" + nr, "");
+            gespielt = Object.assign({}, gespielt, {
+                ergebnis: "weiss", spielzeit: 1800,
+                stand: Object.assign({}, gespielt.stand, { takt: 30 })
+            });
+            partien[gespielt.id] = gespielt;
+        }
+        TEAM_SCHACH.abgleich.daten = Object.assign({}, TEAM_SCHACH.abgleich.daten,
+            { partien: partien });
+        TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
+        if (text("regeln-dauer-quelle").indexOf("2 gespielten Partien") === -1) {
+            throw new Error("die Quelle nennt nicht die zwei gemessenen Partien: \""
+                + text("regeln-dauer-quelle") + "\"");
+        }
+        if (!(minutenVon(text("regeln-dauer-wert")) > vorher)) {
+            throw new Error("zwei langsame Partien muessten die Schaetzung anheben ("
+                + vorher + " -> " + text("regeln-dauer-wert") + ")");
+        }
+    } finally {
+        TEAM_SCHACH.abgleich.daten = gemerkteDaten;
+        Object.assign(TEAM_SCHACH.neueRegeln, gemerkteRegeln);
+        TEAM_SCHACH.auswahlSchliessen();
+    }
+});
+
 pruefe("Die Spielart-Kachel legt nichts mehr an, sie merkt nur (Wunsch 1)", () => {
     const START = umgebung.START;
 

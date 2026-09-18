@@ -266,6 +266,15 @@ pruefe("Die Dauer-Schaetzung lernt aus echten Partien (v0.93)", () => {
         SCHACH_RUNDE.sekundenJeHalbzug(genug),
         "Partien ohne Zeit oder ohne Zuege zaehlen nicht mit");
 
+    /* `messungVon` (v0.116.0) nennt, worauf die Schaetzung fusst — dieselbe
+       Siebung wie der Mittelwert, sonst sagte die Dauer-Zeile eine andere
+       Zahl von Partien, als in die Rechnung gehen. */
+    const messung = SCHACH_RUNDE.messungVon(gemischt);
+    gleich(messung.gezaehlt, 5, "fuenf echte Partien gezaehlt, drei leere nicht");
+    gleich(messung.sekunden, 3000, "ihre Sekunden summiert");
+    gleich(messung.halbzuege, 100, "ihre Halbzuege summiert");
+    gleich(SCHACH_RUNDE.messungVon(null).gezaehlt, 0, "ohne Liste nichts");
+
     /* Mehr Figuren und mehr Platz heissen mehr Zuege. */
     wahr(SCHACH_RUNDE.erwarteteHalbzuege(16, 64)
         > SCHACH_RUNDE.erwarteteHalbzuege(4, 64), "mehr Figuren, mehr Zuege");

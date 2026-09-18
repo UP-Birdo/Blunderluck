@@ -2514,3 +2514,34 @@ den `file:///`-Adressen als `%26` stehen (sonst lädt keine Stildatei), und
 `sed` darf die Adressen nicht einsetzen (`&` ist dort „der Treffer"). Ein
 `<base href>` auf den Projektordner lässt die relativen Bildpfade der App
 weiter funktionieren.
+
+## Eine Messung, die nie etwas misst, fällt nicht auf — bis jemand ihre Quelle sehen will (v0.93, gefunden 18.09.2026, behoben v0.116.0)
+
+**Was gefragt war:** „Bei den Grundeinstellungen oben eine fixe Zeile mit
+der berechneten Zeit, wie lange eine Runde geht — anhand von echten Daten,
+ein Durchschnitt, der sich dynamisch angleicht."
+
+**Was da war:** Genau das, seit v0.93 unter den Spielart-Kacheln:
+`SCHACH_RUNDE.dauerText` mischt einen Richtwert (20 s je Halbzug) mit dem
+Mittel aus gespielten Partien, und seit v0.100 wächst das Gewicht der
+Messung mit jeder Partie. Drei Modell-Tests belegen das.
+
+**Was wirklich lief:** `TEAM_SCHACH._gespieltePartien` reichte dem Modell
+IMMER die leere Liste. Es stand dort `Array.isArray(daten.partien) ?
+daten.partien : []` — aber `partien` ist in der Tafel eine Tabelle nach
+Kennung, keine Liste. Der Rückfall auf `[]` ist still, das Modell nimmt bei
+leerer Liste den Richtwert, die Kachel zeigt eine plausible Zahl. Kein
+Test hat je den Bildschirm-Teil gegen die echte Tafel-Form gehalten; die
+Modell-Tests bekamen ihre Listen von Hand.
+
+**Wie es auffiel:** Die neue Dauer-Zeile sollte ihre Quelle nennen („aus 12
+gespielten Partien"). Der Test dafür wollte Partien an
+`abgleich.daten.partien` anhängen — `concat is not a function`. Erst die
+Frage „worauf fusst die Zahl?" hat den toten Zweig sichtbar gemacht.
+
+**Die Regel dahinter:** Ein stiller Rückfall (`? x : []`, `|| Vorgabe`) an
+der Nahtstelle zwischen Bildschirm und Modell ist eine Messung, die
+aussehen kann wie eine Messung, ohne je zu messen. Wer so etwas baut, lässt
+die Anzeige ihre QUELLE mitnennen (Anzahl, Zeitraum) — dann sieht der
+Nutzer „0 Partien", wo ein Richtwert vorgetäuscht wird — und der Test
+setzt die echten Daten in ihrer echten Form ein, nicht eine Liste von Hand.

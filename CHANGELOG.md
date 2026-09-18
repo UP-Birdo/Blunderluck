@@ -3,6 +3,30 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.116.0 — 18.09.2026
+
+**Die Grundeinstellungen sagen oben, wie lange die Runde etwa dauert — und
+die Zeile bleibt beim Scrollen stehen.**
+
+- Der Kopf der Grundeinstellungen (Zurück, Titel) klebt jetzt oben und
+  rollt mit. Darunter steht „Dauer: etwa 26 Minuten" — die Schätzung für
+  genau die Einstellungen, die du gerade siehst. Jeder Knopfdruck zieht die
+  Zahl sofort mit: mehr Figuren, ein grösseres Brett, mehr Lootboxen.
+- Die Schätzung gab es seit v0.93 nur unter den Spielart-Kacheln; sie ist
+  dieselbe Rechnung: die erwartete Zahl der Züge für Brett und Figuren, mal
+  die Zeit je Zug, die die App in deinen bisherigen Partien wirklich
+  gemessen hat. Je mehr du spielst, desto mehr zählt die Messung und desto
+  weniger der Richtwert — die Zahl gleicht sich an.
+- Darunter steht, worauf sie fusst: „geschätzt aus 12 gespielten Partien"
+  — oder „Richtwert — noch keine gespielte Partie gemessen".
+- Das i im Kopf erklärt die Rechnung in zwei Sätzen.
+- **Dabei behoben:** Die Schätzung hatte seit v0.93 in Wahrheit nie aus
+  gespielten Partien gelernt — der Bildschirm reichte dem Modell immer eine
+  leere Liste, weil er die Partien in einer anderen Form erwartete, als sie
+  gespeichert sind. Deshalb stand unter den Spielart-Kacheln stets der
+  Richtwert (20 Sekunden je Zug). Jetzt fliessen deine beendeten Partien
+  wirklich ein — auf der Kachel wie in der neuen Zeile.
+
 ## v0.115.3 — 18.09.2026
 
 **Ein Haken statt zwei: „Seltenheit anzeigen" — mit einer Vorschau, die

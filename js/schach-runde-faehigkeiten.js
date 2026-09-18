@@ -249,7 +249,14 @@ Object.assign(SCHACH_RUNDE, {
      */
     MESSUNG_ANLAUF: 3,
 
-    sekundenJeHalbzug(partien) {
+    /*
+     * WAS DIE MESSUNG HERGIBT (seit v0.116.0 eigene Funktion): Sekunden und
+     * Halbzüge aller wirklich gespielten Partien, und wie viele das sind.
+     * `sekundenJeHalbzug` rechnet daraus den Mittelwert; die Dauer-Zeile
+     * der Grundeinstellungen nennt die Zahl der Partien — der Nutzer soll
+     * sehen, worauf die Schätzung fusst.
+     */
+    messungVon(partien) {
         const liste = Array.isArray(partien) ? partien : [];
 
         let sekunden = 0;
@@ -271,6 +278,15 @@ Object.assign(SCHACH_RUNDE, {
             halbzuege += takt;
             gezaehlt++;
         }
+
+        return { sekunden: sekunden, halbzuege: halbzuege, gezaehlt: gezaehlt };
+    },
+
+    sekundenJeHalbzug(partien) {
+        const messung = SCHACH_RUNDE.messungVon(partien);
+        const sekunden = messung.sekunden;
+        const halbzuege = messung.halbzuege;
+        const gezaehlt = messung.gezaehlt;
 
         if (gezaehlt <= 0 || halbzuege <= 0) {
             return SCHACH_RUNDE.SEKUNDEN_JE_HALBZUG_VORGABE;
