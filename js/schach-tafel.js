@@ -465,6 +465,12 @@ const SCHACH_TAFEL = {
             }
             partie.regeln.seltenheitZeigen = (regeln.seltenheitZeigen !== false);
             partie.regeln.pechZeigen = (regeln.pechZeigen === true);
+
+            /* Die Sichtbarkeit (seit v0.118.0) — nur eine der drei Stufen;
+               ohne gültige Angabe bleibt es bei der Modell-Vorgabe. */
+            if (SCHACH_RUNDE.sichtbarkeitVon(regeln.sichtbarkeit)) {
+                partie.regeln.sichtbarkeit = regeln.sichtbarkeit;
+            }
             /*
              * DIE LOOTBOX-MENGE (seit v0.71) UND DIE ZWEI ALTEN SCHALTER.
              *

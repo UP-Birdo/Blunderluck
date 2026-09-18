@@ -296,6 +296,9 @@ pruefe("JEDE Einstellung aus der Auswahl kommt in der Partie an (v0.91)", () => 
         /* Seit v0.66.0: die Seite zulosen statt aussuchen. Hier bewusst AUS,
            damit der Test den nicht-vorgegebenen Wert durchreichen sieht. */
         seiteZufaellig: false,
+        /* Seit v0.118.0: wer die Runde sieht. Bewusst NICHT die Vorgabe
+           des Modells (privat), damit das Durchreichen sichtbar wird. */
+        sichtbarkeit: "freunde",
         armeeStaerke: "wenig",
         itemVorrat: "viele",
         einigkeit: false,

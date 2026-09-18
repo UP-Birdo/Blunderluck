@@ -130,6 +130,9 @@ const TEAM_SCHACH = {
         /* Seit v0.66.0: Seite zulosen statt aussuchen (Vorgabe AN). */
         seiteZufaellig: true,
 
+        /* Wer die Runde sieht (seit v0.118.0) — siehe `_regelnVorgabe`. */
+        sichtbarkeit: "oeffentlich",
+
         /*
          * Wie viele Figuren JEDE Seite bekommt (seit v0.86) — eine der Stufen
          * aus `SCHACH_VARIANTEN.ARMEE_STAERKEN`.
@@ -1311,6 +1314,13 @@ const TEAM_SCHACH = {
         }
 
         texte.push(regeln.seiteZufaellig ? "Seiten zugelost" : "Seite wählbar");
+
+        /* Wer die Runde sieht (seit v0.118.0) — dasselbe Wort wie in den
+           Grundeinstellungen. */
+        const sichtbarkeit = SCHACH_RUNDE.sichtbarkeitVon(regeln.sichtbarkeit);
+        if (sichtbarkeit) {
+            texte.push(sichtbarkeit.schild);
+        }
 
         if (regeln.einigkeit) {
             texte.push("Team-Einigkeit");
@@ -3778,6 +3788,10 @@ const TEAM_SCHACH = {
             zufallsArmee: false,
             armeeUnterschiedlich: false,
             seiteZufaellig: true,
+
+            /* Wer die Runde sieht (seit v0.118.0): Vorgabe öffentlich —
+               Nutzer-Ansage 18.09.2026 („Standard soll öffentlich sein"). */
+            sichtbarkeit: "oeffentlich",
             armeeStaerke: "normal",
             itemVorrat: "alle",
 
@@ -4040,6 +4054,10 @@ const TEAM_SCHACH = {
             zufallsArmee: wunsch.zufallsArmee,
             armeeUnterschiedlich: wunsch.armeeUnterschiedlich,
             seiteZufaellig: wunsch.seiteZufaellig,
+
+            /* Wer die Runde sieht (seit v0.118.0) — Unbekanntes wird im
+               Modell zur Vorgabe, nicht durchgereicht. */
+            sichtbarkeit: wunsch.sichtbarkeit,
             armeeStaerke: wunsch.armeeStaerke,
             itemVorrat: wunsch.itemVorrat,
             itemAuswahl: wunsch.itemAuswahl,

@@ -3,6 +3,25 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.118.0 — 18.09.2026
+
+**Wer sieht deine Runde? Öffentlich, nur Freunde oder privat — und unter
+„Runde beitreten" stehen jetzt die offenen Runden, die du sehen darfst.**
+
+- In den Grundeinstellungen gibt es eine neue Karte „Wer sieht die Runde?"
+  mit drei Stufen: **Öffentlich** (Vorgabe) — jeder sieht sie unter „Runde
+  beitreten"; **Freunde** — nur deine Freunde sehen sie dort; **Privat** —
+  niemand, hinein kommt nur, wer den Code hat. Den Code gibt es in jeder
+  Stufe weiterhin.
+- Unter „Runde beitreten" steht eine neue Karte „Offene Runden": alle
+  wartenden Runden, die für dich sichtbar sind — wer schon darin sitzt,
+  welche Spielart, ein Schildchen „Freund" oder „Öffentlich", und
+  „Beitreten". Du siehst also, wenn ein Freund gerade eine Runde offen
+  hat, und bist mit einem Tipp drin.
+- Der Vorraum zeigt die Stufe als Schildchen bei den Regeln.
+- Runden von vor dieser Version gelten als privat — genau so, wie sie
+  bisher waren: nur per Code erreichbar.
+
 ## v0.117.0 — 18.09.2026
 
 **Einladen per Link: Wer ihn antippt, landet direkt in deiner Runde.**

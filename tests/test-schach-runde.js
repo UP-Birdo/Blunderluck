@@ -2699,5 +2699,66 @@ pruefe("Eine Partie von vor v0.66.0 behaelt ihre Seitenwahl (v0.66.0)", () => {
     }
 });
 
+pruefe("Die Sichtbarkeit einer Runde: drei Stufen, alte Runden privat, Freunde ueber die Frage-Funktion (v0.118.0)", () => {
+    /*
+     * NUTZER-ANSAGE 18.09.2026: oeffentlich / Freunde / privat, Standard
+     * oeffentlich. DER DATENVERTRAG: Eine Runde von frueher hat das Feld
+     * nicht und war nur per Code erreichbar — sie muss „privat" bleiben,
+     * sonst stuende sie ploetzlich in jeder Liste.
+     */
+    const alt = SCHACH_RUNDE.leereRunde(1000, "standard", "p-sicht-alt", "Alt");
+    delete alt.regeln.sichtbarkeit;
+    if (SCHACH_RUNDE.normalisieren(alt).regeln.sichtbarkeit !== "privat") {
+        throw new Error("eine alte Runde muss privat bleiben");
+    }
+
+    /* Nur die drei Stufen; Schrott faellt auf privat zurueck. */
+    for (const stufe of ["oeffentlich", "freunde", "privat"]) {
+        const runde = SCHACH_RUNDE.leereRunde(1000, "standard", "p-sicht-" + stufe, "");
+        runde.regeln.sichtbarkeit = stufe;
+        if (SCHACH_RUNDE.normalisieren(runde).regeln.sichtbarkeit !== stufe) {
+            throw new Error("die Stufe " + stufe + " ueberlebt die Normalisierung nicht");
+        }
+    }
+    const schrott = SCHACH_RUNDE.leereRunde(1000, "standard", "p-sicht-x", "");
+    schrott.regeln.sichtbarkeit = "alle";
+    if (SCHACH_RUNDE.normalisieren(schrott).regeln.sichtbarkeit !== "privat") {
+        throw new Error("eine unbekannte Stufe muss privat werden");
+    }
+    if (SCHACH_RUNDE.SICHTBARKEITEN.map((e) => e.id).join(",") !== "oeffentlich,freunde,privat") {
+        throw new Error("die Tabelle nennt nicht genau die drei Stufen in dieser Reihenfolge");
+    }
+
+    /* Wer sieht was. Anna sitzt in der Runde, Ben ist mit Anna befreundet,
+       Carl mit niemandem. */
+    const mit = (stufe) => {
+        let runde = SCHACH_RUNDE.leereRunde(1000, "standard", "p-sicht-" + stufe + "-2", "");
+        runde.regeln.sichtbarkeit = stufe;
+        runde = SCHACH_RUNDE.teamBeitreten(runde, "id-anna", "weiss", 1001);
+        return runde;
+    };
+    const bensFreunde = (id) => id === "id-anna";
+    const carlsFreunde = () => false;
+
+    if (!SCHACH_RUNDE.sichtbarFuer(mit("oeffentlich"), "id-carl", carlsFreunde)) {
+        throw new Error("oeffentlich: jeder sieht sie");
+    }
+    if (!SCHACH_RUNDE.sichtbarFuer(mit("freunde"), "id-ben", bensFreunde)) {
+        throw new Error("freunde: Ben ist mit Anna befreundet und sieht sie");
+    }
+    if (SCHACH_RUNDE.sichtbarFuer(mit("freunde"), "id-carl", carlsFreunde)) {
+        throw new Error("freunde: Carl kennt niemanden darin und sieht sie nicht");
+    }
+    if (SCHACH_RUNDE.sichtbarFuer(mit("privat"), "id-ben", bensFreunde)) {
+        throw new Error("privat: auch ein Freund sieht sie nicht");
+    }
+    if (!SCHACH_RUNDE.sichtbarFuer(mit("privat"), "id-anna", carlsFreunde)) {
+        throw new Error("wer selbst darin sitzt, sieht sie immer");
+    }
+    if (SCHACH_RUNDE.sichtbarFuer(mit("freunde"), "id-ben")) {
+        throw new Error("ohne Frage-Funktion gilt niemand als Freund");
+    }
+});
+
 console.log(anzahlOk + " ok, " + anzahlFehler + " Fehler");
 process.exit(anzahlFehler === 0 ? 0 : 1);

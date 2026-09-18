@@ -130,7 +130,122 @@ Object.assign(TEAM_SCHACH, {
          */
         wurzel.appendChild(TEAM_SCHACH._armeeStaerkeLeisteBauen());
 
+        /* Wer die Runde sieht (seit v0.118.0) — eine eigene Karte, weil
+           die Frage keine Spielregel ist, sondern eine des Umfelds. */
+        wurzel.appendChild(TEAM_SCHACH._sichtbarkeitLeisteBauen());
+
         wurzel.appendChild(TEAM_SCHACH._regelSchalterBauen());
+    },
+
+    /*
+     * WER SIEHT DIE RUNDE? (seit v0.118.0, Nutzer-Ansage 18.09.2026: „in
+     * den Grundeinstellungen soll man privat, öffentlich oder Freunde
+     * einstellen können, Standard öffentlich"). Dieselbe Segment-Reihe wie
+     * Brettform und Computer-Stufe; die drei Stufen und ihre Sätze kommen
+     * aus dem Modell (`SCHACH_RUNDE.SICHTBARKEITEN`), der Bildschirm zeigt
+     * nur an. Eigene Klassen (`sichtbarkeit-*`), damit Test und Stildatei
+     * die Reihe von ihren Nachbarn unterscheiden.
+     */
+    _sichtbarkeitLeisteBauen() {
+        const karte = TEAM_SCHACH._element("section", "karte sichtbarkeit-karte");
+
+        karte.appendChild(TEAM_SCHACH._leistenKopfBauen("Wer sieht die Runde?",
+            SCHACH_RUNDE.SICHTBARKEITEN,
+            "Den Code gibt es in jeder Stufe — wer ihn hat, kommt immer hinein.",
+            true));
+
+        const leiste = TEAM_SCHACH._element("div", "sichtbarkeit-leiste");
+
+        for (const stufe of SCHACH_RUNDE.SICHTBARKEITEN) {
+            const aktiv = (stufe.id === TEAM_SCHACH.neueRegeln.sichtbarkeit);
+
+            const knopf = TEAM_SCHACH._knopf(stufe.titel,
+                "knopf-klein sichtbarkeit-knopf"
+                    + (aktiv ? " sichtbarkeit-knopf-aktiv" : " knopf-still"),
+                () => {
+                    TEAM_SCHACH.neueRegeln.sichtbarkeit = stufe.id;
+                    TEAM_SCHACH.weichZeichnen();
+                });
+
+            knopf.setAttribute("aria-pressed", aktiv ? "true" : "false");
+            knopf.title = stufe.hinweis;
+
+            if (aktiv) {
+                knopf.appendChild(TEAM_SCHACH._aktivPille("sichtbarkeit"));
+            }
+            leiste.appendChild(knopf);
+        }
+
+        karte.appendChild(leiste);
+
+        return karte;
+    },
+
+    /*
+     * DIE OFFENEN RUNDEN, DIE MAN SEHEN DARF (seit v0.118.0, Nutzer-Ansage
+     * 18.09.2026: „unter Runde beitreten soll man auch seine Freunde
+     * sehen, welche gerade eine Runde offen haben, und dort beitreten").
+     *
+     * Gezeigt werden WARTENDE Runden — nicht gestartet, nicht beendet —,
+     * in denen man nicht selbst sitzt (die eigene erreicht man über den
+     * Start), und die `SCHACH_RUNDE.sichtbarFuer` freigibt: öffentliche
+     * für jeden, „Freunde"-Runden, wenn jemand darin ein Freund ist. Ob
+     * jemand ein Freund ist, weiss die Spielerliste (`SPIELER.freundschaft`)
+     * — die Regeln bekommen dafür eine Frage-Funktion mit.
+     *
+     * Je Runde: die Namen derer, die schon darin sitzen (der erste ist
+     * meist der Ersteller), die Spielart, ein Schildchen „Freund" oder
+     * „Öffentlich", und „Beitreten" — derselbe Weg wie über den Code
+     * (`partieOeffnen`), im Vorraum wählt oder lost man dann die Seite.
+     */
+    _offeneRundenBauen(tafel, person) {
+        const karte = TEAM_SCHACH._element("section", "karte offene-runden");
+        karte.appendChild(TEAM_SCHACH._element("h3", "", "Offene Runden"));
+
+        const spielerDaten = (typeof ANMELDUNG !== "undefined" && ANMELDUNG.abgleich)
+            ? ANMELDUNG.abgleich.daten : null;
+        const istFreund = (id) => !!spielerDaten
+            && SPIELER.freundschaft(spielerDaten, person.id, id) === "freunde";
+
+        const wartende = SCHACH_TAFEL.liste(tafel).filter((partie) =>
+            !partie.ergebnis && !partie.laeuft
+            && !SCHACH_RUNDE.teamVon(partie, person.id)
+            && SCHACH_RUNDE.sichtbarFuer(partie, person.id, istFreund));
+
+        if (wartende.length === 0) {
+            karte.appendChild(TEAM_SCHACH._element("p", "erklaerung",
+                "Gerade wartet keine Runde, die du sehen kannst. Öffentliche "
+                + "Runden und die deiner Freunde erscheinen hier."));
+            return karte;
+        }
+
+        for (const partie of wartende) {
+            const mitglieder = partie.teams.weiss.concat(partie.teams.schwarz);
+            const mitFreund = mitglieder.some(istFreund);
+
+            const zeile = TEAM_SCHACH._element("div", "offene-runde");
+
+            const text = TEAM_SCHACH._element("div", "offene-runde-text");
+            text.appendChild(TEAM_SCHACH._element("span", "offene-runde-wer",
+                mitglieder.length
+                    ? mitglieder.map((id) => TEAM_SCHACH._nameVon(id)).join(", ")
+                    : "Noch niemand"));
+            text.appendChild(TEAM_SCHACH._element("span", "offene-runde-was",
+                SCHACH_RUNDE.varianteVon(partie).titel
+                + " — " + SCHACH_RUNDE.kurzfassung(partie)));
+            zeile.appendChild(text);
+
+            zeile.appendChild(TEAM_SCHACH._element("span",
+                "chip " + (mitFreund ? "chip-fertig" : "chip-offen"),
+                mitFreund ? "Freund" : "Öffentlich"));
+
+            zeile.appendChild(TEAM_SCHACH._knopf("Beitreten", "knopf-still knopf-klein",
+                () => TEAM_SCHACH.partieOeffnen(partie.id)));
+
+            karte.appendChild(zeile);
+        }
+
+        return karte;
     },
 
     /*
@@ -1648,6 +1763,9 @@ Object.assign(TEAM_SCHACH, {
             "Rechts oben in einer Runde steht der Code."));
 
         wurzel.appendChild(beitreten);
+
+        /* Die offenen Runden, die man sehen darf (seit v0.118.0). */
+        wurzel.appendChild(TEAM_SCHACH._offeneRundenBauen(tafel, person));
 
         /*
          * DIE KARTE „RUNDE ERSTELLEN" IST WEG (Wunsch 1, 24.08.2026).

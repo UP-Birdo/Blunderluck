@@ -263,6 +263,22 @@ const SCHACH_RUNDE = {
              * was sie schon hatten.
              */
             regeln: {
+                /*
+                 * WER DIE RUNDE SIEHT (seit v0.118.0, Nutzer-Ansage
+                 * 18.09.2026): „oeffentlich" — jeder sieht sie unter
+                 * „Runde beitreten"; „freunde" — nur, wer mit jemandem
+                 * darin befreundet ist; „privat" — niemand, nur der Code
+                 * führt hinein. Der Code gilt in allen drei Stufen.
+                 *
+                 * DIE VORGABE HIER IST „privat", die des Bildschirms
+                 * „oeffentlich" (`TEAM_SCHACH._regelnVorgabe`): Eine Runde
+                 * von vor v0.118.0 hat das Feld nicht und war damals nur
+                 * per Code erreichbar — so bleibt es für sie. Neue Runden
+                 * bekommen die Vorgabe des Bildschirms ausdrücklich
+                 * mitgeschrieben.
+                 */
+                sichtbarkeit: "privat",
+
                 /* Erscheinen Würfel mit Fähigkeiten? Ohne Angabe entscheidet
                    die Spielart, wie bisher. */
                 faehigkeiten: null,
@@ -1343,6 +1359,12 @@ const SCHACH_RUNDE = {
                ihre Seitenwahl. */
             runde.regeln.seiteZufaellig = (roh.regeln.seiteZufaellig === true);
 
+            /* Die Sichtbarkeit (seit v0.118.0): nur eine der drei Stufen;
+               alles andere — und jede Partie von vorher — ist „privat". */
+            if (SCHACH_RUNDE.sichtbarkeitVon(roh.regeln.sichtbarkeit)) {
+                runde.regeln.sichtbarkeit = roh.regeln.sichtbarkeit;
+            }
+
             /* Unbekannte oder fehlende Stärke wird „normal" — der Wert von
                vor v0.86, damit angefangene Partien gleich bleiben. */
             runde.regeln.armeeStaerke = SCHACH_VARIANTEN
@@ -1575,6 +1597,72 @@ const SCHACH_RUNDE = {
     },
 
     /* Die Spielart dieser Partie. */
+    /*
+     * DIE DREI SICHTBARKEITEN EINER RUNDE (seit v0.118.0) — als Tabelle,
+     * damit Bildschirm und Vorraum-Schildchen dieselben Wörter benutzen.
+     * Die Reihenfolge ist die der Knopfreihe: von offen nach geschlossen.
+     */
+    SICHTBARKEITEN: [
+        {
+            id: "oeffentlich",
+            titel: "Öffentlich",
+            schild: "Öffentlich",
+            hinweis: "Jeder sieht die Runde unter \"Runde beitreten\" und kann "
+                + "beitreten."
+        },
+        {
+            id: "freunde",
+            titel: "Freunde",
+            schild: "Nur Freunde",
+            hinweis: "Nur deine Freunde sehen die Runde dort. Den Code gibt "
+                + "es trotzdem."
+        },
+        {
+            id: "privat",
+            titel: "Privat",
+            schild: "Privat",
+            hinweis: "Niemand sieht die Runde — hinein kommt nur, wer den "
+                + "Code hat."
+        }
+    ],
+
+    /* Der Eintrag zu einer Sichtbarkeit — oder null bei Unbekanntem. */
+    sichtbarkeitVon(id) {
+        return SCHACH_RUNDE.SICHTBARKEITEN.find((eintrag) => eintrag.id === id) || null;
+    },
+
+    /*
+     * SIEHT DIESE PERSON DIE RUNDE UNTER „RUNDE BEITRETEN"? (seit v0.118.0)
+     *
+     *   - Wer selbst darin sitzt, sieht sie immer (das ist die eigene Runde).
+     *   - „oeffentlich": jeder.
+     *   - „freunde": wer mit JEMANDEM darin befreundet ist — `istFreund(id)`
+     *     beantwortet das, weil die Freundschaft in der Spielerliste wohnt
+     *     und nicht hier (die Regeln kennen keine Spieler).
+     *   - „privat" und alles Unbekannte: niemand.
+     *
+     * Ob die Runde überhaupt noch offen ist, entscheidet der Aufrufer — die
+     * Frage hier ist nur „darf ich sie sehen".
+     */
+    sichtbarFuer(runde, personId, istFreund) {
+        const stand = SCHACH_RUNDE.normalisieren(runde);
+        const mitglieder = stand.teams.weiss.concat(stand.teams.schwarz);
+
+        if (personId && mitglieder.indexOf(personId) !== -1) {
+            return true;
+        }
+
+        const sichtbarkeit = stand.regeln.sichtbarkeit;
+        if (sichtbarkeit === "oeffentlich") {
+            return true;
+        }
+        if (sichtbarkeit === "freunde") {
+            const fragen = (typeof istFreund === "function") ? istFreund : (() => false);
+            return mitglieder.some((id) => fragen(id) === true);
+        }
+        return false;
+    },
+
     varianteVon(runde) {
         return SCHACH_VARIANTEN.holen(runde ? runde.variante : "");
     },

@@ -857,6 +857,100 @@ pruefe("EIN Haken 'Seltenheit anzeigen' schreibt Farbe UND Unglueckszeichen, sei
     }
 });
 
+pruefe("Sichtbarkeit: Dreier-Reihe in den Grundeinstellungen, und die offenen Runden zeigen nur, was man sehen darf (v0.118.0)", () => {
+    /*
+     * NUTZER-ANSAGE 18.09.2026: „privat, oeffentlich oder Freunde, Standard
+     * oeffentlich" und „unter Runde beitreten seine Freunde sehen, welche
+     * gerade eine Runde offen haben, und dort beitreten".
+     *
+     * Anna (ich) hat den Freund Carl; Bert ist ein Fremder. Gezeigt werden
+     * darf: Berts oeffentliche Runde, Carls Freunde-Runde. Nicht gezeigt:
+     * Berts Freunde-Runde, Carls private Runde, Annas eigene Runde und
+     * eine schon laufende oeffentliche Runde.
+     */
+    const einsammeln = (element, passt, treffer) => {
+        for (const kind of element.kinder || []) {
+            if (passt(kind)) {
+                treffer.push(kind);
+            }
+            einsammeln(kind, passt, treffer);
+        }
+        return treffer;
+    };
+    const mitKlasse = (wurzel, klasse) => einsammeln(wurzel, (kind) =>
+        String(kind.className || "").indexOf(klasse) !== -1, []);
+
+    const gemerkteRegeln = Object.assign({}, TEAM_SCHACH.neueRegeln);
+    const gemerkteSpieler = ANMELDUNG.abgleich.daten;
+
+    try {
+        /* --- Die Dreier-Reihe, Vorgabe oeffentlich. --- */
+        TEAM_SCHACH.partieAnlegen();
+        const knoepfe = mitKlasse(TEAM_SCHACH.wurzelEl, "sichtbarkeit-knopf");
+        if (knoepfe.length !== 3) {
+            throw new Error("erwartet drei Sichtbarkeits-Knoepfe, sind " + knoepfe.length);
+        }
+        if (TEAM_SCHACH.neueRegeln.sichtbarkeit !== "oeffentlich") {
+            throw new Error("die Vorgabe muss oeffentlich sein, ist "
+                + TEAM_SCHACH.neueRegeln.sichtbarkeit);
+        }
+        if (String(knoepfe[0].className).indexOf("sichtbarkeit-knopf-aktiv") === -1) {
+            throw new Error("der erste Knopf (Oeffentlich) muss aktiv sein");
+        }
+        knoepfe[1].ausloesen("click");
+        if (TEAM_SCHACH.neueRegeln.sichtbarkeit !== "freunde") {
+            throw new Error("der zweite Knopf stellt nicht auf Freunde");
+        }
+        TEAM_SCHACH.auswahlSchliessen();
+
+        /* --- Die offenen Runden. --- */
+        let spieler = SPIELER.spielerHinzufuegen(gemerkteSpieler, "Carl", "id-carl", 3000);
+        spieler = SPIELER.freundHinzufuegen(spieler, "id-anna", "id-carl", 3001);
+        spieler = SPIELER.freundHinzufuegen(spieler, "id-carl", "id-anna", 3002);
+        ANMELDUNG.abgleich.daten = spieler;
+
+        let probe = SCHACH_TAFEL.leereTafel(5000);
+        const anlegen = (id, wer, stufe, laeuft) => {
+            let runde = SCHACH_RUNDE.leereRunde(5000, "standard", id, "Runde " + id);
+            runde.regeln.sichtbarkeit = stufe;
+            runde = SCHACH_RUNDE.teamBeitreten(runde, wer, "weiss", 5001);
+            if (laeuft) {
+                runde.laeuft = true;
+            }
+            probe = SCHACH_TAFEL.partieEinsetzen(probe, runde, 5002);
+        };
+        anlegen("p-bert-oeff", "id-bert", "oeffentlich", false);
+        anlegen("p-carl-freunde", "id-carl", "freunde", false);
+        anlegen("p-bert-freunde", "id-bert", "freunde", false);
+        anlegen("p-carl-privat", "id-carl", "privat", false);
+        anlegen("p-anna-oeff", "id-anna", "oeffentlich", false);
+        anlegen("p-bert-laeuft", "id-bert", "oeffentlich", true);
+
+        const karte = TEAM_SCHACH._offeneRundenBauen(probe, { id: "id-anna", name: "Anna" });
+        const zeilen = mitKlasse(karte, "offene-runde-wer").map((kind) => String(kind.textContent));
+        const soll = ["Bert", "Carl"];
+        if (zeilen.slice().sort().join(",") !== soll.join(",")) {
+            throw new Error("erwartet die Runden von " + soll.join(" und ")
+                + ", gezeigt: " + (zeilen.join(",") || "nichts"));
+        }
+
+        const chips = mitKlasse(karte, "chip").map((kind) => String(kind.textContent));
+        if (chips.indexOf("Freund") === -1 || chips.indexOf("Öffentlich") === -1) {
+            throw new Error("je ein Schildchen Freund und Oeffentlich erwartet, da: " + chips.join(","));
+        }
+
+        /* Ohne sichtbare Runde: der Satz statt einer leeren Karte. */
+        const leer = TEAM_SCHACH._offeneRundenBauen(SCHACH_TAFEL.leereTafel(5000),
+            { id: "id-anna", name: "Anna" });
+        if (mitKlasse(leer, "erklaerung").length !== 1) {
+            throw new Error("ohne Runden fehlt der Erklaersatz");
+        }
+    } finally {
+        ANMELDUNG.abgleich.daten = gemerkteSpieler;
+        Object.assign(TEAM_SCHACH.neueRegeln, gemerkteRegeln);
+    }
+});
+
 pruefe("Der Einladungstext traegt einen Link mit Code, und der Code laesst sich daraus lesen (v0.117.0)", () => {
     /*
      * NUTZER-ANSAGE 18.09.2026: „es soll auch ein Link verschickbar

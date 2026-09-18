@@ -1350,6 +1350,7 @@
 .vorrat-leiste,
 .armee-leiste,
 .form-leiste,
+.sichtbarkeit-leiste,
 /* Der Umschalter der Bibliothek (seit v0.107.0, Punkt 48) — er steht
    NICHT auf dem Anlege-Bildschirm, holt sich hier aber dieselbe Optik.
    Wer die Segment-Optik ändert, ändert sie damit an EINER Stelle. */
@@ -1366,7 +1367,8 @@
 .bot-knopf,
 .vorrat-knopf,
 .armee-knopf,
-.form-knopf {
+.form-knopf,
+.sichtbarkeit-knopf {
     flex: 1 1 0;
     min-width: 0;
     padding-left: 4px;
@@ -1381,6 +1383,7 @@
 .vorrat-leiste .knopf,
 .armee-leiste .knopf,
 .form-leiste .knopf,
+.sichtbarkeit-leiste .knopf,
 .karten-leiste .knopf {
     border-color: transparent;
     background: transparent;
@@ -1484,6 +1487,7 @@
 .vorrat-knopf-aktiv,
 .armee-knopf-aktiv,
 .form-knopf-aktiv,
+.sichtbarkeit-knopf-aktiv,
 .karten-knopf-aktiv {
     background: transparent;
     color: var(--haupt-schrift);
@@ -1495,6 +1499,7 @@
 .vorrat-knopf,
 .armee-knopf,
 .form-knopf,
+.sichtbarkeit-knopf,
 .karten-knopf,
 .vorrat-eigene {
     position: relative;
@@ -1518,6 +1523,54 @@
 
 .reihen-pille-armee {
     view-transition-name: armee-aktiv;
+}
+
+.reihen-pille-sichtbarkeit {
+    view-transition-name: sichtbarkeit-aktiv;
+}
+
+/*
+ * DIE KARTE „WER SIEHT DIE RUNDE?" (seit v0.118.0) sieht aus wie ihre
+ * Nachbarin, die Figurenzahl-Karte.
+ */
+.sichtbarkeit-karte {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/*
+ * DIE OFFENEN RUNDEN UNTER „RUNDE BEITRETEN" (seit v0.118.0): je Runde
+ * eine Zeile — links wer und was (zwei Zeilen), rechts Schildchen und
+ * Knopf. Auf schmalen Schirmen darf der Knopf unter den Text rutschen.
+ */
+.offene-runde {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+    padding: 8px 0;
+    border-top: 1px solid var(--rahmen);
+}
+
+.offene-runde-text {
+    /* 120 statt 160 Pixel Mindestbreite: So passen Text, Schildchen und
+       Knopf auf 390 px in EINE Zeile (im Browser gesehen, v0.118.0). */
+    flex: 1 1 120px;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.offene-runde-wer {
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.offene-runde-was {
+    font-size: 0.85rem;
+    color: var(--schrift-leise);
 }
 
 .reihen-pille-mengen {
