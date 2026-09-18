@@ -442,6 +442,79 @@ const TEAM_SCHACH = {
         TEAM_SCHACH.abgleich = abgleich;
     },
 
+    /* ---------------------------------------------------------------- *
+     * Holen und Schreiben in Teilen (seit v0.114.3)
+     *
+     * Bis v0.114.2 holte jeder Schreibweg die GANZE Tafel vom Server
+     * (192 Kilobyte) und schrieb sie ganz zurück. Jetzt gehen alle Wege
+     * über diese zwei Helfer und `SCHACH_SPEICHER` — geholt wird die eine
+     * Partie, geschrieben die eine Partie. Im lokalen Betrieb (und im
+     * Test-Nachbau) bleibt alles wie es war: die Tafel aus dem Speicher.
+     * ---------------------------------------------------------------- */
+
+    /*
+     * Der frische Stand für EINE Partie: im gemeinsamen Betrieb wird nur
+     * sie vom Server geholt und in die bisherige Tafel gesetzt (oder daraus
+     * entfernt, wenn es sie dort nicht mehr gibt). Die Marke der Tafel
+     * bleibt dabei stehen — hochgezogen wird sie erst von der Änderung, die
+     * danach geschrieben wird.
+     */
+    async _frischHolen(partieId) {
+        const abgleich = TEAM_SCHACH.abgleich;
+
+        if (abgleich.speicher.art !== "gemeinsam") {
+            return SCHACH_TAFEL.normalisieren(abgleich.daten);
+        }
+
+        const bisher = SCHACH_TAFEL.normalisieren(abgleich.daten);
+        const frisch = await SCHACH_SPEICHER.partieLaden(abgleich.speicher, partieId);
+
+        return frisch
+            ? SCHACH_TAFEL.partieEinsetzen(bisher, frisch, bisher.geaendertAm)
+            : SCHACH_TAFEL.partieEntfernen(bisher, partieId, bisher.geaendertAm);
+    },
+
+    /* Die genannten Partien schreiben — gemeinsam nur sie (Mehrpfad-
+       Änderung samt Marke), lokal die ganze Tafel wie bisher. */
+    async _tafelSchreiben(tafel, partieIds) {
+        const abgleich = TEAM_SCHACH.abgleich;
+
+        if (abgleich.speicher.art === "gemeinsam") {
+            await SCHACH_SPEICHER.schreiben(abgleich.speicher, tafel, partieIds);
+        } else {
+            await abgleich.speicher.speichern(tafel);
+        }
+    },
+
+    /*
+     * Der Ladeweg des Abgleichs (verdrahtet in app.js): mit `alles` die
+     * Tafel über die Übersicht, sonst nur die offene Partie. Ohne
+     * gemeinsamen Speicher wie bisher alles aus dem Gerät.
+     */
+    async standLaden(alles) {
+        const abgleich = TEAM_SCHACH.abgleich;
+        const speicher = abgleich.speicher;
+
+        if (speicher.art !== "gemeinsam") {
+            return speicher.laden();
+        }
+
+        if (!alles && TEAM_SCHACH.offeneId) {
+            return SCHACH_SPEICHER.partieAuffrischen(
+                speicher, abgleich.daten, TEAM_SCHACH.offeneId);
+        }
+
+        const person = TEAM_SCHACH._ich();
+        return SCHACH_SPEICHER.tafelLaden(
+            speicher, person ? person.id : "", abgleich.daten);
+    },
+
+    /* Braucht der Abgleich gerade den ganzen Stand? Nur ohne offene Partie
+       — dort reicht die eine. */
+    brauchtAlles() {
+        return !TEAM_SCHACH.offeneId;
+    },
+
     aufbauen(behaelter) {
         TEAM_SCHACH.wurzelEl = document.createElement("div");
         TEAM_SCHACH.wurzelEl.className = "schach";
@@ -3434,7 +3507,7 @@ const TEAM_SCHACH = {
             let tafel = sofort;
 
             if (abgleich.speicher.art === "gemeinsam") {
-                const fremd = SCHACH_TAFEL.normalisieren(await abgleich.speicher.laden());
+                const fremd = await TEAM_SCHACH._frischHolen(neuePartie.id);
                 const fremdePartie = fremd.partien[neuePartie.id];
 
                 if (fremdePartie && fremdePartie.zugZaehler !== erwarteterZaehler) {
@@ -3450,7 +3523,7 @@ const TEAM_SCHACH = {
                 tafel = SCHACH_TAFEL.partieEinsetzen(fremd, neuePartie);
             }
 
-            await abgleich.speicher.speichern(tafel);
+            await TEAM_SCHACH._tafelSchreiben(tafel, [neuePartie.id]);
             abgleich.daten = tafel;
             TEAM_SCHACH.zeichnen(tafel);
             return true;
@@ -3508,9 +3581,7 @@ const TEAM_SCHACH = {
         try {
             /* Im lokalen Betrieb gibt es kein Rennen — dort ist der eigene
                Stand der einzige. */
-            const tafel = (abgleich.speicher.art === "gemeinsam")
-                ? SCHACH_TAFEL.normalisieren(await abgleich.speicher.laden())
-                : abgleich.daten;
+            const tafel = await TEAM_SCHACH._frischHolen(partie.id);
 
             const frisch = SCHACH_TAFEL.partie(tafel, partie.id);
 
@@ -3537,7 +3608,7 @@ const TEAM_SCHACH = {
             const geschrieben = SCHACH_TAFEL.partieEinsetzen(tafel, neu);
 
             if (abgleich.speicher.art === "gemeinsam") {
-                await abgleich.speicher.speichern(geschrieben);
+                await TEAM_SCHACH._tafelSchreiben(geschrieben, [partie.id]);
             }
 
             abgleich.daten = geschrieben;
@@ -3725,9 +3796,9 @@ const TEAM_SCHACH = {
          * „Wenn man oft auf Spielen hintereinander drückt, crasht alles und
          * nichts geht" (Nutzer, 18.09.2026). Nachgemessen: Fünf Drücke
          * waren fünf Ladevorgänge und fünf Schreibvorgänge der GANZEN Tafel
-         * (heute rund 600 KB je Richtung), jeder auf einem anderen alten
+         * (damals rund 190 KB je Richtung), jeder auf einem anderen alten
          * Stand — am Ende lagen zwei Runden desselben Spielers auf dem
-         * Server, und am Handy kamen sechs Megabyte gleichzeitig durch die
+         * Server, und am Handy kamen zwei Megabyte gleichzeitig durch die
          * Leitung, während das Brett fünfmal gezeichnet wurde.
          *
          * Dieselbe Sperre wie `ziehtGerade` bei `zugAusfuehren`: Läuft ein
@@ -3767,13 +3838,15 @@ const TEAM_SCHACH = {
         const titel = variante.titel;
 
         /* Angelegt wird auf dem Stand vom Server, damit keine fremde Partie
-           verloren geht. */
+           verloren geht — seit v0.114.3 über die Übersicht: nur die offenen
+           Partien werden geholt, die reichen für die Prüfung unten. */
         const abgleich = TEAM_SCHACH.abgleich;
         let tafel = abgleich.daten;
 
         try {
             if (abgleich.speicher.art === "gemeinsam") {
-                tafel = SCHACH_TAFEL.normalisieren(await abgleich.speicher.laden());
+                tafel = await SCHACH_SPEICHER.tafelLaden(
+                    abgleich.speicher, person.id, abgleich.daten);
             }
         } catch (fehler) {
             await DIALOG.hinweis("Nicht angelegt",
@@ -3808,6 +3881,7 @@ const TEAM_SCHACH = {
          *     heisst „ich will jetzt eine Runde", nicht „ich will noch eine".
          */
         const wartende = SCHACH_TAFEL.eigeneOffene(tafel, person.id);
+        const entfernte = [];
 
         for (const alte of wartende) {
             if (alte.laeuft) {
@@ -3825,6 +3899,7 @@ const TEAM_SCHACH = {
             }
 
             tafel = SCHACH_TAFEL.partieEntfernen(tafel, alte.id);
+            entfernte.push(alte.id);
         }
 
         /*
@@ -3953,7 +4028,8 @@ const TEAM_SCHACH = {
         abgleich.eigenerVorgangBeginnt();
 
         try {
-            await abgleich.speicher.speichern(ergebnis.tafel);
+            await TEAM_SCHACH._tafelSchreiben(ergebnis.tafel,
+                [ergebnis.partie.id].concat(entfernte));
             abgleich.daten = ergebnis.tafel;
 
             /* Merken, dass DIESES Gerät sie angelegt hat — solange ihr
@@ -4011,10 +4087,10 @@ const TEAM_SCHACH = {
 
         try {
             if (abgleich.speicher.art === "gemeinsam") {
-                tafel = SCHACH_TAFEL.normalisieren(await abgleich.speicher.laden());
+                tafel = await TEAM_SCHACH._frischHolen(partie.id);
             }
             const neueTafel = SCHACH_TAFEL.partieEntfernen(tafel, partie.id);
-            await abgleich.speicher.speichern(neueTafel);
+            await TEAM_SCHACH._tafelSchreiben(neueTafel, [partie.id]);
             abgleich.daten = neueTafel;
 
             if (TEAM_SCHACH.offeneId === partie.id) {
@@ -4177,11 +4253,11 @@ const TEAM_SCHACH = {
         try {
             let tafel = abgleich.daten;
             if (abgleich.speicher.art === "gemeinsam") {
-                tafel = SCHACH_TAFEL.normalisieren(await abgleich.speicher.laden());
+                tafel = await TEAM_SCHACH._frischHolen(partie.id);
             }
 
             const neueTafel = SCHACH_TAFEL.partieEntfernen(tafel, partie.id);
-            await abgleich.speicher.speichern(neueTafel);
+            await TEAM_SCHACH._tafelSchreiben(neueTafel, [partie.id]);
             abgleich.daten = neueTafel;
 
             if (TEAM_SCHACH.offeneId === partie.id) {
@@ -4247,8 +4323,7 @@ const TEAM_SCHACH = {
             let tafel = sofort;
 
             if (abgleich.speicher.art === "gemeinsam") {
-                const fremd = SCHACH_TAFEL.normalisieren(
-                    await abgleich.speicher.laden());
+                const fremd = await TEAM_SCHACH._frischHolen(partie.id);
                 const frisch = fremd.partien[partie.id];
 
                 if (!frisch) {
@@ -4272,7 +4347,7 @@ const TEAM_SCHACH = {
                 return true;
             }
 
-            await abgleich.speicher.speichern(tafel);
+            await TEAM_SCHACH._tafelSchreiben(tafel, [partie.id]);
             abgleich.daten = tafel;
             TEAM_SCHACH.zeichnen(tafel);
 
@@ -4335,14 +4410,13 @@ const TEAM_SCHACH = {
         abgleich.eigenerVorgangBeginnt();
 
         try {
-            const tafel = SCHACH_TAFEL.normalisieren(
-                await abgleich.speicher.laden());
+            const tafel = await TEAM_SCHACH._frischHolen(partieId);
             const dortige = tafel.partien[partieId];
             const erneut = dortige ? aenderung(dortige) : null;
 
             if (erneut && !SCHACH_RUNDE.inhaltGleich(erneut, dortige)) {
                 const neu = SCHACH_TAFEL.partieEinsetzen(tafel, erneut);
-                await abgleich.speicher.speichern(neu);
+                await TEAM_SCHACH._tafelSchreiben(neu, [partieId]);
                 abgleich.daten = neu;
                 TEAM_SCHACH.zeichnen(neu);
             }

@@ -150,6 +150,89 @@ Fehlerkette steht in `entscheidungen\00-INDEX.md`, „Die Seite fror ein, bis de
 
 **Wer eine dritte Rückwand baut, gibt ihr ebenfalls ein Zeitlimit.**
 
+### In Teilen statt als Ganzes (seit v0.114.3)
+
+**Gemessen am 18.09.2026:** Der ganze Schach-Stand war 192 Kilobyte, eine
+einzelne Partie 8, die Chronik 9, die Marke 13 Byte. Bis v0.114.2 lud und
+schrieb jeder Zug die ganze Tafel — zweimal 192 Kilobyte je Zug, ein
+„Bereit" mit Nachkontrolle das Doppelte, und die regelmässige Abfrage holte
+bei jeder fremden Änderung alles. Die Tafel wächst mit jeder beendeten
+Partie; 34 der 37 waren beendet und wurden trotzdem jedes Mal mitgeladen.
+
+`SpeicherGemeinsam` hat dafür zwei weitere Leitungen, die nichts über den
+Inhalt wissen:
+
+| Methode | Bedeutung |
+|---|---|
+| `teilLaden(unterpfad, flach)` | `GET …/<pfad>/<unterpfad>.json`; mit `flach` nur die Schlüssel (`?shallow=true`) |
+| `teilSchreiben(aenderungen)` | `PATCH …/<pfad>.json` mit Pfad → Wert; mehrere Knoten in EINEM Schritt, atomar; `null` löscht |
+
+**WAS geholt und geschrieben wird, entscheidet `SCHACH_SPEICHER`**
+(`js\schach-speicher.js`). Der Stand liegt unter denselben Pfaden wie
+vorher — additiv kommt ein Knoten dazu:
+
+    <pfad>/geaendertAm         die Marke (13 Byte), wie seit v0.111.0
+    <pfad>/partien/<id>        eine Partie (~8 KB), wie bisher
+    <pfad>/chronik/<n>         die Chronik-Einträge, wie bisher
+    <pfad>/uebersicht/<id>     NEU: Ergebnis, läuft, Zeitstempel, Teams (~150 Byte)
+
+Der Übersichts-Eintrag (`SCHACH_TAFEL.uebersichtEintrag`) wird bei jedem
+Schreiben der Partie im selben Schritt gesetzt; sein Zeitstempel ist der
+des SCHREIBENS (die Marke der Tafel), nicht der der Partie. Er ist ein
+Abbild, keine zweite Wahrheit: Fehlt er (Altbestand), wird die Partie
+geholt und der Eintrag nachgetragen.
+
+**Die Wege:**
+
+- **Start und immer ohne offene Partie** (`tafelLaden`): drei kleine
+  Abfragen auf einmal — Übersicht (5 KB bei 34 Partien), Schlüssel der
+  Partien, Schlüssel der Chronik. Daraus: fremde beendete Partien NIE
+  holen (niemand sieht sie an); eigene beendete EINMAL holen und im
+  Gerätespeicher merken („Vorrat", `blunderluck.partien-vorrat`, höchstens
+  `VORRAT_HOECHSTENS` = 60, die jüngsten); offene nur, wenn der
+  Zeitstempel ihres Eintrags nicht der zuletzt gesehene ist; die Chronik
+  nur bei geänderter Anzahl.
+- **In einer offenen Partie** (`partieAuffrischen`): bei jeder
+  Marken-Änderung erst der eigene Übersichts-Eintrag (150 Byte); die
+  Partie (8 KB) nur, wenn er neuer ist. Eine fremde Partie, in der jemand
+  zieht, kostet einen also 150 Byte, nicht 192 Kilobyte.
+- **Schreiben** (`schreiben`): je genannter Partie `partien/<id>` (oder
+  `null` = löschen) und `uebersicht/<id>`, dazu `geaendertAm` — eine
+  Mehrpfad-Änderung. Ist die Partie beendet, kommt ihr Chronik-Eintrag ans
+  Ende der Server-Chronik, nachdem nachgesehen wurde, dass er dort fehlt
+  (ein Ergebnis zählt nie zweimal). Die Stelle ist die nächste freie
+  Nummer; zwei Partien, die in derselben Sekunde auf zwei Geräten enden,
+  könnten sie sich streitig machen — der eine Rest ohne Transaktion, so
+  selten wie zwei gleichzeitige Matts.
+
+**Der Abgleich weiss davon nur eines:** Er bekommt vom Schach einen eigenen
+Ladeweg (`rueckrufe.laden(alles)`, `rueckrufe.brauchtAlles()`) und führt
+ZWEI gesehene Marken: `markeGesehen` für den zuletzt geholten Teil,
+`markeGanzGesehen` für den letzten vollen Stand. Wer aus der Partie auf
+den Start zurückkommt, vergleicht mit der ganzen Marke und holt einmal
+nach, was er in der Partie verpasst hat (nur die geänderten Partien, dank
+der Übersicht). Nach der Anmeldung stösst `vollNachladen()` einen vollen
+Blick an — erst dann steht fest, wessen beendete Partien dazugehören.
+
+**Warum nicht nur die letzte Bewegung laden?** Ein Zug ist rund 100 Byte,
+die Partie 8 Kilobyte. Dann müsste aber jedes Gerät das Brett aus den
+Zügen SELBST nachrechnen — und zwei Geräte, die einen Zug verschieden
+verstehen (Fähigkeit, Lootbox, Zufallswert), hätten zwei Bretter. Die
+Hausregel, dass der Stand IN der Partie steht und das Modell ihn schreibt,
+ist mehr wert als die letzten sieben Kilobyte.
+
+**Server-Filter (`orderBy`) gibt es nicht:** Die Datenbank lehnt sie ohne
+Index-Regel mit HTTP 400 ab (gemessen 18.09.2026). Sollten sie je nötig
+werden, braucht es in den Firebase-Regeln `".indexOn": ["ergebnis"]` unter
+`team-schach/partien` — eine Nutzer-Aufgabe, siehe `docs\DEPLOYMENT.md`.
+
+**Übergang:** Ein Gerät mit einer ÄLTEREN App-Fassung (vor v0.114.3)
+schreibt weiterhin die ganze Tafel per PUT und nimmt dabei den
+Übersichts-Knoten weg; die nächste neue Fassung holt dann einmal alle
+Partien und baut ihn wieder auf. Mit `tools\Uebersicht-Nachruesten.ps1`
+lässt er sich auch von Hand anlegen (etwa nach dem Zurückspielen eines
+älteren Abzugs).
+
 `speicherErzeugen(KONFIG)` wählt die Rückwand. Ist der gemeinsame Modus
 eingestellt, aber keine Adresse hinterlegt, fällt die App auf `SpeicherLokal`
 zurück und zeigt oben einen Hinweisbalken.

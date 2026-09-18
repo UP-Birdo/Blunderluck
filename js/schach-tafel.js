@@ -388,6 +388,39 @@ const SCHACH_TAFEL = {
     },
 
     /*
+     * DER ÜBERSICHTS-EINTRAG EINER PARTIE (seit v0.114.3) — was der
+     * Startbildschirm über eine Partie wissen muss, OHNE sie zu laden.
+     *
+     * Liegt in der Datenbank unter `uebersicht/<id>` neben `partien/<id>`
+     * und wird bei jedem Schreiben der Partie im selben Schritt mitgesetzt
+     * (`SCHACH_SPEICHER.schreiben`, eine atomare Mehrpfad-Änderung). Rund
+     * 150 Byte statt 8 Kilobyte je Partie: Daran entscheidet der Lader, ob
+     * eine Partie überhaupt geholt werden muss (fremde beendete nie, eigene
+     * beendete einmal, offene nur wenn ihr Zeitstempel neuer ist).
+     *
+     * Er ist ein Abbild, keine zweite Wahrheit: Fehlt er (Daten aus der
+     * Zeit davor), wird die Partie geholt und der Eintrag nachgetragen.
+     * Die Felder sind Teil des Datenvertrags — nur ergänzen, nie umdeuten.
+     */
+    uebersichtEintrag(partie, zeitpunkt) {
+        const stand = SCHACH_RUNDE.normalisieren(partie);
+        return {
+            ergebnis: stand.ergebnis || "",
+            laeuft: stand.laeuft === true,
+
+            /* Der Zeitpunkt des SCHREIBENS, nicht der der Partie: Der Lader
+               vergleicht ihn mit dem, was er zuletzt gesehen hat — er darf
+               deshalb nie stehen bleiben, auch wenn eine Änderung im Modell
+               den eigenen Zeitstempel der Partie nicht anfasst. */
+            geaendertAm: (zeitpunkt === undefined) ? (stand.geaendertAm || 0) : zeitpunkt,
+            teams: {
+                weiss: stand.teams.weiss.slice(),
+                schwarz: stand.teams.schwarz.slice()
+            }
+        };
+    },
+
+    /*
      * Entfernt eine Partie vom Brett. Ihr Chronik-Eintrag BLEIBT — die Punkte
      * in der Rangliste sind damit endgültig und können nicht mehr verschwinden.
      */

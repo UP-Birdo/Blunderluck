@@ -39,6 +39,22 @@ class Abgleich {
         this.inhaltGleich = rueckrufe.inhaltGleich;
         this.zusammenfuehren = rueckrufe.zusammenfuehren || null;
 
+        /*
+         * EIN EIGENER LADEWEG (seit v0.114.3, optional). Wer ihn mitgibt,
+         * entscheidet selbst, WAS geholt wird: `laden(alles)` liefert den
+         * neuen Stand — mit `alles = true` vollständig (Start, und immer
+         * wenn `brauchtAlles()` es sagt), sonst nur das, was gerade
+         * angesehen wird (beim Schach: die offene Partie). Fehlt er, holt
+         * der Abgleich wie bisher den ganzen Stand über `speicher.laden`
+         * (die Spielerliste, 0,7 Kilobyte, braucht nichts anderes).
+         *
+         * Warum der Abgleich das nicht selbst weiss: Er kennt den Inhalt
+         * nicht — welche Partie offen ist und was eine Übersicht ist, weiss
+         * nur das Schach (`SCHACH_SPEICHER`, `TEAM_SCHACH.standLaden`).
+         */
+        this.laden = rueckrufe.laden || null;
+        this.brauchtAlles = rueckrufe.brauchtAlles || null;
+
         this.daten = this.leereDaten();
         this.schreibZeitgeber = null;
         this.schreibtGerade = false;
@@ -92,6 +108,32 @@ class Abgleich {
          * Sonderweg, der die eigene Marke rät.
          */
         this.markeGesehen = null;
+
+        /*
+         * Die Marke des zuletzt VOLLSTÄNDIG übernommenen Standes (seit
+         * v0.114.3). Holt der eigene Ladeweg nur einen Teil (die offene
+         * Partie), ist der Rest des Standes danach älter als die Marke —
+         * `markeGesehen` gilt dann nur für den Teil. Wer später wieder alles
+         * braucht (zurück auf den Start), vergleicht mit DIESER Marke und
+         * holt einmal nach, was er verpasst hat.
+         */
+        this.markeGanzGesehen = null;
+    }
+
+    /* Beim nächsten Blick alles neu holen — etwa nach der Anmeldung, wenn
+       jetzt feststeht, wessen beendete Partien dazugehören (v0.114.3). */
+    vollNachladen() {
+        this.markeGesehen = null;
+        this.markeGanzGesehen = null;
+        this.fremdenStandHolen();
+    }
+
+    /* Der Stand vom Server — über den eigenen Ladeweg, wenn es einen gibt. */
+    async _standLaden(alles) {
+        if (this.laden) {
+            return this.laden(alles);
+        }
+        return this.speicher.laden();
     }
 
     /* Ein eigener Schreibvorgang beginnt — bis er endet, wird kein fremder
@@ -129,7 +171,7 @@ class Abgleich {
 
         this.melden("laedt", "Wird geladen …");
         try {
-            this.daten = await this.speicher.laden();
+            this.daten = await this._standLaden(true);
             this.beiDaten(this.daten);
             this.melden("bereit", this.speicher.beschreibung);
             geladen = true;
@@ -348,17 +390,27 @@ class Abgleich {
          * ---------------------------------------------------------------- */
         let marke = null;
 
+        /*
+         * GANZ ODER NUR EIN TEIL (seit v0.114.3): Ohne eigenen Ladeweg gibt
+         * es nur „ganz". Mit ihm fragt der Abgleich, ob gerade alles
+         * gebraucht wird — beim Schach: keine Partie offen — und vergleicht
+         * die Marke dann mit der des letzten VOLLEN Standes. Sonst reicht
+         * die Marke des letzten Teils.
+         */
+        const alles = !this.laden || !this.brauchtAlles || this.brauchtAlles() === true;
+        const gesehen = alles ? this.markeGanzGesehen : this.markeGesehen;
+
         if (typeof this.speicher.marke === "function") {
             marke = await this.speicher.marke();
 
-            if (marke !== null && marke === this.markeGesehen) {
+            if (marke !== null && marke === gesehen) {
                 this.melden("bereit", this.speicher.beschreibung);
                 return;
             }
         }
 
         try {
-            const fremd = await this.speicher.laden();
+            const fremd = await this._standLaden(alles);
 
             if (this.schreibtGerade || this.aenderungOffen
                 || this.schreibZeitgeber !== null || this.eigeneVorgaenge > 0
@@ -376,8 +428,12 @@ class Abgleich {
             }
 
             /* Erst JETZT gilt die Marke als gesehen: Der Stand, der zu ihr
-               gehört, steht hier wirklich. */
+               gehört, steht hier wirklich. Ein Teil-Stand zählt nur für den
+               Teil (siehe `markeGanzGesehen`). */
             this.markeGesehen = marke;
+            if (alles) {
+                this.markeGanzGesehen = marke;
+            }
             this.melden("bereit", this.speicher.beschreibung);
         } catch (fehler) {
             this.melden("fehler", "Keine Verbindung: " + fehler.message);

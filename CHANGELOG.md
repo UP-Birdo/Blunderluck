@@ -3,12 +3,42 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.114.3 — 18.09.2026
+
+**Schneller und sparsamer: Die App holt und schreibt nur noch, was gerade
+gebraucht wird — nicht mehr den ganzen Spielstand.**
+
+- Bis jetzt lud jeder Zug den kompletten Spielstand aller Partien (rund
+  190 KB) vom Server und schrieb ihn komplett zurück — auch die 34 längst
+  beendeten Partien reisten jedes Mal mit. Ein „Bereit" kostete mit
+  Nachkontrolle rund 800 KB. Und der Stand wächst mit jeder gespielten
+  Partie, es wurde also von selbst immer langsamer.
+- Jetzt holt ein Zug nur die eigene Partie (rund 8 KB) und schreibt nur sie
+  zurück. Zieht jemand in einer ANDEREN Partie, kostet dich das 150 Byte
+  statt 190 KB. Beendete Partien anderer Leute werden gar nicht mehr
+  geladen; deine eigenen beendeten Partien (Verlauf, Ergebnis ansehen)
+  einmal — danach hat sie dein Gerät im Speicher. Der Verlauf zeigt die
+  letzten 60 deiner beendeten Partien.
+- Beim Start lädt die App statt 190 KB nur noch eine kleine Übersicht (5 KB)
+  plus die offenen Partien und das, was ihr auf diesem Gerät noch fehlt.
+- Am Spiel selbst ändert sich nichts, an den gespeicherten Partien auch
+  nicht — es kommt lediglich ein kleiner Übersichts-Eintrag je Partie in
+  die Datenbank. Für den Altbestand ist er schon angelegt.
+- Nach der Anmeldung und nach dem Verlassen einer Partie holt die App
+  einmal nach, was sie zwischendurch nicht mitverfolgt hat — du siehst also
+  weiterhin alles, nur ohne den Ballast.
+- **Beim ersten Öffnen nach dem Update** kann es einen Moment länger dauern:
+  Die App merkt sich deine beendeten Partien einmalig. Danach ist jeder
+  weitere Start kleiner als früher.
+
 ## v0.114.2 — 18.09.2026
 
 **Behoben: Mehrmals auf „Spielen" gedrückt — und die App stand still.**
 
 - Jeder Druck auf „Spielen" holte den ganzen Spielstand vom Server, legte
-  eine Runde hinein und schrieb alles zurück — rund 600 KB je Richtung.
+  eine Runde hinein und schrieb alles zurück — rund 190 KB je Richtung
+  (Korrektur vom 18.09., nachmittags: zuerst stand hier 600 KB — das war
+  die eingerückte Sicherungsdatei, nicht die Leitung).
   Weil sich dabei ein paar Sekunden lang nichts rührte, drückte man noch
   einmal, und noch einmal: Fünf Drücke waren fünf Ladevorgänge und fünf
   Schreibvorgänge gleichzeitig, das Brett wurde fünfmal aufgebaut, und am

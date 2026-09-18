@@ -12,6 +12,7 @@ das es so nicht mehr gibt.
 | `test-schach-runde.js` | eine Partie: Teams, Zugrecht, Spielarten, Abstimmung, Zufallsarmee |
 | `test-schach-runde-faehigkeiten.js` | Fähigkeiten, Lootboxen, Unglückswürfel und Händler einer Partie |
 | `test-schach-tafel.js` | Sammlung der Partien und der **Umstieg** von früher |
+| `test-schach-speicher.js` | Teil-Laden und Teil-Schreiben gegen einen Datenbank-Nachbau: WAS geholt wird (fremde beendete nie, eigene beendete einmal, offene nur bei neuer Marke), Vorrat, Übersicht, Chronik-Anhang |
 | `test-schach-bot.js` | Computer-Gegner: wann er zieht, was er wählt, dass er nicht spickt |
 | `test-schach-vorschau.js` | Bildanleitung: jede Fähigkeit hat ein Beispiel, und es geht auf |
 | `test-schach-grundlagen.js` | Schachregel-Anleitung: jedes Kapitel ist mit den echten Regeln gerechnet |

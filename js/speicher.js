@@ -202,6 +202,64 @@ class SpeicherGemeinsam {
             throw new Error("Speichern fehlgeschlagen (HTTP " + antwort.status + ")");
         }
     }
+
+    /* ---------------------------------------------------------------- *
+     * TEILE STATT DES GANZEN (seit v0.114.3)
+     *
+     * GEMESSEN AM 18.09.2026: Der ganze Schach-Stand ist 192 Kilobyte,
+     * eine einzelne Partie 8, die Chronik 9, die Schlüsselliste 0,6. Jeder
+     * Zug lud und schrieb bis v0.114.2 die 192 Kilobyte — zweimal. Die
+     * Realtime Database ist aber ein Baum, und jeder Knoten hat seine
+     * eigene Adresse: `<pfad>/partien/<id>.json` liefert genau die eine
+     * Partie, und eine PATCH-Anfrage an `<pfad>.json` setzt mehrere Knoten
+     * auf einmal — atomar, also entweder alle oder keinen.
+     *
+     * Die zwei Aufrufe sind reine Leitungen: Sie wissen nicht, was eine
+     * Partie ist. WELCHE Teile geholt und geschrieben werden, entscheidet
+     * `SCHACH_SPEICHER` (js\schach-speicher.js). `laden` und `speichern`
+     * bleiben — für die Spielerliste (0,7 Kilobyte, ungeteilt) und als
+     * Rückfall.
+     * ---------------------------------------------------------------- */
+
+    /*
+     * Einen Unterknoten holen. `flach = true` liefert nur die Schlüssel der
+     * Kinder (`?shallow=true`), jeder als `true` — die Liste der Partien
+     * ohne ihren Inhalt. Liefert `null`, wenn es den Knoten nicht gibt (so
+     * antwortet die Datenbank selbst — kein Fehler).
+     */
+    async teilLaden(unterpfad, flach) {
+        const sauber = String(unterpfad || "").replace(/^\/+|\/+$/g, "");
+        const ziel = this.basis + "/" + this.pfad
+            + (sauber ? "/" + sauber : "") + ".json"
+            + (flach ? "?shallow=true" : "");
+
+        const antwort = await this._rufen({ cache: "no-store" },
+            SpeicherGemeinsam.ZEITLIMIT_LADEN_MS, "Das Laden", ziel);
+
+        if (!antwort.ok) {
+            throw new Error("Laden fehlgeschlagen (HTTP " + antwort.status + ")");
+        }
+        return antwort.json();
+    }
+
+    /*
+     * Mehrere Unterknoten in EINEM Schritt setzen. `aenderungen` ist ein
+     * Objekt aus Pfad → Wert, die Pfade relativ zum eigenen Knoten
+     * („partien/p-abc", „geaendertAm"); `null` als Wert löscht den Knoten.
+     * Die Datenbank führt alles zusammen aus oder nichts — ein
+     * Zug, der ohne seine Marke landet, kann so nicht entstehen.
+     */
+    async teilSchreiben(aenderungen) {
+        const antwort = await this._rufen({
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(aenderungen)
+        }, SpeicherGemeinsam.ZEITLIMIT_SPEICHERN_MS, "Das Speichern");
+
+        if (!antwort.ok) {
+            throw new Error("Speichern fehlgeschlagen (HTTP " + antwort.status + ")");
+        }
+    }
 }
 
 /*

@@ -412,7 +412,13 @@ const APP = {
             },
             beiStatus: () => { /* Der Kopf zeigt den Stand der Spielerliste. */ },
             leereDaten: () => SCHACH_TAFEL.leereTafel(),
-            inhaltGleich: (a, b) => SCHACH_TAFEL.inhaltGleich(a, b)
+            inhaltGleich: (a, b) => SCHACH_TAFEL.inhaltGleich(a, b),
+
+            /* Der eigene Ladeweg (seit v0.114.3): Das Schach holt nicht die
+               ganze Tafel, sondern über die Übersicht nur, was es braucht —
+               und in einer offenen Partie nur diese (js\schach-speicher.js). */
+            laden: (alles) => TEAM_SCHACH.standLaden(alles),
+            brauchtAlles: () => TEAM_SCHACH.brauchtAlles()
         });
 
         TEAM_SCHACH.verbinden(schachAbgleich);
@@ -455,7 +461,14 @@ const APP = {
         /* Nach jeder Anmeldung entscheidet der Wiedereinstieg (start.js),
            ob es auf den Start geht oder direkt in die eigene laufende
            Partie (Entwurf, Abschnitt 3.2). */
-        ANMELDUNG.beiAngemeldet = () => START.wiedereinstieg();
+        ANMELDUNG.beiAngemeldet = () => {
+            /* Erst jetzt steht fest, WESSEN beendete Partien in die Tafel
+               gehören (Verlauf, Abschluss) — der Ladeweg holt sie nach
+               (seit v0.114.3). Der Wiedereinstieg braucht darauf nicht zu
+               warten: Laufende Partien sind immer geladen. */
+            schachAbgleich.vollNachladen();
+            START.wiedereinstieg();
+        };
 
         /* Angemeldet wird erst, wenn BEIDE Stände da sind: die
            Spielerliste für die Anmeldung selbst, die Schach-Tafel für die

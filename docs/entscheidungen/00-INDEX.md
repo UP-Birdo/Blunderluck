@@ -74,10 +74,16 @@ wird. Die Liste dessen, was noch kommt, steht in [../ROADMAP.md](../ROADMAP.md).
   Play-Store-Umbau braeuchte - Referenz: docs\uebergabe-schach-app.md)
 
 ## erkenntnisse.md - Teuer erkaufte Erkenntnisse
+- **Geholt wird, was man ansieht — drei Fallen beim Umbau auf Teile**
+  (v0.114.3: die Sicherungsdatei ist nicht die Leitung (596 gegen 192 KB);
+  „beendet" heisst nicht „unveraenderlich" (Revanche behaelt die Kennung) —
+  deshalb entscheidet der Zeitstempel des Schreibens im Uebersichts-Knoten;
+  Server-Filter brauchen eine Index-Regel (HTTP 400 gemessen). Regel: Die
+  Antwort auf „was hat sich geaendert" pflegt der Schreiber, nicht der Leser)
 - **Ein Knopf, der Sekunden braucht und nichts zeigt, wird mehrfach
   gedrueckt** (v0.14.0, gemeldet 18.09.2026, behoben v0.114.2: „Spielen"
   hatte keine Sperre und keine Rueckmeldung — fuenf Druecke waren fuenf
-  Lade- und fuenf Schreibvorgaenge der ganzen 600-KB-Tafel; dazu legte
+  Lade- und fuenf Schreibvorgaenge der ganzen 190-KB-Tafel; dazu legte
   „Spielen" nach „Zurueck" eine ZWEITE wartende Runde an. Jetzt Sperre
   `legtGeradeAn`, Knopf sagt „Wird angelegt …", eigene wartende Runde
   wird ersetzt oder betreten. Regel: Netz-Knopf = Sperre UND sichtbares

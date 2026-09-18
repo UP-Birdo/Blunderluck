@@ -64,6 +64,57 @@ async function pruefeMitWarten(bezeichnung, funktion) {
     }
 }
 
+/*
+ * EIN SERVER, DER EINE GANZE TAFEL HAELT, ABER IN TEILEN ANTWORTET (seit
+ * v0.114.3). Drei aeltere Pruefungen stellen ein Rennen nach, indem sie die
+ * Server-Tafel von aussen setzen und lesen. Der Bildschirm-Code spricht seit
+ * v0.114.3 nur noch in Teilen mit dem Server (`teilLaden`, `teilSchreiben`,
+ * siehe js\schach-speicher.js) — dieser Stellvertreter uebersetzt:
+ * `teilLaden("partien/<id>")` liefert die Partie aus der gelesenen Tafel,
+ * `teilSchreiben` setzt Partie, Marke und Chronik in die aktuelle Tafel und
+ * gibt sie an `schreiben` zurueck. Einen Uebersichts-Knoten gibt es hier
+ * nicht — dann wird die Partie immer geholt, genau wie beim Altbestand.
+ *
+ *   lesen()      die Tafel, die ein Ladevorgang sieht
+ *   aktuell()    die Tafel, auf die ein Schreibvorgang aufsetzt (Vorgabe: lesen)
+ *   schreiben(t) nimmt die geschriebene Tafel entgegen
+ */
+function tafelInTeilen(lesen, schreiben, aktuell) {
+    const jetzt = aktuell || lesen;
+    return {
+        art: "gemeinsam",
+        async teilLaden(unterpfad) {
+            const tafel = SCHACH_TAFEL.normalisieren(await lesen());
+            const treffer = /^partien\/(.+)$/.exec(unterpfad);
+            if (treffer) {
+                return tafel.partien[treffer[1]] || null;
+            }
+            if (unterpfad === "chronik") {
+                return tafel.chronik;
+            }
+            return null;
+        },
+        async teilSchreiben(aenderungen) {
+            let tafel = SCHACH_TAFEL.normalisieren(await jetzt());
+            for (const weg of Object.keys(aenderungen)) {
+                const treffer = /^partien\/(.+)$/.exec(weg);
+                if (treffer) {
+                    tafel = aenderungen[weg]
+                        ? SCHACH_TAFEL.partieEinsetzen(tafel, aenderungen[weg], tafel.geaendertAm)
+                        : SCHACH_TAFEL.partieEntfernen(tafel, treffer[1], tafel.geaendertAm);
+                } else if (weg === "geaendertAm") {
+                    tafel.geaendertAm = aenderungen[weg];
+                } else if (/^chronik\//.test(weg)
+                        && !tafel.chronik.some((e) => e.id === aenderungen[weg].id)) {
+                    tafel.chronik.push(aenderungen[weg]);
+                }
+            }
+            await schreiben(tafel);
+            return true;
+        }
+    };
+}
+
 async function zeitlimitPruefen() {
     const speicher = new SpeicherGemeinsam(
         "https://beispiel.example", "team-schach", (roh) => roh);
@@ -537,27 +588,78 @@ async function zeitlimitPruefen() {
      * kommt, und die Sperre haette nichts zu tun.
      * ---------------------------------------------------------------- */
 
+    /*
+     * SEIT v0.114.3 SPRICHT DER BILDSCHIRM IN TEILEN MIT DEM SERVER
+     * (`teilLaden`, `teilSchreiben`, siehe js\schach-speicher.js) — der
+     * Nachbau ist deshalb ein Baum wie die echte Datenbank. `geladen`
+     * zaehlt geholte PARTIEN, `geschrieben` die Schreibvorgaenge; `stand`
+     * bleibt der Blick auf den Baum, den die Pruefungen lesen.
+     */
     const serverNachbau = (start) => {
-        const nachbau = {
-            stand: JSON.parse(JSON.stringify(start)),
-            geladen: 0,
-            geschrieben: 0,
-            speicher: null
+        const kopie = JSON.parse(JSON.stringify(start));
+        const baum = {
+            geaendertAm: kopie.geaendertAm || 0,
+            partien: kopie.partien || {},
+            chronik: kopie.chronik || [],
+            uebersicht: {}
         };
+        for (const id of Object.keys(baum.partien)) {
+            baum.uebersicht[id] = SCHACH_TAFEL.uebersichtEintrag(baum.partien[id], baum.geaendertAm);
+        }
+
+        const nachbau = { stand: baum, geladen: 0, geschrieben: 0, aenderungen: [], speicher: null };
         const warte = (ms) => new Promise((weiter) => setTimeout(weiter, ms));
+
         nachbau.speicher = {
             art: "gemeinsam",
-            async laden() {
-                nachbau.geladen++;
+            async teilLaden(unterpfad, flach) {
+                if (/^partien\/.+/.test(unterpfad)) {
+                    nachbau.geladen++;
+                }
                 await warte(30);
-                return JSON.parse(JSON.stringify(nachbau.stand));
+                let knoten = baum;
+                for (const teil of String(unterpfad || "").split("/").filter((t) => t)) {
+                    if (!knoten || typeof knoten !== "object") {
+                        return null;
+                    }
+                    knoten = knoten[teil];
+                }
+                if (knoten === undefined) {
+                    return null;
+                }
+                if (flach && knoten && typeof knoten === "object") {
+                    const schluessel = {};
+                    Object.keys(knoten).forEach((k) => { schluessel[k] = true; });
+                    return schluessel;
+                }
+                return JSON.parse(JSON.stringify(knoten));
             },
-            async speichern(daten) {
+            async teilSchreiben(aenderungen) {
                 nachbau.geschrieben++;
+                nachbau.aenderungen.push(JSON.parse(JSON.stringify(aenderungen)));
                 await warte(30);
-                nachbau.stand = JSON.parse(JSON.stringify(daten));
+                for (const weg of Object.keys(aenderungen)) {
+                    const teile = weg.split("/");
+                    let knoten = baum;
+                    for (let i = 0; i < teile.length - 1; i++) {
+                        if (!knoten[teile[i]] || typeof knoten[teile[i]] !== "object") {
+                            knoten[teile[i]] = {};
+                        }
+                        knoten = knoten[teile[i]];
+                    }
+                    const letzte = teile[teile.length - 1];
+                    if (aenderungen[weg] === null) {
+                        delete knoten[letzte];
+                    } else {
+                        knoten[letzte] = JSON.parse(JSON.stringify(aenderungen[weg]));
+                    }
+                }
                 return true;
-            }
+            },
+            /* Der Rueckfall, den kein Weg mehr nehmen darf — wer ihn ruft,
+               laedt oder schreibt die ganze Tafel und faellt hier auf. */
+            async laden() { throw new Error("laden(): die ganze Tafel wurde geholt"); },
+            async speichern() { throw new Error("speichern(): die ganze Tafel wurde geschrieben"); }
         };
         return nachbau;
     };
@@ -597,10 +699,13 @@ async function zeitlimitPruefen() {
 
                 await Promise.all(laeufe);
 
-                if (server.geladen !== 1 || server.geschrieben !== 1) {
-                    throw new Error("fuenf Druecke waren " + server.geladen
-                        + " Ladevorgaenge und " + server.geschrieben
-                        + " Schreibvorgaenge — erwartet je einer");
+                if (server.geschrieben !== 1) {
+                    throw new Error("fuenf Druecke waren " + server.geschrieben
+                        + " Schreibvorgaenge — erwartet einer");
+                }
+                if (server.geladen !== 0) {
+                    throw new Error("beim Anlegen auf leerer Tafel wurden "
+                        + server.geladen + " Partien geholt — es gibt keine");
                 }
                 const partien = Object.keys(server.stand.partien);
                 if (partien.length !== 1) {
@@ -726,6 +831,224 @@ async function zeitlimitPruefen() {
                 TEAM_SCHACH.offeneId = "";
                 umgebung.TABS.gewechseltZu = "";
                 START.regelnMerken(TEAM_SCHACH._regelnVorgabe());
+            }
+        });
+
+    /* ---------------------------------------------------------------- *
+     * In Teilen laden und schreiben (v0.114.3)
+     *
+     * GEMESSEN AM 18.09.2026: Der ganze Schach-Stand war 192 Kilobyte, und
+     * jeder Zug holte und schrieb ihn ganz. Seit v0.114.3 geht jeder
+     * Schreibweg ueber `_frischHolen` / `_tafelSchreiben` und damit ueber
+     * die eine Partie; der Abgleich holt in einer offenen Partie nur diese.
+     * Der Nachbau oben wirft bei `laden()`/`speichern()` — faellt ein Weg
+     * auf die ganze Tafel zurueck, schlaegt die Pruefung fehl.
+     * ---------------------------------------------------------------- */
+
+    await pruefeMitWarten("Ein Zug holt und schreibt nur seine Partie (v0.114.3)",
+        async () => {
+            const echteDaten = TEAM_SCHACH.abgleich.daten;
+            const echterSpeicher = TEAM_SCHACH.abgleich.speicher;
+            const echteOffene = TEAM_SCHACH.offeneId;
+            const id = kennungen[SCHACH_VARIANTEN.liste[0].id];
+            const server = serverNachbau(echteDaten);
+
+            try {
+                umgebung.SCHACH_SPEICHER.vergessen();
+                TEAM_SCHACH.abgleich.speicher = server.speicher;
+                TEAM_SCHACH.abgleich.daten = SCHACH_TAFEL.normalisieren(echteDaten);
+                TEAM_SCHACH.offeneId = id;
+
+                const partie = SCHACH_TAFEL.partie(TEAM_SCHACH.abgleich.daten, id);
+                const zuege = SCHACH.alleZuege(partie.stand);
+                if (zuege.length === 0) {
+                    throw new Error("Vorbereitung: keine Zuege in der Testpartie");
+                }
+                const zug = zuege[0];
+                const neu = SCHACH_RUNDE.ziehen(partie, "id-anna", zug.von, zug.nach, "D", "Anna", 9500);
+                if (!neu) {
+                    throw new Error("Vorbereitung: der Zug liess sich nicht rechnen");
+                }
+
+                const gesendet = await TEAM_SCHACH._sendenMitPruefung(neu, partie.zugZaehler);
+                if (gesendet !== true) {
+                    throw new Error("der Zug wurde nicht gesendet");
+                }
+                if (server.geladen !== 1) {
+                    throw new Error("vor dem Schreiben wurden " + server.geladen
+                        + " Partien geholt — erwartet genau die eine");
+                }
+                if (server.geschrieben !== 1) {
+                    throw new Error(server.geschrieben + " Schreibvorgaenge statt einem");
+                }
+                const wege = Object.keys(server.aenderungen[0]).sort();
+                const erwartet = ["geaendertAm", "partien/" + id, "uebersicht/" + id].sort();
+                if (wege.join(",") !== erwartet.join(",")) {
+                    throw new Error("geschrieben wurden " + wege.join(",")
+                        + " — erwartet " + erwartet.join(","));
+                }
+                if (server.stand.partien[id].zugZaehler !== neu.zugZaehler) {
+                    throw new Error("der Zug kam nicht auf dem Server an");
+                }
+                if (server.stand.uebersicht[id].geaendertAm !== server.stand.geaendertAm) {
+                    throw new Error("Eintrag und Marke tragen verschiedene Zeitstempel");
+                }
+                /* Die anderen Partien stehen unangetastet da. */
+                for (const andereId of Object.keys(server.stand.partien)) {
+                    if (andereId !== id && !SCHACH_RUNDE.inhaltGleich(
+                            server.stand.partien[andereId], echteDaten.partien[andereId])) {
+                        throw new Error("eine fremde Partie wurde mitgeschrieben: " + andereId);
+                    }
+                }
+            } finally {
+                TEAM_SCHACH.abgleich.speicher = echterSpeicher;
+                TEAM_SCHACH.abgleich.daten = echteDaten;
+                TEAM_SCHACH.offeneId = echteOffene;
+                umgebung.SCHACH_SPEICHER.vergessen();
+            }
+        });
+
+    await pruefeMitWarten("Bereit holt und schreibt nur seine Partie — samt Nachkontrolle (v0.114.3)",
+        async () => {
+            const echteDaten = TEAM_SCHACH.abgleich.daten;
+            const echterSpeicher = TEAM_SCHACH.abgleich.speicher;
+            const echteOffene = TEAM_SCHACH.offeneId;
+
+            /* Eine wartende Runde: Anna in Weiss, noch nicht bereit. */
+            const alt = SCHACH_TAFEL.partieAnlegen(
+                SCHACH_TAFEL.leereTafel(9600), SCHACH_VARIANTEN.liste[0].id, "Wartend", 9600);
+            const wartend = SCHACH_RUNDE.teamBeitreten(alt.partie, "id-anna", "weiss", 9600);
+            const start = SCHACH_TAFEL.partieEinsetzen(alt.tafel, wartend, 9600);
+            const server = serverNachbau(start);
+
+            try {
+                umgebung.SCHACH_SPEICHER.vergessen();
+                TEAM_SCHACH.abgleich.speicher = server.speicher;
+                TEAM_SCHACH.abgleich.daten = SCHACH_TAFEL.normalisieren(start);
+                TEAM_SCHACH.offeneId = wartend.id;
+
+                await TEAM_SCHACH.bereitUmschalten(wartend, "weiss", true);
+
+                if (server.stand.partien[wartend.id].bereit.weiss !== true) {
+                    throw new Error("die Zusage kam nicht auf dem Server an");
+                }
+                for (const aenderung of server.aenderungen) {
+                    const fremde = Object.keys(aenderung).filter((weg) =>
+                        weg !== "geaendertAm" && weg.indexOf("/" + wartend.id) === -1);
+                    if (fremde.length > 0) {
+                        throw new Error("mitgeschrieben wurde " + fremde.join(","));
+                    }
+                }
+                /* Bereit + sofortige Nachkontrolle: zwei kleine Ladevorgaenge,
+                   frueher zwei ganze Tafeln. */
+                if (server.geladen > 2) {
+                    throw new Error("Bereit hat " + server.geladen + " Partien geholt");
+                }
+            } finally {
+                TEAM_SCHACH.abgleich.speicher = echterSpeicher;
+                TEAM_SCHACH.abgleich.daten = echteDaten;
+                TEAM_SCHACH.offeneId = echteOffene;
+                umgebung.SCHACH_SPEICHER.vergessen();
+            }
+        });
+
+    await pruefeMitWarten("Der Abgleich holt in einer offenen Partie nur diese — und beim Verlassen den Rest (v0.114.3)",
+        async () => {
+            const echterAbgleich = TEAM_SCHACH.abgleich;
+            const echteOffene = TEAM_SCHACH.offeneId;
+
+            const a = SCHACH_TAFEL.partieAnlegen(
+                SCHACH_TAFEL.leereTafel(9700), SCHACH_VARIANTEN.liste[0].id, "A", 9700);
+            const partieA = SCHACH_RUNDE.teamBeitreten(a.partie, "id-anna", "weiss", 9700);
+            const b = SCHACH_TAFEL.partieAnlegen(a.tafel, SCHACH_VARIANTEN.liste[0].id, "B", 9701);
+            const partieB = SCHACH_RUNDE.teamBeitreten(b.partie, "id-bert", "weiss", 9701);
+            let start = SCHACH_TAFEL.partieEinsetzen(b.tafel, partieA, 9700);
+            start = SCHACH_TAFEL.partieEinsetzen(start, partieB, 9702);
+            const server = serverNachbau(start);
+            server.speicher.marke = async () => server.stand.geaendertAm;
+
+            const abgleich = new Abgleich(server.speicher,
+                { abfrageIntervallMs: 100000, schreibVerzoegerungMs: 500 }, {
+                    beiDaten: () => { },
+                    beiStatus: () => { },
+                    leereDaten: () => SCHACH_TAFEL.leereTafel(),
+                    inhaltGleich: (x, y) => SCHACH_TAFEL.inhaltGleich(x, y),
+                    laden: (alles) => TEAM_SCHACH.standLaden(alles),
+                    brauchtAlles: () => TEAM_SCHACH.brauchtAlles()
+                });
+
+            try {
+                umgebung.SCHACH_SPEICHER.vergessen();
+                TEAM_SCHACH.abgleich = abgleich;
+                TEAM_SCHACH.offeneId = "";
+
+                /* 1. Auf dem Start: alles — beide offenen Partien. */
+                await abgleich.fremdenStandHolen();
+                if (server.geladen !== 2) {
+                    throw new Error("der erste Blick holte " + server.geladen + " Partien statt 2");
+                }
+                if (abgleich.markeGanzGesehen !== server.stand.geaendertAm) {
+                    throw new Error("nach dem vollen Blick ist die ganze Marke nicht gemerkt");
+                }
+
+                /* 2. In Partie A; jemand zieht in A. */
+                TEAM_SCHACH.offeneId = partieA.id;
+                const gezogenA = SCHACH_RUNDE.kopieren(server.stand.partien[partieA.id]);
+                gezogenA.zugZaehler = 5;
+                server.stand.partien[partieA.id] = gezogenA;
+                server.stand.uebersicht[partieA.id].geaendertAm = 9800;
+                server.stand.geaendertAm = 9800;
+                server.geladen = 0;
+
+                await abgleich.fremdenStandHolen();
+                if (server.geladen !== 1) {
+                    throw new Error("in der Partie wurden " + server.geladen + " Partien geholt statt 1");
+                }
+                if (abgleich.daten.partien[partieA.id].zugZaehler !== 5) {
+                    throw new Error("der fremde Zug in A kam nicht an");
+                }
+                if (abgleich.markeGanzGesehen === 9800) {
+                    throw new Error("ein Teil-Blick darf nicht als voller gelten");
+                }
+
+                /* 3. Weiter in A; jemand aendert B — A bleibt unberuehrt. */
+                const gezogenB = SCHACH_RUNDE.kopieren(server.stand.partien[partieB.id]);
+                gezogenB.zugZaehler = 9;
+                server.stand.partien[partieB.id] = gezogenB;
+                server.stand.uebersicht[partieB.id].geaendertAm = 9900;
+                server.stand.geaendertAm = 9900;
+                server.geladen = 0;
+
+                await abgleich.fremdenStandHolen();
+                if (server.geladen !== 0) {
+                    throw new Error("eine Aenderung in B liess A neu holen");
+                }
+
+                /* 4. Zurueck auf den Start: jetzt fehlt B — und NUR B kommt. */
+                TEAM_SCHACH.offeneId = "";
+                server.geladen = 0;
+                await abgleich.fremdenStandHolen();
+                if (server.geladen !== 1) {
+                    throw new Error("beim Verlassen wurden " + server.geladen + " Partien geholt statt 1");
+                }
+                if (abgleich.daten.partien[partieB.id].zugZaehler !== 9) {
+                    throw new Error("der verpasste Zug in B kam nicht nach");
+                }
+                if (abgleich.markeGanzGesehen !== 9900) {
+                    throw new Error("nach dem Nachholen ist die ganze Marke nicht gemerkt");
+                }
+
+                /* 5. Nichts mehr passiert: kein Ladevorgang ausser der Marke. */
+                server.geladen = 0;
+                const aufrufeVorher = server.aenderungen.length;
+                await abgleich.fremdenStandHolen();
+                if (server.geladen !== 0 || server.aenderungen.length !== aufrufeVorher) {
+                    throw new Error("ohne Aenderung wurde geholt oder geschrieben");
+                }
+            } finally {
+                TEAM_SCHACH.abgleich = echterAbgleich;
+                TEAM_SCHACH.offeneId = echteOffene;
+                umgebung.SCHACH_SPEICHER.vergessen();
             }
         });
 
@@ -1288,11 +1611,9 @@ async function zeitlimitPruefen() {
                 /* … das Geraet von Schwarz noch nicht. */
                 TEAM_SCHACH.abgleich.daten = SCHACH_TAFEL.partieEinsetzen(
                     SCHACH_TAFEL.leereTafel(9800), partie, 9830);
-                TEAM_SCHACH.abgleich.speicher = {
-                    art: "gemeinsam",
-                    async laden() { return serverTafel; },
-                    async speichern(tafel) { serverTafel = tafel; return true; }
-                };
+                TEAM_SCHACH.abgleich.speicher = tafelInTeilen(
+                    async () => serverTafel,
+                    async (tafel) => { serverTafel = tafel; });
                 TEAM_SCHACH.offeneId = partie.id;
 
                 await TEAM_SCHACH.aufstellungBereitUmschalten(
@@ -1388,11 +1709,9 @@ async function zeitlimitPruefen() {
                 /* … das einladende Geraet noch nicht. */
                 TEAM_SCHACH.abgleich.daten = SCHACH_TAFEL.partieEinsetzen(
                     SCHACH_TAFEL.leereTafel(9900), partie, 9920);
-                TEAM_SCHACH.abgleich.speicher = {
-                    art: "gemeinsam",
-                    async laden() { return serverTafel; },
-                    async speichern(tafel) { serverTafel = tafel; return true; }
-                };
+                TEAM_SCHACH.abgleich.speicher = tafelInTeilen(
+                    async () => serverTafel,
+                    async (tafel) => { serverTafel = tafel; });
                 TEAM_SCHACH.offeneId = partie.id;
 
                 await TEAM_SCHACH.einladen(
@@ -1462,21 +1781,19 @@ async function zeitlimitPruefen() {
                 let ladeNummer = 0;
 
                 TEAM_SCHACH.abgleich.daten = serverTafel;
-                TEAM_SCHACH.abgleich.speicher = {
-                    art: "gemeinsam",
+                TEAM_SCHACH.abgleich.speicher = tafelInTeilen(
                     /* 1. Laden (vor dem Schreiben): der Stand ohne Zusagen.
                        2. Laden (Nachkontrolle): Schwarz hat inzwischen
                        ueberschrieben. */
-                    async laden() {
+                    async () => {
                         ladeNummer += 1;
                         return (ladeNummer === 1) ? serverTafel : ueberschrieben;
                     },
-                    async speichern(tafel) {
+                    async (tafel) => {
                         geschriebene.push(tafel);
                         serverTafel = tafel;
-                        return true;
-                    }
-                };
+                    },
+                    async () => serverTafel);
                 TEAM_SCHACH.offeneId = partie.id;
 
                 await TEAM_SCHACH.aufstellungBereitUmschalten(

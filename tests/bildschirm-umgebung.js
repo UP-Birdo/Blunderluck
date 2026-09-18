@@ -465,7 +465,7 @@ umgebung.TABS = {
  * Test sie greifen kann.
  */
 const bausteinNamen = ["KONFIG", "SPIELER", "ANMELDUNG", "SCHACH_VARIANTEN", "SCHACH", "SCHACH_RUNDE",
-    "SCHACH_TAFEL", "SCHACH_BOT", "SCHACH_VORSCHAU", "SCHACH_GRUNDLAGEN", "TEAM_SCHACH",
+    "SCHACH_TAFEL", "SCHACH_SPEICHER", "SCHACH_BOT", "SCHACH_VORSCHAU", "SCHACH_GRUNDLAGEN", "TEAM_SCHACH",
     "RANGLISTE", "START", "FAEHIGKEITEN", "FREUNDE", "EINSTELLUNGEN",
     "VERWALTUNGS_BILDSCHIRM",
     "FAEHIGKEIT_ZEICHEN",
@@ -480,7 +480,7 @@ const dateien = ["konfig.js", "spieler.js", "speicher.js", "abgleich.js",
     "anmeldung.js",
     "faehigkeit-zeichen.js", "schach-varianten.js",
     "schach.js", "schach-runde.js", "schach-runde-faehigkeiten.js",
-    "schach-tafel.js", "schach-bot.js",
+    "schach-tafel.js", "schach-speicher.js", "schach-bot.js",
     "schach-vorschau.js",
     "schach-grundlagen.js",
     "team-schach.js",

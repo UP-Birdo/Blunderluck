@@ -654,5 +654,41 @@ pruefe("letzteMitspieler ueberlebt das Loeschen der Partie und alte Chronik-Eint
         "id-bert,id-dora", "ein Eintrag ohne Zeitpunkt zaehlt als der aelteste");
 });
 
+pruefe("uebersichtEintrag: Ergebnis, laeuft, Teams und der Zeitpunkt des Schreibens (v0.114.3)", () => {
+    /*
+     * Der Eintrag ist das, was der Lader statt der ganzen Partie liest —
+     * er muss genau die vier Dinge tragen, an denen er entscheidet. Der
+     * Zeitstempel ist der des SCHREIBENS (uebergeben), nicht der der
+     * Partie: Sonst bliebe er stehen, wenn eine Aenderung den eigenen
+     * Zeitstempel der Partie nicht anfasst.
+     */
+    let partie = SCHACH_RUNDE.leereRunde(1000, "standard", "p-ue", "Uebersicht");
+    partie = SCHACH_RUNDE.teamBeitreten(partie, "id-anna", "weiss", 1000);
+    partie = SCHACH_RUNDE.teamBeitreten(partie, "id-bert", "schwarz", 1000);
+
+    const wartend = SCHACH_TAFEL.uebersichtEintrag(partie, 5000);
+    gleich(wartend.ergebnis, "", "wartend: kein Ergebnis");
+    gleich(wartend.laeuft, false, "wartend: laeuft nicht");
+    gleich(wartend.geaendertAm, 5000, "der uebergebene Zeitpunkt zaehlt");
+    gleich(wartend.teams.weiss.join(","), "id-anna", "Weiss im Eintrag");
+    gleich(wartend.teams.schwarz.join(","), "id-bert", "Schwarz im Eintrag");
+    gleich(Object.keys(wartend).sort().join(","), "ergebnis,geaendertAm,laeuft,teams",
+        "genau vier Felder — mehr braucht der Lader nicht");
+
+    const laufend = bereitUndAufgestellt(bereitUndAufgestellt(partie, "weiss", 1100), "schwarz", 1100);
+    gleich(SCHACH_TAFEL.uebersichtEintrag(laufend, 5100).laeuft, true, "laufend: laeuft");
+
+    const beendet = SCHACH_RUNDE.aufgeben(laufend, "weiss", 1200);
+    gleich(SCHACH_TAFEL.uebersichtEintrag(beendet, 5200).ergebnis, "schwarz", "beendet: das Ergebnis");
+
+    /* Ohne Zeitpunkt der der Partie — fuer Werkzeuge, die nachtragen. */
+    gleich(SCHACH_TAFEL.uebersichtEintrag(beendet).geaendertAm, beendet.geaendertAm,
+        "ohne Angabe der Zeitstempel der Partie");
+
+    /* Das Team im Eintrag ist eine Kopie, kein Verweis. */
+    wartend.teams.weiss.push("id-fremd");
+    gleich(SCHACH_RUNDE.teamVon(partie, "id-fremd"), "", "der Eintrag darf die Partie nicht aendern");
+});
+
 console.log(anzahlOk + " ok, " + anzahlFehler + " Fehler");
 process.exit(anzahlFehler === 0 ? 0 : 1);

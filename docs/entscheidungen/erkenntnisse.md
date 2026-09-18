@@ -2329,7 +2329,9 @@ Zustand. Dann ein Wegwerf-Skript gegen die echte Testumgebung mit einem
 Server-Nachbau, der 60 ms verzögert: `START.spielen()` fünfmal im Abstand
 von 10 ms — fünf Ladevorgänge, fünf Schreibvorgänge der ganzen Tafel,
 zwei Runden auf dem Server, keine Fehlermeldung. Die Tafel ist inzwischen
-rund 600 KB gross (37 Partien, davon 34 beendet): Am Handy sind das je
+rund 190 KB gross (37 Partien, davon 34 beendet; die 600 KB der
+Sicherungsdatei sind eingerückt — gemessen wurde danach kompakt): Am
+Handy sind das je
 Druck über eine Megabyte Verkehr und ein fünffach gezeichnetes Brett.
 
 **Die zwei Ursachen:**
@@ -2366,3 +2368,42 @@ Anlegen erzeugte bei jedem Druck etwas NEUES. Und: **Die ganze Tafel je
 Aufruf zu laden und zu schreiben ist der eigentliche Kostentreiber** —
 sie wächst mit jeder beendeten Partie (siehe `STATUS.md`, „Nächste
 Schritte").
+
+## Geholt wird, was man ansieht — drei Fallen beim Umbau auf Teile (v0.114.3, beim Bauen gefunden)
+
+**Der Anlass:** Nutzer-Ansage 18.09.2026, „so wenig Anfragen wie möglich,
+so schnell wie möglich laden". Der Umbau selbst steht in
+`docs\architektur\02-datenmodell-und-speicher.md` („In Teilen statt als
+Ganzes"). Hier nur, was dabei schiefgehen konnte und nicht offensichtlich
+war:
+
+1. **Die Sicherungsdatei ist nicht die Leitung.** Der Abzug von
+   `tools\Sichere-Datenbank.ps1` ist 596 KB gross — eingerückt. Kompakt,
+   wie die Datenbank antwortet, sind es 192 KB. Die 600 KB standen schon
+   in CHANGELOG, STATUS und Erkenntnis von v0.114.2 (am selben Tag
+   korrigiert). **Eine Grösse gilt nur für die Form, in der sie gemessen
+   wurde** — Übertragungsgrössen misst man mit einem GET, nicht mit
+   `Get-Item`.
+
+2. **„Beendet" heisst nicht „unveränderlich".** Der erste Entwurf wollte
+   beendete Partien am Chronik-Eintrag erkennen und nie wieder holen. Aber
+   `SCHACH_RUNDE.neuePartie` (die Revanche) behält die KENNUNG und setzt
+   `ergebnis` zurück — eine Partie mit Chronik-Eintrag kann wieder laufen.
+   Deshalb entscheidet nicht die Chronik, sondern der Übersichts-Eintrag
+   mit dem Zeitstempel des SCHREIBENS: Ändert sich der, wird geholt, egal
+   was die Partie vorher war. Und der Zeitstempel ist bewusst der der
+   Marke, nicht `partie.geaendertAm` — den fasst nicht jede Modell-
+   Änderung an, und ein verpasster Zug wäre der teuerste Fehler dieser App.
+
+3. **Server-Filter gibt es ohne Index nicht.** `orderBy="ergebnis"` kam
+   mit HTTP 400 zurück (gemessen, nicht gelesen). Der Weg ohne
+   Regeländerung ist ein eigener kleiner Index-Knoten (`uebersicht`), den
+   die App bei jedem Schreiben atomar mitsetzt — so weiss ein 5-KB-Blick,
+   was zu holen ist. Wer je einen Filter will, trägt die Index-Regel in
+   Firebase ein (Nutzer-Aufgabe, `docs\DEPLOYMENT.md`).
+
+**Die Regel dahinter:** Wer vom Ganzen auf Teile umstellt, braucht eine
+Antwort auf „was hat sich geändert" die BILLIGER ist als das Ganze — und
+sie muss vom Schreiber gepflegt werden, nicht vom Leser geraten. Und:
+Erst am echten Server messen, was die Schnittstelle hergibt, dann
+entwerfen — der `orderBy`-Entwurf wäre sonst gebaut und gescheitert.

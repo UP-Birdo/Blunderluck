@@ -114,6 +114,14 @@ auf dem jeweiligen Gerät.
    später einer dazu, gehört sein Pfad (aus `js/konfig.js`) hier ergänzt.
    **Nicht** den Testmodus verwenden: der macht die ganze Datenbank auf und
    schließt sie nach 30 Tagen wieder.
+
+   **Seit v0.114.3 liest und schreibt die App in Teilen** (`partien/<id>`,
+   `uebersicht/<id>`, `chronik`, `geaendertAm` — alles UNTER `team-schach`,
+   die Regeln oben decken das ab, nichts zu ändern). Server-Filter
+   (`orderBy`) werden NICHT benutzt; sie brauchten eine Index-Regel
+   (`".indexOn": ["ergebnis"]` unter `team-schach/partien`) und sind ohne
+   sie mit HTTP 400 abgewiesen worden (gemessen 18.09.2026). Sollte das je
+   nötig werden, ist die Regel eine Nutzer-Aufgabe hier im Reiter Regeln.
 6. Oben im Reiter **Daten** steht die Adresse der Datenbank, etwa
    `https://blunderluck-12345-default-rtdb.europe-west1.firebasedatabase.app/`.
 7. Diese Adresse **ohne den Schrägstrich am Ende** in
