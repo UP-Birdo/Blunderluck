@@ -456,7 +456,8 @@ Object.assign(TEAM_SCHACH, {
 
                 zeile.appendChild(TEAM_SCHACH._element("span", "abschluss-platz",
                     (platz + 1) + "."));
-                zeile.appendChild(TEAM_SCHACH._element("span", "abschluss-name", eintrag.name));
+                /* Der Name führt ins Profil (seit v0.119.0). */
+                zeile.appendChild(TEAM_SCHACH._nameKnopfBauen(eintrag.id, "abschluss-name"));
 
                 if (zuwachs[eintrag.id] > 0) {
                     const marke = TEAM_SCHACH._element("span", "abschluss-zuwachs");

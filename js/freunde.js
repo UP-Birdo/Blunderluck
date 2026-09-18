@@ -53,7 +53,7 @@ const FREUNDE = {
                         () => FREUNDE.annehmen(anderer.id)),
                     FREUNDE._knopf("Ablehnen", "knopf-still knopf-klein",
                         () => FREUNDE.ablehnen(anderer.id))
-                ]));
+                ], anderer.id));
             }
         }
 
@@ -63,7 +63,7 @@ const FREUNDE = {
                     DIALOG.zweiSchritt(
                         FREUNDE._knopf("Entfernen", "knopf-gefahr knopf-klein", null),
                         () => FREUNDE.entfernen(freund.id))
-                ]));
+                ], freund.id));
             }
         } else {
             karte.appendChild(FREUNDE._erklaerung(
@@ -78,7 +78,7 @@ const FREUNDE = {
                 karte.appendChild(FREUNDE._zeileBauen(anderer.name, [
                     FREUNDE._knopf("Zurückziehen", "knopf-still knopf-klein",
                         () => FREUNDE.zurueckziehen(anderer.id))
-                ]));
+                ], anderer.id));
             }
         }
 
@@ -120,7 +120,7 @@ const FREUNDE = {
                 treffer.appendChild(FREUNDE._zeileBauen(anderer.name, [
                     FREUNDE._knopf("Anfrage senden", "knopf-still knopf-klein",
                         () => FREUNDE.anfragen(anderer.id))
-                ]));
+                ], anderer.id));
             }
         };
 
@@ -192,14 +192,19 @@ const FREUNDE = {
      * Bausteine
      * ---------------------------------------------------------------- */
 
-    _zeileBauen(name, knoepfe) {
+    /* `id` (seit v0.119.0) macht den Namen zum Knopf ins Profil. */
+    _zeileBauen(name, knoepfe, id) {
         const zeile = document.createElement("div");
         zeile.className = "freunde-zeile";
 
-        const beschriftung = document.createElement("span");
-        beschriftung.className = "freunde-name";
-        beschriftung.textContent = name;
-        zeile.appendChild(beschriftung);
+        if (id && typeof TEAM_SCHACH !== "undefined" && TEAM_SCHACH._nameKnopfBauen) {
+            zeile.appendChild(TEAM_SCHACH._nameKnopfBauen(id, "freunde-name"));
+        } else {
+            const beschriftung = document.createElement("span");
+            beschriftung.className = "freunde-name";
+            beschriftung.textContent = name;
+            zeile.appendChild(beschriftung);
+        }
 
         const leiste = document.createElement("span");
         leiste.className = "freunde-knoepfe";

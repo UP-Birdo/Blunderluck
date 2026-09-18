@@ -353,6 +353,38 @@ pruefe("inhaltGleich erkennt Freundes-Änderungen", () => {
         "eine Ablehnung zählt als Änderung");
 });
 
+pruefe("Abzeichen: höchstens drei, keine doppelt, eigene Wahl überlebt Zusammenführung (v0.119.0)", () => {
+    let daten = mitDrei();
+
+    /* Ein alter Eintrag ohne das Feld bekommt eine leere Liste. */
+    gleich(SPIELER.spielerFinden(daten, "id-anna").abzeichen.length, 0,
+        "ohne Angabe keine Abzeichen");
+
+    /* Setzen: Form wird geprüft, Menge gedeckelt. */
+    daten = SPIELER.abzeichenSetzen(daten, "id-anna",
+        ["erster-sieg", "veteran", "erster-sieg", "", 7, "nachteule", "legende"], 2000);
+    gleich(SPIELER.spielerFinden(daten, "id-anna").abzeichen.join(","),
+        "erster-sieg,veteran,nachteule", "drei bleiben, doppelte und Müll fliegen");
+
+    /* Die Normalisierung deckelt genauso — auch bei fremdem Stand. */
+    const roh = SPIELER.kopieren(daten);
+    roh.spieler[0].abzeichen = ["a", "b", "c", "d"];
+    gleich(SPIELER.normalisieren(roh).spieler[0].abzeichen.length, 3,
+        "mehr als drei nimmt die Normalisierung nicht an");
+
+    /* Der Vergleich sieht die Änderung — sonst bliebe die Karte alt. */
+    const geaendert = SPIELER.abzeichenSetzen(daten, "id-anna", ["legende"], 2100);
+    wahr(!SPIELER.inhaltGleich(daten, geaendert), "inhaltGleich erkennt neue Abzeichen");
+
+    /* Zusammenführen: der eigene Eintrag gewinnt, der fremde bleibt. */
+    const fremd = SPIELER.abzeichenSetzen(daten, "id-bert", ["veteran"], 2200);
+    const zusammen = SPIELER.zusammenfuehren(fremd, geaendert, "id-anna");
+    gleich(SPIELER.spielerFinden(zusammen, "id-anna").abzeichen.join(","), "legende",
+        "die eigene Wahl steht");
+    gleich(SPIELER.spielerFinden(zusammen, "id-bert").abzeichen.join(","), "veteran",
+        "Berts Wahl kommt vom Server");
+});
+
 /* ------------------------------------------------------------------ */
 
 console.log(anzahlOk + " ok, " + anzahlFehler + " Fehler");

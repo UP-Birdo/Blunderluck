@@ -68,9 +68,18 @@ const SPIELER = {
             pinPruefwert: "",
             pinSalz: "",
             freunde: [],
-            abgelehnt: []
+            abgelehnt: [],
+
+            /* Die bis zu drei Abzeichen auf der Visitenkarte (seit v0.119.0).
+               Verdient wird aus der Chronik gerechnet (`RANGLISTE.abzeichenVon`);
+               hier steht nur, WELCHE drei der Spieler zeigen will. */
+            abzeichen: []
         };
     },
+
+    /* Wie viele Abzeichen die Visitenkarte trägt — und mehr nimmt
+       `normalisieren` auch nicht an. */
+    ABZEICHEN_PLAETZE: 3,
 
     /* Ein leerer, gültiger Datenstand. */
     leereDaten(zeitpunkt) {
@@ -124,6 +133,15 @@ const SPIELER = {
                     spieler[feld] = roh[feld].filter(
                         (eintrag) => typeof eintrag === "string" && eintrag !== "");
                 }
+            }
+
+            /* Die gewählten Abzeichen (seit v0.119.0): Kennungen, höchstens
+               drei, keine doppelt — fremder Müll fliegt raus. */
+            if (Array.isArray(roh.abzeichen)) {
+                spieler.abzeichen = roh.abzeichen
+                    .filter((eintrag, stelle, liste) => typeof eintrag === "string"
+                        && eintrag !== "" && liste.indexOf(eintrag) === stelle)
+                    .slice(0, SPIELER.ABZEICHEN_PLAETZE);
             }
 
             daten.spieler.push(spieler);
@@ -322,9 +340,37 @@ const SPIELER = {
                 || spielerA.abgelehnt.join("|") !== spielerB.abgelehnt.join("|")) {
                 return false;
             }
+
+            /* Und die Abzeichen (seit v0.119.0) — sonst bliebe eine fremde
+               Visitenkarte alt, bis etwas anderes das Neuzeichnen auslöst. */
+            if (spielerA.abzeichen.join("|") !== spielerB.abzeichen.join("|")) {
+                return false;
+            }
         }
 
         return true;
+    },
+
+    /*
+     * Die Abzeichen auf der eigenen Visitenkarte setzen (seit v0.119.0).
+     * Geprüft wird nur die Form — ob der Spieler ein Abzeichen wirklich
+     * verdient hat, weiss die Rangliste; der Bildschirm bietet nur
+     * Verdientes an. Mehr als drei nimmt die Normalisierung ohnehin nicht.
+     */
+    abzeichenSetzen(daten, id, liste, zeitpunkt) {
+        const neu = SPIELER.kopieren(daten);
+        const sauber = (Array.isArray(liste) ? liste : [])
+            .filter((eintrag, stelle, alle) => typeof eintrag === "string"
+                && eintrag !== "" && alle.indexOf(eintrag) === stelle)
+            .slice(0, SPIELER.ABZEICHEN_PLAETZE);
+
+        for (const spieler of neu.spieler) {
+            if (spieler.id === id) {
+                spieler.abzeichen = sauber;
+            }
+        }
+        neu.geaendertAm = (zeitpunkt === undefined) ? Date.now() : zeitpunkt;
+        return neu;
     },
 
     /* ---------------------------------------------------------------- *

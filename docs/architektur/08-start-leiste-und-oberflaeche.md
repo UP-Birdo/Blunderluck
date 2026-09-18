@@ -62,7 +62,7 @@ links und der Beschriftung rechts:
 
 | Punkt | Führt zu | Zeichen |
 |---|---|---|
-| Profil | `ANMELDUNG.profilOeffnen()` (Name/Passwort) | `_profilZeichenBauen` (neu) |
+| Profil | `RANGLISTE.eigenesProfilOeffnen("start")` — seit v0.119.0 die Profilseite (Abschnitt unten); bis v0.118.0 das Popup `ANMELDUNG.profilOeffnen()` | `_profilZeichenBauen` (neu) |
 | Einstellungen | Tab `einstellungen` | `_zahnradBauen` |
 | Freunde | `START.freundeOeffnen()` | `_freundeZeichenBauen` |
 | Verlauf | `START.verlaufOeffnen()` | `_verlaufZeichenBauen` |
@@ -215,17 +215,71 @@ der Spielerzeile. Die wartende Partie ruft sie seit v0.61.0 gar nicht mehr.
   (`TEAM_SCHACH.selbstAngelegt`, v0.29.0); `uebersichtOeffnen` ist dafür
   `async` geworden.
 
-## In eine Runde kommt man nur über Code oder Einladung (v0.10.0/v0.13.0)
+## In eine Runde kommt man über Code, Link, Einladung — oder die Liste der offenen Runden (v0.10.0 bis v0.118.0)
 
 - **Der Beitritts-Code wird aus der Partie-Kennung GERECHNET**
   (`SCHACH_RUNDE.beitrittsCode`) und nie gespeichert.
+- **Der Einladungslink (seit v0.117.0)** ist die Adresse der App plus
+  `?code=…` (`TEAM_SCHACH.einladungsAdresse`); Teilen und Kopieren im
+  Vorraum geben ihn mit. Beim Start liest `einladungsCodeAusAdresse` den
+  Code grosszügig (wie das Code-Feld), `einladungAusAdresseAnnehmen` führt
+  nach der Anmeldung in die Runde und bereinigt die Adresse — es läuft in
+  `ANMELDUNG.beiAngemeldet` (`app.js`) VOR dem Wiedereinstieg. Der
+  Service-Worker beantwortet solche Adressen dank `ignoreSearch` offline.
 - **Einladungen liegen additiv in der Partie** (`eingeladen`,
   `SCHACH_RUNDE.istEingeladen`).
+- **Die Sichtbarkeit einer Runde (seit v0.118.0)** steht in
+  `regeln.sichtbarkeit`: `oeffentlich` / `freunde` / `privat`
+  (`SCHACH_RUNDE.SICHTBARKEITEN`). Die Vorgabe des MODELLS ist `privat` —
+  damit eine Runde von vor v0.118.0, die das Feld nicht hat, bleibt, was sie
+  war: nur per Code erreichbar. Die Vorgabe des BILDSCHIRMS
+  (`_regelnVorgabe`) ist `oeffentlich` und wird beim Anlegen ausdrücklich
+  mitgeschrieben. `sichtbarFuer(runde, personId, istFreund)` entscheidet,
+  wer sie sieht; ob jemand ein Freund ist, weiss nur die Spielerliste —
+  deshalb bekommt das Modell eine Frage-Funktion und keine Spielerdaten.
+  Karte „Wer sieht die Runde?" in den Grundeinstellungen
+  (`_sichtbarkeitLeisteBauen`), Schildchen im Vorraum.
+- **Die Karte „Offene Runden" unter „Runde beitreten" (seit v0.118.0,
+  `_offeneRundenBauen`)** zeigt wartende Runden (nicht gestartet, nicht
+  beendet, man sitzt nicht selbst darin), die `sichtbarFuer` freigibt — mit
+  Namen, Spielart, Schildchen „Freund"/„Öffentlich" und „Beitreten"
+  (`partieOeffnen`, derselbe Weg wie der Code). Geladen sind alle offenen
+  Runden ohnehin (Ladeweg seit v0.114.3).
 - **Die Freundesliste wird GELESEN, nie in fremde Einträge geschrieben**
   (`js\freunde.js`, Modell in `spieler.js`: `freunde` / `abgelehnt`). Anfragen
   entstehen aus dem Vergleich beider Sichten (`SPIELER.freundschaft`) — das ist
   dieselbe Denkweise wie beim Zusammenführen der Spielerliste: Jeder ist Herr
   über seinen eigenen Eintrag.
+
+## Die Profilseite — Visitenkarte, Abzeichen, Statistik (seit v0.119.0)
+
+Nutzer-Ansage 18.09.2026: Profil als ganze Seite statt Popup, drei
+Abzeichen, „coole" Statistiken, Namen überall anklickbar, Freundanfragen
+vom Profil. Gebaut auf der Spieler-Profilseite der Rangliste
+(`js\rangliste.js`), die es seit Quizz-v3.3 gab:
+
+- **Einstiege:** `RANGLISTE.profilOeffnen(spielerId, rueckweg)` von überall
+  — `rueckweg` ist der Tab, aus dem man kam, und `profilSchliessen` führt
+  dorthin zurück (ohne Rückweg in die Wertung). `eigenesProfilOeffnen`
+  für Menüband und Einstellungen. `TEAM_SCHACH._nameKnopfBauen(id, klasse)`
+  macht jeden Namen zum Knopf (`.name-inline`): Vorraum-Plätze, Abschluss,
+  Partie-Karten, Freundesliste (`_zeileBauen` mit `id`), offene Runden.
+  Der Computer hat kein Profil und bleibt Text.
+- **Visitenkarte** (`_visitenkarteBauen`): Name, Punkte, Platz, „dabei seit"
+  (Datum der ersten beendeten Partie — die Spielerliste kennt kein
+  Anlegedatum), drei Abzeichen-Plätze; eigenes Profil: Name/Passwort ändern
+  (`ANMELDUNG.namenAendern`/`passwortAendern`), „Abzeichen wählen";
+  fremdes Profil: der Freundschafts-Knopf (`_freundschaftBauen`) in den vier
+  Lagen von `SPIELER.freundschaft`, geschrieben über `FREUNDE`.
+- **Statistik** (`RANGLISTE.statistik`): aus `verlauf` in Spielreihenfolge
+  — Serien, Comebacks, schnellster Sieg, längste Partie, Züge, Zeit,
+  Beute, Lieblings-Brett, häufigster Gegner. Nichts wird gespeichert.
+- **Abzeichen** (`RANGLISTE.ABZEICHEN`, 14 Stück): jedes eine
+  `pruefen(statistik)`-Regel — VERDIENT wird gerechnet, nie vergeben.
+  Gespeichert wird nur die Wahl fürs Schaufenster: `spieler.abzeichen`
+  (additiv, höchstens `SPIELER.ABZEICHEN_PLAETZE` = 3, `abzeichenSetzen`,
+  mit Zusammenführung). `gezeigteAbzeichen` zeigt nur, was gewählt UND
+  verdient ist — schrumpft die Chronik, steht nichts Erlogenes da.
 
 ## Der 3D-Look ist dauerhaft an (seit v0.17.0)
 

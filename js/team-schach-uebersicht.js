@@ -226,10 +226,18 @@ Object.assign(TEAM_SCHACH, {
             const zeile = TEAM_SCHACH._element("div", "offene-runde");
 
             const text = TEAM_SCHACH._element("div", "offene-runde-text");
-            text.appendChild(TEAM_SCHACH._element("span", "offene-runde-wer",
-                mitglieder.length
-                    ? mitglieder.map((id) => TEAM_SCHACH._nameVon(id)).join(", ")
-                    : "Noch niemand"));
+            const wer = TEAM_SCHACH._element("span", "offene-runde-wer");
+            if (mitglieder.length === 0) {
+                wer.textContent = "Noch niemand";
+            }
+            /* Jeder Name führt ins Profil (seit v0.119.0). */
+            mitglieder.forEach((id, stelle) => {
+                if (stelle > 0) {
+                    wer.appendChild(document.createTextNode(", "));
+                }
+                wer.appendChild(TEAM_SCHACH._nameKnopfBauen(id));
+            });
+            text.appendChild(wer);
             text.appendChild(TEAM_SCHACH._element("span", "offene-runde-was",
                 SCHACH_RUNDE.varianteVon(partie).titel
                 + " — " + SCHACH_RUNDE.kurzfassung(partie)));
@@ -1938,27 +1946,36 @@ Object.assign(TEAM_SCHACH, {
                 + jetzt + "."));
         }
 
-        const weiss = partie.teams.weiss.map((id) => TEAM_SCHACH._nameVon(id));
-        const schwarz = partie.teams.schwarz.map((id) => TEAM_SCHACH._nameVon(id));
-
         /* Bei einer beendeten Partie trägt jede Seite dazu, wie sie
            ausgegangen ist — sonst muss man das Ergebnis oben mit den Namen
-           hier unten selbst zusammenrechnen. */
-        const seite = (farbe, namen) => {
+           hier unten selbst zusammenrechnen. Die Namen sind seit v0.119.0
+           Knöpfe ins Profil; deshalb wird die Zeile aus Teilen gebaut. */
+        const namenZeile = TEAM_SCHACH._element("p", "team-namen");
+        const seite = (farbe) => {
             const kopfText = (farbe === "weiss") ? "Weiss" : "Schwarz";
-            const wer = namen.length ? namen.join(", ") : "niemand";
-
-            if (!partie.ergebnis) {
-                return kopfText + ": " + wer;
-            }
+            let zusatz = "";
             if (partie.ergebnis === "remis") {
-                return kopfText + " (unentschieden): " + wer;
+                zusatz = " (unentschieden)";
+            } else if (partie.ergebnis) {
+                zusatz = (partie.ergebnis === farbe) ? " (Sieger)" : " (Verlierer)";
             }
-            return kopfText + ((partie.ergebnis === farbe) ? " (Sieger): " : " (Verlierer): ") + wer;
-        };
+            namenZeile.appendChild(document.createTextNode(kopfText + zusatz + ": "));
 
-        karte.appendChild(TEAM_SCHACH._element("p", "team-namen",
-            seite("weiss", weiss) + "   |   " + seite("schwarz", schwarz)));
+            const ids = partie.teams[farbe];
+            if (ids.length === 0) {
+                namenZeile.appendChild(document.createTextNode("niemand"));
+            }
+            ids.forEach((id, stelle) => {
+                if (stelle > 0) {
+                    namenZeile.appendChild(document.createTextNode(", "));
+                }
+                namenZeile.appendChild(TEAM_SCHACH._nameKnopfBauen(id));
+            });
+        };
+        seite("weiss");
+        namenZeile.appendChild(document.createTextNode("   |   "));
+        seite("schwarz");
+        karte.appendChild(namenZeile);
 
         const leiste = TEAM_SCHACH._element("div", "karte-fuss");
         leiste.appendChild(TEAM_SCHACH._knopf("Öffnen", "knopf-still knopf-klein",

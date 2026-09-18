@@ -339,6 +339,16 @@ const umgebung = {
         /* Für den Pfeil des letzten Zuges (SVG). Der Namensraum spielt hier
            keine Rolle — geprüft wird, dass der Code durchläuft. */
         createElementNS(namensraum, tag) { return neuesElement(tag); },
+
+        /* Seit v0.119.0 stehen Namen als Knöpfe MITTEN im Text (Partie-Karte,
+           offene Runden) — der Text dazwischen ist ein Textknoten. Hier ein
+           Element mit dem Tag „#text", damit `kinder` es wie im Browser
+           führt. */
+        createTextNode(text) {
+            const knoten = neuesElement("#text");
+            knoten.textContent = String(text);
+            return knoten;
+        },
         addEventListener() { /* wird beim Zeichnen nicht gebraucht */ },
 
         /* Seit Wunsch 4 (v0.17.0) setzt EINSTELLUNGEN.laden die Klasse

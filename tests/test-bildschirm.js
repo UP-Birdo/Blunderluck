@@ -927,7 +927,11 @@ pruefe("Sichtbarkeit: Dreier-Reihe in den Grundeinstellungen, und die offenen Ru
         anlegen("p-bert-laeuft", "id-bert", "oeffentlich", true);
 
         const karte = TEAM_SCHACH._offeneRundenBauen(probe, { id: "id-anna", name: "Anna" });
-        const zeilen = mitKlasse(karte, "offene-runde-wer").map((kind) => String(kind.textContent));
+        /* Die Namen sind seit v0.119.0 Knoepfe IN der Zeile — gelesen wird
+           deshalb aus den Kindern, nicht aus der Zeile selbst. */
+        const zeilen = mitKlasse(karte, "offene-runde-wer").map((zeile) =>
+            (zeile.kinder || []).map((kind) => String(kind.textContent || ""))
+                .filter((text) => text !== ", ").join(""));
         const soll = ["Bert", "Carl"];
         if (zeilen.slice().sort().join(",") !== soll.join(",")) {
             throw new Error("erwartet die Runden von " + soll.join(" und ")
@@ -2188,9 +2192,13 @@ pruefe("Die Historie zeigt nur eigene Partien, mit Sieger und Verlierer (v0.59)"
 
     /* Irgendwo im Kasten steht, wer Sieger und wer Verlierer war. */
     let gefunden = "";
+    /* Seit v0.119.0 ist die Namenszeile aus Textknoten und Namens-Knoepfen
+       gebaut — gelesen wird deshalb alles, was DARIN steht. */
+    const textVon = (element) => String(element.textContent || "")
+        + (element.kinder || []).map(textVon).join("");
     const durchsuchen = (element) => {
         if (String(element.className || "").indexOf("team-namen") !== -1) {
-            gefunden += String(element.textContent || "");
+            gefunden += textVon(element);
         }
         for (const kind of element.kinder || []) {
             durchsuchen(kind);

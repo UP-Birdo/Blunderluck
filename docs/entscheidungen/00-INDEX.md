@@ -25,6 +25,12 @@ wird. Die Liste dessen, was noch kommt, steht in [../ROADMAP.md](../ROADMAP.md).
 
 ## entschieden.md - Blunderluck-Eintraege
 
+- **Sichtbarkeit: neue Runden oeffentlich, alte privat; Abzeichen gerechnet,
+  nicht vergeben** (18.09.2026, v0.118.0 / v0.119.0 — zwei Vorgaben fuer
+  `regeln.sichtbarkeit` (Modell privat, Bildschirm oeffentlich), damit alte
+  Runden nicht ploetzlich in der Liste stehen; `spieler.abzeichen` speichert
+  nur die Wahl, verdient wird aus der Chronik gerechnet; Profil-Rueckweg ist
+  ein Tab, keine Kette)
 - **Farbe und Ungluecks-Zeichen an EINEM Haken** (18.09.2026, v0.115.3 —
   kippt die Trennung aus v0.49: „Seltenheit anzeigen" schreibt
   `pechZeigen` mit, sein Bild wechselt bei AN durch alle Stufenfarben;

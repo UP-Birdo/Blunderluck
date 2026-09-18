@@ -1440,10 +1440,14 @@ const TEAM_SCHACH = {
 
         const liste = TEAM_SCHACH._element("div", "seitenwahl-liste");
         for (const id of mitglieder) {
-            liste.appendChild(TEAM_SCHACH._element("div",
+            const eintrag = TEAM_SCHACH._element("div",
                 "seitenwahl-eintrag"
-                + ((id === person.id) ? " seitenwahl-eintrag-ich" : ""),
-                SCHACH_BOT.istBot(id) ? "Computer" : TEAM_SCHACH._nameVon(id)));
+                + ((id === person.id) ? " seitenwahl-eintrag-ich" : ""));
+            /* Der Name führt ins Profil (seit v0.119.0). */
+            eintrag.appendChild(SCHACH_BOT.istBot(id)
+                ? TEAM_SCHACH._element("span", "", "Computer")
+                : TEAM_SCHACH._nameKnopfBauen(id));
+            liste.appendChild(eintrag);
         }
         if (mitglieder.length === 0) {
             liste.appendChild(TEAM_SCHACH._element("div",
@@ -2573,6 +2577,32 @@ const TEAM_SCHACH = {
         }
 
         TEAM_SCHACH.teamBeitreten(partie, farbe);
+    },
+
+    /*
+     * EIN NAME ALS KNOPF INS PROFIL (seit v0.119.0, Nutzer-Ansage
+     * 18.09.2026: „auf Benutzernamen soll man in der ganzen App klicken
+     * können, um das Profil zu sehen"). Ein echter Knopf, kein
+     * anklickbarer Text (Tastatur, Rückmeldung am Handy — wie der
+     * Namensknopf der Rangliste). Der Computer hat kein Profil und bleibt
+     * Text. Der Rückweg ist der Tab, in dem man gerade steht.
+     */
+    _nameKnopfBauen(spielerId, klasse) {
+        if (SCHACH_BOT.istBot(spielerId) || typeof RANGLISTE === "undefined") {
+            return TEAM_SCHACH._element("span", klasse || "", TEAM_SCHACH._nameVon(spielerId));
+        }
+
+        const knopf = document.createElement("button");
+        knopf.type = "button";
+        knopf.className = "name-inline" + (klasse ? " " + klasse : "");
+        knopf.textContent = TEAM_SCHACH._nameVon(spielerId);
+        knopf.setAttribute("aria-label", "Profil von " + TEAM_SCHACH._nameVon(spielerId));
+        knopf.addEventListener("click", (ereignis) => {
+            ereignis.stopPropagation();
+            RANGLISTE.profilOeffnen(spielerId,
+                (typeof TABS !== "undefined") ? TABS.aktiveId : "");
+        });
+        return knopf;
     },
 
     /* Name eines Spielers aus der Spielerliste; Kennung als Rückfall. */

@@ -354,7 +354,12 @@ pruefe("Die Seitenwahl steht in zwei Spalten (Punkt 49)", () => {
     const meine = TEAM_SCHACH._vorraumPlatzBauen(
         alsWeiss, person, "weiss", true);
     const eintrag = klasseSuchen(meine, "seitenwahl-eintrag");
-    if (!eintrag || String(eintrag.textContent || "") !== person.name) {
+    /* Seit v0.119.0 ist der Name ein Knopf IM Eintrag (fuehrt ins Profil). */
+    const eintragText = eintrag
+        ? String((eintrag.kinder && eintrag.kinder[0]) ? eintrag.kinder[0].textContent
+            : eintrag.textContent || "")
+        : "";
+    if (!eintrag || eintragText !== person.name) {
         throw new Error("der Name steht nicht in der Liste: "
             + (eintrag ? eintrag.textContent : "gar nicht"));
     }
@@ -684,6 +689,103 @@ pruefe("Ein Tipp auf den Namen fuehrt ins Profil und wieder zurueck", () => {
 
     if (RANGLISTE.offenesProfil !== "") {
         throw new Error("Zurueck hat das Profil nicht geschlossen");
+    }
+});
+
+pruefe("Die Profilseite: Visitenkarte, Freundschafts-Knopf, Rueckweg — und ein Name im Text fuehrt hin (v0.119.0)", () => {
+    /*
+     * NUTZER-ANSAGE 18.09.2026: Profil als ganze Seite mit Visitenkarte,
+     * drei Abzeichen und Statistik; auf Namen ueberall klicken koennen;
+     * Freundanfrage vom Profil aus.
+     */
+    const einsammeln = (element, passt, treffer) => {
+        for (const kind of element.kinder || []) {
+            if (passt(kind)) {
+                treffer.push(kind);
+            }
+            einsammeln(kind, passt, treffer);
+        }
+        return treffer;
+    };
+    const mitKlasse = (klasse) => einsammeln(RANGLISTE.wurzelEl, (kind) =>
+        String(kind.className || "").indexOf(klasse) !== -1, []);
+    const knopfMit = (text) => einsammeln(RANGLISTE.wurzelEl, (kind) =>
+        kind.tagName === "button" && String(kind.textContent || "") === text, [])[0];
+
+    const gemerkteSpieler = ANMELDUNG.abgleich.daten;
+    try {
+        /* Berts Profil, aus dem Start heraus. */
+        RANGLISTE.profilOeffnen("id-bert", "start");
+        if (einsammeln(RANGLISTE.wurzelEl, (kind) =>
+            String(kind.className || "") === "karte visitenkarte", []).length !== 1) {
+            throw new Error("die Visitenkarte fehlt");
+        }
+        if (mitKlasse("visitenkarte-name").map((k) => String(k.textContent)).join() !== "Bert") {
+            throw new Error("die Visitenkarte traegt nicht Berts Namen");
+        }
+        if (mitKlasse("abzeichen").length < 3) {
+            throw new Error("drei Abzeichen-Plaetze erwartet");
+        }
+        if (mitKlasse("statistik-raster").length + mitKlasse("erklaerung").length === 0) {
+            throw new Error("weder Statistik-Kacheln noch ein Satz dazu");
+        }
+
+        /* Freund anfragen — die Lage wechselt auf „gesendet". */
+        const anfragen = knopfMit("Freund anfragen");
+        if (!anfragen) {
+            throw new Error("der Knopf Freund anfragen fehlt bei einem Fremden");
+        }
+        anfragen.ausloesen("click");
+        if (SPIELER.freundschaft(ANMELDUNG.abgleich.daten, "id-anna", "id-bert") !== "gesendet") {
+            throw new Error("die Anfrage ist nicht im Stand gelandet");
+        }
+        if (!knopfMit("Zurückziehen")) {
+            throw new Error("nach der Anfrage muss Zurueckziehen dastehen");
+        }
+
+        /* Zurueck fuehrt dorthin, wo man herkam. */
+        umgebung.TABS.gewechseltZu = "";
+        knopfMit("Zurück").ausloesen("click");
+        if (umgebung.TABS.gewechseltZu !== "start") {
+            throw new Error("Zurueck muss in den Start fuehren, ging nach: "
+                + umgebung.TABS.gewechseltZu);
+        }
+        if (RANGLISTE.offenesProfil !== "") {
+            throw new Error("das Profil ist noch offen");
+        }
+
+        /* Das eigene Profil: Name, Passwort, Abzeichen waehlen. */
+        RANGLISTE.profilOeffnen("id-anna");
+        for (const text of ["Name ändern", "Passwort ändern", "Abzeichen wählen"]) {
+            if (!knopfMit(text)) {
+                throw new Error("auf dem eigenen Profil fehlt: " + text);
+            }
+        }
+        if (knopfMit("Freund anfragen")) {
+            throw new Error("sich selbst kann man nicht anfragen");
+        }
+        RANGLISTE.profilSchliessen();
+
+        /* Ein Name mitten im Text ist ein Knopf ins Profil. */
+        const knopf = TEAM_SCHACH._nameKnopfBauen("id-bert");
+        if (knopf.tagName !== "button" || String(knopf.textContent) !== "Bert") {
+            throw new Error("der Namensknopf ist kein Knopf mit dem Namen");
+        }
+        knopf.ausloesen("click");
+        if (RANGLISTE.offenesProfil !== "id-bert") {
+            throw new Error("der Namensknopf oeffnet Berts Profil nicht");
+        }
+        RANGLISTE.profilSchliessen();
+
+        /* Der Computer bleibt Text. */
+        const bot = TEAM_SCHACH._nameKnopfBauen(SCHACH_BOT.KENNUNG);
+        if (bot.tagName === "button") {
+            throw new Error("der Computer hat kein Profil und darf kein Knopf sein");
+        }
+    } finally {
+        ANMELDUNG.abgleich.daten = gemerkteSpieler;
+        RANGLISTE.offenesProfil = "";
+        RANGLISTE.profilRueckweg = "";
     }
 });
 

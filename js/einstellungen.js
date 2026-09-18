@@ -284,7 +284,9 @@ const EINSTELLUNGEN = {
         leiste.className = "karte-fuss";
 
         leiste.appendChild(EINSTELLUNGEN._knopf("Profil", "knopf-still knopf-klein",
-            () => ANMELDUNG.profilOeffnen()));
+            /* Seit v0.119.0 die Profilseite (Rangliste) statt des Popups;
+               Zurück führt in die Einstellungen. */
+            () => RANGLISTE.eigenesProfilOeffnen("einstellungen")));
 
         /* EIN Knopf statt der eingebetteten Mitspieler-Liste (bis v0.99.0
            hier, Nutzer-Ansage 27.08.2026): Er fragt bei Bedarf das

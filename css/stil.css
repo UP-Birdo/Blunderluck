@@ -1125,6 +1125,176 @@ body.partie-fest .phasen-leiste {
     font-weight: 600;
 }
 
+/*
+ * EIN NAME MITTEN IM TEXT ALS KNOPF (seit v0.119.0): Vorraum, Abschluss,
+ * Partie-Karten, Freundesliste, offene Runden. Sieht aus wie der Text
+ * ringsum, verrät sich beim Berühren durch die Unterstreichung.
+ */
+.name-inline {
+    appearance: none;
+    display: inline;
+    padding: 0;
+    border: none;
+    background: none;
+    font: inherit;
+    font-weight: 600;
+    color: inherit;
+    cursor: pointer;
+    text-decoration: underline;
+    text-decoration-color: transparent;
+    text-underline-offset: 2px;
+}
+
+.name-inline:hover,
+.name-inline:focus-visible {
+    text-decoration-color: currentColor;
+}
+
+/* ------------------------------------------------------------------ *
+ * Die Profilseite (seit v0.119.0): Visitenkarte, Statistik, Abzeichen
+ * ------------------------------------------------------------------ */
+
+.visitenkarte-kopf {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.visitenkarte-name {
+    font-size: 1.5rem;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+}
+
+.visitenkarte-punkte {
+    font-size: 1.5rem;
+    white-space: nowrap;
+}
+
+.visitenkarte-angaben {
+    margin: 4px 0 0;
+    font-size: 0.85rem;
+    color: var(--schrift-leise);
+}
+
+/* Die drei Plätze der Visitenkarte, gleich breit. */
+.visitenkarte-abzeichen {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+/* Auf der Karte stehen die drei UNTEREINANDER beschriftet (Zeichen oben,
+   Titel darunter): Drei Marken nebeneinander sind auf 390 px nur rund
+   105 px breit, und „Erster Sieg" wurde zu „Erster …" — im Browser
+   gesehen, v0.119.0. */
+.visitenkarte-abzeichen .abzeichen {
+    flex: 1 1 0;
+    min-width: 0;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    padding: 8px 4px;
+    border-radius: 12px;
+    white-space: normal;
+    text-align: center;
+    font-size: 0.78rem;
+    line-height: 1.15;
+}
+
+.visitenkarte-abzeichen .abzeichen-zeichen {
+    min-width: 32px;
+    height: 32px;
+    font-size: 0.8rem;
+}
+
+/* Ein Abzeichen: Zeichen im Kreis, Titel daneben. Verdiente tragen die
+   Hauptfarbe, offene bleiben blass — dieselbe Marke, nur ohne Farbe. */
+.abzeichen {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px 4px 4px;
+    border: 1px solid var(--rahmen);
+    border-radius: 999px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.abzeichen-zeichen {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 26px;
+    height: 26px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: var(--haupt);
+    color: var(--haupt-schrift);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+.abzeichen-titel {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.abzeichen-erreicht {
+    border-color: var(--haupt);
+}
+
+.abzeichen-offen {
+    color: var(--schrift-leise);
+}
+
+.abzeichen-offen .abzeichen-zeichen {
+    background: var(--karte-leise);
+    color: var(--schrift-leise);
+}
+
+.abzeichen-leer {
+    justify-content: center;
+    color: var(--schrift-leise);
+    border-style: dashed;
+}
+
+.abzeichen-liste {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.abzeichen-zeile {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 10px;
+}
+
+.abzeichen-text {
+    flex: 1 1 160px;
+    font-size: 0.82rem;
+    color: var(--schrift-leise);
+}
+
+/* Die Statistik-Kacheln: so viele nebeneinander, wie hineinpassen. */
+.statistik-raster {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+    gap: 8px;
+    margin-top: 6px;
+}
+
+.statistik-raster .profil-summe-zahl {
+    overflow-wrap: anywhere;
+}
+
 /* Die drei Summen nebeneinander, oben im Profil. */
 .profil-summen {
     display: flex;

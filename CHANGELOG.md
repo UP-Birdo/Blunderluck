@@ -3,6 +3,34 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.119.0 — 18.09.2026
+
+**Die Profilseite: Visitenkarte, Abzeichen, Statistik — und jeder Name in
+der App führt hin. Freunde anfragen geht direkt vom Profil.**
+
+- „Profil" im Menüband (und in den Einstellungen) öffnet kein Popup mehr,
+  sondern eine ganze Seite: oben die **Visitenkarte** mit Name, Punkten,
+  Platz in der Rangliste, „dabei seit" und drei Abzeichen-Plätzen; darunter
+  die **Statistik** (Partien, Siege, Siegquote, Remis, längste Serie, Siege
+  in Folge, schnellster Sieg, längste Partie, Züge gesamt, Zeit am Brett,
+  Beute-Punkte, Lieblings-Brett, häufigster Gegner); dann alle
+  **Abzeichen** mit dem Satz, wie man sie bekommt; und wie bisher die
+  Partien, aus denen die Punkte kommen.
+- **14 Abzeichen** gibt es zu verdienen — Erster Sieg, Veteran, Beidhändig,
+  Serienheld, Comeback, Blitzmatt, Marathon, Nachteule, Sammler,
+  Allrounder, Hunderter, Unaufhaltsam, Dauerbrenner, Legende. Sie werden
+  aus deinen beendeten Partien gerechnet; drei davon wählst du für deine
+  Visitenkarte („Abzeichen wählen").
+- **Auf jeden Namen tippen:** im Vorraum, im Abschluss, auf den
+  Partie-Karten, in der Freundesliste, bei den offenen Runden und in der
+  Rangliste — überall öffnet der Name das Profil. „Zurück" führt dorthin,
+  wo du herkamst.
+- **Freundschaft vom Profil aus:** „Freund anfragen", und die andere Seite
+  sieht die Anfrage unter Freunde und auf deinem Profil („Annehmen"/
+  „Ablehnen"). Sobald sie annimmt, seid ihr Freunde — und seht
+  gegenseitig eure „Freunde"-Runden.
+- Name und Passwort änderst du jetzt auf deiner Visitenkarte.
+
 ## v0.118.0 — 18.09.2026
 
 **Wer sieht deine Runde? Öffentlich, nur Freunde oder privat — und unter

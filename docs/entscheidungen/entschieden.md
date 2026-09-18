@@ -1,5 +1,35 @@
 # Blunderluck - Entscheidungen / Entschieden - und warum
 
+## Sichtbarkeit: neue Runden öffentlich, alte privat; Abzeichen gerechnet, nicht vergeben (18.09.2026, v0.118.0 / v0.119.0)
+
+**Nutzer-Ansage:** „Standard soll öffentlich sein" (Sichtbarkeit) und
+„drei Abzeichen, die man bekommen kann" (Profil).
+
+**Zwei Vorgaben für ein Feld — mit Absicht.** `regeln.sichtbarkeit` hat im
+Modell die Vorgabe `privat`, auf dem Bildschirm `oeffentlich`. Grund: Eine
+Runde von vor v0.118.0 trägt das Feld nicht. Bekäme sie die Vorgabe
+„öffentlich", stünde jede alte wartende Runde plötzlich in der Liste
+„Offene Runden" — angelegt zu einer Zeit, als es die Liste nicht gab und
+nur der Code hineinführte. Das wäre eine Änderung am Verhalten unter den
+Spielern, ohne dass jemand sie eingestellt hat. Neue Runden bekommen die
+Bildschirm-Vorgabe ausdrücklich mitgeschrieben; der Datenvertrag bleibt
+additiv.
+
+**Abzeichen werden gerechnet, nie vergeben.** Gespeichert wird nur, welche
+drei der Spieler auf seiner Karte zeigt (`spieler.abzeichen`). Verdient
+oder nicht entscheidet jedes Mal die Chronik (`RANGLISTE.abzeichenVon`).
+Grund: Ein gespeichertes „verdient" ist ein zweiter Datenstand, der beim
+nächsten Umbau der Regeln oder beim Entfernen eines Spielers von der
+Chronik abweicht; eine gerechnete Wahrheit kann nicht lügen. Der Preis —
+die Rechnung läuft bei jedem Öffnen des Profils — ist bei höchstens 60
+Chronik-Einträgen je Spieler nicht messbar. `gezeigteAbzeichen` zeigt
+deshalb nur, was gewählt UND verdient ist.
+
+**Der Rückweg ist ein Tab, kein Verlauf.** `profilOeffnen(id, rueckweg)`
+merkt sich den Tab, aus dem man kam; „Zurück" führt dorthin. Kein
+Browser-Verlauf, keine Kette — ein Profil führt nie zu einem weiteren
+Profil, deshalb reicht eine Stufe.
+
 ## Farbe und Unglückszeichen an EINEM Haken (18.09.2026, v0.115.3)
 
 **Nutzer-Ansage (zweimal am selben Tag):** „Seltenheit anzeigen ja/nein

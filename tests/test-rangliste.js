@@ -93,6 +93,76 @@ function beendetePartie(tafel, titel, ergebnis, zeitpunkt) {
  * Schachpunkte
  * ------------------------------------------------------------------ */
 
+pruefe("Statistik und Abzeichen werden aus der Chronik gerechnet (v0.119.0)", () => {
+    /*
+     * NUTZER-ANSAGE 18.09.2026: Visitenkarte mit drei Abzeichen und
+     * Statistiken. Fuenf Partien Anna (Weiss) gegen Bert (Schwarz), in
+     * Spielreihenfolge: Sieg, Niederlage, Sieg, Sieg, Sieg — daraus muss
+     * folgen: laengste Serie 3, ein Comeback, Erster Sieg und Serienheld
+     * verdient, Veteran und Beidhaendig nicht.
+     */
+    let tafel = SCHACH_TAFEL.leereTafel(1000);
+    tafel = beendetePartie(tafel, "P1", "weiss", 2000);
+    tafel = beendetePartie(tafel, "P2", "schwarz", 3000);
+    tafel = beendetePartie(tafel, "P3", "weiss", 4000);
+    tafel = beendetePartie(tafel, "P4", "weiss", 5000);
+    tafel = beendetePartie(tafel, "P5", "weiss", 6000);
+
+    const staende = { spieler: spielerMitDrei(), schach: tafel };
+    const anna = RANGLISTE.statistik("id-anna", staende);
+
+    gleich(anna.partien, 5, "fuenf Partien");
+    gleich(anna.siege, 4, "vier Siege");
+    gleich(anna.niederlagen, 1, "eine Niederlage");
+    gleich(anna.siegquote, 80, "Siegquote 80 %");
+    gleich(anna.laengsteSerie, 3, "laengste Serie: die drei am Ende");
+    gleich(anna.aktuelleSerie, 3, "und sie laeuft noch");
+    gleich(anna.comebacks, 1, "ein Sieg direkt nach der Niederlage");
+    gleich(anna.siegeWeiss, 4, "alle Siege als Weiss");
+    gleich(anna.siegeSchwarz, 0, "keiner als Schwarz");
+    gleich(anna.haeufigsterGegner.id, "id-bert", "immer gegen Bert");
+    gleich(anna.haeufigsterGegner.anzahl, 5, "fuenfmal");
+    gleich(anna.lieblingsSpielart.id, "standard", "immer klassisch");
+
+    const abzeichen = {};
+    for (const eintrag of RANGLISTE.abzeichenVon("id-anna", staende)) {
+        abzeichen[eintrag.id] = eintrag.erreicht;
+    }
+    wahr(abzeichen["erster-sieg"] === true, "Erster Sieg verdient");
+    wahr(abzeichen["serie-3"] === true, "Serienheld verdient");
+    wahr(abzeichen["comeback"] === true, "Comeback verdient");
+    wahr(abzeichen["veteran"] === false, "Veteran braucht zehn Partien");
+    wahr(abzeichen["beidhaendig"] === false, "Beidhaendig braucht einen Sieg als Schwarz");
+    wahr(abzeichen["unaufhaltsam"] === false, "Unaufhaltsam braucht fuenf in Folge");
+
+    /* Bert: ein Sieg als Schwarz, keine Serie. */
+    const bert = RANGLISTE.statistik("id-bert", staende);
+    gleich(bert.siege, 1, "Bert hat einmal gewonnen");
+    gleich(bert.siegeSchwarz, 1, "als Schwarz");
+    gleich(bert.laengsteSerie, 1, "Serie von eins");
+
+    /* Cem hat nie gespielt: alles null, kein Abzeichen, kein Absturz. */
+    const cem = RANGLISTE.statistik("id-cem", staende);
+    gleich(cem.partien, 0, "Cem ohne Partien");
+    gleich(cem.siegquote, 0, "ohne Partien keine Quote");
+    wahr(RANGLISTE.abzeichenVon("id-cem", staende).every((e) => e.erreicht === false),
+        "Cem hat nichts verdient");
+
+    /* Gezeigt wird nur, was gewaehlt UND verdient ist. */
+    const gewaehlt = SPIELER.abzeichenSetzen(staende.spieler, "id-anna",
+        ["serie-3", "veteran", "gibt-es-nicht"], 7000);
+    const gezeigt = RANGLISTE.gezeigteAbzeichen("id-anna",
+        { spieler: gewaehlt, schach: tafel });
+    gleich(gezeigt.map((e) => e.id).join(","), "serie-3",
+        "Veteran ist nicht verdient, das Unbekannte gibt es nicht");
+
+    /* Jedes Abzeichen hat Titel, Zeichen und Satz. */
+    for (const eintrag of RANGLISTE.ABZEICHEN) {
+        wahr(eintrag.titel && eintrag.zeichen && eintrag.text,
+            "Abzeichen " + eintrag.id + " ist vollstaendig");
+    }
+});
+
 pruefe("Ohne beendete Partie gibt es keine Schachpunkte", () => {
     const tafel = SCHACH_TAFEL.partieAnlegen(
         SCHACH_TAFEL.leereTafel(1000), "standard", "Laeuft noch", 2000).tafel;

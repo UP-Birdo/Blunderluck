@@ -275,9 +275,12 @@ const START = {
         return [
             {
                 name: "Profil",
-                hinweis: "Name und Passwort ändern",
+                hinweis: "Visitenkarte, Abzeichen, Statistik",
                 zeichen: () => START._profilZeichenBauen(),
-                tun: () => ANMELDUNG.profilOeffnen()
+                /* Seit v0.119.0 die ganze Profilseite statt des Popups
+                   (Nutzer-Ansage 18.09.2026); Name und Passwort ändert man
+                   dort auf der Visitenkarte. Zurück führt hierher. */
+                tun: () => RANGLISTE.eigenesProfilOeffnen("start")
             },
             {
                 name: "Einstellungen",

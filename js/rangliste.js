@@ -437,41 +437,281 @@ const RANGLISTE = {
      * Tisch miterlebt haben.
      * ---------------------------------------------------------------- */
 
-    profilOeffnen(spielerId) {
+    /*
+     * DAS PROFIL IST SEIT v0.119.0 DIE PROFILSEITE DER GANZEN APP (Nutzer-
+     * Ansage 18.09.2026: „unter den drei Strichen oben soll Profil kein
+     * Popup mehr sein, sondern die ganze Seite mit Visitenkarte, drei
+     * Abzeichen und Statistiken" und „auf Benutzernamen soll man in der
+     * ganzen App klicken können, um das Profil zu sehen … aber auch
+     * Freundanfragen").
+     *
+     * `rueckweg` ist der Tab, aus dem man kam: Ein Name im Vorraum, im
+     * Abschluss oder in der Freundesliste führt hierher, und „Zurück" soll
+     * genau dorthin zurückführen — nicht in die Rangliste, die man nie
+     * gesehen hat. Ohne Rückweg (Tipp in der Tabelle) geht es in die
+     * Wertung wie bisher.
+     */
+    profilRueckweg: "",
+
+    profilOeffnen(spielerId, rueckweg) {
         RANGLISTE.offenesProfil = spielerId;
+        RANGLISTE.profilRueckweg = (typeof rueckweg === "string" && rueckweg !== "rangliste")
+            ? rueckweg : "";
+
+        if (typeof TABS !== "undefined" && TABS.aktiveId !== "rangliste") {
+            /* `wechseln` ruft `beimOeffnen`, und das zeichnet schon — das
+               Zeichnen darunter ist dann ein zweites, billiges; so hängt
+               das Profil nicht daran, dass der Wechsel wirklich zeichnet. */
+            TABS.wechseln("rangliste");
+        }
         RANGLISTE.zeichnen();
     },
 
     profilSchliessen() {
+        const rueckweg = RANGLISTE.profilRueckweg;
         RANGLISTE.offenesProfil = "";
+        RANGLISTE.profilRueckweg = "";
+
+        if (rueckweg && typeof TABS !== "undefined") {
+            TABS.wechseln(rueckweg);
+            return;
+        }
         RANGLISTE.zeichnen();
     },
 
-    _profilZeichnen(wurzel, person, staende) {
-        const kopf = RANGLISTE._element("div", "partie-kopf");
-        kopf.appendChild(RANGLISTE._knopf("Zurück", "knopf-still knopf-klein",
-            () => RANGLISTE.profilSchliessen()));
-        kopf.appendChild(RANGLISTE._element("h2", "partie-titel", person.name));
-        wurzel.appendChild(kopf);
+    /* Das eigene Profil — aus dem Menüband und den Einstellungen. */
+    eigenesProfilOeffnen(rueckweg) {
+        const ich = ICH.person();
+        if (!ich) {
+            DIALOG.hinweis("Nicht angemeldet",
+                "Auf diesem Gerät ist gerade niemand angemeldet.");
+            return;
+        }
+        RANGLISTE.profilOeffnen(ich.id, rueckweg);
+    },
 
-        /* Die Summen oben — dieselben Zahlen wie in der Tabelle. */
-        const summen = RANGLISTE._element("section", "karte karte-ergebnis");
-        const summenKopf = RANGLISTE._element("div", "karte-kopf");
-        summenKopf.appendChild(RANGLISTE._element("h3", "", "Punkte"));
-        const summeEl = RANGLISTE._element("span", "punkte-zahl");
-        RANGLISTE._zahlSetzen(summeEl, "profil-" + person.id, person.gesamt);
-        summenKopf.appendChild(summeEl);
-        summen.appendChild(summenKopf);
+    /* ---------------------------------------------------------------- *
+     * Die Statistik eines Spielers — gerechnet aus der Chronik (v0.119.0)
+     *
+     * Alles aus `verlauf`, also aus beendeten Partien unter Menschen.
+     * Serien laufen in Spielreihenfolge (das Älteste zuerst), sonst zählte
+     * „in Folge" rückwärts.
+     * ---------------------------------------------------------------- */
 
-        /* Die Schach-Bilanz stand bis Quizz-v3.6 als Untertitel in der Tabelle; sie
-           gehört hierher, wo Platz für einen ganzen Satz ist. */
-        if (person.partien > 0) {
-            summen.appendChild(RANGLISTE._element("p", "erklaerung",
-                RANGLISTE._menge(person.siege, "Sieg", "Siege") + " aus "
-                + RANGLISTE._menge(person.partien, "Schachpartie", "Schachpartien") + "."));
+    statistik(spielerId, staende) {
+        const verlauf = RANGLISTE.verlauf(spielerId, staende.schach).slice().reverse();
+
+        const stat = {
+            partien: verlauf.length,
+            siege: 0,
+            remis: 0,
+            niederlagen: 0,
+            punkte: 0,
+            beute: 0,
+            zuege: 0,
+            dauerMs: 0,
+            laengsteSerie: 0,
+            aktuelleSerie: 0,
+            schnellsterSieg: 0,
+            laengstePartie: 0,
+            siegeWeiss: 0,
+            siegeSchwarz: 0,
+            comebacks: 0,
+            nachtPartien: 0,
+            spielarten: {},
+            gegner: {},
+            erstePartieAm: 0,
+            letztePartieAm: 0
+        };
+
+        let serie = 0;
+        let vorigerAusgang = "";
+
+        for (const eintrag of verlauf) {
+            stat.punkte += eintrag.punkte;
+            stat.beute += eintrag.beute;
+            stat.zuege += eintrag.zuege;
+            stat.dauerMs += eintrag.dauerMs;
+
+            if (eintrag.zuege > stat.laengstePartie) {
+                stat.laengstePartie = eintrag.zuege;
+            }
+            if (eintrag.wann > 0) {
+                if (!stat.erstePartieAm || eintrag.wann < stat.erstePartieAm) {
+                    stat.erstePartieAm = eintrag.wann;
+                }
+                if (eintrag.wann > stat.letztePartieAm) {
+                    stat.letztePartieAm = eintrag.wann;
+                }
+                const stunde = new Date(eintrag.wann).getHours();
+                if (stunde < 5) {
+                    stat.nachtPartien++;
+                }
+            }
+
+            stat.spielarten[eintrag.variante] = (stat.spielarten[eintrag.variante] || 0) + 1;
+            for (const id of eintrag.gegner) {
+                stat.gegner[id] = (stat.gegner[id] || 0) + 1;
+            }
+
+            if (eintrag.ausgang === "sieg") {
+                stat.siege++;
+                serie++;
+                if (serie > stat.laengsteSerie) {
+                    stat.laengsteSerie = serie;
+                }
+                if (eintrag.zuege > 0
+                        && (!stat.schnellsterSieg || eintrag.zuege < stat.schnellsterSieg)) {
+                    stat.schnellsterSieg = eintrag.zuege;
+                }
+                if (eintrag.farbe === "weiss") {
+                    stat.siegeWeiss++;
+                } else {
+                    stat.siegeSchwarz++;
+                }
+                if (vorigerAusgang === "niederlage") {
+                    stat.comebacks++;
+                }
+            } else {
+                serie = 0;
+                if (eintrag.ausgang === "remis") {
+                    stat.remis++;
+                } else {
+                    stat.niederlagen++;
+                }
+            }
+            vorigerAusgang = eintrag.ausgang;
         }
 
-        wurzel.appendChild(summen);
+        stat.aktuelleSerie = serie;
+        stat.siegquote = stat.partien ? Math.round(100 * stat.siege / stat.partien) : 0;
+
+        const meiste = (tabelle) => {
+            let bestesId = "";
+            let beste = 0;
+            for (const id of Object.keys(tabelle)) {
+                if (tabelle[id] > beste) {
+                    beste = tabelle[id];
+                    bestesId = id;
+                }
+            }
+            return { id: bestesId, anzahl: beste };
+        };
+        stat.lieblingsSpielart = meiste(stat.spielarten);
+        stat.haeufigsterGegner = meiste(stat.gegner);
+
+        return stat;
+    },
+
+    /*
+     * DIE ABZEICHEN (seit v0.119.0, Nutzer-Ansage: „drei Abzeichen, die
+     * man bekommen kann … denk dir coole aus"). Jedes wird aus der
+     * Statistik GERECHNET, nie vergeben oder gespeichert — was einmal
+     * verdient ist, bleibt es, solange die Chronik steht. Gespeichert wird
+     * nur, welche drei der Spieler auf seiner Karte zeigt
+     * (`SPIELER.abzeichenSetzen`).
+     *
+     * Die Reihenfolge ist die der Anzeige: leicht zu haben oben, selten
+     * unten.
+     */
+    ABZEICHEN: [
+        { id: "erster-sieg", titel: "Erster Sieg", zeichen: "1",
+            text: "Die erste Partie gewonnen.",
+            pruefen: (s) => s.siege >= 1 },
+        { id: "veteran", titel: "Veteran", zeichen: "10",
+            text: "Zehn Partien zu Ende gespielt.",
+            pruefen: (s) => s.partien >= 10 },
+        { id: "beidhaendig", titel: "Beidhändig", zeichen: "WS",
+            text: "Als Weiss und als Schwarz gewonnen.",
+            pruefen: (s) => s.siegeWeiss >= 1 && s.siegeSchwarz >= 1 },
+        { id: "serie-3", titel: "Serienheld", zeichen: "x3",
+            text: "Drei Siege in Folge.",
+            pruefen: (s) => s.laengsteSerie >= 3 },
+        { id: "comeback", titel: "Comeback", zeichen: "CB",
+            text: "Nach einer Niederlage gleich wieder gewonnen.",
+            pruefen: (s) => s.comebacks >= 1 },
+        { id: "blitzmatt", titel: "Blitzmatt", zeichen: "20",
+            text: "Ein Sieg in höchstens 20 Halbzügen.",
+            pruefen: (s) => s.schnellsterSieg > 0 && s.schnellsterSieg <= 20 },
+        { id: "marathon", titel: "Marathon", zeichen: "100",
+            text: "Eine Partie über 100 Halbzüge.",
+            pruefen: (s) => s.laengstePartie >= 100 },
+        { id: "nachteule", titel: "Nachteule", zeichen: "N",
+            text: "Eine Partie zwischen Mitternacht und fünf Uhr beendet.",
+            pruefen: (s) => s.nachtPartien >= 1 },
+        { id: "sammler", titel: "Sammler", zeichen: "B",
+            text: "50 Punkte allein für geschlagene Figuren.",
+            pruefen: (s) => s.beute >= 50 },
+        { id: "allrounder", titel: "Allrounder", zeichen: "3B",
+            text: "Auf drei verschiedenen Brettern gespielt.",
+            pruefen: (s) => Object.keys(s.spielarten).length >= 3 },
+        { id: "hunderter", titel: "Hunderter", zeichen: "100P",
+            text: "100 Punkte in der Rangliste.",
+            pruefen: (s) => s.punkte >= 100 },
+        { id: "unaufhaltsam", titel: "Unaufhaltsam", zeichen: "x5",
+            text: "Fünf Siege in Folge.",
+            pruefen: (s) => s.laengsteSerie >= 5 },
+        { id: "dauerbrenner", titel: "Dauerbrenner", zeichen: "50",
+            text: "Fünfzig Partien zu Ende gespielt.",
+            pruefen: (s) => s.partien >= 50 },
+        { id: "legende", titel: "Legende", zeichen: "500",
+            text: "500 Punkte in der Rangliste.",
+            pruefen: (s) => s.punkte >= 500 }
+    ],
+
+    /* Ein Abzeichen zu seiner Kennung — oder null. */
+    abzeichenEintrag(id) {
+        return RANGLISTE.ABZEICHEN.find((eintrag) => eintrag.id === id) || null;
+    },
+
+    /* Alle Abzeichen mit der Angabe, ob dieser Spieler sie verdient hat. */
+    abzeichenVon(spielerId, staende) {
+        const stat = RANGLISTE.statistik(spielerId, staende);
+        return RANGLISTE.ABZEICHEN.map((eintrag) => ({
+            id: eintrag.id,
+            titel: eintrag.titel,
+            zeichen: eintrag.zeichen,
+            text: eintrag.text,
+            erreicht: eintrag.pruefen(stat) === true
+        }));
+    },
+
+    /*
+     * Die Abzeichen, die auf der Visitenkarte stehen: die gewählten, aber
+     * nur, soweit sie verdient sind — eine Chronik kann schrumpfen (Spieler
+     * entfernt), und dann steht dort nichts Erlogenes.
+     */
+    gezeigteAbzeichen(spielerId, staende) {
+        const spieler = SPIELER.spielerFinden(staende.spieler, spielerId);
+        const verdient = RANGLISTE.abzeichenVon(spielerId, staende)
+            .filter((eintrag) => eintrag.erreicht);
+        const gewaehlt = spieler ? spieler.abzeichen : [];
+
+        return gewaehlt
+            .map((id) => verdient.find((eintrag) => eintrag.id === id))
+            .filter((eintrag) => !!eintrag);
+    },
+
+    /* ---------------------------------------------------------------- *
+     * Zeichnen der Profilseite
+     * ---------------------------------------------------------------- */
+
+    _profilZeichnen(wurzel, person, staende) {
+        const ich = ICH.person();
+        const istIch = !!ich && ich.id === person.id;
+
+        const kopf = RANGLISTE._element("div", "partie-kopf partie-kopf-klebt");
+        kopf.appendChild(RANGLISTE._knopf("Zurück", "knopf-still knopf-klein",
+            () => RANGLISTE.profilSchliessen()));
+        kopf.appendChild(RANGLISTE._element("h2", "partie-titel",
+            istIch ? "Dein Profil" : "Profil"));
+        wurzel.appendChild(kopf);
+
+        const stat = RANGLISTE.statistik(person.id, staende);
+
+        wurzel.appendChild(RANGLISTE._visitenkarteBauen(person, staende, stat, istIch));
+        wurzel.appendChild(RANGLISTE._statistikKarteBauen(person, staende, stat));
+        wurzel.appendChild(RANGLISTE._abzeichenKarteBauen(person, staende, istIch));
 
         const verlauf = RANGLISTE.verlauf(person.id, staende.schach);
 
@@ -488,6 +728,306 @@ const RANGLISTE = {
         }
 
         wurzel.appendChild(karte);
+    },
+
+    /*
+     * DIE VISITENKARTE: Name gross, darunter Platz und Punkte, die drei
+     * gewählten Abzeichen, und die Handlung — beim eigenen Profil Name,
+     * Passwort und Abzeichen, bei fremden der Freundschafts-Knopf.
+     */
+    _visitenkarteBauen(person, staende, stat, istIch) {
+        const karte = RANGLISTE._element("section", "karte visitenkarte");
+
+        const kopf = RANGLISTE._element("div", "visitenkarte-kopf");
+        kopf.appendChild(RANGLISTE._element("span", "visitenkarte-name", person.name));
+
+        const punkteEl = RANGLISTE._element("span", "punkte-zahl visitenkarte-punkte");
+        RANGLISTE._zahlSetzen(punkteEl, "profil-" + person.id, person.gesamt);
+        kopf.appendChild(punkteEl);
+        karte.appendChild(kopf);
+
+        /* Platz in der Wertung — dieselbe Zählung wie in der Tabelle. */
+        const liste = RANGLISTE.gesamt(staende.spieler, staende.schach);
+        let platz = 0;
+        let letztePunkte = null;
+        for (let stelle = 0; stelle < liste.length; stelle++) {
+            if (liste[stelle].gesamt !== letztePunkte) {
+                platz = stelle + 1;
+                letztePunkte = liste[stelle].gesamt;
+            }
+            if (liste[stelle].id === person.id) {
+                break;
+            }
+        }
+
+        const angaben = [];
+        if (platz > 0) {
+            angaben.push("Platz " + platz + " von " + liste.length);
+        }
+        if (stat.erstePartieAm > 0) {
+            angaben.push("dabei seit " + RANGLISTE._datumText(stat.erstePartieAm));
+        } else {
+            angaben.push("noch keine Partie beendet");
+        }
+        karte.appendChild(RANGLISTE._element("p", "visitenkarte-angaben",
+            angaben.join(" · ")));
+
+        /* Die drei Abzeichen. */
+        const reihe = RANGLISTE._element("div", "visitenkarte-abzeichen");
+        const gezeigt = RANGLISTE.gezeigteAbzeichen(person.id, staende);
+        for (const eintrag of gezeigt) {
+            reihe.appendChild(RANGLISTE._abzeichenBauen(eintrag, true));
+        }
+        for (let frei = gezeigt.length; frei < SPIELER.ABZEICHEN_PLAETZE; frei++) {
+            reihe.appendChild(RANGLISTE._element("span", "abzeichen abzeichen-leer",
+                istIch ? "frei" : "–"));
+        }
+        karte.appendChild(reihe);
+
+        /* Die Handlung. */
+        const fuss = RANGLISTE._element("div", "karte-fuss");
+        if (istIch) {
+            fuss.appendChild(RANGLISTE._knopf("Name ändern", "knopf-still knopf-klein",
+                () => ANMELDUNG.namenAendern(ANMELDUNG.ich())));
+            fuss.appendChild(RANGLISTE._knopf("Passwort ändern", "knopf-still knopf-klein",
+                () => ANMELDUNG.passwortAendern(ANMELDUNG.ich())));
+            fuss.appendChild(RANGLISTE._knopf("Abzeichen wählen", "knopf-haupt knopf-klein",
+                () => RANGLISTE.abzeichenWaehlen()));
+        } else {
+            RANGLISTE._freundschaftBauen(fuss, person, staende);
+        }
+        karte.appendChild(fuss);
+
+        return karte;
+    },
+
+    /*
+     * DER FREUNDSCHAFTS-KNOPF (Nutzer-Ansage: „aber auch Freundanfragen —
+     * die Person bekommt dann unter Freunde/Anfragen eine Anfrage, wenn
+     * die bestätigt ist, seid ihr befreundet"). Genau die Lagen aus
+     * `SPIELER.freundschaft`; geschrieben wird über FREUNDE, denselben
+     * Weg wie die Freundesliste.
+     */
+    _freundschaftBauen(fuss, person, staende) {
+        const ich = ICH.person();
+        if (!ich) {
+            return;
+        }
+        const lage = SPIELER.freundschaft(staende.spieler, ich.id, person.id);
+        const danach = () => RANGLISTE.zeichnen();
+
+        if (lage === "freunde") {
+            fuss.appendChild(RANGLISTE._element("span", "chip chip-fertig", "Ihr seid Freunde"));
+            fuss.appendChild(DIALOG.zweiSchritt(
+                RANGLISTE._knopf("Entfernen", "knopf-gefahr knopf-klein", null),
+                () => { FREUNDE.entfernen(person.id); danach(); }));
+        } else if (lage === "gesendet") {
+            fuss.appendChild(RANGLISTE._element("span", "chip chip-offen", "Anfrage gesendet"));
+            fuss.appendChild(RANGLISTE._knopf("Zurückziehen", "knopf-still knopf-klein",
+                () => { FREUNDE.zurueckziehen(person.id); danach(); }));
+        } else if (lage === "offen") {
+            fuss.appendChild(RANGLISTE._element("span", "chip chip-laeuft",
+                person.name + " möchte mit dir befreundet sein"));
+            fuss.appendChild(RANGLISTE._knopf("Annehmen", "knopf-haupt knopf-klein",
+                () => { FREUNDE.annehmen(person.id); danach(); }));
+            fuss.appendChild(RANGLISTE._knopf("Ablehnen", "knopf-still knopf-klein",
+                () => { FREUNDE.ablehnen(person.id); danach(); }));
+        } else {
+            fuss.appendChild(RANGLISTE._knopf("Freund anfragen", "knopf-haupt knopf-klein",
+                () => { FREUNDE.anfragen(person.id); danach(); }));
+        }
+    },
+
+    /* Ein Abzeichen als Marke: Zeichen im Kreis, Titel daneben. */
+    _abzeichenBauen(eintrag, erreicht) {
+        const marke = RANGLISTE._element("span",
+            "abzeichen" + (erreicht ? " abzeichen-erreicht" : " abzeichen-offen"));
+        marke.appendChild(RANGLISTE._element("span", "abzeichen-zeichen", eintrag.zeichen));
+        marke.appendChild(RANGLISTE._element("span", "abzeichen-titel", eintrag.titel));
+        marke.title = eintrag.text;
+        return marke;
+    },
+
+    /*
+     * DIE STATISTIK-KARTE: Kacheln mit je einer Zahl und einem Wort — das
+     * Muster der Summen von Quizz-v3.3 (`profil-summe`). Was es nicht gibt
+     * (kein Sieg, keine Zeit), wird weggelassen statt als 0 behauptet.
+     */
+    _statistikKarteBauen(person, staende, stat) {
+        const karte = RANGLISTE._element("section", "karte");
+        karte.appendChild(RANGLISTE._element("h3", "", "Statistik"));
+
+        if (stat.partien === 0) {
+            karte.appendChild(RANGLISTE._element("p", "erklaerung",
+                "Noch keine beendete Partie — die Zahlen kommen mit der ersten."));
+            return karte;
+        }
+
+        const kacheln = [
+            [String(stat.partien), "Partien"],
+            [String(stat.siege), stat.siege === 1 ? "Sieg" : "Siege"],
+            [stat.siegquote + " %", "Siegquote"],
+            [String(stat.remis), "Remis"],
+            [String(stat.laengsteSerie), "längste Serie"],
+            [String(stat.aktuelleSerie), "Siege in Folge"]
+        ];
+        if (stat.schnellsterSieg > 0) {
+            kacheln.push([String(stat.schnellsterSieg), "Züge, schnellster Sieg"]);
+        }
+        if (stat.laengstePartie > 0) {
+            kacheln.push([String(stat.laengstePartie), "Züge, längste Partie"]);
+        }
+        if (stat.zuege > 0) {
+            kacheln.push([String(stat.zuege), "Züge gesamt"]);
+        }
+        if (stat.dauerMs > 0) {
+            kacheln.push([RANGLISTE._dauerKurz(stat.dauerMs), "am Brett"]);
+        }
+        kacheln.push([String(stat.beute), "Punkte für Beute"]);
+
+        const raster = RANGLISTE._element("div", "statistik-raster");
+        for (const [zahl, wort] of kacheln) {
+            const kachel = RANGLISTE._element("div", "profil-summe");
+            kachel.appendChild(RANGLISTE._element("span", "profil-summe-zahl", zahl));
+            kachel.appendChild(RANGLISTE._element("span", "profil-summe-titel", wort));
+            raster.appendChild(kachel);
+        }
+        karte.appendChild(raster);
+
+        /* Zwei Sätze, die eine Zahl nicht sagt. */
+        const saetze = [];
+        if (stat.lieblingsSpielart.id) {
+            const variante = SCHACH_VARIANTEN.holen(stat.lieblingsSpielart.id);
+            saetze.push("Am liebsten " + (variante ? variante.titel : stat.lieblingsSpielart.id)
+                + " (" + RANGLISTE._menge(stat.lieblingsSpielart.anzahl, "Partie", "Partien") + ").");
+        }
+        if (stat.haeufigsterGegner.id) {
+            const name = RANGLISTE._nameVon(stat.haeufigsterGegner.id, staende.spieler);
+            if (name) {
+                saetze.push("Am häufigsten gegen " + name + " ("
+                    + RANGLISTE._menge(stat.haeufigsterGegner.anzahl, "Partie", "Partien") + ").");
+            }
+        }
+        if (saetze.length > 0) {
+            karte.appendChild(RANGLISTE._element("p", "erklaerung", saetze.join(" ")));
+        }
+
+        return karte;
+    },
+
+    /* Alle Abzeichen — verdiente farbig, offene blass, jedes mit Satz. */
+    _abzeichenKarteBauen(person, staende, istIch) {
+        const karte = RANGLISTE._element("section", "karte");
+        const kopf = RANGLISTE._element("div", "karte-kopf");
+        kopf.appendChild(RANGLISTE._element("h3", "", "Abzeichen"));
+        const alle = RANGLISTE.abzeichenVon(person.id, staende);
+        const verdient = alle.filter((eintrag) => eintrag.erreicht).length;
+        kopf.appendChild(RANGLISTE._element("span", "chip chip-offen",
+            verdient + " von " + alle.length));
+        karte.appendChild(kopf);
+
+        const liste = RANGLISTE._element("div", "abzeichen-liste");
+        for (const eintrag of alle) {
+            const zeile = RANGLISTE._element("div", "abzeichen-zeile");
+            zeile.appendChild(RANGLISTE._abzeichenBauen(eintrag, eintrag.erreicht));
+            zeile.appendChild(RANGLISTE._element("span", "abzeichen-text", eintrag.text));
+            liste.appendChild(zeile);
+        }
+        karte.appendChild(liste);
+
+        if (istIch) {
+            karte.appendChild(RANGLISTE._element("p", "erklaerung",
+                "Drei davon dürfen auf deine Visitenkarte — oben über \"Abzeichen wählen\"."));
+        }
+
+        return karte;
+    },
+
+    /*
+     * ABZEICHEN WÄHLEN: ein Popup mit den verdienten Abzeichen zum Anhaken,
+     * höchstens drei (dasselbe Muster wie die Item-Auswahl beim Anlegen).
+     * Geschrieben wird der eigene Eintrag mit Zusammenführung.
+     */
+    abzeichenWaehlen() {
+        const ich = ICH.person();
+        if (!ich || !ANMELDUNG.abgleich) {
+            return;
+        }
+        const staende = RANGLISTE._staende();
+        const verdient = RANGLISTE.abzeichenVon(ich.id, staende)
+            .filter((eintrag) => eintrag.erreicht);
+
+        if (verdient.length === 0) {
+            DIALOG.hinweis("Noch kein Abzeichen",
+                "Spiel eine Partie zu Ende — das erste Abzeichen wartet schon.");
+            return;
+        }
+
+        const spieler = SPIELER.spielerFinden(staende.spieler, ich.id);
+        const wahl = (spieler ? spieler.abzeichen : [])
+            .filter((id) => verdient.some((eintrag) => eintrag.id === id));
+
+        const halter = RANGLISTE._element("div", "item-auswahl");
+        const fuellen = () => {
+            halter.innerHTML = "";
+            for (const eintrag of verdient) {
+                const drin = wahl.indexOf(eintrag.id) !== -1;
+                const knopf = RANGLISTE._knopf((drin ? "[x] " : "[ ] ") + eintrag.titel,
+                    "knopf-klein item-haken" + (drin ? " item-haken-an" : " knopf-still"),
+                    () => {
+                        if (drin) {
+                            wahl.splice(wahl.indexOf(eintrag.id), 1);
+                        } else if (wahl.length >= SPIELER.ABZEICHEN_PLAETZE) {
+                            DIALOG.kurzmeldung("Höchstens " + SPIELER.ABZEICHEN_PLAETZE
+                                + " Abzeichen — nimm erst eins weg.");
+                            return;
+                        } else {
+                            wahl.push(eintrag.id);
+                        }
+                        fuellen();
+                    });
+                knopf.setAttribute("aria-pressed", drin ? "true" : "false");
+                knopf.title = eintrag.text;
+                halter.appendChild(knopf);
+            }
+        };
+        fuellen();
+
+        DIALOG.hinweis("Abzeichen wählen",
+            "Bis zu drei stehen auf deiner Visitenkarte.", halter)
+            .then(() => {
+                ANMELDUNG.abgleich.aendern(
+                    SPIELER.abzeichenSetzen(ANMELDUNG.abgleich.daten, ich.id, wahl), true);
+                RANGLISTE.zeichnen();
+            });
+    },
+
+    /*
+     * Die Dauer als KURZE Zahl für eine Kachel („1 h 40 min", „35 min",
+     * „2 T 5 h"): `_dauerText` sagt „1 Stunde 40 Minuten", und das sprengte
+     * die Kachel auf drei Zeilen (im Browser gesehen, v0.119.0).
+     */
+    _dauerKurz(dauerMs) {
+        const minuten = Math.round(dauerMs / 60000);
+        if (minuten < 60) {
+            return Math.max(1, minuten) + " min";
+        }
+        const stunden = Math.floor(minuten / 60);
+        if (stunden < 24) {
+            const rest = minuten % 60;
+            return stunden + " h" + (rest > 0 ? " " + rest + " min" : "");
+        }
+        const tage = Math.floor(stunden / 24);
+        const restStunden = stunden % 24;
+        return tage + " T" + (restStunden > 0 ? " " + restStunden + " h" : "");
+    },
+
+    /* Tag.Monat.Jahr — für „dabei seit". */
+    _datumText(zeitpunkt) {
+        const wann = new Date(zeitpunkt);
+        return String(wann.getDate()).padStart(2, "0")
+            + "." + String(wann.getMonth() + 1).padStart(2, "0")
+            + "." + wann.getFullYear();
     },
 
     _verlaufZeileBauen(eintrag, staende) {
