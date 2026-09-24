@@ -5,8 +5,8 @@
  * Erste, was ein Angemeldeter ohne laufende Partie sieht:
  *
  *   - oben rechts das MENÜBAND (seit v0.103.0) — ein Knopf mit drei
- *     Balken, dahinter Profil, Einstellungen, Freunde, Verlauf und
- *     „Schach lernen". Bis v0.102.0 standen dort drei einzelne Zeichen
+ *     Balken, dahinter Profil, Freunde, Verlauf, „Schach lernen" und
+ *     zuletzt Einstellungen (seit v0.120.1). Bis v0.102.0 standen dort drei einzelne Zeichen
  *     (Verlauf, Freunde, Zahnrad); die Einstellungen sind seit v0.9.0
  *     kein Tab mehr und weiterhin nur von hier aus erreichbar (F8);
  *   - obere Hälfte: das Vorschaubild der eingestellten Spielart, gerechnet
@@ -277,8 +277,8 @@ const START = {
 
     /*
      * Die fünf Punkte in ihrer Reihenfolge — Profil zuerst (eigener Punkt,
-     * wie gewünscht), dann die drei bisherigen Zeichen, zuletzt der
-     * Zugezogene vom Beitritts-Bildschirm.
+     * wie gewünscht), dann Freunde, Verlauf und der Zugezogene vom
+     * Beitritts-Bildschirm, zuletzt die Einstellungen (seit v0.120.1).
      *
      * `tun` beschreibt NUR das Ziel; das Zuklappen erledigt `_menueWahl`
      * für alle gemeinsam.
@@ -291,14 +291,9 @@ const START = {
                 zeichen: () => START._profilZeichenBauen(),
                 /* Seit v0.119.0 die ganze Profilseite statt des Popups
                    (Nutzer-Ansage 18.09.2026); Name und Passwort ändert man
-                   dort auf der Visitenkarte. Zurück führt hierher. */
+                   dort über „Bearbeiten" (seit v0.119.1). Zurück führt
+                   hierher. */
                 tun: () => RANGLISTE.eigenesProfilOeffnen("start")
-            },
-            {
-                name: "Einstellungen",
-                hinweis: "Account, Spieler, Verbindung",
-                zeichen: () => START._zahnradBauen(),
-                tun: () => TABS.wechseln("einstellungen")
             },
             {
                 name: "Freunde",
@@ -320,6 +315,15 @@ const START = {
                     TABS.wechseln("team-schach");
                     TEAM_SCHACH.grundlagenOeffnen();
                 }
+            },
+            /* Seit v0.120.1 ganz unten (Nutzer-Ansage 24.09.2026:
+               „Einstellungen sollen ganz nach unten in der Liste") — wie
+               in den meisten Apps das Letzte im Menü. */
+            {
+                name: "Einstellungen",
+                hinweis: "Account, Spieler, Verbindung",
+                zeichen: () => START._zahnradBauen(),
+                tun: () => TABS.wechseln("einstellungen")
             }
         ];
     },

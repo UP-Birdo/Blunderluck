@@ -2869,8 +2869,9 @@ pruefe("Hinter dem Menueband liegen die fuenf Punkte (v0.103.0)", () => {
 
     const eintraege = startMenueEintraege(START);
 
-    const erwartet = ["Profil", "Einstellungen", "Freunde", "Verlauf",
-        "Schach lernen"];
+    /* Einstellungen seit v0.120.1 ganz unten (Nutzer-Ansage 24.09.2026). */
+    const erwartet = ["Profil", "Freunde", "Verlauf", "Schach lernen",
+        "Einstellungen"];
     const gefunden = eintraege.map(startMenueText);
     if (gefunden.join(" | ") !== erwartet.join(" | ")) {
         throw new Error("die Menuepunkte stimmen nicht: " + gefunden.join(" | "));

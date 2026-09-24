@@ -63,10 +63,10 @@ links und der Beschriftung rechts:
 | Punkt | Führt zu | Zeichen |
 |---|---|---|
 | Profil | `RANGLISTE.eigenesProfilOeffnen("start")` — seit v0.119.0 die Profilseite (Abschnitt unten); bis v0.118.0 das Popup `ANMELDUNG.profilOeffnen()` | `_profilZeichenBauen` (neu) |
-| Einstellungen | Tab `einstellungen` | `_zahnradBauen` |
 | Freunde | `START.freundeOeffnen()` | `_freundeZeichenBauen` |
 | Verlauf | `START.verlaufOeffnen()` | `_verlaufZeichenBauen` |
 | Schach lernen | `TEAM_SCHACH.grundlagenOeffnen()` | `_lernenZeichenBauen` (neu) |
+| Einstellungen | Tab `einstellungen` — seit v0.120.1 ganz unten (Nutzer-Ansage 24.09.2026) | `_zahnradBauen` |
 
 Alles dazu wohnt in `js\start.js` (`_menuePunkte`, `_menuebandBauen`,
 `menueUmschalten`), der Stil in `css\stil-start.css` (`.start-menue…`, die

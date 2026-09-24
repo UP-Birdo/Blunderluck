@@ -3,6 +3,14 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.120.1 — 24.09.2026
+
+**Die Einstellungen stehen im Menü jetzt ganz unten.**
+
+- Im Menü hinter den drei Balken oben rechts ist die Reihenfolge jetzt
+  Profil, Freunde, Verlauf, Schach lernen — und zuletzt Einstellungen,
+  wie in den meisten Apps.
+
 ## v0.120.0 — 24.09.2026
 
 **Dein Profil steht jetzt oben links auf der Startseite — mit Platz und
