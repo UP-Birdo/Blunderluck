@@ -107,7 +107,28 @@ const SPIELER = {
             daten.geaendertAm = rohdaten.geaendertAm;
         }
 
-        const rohliste = Array.isArray(rohdaten.spieler) ? rohdaten.spieler : [];
+        /*
+         * FREMDE FELDER WANDERN UNVERÄNDERT DURCH (seit v0.137.0, UPCrew-
+         * Umzug). Die Liste gehört seitdem ALLEN UPCrew-Spielen; was ein
+         * anderes Spiel ergänzt, darf Blunderluck beim Zurückschreiben nicht
+         * verlieren. Bis v0.136.0 fiel hier alles Unbekannte weg. Dasselbe
+         * gilt oben im Stand (Regel 1 im Kopf von Apps\Typoluck\js\spieler.js).
+         */
+        for (const schluessel of Object.keys(rohdaten)) {
+            if (!(schluessel in daten)) {
+                daten[schluessel] = SPIELER._tiefKopie(rohdaten[schluessel]);
+            }
+        }
+
+        /* Firebase liefert eine Liste mit Lücken als Objekt mit Zahlen-
+           Schlüsseln — beides wird zur Liste (bis v0.136.0 ging sie verloren). */
+        let rohliste = rohdaten.spieler;
+        if (rohliste && !Array.isArray(rohliste) && typeof rohliste === "object") {
+            rohliste = Object.keys(rohliste)
+                .sort((a, b) => Number(a) - Number(b))
+                .map((schluessel) => rohliste[schluessel]);
+        }
+        rohliste = Array.isArray(rohliste) ? rohliste : [];
 
         for (const roh of rohliste) {
             if (!roh || typeof roh !== "object") {
@@ -118,6 +139,14 @@ const SPIELER = {
                 (typeof roh.name === "string") ? roh.name : "",
                 (typeof roh.id === "string" && roh.id !== "") ? roh.id : undefined
             );
+
+            /* Erst alles Fremde übernehmen; die eigenen Felder prüft der
+               Rest dieser Schleife und setzt sie darüber. */
+            for (const schluessel of Object.keys(roh)) {
+                if (!(schluessel in spieler)) {
+                    spieler[schluessel] = SPIELER._tiefKopie(roh[schluessel]);
+                }
+            }
 
             if (typeof roh.pinPruefwert === "string") {
                 spieler.pinPruefwert = roh.pinPruefwert;
@@ -148,6 +177,11 @@ const SPIELER = {
         }
 
         return daten;
+    },
+
+    /* Eine tiefe Kopie über JSON — der Stand kommt ohnehin als JSON. */
+    _tiefKopie(wert) {
+        return (wert === undefined) ? undefined : JSON.parse(JSON.stringify(wert));
     },
 
     /* Tiefe Kopie eines Datenstandes — damit nie versehentlich der
@@ -288,7 +322,11 @@ const SPIELER = {
         const meiner = eigenStand.spieler.find(
             (spieler) => spieler.id === eigeneId) || null;
 
-        const ergebnis = SPIELER.leereDaten(eigenStand.geaendertAm);
+        /* Fremde Felder oben im Stand (andere UPCrew-Spiele) kommen mit. */
+        const ergebnis = Object.assign(SPIELER._tiefKopie(fremdStand), {
+            geaendertAm: eigenStand.geaendertAm,
+            spieler: []
+        });
 
         let selbstGefunden = false;
 

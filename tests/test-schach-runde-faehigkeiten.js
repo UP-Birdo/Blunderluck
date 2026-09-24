@@ -2505,6 +2505,48 @@ pruefe("Alle Geraete sehen dasselbe Angebot", () => {
     gleich(JSON.stringify(einer), JSON.stringify(anderer), "gerechnet, nicht gewuerfelt");
 });
 
+/*
+ * DER HÄNDLER BIETET BIS ZU DREI TAUSCHE, DIE GEHEN (v0.136.0, Nutzer
+ * 24.09.2026: „der hat noch nie richtig funktioniert"). Bis v0.135.0 ging
+ * das eine gewürfelte Angebot in zwei von fünf Zügen nicht.
+ */
+pruefe("Der Haendler bietet in (fast) jedem Zug etwas, das geht (v0.136.0)", () => {
+    let leer = 0;
+    for (let zug = 0; zug < 40; zug++) {
+        const runde = faehigkeitenPartie();
+        runde.zugZaehler = zug;
+        const liste = SCHACH_RUNDE.handelsAngebote(runde, "weiss");
+        wahr(liste.length <= 3, "hoechstens drei");
+        if (liste.length === 0) {
+            leer++;
+        }
+        const texte = liste.map((a) => a.text);
+        gleich(new Set(texte).size, texte.length, "keine doppelten Angebote");
+        for (const angebot of liste) {
+            gleich(angebot.gibtFelder.length, SCHACH_VARIANTEN.handelAnzahl(angebot.gibt),
+                "jedes Angebot hat seine Figuren");
+        }
+    }
+    gleich(leer, 0, "in der Grundstellung hat er nie nichts");
+});
+
+pruefe("Das gewaehlte Angebot wird getauscht, nicht das erste (v0.136.0)", () => {
+    const runde = faehigkeitenPartie();
+    const liste = SCHACH_RUNDE.handelsAngebote(runde, "weiss");
+    wahr(liste.length >= 2, "es gibt eine Wahl");
+
+    const getauscht = SCHACH_RUNDE._handelAusfuehren(runde, "weiss", "1");
+    gleich(getauscht.text, liste[1].text, "das zweite Angebot");
+    for (const feld of liste[1].gibtFelder) {
+        if (liste[1].bekommtFelder.indexOf(feld) === -1) {
+            gleich(SCHACH.figurAuf(getauscht.stand, feld), ".", "die abgegebene Figur ist weg");
+        }
+    }
+
+    /* Ohne Wahl (alte Geraete): das erste — wie bisher. */
+    gleich(SCHACH_RUNDE._handelAusfuehren(runde, "weiss").text, liste[0].text, "ohne Wahl das erste");
+});
+
 /* ------------------------------------------------------------------ *
  * Der Dieb (seit v0.85, Wunsch T3)
  * ------------------------------------------------------------------ */
@@ -4787,9 +4829,12 @@ pruefe("Ein gewirktes Unglueck liegt als Karte in der Hand (v0.82.0)", () => {
     gleich(runde.unglueckskarten.weiss[0].art, "stolperstein", "mit der Art");
     gleich(runde.unglueckskarten.schwarz.length, 0, "Schwarz hat keine");
 
-    /* Der Stolperstein ist dauerhaft — die Hand zeigt ihn. */
-    gleich(SCHACH_RUNDE.unglueckskartenVon(runde, "weiss").length, 1,
-        "die Hand zeigt die Karte");
+    /* Der Stolperstein ist dauerhaft — seit v0.136.0 ist er mit dem
+       Auslösen GESCHEHEN und liegt nicht mehr in der Hand. */
+    gleich(SCHACH_RUNDE.unglueckskartenVon(runde, "weiss").length, 0,
+        "die Hand zeigt keine erledigte Falle");
+    gleich(runde.verlauf[runde.verlauf.length - 1].art, "stolperstein",
+        "der Verlauf nennt die Falle (für die Szene)");
 
     /* Und sie ueberlebt Speichern und Laden (additiver Vertrag). */
     const geladen = SCHACH_RUNDE.normalisieren(JSON.parse(JSON.stringify(runde)));

@@ -385,6 +385,44 @@ pruefe("Abzeichen: höchstens drei, keine doppelt, eigene Wahl überlebt Zusamme
         "Berts Wahl kommt vom Server");
 });
 
+/*
+ * UPCREW (seit v0.137.0): Die Kontenliste gehört allen UPCrew-Spielen.
+ * Was ein anderes Spiel in einen Eintrag oder oben in den Stand legt, muss
+ * Blunderluck beim Zurückschreiben unverändert mitnehmen — und eine Liste,
+ * die Firebase als Objekt liefert, darf nicht verloren gehen.
+ */
+pruefe("Fremde Felder anderer UPCrew-Spiele bleiben erhalten (v0.137.0)", () => {
+    const roh = {
+        datenVersion: 1,
+        geaendertAm: 5,
+        fremdOben: { a: 1 },
+        spieler: [{ id: "id-anna", name: "Anna", pinPruefwert: "p", pinSalz: "s",
+            freunde: [], abgelehnt: [], abzeichen: [], typoluckSeit: 123, bild: { farbe: "rot" } }]
+    };
+    const daten = SPIELER.normalisieren(roh);
+    gleich(daten.fremdOben.a, 1, "oben im Stand");
+    gleich(daten.spieler[0].typoluckSeit, 123, "im Eintrag");
+    gleich(daten.spieler[0].bild.farbe, "rot", "auch verschachtelt");
+
+    /* Und beim Zusammenführen (der Weg jedes Schreibvorgangs). */
+    const eigen = SPIELER.normalisieren(roh);
+    eigen.spieler[0].name = "Anna B";
+    const zusammen = SPIELER.zusammenfuehren(roh, eigen, "id-anna");
+    gleich(zusammen.fremdOben.a, 1, "oben bleibt beim Zusammenführen");
+    gleich(zusammen.spieler[0].typoluckSeit, 123, "der Eintrag behält das Fremde");
+    gleich(zusammen.spieler[0].name, "Anna B", "und die eigene Änderung gilt");
+
+    /* Die eigenen Felder prüft Blunderluck weiter selbst. */
+    const schief = SPIELER.normalisieren({ spieler: [{ id: "x", name: "X", freunde: "kaputt" }] });
+    gleich(Array.isArray(schief.spieler[0].freunde), true, "eigene Felder bleiben geprüft");
+});
+
+pruefe("Eine Liste als Objekt (Firebase mit Lücken) geht nicht verloren (v0.137.0)", () => {
+    const daten = SPIELER.normalisieren({ spieler: { "0": { id: "a", name: "A" }, "2": { id: "b", name: "B" } } });
+    gleich(daten.spieler.length, 2, "beide Spieler da");
+    gleich(daten.spieler[1].id, "b", "in der Reihenfolge");
+});
+
 /* ------------------------------------------------------------------ */
 
 console.log(anzahlOk + " ok, " + anzahlFehler + " Fehler");

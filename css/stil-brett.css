@@ -799,6 +799,42 @@
     margin: 12px auto 0;
 }
 
+/*
+ * DER START-KNOPF BLEIBT IM BILD (seit v0.136.0, Nutzer 24.09.2026: „das
+ * Spiel starten im Vorraum rutscht ganz nach unten"). Brett und Regel-
+ * Schildchen schoben „Bereit" am Handy unter den Rand — man musste erst
+ * scrollen. Jetzt klebt der Fuss unten am Bildschirm, auf eigenem Grund,
+ * und die Schildchen stehen in EINER Zeile, die man seitlich wischt.
+ */
+.vorraum-fuss {
+    position: sticky;
+    bottom: 0;
+    z-index: 6;
+    margin-top: 10px;
+    padding: 10px 0 calc(10px + env(safe-area-inset-bottom, 0px));
+    background: var(--flaeche);
+    box-shadow: 0 -10px 14px -10px rgba(0, 0, 0, 0.45);
+}
+
+@media (max-width: 600px) {
+    .vorraum-regeln {
+        flex-wrap: nowrap;
+        justify-content: flex-start;
+        overflow-x: auto;
+        scrollbar-width: none;
+        max-width: 100%;
+        padding-bottom: 2px;
+    }
+
+    .vorraum-regeln::-webkit-scrollbar {
+        display: none;
+    }
+
+    .vorraum-regel {
+        flex: none;
+    }
+}
+
 /* Der Fuss erbt die Reihe der Aufstellung (`aufstellung-reihe`); der
    Computer-Ausweg darf umbrechen, sonst ist er auf dem Handy zu breit. */
 .vorraum-computer {

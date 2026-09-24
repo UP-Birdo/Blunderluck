@@ -2071,3 +2071,98 @@ body.partie-fest .schach > .hand-leiste {
 .anleitung-buehne-fenster:empty {
     display: none;
 }
+
+/* Das rote Zeichen der letzten Falle neben dem Menü-Knopf (seit v0.136.0):
+   tippen = die Fallen-Szene noch einmal. */
+.falle-zeichen {
+    width: 34px;
+    height: 46px;
+    padding: 2px;
+    margin-top: 6px;
+    border-radius: 6px;
+    border: 2px solid var(--gefahr);
+    background: var(--karte);
+    box-shadow: 0 0 10px rgba(226, 87, 74, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.falle-zeichen > .faehigkeit-bild {
+    width: 100%;
+    height: 100%;
+}
+
+/* DIE ANGEBOTE DES HÄNDLERS in der Leiste (seit v0.136.0): Figurenbilder
+   statt Text, antippen = wählen, das gewählte grün umrandet. */
+.hand-angebote {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.hand-angebot {
+    display: flex;
+    align-items: center;
+    padding: 4px 8px;
+    min-height: 40px;
+    border-radius: 10px;
+    border: 2px solid var(--rahmen);
+    background: var(--karte);
+    cursor: pointer;
+}
+
+.hand-angebot-gewaehlt {
+    border-color: var(--gut);
+    box-shadow: 0 0 0 2px rgba(56, 193, 114, 0.35);
+}
+
+.hand-angebot-figuren {
+    display: flex;
+    align-items: center;
+    gap: 1px;
+    flex-wrap: nowrap;
+}
+
+.hand-angebot-figur {
+    display: inline-block;
+    width: 26px;
+    height: 26px;
+    font-size: 20px;
+    line-height: 26px;
+    text-align: center;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center bottom;
+}
+
+.hand-angebot-figur.figur-bild {
+    color: transparent;
+}
+
+.hand-angebot-pfeil {
+    margin: 0 6px;
+    font-weight: 700;
+    color: var(--schrift-leise);
+}
+
+/* Schwarze Figuren brauchen hellen Grund, weisse dunklen — sonst sieht man
+   sie im Angebot nicht. */
+.hand-angebot-schwarz {
+    background: #dde3ec;
+}
+
+.hand-angebot-weiss {
+    background: #2a2f38;
+}
+
+.hand-angebot-schwarz .hand-angebot-pfeil {
+    color: #3a404b;
+}
+
+.hand-angebot-weiss .hand-angebot-pfeil {
+    color: #c9cfd8;
+}

@@ -231,7 +231,7 @@ pruefe("Nach der Karte kommt der Haken ✓ — und kein altes Fenster mehr (v0.1
         const karte = schritte.findIndex((schritt) => schritt.knopfTipp);
         const haken = schritte.filter((schritt) => schritt.okTipp);
 
-        if (beschreibung.art === "handel" || beschreibung.art === "diebstahl") {
+        if (beschreibung.art === "diebstahl") {
             gleich(haken.length, 0, art + ": zeigt sein Angebot statt ✓");
         } else {
             gleich(haken.length, 1, art + ": genau ein Bild mit dem Finger auf ✓");
@@ -296,7 +296,8 @@ pruefe("Der Haendler zeigt sein Angebot als eigenes Bild (v0.58)", () => {
     const schritte = SCHACH_VORSCHAU.schritte("haendler");
     const angebot = SCHACH_RUNDE.handelsAngebot(schritte[0].runde, SCHACH_VORSCHAU.FARBE);
 
-    gleich(schritte.length, 4, "Stellung, Griff, Angebot, Wirkung");
+    /* Seit v0.136.0 mit eigenem ✓-Bild nach der Wahl. */
+    gleich(schritte.length, 5, "Stellung, Griff, Angebot, ✓, Wirkung");
     wahr(!!angebot, "es gibt ein Angebot");
 
     /*

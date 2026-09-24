@@ -883,7 +883,7 @@ function figurenAbgleichen(beschreibung, animieren, bekannterZug, extras) {
             neu.set(i, g);
             offenAlt.delete(i);
             offenNeu.splice(n, 1);
-            verwandeln(g, ziel, meuterei);
+            verwandeln(g, ziel, meuterei, meuterei ? (Z.falleVerzug || 0) : 0);
         }
     }
 
@@ -947,10 +947,11 @@ function figurenAbgleichen(beschreibung, animieren, bekannterZug, extras) {
     Z.figuren = neu;
 }
 
-function verwandeln(g, ziel, meuterei) {
+function verwandeln(g, ziel, meuterei, warten) {
     const start = g.rotation.y;
     let getauscht = false;
-    g.userData.ziehtBis = performance.now() + dauer(560);
+    warten = warten || 0;
+    g.userData.ziehtBis = performance.now() + warten + dauer(560);
     tween(dauer(560), (t) => {
         g.rotation.y = start + raus(t) * Math.PI * 2;
         const hub = Math.sin(Math.PI * t) * 0.35;
@@ -966,8 +967,10 @@ function verwandeln(g, ziel, meuterei) {
     }, () => {
         g.rotation.y = start;
         g.position.y = GEO.oberkante;
-    });
-    funkenWolke(g.position.clone().setY(GEO.oberkante + 0.6), meuterei ? "#c77dff" : "#ffd76a", 18, 1.0);
+    }, warten);
+    tween(1, () => {}, () => {
+        funkenWolke(g.position.clone().setY(GEO.oberkante + 0.6), meuterei ? "#c77dff" : "#ffd76a", 18, 1.0);
+    }, warten);
 }
 
 /* Teleport: an der alten Stelle im Wirbel vergehen, an der neuen im
@@ -1530,6 +1533,9 @@ function gewinnZuordnen(box, gewonnen) {
     if (!gewonnen || !gewonnen.length) return null;
     let stelle = gewonnen.findIndex((e) => e.pech === !!box.pech && e.stufe === box.stufe);
     if (stelle < 0) stelle = gewonnen.findIndex((e) => e.pech === !!box.pech);
+    /* Eine GETARNTE Box (Stufe unbekannt) kann auch eine Falle sein — sie
+       sieht bis zum Einsammeln aus wie jede andere (v0.136.0). */
+    if (stelle < 0 && box.stufe === "unbekannt") stelle = gewonnen.findIndex((e) => e.pech);
     if (stelle < 0) return null;
     return gewonnen.splice(stelle, 1)[0];
 }
@@ -1581,6 +1587,12 @@ function boxOeffnen(g, inhalt) {
         }
         funkenWolke(mitte, hex, 22, 1.4);
 
+        /* 3a. Eine FALLE zeigt ihre Karte gross über dem Brett (v0.136.0). */
+        if (inhalt.pech) {
+            falleKarteZeigen(inhalt.art, mitte);
+            return;
+        }
+
         /* 3. Die Karte steigt heraus, dreht sich zweimal um, bleibt kurz
               stehen und fliegt zu ihrer Hand (unten die eigene Seite). */
         const tex = kartenTextur(inhalt.art);
@@ -1616,6 +1628,107 @@ function boxOeffnen(g, inhalt) {
             }, dauer(450));
         });
     });
+}
+
+/* ------------------------------------------------------------------ *
+ * DIE FALLEN-SZENE (seit v0.136.0)
+ *
+ * So liest man sie ohne Text:
+ *   1. Die Box springt auf (wie jede).
+ *   2. Die Unglücks-Karte steigt aus ihr bis über die Brettmitte, dreht
+ *      sich zweimal und steht GROSS da — rot umrandet, zwei rote Wellen.
+ *   3. Erst jetzt passiert die Folge (`Z.falleVerzug`): Figuren rutschen,
+ *      stolpern oder laufen über, die getroffenen Felder leuchten rot.
+ *   4. Die Karte wird klein und vergeht. In der Hand bleibt nichts liegen;
+ *      wer es verpasst hat, tippt links in der Leiste auf das rote Zeichen
+ *      (`BRETT_3D.falleZeigen`) und sieht Karte und Felder noch einmal.
+ * ------------------------------------------------------------------ */
+
+function FALLE_MS() {
+    return dauer(1500);
+}
+
+/* Der Verlaufseintrag der eben ausgelösten Falle (die letzten Einträge). */
+function falleEintrag(partie) {
+    const verlauf = partie.verlauf || [];
+    for (let n = verlauf.length - 1; n >= Math.max(0, verlauf.length - 5); n--) {
+        if (verlauf[n] && verlauf[n].wirkung === "pech") return verlauf[n];
+    }
+    return null;
+}
+
+function falleKarteZeigen(art, von, ohneFelder) {
+    const tex = kartenTextur(art);
+    if (!tex) return;
+    const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false });
+    const karte = new THREE.Sprite(mat);
+    karte.renderOrder = 12;
+    const start = von ? von.clone() : new THREE.Vector3(0, GEO.oberkante + 0.5, 0);
+    karte.position.copy(start);
+    Z.effektGruppe.add(karte);
+    const B = 0.71, H = 1.0;
+    const halbZ = (Z.masse ? Z.masse.reihen : 8) / 2;
+    const oben = new THREE.Vector3(0, 2.4, -halbZ * 0.15);
+    const gross = Math.max(2.0, (Z.masse ? Z.masse.spalten : 8) * 0.32);
+    /* Ein roter Schein hinter der Karte. */
+    GEO.falleSchein = GEO.falleSchein || new THREE.CircleGeometry(0.62, 40);
+    const scheinMat = new THREE.MeshBasicMaterial({ color: farbe(FARBE.wirkungPech), transparent: true, opacity: 0, depthTest: false });
+    const schein = new THREE.Mesh(GEO.falleSchein, scheinMat);
+    schein.renderOrder = 11;
+    Z.effektGruppe.add(schein);
+
+    tween(dauer(620), (t) => {
+        const k = raus(t);
+        karte.position.lerpVectors(start, oben, k);
+        const g = 0.25 + k * (gross - 0.25);
+        const drehen = Math.abs(Math.cos(k * Math.PI * 2));
+        karte.scale.set(B * g * Math.max(0.06, drehen), H * g, 1);
+        schein.position.copy(karte.position);
+        schein.quaternion.copy(Z.kamera.quaternion);
+        schein.scale.setScalar(g * 1.15);
+        scheinMat.opacity = k * 0.45;
+    }, () => {
+        /* Stehen bleiben, während die Folge beginnt. */
+        const puls = dauer(1300);
+        tween(puls, (t) => {
+            scheinMat.opacity = 0.3 + 0.2 * Math.sin(t * Math.PI * 4);
+            schein.position.copy(karte.position);
+            schein.quaternion.copy(Z.kamera.quaternion);
+        }, () => {
+            tween(dauer(420), (t) => {
+                const k = weich(t);
+                const g = gross * (1 - k * 0.85);
+                karte.scale.set(B * g, H * g, 1);
+                schein.scale.setScalar(g * 1.15);
+                mat.opacity = 1 - k;
+                scheinMat.opacity = 0.3 * (1 - k);
+            }, () => {
+                Z.effektGruppe.remove(karte, schein);
+                mat.dispose();
+                scheinMat.dispose();
+            });
+        });
+        if (!ohneFelder) return;
+        /* Beim Wiederholen: die getroffenen Felder noch einmal rot. */
+        const jetzt = performance.now();
+        for (const i of ohneFelder) {
+            const feld = Z.felder[i];
+            if (!feld) continue;
+            feld.wirkungFarbe = farbe(FARBE.wirkungPech);
+            feld.wirkungStart = jetzt;
+            feld.wirkungBis = jetzt + 2200;
+        }
+        anstossen();
+    });
+}
+
+/* Die letzte Falle noch einmal zeigen (Tipp aufs rote Zeichen). */
+function falleZeigen() {
+    if (!Z.bereit || !Z.letzteFalle) return false;
+    const art = Z.letzteFalle.art;
+    if (!art) return false;
+    falleKarteZeigen(art, null, Z.letzteFalle.felder);
+    return true;
 }
 
 /* ------------------------------------------------------------------ *
@@ -2003,9 +2116,13 @@ function felderAbgleichen(beschreibung, animieren) {
         /* --- Wirkung: kurzes Aufleuchten (Fähigkeit blau, Unglück rot) --- */
         if (k.contains("feld-wirkung") || k.contains("feld-wirkung-pech")) {
             if (!feld.wirkungBis || feld.wirkungBis < jetzt) {
-                feld.wirkungFarbe = farbe(k.contains("feld-wirkung-pech") ? FARBE.wirkungPech : FARBE.wirkung);
-                feld.wirkungStart = jetzt;
-                feld.wirkungBis = jetzt + 1600;
+                const pech = k.contains("feld-wirkung-pech");
+                /* Bei einer Falle leuchtet es erst, wenn ihre Karte gezeigt
+                   ist (seit v0.136.0) — dann aber länger. */
+                const warten = pech ? (Z.falleVerzug || 0) : 0;
+                feld.wirkungFarbe = farbe(pech ? FARBE.wirkungPech : FARBE.wirkung);
+                feld.wirkungStart = jetzt + warten;
+                feld.wirkungBis = jetzt + warten + (warten ? 2200 : 1600);
             }
         }
 
@@ -2452,8 +2569,8 @@ function bildInnen(zeit) {
             e.copy(feld.leuchten).multiplyScalar(kraft);
             if (feld.pulsiert) weiter = true;
         }
-        if (feld.wirkungBis && zeit < feld.wirkungBis + 50) {
-            const t = (zeit - feld.wirkungStart) / 1600;
+        if (feld.wirkungBis && zeit >= feld.wirkungStart && zeit < feld.wirkungBis + 50) {
+            const t = (zeit - feld.wirkungStart) / (feld.wirkungBis - feld.wirkungStart);
             const puls = Math.max(0, Math.sin(t * Math.PI * 4)) * (1 - t);
             e.lerp(feld.wirkungFarbe, Math.min(1, puls));
             e.multiplyScalar(0.3 + puls * 0.9);
@@ -2955,6 +3072,30 @@ function anbinden(halter, partie, person, animierenErlaubt) {
     /* Was ist seit dem letzten Bild in eine Hand gekommen? (Lootbox öffnen) */
     if (anderePartie) Z.hand = null;
     const gewonnen = handZuwachs(partie);
+
+    /*
+     * DIE FALLE (seit v0.136.0, Nutzer 24.09.2026: „nach dem Einsammeln einer
+     * Falle soll es nicht fix passieren, sondern eine Animation, welche beiden
+     * Seiten zeigt, welche Falle ausgelöst wurde, und die Folge klar zeigt").
+     * Kam gerade eine Unglücks-Karte dazu, zeigt die Box sie gross über dem
+     * Brett (`boxOeffnen`), und alles, was die Falle bewegt, verwandelt oder
+     * rot aufleuchten lässt, WARTET so lange. Beide Geräte sehen dasselbe —
+     * beide lesen denselben Zugverlauf.
+     */
+    Z.falleVerzug = 0;
+    const falle = (animieren && !Z.reduziert && gewonnen.some((e) => e.pech))
+        ? falleEintrag(partie) : null;
+    if (falle) {
+        Z.falleVerzug = FALLE_MS();
+        const zuAnzeige = new Map(beschreibung.zellen.map((z, i) => [z.feld, i]));
+        extras = extras || new Map();
+        for (const w of (falle.wege || [])) {
+            if (!zuAnzeige.has(w.von)) continue;
+            const i = zuAnzeige.get(w.von);
+            extras.set(i, Object.assign({}, extras.get(i), { verzoegerung: Z.falleVerzug }));
+        }
+        Z.letzteFalle = { art: (gewonnen.find((e) => e.pech) || {}).art, eintrag: falle, felder: (falle.felder || []).filter((f) => zuAnzeige.has(f)).map((f) => zuAnzeige.get(f)) };
+    }
 
     felderAbgleichen(beschreibung, animieren || !anderePartie);
     figurenAbgleichen(beschreibung, animieren, bekannt, extras);
@@ -4124,6 +4265,14 @@ window.BRETT_3D = {
     },
     /* Kleine Bretter (`.vorschau`) als 3D-Standbild. */
     standbild,
+    /* Die letzte Falle noch einmal zeigen (seit v0.136.0); `art` ohne
+       gespeicherte Szene: die Karte dieser Art (Wiederholen nach Neuladen). */
+    falleZeigen(art, felder) {
+        if (art && (!Z.letzteFalle || Z.letzteFalle.art !== art)) {
+            Z.letzteFalle = { art, felder: felder || [] };
+        }
+        return falleZeigen();
+    },
     /* Die Anleitung als abgespielte 3D-Bühne (seit v0.135.0). */
     buehneMoeglich,
     buehne,

@@ -1389,19 +1389,30 @@ const SCHACH_VORSCHAU = {
                      * (`SCHACH_RUNDE.handelsAngebot`), damit Anleitung und
                      * Dialog nicht auseinanderlaufen.
                      */
-                    kurz: "Annehmen oder ablehnen",
+                    kurz: "Tausch wählen",
                     fenster: {
-                        titel: "Der Händler bietet",
-                        text: angebot.text
+                        /* Seit v0.136.0 bis zu drei Angebote zur Wahl. */
+                        titel: "Tausch wählen",
+                        text: SCHACH_RUNDE.handelsAngebote(vorher, SCHACH_VORSCHAU.FARBE)
+                            .map((eines) => "• " + eines.text).join("\n")
                             + "\n\nDu gibst ab: " + namen(angebot.gibtFelder)
                             + "\nDu bekommst auf: " + namen(angebot.bekommtFelder),
-                        ja: "Annehmen",
-                        nein: "Abbrechen"
+                        ja: "✓",
+                        nein: "✕"
                     },
 
-                    text: "So sieht sein Angebot aus. Markiert ist, was "
-                        + "weggeht und wo das Neue erscheint. Du darfst "
-                        + "ablehnen."
+                    text: "Er zeigt dir bis zu drei Tausche, die gerade gehen. "
+                        + "Du tippst einen an — auf dem Brett siehst du, was "
+                        + "weggeht und wo das Neue erscheint."
+                }));
+
+                liste.push(SCHACH_VORSCHAU._schritt({
+                    runde: vorher,
+                    marken: angebot.bekommtFelder,
+                    okTipp: true,
+                    kurz: "✓ tauschen",
+                    text: "Mit ✓ tauschst du — oder du brichst mit ✕ ab und "
+                        + "behältst den Händler."
                 }));
             }
         }
@@ -1605,8 +1616,8 @@ const SCHACH_VORSCHAU = {
            allgemeine Einsetzen-Fenster (`handelAnbieten`,
            `diebstahlAnbieten` in team-schach.js). */
         if (beschreibung.art === "handel") {
-            return " Er zeigt dir sofort sein Angebot in einem Fenster — "
-                + "du darfst annehmen oder ablehnen.";
+            return " Er zeigt dir in der Leiste bis zu drei Tausche — du "
+                + "wählst einen oder lässt es.";
         }
         if (beschreibung.art === "diebstahl") {
             return " Ein Fenster zeigt dir, was du dem Gegner abnimmst — "

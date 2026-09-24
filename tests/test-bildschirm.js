@@ -3772,9 +3772,15 @@ pruefe("Ein eingesammeltes Unglueck liegt als Karte in der Hand (v0.82.0)", () =
         throw new Error("der alte Streifen wird immer noch gebaut");
     }
 
-    /* Stattdessen liegt die Karte in der Hand der betroffenen Seite. */
-    if (!klasseSuchen(TEAM_SCHACH.wurzelEl, "unglueck-knopf")) {
-        throw new Error("keine Unglueck-Karte in der Hand nach dem Unglueckswuerfel");
+    /* Seit v0.136.0 liegt die erledigte Falle NICHT mehr in der Hand —
+       stattdessen steht ihr rotes Zeichen neben dem Menü-Knopf. */
+    if (klasseSuchen(TEAM_SCHACH.wurzelEl, "unglueck-knopf")) {
+        throw new Error("die erledigte Falle liegt noch als Karte in der Hand");
+    }
+    /* Das Zeichen steht in der Karten-Leiste der Mitspieler; gebaut wird
+       es hier direkt (der Test-Betrachter sitzt in keinem Team). */
+    if (!TEAM_SCHACH._falleZeichenBauen(partie)) {
+        throw new Error("kein rotes Zeichen der eben ausgelösten Falle");
     }
 
     /* Ein DAUERHAFTES Unglueck traegt keine Restzeit-Zahl (Punkt 27) — die
@@ -3783,16 +3789,15 @@ pruefe("Ein eingesammeltes Unglueck liegt als Karte in der Hand (v0.82.0)", () =
         throw new Error("die dauerhafte Unglueck-Karte traegt eine Restzeit-Zahl");
     }
 
-    /* Der Erdrutsch ist DAUERHAFT: Die Karte bleibt auch nach dem naechsten
-       Zug liegen (Nutzer-Ansage 26.08.2026 — nur zeitlich Begrenztes geht). */
+    /* Auch nach dem naechsten Zug kommt die Karte nicht zurueck (v0.136.0). */
     partie = SCHACH_RUNDE.ziehen(partie, "id-bert",
         SCHACH.feldNummer("h7"), SCHACH.feldNummer("h6"), "D", "Bert", 5720);
     TEAM_SCHACH.abgleich.daten = SCHACH_TAFEL.partieEinsetzen(
         TEAM_SCHACH.abgleich.daten, partie, 5720);
     TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
 
-    if (!klasseSuchen(TEAM_SCHACH.wurzelEl, "unglueck-knopf")) {
-        throw new Error("die dauerhafte Unglueck-Karte verschwindet mit dem naechsten Zug");
+    if (klasseSuchen(TEAM_SCHACH.wurzelEl, "unglueck-knopf")) {
+        throw new Error("die erledigte Falle liegt nach dem naechsten Zug wieder in der Hand");
     }
 
     TEAM_SCHACH.offeneId = "";

@@ -3,6 +3,27 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.136.0 — 24.09.2026
+
+**Fallen sieht man jetzt, der Händler funktioniert, und „Bereit" bleibt im Bild.**
+
+- **Fallen als Szene:** Tritt eine Figur in eine Falle, springt die Box auf,
+  die Unglücks-Karte steht gross und rot leuchtend über dem Brett — bei
+  BEIDEN Spielern — und erst dann passiert die Folge: Figuren rutschen oder
+  laufen über, die getroffenen Felder leuchten rot.
+- **Keine erledigten Fallen mehr in der Hand.** Stattdessen steht die letzte
+  Falle kurz als rotes Zeichen neben deinem Menü-Knopf — antippen zeigt die
+  Szene noch einmal. Nur was gerade wirkt (Halluzination), bleibt als Karte.
+- **Der Händler neu:** Statt eines gewürfelten Angebots, das oft nicht ging,
+  zeigt er bis zu drei Tausche, die gerade gehen — als Figurenbilder. Eins
+  antippen zeigt es auf dem Brett (was weggeht, wird blass mit rotem Ring,
+  das Neue steht als Geist da), ✓ tauscht, ✕ lässt es.
+- **Vorraum:** Der Knopf „Bereit" klebt am Handy unten im Bild, die
+  Regel-Schildchen stehen in einer Zeile.
+- **Vorbereitung für UPCrew:** Die Spielerliste verliert beim Speichern
+  keine Angaben mehr, die sie nicht kennt (wichtig, sobald sich mehrere
+  Spiele die Konten teilen).
+
 ## v0.135.0 — 24.09.2026
 
 **Anleitungen als kleines 3D-Video — ohne Text.**

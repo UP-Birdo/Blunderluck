@@ -459,6 +459,8 @@ Object.assign(TEAM_SCHACH, {
          */
         const vorschlaege = TEAM_SCHACH._teamVorschlaege(partie, person);
         const vorschau = { geister: {}, weg: {}, ziele: {} };
+        /* Der gewählte Händler-Tausch als Vorschau (seit v0.136.0). */
+        const handelVorschau = TEAM_SCHACH._handelVorschau ? TEAM_SCHACH._handelVorschau(partie) : null;
 
         for (const eintrag of vorschlaege) {
             const dessen = eintrag.vorschlag;
@@ -856,6 +858,38 @@ Object.assign(TEAM_SCHACH, {
                         ? "figur-weiss" : "figur-schwarz")
                     + TEAM_SCHACH._figurKlasse(vorschau.geister[feld]),
                     TEAM_SCHACH._figurZeichen(vorschau.geister[feld])));
+            }
+
+            /*
+             * DER GEWÄHLTE TAUSCH DES HÄNDLERS (seit v0.136.0): Was weggeht,
+             * trägt den roten Ring; wo Neues hinkommt, steht es als Geist —
+             * steht dort noch die alte Figur, tritt sie für die Vorschau
+             * zurück (nie zwei Figuren in einem Feld).
+             */
+            if (handelVorschau) {
+                if (handelVorschau.weg[feld]) {
+                    zelle.classList.add("feld-schlag");
+                    /* Die Figur, die geht, wird schon blass. */
+                    for (const kind of Array.from(zelle.children || zelle.kinder || [])) {
+                        if (String(kind.className || "").indexOf("figur ") === 0) {
+                            kind.className += " figur-schemen";
+                        }
+                    }
+                }
+                if (handelVorschau.neu[feld]) {
+                    zelle.classList.add("feld-vorschau");
+                    for (const kind of Array.from(zelle.children || zelle.kinder || [])) {
+                        if (String(kind.className || "").indexOf("figur ") === 0) {
+                            zelle.removeChild(kind);
+                        }
+                    }
+                    const neu = handelVorschau.neu[feld];
+                    zelle.appendChild(TEAM_SCHACH._element("span",
+                        "figur figur-schemen "
+                        + ((SCHACH.farbeVon(neu) === "weiss") ? "figur-weiss" : "figur-schwarz")
+                        + TEAM_SCHACH._figurKlasse(neu),
+                        TEAM_SCHACH._figurZeichen(neu)));
+                }
             }
 
             /* Wartet die Fähigkeit auf ein Ziel? Dann sind die möglichen

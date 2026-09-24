@@ -1024,7 +1024,7 @@ Object.assign(SCHACH_RUNDE, {
              * Tausch durchsetzen, den es so gar nicht mehr gibt. Der Bildschirm
              * fragt dasselbe ab, um es zu zeigen — die Wahrheit steht hier.
              */
-            const wirkung = SCHACH_RUNDE._handelAusfuehren(neu, farbe);
+            const wirkung = SCHACH_RUNDE._handelAusfuehren(neu, farbe, wahl);
             if (!wirkung) {
                 return null;
             }
@@ -1815,6 +1815,9 @@ Object.assign(SCHACH_RUNDE, {
             von: -1,
             nach: -1,
             wirkung: "pech",
+            /* Welche Falle — für die Fallen-Szene und ihr Wiederholen
+               (seit v0.136.0, additiv). */
+            art: art,
             felder: wirkung ? wirkung.felder : [feld],
             wege: wirkung ? (wirkung.wege || []) : []
         });
@@ -1865,16 +1868,22 @@ Object.assign(SCHACH_RUNDE, {
      */
     UNGLUECKE_MIT_ABLAUF: ["vollesGlas"],
 
+    /*
+     * SEIT v0.136.0 NUR NOCH, WAS GERADE WIRKT (Nutzer 24.09.2026: „Karten,
+     * die genutzt wurden, sollen nicht mehr in der Hand liegen"). Ein
+     * dauerhaftes Unglück ist mit dem Auslösen GESCHEHEN — was es getan hat,
+     * zeigt die Fallen-Szene auf dem Brett (brett-3d.js) und, auf Tipp, das
+     * rote Zeichen links in der Leiste. Die Liste `unglueckskarten` selbst
+     * bleibt vollständig (sie ist der Nachweis, und die 3D-Box erkennt an
+     * ihr, dass gerade eine Falle zugeschnappt ist); nur die Hand filtert.
+     */
     unglueckskartenVon(runde, farbe) {
         const liste = (runde.unglueckskarten && runde.unglueckskarten[farbe])
             ? runde.unglueckskarten[farbe] : [];
 
-        return liste.filter((eintrag) => {
-            if (SCHACH_RUNDE.UNGLUECKE_MIT_ABLAUF.indexOf(eintrag.art) !== -1) {
-                return SCHACH_RUNDE.unglueckRestzeit(runde, farbe, eintrag.art) > 0;
-            }
-            return true;
-        });
+        return liste.filter((eintrag) =>
+            SCHACH_RUNDE.UNGLUECKE_MIT_ABLAUF.indexOf(eintrag.art) !== -1
+            && SCHACH_RUNDE.unglueckRestzeit(runde, farbe, eintrag.art) > 0);
     },
 
     /*
@@ -2367,15 +2376,54 @@ Object.assign(SCHACH_RUNDE, {
      *
      * Gerechnet, nicht gewürfelt: Alle Geräte sehen dasselbe Angebot.
      */
-    handelsAngebot(runde, farbe) {
+    /*
+     * DER HÄNDLER BIETET BIS ZU DREI TAUSCHE, DIE GEHEN (seit v0.136.0,
+     * Nutzer 24.09.2026: „der hat noch nie richtig funktioniert").
+     *
+     * Bis v0.135.0 würfelte er je Zug GENAU EIN Angebot aus der Tabelle —
+     * und das ging in rund zwei von fünf Zügen nicht (Figuren fehlen, kein
+     * Platz für das Neue): „Der Händler hat nichts für dich". Jetzt geht er
+     * die Tabelle ab einer gerechneten Stelle durch und sammelt, was WIRKLICH
+     * geht, bis zu drei. Man wählt, sieht es auf dem Brett, bestätigt mit ✓.
+     * Das seltene Angebot (zweiter König) kommt weiter nur mit seinem
+     * Gewicht in die Auswahl. Gerechnet, nicht gewürfelt: Alle Geräte sehen
+     * dieselben Angebote.
+     */
+    handelsAngebote(runde, farbe) {
         const stand = SCHACH_RUNDE.normalisieren(runde);
 
         if (farbe !== "weiss" && farbe !== "schwarz") {
-            return null;
+            return [];
         }
 
         const marke = (stand.id || "partie") + "|handel|" + stand.zugZaehler + "|" + farbe;
-        const angebot = SCHACH_VARIANTEN.handelZiehen(SCHACH_RUNDE._zufallsWert(marke));
+        const tabelle = SCHACH_VARIANTEN.HANDEL;
+        const anfang = Math.floor(SCHACH_RUNDE._zufallsWert(marke) * tabelle.length) % tabelle.length;
+        const liste = [];
+
+        for (let schritt = 0; schritt < tabelle.length && liste.length < 3; schritt++) {
+            const eintrag = tabelle[(anfang + schritt) % tabelle.length];
+            const gewicht = (typeof eintrag.gewicht === "number") ? eintrag.gewicht : 1;
+            if (gewicht < 1 && SCHACH_RUNDE._zufallsWert(marke + "|selten|" + schritt) >= gewicht) {
+                continue;
+            }
+            const angebot = SCHACH_RUNDE._angebotRechnen(stand, farbe, eintrag);
+            if (angebot) {
+                liste.push(angebot);
+            }
+        }
+
+        return liste;
+    },
+
+    /* Das erste der Angebote — für Anleitung, Bot und alte Aufrufer. */
+    handelsAngebot(runde, farbe) {
+        const liste = SCHACH_RUNDE.handelsAngebote(runde, farbe);
+        return liste.length > 0 ? liste[0] : null;
+    },
+
+    /* Ein Tabellen-Eintrag auf diese Stellung gerechnet — oder null. */
+    _angebotRechnen(stand, farbe, angebot) {
 
         /*
          * WELCHE Figuren weggehen, entscheidet nicht der Spieler: Er tippt
@@ -2580,8 +2628,12 @@ Object.assign(SCHACH_RUNDE, {
         };
     },
 
-    _handelAusfuehren(runde, farbe) {
-        const angebot = SCHACH_RUNDE.handelsAngebot(runde, farbe);
+    _handelAusfuehren(runde, farbe, wahl) {
+        /* Welches der Angebote (seit v0.136.0; ohne Wahl das erste). Auch
+           hier NEU gerechnet — ein veraltetes Gerät setzt nichts durch. */
+        const liste = SCHACH_RUNDE.handelsAngebote(runde, farbe);
+        const gewaehlt = parseInt(wahl, 10);
+        const angebot = liste[(gewaehlt >= 0 && gewaehlt < liste.length) ? gewaehlt : 0];
         if (!angebot) {
             return null;
         }

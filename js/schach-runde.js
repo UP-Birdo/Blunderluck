@@ -1583,7 +1583,10 @@ const SCHACH_RUNDE = {
                            Start und Ziel. Der Eintrag wird hier Feld für Feld
                            neu gebaut — was hier fehlt, ist nach dem Laden
                            weg. */
-                        ohneWeg: !!eintrag.ohneWeg
+                        ohneWeg: !!eintrag.ohneWeg,
+                        /* Welche Falle (seit v0.136.0, nur bei `pech`) — für
+                           die Fallen-Szene und ihr rotes Zeichen. */
+                        art: (typeof eintrag.art === "string") ? eintrag.art : ""
                     });
                 }
             }
@@ -2204,7 +2207,7 @@ const SCHACH_RUNDE = {
             return true;
         }
 
-        return !!SCHACH_RUNDE.handelsAngebot(stand, farbe);
+        return SCHACH_RUNDE.handelsAngebote(stand, farbe).length > 0;
     },
 
     /*

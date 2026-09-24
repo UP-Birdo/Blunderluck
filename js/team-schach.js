@@ -227,6 +227,8 @@ const TEAM_SCHACH = {
      */
     handWahl: "",
     handWahlZaehler: -1,
+    /* Die offene Händler-Wahl (seit v0.136.0): { art, zaehler, wahl }. */
+    handelLage: null,
 
     /* Ein kurzer Hinweis über der Karten-Leiste, z. B. „Gerade kein Feld
        frei" — statt eines Dialogs. { text, bis } oder null. */
@@ -2504,6 +2506,12 @@ const TEAM_SCHACH = {
         menue.title = "Spiel-Menü: Einstellungen, Zugverlauf";
         links.appendChild(menue);
 
+        /* Die letzte Falle als rotes Zeichen (seit v0.136.0). */
+        const falle = TEAM_SCHACH._falleZeichenBauen(partie);
+        if (falle) {
+            links.appendChild(falle);
+        }
+
         if (TEAM_SCHACH.eckMenueOffen) {
             const liste = TEAM_SCHACH._element("div", "hand-menue-liste");
             TEAM_SCHACH._eckKnoepfeAnhaengen(liste, partie, farbe, namen);
@@ -2567,6 +2575,46 @@ const TEAM_SCHACH = {
             && !!SCHACH_RUNDE.teamVon(partie, person.id);
     },
 
+    /*
+     * DAS ROTE ZEICHEN DER LETZTEN FALLE (seit v0.136.0, Nutzer 24.09.2026).
+     * Seit die erledigten Unglücks-Karten nicht mehr in der Hand liegen,
+     * steht die zuletzt ausgelöste Falle für zwei, drei Halbzüge als kleines
+     * rotes Zeichen neben dem Menü-Knopf — beide Seiten sehen es. Ein Tipp
+     * spielt die Fallen-Szene noch einmal (3D) bzw. zeigt ihre Beschreibung
+     * (ohne 3D). Eine Falle ohne Wirkung bekommt kein Zeichen.
+     */
+    _falleZeichenBauen(partie) {
+        const verlauf = partie.verlauf || [];
+        let eintrag = null;
+        for (let n = verlauf.length - 1; n >= Math.max(0, verlauf.length - 3); n--) {
+            const e = verlauf[n];
+            if (e && e.wirkung === "pech" && e.art
+                    && String(e.text || "").indexOf("ohne Wirkung") === -1) {
+                eintrag = e;
+                break;
+            }
+        }
+        if (!eintrag) {
+            return null;
+        }
+        const art = eintrag.art;
+        const knopf = TEAM_SCHACH._knopf("", "falle-zeichen", () => {
+            const gezeigt = typeof window !== "undefined" && window.BRETT_3D
+                && window.BRETT_3D.falleZeigen && window.BRETT_3D.falleZeigen(art);
+            if (!gezeigt) {
+                TEAM_SCHACH.unglueckAnsehen(art);
+            }
+        });
+        const bild = (typeof FAEHIGKEIT_ZEICHEN !== "undefined") ? FAEHIGKEIT_ZEICHEN.bauen(art) : null;
+        if (bild) {
+            knopf.appendChild(bild);
+        }
+        const titel = SCHACH_VARIANTEN.pechTitel(art);
+        knopf.setAttribute("aria-label", "Falle noch einmal zeigen: " + titel);
+        knopf.title = titel;
+        return knopf;
+    },
+
     _handHinweisZeigen(text) {
         TEAM_SCHACH.handHinweis = { text: text, bis: Date.now() + 2200 };
         TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
@@ -2614,6 +2662,11 @@ const TEAM_SCHACH = {
             lage = "wahl";
             art = TEAM_SCHACH.handWahl;
         }
+        const handel = lage ? null : TEAM_SCHACH._handelLageVon(partie, person);
+        if (handel) {
+            lage = "handel";
+            art = handel.art;
+        }
         if (!lage) {
             return null;
         }
@@ -2643,7 +2696,9 @@ const TEAM_SCHACH = {
             SCHACH_VARIANTEN.faehigkeitTitel(art)));
 
         let tipp = "";
-        if (lage === "muster") {
+        if (lage === "handel") {
+            tipp = (handel.wahl >= 0) ? "Tauschen?" : "Tausch wählen";
+        } else if (lage === "muster") {
             tipp = "Figur, dann Ziel";
         } else if (lage === "ziel") {
             if (TEAM_SCHACH.zielVorschau >= 0) {
@@ -2673,6 +2728,22 @@ const TEAM_SCHACH = {
         }
         box.appendChild(text);
 
+        /* Die Angebote des Händlers: Figurenbilder, antippen = wählen. */
+        if (lage === "handel") {
+            const liste = TEAM_SCHACH._element("div", "hand-angebote");
+            handel.angebote.forEach((angebot, stelle) => {
+                const knopf = TEAM_SCHACH._knopf("",
+                    "hand-angebot hand-angebot-" + handel.farbe
+                        + (stelle === handel.wahl ? " hand-angebot-gewaehlt" : ""),
+                    () => TEAM_SCHACH.handelWaehlen(stelle));
+                knopf.setAttribute("aria-label", angebot.text);
+                knopf.setAttribute("aria-pressed", stelle === handel.wahl ? "true" : "false");
+                knopf.appendChild(TEAM_SCHACH._angebotBauen(angebot, handel.farbe));
+                liste.appendChild(knopf);
+            });
+            box.appendChild(liste);
+        }
+
         /* Die runden Knöpfe. */
         const knoepfe = TEAM_SCHACH._element("div", "hand-aktiv-knoepfe");
         if (lage !== "muster") {
@@ -2697,12 +2768,15 @@ const TEAM_SCHACH = {
                 ? TEAM_SCHACH.zugmusterVerwerfen(partie)
                 : TEAM_SCHACH.handAbbrechen()));
         if (lage !== "muster") {
-            const bereit = (lage === "wahl") || TEAM_SCHACH.zielVorschau >= 0;
+            const bereit = (lage === "wahl") || TEAM_SCHACH.zielVorschau >= 0
+                || (lage === "handel" && handel.wahl >= 0);
             const ja = TEAM_SCHACH._symbolKnopf("haken", "Einsetzen",
                 "hand-rund hand-rund-ja",
                 () => (lage === "ziel")
                     ? TEAM_SCHACH.zielBestaetigen(partie)
-                    : TEAM_SCHACH.faehigkeitEinsetzen(partie, art));
+                    : (lage === "handel")
+                        ? TEAM_SCHACH.handelBestaetigen(partie)
+                        : TEAM_SCHACH.faehigkeitEinsetzen(partie, art));
             ja.disabled = !bereit;
             knoepfe.appendChild(ja);
         }
@@ -3486,6 +3560,7 @@ const TEAM_SCHACH = {
         TEAM_SCHACH.moeglicheZiele = [];
         TEAM_SCHACH.zielFaehigkeit = "";
         TEAM_SCHACH.handWahl = "";
+        TEAM_SCHACH.handelLage = null;
         TEAM_SCHACH.zielFelder = [];
         TEAM_SCHACH.zielVorschau = -1;
         TEAM_SCHACH.zielUmriss = [];
@@ -5407,40 +5482,109 @@ const TEAM_SCHACH = {
      * verschwinden fünf Bauern, und niemand weiss, welche. Abgelehnt kostet es
      * nichts: Die Fähigkeit bleibt im Vorrat.
      */
+    /*
+     * DER HÄNDLER OHNE FENSTER (seit v0.136.0, Nutzer 24.09.2026: „der hat
+     * noch nie richtig funktioniert"). Der Tipp auf die Karte öffnet in der
+     * Leiste bis zu drei Angebote, die GERADE gehen (`handelsAngebote`), als
+     * Figurenbilder „♙♙♙ → ♘". Ein Angebot antippen zeigt es auf dem Brett:
+     * Was weggeht, trägt den roten Ring, das Neue steht als Geist darauf. ✓
+     * tauscht, ✕ oder die Karte bricht ab. Bis v0.135.0: ein gewürfeltes
+     * Angebot im Textfenster — in zwei von fünf Zügen „hat nichts für dich".
+     */
     async handelAnbieten(partie, person, art) {
         const farbe = SCHACH_RUNDE.teamVon(partie, person.id);
-        const angebot = SCHACH_RUNDE.handelsAngebot(partie, farbe);
+        const angebote = SCHACH_RUNDE.handelsAngebote(partie, farbe);
 
-        if (!angebot) {
-            await DIALOG.hinweis("Der Händler hat nichts für dich",
-                "Dir fehlen die passenden Figuren — oder der Platz für das, was du "
-                + "bekämst. Nach dem nächsten Zug bietet er etwas anderes an.");
+        if (TEAM_SCHACH.handelLage && TEAM_SCHACH.handelLage.art === art) {
+            TEAM_SCHACH.handAbbrechen();
+            return;
+        }
+        if (angebote.length === 0) {
+            TEAM_SCHACH._handHinweisZeigen("Gerade kein Tausch");
             return;
         }
 
-        const breite = SCHACH.breiteVon(partie.stand);
-        const hoehe = SCHACH.hoeheVon(partie.stand);
-        const namen = (felder) => felder
-            .map((feld) => SCHACH.feldName(feld, breite, hoehe))
-            .join(", ");
+        TEAM_SCHACH._auswahlAufheben();
+        TEAM_SCHACH.handelLage = {
+            art: art,
+            zaehler: partie.zugZaehler,
+            wahl: (angebote.length === 1) ? 0 : -1
+        };
+        TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
+    },
 
-        const ja = await DIALOG.frage(
-            "Der Händler bietet",
-            angebot.text + "\n\n"
-                + "Du gibst ab: " + namen(angebot.gibtFelder) + "\n"
-                + "Du bekommst auf: " + namen(angebot.bekommtFelder) + "\n\n"
-                + "Nimmst du an, ist danach der Gegner am Zug. Lehnst du ab, "
-                + "behältst du die Fähigkeit — und nach dem nächsten Zug hat der "
-                + "Händler ein anderes Angebot.",
-            "Annehmen",
-            false
-        );
+    /* Die laufende Händler-Wahl — nur, solange sie zu dieser Stellung passt. */
+    _handelLageVon(partie, person) {
+        const lage = TEAM_SCHACH.handelLage;
+        if (!lage || !person || lage.zaehler !== partie.zugZaehler
+                || !SCHACH_RUNDE.darfEinsetzen(partie, person.id, lage.art)) {
+            return null;
+        }
+        const farbe = SCHACH_RUNDE.teamVon(partie, person.id);
+        const angebote = SCHACH_RUNDE.handelsAngebote(partie, farbe);
+        if (angebote.length === 0) {
+            return null;
+        }
+        return { art: lage.art, farbe: farbe, angebote: angebote,
+            wahl: (lage.wahl >= 0 && lage.wahl < angebote.length) ? lage.wahl : -1 };
+    },
 
-        if (!ja) {
+    /* Was das Brett als Vorschau des gewählten Tauschs zeigt: `weg` (Feld →
+       true) und `neu` (Feld → Figurzeichen). */
+    _handelVorschau(partie) {
+        const lage = TEAM_SCHACH._handelLageVon(partie, TEAM_SCHACH._ich());
+        if (!lage || lage.wahl < 0) {
+            return null;
+        }
+        const angebot = lage.angebote[lage.wahl];
+        const weg = {};
+        const neu = {};
+        for (const feld of angebot.gibtFelder) {
+            weg[feld] = true;
+        }
+        let stelle = 0;
+        for (const teil of SCHACH_VARIANTEN.handelSeite(angebot.bekommt)) {
+            for (let nummer = 0; nummer < teil.anzahl; nummer++) {
+                const feld = angebot.bekommtFelder[stelle++];
+                neu[feld] = (lage.farbe === "weiss") ? teil.art : teil.art.toLowerCase();
+            }
+        }
+        return { weg: weg, neu: neu };
+    },
+
+    handelWaehlen(stelle) {
+        if (TEAM_SCHACH.handelLage) {
+            TEAM_SCHACH.handelLage.wahl = stelle;
+            TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
+        }
+    },
+
+    async handelBestaetigen(partie) {
+        const lage = TEAM_SCHACH._handelLageVon(partie, TEAM_SCHACH._ich());
+        if (!lage || lage.wahl < 0) {
             return;
         }
+        TEAM_SCHACH.handelLage = null;
+        await TEAM_SCHACH.faehigkeitAusfuehren(partie, lage.art, -1, null, String(lage.wahl));
+    },
 
-        await TEAM_SCHACH.faehigkeitAusfuehren(partie, art, -1);
+    /* Ein Angebot als Bild: die Figuren, die gehen, → die Figuren, die kommen. */
+    _angebotBauen(angebot, farbe) {
+        const reihe = TEAM_SCHACH._element("span", "hand-angebot-figuren");
+        const seite = (liste) => {
+            for (const teil of SCHACH_VARIANTEN.handelSeite(liste)) {
+                const zeichen = (farbe === "weiss") ? teil.art : teil.art.toLowerCase();
+                for (let nummer = 0; nummer < teil.anzahl; nummer++) {
+                    reihe.appendChild(TEAM_SCHACH._element("span",
+                        "figur hand-angebot-figur figur-" + farbe + TEAM_SCHACH._figurKlasse(zeichen),
+                        TEAM_SCHACH._figurZeichen(zeichen)));
+                }
+            }
+        };
+        seite(angebot.gibt);
+        reihe.appendChild(TEAM_SCHACH._element("span", "hand-angebot-pfeil", "→"));
+        seite(angebot.bekommt);
+        return reihe;
     },
 
     /*
