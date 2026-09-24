@@ -2,6 +2,33 @@
 
 ## Teuer erkaufte Erkenntnisse
 
+### Eine Test-Seite mit Testkonto braucht einen Port, auf dem es die echte Startseite nicht gibt (v0.123.0)
+
+**Passiert am 24.09.2026.** Die 3D-Werkstatt (`_werkstatt-3d.html`) legt ein
+Testkonto in den Gerätespeicher und schaltet auf Modus „lokal". Sie lief auf
+demselben localhost-Port, auf dem auch `index.html` liegt. Beim Neustart
+öffnete der Browser-Bereich von selbst `/` — die echte Startseite, Modus
+„gemeinsam", mit dem Testkonto im Speicher. Nachgesehen (REST, nur lesen):
+in der Datenbank ist nichts angekommen.
+
+**Die Regel:** Der Gerätespeicher gehört zur Herkunft (Protokoll + Host +
+Port), nicht zur Seite. Wer eine Seite mit Test-Zustand baut, gibt ihr eine
+eigene Herkunft, auf der die echte Seite GAR NICHT erreichbar ist —
+`tools\Werkstatt-3D-Server.py` (Port 8094) leitet `/` und `index.html` auf
+die Werkstatt um. „Man darf dort eben nicht index.html öffnen" ist keine
+Sicherung, sondern eine Hoffnung.
+
+### Das 3D-Brett liest das 2D-Brett — und bekommt so jede Regel geschenkt (v0.122.0)
+
+Der erste Gedanke war eine eigene Beschreibung aus dem Modell (Figuren,
+Boxen, Ziele). Sie hätte Drehung, Glas, Gräber, Vorschläge, verborgene Boxen
+und die Knopf-Sperre ein zweites Mal gerechnet — genau das, was Regel 2 des
+Index verbietet. Das fertige 2D-Brett trägt all das schon als Klassen; das
+3D-Brett liest sie und klickt den Knopf. Ergebnis: +0,7 ms je Neuzeichnen,
+kein einziger Test musste angepasst werden, und jede Parität ist Absicht,
+nicht Glück.
+
+
 ### Eine diagonale Zweiteilung gilt nur fuer ein fast quadratisches Feld (v0.113.0)
 
 **Gefunden beim ersten Blick im Browser, 01.09.2026, VOR der Auslieferung.**

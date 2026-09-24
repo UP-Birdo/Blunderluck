@@ -313,6 +313,44 @@ const FAEHIGKEIT_ZEICHEN = {
      * vor v0.63.0. Ein Test wacht trotzdem darüber, dass keine ohne dasteht.
      */
     bauen(art) {
+        const plaettchen = FAEHIGKEIT_ZEICHEN.plaettchen[art];
+        if (plaettchen && typeof document !== "undefined"
+                && document.createElementNS) {
+            return FAEHIGKEIT_ZEICHEN._plaettchenBauen(art, plaettchen);
+        }
+        return FAEHIGKEIT_ZEICHEN.flachBauen(art);
+    },
+
+    /*
+     * DIE 3D-PLÄTTCHEN (seit v0.127.0, ROADMAP Punkt 60).
+     *
+     * `js\brett-3d.js` rechnet aus jedem Zeichen ein Bild: eine Karte aus
+     * Emaille in der Stufenfarbe, das Zeichen als erhabenes Relief darauf.
+     * Es legt die Bilder hier ab (Art -> Bildadresse) und tauscht die schon
+     * gezeichneten Karten einmal aus; alles, was danach gebaut wird, kommt
+     * über `bauen` von selbst als Plättchen. Ohne WebGL, in den Tests und
+     * bis die Bilder fertig sind, bleibt das Linienzeichen.
+     */
+    plaettchen: {},
+
+    _plaettchenBauen(art, adresse) {
+        const svg = document.createElementNS(FAEHIGKEIT_ZEICHEN.RAUM, "svg");
+        svg.setAttribute("viewBox", "0 0 44 62");
+        svg.setAttribute("class", "faehigkeit-bild faehigkeit-bild-3d");
+        svg.setAttribute("aria-hidden", "true");
+        svg.setAttribute("data-art", art);
+
+        const bild = document.createElementNS(FAEHIGKEIT_ZEICHEN.RAUM, "image");
+        bild.setAttribute("href", adresse);
+        bild.setAttribute("width", "44");
+        bild.setAttribute("height", "62");
+        svg.appendChild(bild);
+        return svg;
+    },
+
+    /* Das Linienzeichen selbst — auch die Vorlage, aus der das 3D-Modul
+       sein Relief rechnet. */
+    flachBauen(art) {
         const formen = FAEHIGKEIT_ZEICHEN.ZEICHEN[art]
             || FAEHIGKEIT_ZEICHEN.ZEICHEN_PECH[art];
 
@@ -325,6 +363,7 @@ const FAEHIGKEIT_ZEICHEN = {
         svg.setAttribute("viewBox", "0 0 24 24");
         svg.setAttribute("class", "start-zeichen faehigkeit-bild");
         svg.setAttribute("aria-hidden", "true");
+        svg.setAttribute("data-art", art);
 
         for (const form of formen) {
             const teil = FAEHIGKEIT_ZEICHEN._formBauen(form);

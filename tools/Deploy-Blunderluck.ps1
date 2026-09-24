@@ -72,8 +72,11 @@ $freigegebeneDateien = @("index.html", "sw.js", "README.md", "CHANGELOG.md",
 # des 3D-Looks. Ohne den Ordner laedt die Stildatei zwoelf Bilder, die es auf
 # dem Server nicht gibt - und weil das Schriftzeichen darunter durchsichtig
 # geschaltet ist, waeren die Figuren dann UNSICHTBAR statt nur schmuckloser.
+#
+# "modelle" gehoert seit v0.122.0 dazu: die 3D-Formen des Echtzeit-Bretts
+# (glTF aus Design\Blunderluck-3D). Ohne sie bleibt es beim flachen Brett.
 $freigegebeneOrdner  = @("css", "js", "icons", "img", "docs", "tests",
-                         "tools", ".github")
+                         "tools", ".github", "modelle")
 $gesperrteDateien    = @("TODO.md", "TODO-Archiv.md", "ROADMAP.md", "ROADMAP-Archiv.md",
                          "CLAUDE.md", "STATUS.md", "github-token.dat",
                          # Interne Planung - liegt in docs\, gehoert aber nicht
@@ -85,7 +88,7 @@ $gesperrteDateien    = @("TODO.md", "TODO-Archiv.md", "ROADMAP.md", "ROADMAP-Arc
 # Diese Endungen sind KEIN Text. Sie muessen als eigener Datenklumpen (Blob)
 # hochgeladen werden - wuerde man sie als Text lesen und senden, kaeme auf der
 # anderen Seite eine kaputte Datei an.
-$binaerEndungen = @(".png", ".jpg", ".jpeg", ".gif", ".ico", ".webp")
+$binaerEndungen = @(".png", ".jpg", ".jpeg", ".gif", ".ico", ".webp", ".glb")
 
 # ---------------------------------------------------------------------
 # Zugriffsschluessel hinterlegen

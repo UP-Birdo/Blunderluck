@@ -1404,3 +1404,290 @@ body.design-3d .grundlagen-figur {
 }
 
 
+
+/* ------------------------------------------------------------------ *
+ * DAS 3D-BRETT (seit v0.122.0, js\brett-3d.js)
+ *
+ * Die Leinwand liegt ÜBER dem 2D-Brett, das darunter unsichtbar
+ * weiterlebt: Es rechnet aus, was auf jedem Feld zu sehen ist, und seine
+ * Knöpfe bekommen die Klicks, die auf der Leinwand ankommen. Unsichtbar
+ * heisst: durchsichtig und ohne Zeiger — NICHT `display: none`, sonst
+ * fehlte dem Einpassen (`_brettEinpassen`) die Grösse.
+ * ------------------------------------------------------------------ */
+
+.brett-rahmen {
+    position: relative;
+}
+
+.brett-rahmen.brett-3d-an > .brett,
+.brett-rahmen.brett-3d-an > .brett-rand {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Solange die 3D-Formen laden, kein kurzes Aufblitzen des flachen Bretts
+   (v0.127.0, `TEAM_SCHACH._brett3dAbwarten`). */
+.brett-rahmen.brett-3d-wartet > .brett,
+.brett-rahmen.brett-3d-wartet > .brett-rand {
+    visibility: hidden;
+}
+
+.brett-3d {
+    position: absolute;
+    inset: -4% -3% -2% -3%;
+    z-index: 3;
+}
+
+.brett-3d-leinwand {
+    display: block;
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+    cursor: pointer;
+}
+
+.brett-3d-leiste {
+    position: absolute;
+    right: 4px;
+    top: 4px;
+    display: flex;
+    gap: 6px;
+    z-index: 4;
+}
+
+.brett-3d-knopf,
+.brett-3d-zurueck {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border: 1px solid var(--rahmen);
+    border-radius: 50%;
+    background: var(--karte);
+    color: var(--schrift);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+    cursor: pointer;
+    opacity: 0.85;
+}
+
+.brett-3d-knopf:hover,
+.brett-3d-zurueck:hover {
+    opacity: 1;
+}
+
+.brett-3d-zurueck {
+    position: absolute;
+    right: 4px;
+    bottom: 4px;
+    z-index: 4;
+    font: 700 0.75rem/1 system-ui, sans-serif;
+}
+
+/* Die Tafel klappt unten am Bildschirm auf, damit das Brett darüber
+   sichtbar bleibt — jede Wahl wirkt sofort und soll gesehen werden. */
+.brett-3d-tafel {
+    position: fixed;
+    left: 50%;
+    bottom: 0;
+    transform: translateX(-50%);
+    width: min(560px, 100%);
+    z-index: 50;
+    max-height: 46vh;
+    overflow-y: auto;
+    padding: 12px 14px calc(12px + env(safe-area-inset-bottom));
+    border-radius: 16px 16px 0 0;
+    background: var(--karte);
+    color: var(--schrift);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.28);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.brett-3d-zeile {
+    display: grid;
+    grid-template-columns: 5.2em 1fr;
+    align-items: center;
+    gap: 8px;
+}
+
+.brett-3d-titel {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--schrift-leise);
+}
+
+.brett-3d-wahl {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.brett-3d-segment {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 9px;
+    border: 1px solid var(--rahmen);
+    border-radius: 999px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: 0.78rem;
+    cursor: pointer;
+}
+
+.brett-3d-segment.ist-an {
+    border-color: var(--haupt);
+    background: var(--haupt);
+    color: var(--haupt-schrift);
+}
+
+.brett-3d-probe {
+    width: 14px;
+    height: 14px;
+    border-radius: 4px;
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.2);
+}
+
+.brett-3d-fuss {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    padding-top: 4px;
+}
+
+/* ------------------------------------------------------------------ *
+ * DIE KLEINEN BRETTER IN 3D (seit v0.123.0)
+ *
+ * `js\brett-3d.js` legt über jedes `.vorschau`-Gitter ein gerendertes
+ * Bild (`.vorschau-3d-bild`). Das Gitter bleibt darunter stehen — es gibt
+ * die Grösse vor und trägt Hand und Pfeile der Bildanleitung, die über dem
+ * Bild liegen müssen. Nur seine eigenen Farben und Figuren verschwinden.
+ * ------------------------------------------------------------------ */
+
+.vorschau.vorschau-3d {
+    border-color: transparent;
+    /* Hohe Figuren der hintersten Reihe dürfen oben über das Gitter ragen. */
+    overflow: visible;
+}
+
+.vorschau.vorschau-3d > .vorschau-feld {
+    background: transparent !important;
+    box-shadow: none !important;
+    z-index: 1;
+}
+
+.vorschau.vorschau-3d > .vorschau-feld::before,
+.vorschau.vorschau-3d > .vorschau-feld::after {
+    display: none !important;
+}
+
+.vorschau.vorschau-3d > .vorschau-feld > :not(.anleitung-finger) {
+    visibility: hidden;
+}
+
+.vorschau-3d-bild {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    /* Die Höhe setzt js\brett-3d.js: das Bild ist höher als das Gitter. */
+    z-index: 0;
+    pointer-events: none;
+}
+
+.vorschau.vorschau-3d > .anleitung-pfeile {
+    z-index: 2;
+}
+
+/* ------------------------------------------------------------------ *
+ * DIE FÄHIGKEITSKARTEN ALS 3D-PLÄTTCHEN (seit v0.127.0, ROADMAP 60)
+ *
+ * `js\brett-3d.js` rechnet je Art ein Bild (Emaille-Karte mit Relief);
+ * `FAEHIGKEIT_ZEICHEN.bauen` setzt es als `.faehigkeit-bild-3d` ein. Das
+ * Bild IST die Karte — Rahmen und Grund des Knopfs treten zurück, der
+ * Schatten kommt vom Bild selbst (liegt unter der Nachbarkarte wie ein
+ * echtes Plättchen). Die Selektoren tragen `:has`, damit ohne WebGL alles
+ * beim Linienzeichen in der gerahmten Karte bleibt.
+ * ------------------------------------------------------------------ */
+
+/* DER FRIEDHOF IM 3D-BRETT (v0.127.0): Die Gefallenen stehen als
+   Grabsteine vor dem Brett. Die flache Klappe entfällt; Totenkopf und Zahl
+   bleiben als ruhige Anzeige (ohne Pfeil, nicht antippbar), damit die
+   Namens-Kästen und die Kartenhöhe bleiben, wie sie sind. */
+body.brett-3d-aktiv .friedhof-klappe {
+    display: none;
+}
+
+body.brett-3d-aktiv .friedhof-streifen {
+    pointer-events: none;
+}
+
+body.brett-3d-aktiv .friedhof-streifen .klapp-pfeil {
+    display: none;
+}
+
+.faehigkeit-reihe .faehigkeit-knopf:has(> .faehigkeit-bild-3d),
+.faehigkeit-kachel:has(.faehigkeit-bild-3d),
+.faehigkeit-kachel:has(.faehigkeit-bild-3d):hover {
+    position: relative;
+    border-color: transparent;
+    background: transparent;
+    box-shadow: none;
+}
+
+/* Vier Klassen: `.faehigkeit-reihe .faehigkeit-knopf .faehigkeit-bild`
+   (stil-auswertung.css, 58 %) steht in einer späteren Datei. */
+.faehigkeit-reihe .faehigkeit-knopf > .faehigkeit-bild.faehigkeit-bild-3d,
+.faehigkeit-kachel .kachel-zeichen .faehigkeit-bild.faehigkeit-bild-3d {
+    aspect-ratio: auto;
+    flex: none;
+    position: absolute;
+    inset: -3px;
+    width: calc(100% + 6px);
+    height: calc(100% + 6px);
+    display: block;
+    pointer-events: none;
+    filter: drop-shadow(-2px 3px 3px rgba(0, 0, 0, 0.45));
+}
+
+.faehigkeit-kachel:has(.faehigkeit-bild-3d) {
+    transition: transform 0.15s ease;
+}
+
+.faehigkeit-kachel:has(.faehigkeit-bild-3d):hover {
+    transform: translateY(-2px);
+}
+
+/* Die fremde Karte (darf man gerade nicht einsetzen) war gestrichelt; als
+   Plättchen liegt sie matter da. */
+.faehigkeit-knopf-fremd > .faehigkeit-bild-3d {
+    opacity: 0.6;
+    filter: saturate(0.55) drop-shadow(-2px 3px 3px rgba(0, 0, 0, 0.35));
+}
+
+/* Plus und Blitz stehen auf dem Plättchen — auf einer dunklen Marke, sonst
+   gingen sie in der Stufenfarbe der Platte unter. */
+.faehigkeit-knopf:has(> .faehigkeit-bild-3d) .faehigkeit-ecke-plus,
+.faehigkeit-knopf:has(> .faehigkeit-bild-3d) .faehigkeit-ecke-blitz {
+    z-index: 1;
+    bottom: 5px;
+    color: #fff;
+    background: rgba(20, 24, 32, 0.72);
+    border-radius: 6px;
+}
+
+.faehigkeit-knopf:has(> .faehigkeit-bild-3d) .faehigkeit-ecke-plus {
+    right: 6px;
+    padding: 1px 3px;
+}
+
+.faehigkeit-knopf:has(> .faehigkeit-bild-3d) .faehigkeit-ecke-blitz {
+    left: 6px;
+}
+
+.faehigkeit-knopf:has(> .faehigkeit-bild-3d) .faehigkeit-anzahl,
+.faehigkeit-knopf:has(> .faehigkeit-bild-3d) .karte-restzeit {
+    z-index: 1;
+}

@@ -952,6 +952,16 @@ const TEAM_SCHACH = {
         TEAM_SCHACH._zugAnimieren(halter, partie, person);
         TEAM_SCHACH._wirkungAnimieren(halter, partie);
 
+        /* Das 3D-Brett (seit v0.122.0, js\brett-3d.js) liest die fertigen
+           Feld-Knöpfe und zeichnet sie nach. Es lädt als Modul und kann
+           später bereit sein als der erste Aufbau — darum merkt es sich
+           hier, was zuletzt gezeichnet wurde. In den Tests fehlt es. */
+        TEAM_SCHACH._brett3dLetzte = { halter, partie, person };
+        TEAM_SCHACH._brett3dAbwarten(halter);
+        if (typeof window !== "undefined" && window.BRETT_3D) {
+            window.BRETT_3D.anbinden(halter, partie, person);
+        }
+
     },
 
     /* ---------------------------------------------------------------- *
@@ -1043,7 +1053,16 @@ const TEAM_SCHACH = {
         /* 5. Das Brett — fest oder gewürfelt; man sieht, was einen erwartet.
            Ohne Team ist es die Vorschau, mit Team die eigene Aufstellung
            (Gegner oben, wie im Match). */
-        wurzel.appendChild(TEAM_SCHACH._brettBauen(partie, person));
+        const vorraumBrett = TEAM_SCHACH._brettBauen(partie, person);
+        wurzel.appendChild(vorraumBrett);
+
+        /* Auch hier das 3D-Brett (v0.122.0) — man sieht vor dem Anpfiff,
+           wie das Brett im Match aussieht. */
+        TEAM_SCHACH._brett3dLetzte = { halter: vorraumBrett, partie, person };
+        TEAM_SCHACH._brett3dAbwarten(vorraumBrett);
+        if (typeof window !== "undefined" && window.BRETT_3D) {
+            window.BRETT_3D.anbinden(vorraumBrett, partie, person);
+        }
 
         /* 6. Die Regeln dieser Runde. */
         wurzel.appendChild(TEAM_SCHACH._regelSchildchenBauen(partie));

@@ -1782,6 +1782,9 @@ Object.assign(TEAM_SCHACH, {
          * In den Tests feuert der Zeitgeber nie — dort wird das Schauspiel
          * einzeln geprüft.
          */
+        /* Seit v0.123.0 zeigt das 3D-Brett auch dieses Bild in 3D. */
+        TEAM_SCHACH._standbild3d(brett);
+
         if (schritt.schauspiel) {
             window.setTimeout(() => TEAM_SCHACH._wirkungSchauspiel(brett, {
                 wirkung: schritt.schauspiel,

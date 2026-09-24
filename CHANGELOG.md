@@ -3,6 +3,126 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.127.0 — 24.09.2026
+
+**Fähigkeiten als 3D-Plättchen, die Lootbox springt auf, der Friedhof
+wird zu Grabsteinen vor dem Brett.**
+
+- **3D-Plättchen:** Jede Fähigkeit und jedes Unglück ist jetzt eine kleine
+  Karte aus Emaille — in der Hand und in der Bibliothek. Fähigkeiten in
+  ihrer Stufenfarbe mit hellem, erhabenem Zeichen, Unglücke dunkel mit
+  leuchtendem Zeichen. Die Karten in der Hand liegen übereinander wie
+  echte Plättchen; eine Karte, die du gerade nicht einsetzen darfst, ist
+  matter.
+- **Lootbox öffnen:** Sammelst du eine Box ein, springt sie hoch, ihre
+  Wände fliegen auseinander, die Karte steigt heraus, dreht sich und
+  fliegt zu deiner Hand (beim Gegner nach hinten).
+- **Friedhof als Grabsteine:** Vor dem Brett steht für jede geschlagene
+  Figur ein kleiner Grabstein, in den ihr Profil eingraviert ist. Weiss
+  auf hellem, Schwarz auf dunklem Stein; links die des Gegners, rechts
+  deine, die wertvollste jeweils aussen und auf einem grösseren Stein.
+  Eine geschlagene Figur fliegt erst vom Brett, dann fällt ihr Stein auf
+  die Ablage. Die aufklappbare Friedhof-Leiste gibt es im 3D-Brett nicht
+  mehr — Totenkopf und Zahl bleiben. Das Brett bleibt so gross wie
+  vorher.
+- **Kein Aufblitzen mehr:** Beim Öffnen einer Partie ist bis zum 3D-Brett
+  nicht mehr kurz das flache Brett zu sehen.
+
+## v0.126.0 — 24.09.2026
+
+**Turm und König nachgebessert: nur ein wenig runder.**
+
+- **Turm:** wieder der gedrechselte Turm mit Zinnen — nur die Zinnen oben
+  sind leicht gerundet. Nebenbei sind die dunklen Keile in den Zinnen weg,
+  die beim Verkleinern der Form entstanden waren.
+- **König:** wieder mit dem Kelch, der nach unten spitz zuläuft, und dem
+  bisherigen Kreuz. Die runde Fassung von v0.125.0 ist zurückgenommen.
+
+## v0.125.0 — 24.09.2026
+
+**Runder Turm und runder König — und eine ruhigere Beschriftung.**
+
+- **Turm:** vier Kugeln auf einem weichen, runden Kronenrand statt eckiger
+  Zinnen — wie beim früheren Turm, aber auf dem gedrechselten Körper.
+- **König:** runde Krone als Knospe mit dickem Rundwulst und Kuppel, das
+  Kreuz aus runden Stäben mit Kugelenden auf einem Kugelknauf.
+- **Beschriftung zurückhaltend:** kleiner, dicht am Brett, halb
+  durchsichtig, ohne Leuchten und Schatten, nur noch ein ganz ruhiges
+  Wiegen — und sie steht immer genau zu deinem Blickwinkel.
+
+## v0.124.0 — 24.09.2026
+
+**Nur noch die Felder — und die Beschriftung fliegt.**
+
+- **Kein Rand mehr:** Das Brett hat weder Rahmen noch Sockel; die Steine
+  stehen frei, auch auf den kleinen Bildern.
+- **3D-Buchstaben und -Zahlen:** a–h und 1–8 (auf grossen Brettern mehr)
+  schweben als echte 3D-Schrift links und unten neben dem Brett, heben und
+  senken sich in einer Welle und drehen sich immer zu dir — auch wenn du
+  das Brett drehst. Im dunklen Modus hell, im hellen Modus in der dunklen
+  Brettfarbe.
+- Das Brett füllt die Breite dadurch besser aus.
+
+## v0.123.0 — 24.09.2026
+
+**Auch die kleinen Bretter sind jetzt 3D — und die Fähigkeiten wirken
+sichtbarer.**
+
+- **Kleine Bretter in 3D:** Die Vorschau auf dem Start, die Brettform-Kacheln
+  in „Neue Runde“, die Bildanleitungen der Fähigkeiten und Unglücke, „Schach
+  lernen“ und die Rückschau zeigen dasselbe 3D-Brett wie das Spiel —
+  schräg von oben, mit Mulden, gehobenen Steinen, Mauer, Reif, Schild und
+  Kette. Hand und Pfeile der Anleitungen liegen genau auf ihrem Feld.
+- **Figurenbilder aus denselben Formen:** Wo eine Figur als Bild steht (Hand,
+  Beute-Bilanz, „Schach lernen“), rechnet die App sie jetzt selbst aus den
+  3D-Formen — im Figurenstil, den du beim Brett gewählt hast.
+- **Wirkungen mit Auftritt:** Die Mauer schichtet sich Stein für Stein auf,
+  Reif wächst von der Mitte aus und lässt Eiszapfen schiessen, die
+  Schild-Glocke senkt sich und blitzt auf, die Kette schnappt zu und rüttelt
+  die Figur, beim Riss zerspringt der Stein. Teleport ist ein Wirbel statt
+  eines Sprungs, Meuterei und Verstärkung verwandeln die Figur an Ort und
+  Stelle (Drehung, Funken) statt sie verschwinden und neu erscheinen zu
+  lassen.
+
+## v0.122.0 — 24.09.2026
+
+**Das Brett ist jetzt echtes 3D: dieselben Figuren wie in der 3D-Werkstatt,
+Lootboxen als schwebende Würfel, Mulden statt Punkte — und man kann es
+drehen und selbst gestalten.**
+
+- **Echte 3D-Figuren.** Die sechs Figuren kommen als Formen aus der
+  3D-Werkstatt (Design\Blunderluck-3D): gedrechselte Staunton-Figuren, der
+  Springer als der neue, geglättete Pferdekopf auf der gemeinsamen Platte.
+  Sie werfen Schatten und stehen auf dicken, abgerundeten Steinen.
+- **Lootboxen schweben als echte Würfel** über ihrem Feld, drehen sich
+  langsam, tragen die Stufenfarbe und das eingravierte Fragezeichen
+  (umgedreht beim Unglück, bunt verlaufend, wenn die Seltenheit verborgen
+  ist). Eingesammelt wirbeln sie hoch und zerplatzen in Funken ihrer Farbe.
+- **Mulden statt Punkte.** Wohin eine Figur ziehen kann, sinkt eine runde
+  Fassung in den Stein. Wo geschlagen würde, liegt ein roter Ring um die
+  Fassung.
+- **Ziehen mit Schwung.** Die Figur springt im Bogen (der Springer höher),
+  landet mit einer kleinen Staubwolke; eine geschlagene Figur fliegt
+  drehend vom Brett — ohne Blut. Umwandlung zeigt Funken bei der Landung.
+- **Wirkungen in 3D:** Mauern aus Ziegeln, Reif mit Eiszapfen beim Frost,
+  eine Glocke über der geschützten Figur, eine Kette um die gefesselte, eine
+  Grube, wo der Boden aufgerissen ist; das Nudelholz rollt als Holzwalze
+  über die Bahn, und jede Figur hüpft darüber. Fähigkeitsziele heben ihren
+  Stein und tragen einen grünen Rand (statt aufgemalter Markierung).
+- **Spur und Farben wie gewohnt:** letzter Zug grün, Schach orange, Matt rot
+  (pulsierend), die gewählte Figur schwebt über gelbem Stein.
+- **Drehen und neu einstellen.** Mit dem Finger lässt sich das Brett drehen
+  und heranzoomen; der Pfeil-Knopf oben rechts setzt den Blick zurück. Der
+  Farbpaletten-Knopf öffnet unten eine Leiste: Blick (Oben / Schräg / Tief),
+  Brett (Blunderluck, Holz, Turnier, Marmor, Nacht), Figuren (Emaille,
+  Porzellan, Matt, Metall), Steine (rund / kantig), Tempo (flott / normal),
+  Schatten an/aus — alles wirkt sofort und bleibt auf dem Gerät gespeichert.
+  Wer lieber flach spielt, schaltet dort aufs 2D-Brett zurück (ein Knopf
+  „3D“ bringt es wieder).
+- **Genauso schnell wie vorher.** Ein Tipp geht denselben Weg wie auf dem
+  flachen Brett; das 3D-Brett kostet je Neuzeichnen unter einer
+  Millisekunde. Ohne WebGL bleibt es automatisch beim flachen Brett.
+
 ## v0.121.0 — 24.09.2026
 
 **Die Einstellungen für eine neue Runde sind neu: ein Bildschirm mit drei

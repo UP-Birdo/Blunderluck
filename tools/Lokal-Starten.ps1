@@ -36,6 +36,7 @@ $inhaltstypen = @{
     ".png"  = "image/png"
     ".ico"  = "image/x-icon"
     ".md"   = "text/plain; charset=utf-8"
+    ".glb"  = "model/gltf-binary"
 }
 
 $zuhoerer = New-Object System.Net.HttpListener

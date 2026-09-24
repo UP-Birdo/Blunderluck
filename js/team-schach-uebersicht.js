@@ -1448,6 +1448,9 @@ Object.assign(TEAM_SCHACH, {
             vorschau.appendChild(zelle);
         }
 
+        /* Seit v0.123.0 legt das 3D-Brett ein Standbild darüber. */
+        TEAM_SCHACH._standbild3d(vorschau);
+
         return vorschau;
     },
 

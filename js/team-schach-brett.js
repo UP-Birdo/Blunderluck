@@ -353,6 +353,18 @@ Object.assign(TEAM_SCHACH, {
         };
     },
 
+    /*
+     * DIE KLEINEN BRETTER IN 3D (seit v0.123.0). Wer ein `.vorschau`-Gitter
+     * baut (Startvorschau, Brettform-Kacheln, Bildanleitungen, Rückschau),
+     * reicht es hier durch; `jsrett-3d.js` legt ein 3D-Standbild darüber.
+     * Ohne 3D-Modul (Tests, kein WebGL) bleibt es beim Gitter.
+     */
+    _standbild3d(element) {
+        if (typeof window !== "undefined" && window.BRETT_3D && window.BRETT_3D.standbild) {
+            window.BRETT_3D.standbild(element);
+        }
+    },
+
     _brettBauen(partie, person) {
         const halter = TEAM_SCHACH._element("div", "brett-halter");
 
@@ -1953,6 +1965,53 @@ Object.assign(TEAM_SCHACH, {
      */
     _brettLage: "",
     _brettBreite: 0,
+
+    /*
+     * DAS FLACHE BRETT BLITZT NICHT MEHR AUF (v0.127.0).
+     *
+     * Das 3D-Brett lädt als Modul und braucht seine Formen; bis dahin stand
+     * rund eine Sekunde lang das flache Brett da und wurde dann ersetzt.
+     * Jetzt wird es in dieser Zeit verborgen (`visibility`, nicht
+     * `display` — die Grösse braucht `_brettEinpassen` weiter). Das Modul
+     * nimmt die Klasse ab, sobald es zeichnet oder aufgibt; spätestens nach
+     * `BRETT_3D_GEDULD_MS` seit dem Seitenstart tut es der Zeitgeber hier,
+     * damit ein Netzfehler nie ein leeres Brett hinterlässt.
+     */
+    BRETT_3D_GEDULD_MS: 6000,
+
+    _brett3dErwartet() {
+        if (typeof window === "undefined" || typeof performance === "undefined"
+                || typeof localStorage === "undefined") {
+            return false;
+        }
+        if (window.BRETT_3D_AUS || performance.now() > TEAM_SCHACH.BRETT_3D_GEDULD_MS) {
+            return false;
+        }
+        try {
+            const einst = JSON.parse(localStorage.getItem("blunderluck.brett3d") || "{}") || {};
+            if (einst.an === false) {
+                return false;
+            }
+        } catch (fehler) {
+            /* dann gilt die Vorgabe: 3D an */
+        }
+        return !window.BRETT_3D || window.BRETT_3D.laedt();
+    },
+
+    _brett3dAbwarten(halter) {
+        if (!halter || typeof halter.querySelector !== "function"
+                || !TEAM_SCHACH._brett3dErwartet()) {
+            return;
+        }
+        const rahmen = halter.querySelector(".brett-rahmen");
+        if (!rahmen || !rahmen.classList) {
+            return;
+        }
+        rahmen.classList.add("brett-3d-wartet");
+
+        const rest = TEAM_SCHACH.BRETT_3D_GEDULD_MS - performance.now();
+        setTimeout(() => rahmen.classList.remove("brett-3d-wartet"), Math.max(0, rest));
+    },
 
     _figurGroesseSetzen() {
         const brett = TEAM_SCHACH.brettEl;

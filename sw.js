@@ -29,7 +29,7 @@
  */
 
 /* Der Name des Zwischenspeichers. HIER STEHT DIE NUMMER GENAU EINMAL. */
-const SPEICHER_NAME = "blunderluck-v0.121.0";
+const SPEICHER_NAME = "blunderluck-v0.127.0";
 
 /*
  * BEIM BAUEN: NETZ ZUERST. IM BETRIEB: ZWISCHENSPEICHER ZUERST.
@@ -111,6 +111,23 @@ const DATEIEN = [
     "./js/verwaltungs-bildschirm.js",
     "./js/wunsch.js",
     "./js/app.js",
+
+    /* Das 3D-Brett (seit v0.122.0): das Modul, three.js aus dem Projekt
+       (kein fremder Server) und die Formen aus der 3D-Werkstatt. Fehlen
+       sie offline, bleibt es beim flachen Brett — kaputt ist dann nichts. */
+    "./js/brett-3d.js",
+    "./js/lib/three/LICENSE",
+    "./js/lib/three/three.module.min.js",
+    "./js/lib/three/addons/controls/OrbitControls.js",
+    "./js/lib/three/addons/fonts/NOTICE-droid.txt",
+    "./js/lib/three/addons/fonts/README-droid.txt",
+    "./js/lib/three/addons/fonts/brett-schrift.typeface.json",
+    "./js/lib/three/addons/geometries/TextGeometry.js",
+    "./js/lib/three/addons/loaders/FontLoader.js",
+    "./js/lib/three/addons/geometries/RoundedBoxGeometry.js",
+    "./js/lib/three/addons/loaders/GLTFLoader.js",
+    "./js/lib/three/addons/utils/BufferGeometryUtils.js",
+    "./modelle/blunderluck-modelle.glb",
 
     /* Die zwölf Figuren des 3D-Looks. Sie stehen in KEINER HTML-Zeile,
        sondern in `css\stil-effekte.css` als Hintergrundbild — und darunter

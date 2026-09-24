@@ -48,8 +48,14 @@ pruefe("Der Ordner js enthält Programmdateien", () => {
 for (const name of dateien) {
     pruefe("js/" + name + " ist syntaktisch fehlerfrei", () => {
         const quelltext = dateisystem.readFileSync(pfad.join(jsOrdner, name), "utf8");
+        /* Ein ES-Modul (seit v0.122.0 das 3D-Brett) beginnt mit `import` —
+           das kennt `vm.Script` nicht. Die Einfuhr-Zeilen fallen weg, der
+           Rest wird genauso uebersetzt wie jede andere Datei. */
+        const code = /^import\s/m.test(quelltext)
+            ? quelltext.replace(/^import\s[^;]*;/gm, "")
+            : quelltext;
         /* new vm.Script übersetzt, führt aber nichts aus. */
-        new vm.Script(quelltext, { filename: name });
+        new vm.Script(code, { filename: name });
     });
 }
 
@@ -646,10 +652,20 @@ pruefe("sw.js legt genau die Dateien in den Zwischenspeicher, die es gibt", () =
     genannt.delete("");
 
     const erwartet = new Set(["index.html", "manifest.webmanifest", "icon.svg"]);
-    for (const ordner of ["icons", "css", "js", "img/figuren", "img/lootboxen"]) {
+    /* Unterordner zaehlen mit (seit v0.122.0: `js/lib/three/…` und
+       `modelle/`) — ein Ordner selbst ist keine Datei. */
+    const sammeln = (ordner) => {
         for (const name of dateisystem.readdirSync(pfad.join(projekt, ordner))) {
-            erwartet.add(ordner + "/" + name);
+            const teil = ordner + "/" + name;
+            if (dateisystem.statSync(pfad.join(projekt, teil)).isDirectory()) {
+                sammeln(teil);
+            } else {
+                erwartet.add(teil);
+            }
         }
+    };
+    for (const ordner of ["icons", "css", "js", "img/figuren", "img/lootboxen", "modelle"]) {
+        sammeln(ordner);
     }
 
     const fehlt = [...erwartet].filter((name) => !genannt.has(name)).sort();

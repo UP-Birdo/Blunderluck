@@ -1,5 +1,28 @@
 # Blunderluck - Entscheidungen / Entschieden - und warum
 
+## Echtes 3D statt Bildfolgen — und das 3D-Brett liest das 2D-Brett (24.09.2026, v0.122.0)
+
+**Entschieden vom Nutzer:** die offene VISION-Frage „Bildfolgen oder echtes
+3D“ — echtes 3D („am Schluss sollen es keine Fähigkeiten, Items oder alles
+keine 2D-Dinge mehr geben, sondern das Spiel soll mit Animationen und
+Bewegungen alles 3D zu sehen sein“).
+
+**Entschieden beim Bau:**
+
+- **three.js als Datei im Projekt** (r170, MIT, `js\lib\three\`), kein CDN:
+  offline-fähig über den Service Worker, keine fremde Herkunft, kein
+  Bauschritt. Die Regel „ohne Bibliothek“ gilt weiter für alles andere.
+- **Das 3D-Brett liest die Feld-Knöpfe des 2D-Bretts**, statt Modell und
+  Bedienzustand selbst auszuwerten. Verworfen: eine eigene Beschreibung aus
+  dem Modell — sie hätte Drehung, Glas, Gräber, Vorschläge, verborgene
+  Boxen usw. ein zweites Mal gerechnet. So bleibt „eine Regel steht genau
+  einmal“ wahr, und jeder Tipp geht denselben Weg wie vorher.
+- **Formen aus der Werkstatt als glTF ohne Material**; Farbe und Oberfläche
+  setzt die App, damit sie einstellbar sind.
+- **Mulde statt Punkt, gehobener Stein mit Rand statt aufgemalter Marke**
+  (Nutzer-Idee; deckt sich mit GitHub-Meldung #1).
+- **Vorgabe 3D an**, 2D bleibt als Schalter auf dem Gerät.
+
 ## Neue Runde: ein Bildschirm, drei Reiter, Bilder statt Haken (24.09.2026, v0.121.0)
 
 **Nutzer-Ansage:** „Kannst du nochmal das Grundeinstellungen-Menü
@@ -23,10 +46,11 @@ mach davor eine Kopie, so dass ich es simpel zurück machen kann".
 - **Gegen den Computer entfällt „Wer sieht die Runde?"** — dort kommt
   niemand dazu. Der Wert bleibt gespeichert, wie er war.
 
-**Zurück zum alten Stand:** Der volle Abzug liegt unter
-`Backup\Blunderluck\v0.120.1`. Zurückspielen heisst: `js\`, `css\`,
-`tests\` aus dem Abzug zurückkopieren und als NEUE Nummer ausliefern
-(Hausregel: eine ausgelieferte Nummer ist eingefroren).
+**Angenommen** (24.09.2026: „ne lass es so passt, kannst die Kopie raus
+nehmen"). Die Sicherheitskopie `Backup\Blunderluck\v0.120.1` ist deshalb
+gelöscht; wer den alten Aufbau je nachsehen will, findet ihn im
+Meilenstein-Abzug `Backup\Blunderluck\v0.120.0` (Auswahl-Code dort
+unverändert zu v0.120.1).
 
 ## Profil kompakt: Kopfkarte, drei Reiter, Popups (24.09.2026, v0.119.1)
 

@@ -108,5 +108,19 @@
     <script src="js/wunsch.js"></script>
     <script src="js/app.js"></script>
 
+    <!-- Das 3D-Brett (seit v0.122.0): three.js liegt als Datei im Projekt
+         (js\lib\three\, MIT-Lizenz) — kein Bauschritt, kein fremder Server.
+         Es lädt als Modul NACH allem anderen und hängt sich an das fertige
+         2D-Brett; fehlt WebGL, bleibt es beim flachen Brett. -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "./js/lib/three/three.module.min.js",
+                "three/addons/": "./js/lib/three/addons/"
+            }
+        }
+    </script>
+    <script type="module" src="js/brett-3d.js"></script>
+
 </body>
 </html>

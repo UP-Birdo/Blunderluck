@@ -57,8 +57,7 @@ Aus dem Umbau-Schwung vom 24.08.2026, je eine Auslieferung pro Nutzer-Ansage
 
 Nutzer-Ansage 24.09.2026: „das Grundeinstellungen-Menü überarbeiten:
 weniger Texte, mehr Bilder, einfachere Navigation" — gewählt hat er „ein
-Bildschirm, drei Reiter" (vorher mit Abzug `Backup\Blunderluck\v0.120.1`,
-damit der alte Stand mit einem Handgriff zurückkommt). Alles in
+Bildschirm, drei Reiter" und danach angenommen („ne lass es so passt"). Alles in
 `js\team-schach-uebersicht.js`, der Stil am Ende von `css\stil-brett.css`.
 
 - **Aufbau** (`_auswahlZeichnen`): klebender Kopf (Zurück, „Neue Runde",
@@ -366,6 +365,121 @@ vom Profil. Gebaut auf der Spieler-Profilseite der Rangliste
   (additiv, höchstens `SPIELER.ABZEICHEN_PLAETZE` = 3, `abzeichenSetzen`,
   mit Zusammenführung). `gezeigteAbzeichen` zeigt nur, was gewählt UND
   verdient ist — schrumpft die Chronik, steht nichts Erlogenes da.
+
+## Das Brett in echtem 3D (seit v0.122.0)
+
+**Auftrag (Nutzer, 24.09.2026):** das Brett nachbauen, die Lootboxen als echte
+3D-Blöcke darüber schweben lassen, Mulden statt Vorschau-Punkte, am Ende
+keine 2D-Dinge mehr — „keine Einbussen, man soll genauso schnell ziehen“.
+
+**Die Bauweise — Leser, nicht Rechner.** `js\brett-3d.js` ist ein ES-Modul
+(Importmap in `index.html`, three.js aus `js\lib\three\`). Es wird am Ende von
+`_partieZeichnen` und in `_vorraumZeichnen` mit `window.BRETT_3D.anbinden(halter,
+partie, person)` gerufen und LIEST die frisch gebauten Feld-Knöpfe des
+2D-Bretts: Klassen (`feld-ziel`, `feld-schlag`, `feld-spur*`, `feld-schach`,
+`feld-matt`, `feld-wahl`, `feld-vorschau`, `feld-mauer`/`mauer-senkrecht`,
+`feld-frost`, `feld-schild`, `feld-fessel`, `feld-geliehen`, `feld-riss`,
+`feld-ausserhalb`, `feld-wirkung*`, `feld-vorschlag-*`), die Figur-Spans
+(`figur-art-*`, `figur-weiss/schwarz`, `figur-schemen`, `figur-getruebt`), das
+Lootbox-Bild (`lootbox-<stufe>[-pech].png`), die Restzeit und die
+Randbeschriftung. Ein Tipp auf die Leinwand trifft per Strahl zuerst Figuren
+und Boxen, sonst die Kachel-Ebene, und ruft `knopf.click()` auf dem
+passenden Knopf — `feldAngetippt` läuft wie immer. Gesperrte Knöpfe
+(`disabled`) klicken nicht.
+
+**Daraus folgt:** Wer eine neue Feld-Markierung baut, baut sie im 2D-Brett
+wie bisher; im 3D-Brett fehlt sie, bis `felderAbgleichen` ihr einen Auftritt
+gibt. Nichts rechnet doppelt. Die 2D-Knöpfe bleiben unsichtbar im Dokument
+(`opacity: 0`, `pointer-events: none` — nicht `display: none`, sonst fehlt
+`_brettEinpassen` die Grösse).
+
+**Die Leinwand lebt weiter.** Der Bildschirm baut sich bei jedem Abgleich neu
+auf; die Leinwand wird nur in den neuen `.brett-rahmen` umgehängt. Bewegt wird
+nur, was sich geändert hat: bekannter Zug aus
+`TEAM_SCHACH._letzterBewegungsEintrag` (auch `wege`), sonst die nächste
+gleiche Figur im Umkreis von drei Feldern; übrig Gebliebenes fliegt vom Brett
+(geschlagen) oder vergeht, Neues erscheint. Gezeichnet wird nur, solange
+sich etwas bewegt (Tweens, Partikel, schwebende Boxen, Puls).
+
+**Die Formen** kommen aus `modelle\blunderluck-modelle.glb`, gebaut von
+`Design\Blunderluck-3D\tools\Modelle-Exportieren.py` (kopflos, ohne
+Material). Farben, Oberflächen und Brett entstehen im Modul — darum lassen
+sie sich live umstellen (Leiste hinter dem Paletten-Knopf, Gerätespeicher
+`blunderluck.brett3d`). „Flaches 2D-Brett“ schaltet ab; ein Knopf „3D“ am
+flachen Brett schaltet zurück. Ohne WebGL oder in den Tests (keine Module)
+gibt es das 3D-Brett nicht, und alles läuft wie vorher.
+
+**Kein Rand, fliegende Schrift (seit v0.124.0).** Das Brett hat weder
+Sockel noch Rahmen, nur Steine. Die Beschriftung kommt aus dem 2D-Rand
+(`.brett-rand-reihen/-spalten`) und wird als `TextGeometry` gebaut
+(Schrift `js\lib\three\addons\fonts\brett-schrift.typeface.json`, nur die
+Zeichen a–p, A–P, 0–9 — wer andere Zeichen braucht, kürzt die Droid-Schrift
+neu). Sie schwebt links und unten, wiegt sich in einer Welle und dreht sich
+jedes Bild zur Kamera; dafür läuft der Bild-Takt dauerhaft (wie bei den
+Lootboxen), ausser bei „weniger Bewegung".
+
+**Keine Durchdringung** (Haus-Regel für 3D): Züge im Bogen, Erscheinen auf
+der Oberfläche, Mulde unter der Figur, Frost als Reif statt Block, Schild als
+Glocke, Nudelholz-Figuren hüpfen über die Walze.
+
+**Die kleinen Bretter (seit v0.123.0).** Alles, was ein `.vorschau`-Gitter
+baut, reicht es an `TEAM_SCHACH._standbild3d(el)`; `BRETT_3D.standbild`
+liest es mit derselben `zelleLesen` wie das grosse Brett und hängt ein
+`img.vorschau-3d-bild` hinein. Ein zweiter Renderer (unsichtbar,
+`preserveDrawingBuffer`) rendert orthografisch 30° geneigt; die Kamera deckt
+links/rechts die Brettkanten, unten die Vorderkante der Steinoberseiten,
+oben die Hinterkante plus 0,8 Zellen. Weil die Projektion der Ebene linear
+ist, liegt nach dem Strecken auf Gittergrösse jeder Stein auf seiner Zelle —
+Hand und Pfeile der Anleitung bleiben im Gitter und treffen. Das Bild ragt
+oben über das Gitter (`overflow: visible`). Zwischenspeicher nach Inhalt
+(Klassen, Figuren, Boxen, Aussehen), höchstens 80 Bilder.
+
+**Die Figurenbilder (seit v0.123.0).** `figurenBilder()` rendert die zwölf
+Figuren mit der Kamera des Liefervertrags (50°, Fuss bei 8 %, ein Massstab
+für alle) und überschreibt per `<style id="figuren-3d-bilder">` die
+Hintergrundbilder aus `css\stil-effekte.css`. Die PNGs in `img\figuren\`
+bleiben der Rückfall ohne WebGL.
+
+**Die Fähigkeitskarten als Plättchen (seit v0.127.0).** `plaettchenBilder()`
+rastert jedes Linienzeichen (`FAEHIGKEIT_ZEICHEN.flachBauen`) samt Rahmen auf
+eine Leinwand, zeichnet es weich (eigenes Kästchen-Weich, Safari kennt
+`ctx.filter` nicht) und hebt damit die Punkte eines Netzes auf einer
+gerundeten Karte an. Das Bild landet in `FAEHIGKEIT_ZEICHEN.plaettchen`;
+`FAEHIGKEIT_ZEICHEN.bauen` liefert von da an ein `svg.faehigkeit-bild-3d`
+mit dem Bild, das Linienzeichen bleibt der Rückfall. Die Stildatei nimmt
+Rahmen und Grund der Karte per `:has()` zurück.
+
+**Lootbox öffnen (seit v0.127.0).** `handZuwachs` vergleicht die Hände
+(Fähigkeiten und Unglückskarten je Farbe) mit dem letzten Bild; eine
+verschwundene Box nimmt sich daraus die Karte ihrer Art und Stufe
+(`gewinnZuordnen`) und springt auf (`boxOeffnen`: Wände als Partikel, die
+Karte als Sprite mit dem Plättchen-Bild, Flug zur Hand der Farbe). Ohne
+Treffer zerplatzt sie wie vorher. Nichts wird dafür im Modell gemerkt.
+
+**Der Friedhof als Grabsteine (seit v0.127.0, Nutzer-Wunsch).**
+`friedhofAbgleichen` liest `SCHACH_RUNDE.bilanz(partie, farbe).verloren`
+und stellt je Gefallenem einen Grabstein auf eine Ablage vor der Schrift:
+links die obere Farbe, rechts die untere, wertvollste aussen und grösser;
+reicht die Breite nicht, werden alle kleiner. Stein: `ExtrudeGeometry`
+mit Bogen, nach hinten gelehnt um die hintere Fusskante (keine
+Durchdringung). Die Gravur ist eine Farb- und Normalen-Karte aus dem
+Seitenprofil der Figur (`profilMaske`, gerendert mit dem Mini-Renderer).
+Im 3D-Brett setzt das Modul `body.brett-3d-aktiv`; die Stildatei blendet
+damit die 2D-Friedhof-Klappe aus, Totenkopf und Zahl bleiben.
+Nur in laufenden oder beendeten Partien (`Z.mitAblage`), dann rechnet
+`blickSetzen` die Ablage in den Bildausschnitt ein. Eine Ablage hinten war
+im Schrägblick verdeckt und ist verworfen.
+
+**Kein Aufblitzen (seit v0.127.0).** `TEAM_SCHACH._brett3dAbwarten` setzt
+`.brett-3d-wartet` (flaches Brett `visibility: hidden`), solange
+`BRETT_3D.laedt()`; das Modul nimmt die Klasse ab, spätestens nach 6 s ein
+Zeitgeber.
+
+**Werkstatt:** `python tools\Werkstatt-3D-Server.py` → `http://localhost:8094`.
+Der Server leitet `/` und `index.html` IMMER auf `_werkstatt-3d.html` um
+(Modus „lokal“, Testkonto „Werkstatt“, wird nicht deployt) — die echte
+Startseite kann dort nie mit dem Testkonto laufen.
+`BRETT_3D._zustand.zeitlupe = 6` verlangsamt jede Animation zum Ansehen.
 
 ## Der 3D-Look ist dauerhaft an (seit v0.17.0)
 
