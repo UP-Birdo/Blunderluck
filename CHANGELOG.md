@@ -3,6 +3,15 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.137.0 — 25.09.2026
+
+**Sicherer im Browser.**
+
+- Die Seite lädt und verbindet sich nur noch mit sich selbst und der
+  Datenbank — fremde Skripte, eingeschleuster Code oder fremde Adressen
+  werden vom Browser blockiert (Content-Security-Policy). Beim Spielen
+  ändert sich nichts.
+
 ## v0.136.0 — 24.09.2026
 
 **Fallen sieht man jetzt, der Händler funktioniert, und „Bereit" bleibt im Bild.**

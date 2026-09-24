@@ -2,6 +2,13 @@
 <html lang="de">
 <head>
     <meta charset="utf-8">
+    <!-- DIE SPERRE IM BROWSER (seit v0.137.0, Sicherheits-Runde 25.09.2026):
+         Skripte nur aus diesem Projekt (dazu genau EIN eingebetteter Block,
+         die Import-Karte des 3D-Bretts, über seinen Fingerabdruck), keine
+         Plugins, keine fremden Formulare, Verbindungen nur zur eigenen Seite
+         und zur Datenbank. Wer die Import-Karte oder die Datenbank-Adresse
+         ändert, zieht diese Zeile mit — tests\test-sicherheit.js prüft beides. -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-3IBak4uiv4l6wKD16ssX6AlPnBMuJNftin3Hcb/KpfM='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' data: blob: https://blunderluck-8b7f0-default-rtdb.europe-west1.firebasedatabase.app; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
     <!-- `viewport-fit=cover` lässt die Seite bis unter den iPhone-Balken
          reichen — das Dock hält sich den Streifen selbst frei
          (`env(safe-area-inset-bottom)` in der Stildatei, seit v0.113). -->
