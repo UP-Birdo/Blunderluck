@@ -3,6 +3,65 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.135.0 — 24.09.2026
+
+**Anleitungen als kleines 3D-Video — ohne Text.**
+
+- **Die Anleitung spielt sich selbst vor:** dasselbe 3D-Brett wie im Spiel,
+  ein 3D-Finger schwebt zur Karte, zum Feld und zu ✓ und tippt (kleine
+  Welle), die Figuren hüpfen wirklich, Geschlagene vergehen, eine leuchtende
+  Spur zeigt den Weg. Karte und ✓ liegen vor dem Brett — wie deine Leiste.
+- **Kein Text mehr** unter dem Bild, nur Punkte für die Bilder. Tippen aufs
+  Video hält an und lässt weiterlaufen.
+- Wer lesen will: „Die ganze Beschreibung" steht weiter darunter; bei
+  „weniger Bewegung" bleiben die Bilder nebeneinander mit Text.
+
+## v0.134.0 — 24.09.2026
+
+**Anleitungen: kaum noch Text, und sie zeigen die Bedienung von heute.**
+
+- **Ein Stichwort statt ganzer Sätze:** Unter dem Bild steht nur noch
+  „Karte antippen", „Feld antippen" oder „✓ einsetzen" — oft gar nichts.
+  Punkte zeigen, bei welchem Bild man ist.
+- **Wie im Spiel:** Unter dem Brett liegt die Karte mit ✓ daneben, der
+  Finger tippt erst auf die Karte, dann (falls nötig) aufs Feld, dann auf ✓.
+  Das alte Fenster mit „Einsetzen" kommt nicht mehr vor.
+- Wer alles lesen will: „Die ganze Beschreibung" steht weiter darunter.
+
+## v0.133.0 — 24.09.2026
+
+**Das Brett wird nicht mehr mit jedem Zug langsamer.**
+
+- **Behoben: Das Spiel wurde mit jeder Animation langsamer.** Jede Wirkung
+  (Funken, Box öffnet, Landung) konnte die Bildschleife verdoppeln, und
+  weil die Lootboxen immer schweben, hörte keine davon je auf. Mit vielen
+  Boxen und vielen Zügen rechnete das Handy dasselbe Bild mehrfach. Jetzt
+  gibt es immer genau eine.
+- **Weniger Arbeit im Stillstand:** Schweben nur die Boxen, zeichnet das
+  Brett halb so oft — man sieht keinen Unterschied, der Akku schon.
+- **Schwache Handys:** Kommt das Gerät nicht mit, rechnet das Brett von
+  selbst mit etwas weniger Bildpunkten.
+- **Schneller da:** Das grosse Brett erscheint zuerst; Figurenbilder und
+  kleine Bretter folgen danach.
+
+## v0.132.0 — 24.09.2026
+
+**Keine Figur steckt mehr in einer anderen — weder im Bild noch im Sprung.**
+
+- **Kein Verdecken mehr:** Das Brett wird steiler von oben gezeigt, die
+  Figuren sind etwas kleiner. Keine Figur schiebt sich mehr vor die auf dem
+  Feld dahinter (nachgemessen für jedes Feld, schlimmster Fall König vor
+  König).
+- **Springer springen hoch genug:** Jeder Zug wird vorher durchgerechnet;
+  steht etwas im Weg, springt die Figur darüber.
+- **Schlagen ohne Hineinfahren:** Die geschlagene Figur hebt ab und
+  zerfällt, bevor der Angreifer sie berührt — statt durch die Figuren
+  dahinter zu schlittern.
+- **Rochade und Platztausch:** Die zwei Figuren springen übereinander weg
+  statt durcheinander.
+- **Lootbox:** Wer sie einsammelt, fährt nicht mehr in sie hinein — sie
+  steigt sofort nach oben.
+
 ## v0.131.0 — 24.09.2026
 
 **Die Figuren sind wieder matt, und die kleinen Bretter sehen aus wie das grosse.**

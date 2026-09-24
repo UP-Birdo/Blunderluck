@@ -74,12 +74,12 @@ const FIGUR_STILE = {
     metall:    { name: "Metall",    weiss: "#d9dde3", schwarz: "#8a5a2b", rau: 0.32, metall: 0.9, lack: 0.2, lackRau: 0.2 }
 };
 
-/* Blickwinkel als Abstand von der Senkrechten. „Schräg" ist die Haus-Kamera
-   der Werkstatt: 50 Grad über der Waagerechten. */
+/* Blickwinkel als Abstand von der Senkrechten. Seit v0.132.0 höchstens
+   17 Grad: Bei 40 Grad verdeckte jede Figur die auf dem Feld dahinter
+   (Nutzer-Foto 24.09.2026). „Tief" (60 Grad) ist deshalb entfallen. */
 const BLICKE = {
     oben:    { name: "Oben",   winkel: THREE.MathUtils.degToRad(4) },
-    schraeg: { name: "Schräg", winkel: THREE.MathUtils.degToRad(40) },
-    tief:    { name: "Tief",   winkel: THREE.MathUtils.degToRad(60) }
+    schraeg: { name: "Schräg", winkel: THREE.MathUtils.degToRad(17) }
 };
 
 const KACHELN = {
@@ -123,12 +123,17 @@ const FARBE = {
 };
 
 /* Figurengrösse auf dem Feld: Die Werkstatt baut mit Sockel-Durchmesser
-   0,84 und Königshöhe 2,00; ein Feld ist hier 1,00 breit. */
-const FIGUR_MASS = 0.74;
+   0,84 und Königshöhe 2,00; ein Feld ist hier 1,00 breit. Seit v0.132.0
+   0,63 statt 0,74 (König 1,26 hoch): Zusammen mit dem Blickwinkel 17 Grad
+   verdeckt keine Figur die auf dem Feld dahinter — gemessen mit
+   `BRETT_3D.ueberdeckungen()` für Bretter von 4×4 bis 12×12, mit 5 Prozent
+   Sicherheit. Nutzer 24.09.2026: „sowas darf nie passieren". */
+const FIGUR_MASS = 0.63;
 const KACHEL_HOEHE = 0.2;
 const MULDE_RADIUS = 0.3;
 const MULDE_TIEFE = 0.115;
 const BOX_MASS = 0.46;
+const BOX_HUB = 1.8;            // so hoch steigt eine eingesammelte Box — über jede Figur
 
 const ARTEN = ["bauer", "springer", "laeufer", "turm", "dame", "koenig"];
 
@@ -904,11 +909,16 @@ function figurenAbgleichen(beschreibung, animieren, bekannterZug, extras) {
 
     const schlagOrte = new Set(bewegungen.map((b) => b.nach));
 
+    /* 3a. Die Bahnen planen, BEVOR sich etwas bewegt (seit v0.132.0):
+           Wer geschlagen wird, ist weg, bevor der Angreifer ihn berührt;
+           wer zieht, springt so hoch, dass er über jede Figur auf seinem
+           Weg kommt. */
+    const plan = animieren ? bahnenPlanen(bewegungen, neu, offenAlt, schlagOrte, extras) : null;
+
     /* 3. Weg ist weg: geschlagen (wegschleudern) oder verschwunden. */
     for (const [j, g] of offenAlt) {
         if (animieren && schlagOrte.has(j)) {
-            const zieher = bewegungen.find((b) => b.nach === j);
-            wegschleudern(g, zieher, j);
+            wegschleudern(g, plan.opferStart.get(j) || 0);
         } else if (animieren) {
             verschwinden(g);
         } else {
@@ -920,7 +930,7 @@ function figurenAbgleichen(beschreibung, animieren, bekannterZug, extras) {
     for (const b of bewegungen) {
         neu.set(b.nach, b.g);
         ziehen(b.g, b.von, b.nach, b.neu, schlagOrte.has(b.nach) && alt.has(b.nach) && alt.get(b.nach) !== b.g,
-            extras ? extras.get(b.von) : null);
+            plan ? plan.extra.get(b) : (extras ? extras.get(b.von) : null));
     }
 
     /* 5. Neu da: erscheinen. */
@@ -984,13 +994,22 @@ function teleportieren(g, a, b, warten) {
     }, warten);
 }
 
+/* Grundhöhe und Dauer eines Zugs — der Planer (`bahnenPlanen`) hebt die
+   Höhe an, wenn etwas im Weg steht. */
+function zugGrund(art, weite) {
+    return {
+        hoch: art === "springer" ? 0.75 + weite * 0.12 : 0.18 + weite * 0.07,
+        ms: dauer(Math.min(420, 230 + weite * 22))
+    };
+}
+
 function ziehen(g, von, nach, neu, schlaegt, extra) {
     const a = Z.felder[von].mitte.clone();
     const b = Z.felder[nach].mitte.clone();
     const weite = a.distanceTo(b);
-    const springer = g.userData.art === "springer";
-    const hoch = (extra && extra.hoch) || (springer ? 0.75 + weite * 0.12 : 0.18 + weite * 0.07);
-    const ms = dauer(Math.min(420, 230 + weite * 22));
+    const grund = zugGrund(g.userData.art, weite);
+    const hoch = (extra && extra.hoch) || grund.hoch;
+    const ms = grund.ms;
     const warten = (extra && extra.verzoegerung) || 0;
     const y0 = GEO.oberkante;
     if (extra && extra.teleport) {
@@ -1031,28 +1050,246 @@ function ziehen(g, von, nach, neu, schlaegt, extra) {
 
 /* Geschlagen: wuchtig, aber ohne Blut (VISION, 25.08.2026) — die Figur
    fliegt drehend vom Brett. */
-function wegschleudern(g, zieher, index) {
-    const wartet = zieher ? dauer(Math.min(420, 230 + abstand(zieher.von, index) * 22)) * 0.82 : 0;
-    const richtung = zieher
-        ? Z.felder[index].mitte.clone().sub(Z.felder[zieher.von].mitte).setY(0).normalize()
-        : new THREE.Vector3(0, 0, 1);
-    if (!isFinite(richtung.x)) richtung.set(0, 0, 1);
+/*
+ * GESCHLAGEN (seit v0.132.0 ohne Durchdringung): Die Figur hebt senkrecht
+ * aus ihrem Feld ab, dreht sich, schrumpft und zerfällt in Funken — fertig,
+ * BEVOR der Angreifer sie berührt (`wartet` rechnet `bahnenPlanen`). Bis
+ * v0.131.0 schlitterte sie drei Felder weit durch alles, was dahinter
+ * stand, und der Angreifer steckte schon in ihr, wenn sie losflog.
+ */
+function wegschleudern(g, wartet) {
     const start = g.position.clone();
     const mat = g.userData.netz.material.clone();
     mat.transparent = true;
     g.userData.netz.material = mat;
     g.userData.netz.userData.eigenesMaterial = true;
     g.userData.eigenesMaterial = true;
-    const drall = new THREE.Vector3(richtung.z, 0, -richtung.x).multiplyScalar(9);
-    tween(dauer(680), (t) => {
-        const w = t * 3.2;
-        g.position.set(start.x + richtung.x * w, start.y + 1.6 * t - 2.6 * t * t + 0.02, start.z + richtung.z * w);
-        g.rotation.set(drall.x * t, t * 4, drall.z * t);
-        mat.opacity = 1 - Math.pow(t, 2);
-    }, () => figurEntfernen(g), wartet);
-    tween(1, () => {}, () => {
+    g.userData.ziehtBis = performance.now() + wartet + opferMs();
+    tween(opferMs(), (t) => {
+        const k = raus(t);
+        g.position.set(start.x, start.y + k * 0.5, start.z);
+        g.rotation.set(0, t * 5, 0);
+        const s = Math.max(0.001, 1 - k);
+        g.scale.set(s, s, s);
+        mat.opacity = 1 - t;
+    }, () => {
+        figurEntfernen(g);
         funkenWolke(start.clone().setY(start.y + 0.5), "#ffe27a", 16, 1.4);
     }, wartet);
+}
+
+/* So lange braucht ein Geschlagener, um zu vergehen. */
+function opferMs() {
+    return dauer(170);
+}
+
+/* ------------------------------------------------------------------ *
+ * Hitboxen und Bahnplanung (seit v0.132.0) — Haus-Regel „keine
+ * Durchdringung": Keine Figur geht durch eine andere, auch nicht für
+ * einen Augenblick.
+ * ------------------------------------------------------------------ */
+
+const LUFT = 0.04;   // Mindestabstand zwischen zwei Hitboxen beim Planen
+
+/* Die Hitbox einer Art: stehender Zylinder um die Drehachse. Der Radius
+   ist der weiteste Punkt der Form von der Achse — so passt er in jeder
+   Drehung (der Springer schaut schräg). */
+function hitbox(art) {
+    Z.hitboxen = Z.hitboxen || {};
+    if (!Z.hitboxen[art]) {
+        const lage = Z.formen[art].attributes.position;
+        let r = 0, h = 0;
+        for (let i = 0; i < lage.count; i++) {
+            r = Math.max(r, Math.hypot(lage.getX(i), lage.getZ(i)));
+            h = Math.max(h, lage.getY(i));
+        }
+        Z.hitboxen[art] = { r, h };
+    }
+    return Z.hitboxen[art];
+}
+
+/* Wo ist ein Zug zur Zeit `ms` (ab Start aller Züge)? `y` ist die
+   Unterkante über der Brettoberfläche — dieselbe Formel wie `ziehen`. */
+function bahnOrt(bahn, ms) {
+    const t = Math.min(1, Math.max(0, (ms - bahn.warten) / bahn.ms));
+    const k = weich(t);
+    return {
+        x: bahn.a.x + (bahn.b.x - bahn.a.x) * k,
+        z: bahn.a.z + (bahn.b.z - bahn.a.z) * k,
+        y: Math.sin(Math.PI * t) * bahn.hoch
+    };
+}
+
+function stossen(p, hp, q, hq) {
+    if (Math.hypot(p.x - q.x, p.z - q.z) >= hp.r + hq.r + LUFT) return false;
+    return p.y < q.y + hq.h + LUFT && q.y < p.y + hp.h + LUFT;
+}
+
+function bahnenPlanen(bewegungen, bleiben, offenAlt, schlagOrte, extras) {
+    const plan = { extra: new Map(), opferStart: new Map() };
+    const stehend = (i, g) => ({ ort: { x: Z.felder[i].mitte.x, z: Z.felder[i].mitte.z, y: 0 }, hb: hitbox(g.userData.art) });
+    /* Was stehen bleibt — und was gleich vergeht, zählt vorsichtshalber
+       für die ganze Dauer mit. */
+    const stehen = [];
+    for (const [i, g] of bleiben) stehen.push(stehend(i, g));
+    for (const [j, g] of offenAlt) {
+        if (!schlagOrte.has(j)) stehen.push(stehend(j, g));
+    }
+
+    const fertig = [];
+    for (const bew of bewegungen) {
+        const ex = extras ? extras.get(bew.von) : null;
+        if (ex && ex.teleport) {
+            plan.extra.set(bew, ex);
+            continue;
+        }
+        const a = Z.felder[bew.von].mitte, b = Z.felder[bew.nach].mitte;
+        const grund = zugGrund(bew.g.userData.art, Math.hypot(b.x - a.x, b.z - a.z));
+        const hb = hitbox(bew.g.userData.art);
+        const bahn = { a, b, ms: grund.ms, warten: (ex && ex.verzoegerung) || 0, hoch: (ex && ex.hoch) || grund.hoch };
+
+        /* Der Geschlagene: vergangen, bevor der Angreifer ihn berührt. */
+        const opfer = offenAlt.get(bew.nach);
+        if (opfer && schlagOrte.has(bew.nach)) {
+            const ho = hitbox(opfer.userData.art);
+            const ort = { x: b.x, z: b.z, y: 0 };
+            let kontakt = bahn.warten + bahn.ms;
+            for (let ms = bahn.warten; ms <= bahn.warten + bahn.ms; ms += 4) {
+                if (stossen(bahnOrt(bahn, ms), hb, ort, ho)) { kontakt = ms; break; }
+            }
+            const vorlauf = opferMs() + 10;
+            if (kontakt < vorlauf) {
+                /* Zu nah für die Zeit: Der Angreifer wartet so lange. */
+                bahn.warten += vorlauf - kontakt;
+                kontakt = vorlauf;
+            }
+            plan.opferStart.set(bew.nach, kontakt - vorlauf);
+        }
+
+        /* So hoch springen, bis nichts mehr im Weg ist — stehende Figuren
+           und die Bahnen der Züge davor (Rochade, Nudelholz, Erdrutsch). */
+        const hindernisse = stehen.concat(fertig);
+        const frei = () => {
+            for (let ms = bahn.warten; ms <= bahn.warten + bahn.ms; ms += 6) {
+                const p = bahnOrt(bahn, ms);
+                for (const h of hindernisse) {
+                    if (stossen(p, hb, h.bahn ? bahnOrt(h.bahn, ms) : h.ort, h.hb)) return false;
+                }
+            }
+            return true;
+        };
+        let runden = 0;
+        while (!frei() && runden < 60) {
+            bahn.hoch += 0.05;
+            runden++;
+        }
+        if (runden >= 60) console.warn("3D-Brett: Bahn nicht frei", bew.von, bew.nach);
+        fertig.push({ bahn, hb });
+        plan.extra.set(bew, { hoch: bahn.hoch, verzoegerung: bahn.warten });
+    }
+    return plan;
+}
+
+/*
+ * DIE PRÜFUNG FÜR DIE WERKSTATT: `BRETT_3D.kollisionen(true)` schaltet sie
+ * ein; ab dann misst jedes Bild alle Figuren- und Lootbox-Hitboxen
+ * gegeneinander und merkt sich jeden Zusammenstoss. `kollisionen()` gibt
+ * die Liste zurück — nach jeder Animation muss sie leer sein.
+ */
+function kollisionenMessen() {
+    const teile = [];
+    for (const g of Z.figurenGruppe.children) {
+        if (!g.userData || !g.userData.art || g.userData.geist) continue;
+        const hb = hitbox(g.userData.art);
+        const netz = g.userData.netz.scale;
+        const sr = g.scale.x * netz.x, sh = g.scale.y * netz.y;
+        if (sr < 0.05) continue;
+        teile.push({ name: g.userData.farbe + " " + g.userData.art,
+            ort: { x: g.position.x, z: g.position.z, y: g.position.y - GEO.oberkante },
+            hb: { r: hb.r * sr, h: hb.h * sh } });
+    }
+    for (const g of Z.effektGruppe.children) {
+        if (!g.userData || !g.userData.dreher) continue;
+        const s = g.scale.x;
+        if (s < 0.05) continue;
+        /* Der Würfel dreht sich: Hitbox bis zur Raumdiagonale. */
+        const halb = BOX_MASS / 2 * s * 1.42;
+        teile.push({ name: "lootbox", ort: { x: g.position.x, z: g.position.z, y: g.position.y - GEO.oberkante - halb },
+            hb: { r: halb, h: halb * 2 } });
+    }
+    for (let i = 0; i < teile.length; i++) {
+        for (let j = i + 1; j < teile.length; j++) {
+            const p = teile[i], q = teile[j];
+            const d = Math.hypot(p.ort.x - q.ort.x, p.ort.z - q.ort.z);
+            if (d >= p.hb.r + q.hb.r) continue;
+            if (p.ort.y < q.ort.y + q.hb.h && q.ort.y < p.ort.y + p.hb.h) {
+                Z.stoesse.push({ a: p.name, b: q.name, abstand: +d.toFixed(3),
+                    hoehe: [+p.ort.y.toFixed(2), +q.ort.y.toFixed(2)] });
+            }
+        }
+    }
+}
+
+/*
+ * DIE PRÜFUNG DES RUHEBILDS: Verdeckt eine Figur eine andere? Gerechnet
+ * für den schlimmsten Fall — König vor König und vor Springer auf JEDEM
+ * Feld, Umriss aus den echten Formpunkten, 5 Prozent grösser als echt —
+ * mit der Kamera, wie sie gerade steht. Gibt die Paare zurück; leer = gut.
+ */
+function ueberdeckungen() {
+    if (!Z.masse) return null;
+    const { spalten, reihen } = Z.masse;
+    const kam = Z.kamera;
+    const punkte = (art) => {
+        const lage = Z.formen[art].attributes.position;
+        const schritt = Math.max(1, Math.floor(lage.count / 400));
+        const aus = [];
+        for (let i = 0; i < lage.count; i += schritt) aus.push([lage.getX(i) * 1.05, lage.getY(i) * 1.05, lage.getZ(i) * 1.05]);
+        return aus;
+    };
+    const huelle = (P) => {
+        P.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+        const kreuz = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+        const unten = [], oben = [];
+        for (const p of P) { while (unten.length >= 2 && kreuz(unten[unten.length - 2], unten[unten.length - 1], p) <= 0) unten.pop(); unten.push(p); }
+        for (let i = P.length - 1; i >= 0; i--) { const p = P[i]; while (oben.length >= 2 && kreuz(oben[oben.length - 2], oben[oben.length - 1], p) <= 0) oben.pop(); oben.push(p); }
+        return unten.slice(0, -1).concat(oben.slice(0, -1));
+    };
+    const v = new THREE.Vector3();
+    const umriss = (P, i) => {
+        const m = Z.felder[i].mitte;
+        return huelle(P.map(([x, y, z]) => { v.set(x + m.x, y + GEO.oberkante, z + m.z).project(kam); return [v.x * kam.aspect, v.y]; }));
+    };
+    const trennt = (A, B) => {
+        for (const H of [A, B]) {
+            for (let i = 0; i < H.length; i++) {
+                const p = H[i], q = H[(i + 1) % H.length];
+                const n = [q[1] - p[1], p[0] - q[0]];
+                let a0 = Infinity, a1 = -Infinity, b0 = Infinity, b1 = -Infinity;
+                for (const w of A) { const d = w[0] * n[0] + w[1] * n[1]; a0 = Math.min(a0, d); a1 = Math.max(a1, d); }
+                for (const w of B) { const d = w[0] * n[0] + w[1] * n[1]; b0 = Math.min(b0, d); b1 = Math.max(b1, d); }
+                if (a1 < b0 || b1 < a0) return true;
+            }
+        }
+        return false;
+    };
+    const vorn = punkte("koenig");
+    const paare = [];
+    for (const hinten of [punkte("koenig"), punkte("springer")]) {
+        for (let i = 0; i < Z.felder.length; i++) {
+            if (!Z.felder[i] || !Z.felder[i].da) continue;
+            const s = i % spalten, r = Math.floor(i / spalten);
+            const A = umriss(vorn, i);
+            for (const [ds, dr] of [[0, -1], [-1, -1], [1, -1], [-1, 0], [1, 0], [0, 1], [-1, 1], [1, 1]]) {
+                const s2 = s + ds, r2 = r + dr;
+                if (s2 < 0 || s2 >= spalten || r2 < 0 || r2 >= reihen) continue;
+                const j = r2 * spalten + s2;
+                if (!Z.felder[j] || !Z.felder[j].da) continue;
+                if (!trennt(A, umriss(hinten, j))) paare.push([i, j]);
+            }
+        }
+    }
+    return paare;
 }
 
 function verschwinden(g) {
@@ -1224,15 +1461,17 @@ function boxenAbgleichen(beschreibung, animieren, gewonnen) {
             boxOeffnen(g, inhalt);
             continue;
         }
+        /* Sofort und schnell nach oben (seit v0.132.0) — bis dahin wartete
+           sie 140 ms, und die ankommende Figur fuhr in sie hinein. */
         tween(dauer(420), (t) => {
             g.userData.dreher.rotation.y += 0.35;
             const s = 1 + t * 0.4;
             g.scale.set(s * (1 - t), s * (1 - t), s * (1 - t));
-            g.position.y = ort.y + t * 0.6;
+            g.position.y = ort.y + raus(Math.min(1, t * 2.1)) * BOX_HUB;
         }, () => {
             Z.effektGruppe.remove(g);
-            funkenWolke(ort.clone().setY(ort.y + 0.9), hex, 18, 1.2);
-        }, 140);
+            funkenWolke(g.position.clone(), hex, 18, 1.2);
+        });
     }
     Z.boxen = neu;
 }
@@ -1310,12 +1549,14 @@ function boxOeffnen(g, inhalt) {
     const ort = g.position.clone();
     const hex = FARBE.stufe[g.userData.stufe] || FARBE.stufe[inhalt.stufe] || "#ffffff";
 
-    /* 1. Hochspringen und schneller drehen — wie ein Deckel, der aufwill. */
-    tween(dauer(300), (t) => {
+    /* 1. Hochspringen und schneller drehen — wie ein Deckel, der aufwill.
+          Seit v0.132.0 schnell und hoch: Die Figur, die das Feld betritt,
+          kommt gleichzeitig an und darf nicht in die Box geraten. */
+    tween(dauer(200), (t) => {
         g.userData.dreher.rotation.y += 0.25 + t * 0.5;
         const s = 1 + weich(t) * 0.25;
         g.scale.set(s, s, s);
-        g.position.y = ort.y + Math.sin(t * Math.PI * 0.5) * 0.5;
+        g.position.y = ort.y + raus(t) * BOX_HUB;
     }, () => {
         const mitte = g.position.clone();
         Z.effektGruppe.remove(g);
@@ -2118,15 +2359,33 @@ function restzeitSetzen(feld, text) {
  * Jeder Rahmen: Schweben, Pulsieren, Heben, Tweens, Partikel
  * ------------------------------------------------------------------ */
 
+/*
+ * EINE SCHLEIFE, NIE ZWEI (seit v0.133.0). `Z.laeuft` heisst: „ein Bild ist
+ * bestellt". Bis v0.132.0 setzte `bild` die Marke zu Beginn zurück und
+ * bestellte am Ende selbst neu — stiess währenddessen etwas `anstossen` an
+ * (Funken, Box öffnet, Landung), lief ab da eine ZWEITE Schleife mit, und
+ * weil die Lootboxen immer schweben, endete keine je. Jede Animation
+ * verdoppelte die Arbeit: am Handy wurde es mit jedem Zug langsamer
+ * (Nutzer-Video 24.09.2026).
+ */
 function anstossen() {
     if (Z.laeuft || !Z.bereit) return;
     Z.laeuft = true;
-    Z.letzteZeit = performance.now();
+    if (!Z.imBild) Z.letzteZeit = performance.now();
     requestAnimationFrame(bild);
 }
 
 function bild(zeit) {
     Z.laeuft = false;
+    Z.imBild = true;
+    try {
+        bildInnen(zeit);
+    } finally {
+        Z.imBild = false;
+    }
+}
+
+function bildInnen(zeit) {
     if (!Z.huelle || !Z.huelle.isConnected) {
         if (Z.tafel) { Z.tafel.remove(); Z.tafel = null; }
         return;
@@ -2174,6 +2433,7 @@ function bild(zeit) {
         if (Math.abs(feld.hub - feld.hubZiel) > 0.001) {
             feld.hub += (feld.hubZiel - feld.hub) * Math.min(1, dt / 70);
             weiter = true;
+            Z.imZug = true;
         } else {
             feld.hub = feld.hubZiel;
         }
@@ -2214,6 +2474,7 @@ function bild(zeit) {
         if (Math.abs(g.position.y - soll) > 0.0005) {
             g.position.y += (soll - g.position.y) * Math.min(1, dt / 60);
             weiter = true;
+            Z.imZug = true;
         }
         if (gewaehlt) weiter = true;
         if (g.userData.getruebt && !Z.reduziert) {
@@ -2237,11 +2498,42 @@ function bild(zeit) {
 
     if (Z.steuerung.update()) weiter = true;
 
-    Z.renderer.render(Z.szene, Z.kamera);
+    /*
+     * IM LEERLAUF HALBER TAKT (seit v0.133.0): Bewegt sich nur, was immer
+     * schwebt oder pulsiert (Lootboxen, Schilder, Ringe), reichen 30 Bilder
+     * in der Sekunde — das Auge sieht das sanfte Schweben gleich, das Handy
+     * rechnet die Hälfte. Sobald etwas zieht, fliegt oder aufgeht, wieder
+     * jedes Bild.
+     */
+    const lebhaft = Z.tweens.length > 0 || Z.partikel.length > 0 || Z.imZug;
+    Z.imZug = false;
+    Z.ruheTakt = lebhaft ? 0 : ((Z.ruheTakt || 0) + 1) % 2;
+    if (lebhaft || Z.ruheTakt === 1 || !weiter) {
+        if (Z.stoesse) kollisionenMessen();
+        Z.renderer.render(Z.szene, Z.kamera);
+        if (lebhaft) aufloesungAnpassen(dt);
+    }
 
-    if (weiter) {
-        Z.laeuft = true;
-        requestAnimationFrame(bild);
+    if (weiter) anstossen();
+}
+
+/*
+ * SCHWACHE GERÄTE (seit v0.133.0): Brauchen die bewegten Bilder im Schnitt
+ * deutlich länger als 1/40 Sekunde, rechnet die Leinwand mit weniger
+ * Bildpunkten (Stufen 0,25, nie unter 1). Nur abwärts — sonst pendelt es.
+ */
+function aufloesungAnpassen(dt) {
+    const m = Z.messung || (Z.messung = { summe: 0, n: 0 });
+    m.summe += dt;
+    m.n++;
+    if (m.n < 40) return;
+    const schnitt = m.summe / m.n;
+    m.summe = 0;
+    m.n = 0;
+    const jetzt = Z.renderer.getPixelRatio();
+    if (schnitt > 25 && jetzt > 1) {
+        Z.renderer.setPixelRatio(Math.max(1, jetzt - 0.25));
+        groesseAnpassen();
     }
 }
 
@@ -2693,8 +2985,8 @@ function anbinden(halter, partie, person, animierenErlaubt) {
 
 const MINI = { renderer: null, cache: new Map(), warte: [] };
 const MINI_ZELLE = 64;          // Bildpunkte je Feld
-const MINI_UEBER = 0.8;         // Platz über der hintersten Reihe, in Zellen
-const MINI_FIGUR = 0.85;        // Figuren im kleinen Bild etwas kleiner
+const MINI_UEBER = 0.4;        // Platz über der hintersten Reihe, in Zellen
+const MINI_FIGUR = 1.0;       // Figuren im kleinen Bild etwas kleiner
 
 /* Derselbe Blickwinkel wie das grosse Brett (Nutzer 24.09.2026: „der
    Blickwinkel ist anders"). Bis v0.130.0 fest 30 Grad. */
@@ -2764,6 +3056,63 @@ function miniSignatur(b, draufsicht) {
     return teile.join("|");
 }
 
+/*
+ * EIN FELD DES KLEINEN BRETTS OHNE FIGUR: Stein, Mulde, Ringe, Rahmen und
+ * Deko (Mauer, Reif, Schild, Fessel). Gemeinsam für Standbild und Bühne
+ * (seit v0.135.0 herausgelöst). Gibt den Hub des Steins zurück — oder
+ * `null` bei einem Riss (dort steht nichts).
+ */
+function miniFeldBauen(ziel, z, m, wegwerfen) {
+    const oben = GEO.oberkante;
+    const k = z.k;
+    const grund = farbe(z.hell ? THEMEN[Z.einst.thema].hell : THEMEN[Z.einst.thema].dunkel);
+    if (z.riss) {
+        const grube = new THREE.Mesh(GEO.grube || (GEO.grube = new THREE.BoxGeometry(0.9, 0.04, 0.9)), Z.mat.grube);
+        grube.position.set(m.x, 0.02, m.z);
+        ziel.add(grube);
+        return null;
+    }
+    const mat = kachelMaterial(z.hell);
+    mat.color.copy(kachelFarbe(z, grund));
+    wegwerfen.push(mat);
+    const mulde = k.contains("feld-ziel") || k.contains("feld-schlag");
+    const hub = k.contains("feld-vorschau") ? 0.1 : (k.contains("feld-wahl") ? 0.05 : 0);
+    const kachel = new THREE.Mesh(mulde ? GEO.kachelMulde : GEO.kachel, mat);
+    kachel.position.set(m.x, hub, m.z);
+    kachel.receiveShadow = true;
+    ziel.add(kachel);
+    if (mulde) {
+        const mm = new THREE.MeshPhysicalMaterial({ color: grund.clone().multiplyScalar(0.74), roughness: 0.6, side: THREE.DoubleSide });
+        wegwerfen.push(mm);
+        const schale = new THREE.Mesh(GEO.mulde, mm);
+        schale.position.set(m.x, oben + hub, m.z);
+        ziel.add(schale);
+    }
+    if (k.contains("feld-schlag") || k.contains("feld-geliehen")) {
+        const ring = new THREE.Mesh(GEO.ring, new THREE.MeshBasicMaterial({
+            color: farbe(k.contains("feld-schlag") ? FARBE.schlag : FARBE.geliehen), transparent: true, opacity: 0.9, depthWrite: false }));
+        wegwerfen.push(ring.material);
+        ring.position.set(m.x, oben + hub + 0.004, m.z);
+        ziel.add(ring);
+    }
+    if (hub > 0) {
+        const hex = k.contains("feld-vorschau") ? FARBE.vorschau : FARBE.wahl;
+        const rm = new THREE.MeshStandardMaterial({ color: farbe(hex), emissive: farbe(hex), emissiveIntensity: 0.55 });
+        wegwerfen.push(rm);
+        const rand = new THREE.Mesh(randGeometrie(), rm);
+        rand.position.set(m.x, oben - 0.035 + hub, m.z);
+        ziel.add(rand);
+    }
+    const deko = new THREE.Group();
+    deko.position.set(m.x, hub, m.z);
+    if (k.contains("feld-mauer")) deko.add(mauerBauen(k.contains("mauer-senkrecht")));
+    if (k.contains("feld-frost")) deko.add(reifBauen());
+    if (k.contains("feld-schild")) deko.add(schildBauen(z.figur ? z.figur.art : null));
+    if (k.contains("feld-fessel")) deko.add(fesselBauen());
+    ziel.add(deko);
+    return hub;
+}
+
 function miniRendern(b, draufsicht) {
     kachelFormen();
     const szene = new THREE.Scene();
@@ -2777,54 +3126,8 @@ function miniRendern(b, draufsicht) {
     b.zellen.forEach((z, i) => {
         if (z.ausserhalb) return;
         const m = mitte(i);
-
-        const k = z.k;
-        const grund = farbe(z.hell ? THEMEN[Z.einst.thema].hell : THEMEN[Z.einst.thema].dunkel);
-        if (z.riss) {
-            const grube = new THREE.Mesh(GEO.grube || (GEO.grube = new THREE.BoxGeometry(0.9, 0.04, 0.9)), Z.mat.grube);
-            grube.position.set(m.x, 0.02, m.z);
-            szene.add(grube);
-            return;
-        }
-        const mat = kachelMaterial(z.hell);
-        mat.color.copy(kachelFarbe(z, grund));
-        wegwerfen.push(mat);
-        const mulde = k.contains("feld-ziel") || k.contains("feld-schlag");
-        const hub = k.contains("feld-vorschau") ? 0.1 : (k.contains("feld-wahl") ? 0.05 : 0);
-        const kachel = new THREE.Mesh(mulde ? GEO.kachelMulde : GEO.kachel, mat);
-        kachel.position.set(m.x, hub, m.z);
-        kachel.receiveShadow = true;
-        szene.add(kachel);
-        if (mulde) {
-            const mm = new THREE.MeshPhysicalMaterial({ color: grund.clone().multiplyScalar(0.74), roughness: 0.6, side: THREE.DoubleSide });
-            wegwerfen.push(mm);
-            const schale = new THREE.Mesh(GEO.mulde, mm);
-            schale.position.set(m.x, oben + hub, m.z);
-            szene.add(schale);
-        }
-        if (k.contains("feld-schlag") || k.contains("feld-geliehen")) {
-            const ring = new THREE.Mesh(GEO.ring, new THREE.MeshBasicMaterial({
-                color: farbe(k.contains("feld-schlag") ? FARBE.schlag : FARBE.geliehen), transparent: true, opacity: 0.9, depthWrite: false }));
-            wegwerfen.push(ring.material);
-            ring.position.set(m.x, oben + hub + 0.004, m.z);
-            szene.add(ring);
-        }
-        if (hub > 0) {
-            const hex = k.contains("feld-vorschau") ? FARBE.vorschau : FARBE.wahl;
-            const rm = new THREE.MeshStandardMaterial({ color: farbe(hex), emissive: farbe(hex), emissiveIntensity: 0.55 });
-            wegwerfen.push(rm);
-            const rahmen = randGeometrie();
-            const rand = new THREE.Mesh(rahmen, rm);
-            rand.position.set(m.x, oben - 0.035 + hub, m.z);
-            szene.add(rand);
-        }
-        const deko = new THREE.Group();
-        deko.position.set(m.x, hub, m.z);
-        if (k.contains("feld-mauer")) deko.add(mauerBauen(k.contains("mauer-senkrecht")));
-        if (k.contains("feld-frost")) deko.add(reifBauen());
-        if (k.contains("feld-schild")) deko.add(schildBauen(z.figur ? z.figur.art : null));
-        if (k.contains("feld-fessel")) deko.add(fesselBauen());
-        szene.add(deko);
+        const hub = miniFeldBauen(szene, z, m, wegwerfen);
+        if (hub === null) return;
 
         for (const [eintrag, geist] of [[z.figur, false], [z.geist, true]]) {
             if (!eintrag) continue;
@@ -2940,6 +3243,520 @@ function standbild(el) {
     bild.src = url;
     el.classList.add("vorschau-3d");
     el.appendChild(bild);
+}
+
+/* ------------------------------------------------------------------ *
+ * DIE ANLEITUNGS-BÜHNE (seit v0.135.0, Nutzer: „weniger Text bis keinen,
+ * nur das Video, wie es geht" — Entwurf docs\entwurf-anleitungen-und-
+ * platzieren.md, Abschnitt 3)
+ *
+ * Eine Anleitung ist ein kleines Spiel, das sich selbst vorspielt. Die
+ * Bilder rechnet weiter `SCHACH_VORSCHAU.schritte` mit den echten Regeln;
+ * der Bildschirm baut aus jedem Schritt das 2D-Gitter wie bisher, und die
+ * Bühne LIEST es (wie das grosse Brett) — nur zeigt sie nicht Bild für
+ * Bild, sondern spielt dazwischen: Ein 3D-Finger schwebt zum Feld, zur
+ * Karte oder zu ✓ und tippt (kleine Welle), die Figuren hüpfen ihren Weg,
+ * Geschlagene vergehen, eine leuchtende Spur ersetzt die Pfeile. Karte und
+ * ✓ liegen als 3D-Teile vor dem Brett — genau wie die Leiste im Spiel.
+ *
+ * Gezeichnet wird mit dem EINEN kleinen Renderer der Standbilder; jede
+ * Bühne kopiert ihr Bild in eine eigene Leinwand. Eine gemeinsame
+ * Schleife mit 30 Bildern je Sekunde läuft nur, solange eine Bühne im
+ * Bildschirm steht. Tippen hält an und lässt weiterlaufen.
+ * ------------------------------------------------------------------ */
+
+const BUEHNE = { alle: new Set(), laeuft: false, zuletzt: 0 };
+const BUEHNE_VORN = 1.7;       // Platz vor dem Brett für Karte und ✓, in Feldern
+const BUEHNE_MS = { hin: 520, tipp: 300, zug: 560, halt: 900, ende: 1300 };
+
+function buehneMoeglich() {
+    return !!(Z.bereit && !Z.fehler && Z.einst && Z.einst.an);
+}
+
+function buehneMitte(b, i) {
+    return new THREE.Vector3(i % b.spalten - (b.spalten - 1) / 2, 0,
+        Math.floor(i / b.spalten) - (b.reihen - 1) / 2);
+}
+
+/* Der Finger: ein weisser Handschuh mit dunklem Rand (wie die flache Hand
+   von v0.116), die Spitze im Ursprung, der Zeigefinger zeigt zum Feld. */
+function handBauen() {
+    const weiss = Z.mat.handschuh || (Z.mat.handschuh = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.55 }));
+    const rand = Z.mat.handRand || (Z.mat.handRand = new THREE.MeshBasicMaterial({ color: 0x1c1f23, side: THREE.BackSide }));
+    const teile = new THREE.Group();
+    const stueck = (geo, x, y, z, rx, rz) => {
+        for (const [mat, s] of [[weiss, 1], [rand, 1.12]]) {
+            const m = new THREE.Mesh(geo, mat);
+            m.position.set(x, y, z);
+            m.rotation.set(rx || 0, 0, rz || 0);
+            m.scale.setScalar(s);
+            m.castShadow = mat === weiss;
+            teile.add(m);
+        }
+    };
+    GEO.handFinger = GEO.handFinger || new THREE.CapsuleGeometry(0.075, 0.42, 6, 12);
+    GEO.handKnoechel = GEO.handKnoechel || new THREE.CapsuleGeometry(0.07, 0.14, 6, 10);
+    GEO.handFlaeche = GEO.handFlaeche || new RoundedBoxGeometry(0.44, 0.4, 0.2, 3, 0.08);
+    /* Zeigefinger entlang +Y, Spitze bei 0. */
+    stueck(GEO.handFinger, 0, 0.285, 0);
+    /* Handfläche darüber, die eingeklappten Finger davor, der Daumen. */
+    stueck(GEO.handFlaeche, 0.13, 0.66, 0);
+    for (const x of [0.2, 0.33]) stueck(GEO.handKnoechel, x - 0.02, 0.5, 0.06, 0, 0);
+    stueck(GEO.handKnoechel, -0.12, 0.62, 0.05, 0, 0.9);
+    /* Gekippt: der Finger kommt von vorn rechts und zeigt nach hinten unten
+       aufs Feld — so sieht man ihn auch von fast oben. */
+    const hand = new THREE.Group();
+    hand.add(teile);
+    teile.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0.3, 0.42, 0.86).normalize());
+    hand.scale.setScalar(1.35);
+    return hand;
+}
+
+/* Karte und ✓ vor dem Brett. */
+function buehneLeisteBauen(bu) {
+    const gruppe = new THREE.Group();
+    const vorn = bu.b.reihen / 2 + 0.85;
+    const oben = GEO.oberkante;
+    /* Die Karte: das Plättchen-Bild der Karten-Leiste, flach hingelegt. */
+    const kartenMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true });
+    const adresse = (typeof FAEHIGKEIT_ZEICHEN !== "undefined" && bu.art) ? FAEHIGKEIT_ZEICHEN.plaettchen[bu.art] : null;
+    if (adresse) {
+        new THREE.TextureLoader().load(adresse, (tex) => {
+            tex.colorSpace = THREE.SRGBColorSpace;
+            kartenMat.map = tex;
+            kartenMat.needsUpdate = true;
+        });
+    } else {
+        kartenMat.color = farbe("#4a78c8");
+    }
+    bu.wegwerfen.push(kartenMat);
+    const karte = new THREE.Mesh(new THREE.PlaneGeometry(0.68, 0.96), kartenMat);
+    karte.rotation.x = -Math.PI / 2;
+    karte.position.set(-0.55, oben + 0.01, vorn);
+    gruppe.add(karte);
+    /* Der Haken: grüne Scheibe, weisses Zeichen aus zwei Balken. */
+    const scheibeMat = new THREE.MeshStandardMaterial({ color: farbe("#3a3f4a"), roughness: 0.5 });
+    bu.wegwerfen.push(scheibeMat);
+    const scheibe = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.08, 32), scheibeMat);
+    scheibe.position.set(0.55, oben + 0.04, vorn);
+    const zeichenMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    bu.wegwerfen.push(zeichenMat);
+    const kurz = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.02, 0.06), zeichenMat);
+    kurz.position.set(-0.07, 0.05, 0.02);
+    kurz.rotation.y = -0.8;
+    const lang = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.02, 0.06), zeichenMat);
+    lang.position.set(0.06, 0.05, -0.03);
+    lang.rotation.y = 0.85;
+    scheibe.add(kurz, lang);
+    gruppe.add(scheibe);
+    bu.karte = karte;
+    bu.haken = scheibe;
+    bu.hakenMat = scheibeMat;
+    bu.kartenMat = kartenMat;
+    bu.szene.add(gruppe);
+}
+
+function buehne(el, auftrag) {
+    if (!buehneMoeglich()) return false;
+    const gitter = auftrag.gitter;
+    const bretter = gitter.map((g) => {
+        const zellen = Array.from(g.querySelectorAll(":scope > .vorschau-feld"));
+        const spalten = parseInt(g.style.getPropertyValue("--vorschau-spalten"), 10) || 8;
+        return { spalten, reihen: Math.round(zellen.length / spalten), zellen: zellen.map(zelleLesen) };
+    });
+    if (bretter.length === 0) return false;
+    kachelFormen();
+
+    const b = bretter[0];
+    const szene = new THREE.Scene();
+    miniLicht(szene, Math.max(b.spalten, b.reihen) / 2 + 2);
+    const leinwand = document.createElement("canvas");
+    leinwand.className = "anleitung-buehne-leinwand";
+    leinwand.setAttribute("aria-hidden", "true");
+    el.appendChild(leinwand);
+
+    const bu = {
+        el, leinwand, szene, b, bretter, schritte: auftrag.schritte, art: auftrag.art || "",
+        beiSchritt: auftrag.beiSchritt || (() => {}),
+        felder: new THREE.Group(), figuren: new Map(), boxen: new Map(), geister: new Map(),
+        effekte: new THREE.Group(), tweens: [], wegwerfen: [], feldWeg: [],
+        uhr: 0, pause: false, stelle: -1, naechsterWechsel: 0, hand: handBauen(),
+        handZiel: null, handVon: null, handStart: 0, tippZeit: -1, tippFertig: null
+    };
+    szene.add(bu.felder, bu.effekte, bu.hand);
+
+    /* Kamera wie beim Standbild, dazu vorn Platz für Karte und ✓. */
+    const oben = GEO.oberkante;
+    const neigung = miniNeigung();
+    const richtung = new THREE.Vector3(0, Math.cos(neigung), Math.sin(neigung));
+    const kamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 100);
+    kamera.position.copy(richtung).multiplyScalar(30).add(new THREE.Vector3(0, oben, 0));
+    kamera.lookAt(0, oben, 0);
+    kamera.updateMatrixWorld();
+    const hz = b.reihen / 2;
+    const mitKarte = !!bu.art;
+    const vornY = new THREE.Vector3(0, oben, hz + (mitKarte ? BUEHNE_VORN : 0.35)).applyMatrix4(kamera.matrixWorldInverse).y;
+    const hintenY = new THREE.Vector3(0, oben, -hz).applyMatrix4(kamera.matrixWorldInverse).y;
+    const zelleY = Math.cos(neigung);
+    kamera.left = -b.spalten / 2 - 0.1; kamera.right = b.spalten / 2 + 0.1;
+    kamera.bottom = vornY; kamera.top = hintenY + (MINI_UEBER + 0.3) * zelleY;
+    kamera.updateProjectionMatrix();
+    bu.kamera = kamera;
+    bu.seitenVerhaeltnis = (kamera.top - kamera.bottom) / (kamera.right - kamera.left);
+    leinwand.style.aspectRatio = (1 / bu.seitenVerhaeltnis).toFixed(4);
+
+    if (mitKarte) buehneLeisteBauen(bu);
+    /* Ohne Karte (Unglücke) ruht die Hand unsichtbar; mit Karte rechts
+       neben ✓. */
+    bu.ruhe = new THREE.Vector3(1.45, oben + 0.5, hz + 0.75);
+    bu.hand.position.copy(bu.ruhe);
+    bu.handRuhtSichtbar = mitKarte;
+
+    leinwand.addEventListener("click", () => { bu.pause = !bu.pause; });
+
+    buehneSchritt(bu, 0, false);
+    BUEHNE.alle.add(bu);
+    buehneStarten();
+    return true;
+}
+
+/* Wohin tippt der Finger in diesem Schritt? */
+function buehneTippOrt(bu, schritt) {
+    const oben = GEO.oberkante;
+    if (schritt.okTipp && bu.haken) return bu.haken.position.clone().setY(oben + 0.09);
+    if (schritt.knopfTipp && bu.karte) return bu.karte.position.clone().setY(oben + 0.02);
+    if (schritt.tipp >= 0) {
+        const m = buehneMitte(bu.b, schritt.tipp);
+        /* Auf eine Figur tippt man oben auf den Kopf — die Hand darf nicht
+           in sie hineingehen. */
+        const figur = bu.figuren.get(schritt.tipp);
+        const hoehe = figur ? hitbox(figur.userData.art).h * MINI_FIGUR : 0;
+        return m.setY(oben + hoehe + 0.02);
+    }
+    return null;
+}
+
+/* In Schritt `k` wechseln: erst der Finger (falls getippt wird), beim Tipp
+   das neue Brett. */
+function buehneSchritt(bu, k, animieren) {
+    const schritt = bu.schritte[k];
+    bu.stelle = k;
+    bu.beiSchritt(k);
+    const ziel = animieren ? buehneTippOrt(bu, schritt) : null;
+    if (ziel) {
+        bu.handVon = bu.hand.position.clone();
+        bu.handZiel = ziel;
+        bu.handStart = bu.uhr;
+        bu.tippZeit = bu.uhr + BUEHNE_MS.hin;
+        bu.tippFertig = () => buehneAnwenden(bu, k, true, ziel);
+        bu.naechsterWechsel = bu.uhr + BUEHNE_MS.hin + BUEHNE_MS.tipp + BUEHNE_MS.zug + BUEHNE_MS.halt;
+    } else {
+        bu.handVon = bu.hand.position.clone();
+        bu.handZiel = bu.ruhe.clone();
+        bu.handStart = bu.uhr;
+        bu.tippZeit = -1;
+        bu.tippFertig = null;
+        buehneAnwenden(bu, k, animieren, null);
+        bu.naechsterWechsel = bu.uhr + (animieren ? BUEHNE_MS.zug : 0) + BUEHNE_MS.halt;
+    }
+    if (k === bu.schritte.length - 1) bu.naechsterWechsel += BUEHNE_MS.ende - BUEHNE_MS.halt;
+}
+
+function buehneTween(bu, ms, schritt, fertig, verzoegerung) {
+    bu.tweens.push({ start: bu.uhr + (verzoegerung || 0), ms: Math.max(1, ms), schritt, fertig });
+}
+
+/* Das Brett von Schritt `k` herstellen — mit Bewegung oder sofort. */
+function buehneAnwenden(bu, k, animieren, tippOrt) {
+    const b = bu.bretter[k];
+    const schritt = bu.schritte[k];
+    const oben = GEO.oberkante;
+
+    /* Die Steine, Rahmen und Deko: neu, das ist billig. */
+    for (const kind of bu.felder.children.slice()) bu.felder.remove(kind);
+    for (const m of bu.feldWeg) m.dispose();
+    bu.feldWeg = [];
+    const hub = [];
+    b.zellen.forEach((z, i) => {
+        if (z.ausserhalb) return;
+        hub[i] = miniFeldBauen(bu.felder, z, buehneMitte(b, i), bu.feldWeg) || 0;
+    });
+    bu.felder.traverse((o) => { if (o.isMesh) o.receiveShadow = true; });
+
+    /* Die Welle, wo getippt wurde. */
+    if (tippOrt && animieren) buehneWelle(bu, tippOrt, "#ffffff");
+
+    /* Figuren: bekannte Wege zuerst, dann Gleiches in der Nähe, der Rest
+       vergeht oder erscheint. */
+    const alt = new Map(bu.figuren);
+    const neu = new Map();
+    const offen = [];
+    b.zellen.forEach((z, i) => {
+        if (!z.figur) return;
+        const g = alt.get(i);
+        if (g && g.userData.art === z.figur.art && g.userData.farbe === z.figur.farbe) {
+            neu.set(i, g); alt.delete(i);
+        } else {
+            offen.push(i);
+        }
+    });
+    const bewegen = [];
+    for (const weg of (schritt.wege || [])) {
+        const g = alt.get(weg.von);
+        const stelle = offen.indexOf(weg.nach);
+        if (g && stelle !== -1 && b.zellen[weg.nach].figur.farbe === g.userData.farbe) {
+            bewegen.push({ g, von: weg.von, nach: weg.nach, neu: b.zellen[weg.nach].figur });
+            alt.delete(weg.von); offen.splice(stelle, 1);
+        }
+    }
+    for (let n = offen.length - 1; n >= 0; n--) {
+        const i = offen[n];
+        const ziel = b.zellen[i].figur;
+        let beste = null, weite = 3.01;
+        for (const [j, g] of alt) {
+            if (g.userData.art !== ziel.art || g.userData.farbe !== ziel.farbe) continue;
+            const w = buehneMitte(b, i).distanceTo(buehneMitte(b, j));
+            if (w < weite) { beste = j; weite = w; }
+        }
+        if (beste !== null) {
+            bewegen.push({ g: alt.get(beste), von: beste, nach: i, neu: ziel });
+            alt.delete(beste); offen.splice(n, 1);
+        }
+    }
+    /* Was bleibt, vergeht — vor der Ankunft (keine Durchdringung). */
+    for (const [, g] of alt) {
+        if (!animieren) { bu.szene.remove(g); continue; }
+        const start = g.position.clone();
+        buehneTween(bu, 200, (t) => {
+            const s = Math.max(0.001, 1 - raus(t));
+            g.scale.set(s, s, s);
+            g.position.y = start.y + raus(t) * 0.4;
+            g.rotation.y = t * 5;
+        }, () => bu.szene.remove(g));
+    }
+    bewegen.forEach((bew, nummer) => {
+        neu.set(bew.nach, bew.g);
+        const a = buehneMitte(b, bew.von), z = buehneMitte(b, bew.nach);
+        const y0 = oben + (hub[bew.nach] || 0);
+        if (!animieren) { bew.g.position.set(z.x, y0, z.z); return; }
+        const weite = a.distanceTo(z);
+        /* Hoch genug über jede Figur auf dem Weg (die Bühne ist klein —
+           Springer und lange Wege springen über alles). Ziehen mehrere
+           zugleich (Platztausch, Rochade), springt jeder weitere über den
+           ersten — keine Durchdringung. */
+        const hoch = (nummer > 0 || bew.g.userData.art === "springer" || weite > 1.5)
+            ? 1.45 : 0.35 + weite * 0.1;
+        buehneTween(bu, BUEHNE_MS.zug - 60, (t) => {
+            const k2 = weich(t);
+            bew.g.position.set(a.x + (z.x - a.x) * k2, y0 + Math.sin(Math.PI * t) * hoch, a.z + (z.z - a.z) * k2);
+        }, () => {
+            bew.g.position.set(z.x, y0, z.z);
+            if (bew.neu.art !== bew.g.userData.art) {
+                bew.g.userData.art = bew.neu.art;
+                bew.g.userData.netz.geometry = Z.formen[bew.neu.art];
+            }
+            buehneWelle(bu, new THREE.Vector3(z.x, oben + 0.005, z.z), "#d8d2c4");
+        }, 60);
+    });
+    for (const i of offen) {
+        const g = figurBauen(b.zellen[i].figur, false);
+        g.userData.netz.scale.setScalar(MINI_FIGUR);
+        const m = buehneMitte(b, i);
+        g.position.set(m.x, oben + (hub[i] || 0), m.z);
+        bu.szene.add(g);
+        neu.set(i, g);
+        if (animieren) {
+            g.scale.setScalar(0.01);
+            buehneTween(bu, 320, (t) => { const s = 0.01 + raus(t) * 0.99; g.scale.set(s, s, s); }, null, 120);
+        }
+    }
+    /* Figuren auf gehobenen Steinen mitheben. */
+    for (const [i, g] of neu) {
+        if (!bewegen.some((bew) => bew.g === g)) g.position.y = oben + (hub[i] || 0);
+    }
+    bu.figuren = neu;
+
+    /* Geister und Lootboxen: einfach abgleichen. */
+    for (const [schluessel, karte, bauen] of [["geist", bu.geister, (e) => figurBauen(e, true)], ["box", bu.boxen, (e) => boxBauen(e)]]) {
+        const neuKarte = new Map();
+        b.zellen.forEach((z, i) => {
+            const e = z[schluessel];
+            if (!e) return;
+            const kennung = schluessel === "box" ? e.stufe + (e.pech ? "p" : "") : e.farbe + e.art;
+            const vorher = karte.get(i);
+            if (vorher && vorher.userData.kennung === kennung) {
+                neuKarte.set(i, vorher); karte.delete(i); return;
+            }
+            const g = bauen(e);
+            g.userData.kennung = kennung;
+            const m = buehneMitte(b, i);
+            g.position.set(m.x, oben + (schluessel === "box" ? 0.42 : 0) + (hub[i] || 0), m.z);
+            bu.szene.add(g);
+            neuKarte.set(i, g);
+        });
+        for (const [, g] of karte) {
+            if (!animieren) { bu.szene.remove(g); continue; }
+            const y = g.position.y;
+            buehneTween(bu, 260, (t) => {
+                const s = Math.max(0.001, 1 - t);
+                g.scale.set(s, s, s);
+                g.position.y = y + raus(t) * 1.6;
+            }, () => bu.szene.remove(g));
+        }
+        if (schluessel === "box") bu.boxen = neuKarte; else bu.geister = neuKarte;
+    }
+
+    /* Die Spur statt der Pfeile. */
+    for (const kind of bu.effekte.children.slice()) {
+        if (kind.userData.spur) { bu.effekte.remove(kind); kind.geometry.dispose(); }
+    }
+    for (const weg of (schritt.wege || [])) buehneSpur(bu, weg, animieren);
+
+    /* Das Wirkungs-Bild: die markierten Felder leuchten kurz auf. */
+    if (animieren && schritt.schauspiel) {
+        for (const feld of (schritt.marken || [])) {
+            const m = buehneMitte(b, feld);
+            buehneWelle(bu, new THREE.Vector3(m.x, oben + 0.01, m.z), "#ffd76a", 180);
+            buehneWelle(bu, new THREE.Vector3(m.x, oben + 0.01, m.z), "#ffd76a", 420);
+        }
+    }
+
+    /* Karte und ✓ zeigen, wo man gerade ist. */
+    if (bu.karte) {
+        const karteAn = bu.schritte.slice(0, k + 1).some((s) => s.knopfTipp)
+            && !bu.schritte.slice(0, k).some((s) => s.okTipp);
+        bu.karte.position.y = oben + (karteAn ? 0.12 : 0.01);
+        bu.kartenMat.opacity = karteAn || schritt.knopfTipp ? 1 : 0.55;
+        const hakenAn = !!schritt.okTipp;
+        bu.hakenMat.color = farbe(hakenAn ? "#38c172" : "#3a3f4a");
+        bu.hakenMat.emissive = farbe(hakenAn ? "#38c172" : "#000000");
+        bu.hakenMat.emissiveIntensity = hakenAn ? 0.35 : 0;
+    }
+}
+
+const SPUR_MAT = {};
+function buehneSpur(bu, weg, animieren) {
+    const b = bu.b;
+    const a = buehneMitte(b, weg.von), z = buehneMitte(b, weg.nach);
+    const laenge = a.distanceTo(z);
+    if (laenge < 0.01) return;
+    const mat = SPUR_MAT.an || (SPUR_MAT.an = new THREE.MeshBasicMaterial({ color: farbe("#9fd07a"), transparent: true, opacity: 0.85, depthWrite: false }));
+    const geo = new THREE.BoxGeometry(0.1, 0.02, laenge - 0.5);
+    const spur = new THREE.Mesh(geo, mat);
+    spur.position.set((a.x + z.x) / 2, GEO.oberkante + 0.03, (a.z + z.z) / 2);
+    spur.rotation.y = Math.atan2(z.x - a.x, z.z - a.z);
+    spur.userData.spur = true;
+    bu.effekte.add(spur);
+    if (animieren) {
+        spur.scale.z = 0.01;
+        buehneTween(bu, 300, (t) => { spur.scale.z = 0.01 + weich(t) * 0.99; });
+    }
+}
+
+function buehneWelle(bu, ort, hex, verzoegerung) {
+    GEO.welle = GEO.welle || new THREE.RingGeometry(0.2, 0.26, 36).rotateX(-Math.PI / 2);
+    const mat = new THREE.MeshBasicMaterial({ color: farbe(hex), transparent: true, opacity: 0.9, depthWrite: false });
+    const ring = new THREE.Mesh(GEO.welle, mat);
+    ring.position.copy(ort).setY(ort.y + 0.01);
+    ring.visible = false;
+    bu.effekte.add(ring);
+    buehneTween(bu, 480, (t) => {
+        ring.visible = true;
+        ring.scale.setScalar(0.6 + t * 1.6);
+        mat.opacity = 0.9 * (1 - t);
+    }, () => { bu.effekte.remove(ring); mat.dispose(); }, verzoegerung || 0);
+}
+
+/* Die Bühne auf ihren Anfang: alles sofort, ohne Bewegung. */
+function buehneZurueck(bu) {
+    for (const karte of [bu.figuren, bu.boxen, bu.geister]) {
+        for (const [, g] of karte) bu.szene.remove(g);
+        karte.clear();
+    }
+    bu.tweens = [];
+    buehneSchritt(bu, 0, false);
+}
+
+function buehneBild(bu, dt) {
+    if (!bu.pause) bu.uhr += dt;
+    const uhr = bu.uhr;
+    /* Tweens der Bühne. */
+    for (let n = bu.tweens.length - 1; n >= 0; n--) {
+        const tw = bu.tweens[n];
+        if (uhr < tw.start) continue;
+        const t = Math.min(1, (uhr - tw.start) / tw.ms);
+        tw.schritt(t);
+        if (t >= 1) { bu.tweens.splice(n, 1); if (tw.fertig) tw.fertig(); }
+    }
+    /* Der Finger: hinschweben, tippen, stehen bleiben. */
+    const hin = Math.min(1, (uhr - bu.handStart) / BUEHNE_MS.hin);
+    bu.hand.visible = bu.handRuhtSichtbar || bu.tippZeit >= 0 || hin < 1;
+    const ziel = bu.handZiel.clone().setY(bu.handZiel.y + (bu.tippZeit >= 0 ? 0.35 : 0));
+    bu.hand.position.lerpVectors(bu.handVon, ziel, weich(hin));
+    if (bu.tippZeit >= 0 && uhr >= bu.tippZeit) {
+        const t = Math.min(1, (uhr - bu.tippZeit) / BUEHNE_MS.tipp);
+        bu.hand.position.y = ziel.y - Math.sin(Math.PI * t) * 0.35;
+        if (t >= 0.5 && bu.tippFertig) {
+            const f = bu.tippFertig;
+            bu.tippFertig = null;
+            f();
+        }
+    }
+    /* Lootboxen drehen sich langsam. */
+    for (const [, g] of bu.boxen) {
+        if (g.userData.dreher) g.userData.dreher.rotation.y += dt / 1900;
+    }
+    /* Nächster Schritt — nach dem letzten wieder von vorn. */
+    if (!bu.pause && uhr >= bu.naechsterWechsel) {
+        const k = bu.stelle + 1;
+        if (k >= bu.schritte.length) buehneZurueck(bu);
+        else buehneSchritt(bu, k, true);
+    }
+
+    /* Zeichnen: der gemeinsame Renderer, dann in die eigene Leinwand. */
+    const breite = Math.max(1, Math.round(bu.leinwand.clientWidth * Math.min(window.devicePixelRatio || 1, 2)));
+    const hoehe = Math.max(1, Math.round(breite * bu.seitenVerhaeltnis));
+    if (bu.leinwand.width !== breite || bu.leinwand.height !== hoehe) {
+        bu.leinwand.width = breite;
+        bu.leinwand.height = hoehe;
+    }
+    const r = miniRenderer();
+    r.setSize(breite, hoehe, false);
+    r.render(bu.szene, bu.kamera);
+    const ctx = bu.ctx || (bu.ctx = bu.leinwand.getContext("2d"));
+    ctx.clearRect(0, 0, breite, hoehe);
+    ctx.drawImage(r.domElement, 0, 0, breite, hoehe);
+}
+
+function buehneStarten() {
+    if (BUEHNE.laeuft) return;
+    BUEHNE.laeuft = true;
+    BUEHNE.zuletzt = performance.now();
+    requestAnimationFrame(buehneTakt);
+}
+
+function buehneTakt(zeit) {
+    const dt = Math.min(80, zeit - BUEHNE.zuletzt);
+    /* 30 Bilder je Sekunde reichen für die kleine Bühne. */
+    if (dt < 30) { requestAnimationFrame(buehneTakt); return; }
+    BUEHNE.zuletzt = zeit;
+    for (const bu of BUEHNE.alle) {
+        if (!bu.el.isConnected) {
+            BUEHNE.alle.delete(bu);
+            for (const m of bu.feldWeg.concat(bu.wegwerfen)) m.dispose();
+            continue;
+        }
+        /* Nicht im Bild (Dialog zu, weggescrollt, verborgen): nicht rechnen. */
+        if (bu.el.offsetParent === null) continue;
+        try {
+            buehneBild(bu, dt);
+        } catch (fehler) {
+            console.error("Anleitungs-Bühne:", fehler);
+            BUEHNE.alle.delete(bu);
+        }
+    }
+    if (BUEHNE.alle.size === 0) { BUEHNE.laeuft = false; return; }
+    requestAnimationFrame(buehneTakt);
 }
 
 /* ------------------------------------------------------------------ *
@@ -3266,20 +4083,26 @@ async function starten() {
         Z.schrift = schrift;
         Z.bereit = true;
         kachelFormen();
-        try {
-            figurenBilder();
-        } catch (fehler) {
-            console.error("Figurenbilder nicht möglich:", fehler);
-        }
-        plaettchenBilder().catch((fehler) => console.error("Plättchen nicht möglich:", fehler));
-        const wartend = MINI.warte.splice(0);
-        for (const el of wartend) {
-            if (el.isConnected) standbild(el);
-        }
-        /* Wurde schon gezeichnet, bevor die Formen da waren? */
+        /*
+         * ERST DAS BRETT, DANN DER REST (seit v0.133.0). Bis v0.132.0
+         * rechnete das Modul zuerst die zwölf Figurenbilder und alle
+         * kleinen Bretter — am Handy sah man so lange das flache Brett.
+         * Jetzt steht das grosse Brett sofort; die Bilder folgen danach,
+         * jedes in einem eigenen Takt, damit nichts hängt.
+         */
         const letzte = (typeof TEAM_SCHACH !== "undefined") ? TEAM_SCHACH._brett3dLetzte : null;
         if (letzte) anbinden(letzte.halter, letzte.partie, letzte.person, false);
         wartenBeenden();
+        plaettchenBilder().catch((fehler) => console.error("Plättchen nicht möglich:", fehler));
+        const spaeter = (arbeit) => new Promise((fertig) => setTimeout(() => {
+            try { arbeit(); } catch (fehler) { console.error("3D-Bild nicht möglich:", fehler); }
+            fertig();
+        }, 20));
+        await spaeter(figurenBilder);
+        const wartend = MINI.warte.splice(0);
+        for (const el of wartend) {
+            await spaeter(() => { if (el.isConnected) standbild(el); });
+        }
     } catch (fehler) {
         Z.fehler = true;
         window.BRETT_3D_AUS = true;
@@ -3301,6 +4124,18 @@ window.BRETT_3D = {
     },
     /* Kleine Bretter (`.vorschau`) als 3D-Standbild. */
     standbild,
+    /* Die Anleitung als abgespielte 3D-Bühne (seit v0.135.0). */
+    buehneMoeglich,
+    buehne,
+    /* Werkstatt: Zusammenstösse in jeder Animation — `true` misst ab
+       jetzt, `false` hört auf, ohne Wert kommt die Liste. */
+    kollisionen(an) {
+        if (an === true) Z.stoesse = [];
+        else if (an === false) Z.stoesse = null;
+        return Z.stoesse ? Z.stoesse.slice() : null;
+    },
+    /* Werkstatt: Verdeckt im Ruhebild eine Figur die auf dem Nachbarfeld? */
+    ueberdeckungen,
     /* Für die Werkstatt und Bildschirmbilder. */
     _zustand: Z
 };

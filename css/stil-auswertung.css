@@ -491,6 +491,64 @@
 .anleitung-vorrat {
     display: flex;
     justify-content: center;
+    align-items: center;
+    gap: 12px;
+}
+
+/*
+ * DIE LEISTE WIE IM SPIEL (seit v0.134.0): die Karte (dasselbe Plättchen
+ * wie in der Karten-Leiste) und daneben der runde Haken. Der Finger liegt
+ * unten rechts auf dem, was gerade getippt wird.
+ */
+.anleitung-karte {
+    position: relative;
+    width: 40px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.2s;
+}
+
+.anleitung-karte > .faehigkeit-bild {
+    width: 100%;
+    height: 100%;
+}
+
+.anleitung-karte-name {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-align: center;
+}
+
+.anleitung-haken {
+    position: relative;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    border: 2px solid var(--rahmen);
+    background: var(--karte-leise);
+    color: var(--schrift-leise);
+    opacity: 0.55;
+}
+
+.anleitung-haken-an {
+    background: var(--gut);
+    border-color: var(--gut);
+    color: #fff;
+    opacity: 1;
+}
+
+.anleitung-karte .anleitung-finger,
+.anleitung-haken .anleitung-finger {
+    width: 26px;
+    height: 26px;
+    right: -12px;
+    bottom: -12px;
 }
 
 /*
@@ -722,46 +780,37 @@
 }
 
 /*
- * Die Schrittliste unter dem Bild (seit v0.44).
- *
- * ALLE Sätze stehen gleichzeitig da, der laufende ist hervorgehoben. Vorher
- * wechselte EIN Satz mit dem Bild — und weil die Sätze verschieden lang sind,
- * hüpfte alles darunter im Sekundentakt.
+ * DIE KURZE ZEILE UND DIE PUNKTE (seit v0.134.0, ersetzt die Satzliste von
+ * v0.44). Unter dem Film steht höchstens ein Stichwort, das mit dem Bild
+ * wechselt, darunter ein Punkt je Bild. Die Zeile hat eine feste Höhe —
+ * auch leer —, damit darunter nichts hüpft.
  */
-.anleitung-schritte {
-    list-style: none;
-    margin: 8px 0 0 0;
-    padding: 0;
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.anleitung-schritt {
-    display: flex;
-    gap: 8px;
-    align-items: baseline;
-    font-size: 0.82rem;
-    line-height: 1.35;
-    color: var(--schrift-leise);
-    opacity: 0.7;
-}
-
-.anleitung-schritt-jetzt {
-    opacity: 1;
+.anleitung-kurz {
+    flex: 1 0 100%;
+    margin: 6px 0 0 0;
+    min-height: 1.4em;
+    text-align: center;
+    font-size: 0.95rem;
+    font-weight: 600;
     color: var(--schrift);
 }
 
-.anleitung-nummer {
-    flex: 0 0 auto;
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-    color: var(--schrift-leise);
+.anleitung-punkte {
+    flex: 1 0 100%;
+    display: flex;
+    justify-content: center;
+    gap: 6px;
 }
 
-.anleitung-schritt-jetzt .anleitung-nummer {
-    color: var(--haupt);
+.anleitung-punkt {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--rahmen);
+}
+
+.anleitung-punkt-jetzt {
+    background: var(--haupt);
 }
 
 /*
@@ -1995,4 +2044,30 @@ body.partie-fest .schach > .hand-leiste {
     .hand-hinweis {
         animation: none;
     }
+}
+
+/* ------------------------------------------------------------------ *
+ * DIE ANLEITUNGS-BÜHNE (seit v0.135.0): eine 3D-Leinwand, die sich selbst
+ * vorspielt (`BRETT_3D.buehne`), darunter nur die Punkte. Tippen hält an.
+ * ------------------------------------------------------------------ */
+.anleitung-buehne .anleitung-bild {
+    flex: 0 1 320px;
+    max-width: 320px;
+}
+
+.anleitung-buehne-leinwand {
+    display: block;
+    width: 100%;
+    cursor: pointer;
+    touch-action: manipulation;
+}
+
+.anleitung-buehne-fenster {
+    flex: 1 0 100%;
+    display: flex;
+    justify-content: center;
+}
+
+.anleitung-buehne-fenster:empty {
+    display: none;
 }

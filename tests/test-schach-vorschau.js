@@ -184,7 +184,7 @@ pruefe("Faehigkeiten mit Zielfeld zeigen den Handgriff als eigenen Schritt", () 
     }
 });
 
-pruefe("Die Zielwahl nennt Rahmen, Ziehen und den Einsetzen-Knopf (Punkt 11)", () => {
+pruefe("Die Zielwahl nennt Rahmen, Ziehen und den Haken ✓ (Punkt 11, seit v0.134.0)", () => {
     /*
      * ROADMAP Punkt 11 (nach v0.84.0): Der Tipp setzt nur den gruenen
      * Rahmen, der Rahmen laesst sich auch ziehen, und eingesetzt wird erst
@@ -202,8 +202,8 @@ pruefe("Die Zielwahl nennt Rahmen, Ziehen und den Einsetzen-Knopf (Punkt 11)", (
 
         wahr(zielSchritt.text.indexOf("verschieben") !== -1,
             art + ": das Ziehen des Rahmens wird genannt");
-        wahr(zielSchritt.text.indexOf("Einsetzen") !== -1,
-            art + ": der Einsetzen-Knopf wird genannt");
+        wahr(zielSchritt.text.indexOf("✓") !== -1,
+            art + ": der Haken wird genannt (seit v0.130.0 statt „Einsetzen\")");
     }
 
     /* Die Faehigkeiten mit Zusatz-Knopf (Mauer-Lage, Tausch-Richtung,
@@ -212,8 +212,42 @@ pruefe("Die Zielwahl nennt Rahmen, Ziehen und den Einsetzen-Knopf (Punkt 11)", (
         const schritte = SCHACH_VORSCHAU.schritte(art);
         const zielSchritt = schritte.filter((schritt) => schritt.tipp >= 0)[0];
 
-        wahr(zielSchritt.text.indexOf("Knopf unter dem Brett") !== -1,
-            art + ": der Zusatz-Knopf wird genannt");
+        wahr(zielSchritt.text.indexOf("⟳") !== -1,
+            art + ": der Dreh-Knopf wird genannt");
+    }
+});
+
+pruefe("Nach der Karte kommt der Haken ✓ — und kein altes Fenster mehr (v0.134.0)", () => {
+    /*
+     * Seit v0.130.0 gibt es kein Fenster mit „Einsetzen" mehr: Karte
+     * antippen, bei Zielfeld das Feld, dann ✓. Jede Anleitung einer Karte
+     * (ausser Händler und Dieb, die ihr Angebot zeigen) hat GENAU ein Bild,
+     * in dem der Finger auf ✓ liegt — nach dem Griff an die Karte. Kein
+     * Satz erwähnt mehr das alte Fenster oder den Knopf unter dem Brett.
+     */
+    for (const art of Object.keys(SCHACH_VARIANTEN.FAEHIGKEITEN)) {
+        const schritte = SCHACH_VORSCHAU.schritte(art);
+        const beschreibung = SCHACH_VARIANTEN.FAEHIGKEITEN[art];
+        const karte = schritte.findIndex((schritt) => schritt.knopfTipp);
+        const haken = schritte.filter((schritt) => schritt.okTipp);
+
+        if (beschreibung.art === "handel" || beschreibung.art === "diebstahl") {
+            gleich(haken.length, 0, art + ": zeigt sein Angebot statt ✓");
+        } else {
+            gleich(haken.length, 1, art + ": genau ein Bild mit dem Finger auf ✓");
+            wahr(schritte.indexOf(haken[0]) > karte, art + ": ✓ kommt nach der Karte");
+            gleich(haken[0].tipp, -1, art + ": beim ✓ kein Finger auf dem Brett");
+        }
+
+        gleich(schritte[karte].kurz, "Karte antippen", art + ": kurze Zeile beim Griff an die Karte");
+
+        for (const schritt of schritte) {
+            wahr(schritt.text.indexOf("Fenster erklärt") === -1
+                && schritt.text.indexOf("„Einsetzen“") === -1
+                && schritt.text.indexOf("unter dem Brett") === -1,
+                art + ": kein Satz über das alte Fenster: " + schritt.text);
+            wahr(schritt.kurz.length <= 24, art + ": die kurze Zeile ist kurz: " + schritt.kurz);
+        }
     }
 });
 
@@ -248,8 +282,9 @@ pruefe("Der Vorrat-Knopf steht in JEDEM Bild, der Finger nur in einem (v0.58)", 
     }
 });
 
-pruefe("Ohne Zielfeld und ohne Zug bleiben Stellung, Griff und Wirkung", () => {
-    gleich(SCHACH_VORSCHAU.schritte("bauernschub").length, 3, "bauernschub: drei Schritte");
+pruefe("Ohne Zielfeld und ohne Zug bleiben Stellung, Griff, ✓ und Wirkung", () => {
+    /* Seit v0.134.0 hat das Häkchen sein eigenes Bild. */
+    gleich(SCHACH_VORSCHAU.schritte("bauernschub").length, 4, "bauernschub: vier Schritte");
 });
 
 pruefe("Der Haendler zeigt sein Angebot als eigenes Bild (v0.58)", () => {
@@ -382,9 +417,9 @@ pruefe("Der Nachschlag zeigt, dass die gefesselte Figur wirklich faellt (v0.75)"
 pruefe("Die Zugmuster haben ein Bild mehr: den Zug selbst", () => {
     /* v0.46: Was die neuen Punkte bedeuten, sieht man erst, wenn die Figur
        einmal wirklich dorthin zieht. Seit v0.50 kommt der Griff an den
-       Vorrat davor. */
+       Vorrat davor, seit v0.134.0 das Häkchen ✓. */
     for (const art of ["sprung", "ausweichen", "teleport"]) {
-        gleich(SCHACH_VORSCHAU.schritte(art).length, 4, art + ": vier Schritte");
+        gleich(SCHACH_VORSCHAU.schritte(art).length, 5, art + ": fünf Schritte");
     }
 });
 

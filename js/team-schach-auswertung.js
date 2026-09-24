@@ -1475,33 +1475,47 @@ Object.assign(TEAM_SCHACH, {
             return TEAM_SCHACH._anleitungRuhigBauen(schritte);
         }
 
+        /* Mit 3D: die abgespielte Bühne, ohne Text (seit v0.135.0). */
+        if (typeof window !== "undefined" && window.BRETT_3D && window.BRETT_3D.buehneMoeglich
+                && window.BRETT_3D.buehneMoeglich()) {
+            const buehne = TEAM_SCHACH._anleitungBuehneBauen(schritte);
+            if (buehne) {
+                return buehne;
+            }
+        }
+
         const halter = TEAM_SCHACH._element("div", "anleitung anleitung-film");
         const bild = TEAM_SCHACH._element("div", "anleitung-bild");
 
         let stelle = 0;
         let brett = TEAM_SCHACH._beispielBrettBauen(schritte[0]);
         bild.appendChild(brett);
+        /* Der Vorleser bekommt weiter den ganzen Satz des laufenden Bilds. */
+        bild.setAttribute("role", "img");
+        bild.setAttribute("aria-label", schritte[0].text);
         halter.appendChild(bild);
 
         /*
-         * DIE TEXTE STEHEN ALLE GLEICHZEITIG DA (seit v0.44), einer je Bild,
-         * und der laufende ist hervorgehoben. Vorher wechselte EIN Satz mit
-         * dem Bild — und weil die Sätze verschieden lang sind, hüpfte alles
-         * darunter im Sekundentakt.
+         * EINE KURZE ZEILE STATT DER SATZLISTE (seit v0.134.0, Nutzer:
+         * „weniger Text bis keinen, nur das Video"). Bis v0.133.0 standen
+         * alle Sätze nummeriert unter dem Bild. Jetzt wechselt mit dem Bild
+         * höchstens ein Stichwort („Karte antippen", „✓ einsetzen"); wo das
+         * Bild für sich spricht, bleibt die Zeile leer. Sie hat eine feste
+         * Höhe, damit darunter nichts hüpft. Die Punkte zeigen, wo man im
+         * Film ist. Die ganzen Sätze stehen weiter in der ruhigen Ansicht.
          */
-        const liste = TEAM_SCHACH._element("ol", "anleitung-schritte");
-        const zeilen = schritte.map((schritt, nummer) => {
-            const zeile = TEAM_SCHACH._element("li",
-                "anleitung-schritt" + (nummer === 0 ? " anleitung-schritt-jetzt" : ""));
+        const zeile = TEAM_SCHACH._element("p", "anleitung-kurz", schritte[0].kurz);
+        halter.appendChild(zeile);
 
-            zeile.appendChild(TEAM_SCHACH._element("span", "anleitung-nummer",
-                "Bild " + (nummer + 1)));
-            zeile.appendChild(TEAM_SCHACH._element("span", "anleitung-satz", schritt.text));
-
-            liste.appendChild(zeile);
-            return zeile;
+        const punkte = TEAM_SCHACH._element("div", "anleitung-punkte");
+        const punktListe = schritte.map((schritt, nummer) => {
+            const punkt = TEAM_SCHACH._element("span",
+                "anleitung-punkt" + (nummer === 0 ? " anleitung-punkt-jetzt" : ""));
+            punkte.appendChild(punkt);
+            return punkt;
         });
-        halter.appendChild(liste);
+        punkte.setAttribute("aria-hidden", "true");
+        halter.appendChild(punkte);
 
         const weiter = () => {
             /*
@@ -1520,9 +1534,11 @@ Object.assign(TEAM_SCHACH, {
             bild.replaceChild(neues, brett);
             brett = neues;
 
-            for (let nummer = 0; nummer < zeilen.length; nummer++) {
-                zeilen[nummer].className = "anleitung-schritt"
-                    + (nummer === stelle ? " anleitung-schritt-jetzt" : "");
+            zeile.textContent = schritte[stelle].kurz;
+            bild.setAttribute("aria-label", schritte[stelle].text);
+            for (let nummer = 0; nummer < punktListe.length; nummer++) {
+                punktListe[nummer].className = "anleitung-punkt"
+                    + (nummer === stelle ? " anleitung-punkt-jetzt" : "");
             }
         };
 
@@ -1530,6 +1546,59 @@ Object.assign(TEAM_SCHACH, {
         TEAM_SCHACH.anleitungTakte.push(takt);
 
         return halter;
+    },
+
+    /*
+     * DIE ANLEITUNG ALS 3D-BÜHNE (seit v0.135.0, Nutzer: „weniger Text bis
+     * keinen, nur das Video"). Die Bühne (`BRETT_3D.buehne`) spielt die
+     * Schritte selbst ab — Finger, Züge, Karte und ✓ in 3D. Hier stehen nur
+     * die Punkte darunter und, beim Händler, sein Angebot als Fenster (dort
+     * IST der Text die Information). Kein Satz; der Vorleser bekommt den
+     * ganzen Satz des laufenden Bilds. Tippen auf die Bühne hält an.
+     */
+    _anleitungBuehneBauen(schritte) {
+        const halter = TEAM_SCHACH._element("div", "anleitung anleitung-film anleitung-buehne");
+        const bild = TEAM_SCHACH._element("div", "anleitung-bild");
+        bild.setAttribute("role", "img");
+        halter.appendChild(bild);
+
+        const fenster = TEAM_SCHACH._element("div", "anleitung-buehne-fenster");
+        halter.appendChild(fenster);
+
+        const punkte = TEAM_SCHACH._element("div", "anleitung-punkte");
+        punkte.setAttribute("aria-hidden", "true");
+        const punktListe = schritte.map(() => {
+            const punkt = TEAM_SCHACH._element("span", "anleitung-punkt");
+            punkte.appendChild(punkt);
+            return punkt;
+        });
+        halter.appendChild(punkte);
+
+        const beiSchritt = (stelle) => {
+            const schritt = schritte[stelle];
+            bild.setAttribute("aria-label", schritt.text);
+            for (let nummer = 0; nummer < punktListe.length; nummer++) {
+                punktListe[nummer].className = "anleitung-punkt"
+                    + (nummer === stelle ? " anleitung-punkt-jetzt" : "");
+            }
+            fenster.replaceChildren();
+            if (schritt.fenster) {
+                const huelle = TEAM_SCHACH._beispielBrettBauen(Object.assign({}, schritt, { knopf: "" }));
+                const echtes = huelle.querySelector && huelle.querySelector(".anleitung-fenster");
+                if (echtes) {
+                    fenster.appendChild(echtes);
+                }
+            }
+        };
+
+        const gelungen = window.BRETT_3D.buehne(bild, {
+            schritte,
+            gitter: schritte.map((schritt) => TEAM_SCHACH._beispielBrettBauen(schritt, true)),
+            art: schritte[0].knopfArt || "",
+            beiSchritt
+        });
+
+        return gelungen ? halter : null;
     },
 
     /* Alle Schritte nebeneinander — für alle, die keine Bewegung wollen. */
@@ -1584,7 +1653,10 @@ Object.assign(TEAM_SCHACH, {
      * und ohne Bedienung. Dazu die markierten Felder: worauf es in diesem Bild
      * ankommt.
      */
-    _beispielBrettBauen(schritt) {
+    /* `nurGitter` (seit v0.135.0): nur das Gitter mit Figuren und Marken —
+       ohne Hand, Pfeile, Standbild, Schauspiel und Leiste. Daraus liest die
+       3D-Bühne jeden Schritt. */
+    _beispielBrettBauen(schritt, nurGitter) {
         const runde = schritt.runde;
         const marken = schritt.marken;
         const wahl = schritt.wahl;
@@ -1762,7 +1834,7 @@ Object.assign(TEAM_SCHACH, {
             }
 
             /* Der Fingerabdruck: HIER wird getippt. */
-            if (schritt.tipp === feld) {
+            if (schritt.tipp === feld && !nurGitter) {
                 zelle.appendChild(TEAM_SCHACH._fingerBauen());
             }
 
@@ -1770,6 +1842,10 @@ Object.assign(TEAM_SCHACH, {
         }
 
         /* Die Pfeile liegen über dem ganzen Brett, nicht in einem Feld. */
+        if (nurGitter) {
+            return brett;
+        }
+
         const pfeile = TEAM_SCHACH._pfeileBauen(stand, schritt.wege);
         if (pfeile) {
             brett.appendChild(pfeile);
@@ -1851,17 +1927,37 @@ Object.assign(TEAM_SCHACH, {
          * einen Bild und verschwand danach — die Anleitung sprang bei jedem
          * Takt in der Höhe, und das Auge folgte dem Sprung statt dem Brett.
          */
+        /*
+         * DIE LEISTE WIE IM SPIEL (seit v0.134.0): die Karte und daneben ✓ —
+         * genau so setzt man seit v0.130.0 ein. Bis v0.133.0 stand hier ein
+         * flacher Knopf mit dem Namen, den es im Spiel nicht mehr gibt. Der
+         * Finger liegt auf der Karte (`knopfTipp`) oder auf ✓ (`okTipp`).
+         */
         const leiste = TEAM_SCHACH._element("div", "anleitung-vorrat");
         const marke = TEAM_SCHACH._element("span",
-            "chip faehigkeit-marke anleitung-knopf"
-                + (schritt.knopfTipp ? "" : " anleitung-knopf-ruht"),
-            schritt.knopf);
+            "anleitung-karte" + (schritt.knopfTipp ? "" : " anleitung-knopf-ruht"));
+        const zeichen = (schritt.knopfArt && typeof FAEHIGKEIT_ZEICHEN !== "undefined")
+            ? FAEHIGKEIT_ZEICHEN.bauen(schritt.knopfArt) : null;
+        if (zeichen) {
+            marke.appendChild(zeichen);
+        } else {
+            marke.appendChild(TEAM_SCHACH._element("span", "anleitung-karte-name", schritt.knopf));
+        }
+        marke.setAttribute("aria-hidden", "true");
 
         if (schritt.knopfTipp) {
             marke.appendChild(TEAM_SCHACH._fingerBauen());
         }
-
         leiste.appendChild(marke);
+
+        const haken = TEAM_SCHACH._element("span",
+            "anleitung-haken" + (schritt.okTipp ? " anleitung-haken-an" : ""), "✓");
+        haken.setAttribute("aria-hidden", "true");
+        if (schritt.okTipp) {
+            haken.appendChild(TEAM_SCHACH._fingerBauen());
+        }
+        leiste.appendChild(haken);
+
         huelle.appendChild(leiste);
 
         return huelle;

@@ -3,8 +3,9 @@
 > **Abschnitt 2 ist GEBAUT als v0.130.0** (Nutzer: „kannst neue Funktionen
 > einbauen und alles wie du willst"): kein Rückfrage-Dialog, Karte +
 > ✓/✕/⟳/? in der Karten-Leiste, Anleitung hinter „?". Noch offen aus 2:
-> die aufsteigenden Geister als 3D-Vorschau. Abschnitt 3 (Anleitungen als
-> 3D-Bühne) ist offen.
+> die aufsteigenden Geister als 3D-Vorschau. **Abschnitt 3 ist GEBAUT als
+> v0.134.0 + v0.135.0** (`BRETT_3D.buehne`, eigene Szene statt mehrfachem `Z`,
+> gemeinsamer kleiner Renderer). Offen: „Schach lernen" auf der Bühne.
 >
 > Stand 24.09.2026 (nach v0.129.0). Auftrag im Wortlaut: „die Fähigkeit
 > Friedhof — die Leiste musst du dir noch was Besseres überlegen" und „die

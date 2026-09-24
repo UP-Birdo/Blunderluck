@@ -1329,10 +1329,29 @@ const SCHACH_VORSCHAU = {
                 runde: vorher,
                 marken: hatFigur ? [beispiel.figur] : [],
                 knopfTipp: true,
-                text: "Du tippst " + beschreibung.titel + " in deinem Vorrat an."
+                kurz: "Karte antippen",
+                text: "Du tippst " + beschreibung.titel + " in deiner Leiste an."
                     + SCHACH_VORSCHAU._vorratSatz(beschreibung, hatZiel,
                         !!beispiel.zug)
             }));
+
+            /*
+             * DAS HÄKCHEN (seit v0.134.0). Seit v0.130.0 gibt es kein Fenster
+             * mit „Einsetzen" mehr: Eine Karte ohne Zielfeld wird mit dem
+             * ersten Tipp gewählt und mit ✓ (oder einem zweiten Tipp)
+             * eingesetzt. Genau dieser Griff bekommt sein eigenes Bild.
+             * Händler und Dieb zeigen stattdessen ihr Angebot.
+             */
+            if (!hatZiel && SCHACH_VORSCHAU._mitHaekchen(beschreibung)) {
+                liste.push(SCHACH_VORSCHAU._schritt({
+                    runde: vorher,
+                    marken: hatFigur ? [beispiel.figur] : [],
+                    okTipp: true,
+                    kurz: "✓ einsetzen",
+                    text: "Mit ✓ — oder einem zweiten Tipp auf die Karte — "
+                        + "setzt du sie ein."
+                }));
+            }
         }
 
         /*
@@ -1370,6 +1389,7 @@ const SCHACH_VORSCHAU = {
                      * (`SCHACH_RUNDE.handelsAngebot`), damit Anleitung und
                      * Dialog nicht auseinanderlaufen.
                      */
+                    kurz: "Annehmen oder ablehnen",
                     fenster: {
                         titel: "Der Händler bietet",
                         text: angebot.text
@@ -1403,6 +1423,8 @@ const SCHACH_VORSCHAU = {
                 marken: [beispiel.ziel],
                 wahl: moeglich.filter((feld) => feld !== beispiel.ziel),
                 tipp: beispiel.ziel,
+                kurz: "Feld antippen"
+                    + (SCHACH_VORSCHAU.PLATZIER_KNOEPFE[art] ? " · ⟳ dreht" : ""),
                 text: ((moeglich.length > 1)
                     ? ("Du tippst " + name(beispiel.ziel) + " an — hell "
                         + "umrandet sind die anderen Felder, die auch gehen.")
@@ -1412,7 +1434,16 @@ const SCHACH_VORSCHAU = {
                     + (SCHACH_VORSCHAU.PLATZIER_KNOEPFE[art]
                         ? " " + SCHACH_VORSCHAU.PLATZIER_KNOEPFE[art]
                         : "")
-                    + " Erst der Knopf „Einsetzen“ unter dem Brett setzt ein."
+                    + " Erst ✓ in der Leiste setzt ein."
+            }));
+
+            liste.push(SCHACH_VORSCHAU._schritt({
+                runde: vorher,
+                marken: [beispiel.ziel],
+                okTipp: true,
+                kurz: "✓ einsetzen",
+                text: "Mit ✓ setzt du sie ein — oder du tippst dasselbe Feld "
+                    + "noch einmal an."
             }));
 
         } else if (beispiel.zug) {
@@ -1430,6 +1461,7 @@ const SCHACH_VORSCHAU = {
                 marken: [beispiel.zug[0]],
                 ziele: ziele,
                 tipp: beispiel.zug[0],
+                kurz: "Figur antippen",
                 text: "Du tippst die Figur auf " + name(beispiel.zug[0])
                     + " an — die Punkte zeigen, wohin sie darf."
             }));
@@ -1440,6 +1472,7 @@ const SCHACH_VORSCHAU = {
                 ziele: ziele,
                 tipp: beispiel.zug[1],
                 wege: [{ von: beispiel.zug[0], nach: beispiel.zug[1] }],
+                kurz: "Ziel antippen",
                 text: "Dann tippst du " + name(beispiel.zug[1]) + " an."
             }));
         }
@@ -1498,6 +1531,7 @@ const SCHACH_VORSCHAU = {
         if (beschreibung) {
             for (const schritt of liste) {
                 schritt.knopf = beschreibung.titel;
+                schritt.knopfArt = art;
             }
         }
 
@@ -1540,12 +1574,16 @@ const SCHACH_VORSCHAU = {
      * Zielwahl-Bild, denn dort ist der Knopf auch im Spiel zu sehen.
      */
     PLATZIER_KNOEPFE: {
-        mauer: "Mit dem Knopf unter dem Brett legst du sie waagerecht "
-            + "oder senkrecht.",
-        platztausch: "Der Knopf unter dem Brett wechselt die Richtung: "
+        mauer: "Mit ⟳ in der Leiste legst du sie waagerecht oder senkrecht.",
+        platztausch: "Mit ⟳ in der Leiste wechselst du die Richtung: "
             + "vor, zurück, links oder rechts.",
-        nudelholz: "Der Knopf unter dem Brett dreht, von welchem Rand "
-            + "es rollt."
+        nudelholz: "Mit ⟳ in der Leiste wählst du, von welchem Rand es rollt."
+    },
+
+    /* Wird diese Karte mit ✓ eingesetzt? Händler und Dieb nicht — sie
+       zeigen gleich ihr Angebot (seit v0.134.0). */
+    _mitHaekchen(beschreibung) {
+        return beschreibung.art !== "handel" && beschreibung.art !== "diebstahl";
     },
 
     /*
@@ -1575,35 +1613,30 @@ const SCHACH_VORSCHAU = {
                 + "erst wenn du zugreifst, ist er verbraucht.";
         }
 
-        const fenster = " Ein Fenster erklärt sie — mit „Einsetzen“ "
-            + "geht es los.";
-
+        /* Seit v0.130.0 kein Fenster mehr: Die Karte wird gross, ✓ setzt
+           ein (Karten mit Zielfeld: erst das Feld). */
         if (hatZiel) {
-            return fenster + " Danach fragt das Brett nach dem Feld.";
+            return " Das Brett zeigt dir die Felder, die gehen.";
         }
+        const haken = " Sie wird gross, daneben erscheint ✓.";
         if (beschreibung.istDerZug) {
-            return fenster + " Sie ist dann dein Zug: Du tippst sofort eine "
-                + "Figur an und dann ihr Ziel — nur das neue Muster geht.";
+            return haken + " Nach ✓ ist sie dein Zug: Du tippst eine Figur an "
+                + "und dann ihr Ziel — nur das neue Muster geht.";
         }
         if (beschreibung.nurImGegenzug) {
-            return fenster + " Das geht nur, während der Gegner am Zug ist — "
+            return haken + " Das geht nur, während der Gegner am Zug ist — "
                 + "bei deinem nächsten Zug tippst du Figur und Ziel wie "
                 + "gewohnt an.";
         }
         if (hatZug) {
-            return fenster + " Danach ziehst du deinen Zug ganz normal.";
+            return haken + " Nach ✓ ziehst du deinen Zug ganz normal.";
         }
-
-        /* Die Art "sofort" ist heute allein der Bauernschub — nur er kann
-           Bauern auf die letzte Reihe bringen, und dann fragt ihn ein
-           Fenster nach der Figur (seit v0.56). */
         if (beschreibung.art === "sofort") {
-            return fenster + " Bringt der Schub einen Bauern auf die letzte "
+            return haken + " Bringt der Schub einen Bauern auf die letzte "
                 + "Reihe, fragt dich zuerst ein Fenster, welche Figur er "
                 + "wird.";
         }
-
-        return fenster + " Mehr ist nicht zu tun — sie wirkt sofort.";
+        return haken + " Mehr ist nicht zu tun — sie wirkt sofort.";
     },
 
     /*
@@ -1768,7 +1801,18 @@ const SCHACH_VORSCHAU = {
              * und die Marke sprang mit jedem Takt ins Bild und wieder heraus.
              */
             knopf: roh.knopf || "",
+            knopfArt: roh.knopfArt || "",
             knopfTipp: !!roh.knopfTipp,
+
+            /* Seit v0.134.0: In diesem Bild tippt der Finger auf ✓ neben
+               der Karte — so setzt man seit v0.130.0 ein. */
+            okTipp: !!roh.okTipp,
+
+            /* Die EINE kurze Zeile, die im Film unter dem Bild steht (seit
+               v0.134.0, Nutzer: „weniger Text bis keinen"). Leer = kein
+               Text, das Bild spricht für sich. `text` bleibt für die ruhige
+               Ansicht und den Vorleser. */
+            kurz: roh.kurz || "",
 
             /* Welches Wirkungs-Schauspiel dieses Bild abspielt (seit v0.116)
                — die Fähigkeits-Kennung, oder leer. Gespielt wird dasselbe
