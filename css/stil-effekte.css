@@ -1577,7 +1577,16 @@ body.design-3d .grundlagen-figur {
     overflow: visible;
 }
 
+/* Die Kamera blickt schräg: eine Reihe ist im Bild um cos(Neigung)
+   flacher als breit. Das Gitter folgt dem Bild (seit v0.131.0), nicht
+   umgekehrt — sonst würden die Figuren gestaucht. */
+body.design-3d .vorschau.vorschau-3d,
+.vorschau.vorschau-3d {
+    row-gap: calc(4px * var(--vorschau-stauchung, 1));
+}
+
 .vorschau.vorschau-3d > .vorschau-feld {
+    aspect-ratio: 1 / var(--vorschau-stauchung, 1);
     background: transparent !important;
     box-shadow: none !important;
     z-index: 1;

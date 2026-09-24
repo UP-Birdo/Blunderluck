@@ -3,6 +3,16 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.131.0 — 24.09.2026
+
+**Die Figuren sind wieder matt, und die kleinen Bretter sehen aus wie das grosse.**
+
+- **Kein Glanz mehr:** Die Figuren haben wieder das matte Material der
+  alten gerenderten Bilder — auf dem Brett, in den Anleitungen und überall,
+  wo eine Figur als Bild steht.
+- **Anleitungen und kleine Bretter** blicken jetzt im selben Winkel auf das
+  Brett wie das Spiel, und die Figuren werden nicht mehr gestaucht.
+
 ## v0.130.0 — 24.09.2026
 
 **Fähigkeiten einsetzen ohne Lesen: Karte antippen, Feld, fertig.**

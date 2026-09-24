@@ -65,7 +65,10 @@ const THEMEN = {
 };
 
 const FIGUR_STILE = {
-    emaille:   { name: "Emaille",   weiss: "#f2ecdf", schwarz: "#2b2e35", rau: 0.46, metall: 0.0, lack: 0.35, lackRau: 0.22 },
+    /* Die Vorgabe trägt das Material der alten gerenderten Figuren
+       (tools\Figuren-Blender.py: Rauheit 0,60, Glanz 0,25, kein Lack) —
+       Nutzer 24.09.2026: „sollen genauso matt bleiben wie die alten". */
+    emaille:   { name: "Emaille",   weiss: "#f2ecdf", schwarz: "#2b2e35", rau: 0.6, metall: 0.0, lack: 0.0, lackRau: 0.5, glanz: 0.5 },
     porzellan: { name: "Porzellan", weiss: "#f6f4ef", schwarz: "#1f2228", rau: 0.26, metall: 0.0, lack: 0.8, lackRau: 0.08 },
     matt:      { name: "Matt",      weiss: "#ebe5d8", schwarz: "#35383f", rau: 0.85, metall: 0.0, lack: 0.0, lackRau: 0.5 },
     metall:    { name: "Metall",    weiss: "#d9dde3", schwarz: "#8a5a2b", rau: 0.32, metall: 0.9, lack: 0.2, lackRau: 0.2 }
@@ -319,7 +322,8 @@ function materialienBauen() {
 
     const figurMat = (hex) => new THREE.MeshPhysicalMaterial({
         color: farbe(hex), roughness: stil.rau, metalness: stil.metall,
-        clearcoat: stil.lack, clearcoatRoughness: stil.lackRau
+        clearcoat: stil.lack, clearcoatRoughness: stil.lackRau,
+        specularIntensity: stil.glanz === undefined ? 1 : stil.glanz
     });
     for (const alt of ["weiss", "schwarz"]) {
         if (m[alt]) m[alt].dispose();
@@ -2689,10 +2693,14 @@ function anbinden(halter, partie, person, animierenErlaubt) {
 
 const MINI = { renderer: null, cache: new Map(), warte: [] };
 const MINI_ZELLE = 64;          // Bildpunkte je Feld
-const MINI_NEIGUNG = THREE.MathUtils.degToRad(30);   // von der Senkrechten
 const MINI_UEBER = 0.8;         // Platz über der hintersten Reihe, in Zellen
 const MINI_FIGUR = 0.85;        // Figuren im kleinen Bild etwas kleiner
-const GITTER_OBEN = 0.38;       // so viel Zelle lässt das Gitter oben frei (stil-effekte.css)
+
+/* Derselbe Blickwinkel wie das grosse Brett (Nutzer 24.09.2026: „der
+   Blickwinkel ist anders"). Bis v0.130.0 fest 30 Grad. */
+function miniNeigung() {
+    return (BLICKE[Z.einst.blick] || BLICKE[VORGABE.blick]).winkel;
+}
 
 function miniRenderer() {
     if (MINI.renderer) return MINI.renderer;
@@ -2745,7 +2753,7 @@ function miniKamera(richtung, punkte, rand) {
 }
 
 function miniSignatur(b, draufsicht) {
-    const teile = [b.spalten, draufsicht ? "o" : "s", Z.einst.thema, Z.einst.figuren, Z.einst.kacheln];
+    const teile = [b.spalten, draufsicht ? "o" : "s", Z.einst.blick, Z.einst.thema, Z.einst.figuren, Z.einst.kacheln];
     for (const z of b.zellen) {
         const klassen = Array.from(z.k).filter((n) => n.startsWith("feld-") || n.startsWith("mauer-") || n.startsWith("kante-")).sort().join(".");
         const f = z.figur ? z.figur.farbe[0] + z.figur.art : "";
@@ -2851,7 +2859,8 @@ function miniRendern(b, draufsicht) {
      * die hohen Figuren der hintersten Reihe (`MINI_UEBER`).
      */
     const hx = spalten / 2, hz = reihen / 2;
-    const richtung = new THREE.Vector3(0, Math.cos(MINI_NEIGUNG), Math.sin(MINI_NEIGUNG));
+    const neigung = miniNeigung();
+    const richtung = new THREE.Vector3(0, Math.cos(neigung), Math.sin(neigung));
     const kamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 100);
     kamera.position.copy(richtung).multiplyScalar(30).add(new THREE.Vector3(0, oben, 0));
     kamera.lookAt(0, oben, 0);
@@ -2865,7 +2874,11 @@ function miniRendern(b, draufsicht) {
 
     const r = miniRenderer();
     const breite = Math.min(900, Math.round(spalten * MINI_ZELLE));
-    const hoehe = Math.round(breite / spalten * (reihen + MINI_UEBER));
+    /* UNVERZERRT: Das Bild bekommt genau das Seitenverhältnis, das die
+       Kamera sieht. Bis v0.130.0 wurde es auf quadratische Zellen gezogen —
+       die Figuren wirkten gestaucht (Nutzer 24.09.2026). Jetzt passt sich
+       umgekehrt das 2D-Gitter an (`--vorschau-stauchung`, stil-effekte.css). */
+    const hoehe = Math.round(breite / spalten * (reihen + MINI_UEBER) * zelleY);
     r.setSize(breite, hoehe, false);
     r.render(szene, kamera);
     const url = r.domElement.toDataURL("image/png");
@@ -2917,9 +2930,11 @@ function standbild(el) {
     }
     const bild = document.createElement("img");
     bild.className = "vorschau-3d-bild";
-    /* Das Gitter ist `reihen + GITTER_OBEN` Zellen hoch, das Bild
-       `reihen + MINI_UEBER` — es steht unten bündig und ragt oben hinaus. */
-    bild.style.height = ((b.reihen + MINI_UEBER) / (b.reihen + GITTER_OBEN) * 100).toFixed(2) + "%";
+    /* Volle Breite, Höhe aus dem Bild selbst; es steht unten bündig und
+       ragt oben hinaus. Das Gitter darunter staucht seine Zeilen um
+       denselben Faktor wie die Kamera, damit Hand und Pfeile ihr Feld
+       treffen. */
+    el.style.setProperty("--vorschau-stauchung", Math.cos(miniNeigung()).toFixed(4));
     bild.alt = "";
     bild.setAttribute("aria-hidden", "true");
     bild.src = url;
