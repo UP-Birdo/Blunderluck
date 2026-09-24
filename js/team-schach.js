@@ -218,6 +218,19 @@ const TEAM_SCHACH = {
      * gemeinsame Stand erfährt erst vom Einsatz, wenn er feststeht.
      */
     zielFaehigkeit: "",
+
+    /*
+     * DIE GEWÄHLTE KARTE OHNE ZIELFELD (seit v0.130.0). Der erste Tipp auf
+     * eine solche Karte wählt sie nur aus (sie steht dann gross in der
+     * Karten-Leiste, mit ✓ und ✕); der zweite Tipp oder ✓ setzt sie ein.
+     * Gilt nur für die Stellung, in der gewählt wurde (`handWahlZaehler`).
+     */
+    handWahl: "",
+    handWahlZaehler: -1,
+
+    /* Ein kurzer Hinweis über der Karten-Leiste, z. B. „Gerade kein Feld
+       frei" — statt eines Dialogs. { text, bis } oder null. */
+    handHinweis: null,
     zielFelder: [],
 
     /*
@@ -2274,52 +2287,7 @@ const TEAM_SCHACH = {
          * das schlösse jeder Tipp auf einen von ihnen zugleich das Menü.
          */
         if (meinTeam === farbe && laeuft && TEAM_SCHACH.eckMenueOffen) {
-            /*
-             * EIN Horcher je Knopf, der Aktion UND `stopPropagation`
-             * uebernimmt: Die Knoepfe liegen IM Kasten-Knopf — ohne das
-             * Stoppen schloesse jeder Tipp auf einen von ihnen zugleich
-             * das Menue. `_knopf` reicht das Ereignis als erstes Argument
-             * durch.
-             */
-            const mitStopp = (aktion) => (ereignis) => {
-                if (ereignis && ereignis.stopPropagation) {
-                    ereignis.stopPropagation();
-                }
-                aktion();
-            };
-
-            const zahnrad = TEAM_SCHACH._knopf("", "knopf-still knopf-klein eck-knopf",
-                mitStopp(() => TEAM_SCHACH.spielEinstellungenOeffnen()));
-            if (typeof START !== "undefined" && START._zahnradBauen) {
-                zahnrad.appendChild(START._zahnradBauen());
-            } else {
-                zahnrad.textContent = "E";
-            }
-            zahnrad.setAttribute("aria-label", "Einstellungen für diese Partie");
-            zahnrad.title = "Einstellungen für diese Partie";
-            lage.appendChild(zahnrad);
-
-            const verlauf = TEAM_SCHACH._knopf("", "knopf-still knopf-klein eck-knopf",
-                mitStopp(() => TEAM_SCHACH.zuegeOeffnen(partie)));
-            if (typeof START !== "undefined" && START._zugverlaufZeichenBauen) {
-                verlauf.appendChild(START._zugverlaufZeichenBauen());
-            } else {
-                verlauf.textContent = "Z";
-            }
-            verlauf.setAttribute("aria-label",
-                "Zugverlauf, " + partie.verlauf.length + " Züge");
-            verlauf.title = "Zugverlauf, " + partie.verlauf.length + " Züge";
-            lage.appendChild(verlauf);
-
-            if (namen.length > 1) {
-                const team = TEAM_SCHACH._knopf("+" + (namen.length - 1),
-                    "knopf-still knopf-klein eck-knopf",
-                    mitStopp(() => TEAM_SCHACH._teamKastenOeffnen(farbe, namen)));
-                team.setAttribute("aria-label",
-                    "Wer spielt auf dieser Seite? (" + namen.length + ")");
-                team.title = "Wer spielt auf dieser Seite?";
-                lage.appendChild(team);
-            }
+            TEAM_SCHACH._eckKnoepfeAnhaengen(lage, partie, farbe, namen);
         }
 
         zeile.appendChild(lage);
@@ -2394,6 +2362,12 @@ const TEAM_SCHACH = {
      * ausrichten. Die Zellen stehen in der Stildatei (`.seiten-reihe`).
      */
     _seitenReiheBauen(partie, person, farbe, obenAmBrett) {
+        /* Die eigene Seite unten ist seit v0.128.0 die Karten-Leiste. */
+        if (!obenAmBrett && partie.laeuft && !partie.ergebnis
+                && SCHACH_RUNDE.teamVon(partie, person.id) === farbe) {
+            return TEAM_SCHACH._handLeisteBauen(partie, person, farbe);
+        }
+
         const reihe = TEAM_SCHACH._element("div",
             "seiten-reihe seiten-reihe-" + (obenAmBrett ? "oben" : "unten"));
 
@@ -2422,6 +2396,418 @@ const TEAM_SCHACH = {
         }
 
         return reihe;
+    },
+
+    /*
+     * DIE KNÖPFE DES ECK-MENÜS — Einstellungen, Zugverlauf und bei mehreren
+     * Mitspielern „+N" für die Team-Liste. Seit v0.128.0 eine eigene
+     * Funktion: Sie hängen im eigenen Namens-Kasten (alter Weg) oder in der
+     * Karten-Leiste unten (`_handLeisteBauen`).
+     */
+    _eckKnoepfeAnhaengen(ziel, partie, farbe, namen) {
+        /*
+         * EIN Horcher je Knopf, der Aktion UND `stopPropagation`
+         * uebernimmt: Die Knoepfe liegen IM Kasten-Knopf — ohne das
+         * Stoppen schloesse jeder Tipp auf einen von ihnen zugleich
+         * das Menue. `_knopf` reicht das Ereignis als erstes Argument
+         * durch.
+         */
+        const mitStopp = (aktion) => (ereignis) => {
+            if (ereignis && ereignis.stopPropagation) {
+                ereignis.stopPropagation();
+            }
+            aktion();
+        };
+
+        const zahnrad = TEAM_SCHACH._knopf("", "knopf-still knopf-klein eck-knopf",
+            mitStopp(() => TEAM_SCHACH.spielEinstellungenOeffnen()));
+        if (typeof START !== "undefined" && START._zahnradBauen) {
+            zahnrad.appendChild(START._zahnradBauen());
+        } else {
+            zahnrad.textContent = "E";
+        }
+        zahnrad.setAttribute("aria-label", "Einstellungen für diese Partie");
+        zahnrad.title = "Einstellungen für diese Partie";
+        ziel.appendChild(zahnrad);
+
+        const verlauf = TEAM_SCHACH._knopf("", "knopf-still knopf-klein eck-knopf",
+            mitStopp(() => TEAM_SCHACH.zuegeOeffnen(partie)));
+        if (typeof START !== "undefined" && START._zugverlaufZeichenBauen) {
+            verlauf.appendChild(START._zugverlaufZeichenBauen());
+        } else {
+            verlauf.textContent = "Z";
+        }
+        verlauf.setAttribute("aria-label",
+            "Zugverlauf, " + partie.verlauf.length + " Züge");
+        verlauf.title = "Zugverlauf, " + partie.verlauf.length + " Züge";
+        ziel.appendChild(verlauf);
+
+        if (namen.length > 1) {
+            const team = TEAM_SCHACH._knopf("+" + (namen.length - 1),
+                "knopf-still knopf-klein eck-knopf",
+                mitStopp(() => TEAM_SCHACH._teamKastenOeffnen(farbe, namen)));
+            team.setAttribute("aria-label",
+                "Wer spielt auf dieser Seite? (" + namen.length + ")");
+            team.title = "Wer spielt auf dieser Seite?";
+            ziel.appendChild(team);
+        }
+    },
+
+    /*
+     * DIE KARTEN-LEISTE UNTEN (seit v0.128.0).
+     *
+     * NUTZER-ANSAGE 24.09.2026 (mit einem Bildschirmfoto aus Clash Royale):
+     * „im Spiel soll unten das Band mit deinem Profil verschwinden, nur noch
+     * oben das Profil des Gegners … so ähnlich will ich meine Fähigkeiten
+     * auch haben; der pinke Balken soll bei mir weg und ein Scroll-Balken
+     * werden, damit die Karten durchrotieren; die Grösse der Karten wie im
+     * Bild."
+     *
+     * DARUM STEHT HIER KEIN NAMENS-KASTEN MEHR, sondern:
+     *
+     *   [ Menü ]  [ Karte ][ Karte ][ Karte ][ Karte ]
+     *             [=========== Rollbalken ===========]
+     *
+     *   - Vier Karten gross nebeneinander; sind es mehr, rollt die Reihe
+     *     waagerecht und rastet je Karte ein. Leere Plätze stehen als
+     *     gestrichelte Umrisse da — man sieht, wohin Karten kommen.
+     *   - Der Balken darunter ist der Rollbalken (statt des Elixier-Balkens
+     *     im Vorbild): Der Griff zeigt, welcher Teil der Hand zu sehen ist;
+     *     ziehen oder tippen rollt die Reihe.
+     *   - Der runde Knopf links (die eigene Initiale im Ring der eigenen
+     *     Farbe) ist das Menü, das bisher hinter dem Namens-Kasten lag:
+     *     Einstellungen, Zugverlauf, Team-Liste (`_eckKnoepfeAnhaengen`).
+     *   - Wer am Zug ist, sah man bisher am blauen eigenen Kasten; jetzt
+     *     leuchtet die Leiste (`hand-leiste-amzug`).
+     *
+     * Nur für die EIGENE Seite in einer laufenden Partie. Zuschauer und das
+     * Ende der Partie behalten die alte Seiten-Zeile.
+     */
+    _handLeisteBauen(partie, person, farbe) {
+        const amZug = partie.stand.amZug === farbe;
+        const leiste = TEAM_SCHACH._element("div",
+            "hand-leiste" + (amZug ? " hand-leiste-amzug" : ""));
+        /* Klicks in der Leiste lassen das offene Menü in Ruhe
+           (`_eckMenueAussenklick` erkennt die Marke). */
+        leiste.dataset.eckKasten = "1";
+
+        const namen = partie.teams[farbe].map((id) => TEAM_SCHACH._nameVon(id));
+        const links = TEAM_SCHACH._element("div", "hand-links");
+
+        const menue = TEAM_SCHACH._knopf("", "hand-menue hand-menue-" + farbe,
+            () => TEAM_SCHACH.eckMenueUmschalten());
+        const eigenerName = (person && person.name) ? person.name : "?";
+        menue.appendChild(TEAM_SCHACH._element("span", "hand-menue-initiale",
+            eigenerName.charAt(0).toUpperCase()));
+        menue.setAttribute("aria-label", "Spiel-Menü");
+        menue.setAttribute("aria-expanded", TEAM_SCHACH.eckMenueOffen ? "true" : "false");
+        menue.title = "Spiel-Menü: Einstellungen, Zugverlauf";
+        links.appendChild(menue);
+
+        if (TEAM_SCHACH.eckMenueOffen) {
+            const liste = TEAM_SCHACH._element("div", "hand-menue-liste");
+            TEAM_SCHACH._eckKnoepfeAnhaengen(liste, partie, farbe, namen);
+            links.appendChild(liste);
+        }
+        leiste.appendChild(links);
+
+        /* Ein kurzer Hinweis (statt Dialog) schwebt über der Leiste. */
+        const hinweis = TEAM_SCHACH.handHinweis;
+        if (hinweis && hinweis.bis > Date.now()) {
+            leiste.appendChild(TEAM_SCHACH._element("span", "hand-hinweis", hinweis.text));
+        }
+
+        /* Läuft gerade eine Karte (Zielwahl, gewählt, laufender Sprung),
+           zeigt die Leiste nur sie und ihre Knöpfe (seit v0.130.0). */
+        const aktiv = TEAM_SCHACH._handAktivBauen(partie, person, farbe);
+        if (aktiv) {
+            leiste.className += " hand-leiste-aktiv";
+            leiste.appendChild(aktiv);
+            return leiste;
+        }
+
+        const koennen = TEAM_SCHACH._faehigkeitReiheBauen(partie, person, farbe);
+        if (!koennen) {
+            /* Fähigkeiten aus: nur der Menü-Knopf, ohne leere Plätze. */
+            leiste.className += " hand-leiste-ohne-karten";
+            return leiste;
+        }
+
+        const mitte = TEAM_SCHACH._element("div", "hand-mitte");
+        koennen.className += " hand-karten";
+
+        /* Leere Plätze bis vier — aber nicht, solange eine Fähigkeit auf
+           ihr Ziel wartet (dann steht dort der Satz mit „Abbrechen"). */
+        const wartet = String(koennen.className).indexOf("faehigkeit-reihe-ziel") !== -1;
+        if (!wartet) {
+            const karten = (koennen.children || koennen.kinder || []).length;
+            for (let platz = karten; platz < 4; platz++) {
+                koennen.appendChild(TEAM_SCHACH._element("span", "hand-platz"));
+            }
+        }
+        mitte.appendChild(koennen);
+
+        const balken = TEAM_SCHACH._element("div", "hand-rollbalken");
+        const griff = TEAM_SCHACH._element("span", "hand-rollbalken-griff");
+        balken.appendChild(griff);
+        if (!wartet) {
+            mitte.appendChild(balken);
+            TEAM_SCHACH._handRollenAnbinden(koennen, balken, griff);
+        }
+        leiste.appendChild(mitte);
+        return leiste;
+    },
+
+    /*
+     * Gibt es unten die Karten-Leiste? Dann entfallen die Platzier- und die
+     * Zugmuster-Karte unter dem Brett — ihre Knöpfe stehen in der Leiste.
+     */
+    _mitHandLeiste(partie, person) {
+        return !!person && !!partie.laeuft && !partie.ergebnis
+            && !!SCHACH_RUNDE.teamVon(partie, person.id);
+    },
+
+    _handHinweisZeigen(text) {
+        TEAM_SCHACH.handHinweis = { text: text, bis: Date.now() + 2200 };
+        TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
+        if (typeof setTimeout === "function") {
+            setTimeout(() => {
+                if (TEAM_SCHACH.handHinweis && TEAM_SCHACH.handHinweis.bis <= Date.now()) {
+                    TEAM_SCHACH.handHinweis = null;
+                    TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
+                }
+            }, 2300);
+        }
+    },
+
+    /*
+     * DIE LAUFENDE KARTE IN DER LEISTE (seit v0.130.0).
+     *
+     *   [ Karte ]  Titel            [?] [⟳] [✕] [✓]
+     *              kurzer Hinweis · Kosten-Schild
+     *
+     * Drei Lagen, in dieser Reihenfolge gefragt:
+     *   muster  Sprung/Teleport sind eingesetzt und SIND der Zug — ✕ nimmt
+     *           sie im Modell zurück (`zugmusterVerwerfen`).
+     *   ziel    Die Fähigkeit wartet auf ihr Feld — ✓ erst, wenn der grüne
+     *           Rahmen steht (`zielBestaetigen`), ⟳ bei Mauer, Platztausch,
+     *           Nudelholz.
+     *   wahl    Eine Karte ohne Zielfeld ist gewählt — ✓ setzt sie ein.
+     * Sonst null: Die Leiste zeigt die Hand.
+     */
+    _handAktivBauen(partie, person, farbe) {
+        let lage = "";
+        let art = "";
+
+        const muster = SCHACH_RUNDE.darfZiehen(partie, person.id)
+            ? SCHACH_RUNDE.laufendesZugmuster(partie, farbe) : "";
+        if (muster) {
+            lage = "muster";
+            art = muster;
+        } else if (TEAM_SCHACH.zielFaehigkeit
+                && SCHACH_RUNDE.darfEinsetzen(partie, person.id, TEAM_SCHACH.zielFaehigkeit)) {
+            lage = "ziel";
+            art = TEAM_SCHACH.zielFaehigkeit;
+        } else if (TEAM_SCHACH.handWahl
+                && TEAM_SCHACH.handWahlZaehler === partie.zugZaehler
+                && SCHACH_RUNDE.darfEinsetzen(partie, person.id, TEAM_SCHACH.handWahl)) {
+            lage = "wahl";
+            art = TEAM_SCHACH.handWahl;
+        }
+        if (!lage) {
+            return null;
+        }
+
+        const beschreibung = SCHACH_VARIANTEN.FAEHIGKEITEN[art] || {};
+        const stufe = SCHACH_VARIANTEN.stufeVon(art);
+        const box = TEAM_SCHACH._element("div", "hand-aktiv hand-aktiv-" + lage);
+
+        /* Die Karte selbst, gross — ein Tipp auf sie bricht ab. */
+        const karte = TEAM_SCHACH._knopf("", "hand-aktiv-karte",
+            () => (lage === "muster")
+                ? TEAM_SCHACH.zugmusterVerwerfen(partie)
+                : TEAM_SCHACH.handAbbrechen());
+        karte.style.setProperty("--stufe-farbe", stufe.farbe);
+        karte.setAttribute("aria-label", SCHACH_VARIANTEN.faehigkeitTitel(art) + " — abbrechen");
+        const bild = (typeof FAEHIGKEIT_ZEICHEN !== "undefined") ? FAEHIGKEIT_ZEICHEN.bauen(art) : null;
+        if (bild) {
+            karte.appendChild(bild);
+        } else {
+            karte.textContent = SCHACH_VARIANTEN.faehigkeitTitel(art).charAt(0);
+        }
+        box.appendChild(karte);
+
+        /* Titel, darunter EIN kurzer Hinweis und das Kosten-Schild. */
+        const text = TEAM_SCHACH._element("div", "hand-aktiv-text");
+        text.appendChild(TEAM_SCHACH._element("span", "hand-aktiv-titel",
+            SCHACH_VARIANTEN.faehigkeitTitel(art)));
+
+        let tipp = "";
+        if (lage === "muster") {
+            tipp = "Figur, dann Ziel";
+        } else if (lage === "ziel") {
+            if (TEAM_SCHACH.zielVorschau >= 0) {
+                tipp = "Hier einsetzen?";
+            } else {
+                tipp = "Feld wählen";
+            }
+        } else {
+            tipp = "Einsetzen?";
+        }
+        text.appendChild(TEAM_SCHACH._element("span", "hand-aktiv-tipp", tipp));
+
+        let kosten = "";
+        if (lage !== "muster") {
+            if (SCHACH_RUNDE.behaeltZug(partie, farbe, art)) {
+                kosten = "Zug bleibt";
+            } else if (beschreibung.istDerZug) {
+                kosten = "ist dein Zug";
+            } else if (beschreibung.beendetZug) {
+                kosten = "kostet den Zug";
+            } else {
+                kosten = "im Gegenzug";
+            }
+            text.appendChild(TEAM_SCHACH._element("span",
+                "hand-aktiv-kosten" + ((kosten === "Zug bleibt") ? " hand-aktiv-kosten-gut" : ""),
+                kosten));
+        }
+        box.appendChild(text);
+
+        /* Die runden Knöpfe. */
+        const knoepfe = TEAM_SCHACH._element("div", "hand-aktiv-knoepfe");
+        if (lage !== "muster") {
+            knoepfe.appendChild(TEAM_SCHACH._symbolKnopf("frage", "Anleitung",
+                "hand-rund hand-rund-still",
+                () => TEAM_SCHACH.faehigkeitAnsehen(art)));
+        }
+        if (lage === "ziel") {
+            const drehen = {
+                mauer: () => TEAM_SCHACH.drehenMauer(partie),
+                platztausch: () => TEAM_SCHACH.schaltenTausch(partie),
+                nudelholz: () => TEAM_SCHACH.drehenNudelholz(partie)
+            }[art];
+            if (drehen) {
+                knoepfe.appendChild(TEAM_SCHACH._symbolKnopf("drehen", "Drehen",
+                    "hand-rund hand-rund-still", drehen));
+            }
+        }
+        knoepfe.appendChild(TEAM_SCHACH._symbolKnopf("kreuz", "Abbrechen",
+            "hand-rund hand-rund-weg",
+            () => (lage === "muster")
+                ? TEAM_SCHACH.zugmusterVerwerfen(partie)
+                : TEAM_SCHACH.handAbbrechen()));
+        if (lage !== "muster") {
+            const bereit = (lage === "wahl") || TEAM_SCHACH.zielVorschau >= 0;
+            const ja = TEAM_SCHACH._symbolKnopf("haken", "Einsetzen",
+                "hand-rund hand-rund-ja",
+                () => (lage === "ziel")
+                    ? TEAM_SCHACH.zielBestaetigen(partie)
+                    : TEAM_SCHACH.faehigkeitEinsetzen(partie, art));
+            ja.disabled = !bereit;
+            knoepfe.appendChild(ja);
+        }
+        box.appendChild(knoepfe);
+        return box;
+    },
+
+    handAbbrechen() {
+        TEAM_SCHACH._auswahlAufheben();
+        TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
+    },
+
+    /* Ein runder Knopf mit gezeichnetem Zeichen (keine Emojis, Haus-Regel);
+       der Name steht für Vorleser im `aria-label`. */
+    _symbolKnopf(zeichen, name, klasse, aktion) {
+        const knopf = TEAM_SCHACH._knopf("", klasse, aktion);
+        knopf.setAttribute("aria-label", name);
+        knopf.title = name;
+        const pfade = {
+            haken: ["M5 12.5 L10 17.5 L19.5 7"],
+            kreuz: ["M6.5 6.5 L17.5 17.5", "M17.5 6.5 L6.5 17.5"],
+            drehen: ["M19.5 12 A7.5 7.5 0 1 1 16.8 6.2", "M19.5 3.5 V8.5 H14.5"],
+            frage: ["M9.2 9.2 A2.9 2.9 0 1 1 13.4 11.8 C12.5 12.3 12 12.9 12 14", "M12 17.6 L12 17.8"]
+        }[zeichen] || [];
+        if (typeof document !== "undefined" && document.createElementNS) {
+            const ns = "http://www.w3.org/2000/svg";
+            const svg = document.createElementNS(ns, "svg");
+            svg.setAttribute("viewBox", "0 0 24 24");
+            svg.setAttribute("aria-hidden", "true");
+            for (const d of pfade) {
+                const pfad = document.createElementNS(ns, "path");
+                pfad.setAttribute("d", d);
+                pfad.setAttribute("fill", "none");
+                pfad.setAttribute("stroke", "currentColor");
+                pfad.setAttribute("stroke-width", "2.6");
+                pfad.setAttribute("stroke-linecap", "round");
+                pfad.setAttribute("stroke-linejoin", "round");
+                svg.appendChild(pfad);
+            }
+            knopf.appendChild(svg);
+        }
+        return knopf;
+    },
+
+    /*
+     * Wo die Hand zuletzt stand — der Bildschirm baut sich bei jedem
+     * Abgleich neu, und ohne das Merken spränge die Reihe jedes Mal an den
+     * Anfang zurück.
+     */
+    _handRollen: 0,
+
+    _handRollenAnbinden(reihe, balken, griff) {
+        if (typeof reihe.addEventListener !== "function"
+                || typeof window === "undefined"
+                || typeof requestAnimationFrame !== "function") {
+            return;
+        }
+
+        const griffSetzen = () => {
+            const ganz = reihe.scrollWidth || 1;
+            const sicht = reihe.clientWidth || ganz;
+            const anteil = Math.min(1, sicht / ganz);
+            const weg = ganz - sicht;
+            const lage = weg > 0 ? reihe.scrollLeft / weg : 0;
+            griff.style.width = (anteil * 100) + "%";
+            griff.style.left = (lage * (1 - anteil) * 100) + "%";
+            balken.classList.toggle("hand-rollbalken-voll", anteil >= 0.999);
+        };
+
+        reihe.addEventListener("scroll", () => {
+            TEAM_SCHACH._handRollen = reihe.scrollLeft;
+            griffSetzen();
+        }, { passive: true });
+
+        /* Tippen oder Ziehen auf dem Balken rollt die Reihe dorthin: die
+           Mitte des Griffs folgt dem Finger. */
+        const rollenNach = (clientX) => {
+            const rahmen = balken.getBoundingClientRect();
+            const anteil = Math.min(1, reihe.clientWidth / (reihe.scrollWidth || 1));
+            const x = (clientX - rahmen.left) / rahmen.width - anteil / 2;
+            const lage = Math.max(0, Math.min(1, x / Math.max(0.0001, 1 - anteil)));
+            reihe.scrollLeft = lage * (reihe.scrollWidth - reihe.clientWidth);
+        };
+        balken.addEventListener("pointerdown", (ereignis) => {
+            ereignis.preventDefault();
+            if (balken.setPointerCapture) balken.setPointerCapture(ereignis.pointerId);
+            reihe.style.scrollSnapType = "none";
+            rollenNach(ereignis.clientX);
+            const ziehen = (e) => rollenNach(e.clientX);
+            const los = () => {
+                reihe.style.scrollSnapType = "";
+                balken.removeEventListener("pointermove", ziehen);
+                balken.removeEventListener("pointerup", los);
+                balken.removeEventListener("pointercancel", los);
+            };
+            balken.addEventListener("pointermove", ziehen);
+            balken.addEventListener("pointerup", los);
+            balken.addEventListener("pointercancel", los);
+        });
+
+        /* Erst im Dokument hat die Reihe Masse. */
+        requestAnimationFrame(() => {
+            reihe.scrollLeft = TEAM_SCHACH._handRollen;
+            griffSetzen();
+        });
     },
 
     /*
@@ -3099,6 +3485,7 @@ const TEAM_SCHACH = {
         TEAM_SCHACH.gewaehltesFeld = -1;
         TEAM_SCHACH.moeglicheZiele = [];
         TEAM_SCHACH.zielFaehigkeit = "";
+        TEAM_SCHACH.handWahl = "";
         TEAM_SCHACH.zielFelder = [];
         TEAM_SCHACH.zielVorschau = -1;
         TEAM_SCHACH.zielUmriss = [];
@@ -3199,10 +3586,18 @@ const TEAM_SCHACH = {
 
         /* Wie beim Drehen der Mauer: Der bisherige Vorschau-Platz passt meist
            nicht mehr, und die Liste der möglichen Felder wird neu gerechnet. */
+        const warGesetzt = TEAM_SCHACH.zielVorschau;
         TEAM_SCHACH.zielVorschau = -1;
         TEAM_SCHACH.zielUmriss = [];
         TEAM_SCHACH.zielFelder = SCHACH_RUNDE.zielFelder(
             partie, person.id, "platztausch", TEAM_SCHACH.tauschRichtung);
+
+        /* Passt das gewählte Feld gedreht noch, bleibt es gewählt (seit
+           v0.130.0): In der Karten-Leiste wählt man erst das Feld und dreht
+           dann — sonst wäre ✓ nach jedem Drehen wieder gesperrt. */
+        if (warGesetzt >= 0 && TEAM_SCHACH.zielFelder.indexOf(warGesetzt) !== -1) {
+            TEAM_SCHACH.vorschauSetzen(partie, person, warGesetzt);
+        }
 
         TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
     },
@@ -3239,10 +3634,18 @@ const TEAM_SCHACH = {
         TEAM_SCHACH.mauerRichtung =
             (TEAM_SCHACH.mauerRichtung === "senkrecht") ? "waagerecht" : "senkrecht";
 
+        const warGesetzt = TEAM_SCHACH.zielVorschau;
         TEAM_SCHACH.zielVorschau = -1;
         TEAM_SCHACH.zielUmriss = [];
         TEAM_SCHACH.zielFelder = SCHACH_RUNDE.zielFelder(
             partie, person.id, "mauer", TEAM_SCHACH.mauerRichtung);
+
+        /* Passt das gewählte Feld gedreht noch, bleibt es gewählt (seit
+           v0.130.0): In der Karten-Leiste wählt man erst das Feld und dreht
+           dann — sonst wäre ✓ nach jedem Drehen wieder gesperrt. */
+        if (warGesetzt >= 0 && TEAM_SCHACH.zielFelder.indexOf(warGesetzt) !== -1) {
+            TEAM_SCHACH.vorschauSetzen(partie, person, warGesetzt);
+        }
 
         TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
     },
@@ -4886,8 +5289,31 @@ const TEAM_SCHACH = {
          * Rückfrage wäre auch ein zweites Ergebnis, wenn inzwischen jemand
          * gezogen hat.
          */
+        /*
+         * EINSETZEN OHNE RÜCKFRAGE (seit v0.130.0, Nutzer-Auftrag 24.09.2026:
+         * „Fähigkeiten mit wenig Text einfach und intuitiv nutzbar machen").
+         *
+         * Bis v0.129.0 kam nach dem Tipp ein Dialog mit Kurztext, Kosten-Satz
+         * und Bildanleitung, dann die Platzier-Leiste mit zwei Sätzen unter
+         * dem Brett. Jetzt:
+         *
+         *   - MIT Zielfeld: Der Tipp schaltet sofort in die Zielwahl, das Brett
+         *     zeigt die Felder, die Karten-Leiste zeigt die Karte mit ✓ / ✕
+         *     (und ⟳ zum Drehen). Nochmal auf die Karte = abbrechen.
+         *   - OHNE Zielfeld: Der erste Tipp wählt die Karte (gross in der
+         *     Leiste, Kosten als kleines Schild), der zweite Tipp oder ✓
+         *     setzt ein. Ein versehentlicher Tipp kostet also nichts.
+         *
+         * Die Anleitung steht hinter „?" in der Leiste; Händler und Dieb
+         * zeigen weiter ihr Angebot (dort IST der Text die Information).
+         */
         let felder = null;
         if (beschreibung.art === "ziel") {
+            if (TEAM_SCHACH.zielFaehigkeit === art) {
+                TEAM_SCHACH.zielVerwerfen();
+                return;
+            }
+
             /* Das Nudelholz beginnt immer an der EIGENEN Seite (v0.117) —
                von dort rollt es von einem weg, wie man es kennt. Gedreht
                wird danach mit dem Knopf am Brett. */
@@ -4901,45 +5327,13 @@ const TEAM_SCHACH = {
                 TEAM_SCHACH._zusatzWahl(art));
 
             if (felder.length === 0) {
-                await DIALOG.hinweis("Kein Ziel möglich",
-                    "Für " + SCHACH_VARIANTEN.faehigkeitTitel(art)
-                        + " gibt es auf diesem Brett gerade kein gültiges Feld. "
-                        + "Die Fähigkeit bleibt dir erhalten.");
+                TEAM_SCHACH._handHinweisZeigen("Gerade kein Feld frei");
                 return;
             }
         }
 
-        /* Dieselbe Frage wie beim Pluszeichen am Vorrat, dieselbe Antwort —
-           sie kommt aus dem Modell (SCHACH_RUNDE.behaeltZug). */
-        const meineFarbe = SCHACH_RUNDE.teamVon(partie, person.id);
-        const behaeltZug = SCHACH_RUNDE.behaeltZug(partie, meineFarbe, art);
-
-        const ja = await DIALOG.frage(
-            SCHACH_VARIANTEN.faehigkeitTitel(art) + " einsetzen?",
-            SCHACH_VARIANTEN.faehigkeitKurz(art)
-                + "\n\nSie ist danach verbraucht."
-                + (behaeltZug
-                    ? " Dein normaler Zug bleibt dir."
-                    : (beschreibung.istDerZug
-                        ? " Sie IST dein Zug: Gleich danach tippst du deine Figur "
-                            + "und ihr Ziel an — etwas anderes geht dann nicht mehr."
-                        : (beschreibung.beendetZug
-                            ? " Und sie kostet den ganzen Zug: Danach ist der Gegner dran."
-                            : " Einen Zug bekommst du dadurch nicht — du bist gerade "
-                                + "nicht dran."))),
-            "Einsetzen",
-            false,
-            /* Bilder statt eines langen Satzes: was die Fähigkeit tut, sieht
-               man schneller, als man es liest. Der ganze Text steht seit v0.94
-               im Aufklapper DARUNTER — vorher stand er darüber und schob die
-               Bilder aus dem Bild. */
-            TEAM_SCHACH._anleitungMitBeschreibung(art)
-        );
-        if (!ja) {
-            return;
-        }
-
         if (beschreibung.art === "ziel") {
+            TEAM_SCHACH._auswahlAufheben();
             TEAM_SCHACH.gewaehltesFeld = -1;
             TEAM_SCHACH.moeglicheZiele = [];
             TEAM_SCHACH.zielFaehigkeit = art;
@@ -4952,6 +5346,17 @@ const TEAM_SCHACH = {
             TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
             return;
         }
+
+        /* Ohne Zielfeld: erst wählen, dann (zweiter Tipp oder ✓) einsetzen. */
+        if (TEAM_SCHACH.handWahl !== art
+                || TEAM_SCHACH.handWahlZaehler !== partie.zugZaehler) {
+            TEAM_SCHACH._auswahlAufheben();
+            TEAM_SCHACH.handWahl = art;
+            TEAM_SCHACH.handWahlZaehler = partie.zugZaehler;
+            TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
+            return;
+        }
+        TEAM_SCHACH.handWahl = "";
 
         /*
          * DER BAUERNSCHUB FRAGT NACH DER FIGUR (seit v0.56).

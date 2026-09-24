@@ -4056,15 +4056,16 @@ pruefe("In der eigenen laufenden Partie fuehrt nichts an ihr vorbei (F10)", () =
 
     /*
      * DAS AUFGEBEN STEHT HINTER DEN EINSTELLUNGEN (v0.48.0), die seit
-     * v0.80.0 im Menue hinter dem eigenen Namens-Kasten liegen. Geprueft
-     * wird der ganze Weg — sonst bliebe der Test gruen, wenn das Aufgeben
-     * ganz verschwaende: Kasten antippen, Menue auf, Einstellungen.
+     * v0.128.0 im Menue hinter dem runden Knopf der Karten-Leiste liegen
+     * (davor hinter dem eigenen Namens-Kasten). Geprueft wird der ganze
+     * Weg — sonst bliebe der Test gruen, wenn das Aufgeben ganz
+     * verschwaende: Knopf antippen, Menue auf, Einstellungen.
      */
     const kasten = einsammeln(TEAM_SCHACH.wurzelEl, (kind) =>
-        String(kind.className || "").indexOf("spieler-zeile-tippbar") !== -1
-        && String(kind.attribute["role"] || "") === "button", [])[0];
+        String(kind.className || "").indexOf("hand-menue") !== -1
+        && kind.tagName === "button", [])[0];
     if (!kasten) {
-        throw new Error("kein antippbarer Namens-Kasten in der laufenden Partie");
+        throw new Error("kein Menue-Knopf in der Karten-Leiste der laufenden Partie");
     }
 
     kasten.ausloesen("click");
@@ -4073,7 +4074,7 @@ pruefe("In der eigenen laufenden Partie fuehrt nichts an ihr vorbei (F10)", () =
         && String((kind.attribute || {})["aria-label"] || "")
             .indexOf("Einstellungen") !== -1, [])[0];
     if (!einstellungen) {
-        throw new Error("hinter dem Namens-Kasten fehlen die Einstellungen");
+        throw new Error("hinter dem Menue-Knopf fehlen die Einstellungen");
     }
 
     einstellungen.ausloesen("click");

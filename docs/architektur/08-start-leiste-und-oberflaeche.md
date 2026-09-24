@@ -366,6 +366,26 @@ vom Profil. Gebaut auf der Spieler-Profilseite der Rangliste
   mit Zusammenführung). `gezeigteAbzeichen` zeigt nur, was gewählt UND
   verdient ist — schrumpft die Chronik, steht nichts Erlogenes da.
 
+## Die Karten-Leiste unten (seit v0.128.0)
+
+**Nutzer-Ansage 24.09.2026** (mit Bildschirmfoto aus Clash Royale): unten kein
+eigener Namens-Kasten mehr, oben nur der Gegner; die Fähigkeiten als grosse
+Karten wie im Vorbild, statt des pinken Balkens ein Rollbalken, „damit die
+Karten durchrotieren".
+
+`TEAM_SCHACH._handLeisteBauen` ersetzt für die EIGENE Seite in einer
+laufenden Partie die untere Seiten-Zeile (Zuschauer und beendete Partien
+behalten sie). Aufbau: runder Menü-Knopf links (Initiale im Ring der eigenen
+Farbe; öffnet über sich `_eckKnoepfeAnhaengen` — Einstellungen, Zugverlauf,
+Team-Liste), rechts die Kartenreihe aus `_faehigkeitReiheBauen` als
+waagerechter Rollbereich mit Einrasten (vier Karten füllen die Breite,
+leere Plätze als `.hand-platz`), darunter `.hand-rollbalken`: Griffbreite =
+sichtbarer Anteil, Tippen/Ziehen rollt (`_handRollenAnbinden`). Die Lage
+merkt `TEAM_SCHACH._handRollen`, weil der Bildschirm bei jedem Abgleich neu
+gebaut wird. Am Zug leuchtet der obere Rand (`hand-leiste-amzug`) — das war
+vorher der blaue eigene Kasten. Seitdem füllt der Tab-Bereich im Spiel die
+Höhe (`.tab-bereich-zeigt:not([hidden])`), die Leiste steht am Fuss.
+
 ## Das Brett in echtem 3D (seit v0.122.0)
 
 **Auftrag (Nutzer, 24.09.2026):** das Brett nachbauen, die Lootboxen als echte

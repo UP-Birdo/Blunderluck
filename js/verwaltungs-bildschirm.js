@@ -95,6 +95,40 @@ const VERWALTUNGS_BILDSCHIRM = {
 
         karte.appendChild(VERWALTUNGS_BILDSCHIRM._tabelleBauen());
 
+        /*
+         * BRETT-ANPASSUNG (seit v0.129.0, Nutzer-Ansage 24.09.2026): Farben,
+         * Figuren und Blick des 3D-Bretts stellt nur der Admin um. Der
+         * Schalter blendet am Brett den Paletten-Knopf ein oder aus — auf
+         * diesem Gerät, solange die Verwaltung offen ist.
+         */
+        const anpassung = document.createElement("section");
+        anpassung.className = "karte";
+        const anpassungKopf = document.createElement("h2");
+        anpassungKopf.textContent = "Brett-Anpassung";
+        anpassung.appendChild(anpassungKopf);
+        const an = (typeof ICH.anpassungAn === "function") && ICH.anpassungAn();
+        const anpassungText = document.createElement("p");
+        anpassungText.className = "erklaerung";
+        anpassungText.textContent = an
+            ? "An: Am Brett steht der Paletten-Knopf für Farben, Figuren und Blick."
+            : "Aus: Am Brett gibt es keinen Paletten-Knopf.";
+        anpassung.appendChild(anpassungText);
+        const schalter = VERWALTUNGS_BILDSCHIRM._knopf(
+            an ? "Ausschalten" : "Einschalten",
+            an ? "knopf-still knopf-klein" : "knopf-haupt knopf-klein",
+            () => {
+                if (typeof ICH.anpassungSetzen === "function") {
+                    ICH.anpassungSetzen(!an);
+                }
+                VERWALTUNGS_BILDSCHIRM._zeichnen();
+            });
+        schalter.setAttribute("aria-pressed", an ? "true" : "false");
+        const anpassungFuss = document.createElement("div");
+        anpassungFuss.className = "karte-fuss";
+        anpassungFuss.appendChild(schalter);
+        anpassung.appendChild(anpassungFuss);
+        wurzel.appendChild(anpassung);
+
         /* Die Freischaltung sichtbar wieder schliessen — vorher tat das der
            Umschalt-Knopf in den Einstellungen. */
         const fuss = document.createElement("div");

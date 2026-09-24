@@ -1002,12 +1002,16 @@ Object.assign(TEAM_SCHACH, {
          * folgt, ist etwas anderes als eine, die der Gegner auslöst.
          */
 
-        const platzieren = TEAM_SCHACH._platzierenBauen(partie, person);
+        /* Mit der Karten-Leiste (seit v0.130.0) stehen Einsetzen, Drehen und
+           Abbrechen dort — die zwei Text-Karten unter dem Brett entfallen. */
+        const mitLeiste = TEAM_SCHACH._mitHandLeiste(partie, person);
+
+        const platzieren = mitLeiste ? null : TEAM_SCHACH._platzierenBauen(partie, person);
         if (platzieren) {
             halter.appendChild(platzieren);
         }
 
-        const zugmuster = TEAM_SCHACH._zugmusterBauen(partie, person);
+        const zugmuster = mitLeiste ? null : TEAM_SCHACH._zugmusterBauen(partie, person);
         if (zugmuster) {
             halter.appendChild(zugmuster);
         }

@@ -183,6 +183,9 @@ function einstellungenLaden() {
     } catch (fehler) {
         gespeichert = {};
     }
+    /* Ohne Admin-Freigabe gilt die Vorgabe — auch wenn auf diesem Gerät
+       noch ein älteres eigenes Aussehen gespeichert ist (seit v0.129.0). */
+    if (!anpassungErlaubt()) gespeichert = {};
     const einst = Object.assign({}, VORGABE, gespeichert);
     if (!THEMEN[einst.thema]) einst.thema = VORGABE.thema;
     if (!FIGUR_STILE[einst.figuren]) einst.figuren = VORGABE.figuren;
@@ -267,7 +270,17 @@ function aufbauen() {
     Z.kamera = new THREE.PerspectiveCamera(24, 1, 0.1, 200);
     Z.kamera.position.set(0, 10, 10);
 
+    /*
+     * DAS BRETT LÄSST SICH NICHT MEHR DREHEN ODER ZOOMEN (v0.129.0,
+     * Nutzer-Ansage 24.09.2026: „das raus, wo man die Karte im Spiel selbst
+     * drehen kann — komplett raus"). Die Steuerung bleibt als Objekt, weil
+     * `blickSetzen` Ziel und Abstand über sie führt, nimmt aber keine
+     * Eingaben mehr an. Nebenwirkung, und der eigentliche Gewinn: Ein Tipp
+     * kann nicht mehr als Drehen missverstanden werden (siehe
+     * `bedienungAnmelden`).
+     */
     const steuerung = new OrbitControls(Z.kamera, Z.leinwand);
+    steuerung.enabled = false;
     steuerung.enablePan = false;
     steuerung.enableDamping = true;
     steuerung.dampingFactor = 0.12;
@@ -2302,30 +2315,26 @@ function bedienungAnmelden() {
     const lw = Z.leinwand;
     const strahl = new THREE.Raycaster();
     const zeiger = new THREE.Vector2();
-    let unten = null;
-    let letzterTipp = 0;
 
+    /*
+     * DER TIPP ZÄHLT BEIM AUFSETZEN (seit v0.129.0).
+     *
+     * Nutzer-Meldung 24.09.2026: „riesen Probleme mit der Zeit, wo ich was
+     * drücke". Gemessen: Tipp plus Neuzeichnen kosten 3 bis 4 ms — daran lag
+     * es nicht. Es lag an der Unterscheidung Tippen/Drehen: Gezählt wurde
+     * erst beim Loslassen, und nur, wenn der Finger weniger als 8 px
+     * gewandert und keine 0,6 s lang gelegen hatte. Am Handy wandert ein
+     * Finger beim Tippen oft mehr — dann drehte sich das Brett ein Stück,
+     * und der Tipp verfiel. Seit das Drehen weg ist, gibt es nichts mehr zu
+     * unterscheiden: Das Feld reagiert, sobald der Finger aufsetzt.
+     */
     lw.addEventListener("pointerdown", (e) => {
-        unten = { x: e.clientX, y: e.clientY, zeit: performance.now(), id: e.pointerId };
-    });
-    lw.addEventListener("pointerup", (e) => {
-        if (!unten || unten.id !== e.pointerId) return;
-        const weg = Math.hypot(e.clientX - unten.x, e.clientY - unten.y);
-        const lang = performance.now() - unten.zeit;
-        unten = null;
-        if (weg > 8 || lang > 600) return;
-        const jetzt = performance.now();
+        if (e.button !== undefined && e.button !== 0) return;
         const r = lw.getBoundingClientRect();
         zeiger.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
         strahl.setFromCamera(zeiger, Z.kamera);
         const index = feldUnterStrahl(strahl);
-        if (index === null) {
-            /* Doppeltipp neben das Brett: Blick zurücksetzen. */
-            if (jetzt - letzterTipp < 350) blickSetzen(true);
-            letzterTipp = jetzt;
-            return;
-        }
-        letzterTipp = 0;
+        if (index === null) return;
         const knopf = Z.knoepfe[index];
         if (knopf && !knopf.disabled) knopf.click();
     });
@@ -2377,14 +2386,6 @@ function knopfLeisteBauen() {
     const leiste = document.createElement("div");
     leiste.className = "brett-3d-leiste";
 
-    const blickKnopf = document.createElement("button");
-    blickKnopf.type = "button";
-    blickKnopf.className = "brett-3d-knopf";
-    blickKnopf.title = "Blick zurücksetzen";
-    blickKnopf.setAttribute("aria-label", "Blick zurücksetzen");
-    blickKnopf.appendChild(zeichen([["path", { d: "M3 12a9 9 0 1 0 3-6.7" }], ["path", { d: "M3 4v5h5" }]]));
-    blickKnopf.addEventListener("click", () => blickSetzen(true));
-
     const ansichtKnopf = document.createElement("button");
     ansichtKnopf.type = "button";
     ansichtKnopf.className = "brett-3d-knopf";
@@ -2397,9 +2398,29 @@ function knopfLeisteBauen() {
     ]));
     ansichtKnopf.addEventListener("click", () => tafelUmschalten());
 
-    leiste.append(blickKnopf, ansichtKnopf);
+    leiste.append(ansichtKnopf);
     Z.huelle.appendChild(leiste);
     Z.knopfLeiste = leiste;
+    anpassungZeigen();
+}
+
+/*
+ * DAS AUSSEHEN STELLT NUR DER ADMIN UM (seit v0.129.0, Nutzer-Ansage
+ * 24.09.2026: „die Farben-Einstellungen nur der Admin — in den
+ * Admin-Einstellungen ein Anpassungs-Knopf an/aus"). Zu sehen ist der
+ * Paletten-Knopf nur, wenn auf diesem Gerät die Verwaltung freigeschaltet
+ * UND dort „Brett-Anpassung" eingeschaltet ist (`ICH.anpassungAn`).
+ */
+function anpassungErlaubt() {
+    return typeof ICH !== "undefined" && !!ICH.verwaltungAktiv && ICH.verwaltungAktiv()
+        && !!ICH.anpassungAn && ICH.anpassungAn();
+}
+
+function anpassungZeigen() {
+    if (!Z.knopfLeiste) return;
+    const erlaubt = anpassungErlaubt();
+    Z.knopfLeiste.hidden = !erlaubt;
+    if (!erlaubt && Z.tafel) tafelUmschalten();
 }
 
 function tafelUmschalten() {
@@ -2559,6 +2580,7 @@ function anbinden(halter, partie, person, animierenErlaubt) {
 
     rahmen.classList.add("brett-3d-an");
     rahmen.classList.remove("brett-3d-wartet");
+    anpassungZeigen();
     /* Der Friedhof steht jetzt als Grabsteine vor dem Brett; die flache
        Klappe darf gehen (stil-effekte.css, `.brett-3d-aktiv`). */
     document.body.classList.add("brett-3d-aktiv");
@@ -3057,7 +3079,23 @@ function kaestchenWeich(werte, b, h, dx, dy) {
     return neu;
 }
 
-function reliefNetz(hoehe, grund, spitze, mat) {
+/*
+ * DAS ZEICHEN IST EINGESCHNITTEN, NICHT ERHABEN (seit v0.129.0).
+ *
+ * Nutzer-Ansage 24.09.2026: „die Muster sollen nicht rausstehen, sondern
+ * reingehen in die Karten — wie bei der Schablone beim IT-Logo". Auf der
+ * Karte liegt dafür eine leicht erhöhte Innenfläche (`RELIEF_HOEHE` dick,
+ * mit eigenen Seitenwänden); Zeichen und Rahmenlinie sind in sie
+ * hineingeschnitten, bis hinunter auf die Karte. Der Grund der Schnitte hat
+ * eine eigene Farbe (`tief`): dunkler bei Fähigkeiten, leuchtend in der
+ * Stufenfarbe bei Unglücken — wie Licht, das durch eine Schablone fällt.
+ *
+ * Warum die erhöhte Fläche und nicht einfach eine Grube in der Karte: Eine
+ * Grube unter der Kartenoberseite läge im Körper und wäre verdeckt. So ist
+ * die Innenfläche die Oberseite, und ihre tiefsten Punkte liegen genau auf
+ * der Karte.
+ */
+function reliefNetz(hoehe, grund, tief, mat, wandMat) {
     const b = PLATTE_B - 2 * PLATTE_RUND;
     const h = PLATTE_H - 2 * PLATTE_RUND;
     const geo = new THREE.PlaneGeometry(b, h, 110, 155);
@@ -3071,15 +3109,25 @@ function reliefNetz(hoehe, grund, spitze, mat) {
         const px = Math.min(RASTER_B - 1, Math.max(0, Math.round(u * (RASTER_B - 1))));
         const py = Math.min(RASTER_H - 1, Math.max(0, Math.round(v * (RASTER_H - 1))));
         const w = Math.min(1, hoehe[py * RASTER_B + px] * 1.35);
-        pos.setZ(i, w * RELIEF_HOEHE);
-        c.copy(grund).lerp(spitze, Math.min(1, w * 1.6));
+        pos.setZ(i, (1 - w) * RELIEF_HOEHE);
+        c.copy(grund).lerp(tief, Math.min(1, w * 1.5));
         farben[i * 3] = c.r; farben[i * 3 + 1] = c.g; farben[i * 3 + 2] = c.b;
     }
     geo.setAttribute("color", new THREE.BufferAttribute(farben, 3));
     geo.computeVertexNormals();
-    const netz = new THREE.Mesh(geo, mat);
-    netz.position.z = PLATTE_DICKE / 2 + 0.0005;
-    return netz;
+
+    const gruppe = new THREE.Group();
+    gruppe.add(new THREE.Mesh(geo, mat));
+    /* Die Seitenwände der Innenfläche — sonst schwebte ihr Rand. */
+    const dicke = 0.006;
+    for (const [bw, hw, x, y] of [[b, dicke, 0, h / 2 - dicke / 2], [b, dicke, 0, -h / 2 + dicke / 2],
+        [dicke, h, b / 2 - dicke / 2, 0], [dicke, h, -b / 2 + dicke / 2, 0]]) {
+        const wand = new THREE.Mesh(new THREE.BoxGeometry(bw, hw, RELIEF_HOEHE), wandMat);
+        wand.position.set(x, y, RELIEF_HOEHE / 2);
+        gruppe.add(wand);
+    }
+    gruppe.position.z = PLATTE_DICKE / 2 + 0.0005;
+    return gruppe;
 }
 
 function plaettchenRendern(art, hoehe, szene, kamera) {
@@ -3087,22 +3135,26 @@ function plaettchenRendern(art, hoehe, szene, kamera) {
     const stufe = pech ? SCHACH_VARIANTEN.pechStufeVon(art) : SCHACH_VARIANTEN.stufeVon(art);
     const stufeFarbe = farbe(stufe.farbe);
 
+    /* Fähigkeit: Karte in der Stufenfarbe, Schnitte dunkel.
+       Unglück: dunkle Karte, Schnitte leuchten in der Stufenfarbe. */
     const koerperFarbe = pech ? farbe("#2a2e36") : stufeFarbe.clone();
-    const spitze = pech ? stufeFarbe.clone().lerp(farbe("#ffffff"), 0.15)
-        : stufeFarbe.clone().lerp(farbe("#fff6e2"), 0.82);
+    const grund = pech ? farbe("#30343d") : stufeFarbe.clone().lerp(farbe("#ffffff"), 0.1);
+    const tief = pech ? stufeFarbe.clone().lerp(farbe("#ffffff"), 0.2)
+        : stufeFarbe.clone().lerp(farbe("#0c0e12"), 0.62);
 
     const koerperMat = new THREE.MeshPhysicalMaterial({
         color: koerperFarbe, roughness: 0.42, clearcoat: 0.7, clearcoatRoughness: 0.18
     });
     const reliefMat = new THREE.MeshPhysicalMaterial({
-        vertexColors: true, roughness: 0.38, clearcoat: 0.7, clearcoatRoughness: 0.18,
-        emissive: pech ? stufeFarbe : new THREE.Color(0x000000),
-        emissiveIntensity: pech ? 0.12 : 0
+        vertexColors: true, roughness: 0.4, clearcoat: 0.6, clearcoatRoughness: 0.2
+    });
+    const wandMat = new THREE.MeshPhysicalMaterial({
+        color: grund, roughness: 0.4, clearcoat: 0.6, clearcoatRoughness: 0.2
     });
 
     const karte = new THREE.Group();
     karte.add(new THREE.Mesh(GEO.plaette, koerperMat));
-    const relief = reliefNetz(hoehe, koerperFarbe, spitze, reliefMat);
+    const relief = reliefNetz(hoehe, grund, tief, reliefMat, wandMat);
     karte.add(relief);
     karte.rotation.set(-0.3, 0.16, 0);
     szene.add(karte);
@@ -3113,9 +3165,10 @@ function plaettchenRendern(art, hoehe, szene, kamera) {
     const url = r.domElement.toDataURL("image/png");
 
     szene.remove(karte);
-    relief.geometry.dispose();
+    relief.traverse((o) => { if (o.geometry) o.geometry.dispose(); });
     koerperMat.dispose();
     reliefMat.dispose();
+    wandMat.dispose();
     return url;
 }
 

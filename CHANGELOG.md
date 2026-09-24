@@ -3,6 +3,59 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.130.0 — 24.09.2026
+
+**Fähigkeiten einsetzen ohne Lesen: Karte antippen, Feld, fertig.**
+
+- **Kein Fragefenster mehr vor dem Einsetzen.** Tippst du eine Karte mit
+  Zielfeld an (Mauer, Frost, Nekromant …), zeigt das Brett sofort die
+  möglichen Felder. Unten steht die Karte gross, daneben runde Knöpfe:
+  **✓** Einsetzen, **✕** Abbrechen, **⟳** Drehen (Mauer, Platztausch,
+  Nudelholz) und **?** für die Anleitung. Nochmal auf die Karte tippen
+  bricht ab.
+- **Karten ohne Zielfeld** (Doppelzug, Schub …): Der erste Tipp wählt sie,
+  der zweite Tipp oder ✓ setzt sie ein — ein Tipp aus Versehen kostet
+  nichts.
+- **Was es kostet, steht als kleines Schild an der Karte:** „Zug bleibt",
+  „kostet den Zug", „ist dein Zug".
+- **Sprung und Teleport:** Die Leiste zeigt „Figur, dann Ziel" und ✕ zum
+  Zurücknehmen.
+- **Die Text-Karte unter dem Brett ist weg.** Gibt es gerade kein Feld,
+  erscheint kurz „Gerade kein Feld frei" über der Leiste.
+- Die Mauer bleibt nach dem Drehen auf ihrem Feld, wenn sie dort noch
+  passt.
+
+## v0.129.0 — 24.09.2026
+
+**Schnelleres Tippen, festes Brett, eingravierte Karten.**
+
+- **Das Brett reagiert sofort:** Ein Feld zählt, sobald dein Finger
+  aufsetzt. Vorher wurde ein Tipp verworfen, wenn der Finger dabei ein
+  kleines Stück rutschte — das Brett hielt ihn fürs Drehen.
+- **Das Brett lässt sich nicht mehr drehen oder zoomen**, der Knopf „Blick
+  zurücksetzen" ist weg.
+- **Farben und Aussehen des Bretts stellt nur noch der Admin um:** In der
+  Verwaltung gibt es dafür den Schalter „Brett-Anpassung". Alle anderen
+  sehen das Standard-Aussehen.
+- **Die Zeichen auf den Fähigkeitskarten sind eingraviert** — wie in eine
+  Schablone geschnitten, statt erhaben. Bei Unglücken leuchten die
+  Schnitte in der Stufenfarbe.
+
+## v0.128.0 — 24.09.2026
+
+**Die Karten-Leiste unten — wie in Kartenspielen.**
+
+- **Deine Fähigkeiten stehen unten als grosse Karten**, vier nebeneinander
+  über die ganze Breite. Hast du mehr, wischst du sie durch — oder ziehst
+  am Balken darunter, der zeigt, welchen Teil deiner Hand du gerade siehst.
+  Leere Plätze stehen als gestrichelte Umrisse da.
+- **Dein eigener Namens-Kasten unten ist weg.** Oben steht nur noch der
+  Gegner. Einstellungen und Zugverlauf liegen hinter dem runden Knopf
+  links in der Leiste (deine Initiale, im Ring deiner Farbe).
+- **Wer am Zug ist:** Bist du dran, leuchtet der Rand der Leiste.
+- Oben entfällt der Totenkopf-Streifen — der Friedhof steht als
+  Grabsteine vor dem Brett.
+
 ## v0.127.0 — 24.09.2026
 
 **Fähigkeiten als 3D-Plättchen, die Lootbox springt auf, der Friedhof

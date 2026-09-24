@@ -1455,6 +1455,11 @@ body.design-3d .grundlagen-figur {
     z-index: 4;
 }
 
+/* Ohne Admin-Freigabe gibt es den Paletten-Knopf nicht (v0.129.0). */
+.brett-3d-leiste[hidden] {
+    display: none;
+}
+
 .brett-3d-knopf,
 .brett-3d-zurueck {
     display: grid;

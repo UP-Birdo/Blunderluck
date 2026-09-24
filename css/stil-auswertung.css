@@ -1618,3 +1618,381 @@
     opacity: 0.7;
 }
 
+
+/* ------------------------------------------------------------------ *
+ * DIE KARTEN-LEISTE UNTEN (seit v0.128.0, `TEAM_SCHACH._handLeisteBauen`)
+ *
+ * Nutzer-Vorlage: die Kartenleiste aus Clash Royale — vier grosse Karten
+ * nebeneinander, links ein runder Knopf, darunter ein Balken. Bei uns ist
+ * der Balken der Rollbalken der Hand, der Knopf das Menü (Einstellungen,
+ * Zugverlauf). Die Leiste ersetzt den eigenen Namens-Kasten; wer am Zug
+ * ist, zeigt ihr leuchtender Rand.
+ *
+ * Sie reicht über die ganze Breite (der Spielbereich hat seitlich
+ * `--inhalt-rand` Innenabstand, den sie sich zurückholt) und steht am
+ * Fuss: Das Brett darüber wächst (`.brett-halter` hat `flex: 1`).
+ * ------------------------------------------------------------------ */
+
+.hand-leiste {
+    display: flex;
+    align-items: stretch;
+    gap: 8px;
+    margin: 6px calc(var(--inhalt-rand) * -1) 0;
+    padding: 10px var(--inhalt-rand) calc(8px + env(safe-area-inset-bottom, 0px));
+    background: linear-gradient(180deg, var(--karte-leise), var(--karte));
+    border-top: 2px solid var(--rahmen);
+    border-radius: 14px 14px 0 0;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Am Zug: der Rand leuchtet in der Hauptfarbe — dieselbe Auskunft, die
+   bisher der blaue eigene Namens-Kasten gab. */
+.hand-leiste-amzug {
+    border-top-color: var(--haupt);
+    box-shadow: 0 -6px 18px -8px var(--haupt);
+}
+
+.hand-links {
+    position: relative;
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.hand-menue {
+    width: 48px;
+    height: 48px;
+    padding: 0;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--haupt);
+    color: var(--haupt-schrift);
+    font-size: 1.3rem;
+    font-weight: 800;
+    cursor: pointer;
+    /* Der Ring ist die eigene Steinfarbe. */
+    border: 3px solid #f1efe9;
+}
+
+.hand-menue-schwarz {
+    border-color: #2a2d33;
+    box-shadow: 0 0 0 1px var(--rahmen);
+}
+
+/* Das offene Menü steht ÜBER dem Knopf, nicht daneben — die Karten
+   bleiben sichtbar. */
+.hand-menue-liste {
+    position: absolute;
+    left: 0;
+    bottom: calc(100% + 8px);
+    z-index: var(--ebene-schwebend);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 6px;
+    background: var(--karte);
+    border: 1px solid var(--rahmen);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.hand-mitte {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* Die Hand rollt waagerecht und rastet je Karte ein; der eigene Balken
+   darunter ersetzt den des Browsers. */
+.hand-leiste .faehigkeit-reihe.hand-karten {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 6px;
+    width: 100%;
+    max-width: none;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    padding: 2px 0 4px;
+    margin: 0;
+}
+
+.hand-leiste .faehigkeit-reihe.hand-karten::-webkit-scrollbar {
+    display: none;
+}
+
+/* Vier Karten füllen die Breite; jede weitere rollt herein. */
+.hand-leiste .faehigkeit-reihe.hand-karten > .faehigkeit-knopf,
+.hand-leiste .faehigkeit-reihe.hand-karten > .hand-platz {
+    flex: 0 0 calc((100% - 18px) / 4);
+    width: calc((100% - 18px) / 4);
+    height: auto;
+    aspect-ratio: 44 / 62;
+    align-self: flex-start;
+    margin: 0;
+    box-shadow: none;
+    scroll-snap-align: start;
+}
+
+.hand-leiste .faehigkeit-reihe.hand-karten > .faehigkeit-knopf:first-child {
+    margin-left: 0;
+}
+
+/* Ein leerer Platz: gestrichelter Umriss in Kartengrösse. */
+.hand-platz {
+    display: block;
+    border: 2px dashed var(--rahmen);
+    border-radius: 8px;
+    opacity: 0.55;
+}
+
+/* Wartet eine Fähigkeit auf ihr Ziel, steht der Satz mit „Abbrechen"
+   über die ganze Breite. */
+.hand-leiste .faehigkeit-reihe-ziel.hand-karten {
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    overflow: visible;
+    min-height: 48px;
+}
+
+.hand-rollbalken {
+    position: relative;
+    height: 12px;
+    border-radius: 6px;
+    background: var(--karte-leise);
+    border: 1px solid var(--rahmen);
+    cursor: pointer;
+    touch-action: none;
+}
+
+.hand-rollbalken-griff {
+    position: absolute;
+    top: 1px;
+    bottom: 1px;
+    left: 0;
+    width: 100%;
+    border-radius: 5px;
+    background: var(--haupt);
+    background: linear-gradient(180deg, color-mix(in srgb, var(--haupt) 70%, #fff), var(--haupt));
+}
+
+/* Passt alles auf einmal, ist nichts zu rollen — der Balken tritt zurück. */
+.hand-rollbalken-voll {
+    opacity: 0.45;
+    cursor: default;
+}
+
+.hand-leiste-ohne-karten {
+    padding-top: 8px;
+}
+
+/* Im 3D-Brett steht der Friedhof als Grabsteine vor dem Brett; oben
+   bleibt nur das Profil des Gegners (Nutzer-Ansage v0.128.0). */
+body.brett-3d-aktiv .seiten-reihe-oben .friedhof-streifen {
+    display: none;
+}
+
+/* Die Leiste gehört an den unteren Rand (wie im Vorbild). Bis v0.127.0
+   nahm der Tab-Bereich um den Spielbildschirm nur seine Inhaltshöhe —
+   `.schach` und das Brett konnten nicht wachsen, unten blieben am Handy
+   rund 150 px leer (gemessen 24.09.2026: 693 von 844). Jetzt füllt er die
+   Höhe; das Brett (`flex: 1`) bekommt den Rest, die Leiste steht unten. */
+/* `:not([hidden])`: Die anderen Tab-Bereiche tragen dieselbe Klasse und
+   werden nur über `hidden` versteckt — ein `display: flex` holte sie
+   sonst wieder hervor. */
+body.partie-fest .tab-bereich-zeigt:not([hidden]) {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+body.partie-fest .schach > .hand-leiste {
+    margin-top: auto;
+}
+
+/* ------------------------------------------------------------------ *
+ * DIE LAUFENDE KARTE IN DER LEISTE (seit v0.130.0,
+ * `TEAM_SCHACH._handAktivBauen`)
+ *
+ * Statt Dialog und Text-Karte unter dem Brett: die Karte gross links,
+ * daneben Titel, ein kurzer Hinweis und das Kosten-Schild, rechts runde
+ * Knöpfe — ? Anleitung, ⟳ Drehen, ✕ Abbrechen, ✓ Einsetzen (grün, erst
+ * aktiv, wenn es etwas einzusetzen gibt).
+ * ------------------------------------------------------------------ */
+
+.hand-leiste {
+    position: relative;
+}
+
+.hand-aktiv {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.hand-aktiv-karte {
+    position: relative;
+    flex: 0 0 auto;
+    width: 78px;
+    aspect-ratio: 44 / 62;
+    padding: 0;
+    border: 3px solid var(--stufe-farbe, var(--rahmen));
+    border-radius: 8px;
+    background: var(--karte-leise);
+    color: var(--stufe-farbe, var(--schrift));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transform: translateY(-6px) rotate(-3deg);
+    animation: hand-karte-heben 0.22s ease-out;
+    box-shadow: 0 10px 18px -8px var(--stufe-farbe, #000);
+}
+
+.hand-aktiv-karte:has(> .faehigkeit-bild-3d) {
+    border-color: transparent;
+    background: transparent;
+}
+
+.hand-aktiv-karte > .faehigkeit-bild {
+    width: 60%;
+    height: auto;
+}
+
+.hand-aktiv-karte > .faehigkeit-bild.faehigkeit-bild-3d {
+    position: absolute;
+    inset: -3px;
+    width: calc(100% + 6px);
+    height: calc(100% + 6px);
+    filter: drop-shadow(-2px 4px 4px rgba(0, 0, 0, 0.45));
+}
+
+@keyframes hand-karte-heben {
+    from { transform: translateY(8px) rotate(0deg) scale(0.9); opacity: 0.6; }
+    to   { transform: translateY(-6px) rotate(-3deg) scale(1); opacity: 1; }
+}
+
+.hand-aktiv-text {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.hand-aktiv-titel {
+    font-weight: 800;
+    font-size: 1.02rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.hand-aktiv-tipp {
+    font-size: 0.86rem;
+    color: var(--schrift-leise);
+}
+
+.hand-aktiv-kosten {
+    align-self: flex-start;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: var(--karte-leise);
+    border: 1px solid var(--rahmen);
+    color: var(--schrift-leise);
+}
+
+.hand-aktiv-kosten-gut {
+    color: var(--gut);
+    border-color: var(--gut);
+}
+
+.hand-aktiv-knoepfe {
+    flex: 0 0 auto;
+    display: grid;
+    grid-template-columns: repeat(2, 44px);
+    gap: 8px;
+}
+
+.hand-rund {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border: 2px solid var(--rahmen);
+    background: var(--karte);
+    color: var(--schrift);
+}
+
+.hand-rund svg {
+    width: 22px;
+    height: 22px;
+}
+
+.hand-rund-weg {
+    color: var(--gefahr);
+}
+
+.hand-rund-ja {
+    background: var(--gut);
+    border-color: var(--gut);
+    color: #fff;
+}
+
+.hand-rund-ja:disabled {
+    background: var(--karte-leise);
+    border-color: var(--rahmen);
+    color: var(--schrift-leise);
+    opacity: 0.55;
+    cursor: default;
+}
+
+.hand-rund-still {
+    color: var(--schrift-leise);
+}
+
+/* Der kurze Hinweis („Gerade kein Feld frei") schwebt über der Leiste. */
+.hand-hinweis {
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 8px);
+    transform: translateX(-50%);
+    z-index: var(--ebene-schwebend);
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: var(--schrift);
+    color: var(--flaeche);
+    font-size: 0.86rem;
+    font-weight: 700;
+    white-space: nowrap;
+    animation: hand-hinweis-auf 0.18s ease-out;
+    pointer-events: none;
+}
+
+@keyframes hand-hinweis-auf {
+    from { opacity: 0; transform: translate(-50%, 6px); }
+    to   { opacity: 1; transform: translate(-50%, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .hand-aktiv-karte,
+    .hand-hinweis {
+        animation: none;
+    }
+}

@@ -563,13 +563,19 @@ pruefe("Ein laufender Sprung laesst sich abbrechen (v0.76)", () => {
         angelegt.tafel, partie, 7600);
     TEAM_SCHACH.partieOeffnen(angelegt.partie.id);
 
-    const leiste = klasseSuchen(TEAM_SCHACH.wurzelEl, "platzieren");
+    /* Seit v0.130.0 zeigt die Karten-Leiste das laufende Item (Karte,
+       „Figur, dann Ziel", runder Abbrechen-Knopf) — die Text-Karte unter
+       dem Brett gibt es dann nicht mehr. */
+    const leiste = klasseSuchen(TEAM_SCHACH.wurzelEl, "hand-aktiv-muster");
     if (!leiste) {
         throw new Error("keine Leiste fuer das laufende Item");
     }
+    if (klasseSuchen(TEAM_SCHACH.wurzelEl, "platzieren")) {
+        throw new Error("die alte Text-Karte steht noch unter dem Brett");
+    }
 
-    const knopf = klasseSuchen(leiste, "knopf-still");
-    if (!knopf || String(knopf.textContent || "") !== "Abbrechen") {
+    const knopf = klasseSuchen(leiste, "hand-rund-weg");
+    if (!knopf || String((knopf.attribute || {})["aria-label"] || "") !== "Abbrechen") {
         throw new Error("kein Abbrechen-Knopf");
     }
 
@@ -584,9 +590,9 @@ pruefe("Ein laufender Sprung laesst sich abbrechen (v0.76)", () => {
         throw new Error("das Muster laeuft weiter");
     }
 
-    /* Ohne laufendes Item gibt es die Leiste nicht. */
+    /* Ohne laufendes Item zeigt die Leiste wieder die Hand. */
     TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
-    if (klasseSuchen(TEAM_SCHACH.wurzelEl, "platzieren")) {
+    if (klasseSuchen(TEAM_SCHACH.wurzelEl, "hand-aktiv-muster")) {
         throw new Error("die Leiste bleibt stehen, obwohl nichts mehr laeuft");
     }
 

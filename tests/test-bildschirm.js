@@ -2807,10 +2807,13 @@ pruefe("Die Anordnung der dritten Skizze: Eck-Kasten mit Friedhof-Streifen (v0.8
     const stelle = (passt) => kinder.findIndex(passt);
     const brett = stelle((k) => hatKlasse(k, "brett-halter"));
     const obenReihe = stelle((k) => hatKlasse(k, "seiten-reihe-oben"));
-    const untenReihe = stelle((k) => hatKlasse(k, "seiten-reihe-unten"));
+    /* Die eigene Seite unten ist seit v0.128.0 die Karten-Leiste (Nutzer-
+       Ansage 24.09.2026, Vorlage Clash Royale): kein Namens-Kasten, kein
+       Streifen, dafuer Menue-Knopf, Karten und Rollbalken. */
+    const untenReihe = stelle((k) => hatKlasse(k, "hand-leiste"));
 
     if (obenReihe < 0 || untenReihe < 0) {
-        throw new Error("die zwei Seiten-Zeilen fehlen");
+        throw new Error("Seiten-Zeile oben oder Karten-Leiste unten fehlt");
     }
     if (!(obenReihe < brett && brett < untenReihe)) {
         throw new Error("die Seiten stehen nicht ueber und unter dem Brett: "
@@ -2822,8 +2825,18 @@ pruefe("Die Anordnung der dritten Skizze: Eck-Kasten mit Friedhof-Streifen (v0.8
         throw new Error("es steht noch eine Steuer-Spalte im Baum");
     }
 
-    /* Jede Seiten-Zeile traegt Karten, Banner UND ihren Friedhof-Streifen. */
-    for (const stelleReihe of [obenReihe, untenReihe]) {
+    const leiste = kinder[untenReihe];
+    for (const teil of ["hand-menue", "faehigkeit-reihe", "hand-rollbalken"]) {
+        if (!klasseSuchen(leiste, teil)) {
+            throw new Error("in der Karten-Leiste fehlt " + teil);
+        }
+    }
+    if (klasseSuchen(leiste, "spieler-zeile")) {
+        throw new Error("in der Karten-Leiste steht noch ein Namens-Kasten");
+    }
+
+    /* Die obere Zeile traegt Karten, Banner UND ihren Friedhof-Streifen. */
+    for (const stelleReihe of [obenReihe]) {
         const zeile = kinder[stelleReihe];
         if (!klasseSuchen(zeile, "spieler-zeile")) {
             throw new Error("in einer Seiten-Zeile fehlt der Banner");
@@ -2849,9 +2862,6 @@ pruefe("Die Anordnung der dritten Skizze: Eck-Kasten mit Friedhof-Streifen (v0.8
 
     if (folge(kinder[obenReihe]) !== "karten,banner,streifen") {
         throw new Error("obere Zeile falsch geordnet: " + folge(kinder[obenReihe]));
-    }
-    if (folge(kinder[untenReihe]) !== "streifen,banner,karten") {
-        throw new Error("untere Zeile falsch geordnet: " + folge(kinder[untenReihe]));
     }
 });
 
@@ -2988,10 +2998,11 @@ pruefe("Der eigene Namens-Kasten klappt sein Menue IM Kasten auf (v0.81.0)", () 
             throw new Error("nach dem Tipp fehlen die zwei Menue-Knoepfe ("
                 + offen.length + ")");
         }
-        /* Sie wohnen IM eigenen Kasten, nicht daneben. */
-        const zeile = klasseSuchen(TEAM_SCHACH.wurzelEl, "spieler-zeile-meine");
-        if (!zeile || !klasseSuchen(zeile, "eck-knopf")) {
-            throw new Error("die Menue-Knoepfe stehen nicht im eigenen Kasten");
+        /* Seit v0.128.0 wohnen sie in der Karten-Leiste unten (der eigene
+           Namens-Kasten ist dort weg, Nutzer-Ansage 24.09.2026). */
+        const leiste = klasseSuchen(TEAM_SCHACH.wurzelEl, "hand-leiste");
+        if (!leiste || !klasseSuchen(leiste, "eck-knopf")) {
+            throw new Error("die Menue-Knoepfe stehen nicht in der Karten-Leiste");
         }
     } finally {
         TEAM_SCHACH.eckMenueUmschalten();

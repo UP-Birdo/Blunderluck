@@ -14,6 +14,7 @@ const ICH = {
 
     SCHLUESSEL_PERSON: "blunderluck.ich",
     SCHLUESSEL_VERWALTUNG: "blunderluck.verwaltung",
+    SCHLUESSEL_ANPASSUNG: "blunderluck.anpassung",
     SCHLUESSEL_ABSCHLUSS: "blunderluck.abschluss-gesehen",
 
     /* ---------------------------------------------------------------- *
@@ -51,6 +52,23 @@ const ICH = {
 
     verwaltungAktiv() {
         return ICH._lesen(ICH.SCHLUESSEL_VERWALTUNG) === true;
+    },
+
+    /*
+     * Der Schalter „Brett-Anpassung" aus der Verwaltung (seit v0.129.0):
+     * Nur wenn er an ist, zeigt das 3D-Brett dem Admin den Paletten-Knopf.
+     * Er gilt nur auf diesem Gerät, wie die Freischaltung selbst.
+     */
+    anpassungAn() {
+        return ICH._lesen(ICH.SCHLUESSEL_ANPASSUNG) === true;
+    },
+
+    anpassungSetzen(an) {
+        if (an) {
+            ICH._schreiben(ICH.SCHLUESSEL_ANPASSUNG, true);
+        } else {
+            ICH._loeschen(ICH.SCHLUESSEL_ANPASSUNG);
+        }
     },
 
     verwaltungSetzen(aktiv) {
