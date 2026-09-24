@@ -68,13 +68,16 @@ const TEAM_SCHACH = {
     auswahlOffen: false,
 
     /*
-     * WELCHER TEIL DER AUSWAHL (seit v0.21.0, Wunsch 8). Bis v0.20.0 stand
-     * alles auf einem Bildschirm: Figurenzahl, Regler, Brettform und die
-     * Grössen-Kacheln. Der Nutzer hat ihn geteilt — auf dem Start führt die
-     * VORSCHAU zur Brettform und der PFEIL zu den Grundeinstellungen:
+     * WELCHER REITER DER AUSWAHL OFFEN IST (seit v0.121.0; v0.21.0 bis
+     * v0.120.1 hiess das Feld so, weil es zwei getrennte Bildschirme
+     * unterschied). Seit v0.121.0 ist die Auswahl EIN Bildschirm mit drei
+     * Reitern (`TEAM_SCHACH.AUSWAHL_REITER` in team-schach-uebersicht.js):
      *
-     *   "brett"   Brettform und Grösse (die Kacheln)
-     *   "regeln"  Figurenzahl, Haken, Lootbox-Menge, Item-Vorrat
+     *   "brett"      Brettform, Grösse, Figurenzahl, Aufstellung
+     *   "gegner"     gegen wen, wer sieht die Runde, Seiten, Ziehen im Team
+     *   "lootboxen"  an/aus, Menge, Items, Seltenheit
+     *
+     * Die Vorschau auf dem Start öffnet „brett", der Pfeil „gegner".
      */
     auswahlTeil: "brett",
 
@@ -3843,14 +3846,17 @@ const TEAM_SCHACH = {
      * SEIT WUNSCH 1 (24.08.2026) LEGT DIE AUSWAHL NICHTS MEHR AN: Sie zeigt,
      * was zuletzt eingestellt war, und schreibt jede Wahl in die
      * Geräte-Erinnerung des Starts zurück (`spielartGewaehlt`,
-     * `auswahlSchliessen`). Angelegt wird erst mit „Spielen"
-     * (`rundeStarten`).
+     * `auswahlSchliessen`). Angelegt wird mit „Spielen" — seit v0.121.0
+     * auch direkt unten in der Auswahl (`auswahlSpielen`).
+     *
+     * SEIT v0.121.0 führt der Pfeil in denselben Bildschirm wie die
+     * Vorschau, nur in den Reiter „Gegner".
      */
     partieAnlegen() {
-        TEAM_SCHACH._auswahlOeffnen("regeln");
+        TEAM_SCHACH._auswahlOeffnen("gegner");
     },
 
-    /* Der Weg über die Vorschau (Wunsch 7/8): Form und Grösse. */
+    /* Der Weg über die Vorschau (Wunsch 7/8): der Reiter „Brett". */
     brettformOeffnen() {
         TEAM_SCHACH._auswahlOeffnen("brett");
     },
@@ -3865,7 +3871,7 @@ const TEAM_SCHACH = {
             return;
         }
         TEAM_SCHACH.auswahlOffen = true;
-        TEAM_SCHACH.auswahlTeil = (teil === "regeln") ? "regeln" : "brett";
+        TEAM_SCHACH.auswahlTeil = TEAM_SCHACH._auswahlReiterVon(teil);
         TEAM_SCHACH.offeneId = "";
 
         /* Die zuletzt gemerkten Einstellungen, sonst die Vorgaben. */
@@ -3923,14 +3929,16 @@ const TEAM_SCHACH = {
     },
 
     /*
-     * Eine Kachel wurde angetippt. SIE LEGT NICHTS MEHR AN (Wunsch 1,
+     * Eine Kachel wurde angetippt. SIE LEGT NICHTS AN (Wunsch 1,
      * 24.08.2026): Die Wahl wird nur GEMERKT — Spielart und die
-     * eingestellten Regler wandern in den Gerätespeicher —, und man landet
-     * wieder auf dem Startbildschirm. Dort zeigt die Vorschau das gewählte
-     * Brett, und erst „Spielen" legt die Runde an (`rundeStarten`).
+     * eingestellten Regler wandern in den Gerätespeicher. Erst „Spielen"
+     * legt die Runde an (`rundeStarten`).
      *
-     * Damit ist auch der Namens-Dialog weg: Runden bekommen gar keinen
-     * eigenen Namen mehr, nur einen Anzeigetitel aus der Spielart.
+     * SEIT v0.121.0 BLEIBT MAN AUF DEM BILDSCHIRM: Die Kachel wird
+     * hervorgehoben, die Dauer-Zeile rechnet mit dem neuen Brett, und
+     * „Spielen" steht direkt darunter. Bis v0.120.1 schickte die Kachel
+     * sofort zurück auf den Start — damals gab es auf diesem Bildschirm
+     * nichts weiter zu tun.
      */
     spielartGewaehlt(varianteId) {
         if (!SCHACH_VARIANTEN.gibtEs(varianteId)) {
@@ -3942,9 +3950,7 @@ const TEAM_SCHACH = {
             START.spielartMerken(varianteId);
         }
 
-        TEAM_SCHACH.auswahlOffen = false;
-        TEAM_SCHACH._auswahlAufheben();
-        TABS.wechseln("start");
+        TEAM_SCHACH.weichZeichnen();
     },
 
     /*

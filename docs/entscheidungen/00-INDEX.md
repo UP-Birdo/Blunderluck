@@ -25,6 +25,10 @@ wird. Die Liste dessen, was noch kommt, steht in [../ROADMAP.md](../ROADMAP.md).
 
 ## entschieden.md - Blunderluck-Eintraege
 
+- **Neue Runde: ein Bildschirm, drei Reiter, Bilder statt Haken**
+  (24.09.2026, v0.121.0 — nimmt Wunsch 8 zurueck (zwei Bildschirme),
+  Spielen direkt unten, Kachel bleibt stehen, Zeichen mit Wort statt
+  Haken mit Satz; Rueckweg ueber `Backup\Blunderluck\v0.120.1`)
 - **Profil kompakt: Kopfkarte, drei Reiter, Popups** (24.09.2026, v0.119.1 —
   Spiele-App-Muster: alles fuer den ersten Blick auf einer Karte, Rest in
   Reitern (Statistik / Abzeichen / Partien), Einzelheiten im Popup,

@@ -10,24 +10,39 @@
 
 Object.assign(TEAM_SCHACH, {
     /* ---------------------------------------------------------------- *
-     * Auswahl der Spielart
+     * Die neue Runde einstellen — EIN Bildschirm, drei Reiter
      *
-     * Eine eigene Ansicht statt eines Dialogs: Zu jeder Spielart gehört ein
-     * Vorschaubild, und dafür ist eine Auswahlliste der falsche Ort. Auf dem
-     * Handy ist eine volle Seite mit Kacheln ohnehin besser zu treffen als ein
-     * Dialog mit fünf Zeilen.
+     * SEIT v0.121.0 (Nutzer-Ansage 24.09.2026: „das Grundeinstellungen-
+     * Menü überarbeiten: weniger Texte, mehr Bilder, einfachere Navigation";
+     * die Variante „ein Bildschirm, drei Reiter" hat er gewählt). Bis
+     * v0.120.1 waren es zwei Bildschirme hinter zwei Einstiegen — die
+     * Vorschau führte zur Brettform, der Pfeil zu den Grundeinstellungen
+     * (Wunsch 8, v0.21.0) —, und „Spielen" gab es nur auf dem Start.
+     *
+     * Jetzt:
+     *   - Beide Einstiege führen HIERHER, nur in einen anderen Reiter
+     *     (Vorschau -> „Brett", Pfeil -> „Gegner"). `auswahlTeil` trägt
+     *     den offenen Reiter.
+     *   - Jede Wahl ist ein SEGMENT-SCHALTER MIT BILDERN (Bild oben, ein
+     *     Wort darunter — das Muster der Figurenzahl) statt eines Hakens
+     *     mit Satz. Die Bilder sind die 3D-Figuren und Lootboxen der App
+     *     oder schlichte Linienzeichen.
+     *   - EIN i je Abschnitt statt eines je Zeile; es sammelt die Sätze,
+     *     die vorher neben jedem Schalter hingen.
+     *   - Unten klebt „Spielen": Wer hier fertig ist, legt direkt an.
+     *   - Die Brett-Kachel wählt nur aus und bleibt hier (bis v0.120.1
+     *     schickte sie sofort zurück auf den Start).
+     *
+     * Gemerkt wird wie bisher bei jedem Zeichnen (`reglerMerken`), die
+     * Datenfelder in `neueRegeln` sind unverändert.
      * ---------------------------------------------------------------- */
 
-    /*
-     * ZWEI BILDSCHIRME STATT EINEM (seit v0.21.0, Wunsch 8). Bis v0.20.0
-     * stand hier alles untereinander: Figurenzahl, Regler, Brettform und die
-     * Grössen-Kacheln. Der Nutzer hat es geteilt — auf dem Startbildschirm
-     * führt die VORSCHAU hierher zur Brettform, der PFEIL zu den
-     * Grundeinstellungen. Welcher Teil gemeint ist, sagt
-     * `TEAM_SCHACH.auswahlTeil`.
-     *
-     * Angelegt wird auf keinem von beiden: Beide merken nur (Wunsch 1).
-     */
+    AUSWAHL_REITER: [
+        { id: "brett", titel: "Brett" },
+        { id: "gegner", titel: "Gegner" },
+        { id: "lootboxen", titel: "Lootboxen" }
+    ],
+
     _auswahlZeichnen(wurzel) {
         /* Jede Änderung eines Reglers zeichnet neu — also führt jede
            Änderung hier vorbei und wird gemerkt (seit v0.33.0). Warum das
@@ -36,149 +51,530 @@ Object.assign(TEAM_SCHACH, {
         TEAM_SCHACH.reglerMerken();
 
         /*
-         * DIE AUSWAHL IST EIN FENSTER, KEIN TAB (seit v0.39.0).
-         *
-         * Nutzer-Ansage 24.08.2026: „Grundeinstellungen für eine Runde soll
-         * unten das Menü Band weg so das man nur oben zurück hat um auf den
-         * Home Screen zu kommen." Dasselbe Muster wie die offene Partie
-         * (v0.113), die Einstellungen und die Freundesliste: Wer hier steht,
-         * hat genau einen Weg hinaus, und der steht oben links.
-         *
-         * `zeichnen` hat die Leiste ein paar Zeilen vorher wieder
-         * eingeschaltet (der Zweig für „alle anderen Ansichten") — deshalb
-         * steht das hier und nicht dort.
+         * DIE AUSWAHL IST EIN FENSTER, KEIN TAB (seit v0.39.0, Nutzer-Ansage
+         * 24.08.2026: „unten das Menüband weg, so dass man nur oben zurück
+         * hat"). `zeichnen` hat die Leiste ein paar Zeilen vorher wieder
+         * eingeschaltet — deshalb steht das hier und nicht dort.
          */
         if (typeof TABS !== "undefined" && TABS.rundeSetzen) {
             TABS.rundeSetzen("team-schach", true);
         }
 
-        if (TEAM_SCHACH.auswahlTeil === "regeln") {
-            TEAM_SCHACH._regelnZeichnen(wurzel);
-            return;
-        }
-        TEAM_SCHACH._brettformZeichnen(wurzel);
-    },
+        const reiter = TEAM_SCHACH._auswahlReiterVon(TEAM_SCHACH.auswahlTeil);
+        const seite = TEAM_SCHACH._element("div", "runde-seite");
 
-    /* Der Weg über die Vorschau: Form und Grösse — sonst nichts. */
-    _brettformZeichnen(wurzel) {
-        const kopf = TEAM_SCHACH._element("div", "partie-kopf");
-        kopf.appendChild(TEAM_SCHACH._knopf("Zurück", "knopf-still knopf-klein",
-            () => TEAM_SCHACH.auswahlSchliessen()));
-        kopf.appendChild(TEAM_SCHACH._element("h2", "partie-titel", "Brettform"));
+        seite.appendChild(TEAM_SCHACH._auswahlKopfBauen());
+        seite.appendChild(TEAM_SCHACH._auswahlReiterLeisteBauen(reiter));
 
-        /*
-         * DER ERKLÄRSATZ STEHT HINTER DEM i (seit v0.52). Er sagt etwas, das man
-         * EINMAL wissen muss und danach nie wieder — als Absatz blähte er den
-         * Bildschirm auf und schob die Kacheln nach unten, also genau das, was
-         * man hier eigentlich antippen will. Dasselbe Muster wie beim
-         * Fähigkeiten-Fenster in v3.5.
-         */
-        kopf.appendChild(TEAM_SCHACH._infoZeichenBauen(
-            "Was gilt hier?",
-            "Hier wird noch nichts angelegt: Deine Wahl wird gemerkt, und der "
-            + "Startbildschirm zeigt sie als Vorschau. Erst \"Spielen\" macht "
-            + "daraus eine Runde. Das Bild auf der Kachel zeigt die "
-            + "Startaufstellung — mit der Figurenzahl, die unter dem Pfeil "
-            + "neben \"Spielen\" eingestellt ist."));
-
-        wurzel.appendChild(kopf);
-
-        wurzel.appendChild(TEAM_SCHACH._formLeisteBauen());
-
-        const feld = TEAM_SCHACH._element("div", "spielart-feld");
-
-        for (const variante of SCHACH_VARIANTEN.zurAuswahlNachForm(TEAM_SCHACH.gewaehlteForm)) {
-            feld.appendChild(TEAM_SCHACH._spielartKachelBauen(variante));
+        if (reiter === "gegner") {
+            TEAM_SCHACH._gegnerReiterBauen(seite);
+        } else if (reiter === "lootboxen") {
+            TEAM_SCHACH._lootboxReiterBauen(seite);
+        } else {
+            TEAM_SCHACH._brettReiterBauen(seite);
         }
 
-        wurzel.appendChild(feld);
+        seite.appendChild(TEAM_SCHACH._auswahlFussBauen());
+        wurzel.appendChild(seite);
     },
 
-    /* Der Weg über den Pfeil: die Regler und Haken der nächsten Runde. */
-    _regelnZeichnen(wurzel) {
-        /*
-         * DER KOPF KLEBT OBEN (seit v0.116.0, Nutzer-Ansage 18.09.2026:
-         * „oben eine fixe Zeile, die beim Hoch- und Runterscrollen mitgeht,
-         * mit der geschätzten Dauer"). Dieselbe Klasse wie Bibliothek und
-         * „Schach lernen" — so bleibt auch der Zurück-Knopf erreichbar.
-         */
-        const kopf = TEAM_SCHACH._element("div", "partie-kopf partie-kopf-klebt");
-        kopf.appendChild(TEAM_SCHACH._knopf("Zurück", "knopf-still knopf-klein",
-            () => TEAM_SCHACH.auswahlSchliessen()));
-        kopf.appendChild(TEAM_SCHACH._element("h2", "partie-titel",
-            "Grundeinstellungen"));
+    /* Aus dem Einstieg den Reiter: „regeln" (der Pfeil, so heisst er seit
+       Wunsch 8) öffnet „Gegner", alles Unbekannte das Brett. */
+    _auswahlReiterVon(teil) {
+        if (teil === "regeln") {
+            return "gegner";
+        }
+        return TEAM_SCHACH.AUSWAHL_REITER.some((eintrag) => eintrag.id === teil)
+            ? teil : "brett";
+    },
 
-        kopf.appendChild(TEAM_SCHACH._infoZeichenBauen(
-            "Was gilt hier?",
-            "Diese Einstellungen gelten für die nächste Runde, die du mit "
-            + "\"Spielen\" anlegst — dein Gerät merkt sie sich. Welches Brett "
-            + "gespielt wird, wählst du über die Vorschau darüber. Die Dauer "
-            + "oben ist eine Schätzung: die erwartete Zahl der Züge für dein "
-            + "Brett und deine Figuren, mal der Zeit je Zug aus deinen "
-            + "bisherigen Partien — je mehr du spielst, desto genauer."));
-
-        kopf.appendChild(TEAM_SCHACH._regelnDauerBauen());
-
-        wurzel.appendChild(kopf);
-
-        /*
-         * DIE FIGURENZAHL STEHT GANZ OBEN (seit v0.86, Wunsch V1: „die Anzahl
-         * der Figuren auch eine Knopf-Funktion, immer bei der Auswahl ganz
-         * oben"). Sie war bis v0.20.0 die Leiste über den Kacheln, damit die
-         * Zahl unter jeder Kachel mitging; seit Wunsch 8 ist sie ein Regler
-         * unter anderen — die Kachel rechnet sie weiterhin mit.
-         */
-        wurzel.appendChild(TEAM_SCHACH._armeeStaerkeLeisteBauen());
-
-        /* Wer die Runde sieht (seit v0.118.0) — eine eigene Karte, weil
-           die Frage keine Spielregel ist, sondern eine des Umfelds. */
-        wurzel.appendChild(TEAM_SCHACH._sichtbarkeitLeisteBauen());
-
-        wurzel.appendChild(TEAM_SCHACH._regelSchalterBauen());
+    auswahlReiterSetzen(id) {
+        TEAM_SCHACH.auswahlTeil = TEAM_SCHACH._auswahlReiterVon(id);
+        TEAM_SCHACH.weichZeichnen();
     },
 
     /*
-     * WER SIEHT DIE RUNDE? (seit v0.118.0, Nutzer-Ansage 18.09.2026: „in
-     * den Grundeinstellungen soll man privat, öffentlich oder Freunde
-     * einstellen können, Standard öffentlich"). Dieselbe Segment-Reihe wie
-     * Brettform und Computer-Stufe; die drei Stufen und ihre Sätze kommen
-     * aus dem Modell (`SCHACH_RUNDE.SICHTBARKEITEN`), der Bildschirm zeigt
-     * nur an. Eigene Klassen (`sichtbarkeit-*`), damit Test und Stildatei
-     * die Reihe von ihren Nachbarn unterscheiden.
+     * Der Kopf klebt oben (wie seit v0.116.0): Zurück, Titel und darunter
+     * die Dauer-Zeile mit ihrer Quelle (`_regelnDauerBauen`, unverändert).
      */
-    _sichtbarkeitLeisteBauen() {
-        const karte = TEAM_SCHACH._element("section", "karte sichtbarkeit-karte");
+    _auswahlKopfBauen() {
+        const kopf = TEAM_SCHACH._element("div", "partie-kopf partie-kopf-klebt runde-kopf");
+        kopf.appendChild(TEAM_SCHACH._knopf("Zurück", "knopf-still knopf-klein",
+            () => TEAM_SCHACH.auswahlSchliessen()));
+        kopf.appendChild(TEAM_SCHACH._element("h2", "partie-titel", "Neue Runde"));
+        kopf.appendChild(TEAM_SCHACH._regelnDauerBauen());
+        return kopf;
+    },
 
-        karte.appendChild(TEAM_SCHACH._leistenKopfBauen("Wer sieht die Runde?",
-            SCHACH_RUNDE.SICHTBARKEITEN,
-            "Den Code gibt es in jeder Stufe — wer ihn hat, kommt immer hinein.",
-            true));
+    /* Die Reiter-Leiste — derselbe Segment-Schalter wie im Profil. */
+    _auswahlReiterLeisteBauen(offen) {
+        const leiste = TEAM_SCHACH._element("div", "profil-reiter runde-reiter");
+        leiste.setAttribute("role", "tablist");
 
-        const leiste = TEAM_SCHACH._element("div", "sichtbarkeit-leiste");
+        for (const reiter of TEAM_SCHACH.AUSWAHL_REITER) {
+            const aktiv = (reiter.id === offen);
+            const knopf = TEAM_SCHACH._knopf(reiter.titel,
+                "profil-reiter-knopf runde-reiter-knopf" + (aktiv ? " profil-reiter-aktiv" : ""),
+                () => TEAM_SCHACH.auswahlReiterSetzen(reiter.id));
+            knopf.setAttribute("role", "tab");
+            knopf.setAttribute("aria-selected", aktiv ? "true" : "false");
+            knopf.dataset.reiter = reiter.id;
+            leiste.appendChild(knopf);
+        }
+        return leiste;
+    },
 
-        for (const stufe of SCHACH_RUNDE.SICHTBARKEITEN) {
-            const aktiv = (stufe.id === TEAM_SCHACH.neueRegeln.sichtbarkeit);
+    /* Unten, klebend: der eine Weg ins Spiel. */
+    _auswahlFussBauen() {
+        const fuss = TEAM_SCHACH._element("div", "runde-fuss");
+        const knopf = TEAM_SCHACH._knopf("Spielen", "knopf-haupt runde-spielen",
+            () => TEAM_SCHACH.auswahlSpielen());
+        fuss.appendChild(knopf);
+        return fuss;
+    },
 
-            const knopf = TEAM_SCHACH._knopf(stufe.titel,
-                "knopf-klein sichtbarkeit-knopf"
-                    + (aktiv ? " sichtbarkeit-knopf-aktiv" : " knopf-still"),
-                () => {
-                    TEAM_SCHACH.neueRegeln.sichtbarkeit = stufe.id;
-                    TEAM_SCHACH.weichZeichnen();
-                });
+    /*
+     * „Spielen" aus der Auswahl: merken, schliessen, anlegen — derselbe
+     * Weg wie der Knopf auf dem Start (`START.spielen`), damit Sperre und
+     * „Wird angelegt …" nur an einer Stelle wohnen.
+     */
+    auswahlSpielen() {
+        TEAM_SCHACH.reglerMerken();
+        TEAM_SCHACH.auswahlOffen = false;
+        if (typeof START === "undefined") {
+            return null;
+        }
+        TABS.wechseln("start");
+        return START.spielen();
+    },
 
+    /* ---------------------------------------------------------------- *
+     * Bausteine: Abschnitt, Bild-Reihe, Bilder
+     * ---------------------------------------------------------------- */
+
+    /*
+     * Ein Abschnitt: eine Karte, oben die Frage mit EINEM i (derselbe Kopf
+     * wie bei der Figurenzahl, `leisten-kopf`), darunter die Wahl.
+     */
+    _abschnittBauen(titel, infoText) {
+        const karte = TEAM_SCHACH._element("section", "karte runde-abschnitt");
+        const kopf = TEAM_SCHACH._element("div", "leisten-kopf");
+        kopf.appendChild(TEAM_SCHACH._element("h3", "", titel));
+        if (infoText) {
+            kopf.appendChild(TEAM_SCHACH._infoZeichenBauen(titel, infoText));
+        }
+        karte.appendChild(kopf);
+        return karte;
+    },
+
+    /*
+     * EINE WAHL ALS SEGMENT-SCHALTER MIT BILDERN — das Muster der
+     * Figurenzahl-Reihe (seit v0.115.1: Bild oben, Wort klein darunter,
+     * die blaue Pille gleitet beim Umschalten), jetzt für jede Wahl.
+     *
+     * `name` gibt der Reihe ihre Klassen (`<name>-leiste`, `<name>-knopf`,
+     * `<name>-knopf-aktiv`) und der Pille ihren Übergangsnamen
+     * (`reihen-pille-<name>` in `css\stil-brett.css`) — jede Reihe braucht
+     * einen EIGENEN, sonst gleiten zwei Pillen unter demselben Namen und
+     * der Browser bricht den Übergang ab. `eintraege` ist eine Liste aus
+     * { id, titel, bild (Element oder null), hinweis }.
+     */
+    _bildReiheBauen(name, eintraege, gewaehltId, beiWahl) {
+        const leiste = TEAM_SCHACH._element("div", name + "-leiste bild-leiste");
+
+        for (const eintrag of eintraege) {
+            const aktiv = (eintrag.id === gewaehltId);
+            const knopf = TEAM_SCHACH._knopf("",
+                "knopf-klein bild-knopf " + name + "-knopf"
+                    + (aktiv ? " bild-knopf-aktiv " + name + "-knopf-aktiv" : " knopf-still"),
+                () => beiWahl(eintrag.id));
             knopf.setAttribute("aria-pressed", aktiv ? "true" : "false");
-            knopf.title = stufe.hinweis;
+            knopf.setAttribute("aria-label", eintrag.titel);
+            knopf.dataset.wahl = String(eintrag.id);
+            if (eintrag.hinweis) {
+                knopf.title = eintrag.hinweis;
+            }
+
+            const bild = TEAM_SCHACH._element("span", "bild-knopf-bild");
+            bild.setAttribute("aria-hidden", "true");
+            if (eintrag.bild) {
+                bild.appendChild(eintrag.bild);
+            }
+            knopf.appendChild(bild);
+            knopf.appendChild(TEAM_SCHACH._element("span", "bild-knopf-wort", eintrag.titel));
 
             if (aktiv) {
-                knopf.appendChild(TEAM_SCHACH._aktivPille("sichtbarkeit"));
+                knopf.appendChild(TEAM_SCHACH._aktivPille(name));
             }
             leiste.appendChild(knopf);
         }
+        return leiste;
+    },
 
-        karte.appendChild(leiste);
+    /* Ein Feld aus neueRegeln setzen und neu zeichnen. */
+    _regelSetzen(feld, wert) {
+        TEAM_SCHACH.neueRegeln[feld] = wert;
+        TEAM_SCHACH.weichZeichnen();
+    },
 
-        return karte;
+    /* Eine 3D-Figur als Bild (dieselben Dateien wie auf dem Brett). */
+    FIGUREN_ORDNER: "img/figuren/",
+
+    _figurBildBauen(art, farbe) {
+        const bild = document.createElement("img");
+        bild.className = "bild-figur";
+        bild.src = TEAM_SCHACH.FIGUREN_ORDNER + "figur-" + art + "-" + farbe + ".png";
+        bild.alt = "";
+        return bild;
+    },
+
+    /* Mehrere Bilder nebeneinander in einem Halter. */
+    _bildGruppe(teile) {
+        const gruppe = TEAM_SCHACH._element("span", "bild-gruppe");
+        for (const teil of teile) {
+            gruppe.appendChild(teil);
+        }
+        return gruppe;
+    },
+
+    /* Eine Lootbox als Bild (dieselben Dateien wie auf dem Brett). */
+    _lootboxKachelBild(stufeId, pech) {
+        return TEAM_SCHACH._wuerfelBauen
+            ? TEAM_SCHACH._wuerfelBauen({ id: stufeId }, !!pech)
+            : null;
+    },
+
+    /*
+     * Ein Linienzeichen aus Pfaden, über currentColor gefärbt (wie die
+     * Zeichen im Menüband — kein Emoji, Haus-Regel). `formen` ist eine
+     * Liste aus [tag, attribute]; gefüllt wird nur, was `fill` selbst
+     * setzt.
+     */
+    _linienZeichen(formen) {
+        const ns = "http://www.w3.org/2000/svg";
+        const svg = document.createElementNS(ns, "svg");
+        svg.setAttribute("viewBox", "0 0 24 24");
+        svg.setAttribute("class", "bild-zeichen");
+        svg.setAttribute("aria-hidden", "true");
+        for (const [tag, attribute] of formen) {
+            const form = document.createElementNS(ns, tag);
+            form.setAttribute("fill", "none");
+            form.setAttribute("stroke", "currentColor");
+            form.setAttribute("stroke-width", "1.8");
+            form.setAttribute("stroke-linecap", "round");
+            form.setAttribute("stroke-linejoin", "round");
+            for (const name of Object.keys(attribute)) {
+                form.setAttribute(name, attribute[name]);
+            }
+            svg.appendChild(form);
+        }
+        return svg;
+    },
+
+    /* Die Zeichen, nach Namen. Was sie zeigen, steht daneben. */
+    _zeichen(name) {
+        const z = TEAM_SCHACH._linienZeichen;
+        switch (name) {
+        case "menschen":        /* zwei Personen */
+            return z([
+                ["circle", { cx: "9", cy: "8", r: "3.4" }],
+                ["path", { d: "M3.4 20 C3.4 15.6 5.8 13.4 9 13.4 C12.2 13.4 14.6 15.6 14.6 20" }],
+                ["circle", { cx: "16.5", cy: "8.5", r: "2.6" }],
+                ["path", { d: "M16.2 14.2 C19.4 14.2 21 16 21 19" }]
+            ]);
+        case "computer":        /* ein Roboterkopf */
+            return z([
+                ["rect", { x: "4.5", y: "7", width: "15", height: "12", rx: "3" }],
+                ["path", { d: "M12 7 V3.8" }],
+                ["circle", { cx: "12", cy: "3", r: "1.1" }],
+                ["circle", { cx: "9", cy: "12.5", r: "1.4", fill: "currentColor" }],
+                ["circle", { cx: "15", cy: "12.5", r: "1.4", fill: "currentColor" }],
+                ["path", { d: "M9.5 16 H14.5" }]
+            ]);
+        case "welt":            /* ein Globus: öffentlich */
+            return z([
+                ["circle", { cx: "12", cy: "12", r: "8.5" }],
+                ["path", { d: "M3.5 12 H20.5" }],
+                ["path", { d: "M12 3.5 C8.8 6.5 8.8 17.5 12 20.5 C15.2 17.5 15.2 6.5 12 3.5" }]
+            ]);
+        case "schloss":         /* ein Vorhängeschloss: privat */
+            return z([
+                ["rect", { x: "5", y: "10.5", width: "14", height: "9.5", rx: "2" }],
+                ["path", { d: "M8 10.5 V7.5 C8 5 9.8 3.5 12 3.5 C14.2 3.5 16 5 16 7.5 V10.5" }],
+                ["path", { d: "M12 14.2 V16.4" }]
+            ]);
+        case "wuerfel":         /* ein Würfel mit fünf Augen: Zufall */
+            return z([
+                ["rect", { x: "4", y: "4", width: "16", height: "16", rx: "3.5" }],
+                ["circle", { cx: "8.5", cy: "8.5", r: "1.2", fill: "currentColor" }],
+                ["circle", { cx: "15.5", cy: "8.5", r: "1.2", fill: "currentColor" }],
+                ["circle", { cx: "12", cy: "12", r: "1.2", fill: "currentColor" }],
+                ["circle", { cx: "8.5", cy: "15.5", r: "1.2", fill: "currentColor" }],
+                ["circle", { cx: "15.5", cy: "15.5", r: "1.2", fill: "currentColor" }]
+            ]);
+        case "blitz":           /* ein Blitz: sofort */
+            return z([
+                ["path", { d: "M13.5 3 L6 13.5 H11.5 L10.5 21 L18 10.5 H12.5 Z" }]
+            ]);
+        case "einig":           /* ein Haken im Kreis: alle einig */
+            return z([
+                ["circle", { cx: "12", cy: "12", r: "8.5" }],
+                ["path", { d: "M8 12.3 L10.9 15.2 L16.2 9.2" }]
+            ]);
+        case "brett":           /* ein leeres Brett: ohne Lootboxen */
+            return z([
+                ["rect", { x: "3.5", y: "3.5", width: "17", height: "17", rx: "1.5" }],
+                ["rect", { x: "3.5", y: "3.5", width: "5.67", height: "5.67", fill: "currentColor", stroke: "none" }],
+                ["rect", { x: "14.83", y: "3.5", width: "5.67", height: "5.67", fill: "currentColor", stroke: "none" }],
+                ["rect", { x: "9.17", y: "9.17", width: "5.67", height: "5.67", fill: "currentColor", stroke: "none" }],
+                ["rect", { x: "3.5", y: "14.83", width: "5.67", height: "5.67", fill: "currentColor", stroke: "none" }],
+                ["rect", { x: "14.83", y: "14.83", width: "5.67", height: "5.67", fill: "currentColor", stroke: "none" }]
+            ]);
+        case "quadrat":
+            return z([["rect", { x: "5", y: "5", width: "14", height: "14", rx: "1.5" }]]);
+        case "rechteck":
+            return z([["rect", { x: "3.5", y: "7", width: "17", height: "10", rx: "1.5" }]]);
+        case "kreuz":
+            return z([["path", { d: "M9 3.5 H15 V9 H20.5 V15 H15 V20.5 H9 V15 H3.5 V9 H9 Z" }]]);
+        default:
+            return null;
+        }
+    },
+
+    /* Welches Zeichen zu welcher Brettform (`SCHACH_VARIANTEN.FORMEN`). */
+    FORM_ZEICHEN: { klassisch: "quadrat", rechteckig: "rechteck", kreuz: "kreuz" },
+
+    /* Stärke als vier Balken, die ersten `n` gefüllt. */
+    _staerkeZeichen(n) {
+        const formen = [];
+        for (let stelle = 0; stelle < 4; stelle++) {
+            const hoehe = 5 + stelle * 4;
+            formen.push(["rect", {
+                x: String(3 + stelle * 5), y: String(20 - hoehe),
+                width: "3.4", height: String(hoehe), rx: "1",
+                fill: (stelle < n) ? "currentColor" : "none"
+            }]);
+        }
+        return TEAM_SCHACH._linienZeichen(formen);
+    },
+
+    /* ---------------------------------------------------------------- *
+     * Reiter 1: Brett
+     * ---------------------------------------------------------------- */
+
+    _brettReiterBauen(seite) {
+        /* Form und Grösse — die Kachel wählt nur aus und bleibt hier. */
+        const brett = TEAM_SCHACH._abschnittBauen("Brett",
+            "Erst die Form, dann die Grösse. Das Bild zeigt die Startaufstellung "
+            + "mit der Figurenzahl, die darunter eingestellt ist.");
+
+        brett.appendChild(TEAM_SCHACH._bildReiheBauen("form",
+            SCHACH_VARIANTEN.FORMEN.map((form) => ({
+                id: form.id, titel: form.titel,
+                bild: TEAM_SCHACH._zeichen(TEAM_SCHACH.FORM_ZEICHEN[form.id])
+            })),
+            TEAM_SCHACH.gewaehlteForm,
+            (id) => {
+                TEAM_SCHACH.gewaehlteForm = id;
+                TEAM_SCHACH.weichZeichnen();
+            }));
+
+        const gewaehlt = (typeof START !== "undefined") ? START._spielart().id : "";
+        const feld = TEAM_SCHACH._element("div", "spielart-feld runde-spielarten");
+        for (const variante of SCHACH_VARIANTEN.zurAuswahlNachForm(TEAM_SCHACH.gewaehlteForm)) {
+            feld.appendChild(TEAM_SCHACH._spielartKachelBauen(variante, variante.id === gewaehlt));
+        }
+        brett.appendChild(feld);
+        seite.appendChild(brett);
+
+        /* Figuren je Seite — die Knöpfe mit Zahl und Muster (v0.115.1). */
+        seite.appendChild(TEAM_SCHACH._armeeStaerkeLeisteBauen());
+
+        /* Aufstellung: gewohnt oder gewürfelt, und beim Würfeln gleich
+           oder verschieden. */
+        const aufstellung = TEAM_SCHACH._abschnittBauen("Aufstellung",
+            "Gewohnt: die Aufstellung der Spielart. Zufall: gewürfelte Figuren — "
+            + "wie viele, sagt die Figurenzahl darüber. Selten sind es ZWEI Könige: "
+            + "Dann hast du zwei Leben.\n\nGleich: beide Seiten bekommen dieselben "
+            + "Figuren, spiegelbildlich. Verschieden: jede Seite würfelt für sich.");
+
+        aufstellung.appendChild(TEAM_SCHACH._bildReiheBauen("aufstellung", [
+            { id: "gewohnt", titel: "Gewohnt", bild: TEAM_SCHACH._bildGruppe([
+                TEAM_SCHACH._figurBildBauen("dame", "weiss"),
+                TEAM_SCHACH._figurBildBauen("koenig", "weiss")]) },
+            { id: "zufall", titel: "Zufall", bild: TEAM_SCHACH._zeichen("wuerfel") }
+        ], TEAM_SCHACH.neueRegeln.zufallsArmee ? "zufall" : "gewohnt",
+        (id) => TEAM_SCHACH._regelSetzen("zufallsArmee", id === "zufall")));
+
+        if (TEAM_SCHACH.neueRegeln.zufallsArmee) {
+            aufstellung.appendChild(TEAM_SCHACH._bildReiheBauen("armeen", [
+                { id: "gleich", titel: "Beide gleich", bild: TEAM_SCHACH._bildGruppe([
+                    TEAM_SCHACH._figurBildBauen("turm", "weiss"),
+                    TEAM_SCHACH._figurBildBauen("turm", "schwarz")]) },
+                { id: "verschieden", titel: "Verschieden", bild: TEAM_SCHACH._bildGruppe([
+                    TEAM_SCHACH._figurBildBauen("dame", "weiss"),
+                    TEAM_SCHACH._figurBildBauen("bauer", "schwarz")]) }
+            ], TEAM_SCHACH.neueRegeln.armeeUnterschiedlich ? "verschieden" : "gleich",
+            (id) => TEAM_SCHACH._regelSetzen("armeeUnterschiedlich", id === "verschieden")));
+        }
+        seite.appendChild(aufstellung);
+    },
+
+    /* ---------------------------------------------------------------- *
+     * Reiter 2: Gegner — gegen wen, wer sieht es, wie wird gezogen
+     * ---------------------------------------------------------------- */
+
+    _gegnerReiterBauen(seite) {
+        const regeln = TEAM_SCHACH.neueRegeln;
+
+        const gegen = TEAM_SCHACH._abschnittBauen("Gegen wen?",
+            "Menschen: andere Spieler kommen über Code, Link oder die Liste der "
+            + "offenen Runden dazu. Computer: er sitzt in Schwarz und zieht von "
+            + "selbst — solche Runden zählen nicht für die Rangliste.");
+        gegen.appendChild(TEAM_SCHACH._bildReiheBauen("gegner", [
+            { id: "menschen", titel: "Menschen", bild: TEAM_SCHACH._zeichen("menschen") },
+            { id: "computer", titel: "Computer", bild: TEAM_SCHACH._zeichen("computer") }
+        ], regeln.gegenComputer ? "computer" : "menschen",
+        (id) => TEAM_SCHACH._regelSetzen("gegenComputer", id === "computer")));
+        seite.appendChild(gegen);
+
+        if (regeln.gegenComputer) {
+            /* Wie stark er spielt — die Stufen und Sätze aus dem Modell. */
+            const staerke = TEAM_SCHACH._abschnittBauen("Wie stark?",
+                SCHACH_BOT.STUFEN.map((stufe) => stufe.titel + ": " + stufe.hinweis).join("\n")
+                + "\n\nEine laufende Partie behält ihre Stufe.");
+            staerke.appendChild(TEAM_SCHACH._bildReiheBauen("bot",
+                SCHACH_BOT.STUFEN.map((stufe, stelle) => ({
+                    id: stufe.id, titel: stufe.titel, hinweis: stufe.hinweis,
+                    bild: TEAM_SCHACH._staerkeZeichen(stelle + 1)
+                })),
+                regeln.botStufe,
+                (id) => TEAM_SCHACH._regelSetzen("botStufe", id)));
+            seite.appendChild(staerke);
+        } else {
+            /* Wer die Runde sieht — nur, wenn Menschen dazukommen sollen. */
+            const bilder = { oeffentlich: "welt", freunde: "menschen", privat: "schloss" };
+            const sicht = TEAM_SCHACH._abschnittBauen("Wer sieht die Runde?",
+                SCHACH_RUNDE.SICHTBARKEITEN.map((stufe) => stufe.titel + ": " + stufe.hinweis)
+                    .join("\n")
+                + "\n\nDen Code gibt es in jeder Stufe — wer ihn hat, kommt immer hinein.");
+            sicht.appendChild(TEAM_SCHACH._bildReiheBauen("sichtbarkeit",
+                SCHACH_RUNDE.SICHTBARKEITEN.map((stufe) => ({
+                    id: stufe.id, titel: stufe.titel, hinweis: stufe.hinweis,
+                    bild: TEAM_SCHACH._zeichen(bilder[stufe.id] || "welt")
+                })),
+                regeln.sichtbarkeit,
+                (id) => TEAM_SCHACH._regelSetzen("sichtbarkeit", id)));
+            seite.appendChild(sicht);
+        }
+
+        /* Die Seiten: zulosen oder selbst wählen. */
+        const seiten = TEAM_SCHACH._abschnittBauen("Wer spielt Weiss?",
+            "Zulosen (Vorgabe): Jeder bekommt seine Farbe beim Betreten — es geht "
+            + "sofort ans Brett. Selbst wählen: Vorher kommt ein Bildschirm mit "
+            + "Weiss, Schwarz und Zufall.");
+        seiten.appendChild(TEAM_SCHACH._bildReiheBauen("seiten", [
+            { id: "zulosen", titel: "Zulosen", bild: TEAM_SCHACH._zeichen("wuerfel") },
+            { id: "waehlen", titel: "Selbst wählen", bild: TEAM_SCHACH._bildGruppe([
+                TEAM_SCHACH._figurBildBauen("koenig", "weiss"),
+                TEAM_SCHACH._figurBildBauen("koenig", "schwarz")]) }
+        ], regeln.seiteZufaellig ? "zulosen" : "waehlen",
+        (id) => TEAM_SCHACH._regelSetzen("seiteZufaellig", id === "zulosen")));
+        seite.appendChild(seiten);
+
+        /* Ziehen im Team: alle einig (Vorgabe) oder wer zuerst zieht.
+           Gespeichert bleibt `einigkeit` mit derselben Bedeutung (v0.76). */
+        const team = TEAM_SCHACH._abschnittBauen("Ziehen im Team",
+            "Alle einig (Vorgabe): Ein Zug zählt erst, wenn ALLE aus dem Team "
+            + "denselben gemacht haben; die Vorschläge stehen durchsichtig auf dem "
+            + "Brett. Wer nicht mitzieht, wird nach Ablauf der Frist übergangen.\n\n"
+            + "Wer zuerst zieht: Jeder zieht sofort für sein ganzes Team.");
+        team.appendChild(TEAM_SCHACH._bildReiheBauen("einigkeit", [
+            { id: "einig", titel: "Alle einig", bild: TEAM_SCHACH._zeichen("einig") },
+            { id: "sofort", titel: "Wer zuerst zieht", bild: TEAM_SCHACH._zeichen("blitz") }
+        ], regeln.einigkeit ? "einig" : "sofort",
+        (id) => TEAM_SCHACH._regelSetzen("einigkeit", id === "einig")));
+        seite.appendChild(team);
+    },
+
+    /* ---------------------------------------------------------------- *
+     * Reiter 3: Lootboxen
+     * ---------------------------------------------------------------- */
+
+    _lootboxReiterBauen(seite) {
+        const regeln = TEAM_SCHACH.neueRegeln;
+
+        const an = TEAM_SCHACH._abschnittBauen("Mit Lootboxen?",
+            "Auf freien Feldern erscheinen Lootboxen. Wer darüberzieht, sammelt "
+            + "eine Fähigkeit oder ein Unglück ein.");
+        an.appendChild(TEAM_SCHACH._bildReiheBauen("lootbox", [
+            { id: "aus", titel: "Ohne", bild: TEAM_SCHACH._zeichen("brett") },
+            { id: "an", titel: "Mit Lootboxen", bild: TEAM_SCHACH._lootboxKachelBild("lila", false) }
+        ], regeln.faehigkeiten ? "an" : "aus",
+        (id) => TEAM_SCHACH._regelSetzen("faehigkeiten", id === "an")));
+
+        /* Der Weg in die Bibliothek: alle Fähigkeiten mit Bildanleitung. */
+        an.appendChild(TEAM_SCHACH._knopf("Alle Fähigkeiten ansehen",
+            "knopf-still knopf-klein runde-bibliothek", () => TEAM_SCHACH.faehigkeitenOeffnen()));
+        seite.appendChild(an);
+
+        if (!regeln.faehigkeiten) {
+            return;
+        }
+
+        /* Wie viele — je Stufe eine Lootbox mehr im Bild. */
+        const stufen = SCHACH_VARIANTEN.STUFEN;
+        const menge = TEAM_SCHACH._abschnittBauen("Wie viele?",
+            SCHACH_VARIANTEN.LOOTBOX_MENGEN
+                .filter((eintrag) => !!eintrag.hinweis)
+                .map((eintrag) => eintrag.titel + ": " + eintrag.hinweis).join("\n"));
+        menge.appendChild(TEAM_SCHACH._bildReiheBauen("mengen",
+            SCHACH_VARIANTEN.LOOTBOX_MENGEN.map((eintrag, stelle) => ({
+                id: eintrag.id, titel: eintrag.titel, hinweis: eintrag.hinweis,
+                bild: TEAM_SCHACH._bildGruppe(stufen.slice(0, Math.min(stelle + 1, stufen.length))
+                    .map((stufe) => TEAM_SCHACH._lootboxKachelBild(stufe.id, false))
+                    .filter((teil) => !!teil))
+            })),
+            regeln.lootboxMenge,
+            (id) => TEAM_SCHACH._regelSetzen("lootboxMenge", id)));
+        seite.appendChild(menge);
+
+        /* Welche Items — die Mengen als Kacheln, die eigene Wahl darunter. */
+        const vorrat = TEAM_SCHACH._abschnittBauen("Welche Items?",
+            SCHACH_VARIANTEN.ITEM_VORRAETE
+                .filter((eintrag) => !!eintrag.hinweis)
+                .map((eintrag) => eintrag.titel + ": " + eintrag.hinweis).join("\n"));
+        const mengen = SCHACH_VARIANTEN.ITEM_VORRAETE.filter((eintrag) => !eintrag.eigeneWahl);
+        vorrat.appendChild(TEAM_SCHACH._bildReiheBauen("vorrat",
+            mengen.map((eintrag, stelle) => ({
+                id: eintrag.id, titel: eintrag.titel, hinweis: eintrag.hinweis,
+                bild: TEAM_SCHACH._bildGruppe(stufen
+                    .slice(0, Math.max(1, Math.round((stelle + 1) * stufen.length / mengen.length)))
+                    .map((stufe) => TEAM_SCHACH._lootboxKachelBild(stufe.id, false))
+                    .filter((teil) => !!teil))
+            })),
+            regeln.itemVorrat,
+            (id) => TEAM_SCHACH._regelSetzen("itemVorrat", id)));
+        vorrat.appendChild(TEAM_SCHACH._eigeneWahlKnopfBauen());
+        seite.appendChild(vorrat);
+
+        /* Sieht man, was drin ist? Ein Bild für jede Antwort. */
+        const seltenheit = TEAM_SCHACH._abschnittBauen("Sieht man, was drin ist?",
+            "Farbig: Jede Lootbox trägt schon auf dem Brett die Farbe ihrer Stufe, "
+            + "eine schlechte ihr Fragezeichen. Verdeckt: Alle sehen gleich aus — "
+            + "man weiss erst beim Einsammeln, was es war.");
+        const wechsel = TEAM_SCHACH._element("span", "schalter-bild schalter-bild-fenster");
+        wechsel.appendChild(TEAM_SCHACH._lootboxWechselBauen());
+        seltenheit.appendChild(TEAM_SCHACH._bildReiheBauen("seltenheit", [
+            { id: "verdeckt", titel: "Verdeckt", bild: TEAM_SCHACH._lootboxKachelBild("unbekannt", false) },
+            { id: "farbig", titel: "Farbig", bild: wechsel }
+        ], regeln.seltenheitZeigen ? "farbig" : "verdeckt",
+        (id) => {
+            /* Ein Wert für beide Felder (seit v0.115.3, `entschieden.md`). */
+            regeln.pechZeigen = (id === "farbig");
+            TEAM_SCHACH._regelSetzen("seltenheitZeigen", id === "farbig");
+        }));
+        seite.appendChild(seltenheit);
     },
 
     /*
@@ -303,440 +699,6 @@ Object.assign(TEAM_SCHACH, {
     },
 
     /*
-     * DIE BRETTFORM STEHT VOR DER SPIELART (seit v0.63, Wunsch #22).
-     *
-     * Bis v0.62 lagen alle Spielarten als eine flache Reihe Kacheln da und
-     * mischten zwei Fragen: welche FORM und welche GRÖSSE. Mit den drei
-     * Kreuz-Brettern wären das sieben Kacheln ohne erkennbare Ordnung gewesen.
-     *
-     * Jetzt wählt man erst die Form — Quadratisch, Rechteckig, Kreuz — und
-     * sieht darunter nur deren Grössen. Die Form ist reine Anzeige: Sie steht
-     * nicht in der Partie, sondern nur in diesem Bildschirm. Was gespeichert
-     * wird, ist wie immer die eine gewählte Spielart.
-     */
-    _formLeisteBauen() {
-        const karte = TEAM_SCHACH._element("section", "karte");
-        karte.appendChild(TEAM_SCHACH._element("h3", "", "Welche Brettform?"));
-
-        const leiste = TEAM_SCHACH._element("div", "form-leiste");
-
-        for (const form of SCHACH_VARIANTEN.FORMEN) {
-            const aktiv = (form.id === TEAM_SCHACH.gewaehlteForm);
-
-            const knopf = TEAM_SCHACH._knopf(form.titel,
-                "knopf-klein form-knopf" + (aktiv ? " form-knopf-aktiv" : " knopf-still"),
-                () => {
-                    TEAM_SCHACH.gewaehlteForm = form.id;
-                    TEAM_SCHACH.weichZeichnen();
-                });
-
-            knopf.setAttribute("aria-pressed", aktiv ? "true" : "false");
-
-            if (aktiv) {
-                knopf.appendChild(TEAM_SCHACH._aktivPille("form"));
-            }
-            leiste.appendChild(knopf);
-        }
-
-        karte.appendChild(leiste);
-
-        /*
-         * KEIN ERKLÄRABSATZ MEHR UNTER DEN FORM-KNÖPFEN (seit v0.56.0).
-         *
-         * Nutzer-Ansage 25.08.2026: „Beschreibung unter Brettform weg,
-         * selbst erklärend." Die drei Knöpfe (Quadratisch, Rechteckig, Kreuz)
-         * und die Brettbilder auf den Kacheln darunter sagen bereits, was
-         * jede Form ist; der Satz `FORMEN[].beschreibung` wiederholte es nur
-         * und schob die Kacheln nach unten. Das Datenfeld bleibt im Modell —
-         * es tut niemandem weh und könnte an anderer Stelle wieder gebraucht
-         * werden.
-         */
-        return karte;
-    },
-
-    /*
-     * Die drei Einstellungen über den Kacheln. Sie stehen VOR der Spielart,
-     * weil sie für jede gelten — die Kachel ist der letzte Klick, der die
-     * Partie anlegt.
-     */
-    _regelSchalterBauen() {
-        const karte = TEAM_SCHACH._element("section", "karte");
-        karte.appendChild(TEAM_SCHACH._element("h3", "", "Einstellungen"));
-
-        /*
-         * Alle Haken sind zu Beginn AUS: Eine neue Partie ist erst einmal ein
-         * normales Schachspiel. Was dazukommen soll, hakt man ausdrücklich an.
-         *
-         * „Seltenheit anzeigen" hängt am Würfel-Haken und erscheint erst, wenn
-         * der gesetzt ist — ohne Würfel gäbe es nichts anzuzeigen.
-         */
-        const schalter = [
-            /*
-             * GEGEN DEN COMPUTER STEHT GANZ OBEN (seit v0.27.0). Der Haken
-             * beantwortet nicht die Frage „wie wird gespielt", sondern
-             * „gegen wen" — und das entscheidet man zuerst. Alle weiteren
-             * Einstellungen gelten danach unverändert.
-             */
-            {
-                schluessel: "gegenComputer",
-                titel: "Gegen den Computer",
-                hinweis: "An sitzt der Computer in Schwarz und zieht von "
-                    + "selbst — du brauchst niemanden dazu. Wie stark er "
-                    + "spielt, stellst du darunter ein. Solche Runden zählen "
-                    + "nicht für die Rangliste."
-            },
-            {
-                schluessel: "faehigkeiten",
-                titel: "Lootboxen",
-                hinweis: "Auf freien Feldern erscheinen Lootboxen mit Fähigkeiten — "
-                    + "gute wie schlechte.",
-
-                /*
-                 * DAS i FÜHRT IN DIE GANZE BIBLIOTHEK (seit v0.55).
-                 *
-                 * In v0.52 zeigte es nur einen Absatz Text. Gemeint war aber
-                 * das ganze Menü: alle Fähigkeiten mit ihren Stufen, Zeichen und
-                 * abgespielten Anleitungen. Wer sich beim Anlegen fragt, ob er
-                 * Würfel will, will genau das sehen — und nicht erst eine Partie
-                 * anlegen müssen, um es zu erfahren.
-                 *
-                 * Möglich ist das ohne Umbau: `zeichnen` fragt `infoOffen` VOR
-                 * `auswahlOffen` ab, und `infoSchliessen` bringt einen deshalb
-                 * genau hierher zurück.
-                 */
-                bibliothek: true
-            },
-            /*
-             * EIN HAKEN FÜR FARBE UND ZEICHEN (seit v0.115.3). Von v0.49 bis
-             * v0.115.2 waren es zwei: „Seltenheit anzeigen" (die Farbe der
-             * Stufe) und „Unglücks-Lootboxen anzeigen" (das Fragezeichen der
-             * schlechten). Nutzer-Ansage 18.09.2026, zweimal: „das eine
-             * grenzt das andere aus — mach aus zwei Knöpfen einen, mit einer
-             * Vorschau vom Würfel, die sich ändert, am besten durch alle
-             * Würfelfarben." Der zweite Haken trug als Bild die graue Box
-             * mit Fragezeichen — sie sah aus wie die VERBORGENE Box, also
-             * wie das „Nein" zum ersten Haken. Zwei Bilder, die wie Ja und
-             * Nein aussehen, aber beide anschaltbar sind, sind ein Rätsel.
-             *
-             * `zusammen` nennt die Felder, die der Haken MITSCHREIBT: Der
-             * Datenvertrag bleibt (jede Partie trägt `pechZeigen` weiter),
-             * nur stellt man es nicht mehr getrennt ein. Die Kombination
-             * „Farbe ja, Warnung nein" ist damit vom Bildschirm genommen —
-             * bewusst, siehe `entschieden.md`.
-             */
-            {
-                schluessel: "seltenheitZeigen",
-                zusammen: ["pechZeigen"],
-                titel: "Seltenheit anzeigen",
-                hinweis: "An heisst: Jede Lootbox trägt schon auf dem Brett die "
-                    + "Farbe ihrer Stufe, und eine schlechte ihr Fragezeichen. "
-                    + "Aus sehen alle gleich aus, und man weiss erst beim "
-                    + "Einsammeln, was es war.",
-                nurMitWuerfeln: true
-            },
-            {
-                schluessel: "zufallsArmee",
-                titel: "Zufallsarmee",
-                hinweis: "Gewürfelte Figuren statt der gewohnten Aufstellung. Wie "
-                    + "viele es sind, sagt allein der Regler oben. Selten sind es "
-                    + "ZWEI Könige: Dann hast du zwei Leben — der erste fällt wie "
-                    + "jede Figur, den letzten muss der Gegner mattsetzen."
-            },
-            {
-                schluessel: "armeeUnterschiedlich",
-                titel: "Unterschiedliche Armeen",
-                hinweis: "An würfelt jede Mannschaft für sich — dann kann eine Seite "
-                    + "zwei Türme und eine Dame haben und die andere fast nur Bauern. "
-                    + "Aus bekommen beide dieselben Figuren, spiegelbildlich.",
-                nurMitArmee: true
-            },
-            {
-                schluessel: "seiteZufaellig",
-                titel: "Seite zulosen",
-                hinweis: "An (Vorgabe) bekommt jeder seine Farbe zugelost, sobald er "
-                    + "die Runde betritt — es geht sofort ans Brett. Aus sucht sich "
-                    + "jeder seine Seite selbst aus; dafür kommt vorher ein "
-                    + "Bildschirm mit Weiss, Schwarz und Zufall."
-            },
-            /*
-             * EINIGKEIT IST SEIT v0.76 DIE VORGABE — der Haken fragt das
-             * GEGENTEIL ab (Eingangskorb vom 18.08.: „Team muss einig sein soll
-             * andersrum da stehen, also dass einig sein Standard sein soll und
-             * das andere nur mit Knopfdruck auswählbar ist").
-             *
-             * Gespeichert wird weiter `regeln.einigkeit` mit derselben
-             * Bedeutung (additiver Datenvertrag — jede laufende Partie trägt
-             * das Feld). Umgedreht ist nur, was am Bildschirm steht: Der Haken
-             * heisst jetzt nach dem SCHNELLEN Weg und ist aus.
-             */
-            {
-                schluessel: "einigkeit",
-                umgekehrt: true,
-                titel: "Wer zuerst zieht, hat gezogen",
-                /* Seit v0.83.0 stimmt das Team ab, indem jeder denselben Zug
-                   selbst macht — keine Karte, keine Knöpfe mehr. */
-                hinweis: "Aus (Vorgabe) zieht ein Zug erst, wenn ALLE aus dem "
-                    + "Team denselben gemacht haben — die Vorschläge der "
-                    + "anderen stehen durchsichtig auf dem Brett (der Gegner "
-                    + "sieht sie nicht). Wer nicht mitzieht, wird nach Ablauf "
-                    + "der Frist übergangen. An zieht jeder sofort für sein "
-                    + "ganzes Team."
-            }
-        ];
-
-        /*
-         * Zwei Haken haben Unterpunkte: der Würfel-Haken und (seit v0.51) die
-         * Zufallsarmee. Ein Unterpunkt erscheint erst, wenn sein Oberpunkt
-         * gesetzt ist — sonst stünde dort eine Einstellung zu einer Sache, die
-         * es in dieser Partie gar nicht gibt.
-         */
-        const obenDrueber = { nurMitWuerfeln: "faehigkeiten", nurMitArmee: "zufallsArmee" };
-
-        /*
-         * UNTERPUNKTE LIEGEN IN EINEM GRUPPEN-KASTEN (seit v0.110). Bis
-         * v0.109 zeigte ein Einrück-Strich die Zugehörigkeit — weg damit
-         * (Nutzer-Ansage 22.08.): Jetzt sammelt ein leise hinterlegter Kasten
-         * alles, was zu einem Haken gehört, wie in den Einstellungen moderner
-         * Apps. `ablegen` sortiert jede Zeile an ihren Platz: ohne Oberpunkt
-         * in die Karte (und der Kasten ist zu), mit Oberpunkt in den Kasten
-         * ihres Oberpunkts.
-         */
-        let gruppe = null;
-        let gruppeFuer = "";
-
-        const ablegen = (element, unter) => {
-            if (!unter) {
-                karte.appendChild(element);
-                gruppe = null;
-                gruppeFuer = "";
-                return;
-            }
-
-            if (!gruppe || gruppeFuer !== unter) {
-                gruppe = TEAM_SCHACH._element("div", "schalter-gruppe");
-                gruppeFuer = unter;
-                karte.appendChild(gruppe);
-            }
-
-            gruppe.appendChild(element);
-        };
-
-        for (const eintrag of schalter) {
-            const oben = eintrag.nurMitWuerfeln
-                ? obenDrueber.nurMitWuerfeln
-                : (eintrag.nurMitArmee ? obenDrueber.nurMitArmee : "");
-
-            if (oben && !TEAM_SCHACH.neueRegeln[oben]) {
-                continue;
-            }
-
-            const zeile = TEAM_SCHACH._element("label", "schalter-zeile");
-
-            const kasten = document.createElement("input");
-            kasten.type = "checkbox";
-            kasten.className = "schalter-kasten";
-            /* `umgekehrt` (seit v0.76): Der Haken fragt das GEGENTEIL des
-               gespeicherten Feldes ab — siehe „Wer zuerst zieht, hat gezogen".
-               Im Stand ändert sich dadurch nichts. */
-            kasten.checked = eintrag.umgekehrt
-                ? !TEAM_SCHACH.neueRegeln[eintrag.schluessel]
-                : !!TEAM_SCHACH.neueRegeln[eintrag.schluessel];
-
-            kasten.addEventListener("change", () => {
-                TEAM_SCHACH.neueRegeln[eintrag.schluessel] = eintrag.umgekehrt
-                    ? !kasten.checked
-                    : !!kasten.checked;
-
-                /* Mitgeschriebene Felder bekommen denselben Wert (seit
-                   v0.115.3, „Seltenheit anzeigen" schreibt `pechZeigen`). */
-                for (const weiterer of eintrag.zusammen || []) {
-                    TEAM_SCHACH.neueRegeln[weiterer] =
-                        TEAM_SCHACH.neueRegeln[eintrag.schluessel];
-                }
-
-                /*
-                 * JEDER HAKEN ZEICHNET NEU (seit v0.71).
-                 *
-                 * Bis v0.70 stand hier eine Liste mit zwei Schlüsseln: Nur
-                 * „Lootboxen" und „Zufallsarmee" zeichneten neu, weil nur sie
-                 * Unterpunkte hatten. Als der Regen-Haken v0.60 seinen
-                 * Schieberegler bekam, wurde er zum dritten — und niemand
-                 * ergänzte die Liste. Der Regler erschien deshalb erst, wenn
-                 * irgendetwas anderes ein Neuzeichnen auslöste, etwa ein Tipp
-                 * auf eine andere Brettform und zurück. Genau so wurde es
-                 * gemeldet.
-                 *
-                 * Eine Liste, die man beim Einbauen des nächsten Unterpunkts
-                 * mitpflegen muss, ist eine Falle. Neuzeichnen kostet hier
-                 * nichts: `neueRegeln` ist reiner Bildschirm-Zustand, die
-                 * Ansicht baut sich aus ihm auf.
-                 */
-                TEAM_SCHACH.weichZeichnen();
-            });
-            zeile.appendChild(kasten);
-
-            /*
-             * NUR DER TITEL STEHT DA (seit v0.105). Der Erklärsatz sitzt hinter
-             * dem i daneben — siehe `_leistenKopfBauen`, dieselbe Ansage vom
-             * 21.08. Sieben Haken mit je zwei bis vier Zeilen Text waren eine
-             * Wand, durch die man sich zu den Kacheln durchscrollen musste.
-             */
-            /*
-             * DAS BILD VOR DEM TITEL (seit v0.110.0, Nutzer-Ansage
-             * 28.08.2026: Icons und Beispielbilder statt Texten).
-             *
-             * ES BEKOMMT NICHT JEDE ZEILE EINS, und das ist Absicht: Ein
-             * Zeichen für „Unterschiedliche Armeen" oder „Wer zuerst zieht"
-             * müsste erfunden werden und wäre dann ein Rätsel neben einem
-             * klaren Wort — schlechter als gar keines. Ein Bild steht nur
-             * dort, wo die App das Ding ohnehin ZEIGT: bei den drei
-             * Lootbox-Haken. Ihr Bild ist dieselbe Lootbox, die auf dem
-             * Brett liegt (`_wuerfelBauen`), und es zeigt genau das, was der
-             * Haken bewirkt — beim Seltenheits-Haken die farbige Box, beim
-             * Unglücks-Haken die mit dem umgedrehten Fragezeichen.
-             */
-            const bild = TEAM_SCHACH._schalterBildBauen(eintrag);
-            if (bild) {
-                zeile.appendChild(bild);
-            }
-
-            const text = TEAM_SCHACH._element("span", "schalter-text");
-            text.appendChild(TEAM_SCHACH._element("span", "schalter-titel", eintrag.titel));
-            zeile.appendChild(text);
-
-            /*
-             * Das i steht NEBEN der Zeile, nicht darin: Die ganze Zeile ist ein
-             * `label` und schaltet den Haken um — ein Knopf mittendrin würde
-             * beides gleichzeitig auslösen.
-             */
-            const halter = TEAM_SCHACH._element("div", "schalter-halter");
-            halter.appendChild(zeile);
-
-            /*
-             * EIN i JE ZEILE, und es zeigt immer den Erklärsatz dieser Zeile.
-             * Beim Lootbox-Haken führt es zusätzlich in die Bibliothek: Wer
-             * dort mehr wissen will, will die Fähigkeiten sehen, nicht noch
-             * einen Absatz (seit v0.55 war das der ganze Zweck dieses i).
-             */
-            halter.appendChild(eintrag.bibliothek
-                ? TEAM_SCHACH._bibliothekZeichenBauen(eintrag)
-                : TEAM_SCHACH._infoZeichenBauen(eintrag.titel, eintrag.hinweis));
-
-            ablegen(halter, oben);
-
-            /* Wie stark der Computer spielt, steht direkt unter seinem
-               Haken (seit v0.28.0) — dieselbe Stelle und dieselbe Bauart
-               wie die Lootbox-Menge unter ihrem. */
-            if (eintrag.schluessel === "gegenComputer"
-                && TEAM_SCHACH.neueRegeln.gegenComputer) {
-                ablegen(TEAM_SCHACH._botStufenLeisteBauen(), "gegenComputer");
-            }
-
-            /* Wie viele Lootboxen es sein sollen, steht direkt unter ihrem
-               Haken — es ist die erste Frage, die man danach hat. Beide
-               Reihen liegen im Gruppen-Kasten des Lootbox-Hakens. */
-            if (eintrag.schluessel === "faehigkeiten"
-                && TEAM_SCHACH.neueRegeln.faehigkeiten) {
-                ablegen(TEAM_SCHACH._mengenLeisteBauen(), "faehigkeiten");
-
-                /* Und darunter, WELCHE Items vorkommen (seit v0.87, V3:
-                   „nicht nur die Anzahl, sondern auch welche Items"). */
-                ablegen(TEAM_SCHACH._vorratLeisteBauen(), "faehigkeiten");
-            }
-        }
-
-        return karte;
-    },
-
-    /*
-     * DIE VIER STUFEN FÜR DIE LOOTBOX-MENGE (seit v0.71).
-     *
-     * Sie lösen zwei Einstellungen auf einmal ab: den Haken „Lootbox-Regen"
-     * (v0.50) und den Schieberegler „Wie früh es regnet" (v0.60). Beide
-     * beantworteten dieselbe Frage — wie viel kommt —, und man musste sie
-     * zusammendenken. Vier Kästchen nebeneinander sagen es in einem Blick.
-     *
-     * Was jede Stufe bedeutet, steht im Modell
-     * (`SCHACH_VARIANTEN.LOOTBOX_MENGEN`), samt dem Satz darunter: Der
-     * Bildschirm zeigt hier nur an, was das Modell sagt.
-     */
-    /*
-     * DIE VIER SCHWIERIGKEITSSTUFEN DES COMPUTERS (seit v0.28.0).
-     *
-     * Dieselbe Knopfreihe wie die Lootbox-Menge und die Figurenzahl — wer
-     * die eine bedienen kann, kann auch diese. Eigene Klassen (`bot-*`) aus
-     * demselben Grund wie bei Armee und Vorrat: Gleich aussehende Reihen auf
-     * einem Bildschirm müssen im Test und in der Stildatei unterscheidbar
-     * bleiben.
-     *
-     * Was jede Stufe bedeutet, steht im MODELL (`SCHACH_BOT.STUFEN`) und
-     * kommt über das i daneben — der Bildschirm zeigt hier nur an.
-     */
-    _botStufenLeisteBauen() {
-        const zeile = TEAM_SCHACH._element("div", "mengen-zeile");
-
-        zeile.appendChild(TEAM_SCHACH._leistenKopfBauen(
-            "Wie stark spielt der Computer?", SCHACH_BOT.STUFEN,
-            "Umstellen geht vor jeder Runde. Eine laufende Partie behält die "
-                + "Stufe, mit der sie angelegt wurde."));
-
-        const leiste = TEAM_SCHACH._element("div", "bot-leiste");
-
-        for (const stufe of SCHACH_BOT.STUFEN) {
-            const aktiv = (stufe.id === TEAM_SCHACH.neueRegeln.botStufe);
-
-            const knopf = TEAM_SCHACH._knopf(stufe.titel,
-                "knopf-klein bot-knopf" + (aktiv ? " bot-knopf-aktiv" : " knopf-still"),
-                () => {
-                    TEAM_SCHACH.neueRegeln.botStufe = stufe.id;
-                    TEAM_SCHACH.weichZeichnen();
-                });
-
-            knopf.setAttribute("aria-pressed", aktiv ? "true" : "false");
-
-            if (aktiv) {
-                knopf.appendChild(TEAM_SCHACH._aktivPille("bot"));
-            }
-            leiste.appendChild(knopf);
-        }
-
-        zeile.appendChild(leiste);
-
-        return zeile;
-    },
-
-    _mengenLeisteBauen() {
-        const zeile = TEAM_SCHACH._element("div", "mengen-zeile");
-
-        zeile.appendChild(TEAM_SCHACH._leistenKopfBauen("Wie viele Lootboxen?",
-            SCHACH_VARIANTEN.LOOTBOX_MENGEN));
-
-        const leiste = TEAM_SCHACH._element("div", "mengen-leiste");
-
-        for (const menge of SCHACH_VARIANTEN.LOOTBOX_MENGEN) {
-            const aktiv = (menge.id === TEAM_SCHACH.neueRegeln.lootboxMenge);
-
-            const knopf = TEAM_SCHACH._knopf(menge.titel,
-                "knopf-klein mengen-knopf" + (aktiv ? " mengen-knopf-aktiv" : " knopf-still"),
-                () => {
-                    TEAM_SCHACH.neueRegeln.lootboxMenge = menge.id;
-                    TEAM_SCHACH.weichZeichnen();
-                });
-
-            knopf.setAttribute("aria-pressed", aktiv ? "true" : "false");
-
-            if (aktiv) {
-                knopf.appendChild(TEAM_SCHACH._aktivPille("mengen"));
-            }
-            leiste.appendChild(knopf);
-        }
-
-        zeile.appendChild(leiste);
-
-        return zeile;
-    },
-
-    /*
      * Ein kleines i, das einen Text in einem Hinweis zeigt (seit v0.52).
      *
      * Es gibt schon `_infoKnopfBauen` — der führt aber fest in die
@@ -761,36 +723,6 @@ Object.assign(TEAM_SCHACH, {
      * Die Texte kommen aus dem Modell (`hinweis` je Stufe) — der Bildschirm
      * denkt sich keine Regeln aus (eiserne Regel).
      */
-    /*
-     * Das i des Lootbox-Hakens: erst der Erklärsatz, dann der Weg in die
-     * Bibliothek. `DIALOG.frage` statt `hinweis`, weil es zwei Knöpfe braucht —
-     * „Verstanden" und „Alle Fähigkeiten ansehen".
-     */
-    _bibliothekZeichenBauen(eintrag) {
-        const knopf = document.createElement("button");
-
-        knopf.type = "button";
-        knopf.className = "info-knopf";
-        knopf.textContent = "i";
-        knopf.setAttribute("aria-label", eintrag.titel);
-        knopf.title = eintrag.titel;
-        knopf.addEventListener("click", (ereignis) => {
-            /* Sonst schaltet der Klick zusätzlich den Haken der Zeile um. */
-            if (ereignis && ereignis.preventDefault) {
-                ereignis.preventDefault();
-            }
-
-            DIALOG.frage(eintrag.titel, eintrag.hinweis,
-                "Alle Fähigkeiten ansehen").then((weiter) => {
-                    if (weiter) {
-                        TEAM_SCHACH.faehigkeitenOeffnen();
-                    }
-                });
-        });
-
-        return knopf;
-    },
-
     /* `alsUeberschrift` (seit v0.109): Steht die Reihe in einer eigenen
        Karte, trägt der Kopf ein h3 wie die Nachbar-Karten — als Unterpunkt
        im Einstellungs-Kasten bleibt es der kleinere Titel. */
@@ -844,64 +776,6 @@ Object.assign(TEAM_SCHACH, {
      * eigene Aufstellung mitbringt — die Reihe verschwindet nicht, sonst
      * springt der Bildschirm beim Haken-Setzen.
      */
-    /*
-     * WELCHE ITEMS ES IN DER PARTIE GIBT (seit v0.87, Wunsch R5/V3).
-     *
-     * Wieder dieselbe Knopfreihe. Eigene Klassen (`vorrat-*`) aus demselben
-     * Grund wie bei der Armee-Stärke: Drei gleich aussehende Reihen auf einem
-     * Bildschirm müssen im Test und im CSS unterscheidbar bleiben.
-     *
-     * Welche Items ausgelost werden, entscheidet sich erst beim ANLEGEN und
-     * hängt an der Partie-Kennung — hier steht deshalb nur, WIE VIELE es sein
-     * sollen. Die Liste selbst zeigt die Partie danach oben an.
-     */
-    /*
-     * DREI MENGEN IN EINER REIHE, DIE EIGENE WAHL DARUNTER (seit v0.105,
-     * Nutzer-Ansage 21.08.: „bei welche Items kommen vor die 10 rausnehmen und
-     * die drei übrigen Punkte nebeneinander").
-     *
-     * Die Reihe zeigt nur noch die MENGEN (`wenig`, `viele`, `alle`) — sie
-     * beantworten dieselbe Frage und passen damit zu dritt nebeneinander. Die
-     * eigene Wahl ist keine Menge, sondern eine Liste; sie bekommt einen
-     * eigenen Knopf darunter, der das Popup öffnet. Erkannt wird sie an
-     * `eigeneWahl`, nicht am Namen.
-     */
-    _vorratLeisteBauen() {
-        const zeile = TEAM_SCHACH._element("div", "vorrat-zeile");
-
-        zeile.appendChild(TEAM_SCHACH._leistenKopfBauen("Welche Items kommen vor?",
-            SCHACH_VARIANTEN.ITEM_VORRAETE));
-
-        const leiste = TEAM_SCHACH._element("div", "vorrat-leiste");
-
-        for (const groesse of SCHACH_VARIANTEN.ITEM_VORRAETE) {
-            if (groesse.eigeneWahl) {
-                continue;
-            }
-
-            const aktiv = (groesse.id === TEAM_SCHACH.neueRegeln.itemVorrat);
-
-            const knopf = TEAM_SCHACH._knopf(groesse.titel,
-                "knopf-klein vorrat-knopf" + (aktiv ? " vorrat-knopf-aktiv" : " knopf-still"),
-                () => {
-                    TEAM_SCHACH.neueRegeln.itemVorrat = groesse.id;
-                    TEAM_SCHACH.weichZeichnen();
-                });
-
-            knopf.setAttribute("aria-pressed", aktiv ? "true" : "false");
-
-            if (aktiv) {
-                knopf.appendChild(TEAM_SCHACH._aktivPille("vorrat"));
-            }
-            leiste.appendChild(knopf);
-        }
-
-        zeile.appendChild(leiste);
-        zeile.appendChild(TEAM_SCHACH._eigeneWahlKnopfBauen());
-
-        return zeile;
-    },
-
     /*
      * DER KNOPF FÜR DIE EIGENE WAHL — und was er anzeigt.
      *
@@ -1148,7 +1022,7 @@ Object.assign(TEAM_SCHACH, {
          */
         const karte = TEAM_SCHACH._element("section", "karte armee-karte");
 
-        karte.appendChild(TEAM_SCHACH._leistenKopfBauen("Wie viele Figuren je Seite?",
+        karte.appendChild(TEAM_SCHACH._leistenKopfBauen("Figuren je Seite",
             SCHACH_VARIANTEN.ARMEE_STAERKEN,
             "Ohne den Haken „Zufallsarmee“ bleibt die Aufstellung der Spielart "
             + "stehen, nur eben schmaler oder tiefer.", true));
@@ -1197,57 +1071,6 @@ Object.assign(TEAM_SCHACH, {
         karte.appendChild(leiste);
 
         return karte;
-    },
-
-    /*
-     * DAS BILD VOR EINEM HAKEN (seit v0.110.0) — oder nichts.
-     *
-     * Welcher Haken welches bekommt, steht hier und nur hier. Gezeichnet
-     * wird mit `_wuerfelBauen`, also mit denselben zehn Bildern, die auf dem
-     * Brett liegen; erfunden wird nichts.
-     *
-     *   Lootboxen                    die verborgene Box (so liegt sie da,
-     *                                solange die Seltenheit aus ist)
-     *   Seltenheit anzeigen          DAS BILD ZEIGT DEN ZUSTAND (seit
-     *                                v0.115.3): Ist der Haken an, wechselt
-     *                                die Box im Takt durch alle Stufen-
-     *                                farben und zuletzt durch eine Unglücks-
-     *                                Box mit Fragezeichen — genau das macht
-     *                                der Haken sichtbar. Ist er aus, steht
-     *                                die graue verborgene Box da: so sieht
-     *                                dann jede aus.
-     *
-     * Bis v0.115.2 zeigte der Seltenheits-Haken fest die seltenste Stufe
-     * und ein zweiter Haken die graue Box mit Fragezeichen — die sah aus
-     * wie das „Nein" zum ersten (Nutzer-Meldung 18.09.2026).
-     */
-    _schalterBildBauen(eintrag) {
-        if (!TEAM_SCHACH._wuerfelBauen) {
-            return null;
-        }
-
-        const halter = TEAM_SCHACH._element("span", "schalter-bild");
-        halter.setAttribute("aria-hidden", "true");
-
-        /*
-         * OHNE BILD BLEIBT DER PLATZ TROTZDEM STEHEN. Sonst beginnt der
-         * Titel „Lootboxen" weiter rechts als „Zufallsarmee" darunter, und
-         * die Liste franst aus — im Browser gesehen, bevor dieser Zweig
-         * da war (v0.110.0).
-         */
-        if (eintrag.schluessel === "faehigkeiten") {
-            halter.appendChild(TEAM_SCHACH._wuerfelBauen({ id: "unbekannt" }, false));
-        } else if (eintrag.schluessel === "seltenheitZeigen") {
-            if (TEAM_SCHACH.neueRegeln.seltenheitZeigen) {
-                /* Der Halter wird zum Fenster, in dem der Streifen fährt. */
-                halter.classList.add("schalter-bild-fenster");
-                halter.appendChild(TEAM_SCHACH._lootboxWechselBauen());
-            } else {
-                halter.appendChild(TEAM_SCHACH._wuerfelBauen({ id: "unbekannt" }, false));
-            }
-        }
-
-        return halter;
     },
 
     /*
@@ -1390,10 +1213,18 @@ Object.assign(TEAM_SCHACH, {
         return pille;
     },
 
-    _spielartKachelBauen(variante) {
+    /*
+     * DIE BRETT-KACHEL (seit v0.121.0 schlank): Bild, Name mit Massen und
+     * die Figurenzahl. Die Dauer steht im klebenden Kopf, die Beschreibung
+     * im Mauszeiger-Text. `gewaehlt` hebt die Kachel hervor — sie wählt
+     * seit v0.121.0 nur aus und bleibt auf dem Bildschirm.
+     */
+    _spielartKachelBauen(variante, gewaehlt) {
         const kachel = document.createElement("button");
         kachel.type = "button";
-        kachel.className = "spielart-kachel";
+        kachel.className = "spielart-kachel" + (gewaehlt ? " spielart-kachel-aktiv" : "");
+        kachel.setAttribute("aria-pressed", gewaehlt ? "true" : "false");
+        kachel.title = variante.beschreibung || variante.titel;
         kachel.addEventListener("click", () => TEAM_SCHACH.spielartGewaehlt(variante.id));
 
         /*
@@ -1430,24 +1261,13 @@ Object.assign(TEAM_SCHACH, {
             TEAM_SCHACH._figurenText(brett)));
 
         /*
-         * WIE LANGE DAUERT DAS? (seit v0.93, Wunsch W10.)
-         *
-         * Der einzige sichtbare Teil der stillen Zeitmessung — und ihr ganzer
-         * Zweck. Gerechnet wird im Modell (`SCHACH_RUNDE.dauerText`) aus den
-         * gewählten Einstellungen und dem, was in bisherigen Partien wirklich
-         * gemessen wurde; der Bildschirm rechnet nichts selbst.
-         *
-         * Die Zahl steht bewusst unter der Figurenzahl: Beides beantwortet
-         * dieselbe Frage — worauf lasse ich mich hier ein?
+         * DIE DAUER STEHT SEIT v0.121.0 NICHT MEHR AUF DER KACHEL (v0.93 bis
+         * v0.120.1 stand sie hier, samt Beschreibungssatz): Der klebende
+         * Kopf zeigt sie für das gewählte Brett, und ein Tipp auf eine
+         * andere Kachel wählt sie aus — die Zeile oben rechnet dann mit.
+         * So bleibt die Kachel ein Bild mit Namen (Nutzer-Ansage 24.09.2026:
+         * „weniger Texte, mehr Bilder").
          */
-        kachel.appendChild(TEAM_SCHACH._element("span", "spielart-dauer",
-            "Dauer: " + SCHACH_RUNDE.dauerText(
-                TEAM_SCHACH._figurenJeSeite(brett),
-                variante.breite * variante.hoehe,
-                TEAM_SCHACH.neueRegeln,
-                TEAM_SCHACH._gespieltePartien())));
-
-        kachel.appendChild(TEAM_SCHACH._element("span", "spielart-text", variante.beschreibung));
 
         return kachel;
     },

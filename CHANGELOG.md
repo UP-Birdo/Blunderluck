@@ -3,6 +3,33 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.121.0 — 24.09.2026
+
+**Die Einstellungen für eine neue Runde sind neu: ein Bildschirm mit drei
+Reitern, Bilder statt Schalter mit Text — und „Spielen“ direkt darunter.**
+
+- **Ein Bildschirm statt zwei.** Die Vorschau auf dem Start und der Pfeil
+  daneben führen jetzt beide auf denselben Bildschirm „Neue Runde“, nur in
+  einen anderen Reiter: **Brett** (Form, Grösse, Figurenzahl, Aufstellung),
+  **Gegner** (Menschen oder Computer, wie stark, wer die Runde sieht, wer
+  Weiss spielt, Ziehen im Team) und **Lootboxen** (mit oder ohne, wie
+  viele, welche Items, sieht man, was drin ist).
+- **Bilder statt Schalter.** Jede Wahl ist eine Reihe mit Bildern: die
+  3D-Figuren und Lootboxen aus dem Spiel oder ein schlichtes Zeichen
+  (Roboter für den Computer, Globus für öffentlich, Schloss für privat,
+  Würfel für Zufall …), darunter ein Wort. Die blaue Fläche gleitet zum
+  gewählten Feld.
+- **Weniger Text.** Je Frage ein i statt eines je Zeile; die Brett-Kacheln
+  zeigen nur noch Bild, Namen, Masse und Figurenzahl — die Dauer steht
+  oben im Kopf und rechnet beim Antippen einer Kachel mit.
+- **„Spielen“ steht unten auf dem Bildschirm** und legt die Runde gleich an —
+  kein Umweg mehr über den Start. Eine Brett-Kachel wählt nur aus und
+  bleibt stehen (vorher sprang sie sofort zurück zum Start).
+- Gegen den Computer entfällt die Frage „Wer sieht die Runde?“ — dort kommt
+  ohnehin niemand dazu.
+
+Gespeichert wird genau wie vorher; laufende und alte Runden merken nichts.
+
 ## v0.120.1 — 24.09.2026
 
 **Die Einstellungen stehen im Menü jetzt ganz unten.**

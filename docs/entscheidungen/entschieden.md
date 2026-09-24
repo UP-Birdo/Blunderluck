@@ -1,5 +1,33 @@
 # Blunderluck - Entscheidungen / Entschieden - und warum
 
+## Neue Runde: ein Bildschirm, drei Reiter, Bilder statt Haken (24.09.2026, v0.121.0)
+
+**Nutzer-Ansage:** „Kannst du nochmal das Grundeinstellungen-Menü
+überarbeiten — weniger Texte, mehr Bilder, einfachere Navigation und co."
+Zur Wahl standen: ein Bildschirm mit drei Reitern (Empfehlung), eine lange
+Seite, oder die zwei Bildschirme lassen. Gewählt: die Empfehlung, „aber
+mach davor eine Kopie, so dass ich es simpel zurück machen kann".
+
+**Entschieden:**
+
+- **Wunsch 8 (v0.21.0, zwei Bildschirme hinter Vorschau und Pfeil) ist
+  zurückgenommen** — mit Zustimmung des Nutzers. Beide Einstiege bleiben,
+  führen aber in denselben Bildschirm, nur in einen anderen Reiter.
+- **„Spielen" steht auf dem Bildschirm selbst.** Der häufigste Weg („ich
+  stelle ein und will los") brauchte vorher Zurück + Spielen.
+- **Die Brett-Kachel bleibt stehen** statt zum Start zu springen (Wunsch 1
+  gilt weiter: sie legt nichts an, sie merkt nur).
+- **Bilder statt Haken, auch dort, wo das Bild ein Zeichen ist.** Das hebt
+  die Festlegung „keine erfundenen Zeichen" (STATUS, „Bewusst NICHT
+  gebaut") auf — tragbar, weil unter jedem Zeichen sein Wort steht.
+- **Gegen den Computer entfällt „Wer sieht die Runde?"** — dort kommt
+  niemand dazu. Der Wert bleibt gespeichert, wie er war.
+
+**Zurück zum alten Stand:** Der volle Abzug liegt unter
+`Backup\Blunderluck\v0.120.1`. Zurückspielen heisst: `js\`, `css\`,
+`tests\` aus dem Abzug zurückkopieren und als NEUE Nummer ausliefern
+(Hausregel: eine ausgelieferte Nummer ist eingefroren).
+
 ## Profil kompakt: Kopfkarte, drei Reiter, Popups (24.09.2026, v0.119.1)
 
 **Nutzer-Ansage:** „Das Profil ist zu überladen, mache es schöner, kompakter

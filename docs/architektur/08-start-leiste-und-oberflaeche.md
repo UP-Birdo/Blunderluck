@@ -37,10 +37,11 @@ Aus dem Umbau-Schwung vom 24.08.2026, je eine Auslieferung pro Nutzer-Ansage
   `START._spielart()` und `START.regeln()` / `regelnMerken(...)`. Beide
   Einstell-Bildschirme schreiben nur dorthin, keiner legt an. Der Start hält
   also die WAHL, nicht die Runde.
-- **Die Vorschau ist ein Knopf** und führt zur Brettform, das **Pfeil-Quadrat**
-  zu den Grundeinstellungen — ein geteilter Bildschirm, gesteuert über
-  `TEAM_SCHACH.auswahlTeil` („brett" / „regeln"). Einstiege sind
-  `brettformOeffnen` (Vorschau) und `partieAnlegen` (Pfeil);
+- **Die Vorschau ist ein Knopf** und führt zur Auswahl, das **Pfeil-Quadrat**
+  ebenfalls — seit v0.121.0 in DENSELBEN Bildschirm, nur in einen anderen
+  Reiter (Abschnitt „Die neue Runde" unten). Von v0.21.0 bis v0.120.1
+  waren es zwei Bildschirme (Wunsch 8). Einstiege sind `brettformOeffnen`
+  (Vorschau, Reiter „brett") und `partieAnlegen` (Pfeil, Reiter „gegner");
   `auswahlSchliessen` merkt die Regler.
 - **Oben rechts stand eine Icon-Reihe** (Verlauf, Freunde, Zahnrad) — sie ist
   seit v0.103.0 durch EINEN Knopf ersetzt, das Menüband (eigener Abschnitt
@@ -51,6 +52,50 @@ Aus dem Umbau-Schwung vom 24.08.2026, je eine Auslieferung pro Nutzer-Ansage
 - **Es gibt keinen Kopfbalken mehr** (seit v0.25.0): Der Stand des Abgleichs,
   die Version und der Wunsch-Knopf sind der Reihe nach in die Einstellungen
   gezogen; die `h1` steht unsichtbar im `body`.
+
+## Die neue Runde — ein Bildschirm, drei Reiter (seit v0.121.0)
+
+Nutzer-Ansage 24.09.2026: „das Grundeinstellungen-Menü überarbeiten:
+weniger Texte, mehr Bilder, einfachere Navigation" — gewählt hat er „ein
+Bildschirm, drei Reiter" (vorher mit Abzug `Backup\Blunderluck\v0.120.1`,
+damit der alte Stand mit einem Handgriff zurückkommt). Alles in
+`js\team-schach-uebersicht.js`, der Stil am Ende von `css\stil-brett.css`.
+
+- **Aufbau** (`_auswahlZeichnen`): klebender Kopf (Zurück, „Neue Runde",
+  Dauer-Zeile `_regelnDauerBauen` wie seit v0.116.0), die Reiter-Leiste
+  (dieselben Klassen wie im Profil, `profil-reiter`), der Inhalt des
+  offenen Reiters und unten klebend „Spielen" (`auswahlSpielen` →
+  `START.spielen`, damit Sperre und „Wird angelegt …" an einer Stelle
+  bleiben). Der offene Reiter steht in `TEAM_SCHACH.auswahlTeil`
+  (`AUSWAHL_REITER`: brett, gegner, lootboxen; der alte Wert „regeln"
+  wird zu „gegner").
+- **Brett** (`_brettReiterBauen`): Form als Bild-Reihe, darunter die
+  Kacheln der Form zu zweit (`_spielartKachelBauen(variante, gewaehlt)` —
+  schlank, die gewählte hervorgehoben; ein Tipp merkt nur und bleibt),
+  Figurenzahl (`_armeeStaerkeLeisteBauen`, unverändert), Aufstellung
+  (Gewohnt / Zufall, bei Zufall Beide gleich / Verschieden).
+- **Gegner** (`_gegnerReiterBauen`): Menschen / Computer, bei Computer die
+  Stärke, sonst „Wer sieht die Runde?"; „Wer spielt Weiss?" (Zulosen /
+  Selbst wählen); „Ziehen im Team" (Alle einig / Wer zuerst zieht —
+  gespeichert weiter `einigkeit`).
+- **Lootboxen** (`_lootboxReiterBauen`): Ohne / Mit, der Knopf „Alle
+  Fähigkeiten ansehen" (Bibliothek, `infoSchliessen` führt in denselben
+  Reiter zurück); mit Lootboxen: Menge, Items (drei Mengen + „selbst
+  wählen …" wie seit v0.105), „Sieht man, was drin ist?" (Verdeckt /
+  Farbig — schreibt `seltenheitZeigen` UND `pechZeigen`, v0.115.3).
+- **Jede Wahl ist ein Segment-Schalter mit Bildern** (`_bildReiheBauen`):
+  das Muster der Figurenzahl-Reihe — Bild oben, Wort darunter, die blaue
+  Pille gleitet. Jede Reihe hat EIGENE Klassen (`<name>-leiste`,
+  `<name>-knopf`) und einen eigenen Pillen-Namen
+  (`reihen-pille-<name>`): Zwei gleichnamige Pillen bricht der Browser ab.
+  Bilder: 3D-Figuren (`_figurBildBauen`, `img\figuren\`), Lootboxen
+  (`_wuerfelBauen`) und Linienzeichen (`_zeichen`, `_staerkeZeichen`).
+- **Ein i je Frage** (`_abschnittBauen`, Kopf `leisten-kopf`), die Sätze
+  darin sind die der früheren Haken-Zeilen.
+- **Bewusst anders als vorher:** Bis v0.120.1 galt „keine erfundenen
+  Zeichen für die Haken ohne Lootbox" — ein Zeichen allein wäre ein
+  Rätsel. Seit v0.121.0 steht unter jedem Zeichen sein Wort; der Nutzer
+  hat ausdrücklich „mehr Bilder" verlangt.
 
 ## Das Menüband oben rechts (seit v0.103.0)
 

@@ -3103,12 +3103,17 @@ pruefe("Ein Tipp auf die Vorschau oeffnet die Brettform (Wunsch 7)", () => {
     umgebung.TABS.gewechseltZu = "";
 });
 
-pruefe("Pfeil und Vorschau fuehren auf getrennte Bildschirme (Wunsch 8)", () => {
+pruefe("Pfeil und Vorschau fuehren in DENSELBEN Bildschirm, nur in verschiedene Reiter (v0.121.0; bis v0.120.1 Wunsch 8)", () => {
     /*
-     * DER GEMELDETE WUNSCH: „Unter dem Pfeil neben Spielen verschwindet die
-     * Spielart-Auswahl: Dort werden nur noch die Grundeinstellungen der
-     * Runde festgelegt (Regler/Haken). Die Brettform waehlt man ueber die
-     * Vorschau."
+     * NUTZER-ANSAGE 24.09.2026: „das Grundeinstellungen-Menue ueberarbeiten:
+     * weniger Texte, mehr Bilder, einfachere Navigation" — gewaehlt hat er
+     * „ein Bildschirm, drei Reiter". Bis v0.120.1 fuehrten Pfeil und
+     * Vorschau auf zwei getrennte Bildschirme (Wunsch 8).
+     *
+     * Geprueft: Der Pfeil oeffnet den Reiter „Gegner", die Vorschau den
+     * Reiter „Brett"; beide zeigen drei Reiter und unten „Spielen"; ein
+     * Tipp auf einen Reiter wechselt nur den Inhalt; was eingestellt wird,
+     * ueberlebt das Zurueck.
      */
     const einsammeln = (element, passt, treffer) => {
         for (const kind of element.kinder || []) {
@@ -3119,43 +3124,63 @@ pruefe("Pfeil und Vorschau fuehren auf getrennte Bildschirme (Wunsch 8)", () => 
         }
         return treffer;
     };
-    const kacheln = () => einsammeln(TEAM_SCHACH.wurzelEl, (kind) =>
-        String(kind.className || "").indexOf("spielart-kachel") !== -1, []);
-    const formKnoepfe = () => einsammeln(TEAM_SCHACH.wurzelEl, (kind) =>
-        String(kind.className || "").indexOf("form-knopf") !== -1, []);
-    const schalter = () => einsammeln(TEAM_SCHACH.wurzelEl, (kind) =>
-        String(kind.className || "").indexOf("schalter-kasten") !== -1, []);
+    const mitKlasse = (klasse) => einsammeln(TEAM_SCHACH.wurzelEl, (kind) =>
+        String(kind.className || "").split(" ").indexOf(klasse) !== -1, []);
+    const gemeinsam = (wo) => {
+        if (mitKlasse("profil-reiter-knopf").length !== 3) {
+            throw new Error(wo + ": drei Reiter erwartet");
+        }
+        if (mitKlasse("runde-spielen").length !== 1) {
+            throw new Error(wo + ": unten fehlt Spielen");
+        }
+    };
 
-    /* Der Pfeil: Regler ja, Brettform und Kacheln nein. */
+    /* Der Pfeil: Reiter Gegner — keine Kacheln. */
     TEAM_SCHACH.partieAnlegen();
-    if (TEAM_SCHACH.auswahlTeil !== "regeln") {
-        throw new Error("der Pfeil oeffnet nicht die Grundeinstellungen");
+    if (TEAM_SCHACH.auswahlTeil !== "gegner") {
+        throw new Error("der Pfeil oeffnet nicht den Reiter Gegner, sondern: "
+            + TEAM_SCHACH.auswahlTeil);
     }
-    if (schalter().length === 0) {
-        throw new Error("auf den Grundeinstellungen fehlen die Haken");
+    gemeinsam("Pfeil");
+    if (mitKlasse("gegner-leiste").length !== 1) {
+        throw new Error("im Reiter Gegner fehlt die Wahl Menschen / Computer");
     }
-    if (kacheln().length !== 0 || formKnoepfe().length !== 0) {
-        throw new Error("die Brettform haengt noch unter dem Pfeil");
+    if (mitKlasse("spielart-kachel").length !== 0) {
+        throw new Error("die Brett-Kacheln haengen im Reiter Gegner");
     }
 
-    /* Was hier eingestellt wird, ueberlebt das Zurueck (es gibt hier keine
-       Kachel, die es merken koennte). */
+    /* Was hier eingestellt wird, ueberlebt das Zurueck. */
     TEAM_SCHACH.neueRegeln.armeeStaerke = "viel";
     TEAM_SCHACH.auswahlSchliessen();
     if (umgebung.START.regeln().armeeStaerke !== "viel") {
         throw new Error("Zurueck vergisst die Regler");
     }
 
-    /* Die Vorschau: Brettform und Kacheln ja, Regler nein. */
+    /* Die Vorschau: Reiter Brett — Form, Kacheln, Figurenzahl. */
     TEAM_SCHACH.brettformOeffnen();
     if (TEAM_SCHACH.auswahlTeil !== "brett") {
-        throw new Error("die Vorschau oeffnet nicht die Brettform");
+        throw new Error("die Vorschau oeffnet nicht den Reiter Brett");
     }
-    if (kacheln().length === 0 || formKnoepfe().length === 0) {
-        throw new Error("auf der Brettform fehlen Form oder Groessen");
+    gemeinsam("Vorschau");
+    if (mitKlasse("spielart-kachel").length === 0 || mitKlasse("form-knopf").length === 0) {
+        throw new Error("im Reiter Brett fehlen Form oder Groessen");
     }
-    if (schalter().length !== 0) {
-        throw new Error("die Regler haengen noch bei der Brettform");
+    if (mitKlasse("armee-knopf").length !== SCHACH_VARIANTEN.ARMEE_STAERKEN.length) {
+        throw new Error("im Reiter Brett fehlt die Figurenzahl");
+    }
+    if (mitKlasse("gegner-leiste").length !== 0) {
+        throw new Error("die Gegner-Wahl haengt im Reiter Brett");
+    }
+
+    /* Ein Tipp auf den Reiter Lootboxen wechselt den Inhalt. */
+    const lootboxen = mitKlasse("profil-reiter-knopf")
+        .find((knopf) => knopf.dataset.reiter === "lootboxen");
+    lootboxen.ausloesen("click");
+    if (TEAM_SCHACH.auswahlTeil !== "lootboxen" || mitKlasse("lootbox-leiste").length !== 1) {
+        throw new Error("der Reiter Lootboxen zeigt nicht die Lootbox-Wahl");
+    }
+    if (!TEAM_SCHACH.auswahlOffen) {
+        throw new Error("der Reiterwechsel hat die Auswahl geschlossen");
     }
 
     TEAM_SCHACH.auswahlSchliessen();
@@ -3285,19 +3310,34 @@ pruefe("Die Grundeinstellungen tragen oben eine klebende Dauer-Zeile, die mit de
     }
 });
 
-pruefe("Die Spielart-Kachel legt nichts mehr an, sie merkt nur (Wunsch 1)", () => {
+pruefe("Die Spielart-Kachel legt nichts an, sie merkt nur — und man bleibt auf dem Bildschirm (Wunsch 1, v0.121.0)", () => {
     const START = umgebung.START;
 
     /*
-     * DER GEMELDETE WUNSCH: „Wenn in der Auswahl alles gewaehlt ist und man
-     * auf die Spielart-Kachel drueckt, soll NICHT ‚Name eingeben' kommen —
-     * die Wahl soll nur GEMERKT werden, und man kommt zurueck zum
-     * Start-Screen."
+     * DER GEMELDETE WUNSCH (24.08.2026): „Wenn in der Auswahl alles gewaehlt
+     * ist und man auf die Spielart-Kachel drueckt, soll NICHT ‚Name eingeben'
+     * kommen — die Wahl soll nur GEMERKT werden."
      *
-     * Geprueft wird beides: dass keine Partie entsteht und dass Spielart
-     * UND Regler im Geraetespeicher landen.
+     * SEIT v0.121.0 bleibt man danach auf dem Bildschirm: Die Kachel ist
+     * hervorgehoben, und „Spielen" steht unten. Bis v0.120.1 fuehrte die
+     * Kachel zurueck zum Start. Geprueft wird: keine Partie entsteht,
+     * Spielart UND Regler landen im Geraetespeicher, die Kachel ist
+     * markiert, und „Spielen" unten legt ueber denselben Weg an wie der
+     * Start (`START.spielen`).
      */
-    TEAM_SCHACH.partieAnlegen();
+    const einsammeln = (element, passt, treffer) => {
+        for (const kind of element.kinder || []) {
+            if (passt(kind)) {
+                treffer.push(kind);
+            }
+            einsammeln(kind, passt, treffer);
+        }
+        return treffer;
+    };
+    const mitKlasse = (klasse) => einsammeln(TEAM_SCHACH.wurzelEl, (kind) =>
+        String(kind.className || "").split(" ").indexOf(klasse) !== -1, []);
+
+    TEAM_SCHACH.brettformOeffnen();
     if (!TEAM_SCHACH.auswahlOffen) {
         throw new Error("die Auswahl ist gar nicht offen");
     }
@@ -3317,11 +3357,11 @@ pruefe("Die Spielart-Kachel legt nichts mehr an, sie merkt nur (Wunsch 1)", () =
     if (SCHACH_TAFEL.liste(TEAM_SCHACH.abgleich.daten).length !== vorher) {
         throw new Error("die Kachel hat doch eine Partie angelegt");
     }
-    if (TEAM_SCHACH.auswahlOffen) {
-        throw new Error("die Auswahl bleibt nach der Wahl offen");
+    if (!TEAM_SCHACH.auswahlOffen) {
+        throw new Error("die Auswahl hat sich nach der Wahl geschlossen");
     }
-    if (umgebung.TABS.gewechseltZu !== "start") {
-        throw new Error("die Kachel fuehrt nicht zurueck zum Start");
+    if (umgebung.TABS.gewechseltZu !== "") {
+        throw new Error("die Kachel wechselt den Tab nach: " + umgebung.TABS.gewechseltZu);
     }
     if (START._spielart().id !== gewaehlt.id) {
         throw new Error("die Spielart wurde nicht gemerkt");
@@ -3330,6 +3370,31 @@ pruefe("Die Spielart-Kachel legt nichts mehr an, sie merkt nur (Wunsch 1)", () =
     const gemerkt = START.regeln();
     if (gemerkt.faehigkeiten !== true || gemerkt.armeeStaerke !== "wenig") {
         throw new Error("die Regler wurden nicht gemerkt");
+    }
+
+    /* Die gewaehlte Kachel ist hervorgehoben — wenn ihre Form offen ist. */
+    TEAM_SCHACH.gewaehlteForm = SCHACH_VARIANTEN.formVon(gewaehlt);
+    TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
+    if (mitKlasse("spielart-kachel-aktiv").length !== 1) {
+        throw new Error("genau eine Kachel muss hervorgehoben sein, sind "
+            + mitKlasse("spielart-kachel-aktiv").length);
+    }
+
+    /* „Spielen" unten schliesst, wechselt zum Start und legt ueber
+       START.spielen an. */
+    const echtesSpielen = START.spielen;
+    let gespielt = 0;
+    try {
+        START.spielen = () => { gespielt++; return null; };
+        mitKlasse("runde-spielen")[0].ausloesen("click");
+    } finally {
+        START.spielen = echtesSpielen;
+    }
+    if (gespielt !== 1) {
+        throw new Error("Spielen unten ruft START.spielen nicht (" + gespielt + "x)");
+    }
+    if (TEAM_SCHACH.auswahlOffen || umgebung.TABS.gewechseltZu !== "start") {
+        throw new Error("Spielen unten schliesst die Auswahl nicht und fuehrt nicht zum Start");
     }
 
     /* Und die Auswahl zeigt beim naechsten Oeffnen genau das wieder. */

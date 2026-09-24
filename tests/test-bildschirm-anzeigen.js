@@ -491,14 +491,15 @@ pruefe("Der Zugverlauf liegt im Kasten-Menue und zaehlt seine Zuege (v0.81.0)", 
         TEAM_SCHACH.eckMenueOffen = false;
     }
 });
-pruefe("Einigkeit ist die Vorgabe, der Haken fragt das Gegenteil (v0.76)", () => {
+pruefe("Einigkeit ist die Vorgabe, das zweite Segment ist der schnelle Weg (v0.76, seit v0.121.0 als Bild-Reihe)", () => {
     /*
      * DER GEMELDETE PUNKT: „Team muss einig sein soll andersrum da stehen, also
      * dass einig sein Standard sein soll und das andere (wer zuerst zieht,
      * zieht zuerst) nur mit Knopfdruck auswaehlbar ist."
      *
-     * Gespeichert wird weiter `regeln.einigkeit` mit derselben Bedeutung —
-     * umgedreht ist nur, was am Bildschirm steht.
+     * Gespeichert wird weiter `regeln.einigkeit` mit derselben Bedeutung.
+     * Seit v0.121.0 steht die Wahl als zwei Segmente im Reiter „Gegner":
+     * „Alle einig" (gewaehlt) und „Wer zuerst zieht".
      */
     TEAM_SCHACH.partieAnlegen();
 
@@ -506,11 +507,10 @@ pruefe("Einigkeit ist die Vorgabe, der Haken fragt das Gegenteil (v0.76)", () =>
         throw new Error("Einigkeit ist beim Anlegen nicht die Vorgabe");
     }
 
-    /* Die Zeile heisst nach dem SCHNELLEN Weg — und ihr Haken ist aus. */
-    const zeilen = [];
+    const segmente = [];
     const sammeln = (element) => {
-        if (String(element.className || "").indexOf("schalter-zeile") !== -1) {
-            zeilen.push(element);
+        if (String(element.className || "").split(" ").indexOf("einigkeit-knopf") !== -1) {
+            segmente.push(element);
         }
         for (const kind of element.kinder || []) {
             sammeln(kind);
@@ -518,29 +518,23 @@ pruefe("Einigkeit ist die Vorgabe, der Haken fragt das Gegenteil (v0.76)", () =>
     };
     sammeln(TEAM_SCHACH.wurzelEl);
 
-    const gesucht = zeilen.find((zeile) => {
-        const titel = klasseSuchen(zeile, "schalter-titel");
-        return titel && String(titel.textContent || "") === "Wer zuerst zieht, hat gezogen";
-    });
-
-    if (!gesucht) {
-        throw new Error("die Zeile Wer-zuerst-zieht fehlt");
+    const einig = segmente.find((knopf) => knopf.dataset.wahl === "einig");
+    const sofort = segmente.find((knopf) => knopf.dataset.wahl === "sofort");
+    if (!einig || !sofort) {
+        throw new Error("die zwei Segmente Alle einig / Wer zuerst zieht fehlen");
+    }
+    if (String(einig.className).indexOf("einigkeit-knopf-aktiv") === -1) {
+        throw new Error("Alle einig muesste gewaehlt sein");
+    }
+    if (String(klasseSuchen(sofort, "bild-knopf-wort").textContent) !== "Wer zuerst zieht") {
+        throw new Error("das zweite Segment heisst nach dem SCHNELLEN Weg");
     }
 
-    const kasten = gesucht.kinder.find((kind) => kind.tagName === "input");
-    if (!kasten) {
-        throw new Error("die Zeile hat keinen Haken");
-    }
-    if (kasten.checked !== false) {
-        throw new Error("der Haken muesste aus sein");
-    }
-
-    /* Anhaken schaltet die Abstimmung ab, nicht an. */
-    kasten.checked = true;
-    kasten.ausloesen("change");
+    /* Der schnelle Weg schaltet die Abstimmung ab, nicht an. */
+    sofort.ausloesen("click");
 
     if (TEAM_SCHACH.neueRegeln.einigkeit !== false) {
-        throw new Error("der umgekehrte Haken schaltet in die falsche Richtung");
+        throw new Error("das Segment schaltet in die falsche Richtung");
     }
 
     TEAM_SCHACH.auswahlSchliessen();

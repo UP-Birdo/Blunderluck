@@ -86,9 +86,22 @@ pruefe("Die Auswahl der Spielart zeigt je eine Kachel mit Vorschaubild", () => {
     }
 
     /* Nach Klasse suchen statt nach Stelle — sonst kippt der Test, sobald
-       darüber etwas dazukommt (wie die Einstellungen in v2.5). */
-    const feld = TEAM_SCHACH.wurzelEl.kinder.find(
-        (kind) => kind.className === "spielart-feld");
+       darüber etwas dazukommt (wie die Einstellungen in v2.5). Seit
+       v0.121.0 liegt das Feld IN der Brett-Karte des Reiters „Brett",
+       also wird in der Tiefe gesucht. */
+    const feldSuchen = (element) => {
+        for (const kind of element.kinder || []) {
+            if (String(kind.className || "").split(" ").indexOf("spielart-feld") !== -1) {
+                return kind;
+            }
+            const tiefer = feldSuchen(kind);
+            if (tiefer) {
+                return tiefer;
+            }
+        }
+        return null;
+    };
+    const feld = feldSuchen(TEAM_SCHACH.wurzelEl);
 
     if (!feld) {
         throw new Error("kein Kachelfeld gezeichnet");
@@ -113,8 +126,7 @@ pruefe("Die Auswahl der Spielart zeigt je eine Kachel mit Vorschaubild", () => {
         TEAM_SCHACH.gewaehlteForm = form.id;
         TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
 
-        const dieses = TEAM_SCHACH.wurzelEl.kinder.find(
-            (kind) => kind.className === "spielart-feld");
+        const dieses = feldSuchen(TEAM_SCHACH.wurzelEl);
         const erwartete = SCHACH_VARIANTEN.zurAuswahlNachForm(form.id);
 
         if (dieses.kinder.length !== erwartete.length) {
@@ -283,20 +295,18 @@ pruefe("Jeder sieht seine eigene Armee unten (v0.72)", () => {
     }
 });
 
-pruefe("Ein Haken zeigt seine Unterpunkte SOFORT (v0.71)", () => {
+pruefe("Eine Wahl zeigt ihre Unterpunkte SOFORT (v0.71; seit v0.121.0 als Bild-Reihe)", () => {
     /*
      * DER FEHLER AUS DEM EINGANGSKORB VOM 13.08.: „Hakt man Lootboxen an,
      * erscheinen die Unterpunkte erst, wenn man einmal auf eine andere
-     * Brettform und zurueck tippt."
+     * Brettform und zurueck tippt." Ursache war eine Liste im Behandler,
+     * die nicht jeden Unterpunkt kannte.
      *
-     * Ursache war eine Liste mit zwei Schluesseln im Behandler des Hakens:
-     * Nur „Lootboxen" und „Zufallsarmee" zeichneten neu. Der Regen-Haken
-     * bekam v0.60 einen Schieberegler als Unterpunkt und stand nicht darin.
-     * Nachgemessen am 14.08. in einem echten Browser — genau so war es.
-     *
-     * Geprueft wird deshalb ueber das EREIGNIS, nicht ueber einen direkten
-     * Aufruf von `zeichnen`: Nur so faellt auf, wenn der Haken das
-     * Neuzeichnen wieder verliert.
+     * Seit v0.121.0 ist „Lootboxen" kein Haken mehr, sondern eine
+     * Bild-Reihe (Ohne / Mit Lootboxen) im Reiter „Lootboxen". Geprueft
+     * wird weiter ueber das EREIGNIS (der Klick auf das Segment), nicht
+     * ueber einen direkten Aufruf von `zeichnen`: Nur so faellt auf, wenn
+     * die Wahl das Neuzeichnen wieder verliert.
      */
     const suchen = (klasse) => {
         const treffer = [];
@@ -311,75 +321,42 @@ pruefe("Ein Haken zeigt seine Unterpunkte SOFORT (v0.71)", () => {
         gehen(TEAM_SCHACH.wurzelEl);
         return treffer;
     };
+    const mitDaten = (klasse, schluessel, wert) => suchen(klasse)
+        .find((kind) => kind.dataset && kind.dataset[schluessel] === wert);
 
     TEAM_SCHACH.partieAnlegen();
+    TEAM_SCHACH.neueRegeln.faehigkeiten = false;
+
+    const reiter = mitDaten("profil-reiter-knopf", "reiter", "lootboxen");
+    if (!reiter) {
+        throw new Error("der Reiter Lootboxen fehlt");
+    }
+    reiter.ausloesen("click");
+    if (TEAM_SCHACH.auswahlTeil !== "lootboxen") {
+        throw new Error("der Reiter oeffnet nicht, offen ist: " + TEAM_SCHACH.auswahlTeil);
+    }
 
     if (suchen("mengen-leiste").length !== 0) {
-        throw new Error("die Stufen stehen da, bevor Lootboxen angehakt sind");
+        throw new Error("die Stufen stehen da, bevor Lootboxen gewaehlt sind");
     }
 
-    /*
-     * DER HAKEN WIRD UEBER SEINEN TITEL GESUCHT, NICHT UEBER SEINE STELLE
-     * (seit v0.27.0). Bis dahin stand hier `suchen("schalter-kasten")[0]` —
-     * das war so lange richtig, wie „Lootboxen" der erste Haken war. Mit
-     * „Gegen den Computer" darueber prueft der Test sonst lautlos den
-     * falschen Schalter und meldet „der Haken kam nicht an".
-     */
-    const zeileMitTitel = (text) => suchen("schalter-zeile").find((zeile) => {
-        const titel = klasseSuchen(zeile, "schalter-titel");
-        return titel && String(titel.textContent || "") === text;
-    });
-
-    const lootboxZeile = zeileMitTitel("Lootboxen");
-    if (!lootboxZeile) {
-        throw new Error("der Haken Lootboxen fehlt");
+    const mit = mitDaten("lootbox-knopf", "wahl", "an");
+    if (!mit) {
+        throw new Error("das Segment Mit Lootboxen fehlt");
     }
-
-    const kasten = lootboxZeile.kinder.find((kind) => kind.tagName === "input");
-    if (!kasten) {
-        throw new Error("kein Haken gezeichnet");
-    }
-
-    kasten.checked = true;
-    kasten.ausloesen("change");
+    mit.ausloesen("click");
 
     if (!TEAM_SCHACH.neueRegeln.faehigkeiten) {
-        throw new Error("der Haken kam nicht an");
+        throw new Error("die Wahl kam nicht an");
     }
     if (suchen("mengen-leiste").length !== 1) {
         throw new Error("die vier Stufen erscheinen nicht sofort");
     }
-
-    /* Und die Unterpunkte des Hakens sind auch da — seit v0.110 liegen sie
-       in einem GRUPPEN-KASTEN statt an einem Einrueck-Strich. Geprueft wird
-       beides: Der Kasten steht da, und die abhaengige Zeile (Seltenheit —
-       seit v0.115.3 EIN Haken fuer Farbe und Unglueckszeichen) steckt mit
-       den beiden Reihen DARIN. */
-    const gruppen = suchen("schalter-gruppe");
-    if (gruppen.length !== 1) {
-        throw new Error("genau ein Gruppen-Kasten unter dem Lootbox-Haken, "
-            + "gezaehlt: " + gruppen.length);
+    if (suchen("vorrat-leiste").length !== 1) {
+        throw new Error("die Item-Reihe erscheint nicht sofort");
     }
-
-    const inGruppe = (klasse) => {
-        const treffer = [];
-        const absteigen = (element) => {
-            for (const kind of element.kinder || []) {
-                if (String(kind.className || "").indexOf(klasse) !== -1) {
-                    treffer.push(kind);
-                }
-                absteigen(kind);
-            }
-        };
-        absteigen(gruppen[0]);
-        return treffer;
-    };
-
-    if (inGruppe("schalter-zeile").length < 1) {
-        throw new Error("Seltenheit gehoert in den Kasten");
-    }
-    if (inGruppe("vorrat-leiste").length !== 1) {
-        throw new Error("die Vorrat-Reihe gehoert in den Kasten");
+    if (suchen("seltenheit-leiste").length !== 1) {
+        throw new Error("die Seltenheits-Reihe erscheint nicht sofort");
     }
 
     /* Eine Stufe antippen setzt sie und zeichnet neu. */
@@ -683,41 +660,57 @@ pruefe("Item-Vorrat: drei Mengen in einer Reihe, die eigene Wahl im Popup (v0.10
      * die drei uebrigen Punkte nebeneinander; bei selbst waehlen soll statt
      * dieser scrollbaren Liste ein Popup-Menue kommen."
      *
-     * Geprueft wird der ECHTE Aufbau der Zeile, nicht der Stil: dass die Reihe
-     * drei Knoepfe traegt, dass die eigene Wahl daneben steht statt darin, und
-     * dass ihr Druck den Dialog mit der Liste als ELEMENT oeffnet — nicht als
-     * Text.
+     * Geprueft wird der ECHTE Aufbau im Reiter „Lootboxen" (seit v0.121.0):
+     * dass die Reihe drei Segmente traegt, dass die eigene Wahl daneben
+     * steht statt darin, dass die Karte ihr i hat und dass der Druck den
+     * Dialog mit der Liste als ELEMENT oeffnet — nicht als Text.
      */
-    const gemerkterVorrat = TEAM_SCHACH.neueRegeln.itemVorrat;
-    const gemerkteAuswahl = TEAM_SCHACH.neueRegeln.itemAuswahl;
+    const gemerkt = Object.assign({}, TEAM_SCHACH.neueRegeln);
     const echterHinweis = umgebung.DIALOG.hinweis;
 
+    const einsammeln = (element, klasse, treffer) => {
+        for (const kind of element.kinder || []) {
+            if (String(kind.className || "").split(" ").indexOf(klasse) !== -1) {
+                treffer.push(kind);
+            }
+            einsammeln(kind, klasse, treffer);
+        }
+        return treffer;
+    };
+
     try {
+        TEAM_SCHACH.partieAnlegen();
+        TEAM_SCHACH.neueRegeln.faehigkeiten = true;
         TEAM_SCHACH.neueRegeln.itemVorrat = "alle";
         TEAM_SCHACH.neueRegeln.itemAuswahl = [];
+        TEAM_SCHACH.auswahlReiterSetzen("lootboxen");
 
-        const zeile = TEAM_SCHACH._vorratLeisteBauen();
-        const leiste = zeile.querySelector(".vorrat-leiste");
-
-        if (!leiste) {
-            throw new Error("die Mengen-Reihe fehlt");
+        /* Die Karte, in der die Item-Reihe steht. */
+        const karte = einsammeln(TEAM_SCHACH.wurzelEl, "runde-abschnitt", [])
+            .find((kind) => einsammeln(kind, "vorrat-leiste", []).length === 1);
+        if (!karte) {
+            throw new Error("die Item-Karte fehlt");
         }
+
+        const leiste = einsammeln(karte, "vorrat-leiste", [])[0];
         if (leiste.kinder.length !== 3) {
-            throw new Error("drei Mengen nebeneinander, gezaehlt: "
-                + leiste.kinder.length);
+            throw new Error("drei Mengen nebeneinander, gezaehlt: " + leiste.kinder.length);
         }
 
-        const eigene = zeile.querySelector(".vorrat-eigene");
+        const eigene = einsammeln(karte, "vorrat-eigene", [])[0];
         if (!eigene) {
             throw new Error("der Knopf fuer die eigene Wahl fehlt");
         }
+        if (einsammeln(leiste, "vorrat-eigene", []).length !== 0) {
+            throw new Error("die eigene Wahl gehoert neben die Reihe, nicht hinein");
+        }
 
         /* Der Erklaersatz ist nicht weg, er steht hinter dem i (v0.105). */
-        if (zeile.querySelector(".schalter-hinweis")) {
+        if (einsammeln(karte, "schalter-hinweis", []).length !== 0) {
             throw new Error("der Erklaersatz soll nicht mehr offen dastehen");
         }
-        if (!zeile.querySelector(".info-knopf")) {
-            throw new Error("ohne i waere die Erklaerung verschwunden");
+        if (einsammeln(karte, "info-knopf", []).length !== 1) {
+            throw new Error("die Karte braucht genau ein i");
         }
 
         let zusatz = null;
@@ -739,22 +732,23 @@ pruefe("Item-Vorrat: drei Mengen in einer Reihe, die eigene Wahl im Popup (v0.10
         }
     } finally {
         umgebung.DIALOG.hinweis = echterHinweis;
-        TEAM_SCHACH.neueRegeln.itemVorrat = gemerkterVorrat;
-        TEAM_SCHACH.neueRegeln.itemAuswahl = gemerkteAuswahl;
+        Object.assign(TEAM_SCHACH.neueRegeln, gemerkt);
+        TEAM_SCHACH.auswahlSchliessen();
     }
 });
 
-pruefe("EIN Haken 'Seltenheit anzeigen' schreibt Farbe UND Unglueckszeichen, sein Bild zeigt den Zustand (v0.115.3)", () => {
+pruefe("EINE Wahl 'Sieht man, was drin ist?' schreibt Farbe UND Unglueckszeichen, ihre Bilder zeigen beide Zustaende (v0.115.3, seit v0.121.0 als Bild-Reihe)", () => {
     /*
      * NUTZER-ANSAGE 18.09.2026, zweimal: „ich kann beides an- und
      * ausschalten, obwohl das eine das andere ausschliesst — mach aus zwei
      * Knoepfen einen, mit einer Vorschau vom Wuerfel, die sich aendert."
      *
-     * Geprueft: Es gibt keinen Haken „Ungluecks-Lootboxen anzeigen" mehr;
-     * der Seltenheits-Haken setzt `pechZeigen` mit (an wie aus); sein Bild
-     * ist bei AUS die eine graue Box und bei AN der Streifen mit allen
-     * Stufen plus einer Ungluecks-Box — und der Streifen sagt der
-     * Stildatei, wie viele Bilder er traegt.
+     * Seit v0.121.0 ist es eine Reihe mit ZWEI Segmenten: „Verdeckt" zeigt
+     * die eine graue Box, „Farbig" den Streifen mit allen Stufen plus
+     * einer Ungluecks-Box. Geprueft: Es gibt keine eigene Wahl fuer die
+     * Ungluecks-Boxen; „Farbig" setzt `pechZeigen` mit, „Verdeckt" nimmt
+     * beides heraus; der Streifen sagt der Stildatei, wie viele Bilder er
+     * traegt.
      */
     const gemerkt = Object.assign({}, TEAM_SCHACH.neueRegeln);
 
@@ -770,64 +764,52 @@ pruefe("EIN Haken 'Seltenheit anzeigen' schreibt Farbe UND Unglueckszeichen, sei
         }
         return anzahl;
     };
-
-    const zeilen = (wurzel) => {
-        const treffer = [];
-        const absteigen = (element) => {
-            for (const kind of element.kinder || []) {
-                if (String(kind.className || "").indexOf("schalter-zeile") !== -1) {
-                    treffer.push(kind);
-                }
-                absteigen(kind);
+    const einsammeln = (element, passt, treffer) => {
+        for (const kind of element.kinder || []) {
+            if (passt(kind)) {
+                treffer.push(kind);
             }
-        };
-        absteigen(wurzel);
+            einsammeln(kind, passt, treffer);
+        }
         return treffer;
     };
-    const zeileMitTitel = (wurzel, text) => zeilen(wurzel).find((zeile) => {
-        const titel = klasseSuchen(zeile, "schalter-titel");
-        return titel && String(titel.textContent || "") === text;
-    });
+    const segment = (wahl) => einsammeln(TEAM_SCHACH.wurzelEl, (kind) =>
+        String(kind.className || "").split(" ").indexOf("seltenheit-knopf") !== -1
+        && kind.dataset && kind.dataset.wahl === wahl, [])[0];
 
     try {
+        TEAM_SCHACH.partieAnlegen();
         TEAM_SCHACH.neueRegeln.faehigkeiten = true;
         TEAM_SCHACH.neueRegeln.seltenheitZeigen = false;
         TEAM_SCHACH.neueRegeln.pechZeigen = false;
+        TEAM_SCHACH.auswahlReiterSetzen("lootboxen");
 
-        let karte = TEAM_SCHACH._regelSchalterBauen();
-
-        if (zeileMitTitel(karte, "Unglücks-Lootboxen anzeigen")) {
-            throw new Error("der zweite Haken steht noch da");
-        }
-        const zeile = zeileMitTitel(karte, "Seltenheit anzeigen");
-        if (!zeile) {
-            throw new Error("der Haken Seltenheit anzeigen fehlt");
+        if (einsammeln(TEAM_SCHACH.wurzelEl, (kind) =>
+            String(kind.textContent || "").indexOf("Unglücks-Lootboxen") !== -1, []).length) {
+            throw new Error("eine eigene Wahl fuer die Ungluecks-Boxen steht noch da");
         }
 
-        /* AUS: genau eine Box, die graue. */
-        let bild = klasseSuchen(zeile, "schalter-bild");
-        if (!bild || boxenZaehlen(bild) !== 1) {
-            throw new Error("bei AUS steht genau EINE Box da");
+        const verdeckt = segment("verdeckt");
+        const farbig = segment("farbig");
+        if (!verdeckt || !farbig) {
+            throw new Error("die zwei Segmente Verdeckt und Farbig fehlen");
         }
-        if (klasseSuchen(bild, "lootbox-wechsel")) {
-            throw new Error("bei AUS darf nichts wechseln");
-        }
-
-        /* Anhaken schreibt BEIDE Felder. */
-        const kasten = zeile.kinder.find((kind) => kind.tagName === "input");
-        kasten.checked = true;
-        kasten.ausloesen("change");
-        if (TEAM_SCHACH.neueRegeln.seltenheitZeigen !== true
-            || TEAM_SCHACH.neueRegeln.pechZeigen !== true) {
-            throw new Error("Anhaken muss seltenheitZeigen UND pechZeigen setzen");
+        if (String(verdeckt.className).indexOf("seltenheit-knopf-aktiv") === -1) {
+            throw new Error("bei AUS muss Verdeckt gewaehlt sein");
         }
 
-        /* AN: der Streifen mit allen Stufen plus einer Ungluecks-Box. */
-        karte = TEAM_SCHACH._regelSchalterBauen();
-        bild = klasseSuchen(zeileMitTitel(karte, "Seltenheit anzeigen"), "schalter-bild");
-        const streifen = klasseSuchen(bild, "lootbox-wechsel");
+        /* Verdeckt: genau eine Box, die graue, nichts wechselt. */
+        if (boxenZaehlen(verdeckt) !== 1) {
+            throw new Error("Verdeckt zeigt genau EINE Box, gezaehlt: " + boxenZaehlen(verdeckt));
+        }
+        if (klasseSuchen(verdeckt, "lootbox-wechsel")) {
+            throw new Error("bei Verdeckt darf nichts wechseln");
+        }
+
+        /* Farbig: der Streifen mit allen Stufen plus einer Ungluecks-Box. */
+        const streifen = klasseSuchen(farbig, "lootbox-wechsel");
         if (!streifen) {
-            throw new Error("bei AN fehlt der wechselnde Streifen");
+            throw new Error("bei Farbig fehlt der wechselnde Streifen");
         }
         const erwartet = SCHACH_VARIANTEN.STUFEN.length + 1;
         if (boxenZaehlen(streifen) !== erwartet) {
@@ -843,17 +825,22 @@ pruefe("EIN Haken 'Seltenheit anzeigen' schreibt Farbe UND Unglueckszeichen, sei
                 + streifen.style["animation-timing-function"]);
         }
 
-        /* Abhaken nimmt beide wieder heraus. */
-        const kasten2 = zeileMitTitel(karte, "Seltenheit anzeigen").kinder
-            .find((kind) => kind.tagName === "input");
-        kasten2.checked = false;
-        kasten2.ausloesen("change");
+        /* Farbig waehlen schreibt BEIDE Felder. */
+        farbig.ausloesen("click");
+        if (TEAM_SCHACH.neueRegeln.seltenheitZeigen !== true
+            || TEAM_SCHACH.neueRegeln.pechZeigen !== true) {
+            throw new Error("Farbig muss seltenheitZeigen UND pechZeigen setzen");
+        }
+
+        /* Verdeckt nimmt beide wieder heraus. */
+        segment("verdeckt").ausloesen("click");
         if (TEAM_SCHACH.neueRegeln.seltenheitZeigen !== false
             || TEAM_SCHACH.neueRegeln.pechZeigen !== false) {
-            throw new Error("Abhaken muss beide Felder loeschen");
+            throw new Error("Verdeckt muss beide Felder loeschen");
         }
     } finally {
         Object.assign(TEAM_SCHACH.neueRegeln, gemerkt);
+        TEAM_SCHACH.auswahlSchliessen();
     }
 });
 
@@ -1050,7 +1037,7 @@ pruefe("Enttarnen / Verstecken sind im Popup EIN Eintrag, der beide schaltet (v0
         }
 
         /* Der Zaehl-Knopf zaehlt Eintraege: einer von (alle - 1) fehlt. */
-        const eigene = TEAM_SCHACH._vorratLeisteBauen().querySelector(".vorrat-eigene");
+        const eigene = TEAM_SCHACH._eigeneWahlKnopfBauen();
         const erwartet = "Selbst gewählt: " + (alle - 2) + " von " + (alle - 1);
         if (String(eigene.textContent).indexOf(erwartet) === -1) {
             throw new Error("der Zaehl-Knopf sagt \"" + eigene.textContent
@@ -1091,49 +1078,90 @@ pruefe("Enttarnen / Verstecken sind im Popup EIN Eintrag, der beide schaltet (v0
     }
 });
 
-pruefe("Jeder aktive Reihen-Knopf traegt seine Pille (v0.109)", () => {
+pruefe("Jeder aktive Reihen-Knopf traegt seine Pille — und keine zwei Pillen teilen einen Namen (v0.109, v0.121.0)", () => {
     /*
      * SEIT v0.109 IST DER AKTIVE KNOPF SELBST DURCHSICHTIG — seine Farbe
      * liefert ein Kind-Element (`.reihen-pille`), damit beim weichen
      * Neuzeichnen nur die FLAECHE wandert und nicht die Beschriftung.
      * Fehlt die Pille, ist der gewaehlte Knopf am Bildschirm UNSICHTBAR
-     * markiert. Geprueft werden alle vier Reihen plus der Knopf der eigenen
-     * Wahl; die Armee-Reihe muss ausserdem eine KARTE sein — der
-     * Unterpunkt-Strich hing dort im Leeren (Nutzer-Meldung 22.08.).
+     * markiert.
+     *
+     * SEIT v0.121.0 stehen viele Reihen auf einem Bildschirm, und jede
+     * Pille gleitet unter ihrem eigenen Namen (`reihen-pille-<name>`).
+     * Tragen zwei Pillen denselben Namen, bricht der Browser den Uebergang
+     * ab — geprueft wird deshalb je Reiter: jedes gewaehlte Segment hat
+     * seine Pille, und kein Name kommt zweimal vor. Die Armee-Reihe muss
+     * ausserdem eine KARTE sein (Nutzer-Meldung 22.08.).
      */
-    const gemerkterVorrat = TEAM_SCHACH.neueRegeln.itemVorrat;
-    const gemerkteAuswahl = TEAM_SCHACH.neueRegeln.itemAuswahl;
+    const gemerkt = Object.assign({}, TEAM_SCHACH.neueRegeln);
 
-    const pilleDrin = (wurzel, name, wo) => {
-        if (!wurzel.querySelector(".reihen-pille-" + name)) {
-            throw new Error(wo + ": die Pille reihen-pille-" + name + " fehlt");
+    const einsammeln = (element, passt, treffer) => {
+        for (const kind of element.kinder || []) {
+            if (passt(kind)) {
+                treffer.push(kind);
+            }
+            einsammeln(kind, passt, treffer);
+        }
+        return treffer;
+    };
+    const klassen = (kind) => String(kind.className || "").split(" ");
+
+    const reiterPruefen = (reiter) => {
+        TEAM_SCHACH.auswahlReiterSetzen(reiter);
+        const aktive = einsammeln(TEAM_SCHACH.wurzelEl, (kind) =>
+            klassen(kind).indexOf("bild-knopf-aktiv") !== -1, []);
+        if (aktive.length === 0) {
+            throw new Error(reiter + ": kein gewaehltes Segment");
+        }
+        for (const knopf of aktive) {
+            if (!einsammeln(knopf, (kind) => klassen(kind).indexOf("reihen-pille") !== -1, []).length) {
+                throw new Error(reiter + ": ein gewaehltes Segment ohne Pille ("
+                    + knopf.className + ")");
+            }
+        }
+        const namen = einsammeln(TEAM_SCHACH.wurzelEl, (kind) =>
+            klassen(kind).indexOf("reihen-pille") !== -1, [])
+            .map((pille) => klassen(pille).find((klasse) => klasse.indexOf("reihen-pille-") === 0));
+        const doppelt = namen.filter((name, stelle) => namen.indexOf(name) !== stelle);
+        if (doppelt.length) {
+            throw new Error(reiter + ": Pillen-Namen doppelt: " + doppelt.join(", "));
         }
     };
 
     try {
         const armee = TEAM_SCHACH._armeeStaerkeLeisteBauen();
-        pilleDrin(armee, "armee", "Figurenzahl");
+        if (!armee.querySelector(".reihen-pille-armee")) {
+            throw new Error("Figurenzahl: die Pille reihen-pille-armee fehlt");
+        }
         if (armee.className.indexOf("karte") === -1
             || armee.className.indexOf("schalter-unterpunkt") !== -1) {
             throw new Error("die Figurenzahl-Reihe muss eine Karte ohne "
                 + "Unterpunkt-Strich sein (war: " + armee.className + ")");
         }
 
-        pilleDrin(TEAM_SCHACH._formLeisteBauen(), "form", "Brettform");
-        pilleDrin(TEAM_SCHACH._mengenLeisteBauen(), "mengen", "Lootbox-Menge");
-
+        /* Alles an, damit jede Reihe zu sehen ist. */
+        TEAM_SCHACH.partieAnlegen();
+        TEAM_SCHACH.neueRegeln.faehigkeiten = true;
+        TEAM_SCHACH.neueRegeln.zufallsArmee = true;
         TEAM_SCHACH.neueRegeln.itemVorrat = "alle";
-        pilleDrin(TEAM_SCHACH._vorratLeisteBauen(), "vorrat", "Item-Vorrat");
+
+        reiterPruefen("brett");
+        TEAM_SCHACH.neueRegeln.gegenComputer = true;
+        reiterPruefen("gegner");
+        TEAM_SCHACH.neueRegeln.gegenComputer = false;
+        reiterPruefen("gegner");
+        reiterPruefen("lootboxen");
 
         /* Und auf dem Knopf der eigenen Wahl, wenn SIE gewaehlt ist. */
         TEAM_SCHACH.neueRegeln.itemVorrat = "auswahl";
         TEAM_SCHACH.neueRegeln.itemAuswahl = ["mauer"];
-        const zeile = TEAM_SCHACH._vorratLeisteBauen();
-        const eigene = zeile.querySelector(".vorrat-eigene");
-        pilleDrin(eigene, "vorrat", "Selbst gewaehlt");
+        const eigene = TEAM_SCHACH._eigeneWahlKnopfBauen();
+        if (!eigene.querySelector(".reihen-pille-vorrat")) {
+            throw new Error("Selbst gewaehlt: die Pille reihen-pille-vorrat fehlt");
+        }
     } finally {
-        TEAM_SCHACH.neueRegeln.itemVorrat = gemerkterVorrat;
-        TEAM_SCHACH.neueRegeln.itemAuswahl = gemerkteAuswahl;
+        Object.assign(TEAM_SCHACH.neueRegeln, gemerkt);
+        TEAM_SCHACH.auswahlSchliessen();
     }
 });
 
@@ -1162,17 +1190,18 @@ pruefe("Weiches Zeichnen faellt ohne Browser-Hilfe auf hartes zurueck (v0.107)",
     }
 });
 
-pruefe("Die Einstellungen tragen keinen offenen Erklaertext mehr (v0.105)", () => {
+pruefe("Die Auswahl traegt keinen offenen Erklaertext, aber jede Frage ihr i (v0.105, seit v0.121.0 eines je Karte)", () => {
     /*
      * NUTZER-ANSAGE 21.08.: „Generell zu viel Texte ueberall — kuerze die Infos
      * so, dass man sie noch versteht, und verstecke sie so, dass sie beim
      * normalen Nutzen nicht sichtbar sind, aber nicht VERSCHWINDEN."
      *
-     * Beides wird geprueft, und das zweite ist das wichtigere: Zu jeder
-     * Haken-Zeile muss weiterhin ein i gehoeren. Ein Text, der nur geloescht
-     * wird, waere die halbe Ansage.
+     * Beides wird geprueft, und das zweite ist das wichtigere: Jede Frage
+     * (jeder Kartenkopf `leisten-kopf`) traegt weiterhin ein i. Ein Text,
+     * der nur geloescht wird, waere die halbe Ansage. Geprueft in allen
+     * drei Reitern, mit allem eingeschaltet, damit keine Karte fehlt.
      */
-    const karte = TEAM_SCHACH._regelSchalterBauen();
+    const gemerkt = Object.assign({}, TEAM_SCHACH.neueRegeln);
 
     const suchen = (element, klasse, treffer) => {
         for (const kind of element.kinder || []) {
@@ -1185,19 +1214,33 @@ pruefe("Die Einstellungen tragen keinen offenen Erklaertext mehr (v0.105)", () =
         return treffer;
     };
 
-    const hinweise = suchen(karte, "schalter-hinweis", []);
-    const titel = suchen(karte, "schalter-titel", []);
-    const infos = suchen(karte, "info-knopf", []);
+    try {
+        TEAM_SCHACH.partieAnlegen();
+        TEAM_SCHACH.neueRegeln.faehigkeiten = true;
+        TEAM_SCHACH.neueRegeln.zufallsArmee = true;
 
-    if (hinweise.length !== 0) {
-        throw new Error("kein offener Erklaersatz mehr, gezaehlt: " + hinweise.length);
-    }
-    if (titel.length === 0) {
-        throw new Error("die Titel der Einstellungen muessen bleiben");
-    }
-    if (infos.length < titel.length) {
-        throw new Error("jede Zeile braucht ihr i (" + infos.length + " i zu "
-            + titel.length + " Titeln)");
+        for (const [reiter, computer] of [["brett", false], ["gegner", false],
+            ["gegner", true], ["lootboxen", false]]) {
+            TEAM_SCHACH.neueRegeln.gegenComputer = computer;
+            TEAM_SCHACH.auswahlReiterSetzen(reiter);
+
+            const wurzel = TEAM_SCHACH.wurzelEl;
+            if (suchen(wurzel, "schalter-hinweis", []).length !== 0) {
+                throw new Error(reiter + ": kein offener Erklaersatz mehr");
+            }
+            const koepfe = suchen(wurzel, "leisten-kopf", []);
+            if (koepfe.length === 0) {
+                throw new Error(reiter + ": keine einzige Frage");
+            }
+            for (const kopf of koepfe) {
+                if (suchen(kopf, "info-knopf", []).length !== 1) {
+                    throw new Error(reiter + ": eine Frage ohne ihr i");
+                }
+            }
+        }
+    } finally {
+        Object.assign(TEAM_SCHACH.neueRegeln, gemerkt);
+        TEAM_SCHACH.auswahlSchliessen();
     }
 });
 
@@ -1367,25 +1410,44 @@ pruefe("Anlegen und Loeschen melden sich beim Abgleich an (v0.52)", () => {
     }
 });
 
-pruefe("Das i beim Wuerfel-Haken fuehrt in die Bibliothek (v0.55)", () => {
+pruefe("Aus dem Reiter Lootboxen fuehrt ein Knopf in die Bibliothek und zurueck (v0.55, seit v0.121.0 ein Knopf statt des i)", () => {
     /*
      * „Ich meinte bei dem i neben Zufallswuerfel an das ganze Menue mit den
      * Faehigkeiten, welche es gibt, mit Animationen und co."
      *
-     * Moeglich ist das ohne Umbau, weil `zeichnen` die Bibliothek VOR der
-     * Spielart-Auswahl abfragt — und `infoSchliessen` bringt einen deshalb
-     * genau dorthin zurueck. Genau das prueft dieser Test.
+     * Seit v0.121.0 steht dafuer ein eigener Knopf „Alle Faehigkeiten
+     * ansehen" unter der Lootbox-Wahl. Moeglich ist der Rueckweg ohne
+     * Umbau, weil `zeichnen` die Bibliothek VOR der Auswahl abfragt — und
+     * `infoSchliessen` bringt einen deshalb genau dorthin zurueck, in
+     * denselben Reiter. Genau das prueft dieser Test.
      */
+    const suchenAlle = (element, passt, treffer) => {
+        for (const kind of element.kinder || []) {
+            if (passt(kind)) {
+                treffer.push(kind);
+            }
+            suchenAlle(kind, passt, treffer);
+        }
+        return treffer;
+    };
+
     TEAM_SCHACH.partieAnlegen();
     TEAM_SCHACH.neueRegeln.faehigkeiten = true;
+    TEAM_SCHACH.auswahlReiterSetzen("lootboxen");
 
-    TEAM_SCHACH.faehigkeitenOeffnen();
+    const knopf = suchenAlle(TEAM_SCHACH.wurzelEl, (kind) =>
+        kind.tagName === "button"
+        && String(kind.className || "").indexOf("runde-bibliothek") !== -1, [])[0];
+    if (!knopf) {
+        throw new Error("der Knopf in die Bibliothek fehlt");
+    }
+    knopf.ausloesen("click");
 
     if (!TEAM_SCHACH.infoOffen) {
         throw new Error("die Bibliothek ist nicht offen");
     }
     if (!TEAM_SCHACH.auswahlOffen) {
-        throw new Error("die Spielart-Auswahl darf darunter offen bleiben");
+        throw new Error("die Auswahl darf darunter offen bleiben");
     }
 
     /* Gezeichnet wird die Bibliothek, nicht die Auswahl. */
@@ -1395,31 +1457,17 @@ pruefe("Das i beim Wuerfel-Haken fuehrt in die Bibliothek (v0.55)", () => {
         throw new Error("kein Kopf gezeichnet");
     }
 
-    /*
-     * Und zurueck landet man wieder bei den Grundeinstellungen — dort steht
-     * der Wuerfel-Haken, von dem aus man gekommen ist. Bis v0.20.0 waren
-     * das die Spielart-Kacheln; seit Wunsch 8 sind die Bildschirme geteilt.
-     */
     TEAM_SCHACH.infoSchliessen();
     if (TEAM_SCHACH.infoOffen) {
         throw new Error("die Bibliothek ist nicht zugegangen");
     }
-
-    const suchen = (element, klasse) => {
-        for (const kind of element.kinder || []) {
-            if (String(kind.className || "").indexOf(klasse) !== -1) {
-                return kind;
-            }
-            const tiefer = suchen(kind, klasse);
-            if (tiefer) {
-                return tiefer;
-            }
-        }
-        return null;
-    };
-
-    if (!suchen(TEAM_SCHACH.wurzelEl, "schalter-kasten")) {
-        throw new Error("nach dem Zurueck fehlen die Grundeinstellungen");
+    if (TEAM_SCHACH.auswahlTeil !== "lootboxen") {
+        throw new Error("zurueck landet man nicht im Reiter Lootboxen, sondern: "
+            + TEAM_SCHACH.auswahlTeil);
+    }
+    if (!suchenAlle(TEAM_SCHACH.wurzelEl, (kind) =>
+        String(kind.className || "").indexOf("lootbox-leiste") !== -1, []).length) {
+        throw new Error("nach dem Zurueck fehlt die Lootbox-Wahl");
     }
 
     TEAM_SCHACH.auswahlSchliessen();

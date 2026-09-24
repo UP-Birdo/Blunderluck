@@ -1351,6 +1351,8 @@
 .armee-leiste,
 .form-leiste,
 .sichtbarkeit-leiste,
+/* Die Bild-Reihen der neuen Runde (seit v0.121.0, `_bildReiheBauen`). */
+.bild-leiste,
 /* Der Umschalter der Bibliothek (seit v0.107.0, Punkt 48) — er steht
    NICHT auf dem Anlege-Bildschirm, holt sich hier aber dieselbe Optik.
    Wer die Segment-Optik ändert, ändert sie damit an EINER Stelle. */
@@ -1368,7 +1370,8 @@
 .vorrat-knopf,
 .armee-knopf,
 .form-knopf,
-.sichtbarkeit-knopf {
+.sichtbarkeit-knopf,
+.bild-knopf {
     flex: 1 1 0;
     min-width: 0;
     padding-left: 4px;
@@ -1384,6 +1387,7 @@
 .armee-leiste .knopf,
 .form-leiste .knopf,
 .sichtbarkeit-leiste .knopf,
+.bild-leiste .knopf,
 .karten-leiste .knopf {
     border-color: transparent;
     background: transparent;
@@ -1488,6 +1492,7 @@
 .armee-knopf-aktiv,
 .form-knopf-aktiv,
 .sichtbarkeit-knopf-aktiv,
+.bild-knopf-aktiv,
 .karten-knopf-aktiv {
     background: transparent;
     color: var(--haupt-schrift);
@@ -1500,6 +1505,7 @@
 .armee-knopf,
 .form-knopf,
 .sichtbarkeit-knopf,
+.bild-knopf,
 .karten-knopf,
 .vorrat-eigene {
     position: relative;
@@ -1589,6 +1595,17 @@
 .reihen-pille-bot {
     view-transition-name: bot-aktiv;
 }
+
+/* Die Bild-Reihen der neuen Runde (seit v0.121.0) — jede mit EIGENEM
+   Namen: Zwei Pillen unter demselben Namen bricht der Browser ab, dann
+   gleitet gar nichts mehr. */
+.reihen-pille-aufstellung { view-transition-name: aufstellung-aktiv; }
+.reihen-pille-armeen { view-transition-name: armeen-aktiv; }
+.reihen-pille-gegner { view-transition-name: gegner-aktiv; }
+.reihen-pille-seiten { view-transition-name: seiten-aktiv; }
+.reihen-pille-einigkeit { view-transition-name: einigkeit-aktiv; }
+.reihen-pille-lootbox { view-transition-name: lootbox-aktiv; }
+.reihen-pille-seltenheit { view-transition-name: seltenheit-aktiv; }
 
 /*
  * DIE ANKREUZLISTE DER ITEMS (seit v0.100) — seit v0.105 im Popup.
@@ -1873,3 +1890,154 @@
     background: var(--feld-dunkel);
 }
 
+/* ------------------------------------------------------------------ *
+ * DIE NEUE RUNDE — EIN BILDSCHIRM, DREI REITER (seit v0.121.0)
+ *
+ * Nutzer-Ansage 24.09.2026: „weniger Texte, mehr Bilder, einfachere
+ * Navigation". Jede Wahl ist ein Segment mit Bild oben und Wort darunter
+ * (`.bild-knopf`, gebaut wie die Figurenzahl-Knöpfe), unten klebt
+ * „Spielen". Die Reiter-Leiste ist derselbe Schalter wie im Profil
+ * (`.profil-reiter` in `css\stil.css`).
+ * ------------------------------------------------------------------ */
+
+.runde-seite {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.runde-seite .profil-reiter {
+    margin: 0;
+}
+
+/* Die Abschnitte stehen dichter als die übrigen Karten. */
+.runde-seite > .karte {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.bild-knopf {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 4px 6px;
+}
+
+.bild-knopf-bild {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 40px;
+}
+
+.bild-knopf-wort {
+    font-size: 0.78rem;
+    line-height: 1.15;
+    text-align: center;
+    overflow-wrap: anywhere;
+}
+
+/* Linienzeichen: in der Schriftfarbe, also blau-weiss auf der Pille. */
+.bild-zeichen {
+    width: 32px;
+    height: 32px;
+}
+
+/* 3D-Figuren und Lootboxen im Segment. */
+.bild-gruppe {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+}
+
+/* Der helle Schein macht schwarze Figuren auf dunklem Grund sichtbar
+   (ohne ihn verschwand der schwarze König neben dem weissen, im Browser
+   gesehen). */
+.bild-figur {
+    width: 30px;
+    height: 36px;
+    object-fit: contain;
+    filter: drop-shadow(0 0 1px rgba(255, 255, 255, 0.55));
+}
+
+.bild-gruppe .bild-figur + .bild-figur {
+    margin-left: -8px;
+}
+
+/* Lootboxen im Segment: aus der Brett-Haltung lösen — dieselbe Lage wie
+   bei `.schalter-bild .wuerfel` weiter oben (dort steht, warum). Nur die
+   DIREKTEN Kinder: Die wechselnde Box der Seltenheit rechnet mit ihren
+   30 px (`lootbox-wechsel`) und bleibt unberührt. */
+.bild-knopf-bild > .wuerfel,
+.bild-gruppe > .wuerfel {
+    position: static;
+    flex: 0 0 auto;
+    animation: none;
+}
+
+.bild-knopf-bild > .wuerfel {
+    width: 34px;
+    height: 34px;
+}
+
+/* Mehrere Lootboxen (Menge, Items) rücken zusammen, damit vier passen. */
+.bild-gruppe > .wuerfel {
+    width: 22px;
+    height: 22px;
+}
+
+.bild-gruppe > .wuerfel + .wuerfel {
+    margin-left: -5px;
+}
+
+/* Die Brett-Kacheln stehen zu zweit nebeneinander, die gewählte trägt
+   den Rand der Hauptfarbe. Zwei Klassen, weil `.spielart-feld` in
+   `stil-auswertung.css` steht, die NACH dieser Datei lädt. */
+.spielart-feld.runde-spielarten {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 0;
+}
+
+.runde-spielarten .spielart-kachel {
+    gap: 4px;
+    padding: 8px;
+}
+
+/* Lange Namen („Großes Brett (quadratisch)") schoben die Masse aus der
+   halb so breiten Kachel — jetzt stehen sie darunter. */
+.runde-spielarten .spielart-kopf {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
+}
+
+.spielart-kachel-aktiv {
+    border-color: var(--haupt);
+    box-shadow: 0 0 0 2px var(--haupt);
+}
+
+.runde-bibliothek {
+    align-self: flex-start;
+}
+
+/* „Spielen" klebt am unteren Rand — die Tab-Leiste ist in der Auswahl
+   ohnehin weg (seit v0.39.0), der Platz gehört ihm. */
+.runde-fuss {
+    position: sticky;
+    bottom: 0;
+    z-index: var(--ebene-schwebend);
+    margin: 0 calc(-1 * var(--inhalt-rand));
+    padding: 10px var(--inhalt-rand) calc(10px + env(safe-area-inset-bottom));
+    background: var(--flaeche);
+    border-top: 1px solid var(--rahmen);
+}
+
+.runde-spielen {
+    width: 100%;
+    min-height: 48px;
+    font-size: 1.05rem;
+}
