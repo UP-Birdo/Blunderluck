@@ -448,6 +448,78 @@ body.dialog-offen {
     gap: 4px;
 }
 
+/* Die oberste Zeile des Starts (seit v0.120.0): links das Kurzprofil,
+   rechts der Kopf mit dem Menüband. */
+.start-oben {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.start-oben .start-kopf {
+    margin-left: auto;
+}
+
+/* Das Kurzprofil: grosser Kreis ganz links, daneben Name, Platz, Punkte.
+   Ein Knopf ohne Knopf-Look — wie das Spielerfeld in Spiele-Apps. */
+.start-profil {
+    appearance: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    padding: 4px 12px 4px 4px;
+    border: 1px solid var(--rahmen);
+    border-radius: 999px;
+    background: var(--karte);
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.start-profil-bild.visitenkarte-bild {
+    width: 48px;
+    height: 48px;
+    font-size: 1.4rem;
+}
+
+.start-profil-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.start-profil-name {
+    font-weight: 700;
+    font-size: 0.95rem;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.start-profil-werte {
+    display: flex;
+    gap: 12px;
+}
+
+.start-profil-wert {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 4px;
+}
+
+.start-profil-zahl {
+    font-size: 1.15rem;
+    font-weight: 700;
+}
+
+.start-profil-wort {
+    font-size: 0.72rem;
+    color: var(--schrift-leise);
+}
+
 .start-zahnrad {
     padding: 8px;
     color: var(--schrift-leise);

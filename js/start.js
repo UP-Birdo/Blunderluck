@@ -99,7 +99,19 @@ const START = {
         const kopf = document.createElement("div");
         kopf.className = "start-kopf";
         kopf.appendChild(START._menuebandBauen());
-        seite.appendChild(kopf);
+
+        /* Oben links seit v0.120.0 das Kurzprofil, rechts wie bisher der
+           Kopf mit dem Menüband — beide in einer Zeile. Das Kurzprofil
+           steht bewusst NEBEN `start-kopf`, nicht darin: Der Kopf trägt
+           genau einen Knopf (Test „oben rechts EIN Knopf"). */
+        const oben = document.createElement("div");
+        oben.className = "start-oben";
+        const kurzprofil = START._kurzprofilBauen();
+        if (kurzprofil) {
+            oben.appendChild(kurzprofil);
+        }
+        oben.appendChild(kopf);
+        seite.appendChild(oben);
 
         /*
          * Obere Hälfte: das Vorschaubild der eingestellten Spielart (F2).
@@ -310,6 +322,72 @@ const START = {
                 }
             }
         ];
+    },
+
+    /*
+     * DAS KURZPROFIL OBEN LINKS (seit v0.120.0, Nutzer-Ansage 24.09.2026:
+     * „das Profil soll kompakt auf der Startseite oben links im Eck stehen,
+     * wo dein Name steht, mit Platz und Punkte, ganz links gross").
+     *
+     * Ganz links der Kreis mit dem Anfangsbuchstaben (derselbe wie auf der
+     * Profilseite), daneben Name, Platz und Punkte. Ein Tipp öffnet das
+     * eigene Profil; „Zurück" führt wieder hierher. Die Zahlen rechnet
+     * RANGLISTE (`kurzprofil`) — dieselbe Zählung wie in der Tabelle.
+     * Ohne Anmeldung steht hier nichts.
+     */
+    _kurzprofilBauen() {
+        const ich = ICH.person();
+        if (!ich) {
+            return null;
+        }
+        const daten = RANGLISTE.kurzprofil(ich.id);
+        const name = daten ? daten.name : ich.name;
+
+        const knopf = document.createElement("button");
+        knopf.type = "button";
+        knopf.className = "start-profil";
+        knopf.setAttribute("aria-label", "Dein Profil");
+        knopf.title = "Dein Profil";
+        knopf.addEventListener("click", () => RANGLISTE.eigenesProfilOeffnen("start"));
+
+        const bild = document.createElement("span");
+        bild.className = "visitenkarte-bild start-profil-bild";
+        bild.textContent = String(name || "").trim().charAt(0).toUpperCase() || "?";
+        knopf.appendChild(bild);
+
+        const text = document.createElement("span");
+        text.className = "start-profil-text";
+
+        const nameEl = document.createElement("span");
+        nameEl.className = "start-profil-name";
+        nameEl.textContent = name;
+        text.appendChild(nameEl);
+
+        if (daten) {
+            const werte = document.createElement("span");
+            werte.className = "start-profil-werte";
+            /* „Platz 1" und „522 Punkte" — das Wort steht dort, wo man es
+               spricht; die Zahl ist jeweils gross. */
+            for (const [zahl, wort, wortVorn] of [
+                [daten.platz > 0 ? String(daten.platz) : "–", "Platz", true],
+                [String(daten.punkte), "Punkte", false]
+            ]) {
+                const wert = document.createElement("span");
+                wert.className = "start-profil-wert";
+                const zahlEl = document.createElement("span");
+                zahlEl.className = "start-profil-zahl";
+                zahlEl.textContent = zahl;
+                const wortEl = document.createElement("span");
+                wortEl.className = "start-profil-wort";
+                wortEl.textContent = wort;
+                wert.appendChild(wortVorn ? wortEl : zahlEl);
+                wert.appendChild(wortVorn ? zahlEl : wortEl);
+                werte.appendChild(wert);
+            }
+            text.appendChild(werte);
+        }
+        knopf.appendChild(text);
+        return knopf;
     },
 
     /* Der Halter mit dem Balken-Knopf und — solange offen — der Liste. Er

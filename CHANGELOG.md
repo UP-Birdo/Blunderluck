@@ -3,6 +3,22 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.120.0 — 24.09.2026
+
+**Dein Profil steht jetzt oben links auf der Startseite — mit Platz und
+Punkten auf einen Blick.**
+
+- **Oben links auf dem Start** sitzt ein kompaktes Spielerfeld: ganz links
+  gross der Kreis mit deinem Anfangsbuchstaben, daneben dein Name und
+  darunter „Platz 1“ und „522 Punkte“. Ein Tipp darauf öffnet dein
+  Profil, „Zurück“ führt wieder zum Start. Das Menü oben rechts bleibt,
+  wo es war.
+- **Die Zeile unter dem Bilanz-Balken erklärt sich jetzt selbst:** statt
+  „Form“ steht dort „Letzte 5“, und statt „12 S · 1 R · 1 N“ ausgeschrieben
+  „12 Siege · 1 Remis · 1 Niederlage“. Die Kästchen behalten ihren
+  Buchstaben (S = Sieg, R = Remis, N = Niederlage); mit der Maus darauf
+  steht das ganze Wort da.
+
 ## v0.119.1 — 24.09.2026
 
 **Das Profil ist aufgeräumt: alles Wichtige auf einer Karte, der Rest in

@@ -2787,6 +2787,36 @@ pruefe("Der Startbildschirm zeigt Vorschau, Spielen und das Menueband (v0.103.0)
         throw new Error("der eine Knopf oben rechts ist nicht das Menueband");
     }
 
+    /* (b) OBEN LINKS DAS KURZPROFIL (v0.120.0, Nutzer-Ansage 24.09.2026:
+       „das Profil soll kompakt auf der Startseite oben links im Eck
+       stehen, wo dein Name steht, mit Platz und Punkte"). */
+    const kurzprofil = startEinsammeln(START.wurzelEl, (kind) =>
+        String(kind.className || "").split(" ").indexOf("start-profil") !== -1, [])[0];
+    if (!kurzprofil || kurzprofil.tagName !== "button") {
+        throw new Error("oben links fehlt das Kurzprofil");
+    }
+    const kurzName = startEinsammeln(kurzprofil, (kind) =>
+        String(kind.className || "") === "start-profil-name", [])[0];
+    if (!kurzName || String(kurzName.textContent) !== "Anna") {
+        throw new Error("das Kurzprofil traegt nicht den eigenen Namen");
+    }
+    const kurzWoerter = startEinsammeln(kurzprofil, (kind) =>
+        String(kind.className || "") === "start-profil-wort", [])
+        .map((kind) => String(kind.textContent)).join("|");
+    if (kurzWoerter !== "Platz|Punkte") {
+        throw new Error("Platz und Punkte fehlen im Kurzprofil: " + kurzWoerter);
+    }
+    const RANGLISTE = umgebung.RANGLISTE;
+    try {
+        kurzprofil.ausloesen("click");
+        if (RANGLISTE.offenesProfil !== "id-anna" || RANGLISTE.profilRueckweg !== "start") {
+            throw new Error("der Tipp aufs Kurzprofil oeffnet nicht das eigene Profil mit Rueckweg Start");
+        }
+    } finally {
+        RANGLISTE.offenesProfil = "";
+        RANGLISTE.profilRueckweg = "";
+    }
+
     /* Das Vorschaubrett ist da und hat Felder. */
     const vorschau = startEinsammeln(START.wurzelEl, (kind) =>
         String(kind.className || "").split(" ").indexOf("vorschau") !== -1, [])[0];

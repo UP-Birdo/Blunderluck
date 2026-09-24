@@ -891,6 +891,22 @@ const RANGLISTE = {
         return karte;
     },
 
+    /*
+     * Name, Platz und Punkte eines Spielers — für das Kurzprofil oben
+     * links auf dem Start (seit v0.120.0). Null, wenn er nicht (mehr) in
+     * der Spielerliste steht.
+     */
+    kurzprofil(spielerId) {
+        const staende = RANGLISTE._staende();
+        const eintrag = RANGLISTE.gesamt(staende.spieler, staende.schach)
+            .find((person) => person.id === spielerId);
+        if (!eintrag) {
+            return null;
+        }
+        const platz = RANGLISTE._platzVon(spielerId, staende);
+        return { name: eintrag.name, punkte: eintrag.gesamt, platz: platz.platz, von: platz.von };
+    },
+
     /* Platz in der Wertung — dieselbe Zählung wie in der Tabelle. */
     _platzVon(spielerId, staende) {
         const liste = RANGLISTE.gesamt(staende.spieler, staende.schach);
@@ -928,17 +944,28 @@ const RANGLISTE = {
         }
         block.appendChild(balken);
 
+        /* Seit v0.120.0 in Worten statt „Form" und „12 S · 1 R · 1 N" —
+           Nutzer-Frage „was ist Form N?": Die Buchstaben allein erklärten
+           sich nicht. Die Kästchen behalten ihren Buchstaben, sagen aber
+           Vorleseprogramm und Maus das ganze Wort. */
         const zeile = RANGLISTE._element("div", "profil-bilanz-zeile");
+        const letzte = verlauf.slice(0, RANGLISTE.PROFIL_FORM_LAENGE);
         const form = RANGLISTE._element("span", "profil-form");
-        form.appendChild(RANGLISTE._element("span", "profil-form-wort", "Form"));
-        for (const eintrag of verlauf.slice(0, RANGLISTE.PROFIL_FORM_LAENGE)) {
-            form.appendChild(RANGLISTE._element("span",
+        form.appendChild(RANGLISTE._element("span", "profil-form-wort",
+            letzte.length === 1 ? "Letzte Partie" : "Letzte " + letzte.length));
+        for (const eintrag of letzte) {
+            const marke = RANGLISTE._element("span",
                 "profil-marke profil-marke-" + eintrag.ausgang,
-                RANGLISTE._ausgangKurz(eintrag.ausgang)));
+                RANGLISTE._ausgangKurz(eintrag.ausgang));
+            marke.title = RANGLISTE._ausgangWort(eintrag.ausgang, 1);
+            marke.setAttribute("aria-label", marke.title);
+            form.appendChild(marke);
         }
         zeile.appendChild(form);
         zeile.appendChild(RANGLISTE._element("span", "profil-bilanz-text",
-            stat.siege + " S · " + stat.remis + " R · " + stat.niederlagen + " N"));
+            [[stat.siege, "sieg"], [stat.remis, "remis"], [stat.niederlagen, "niederlage"]]
+                .map(([anzahl, ausgang]) => anzahl + " " + RANGLISTE._ausgangWort(ausgang, anzahl))
+                .join(" · ")));
         block.appendChild(zeile);
 
         return block;
@@ -947,6 +974,18 @@ const RANGLISTE = {
     /* S / R / N — der eine Buchstabe im farbigen Kästchen. */
     _ausgangKurz(ausgang) {
         return { sieg: "S", remis: "R", niederlage: "N" }[ausgang] || "?";
+    },
+
+    /* Das ganze Wort zum Ausgang, Einzahl oder Mehrzahl. */
+    _ausgangWort(ausgang, anzahl) {
+        const eins = anzahl === 1;
+        if (ausgang === "sieg") {
+            return eins ? "Sieg" : "Siege";
+        }
+        if (ausgang === "remis") {
+            return "Remis";
+        }
+        return eins ? "Niederlage" : "Niederlagen";
     },
 
     /* Die Reiter-Leiste: drei Knöpfe, der offene hervorgehoben. */

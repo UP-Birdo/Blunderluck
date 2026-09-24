@@ -90,6 +90,26 @@ Bewegung im `no-preference`-Block am Dateiende).
   Schatten, ruhiger Hover, kurzes Einblenden — alles aus den vorhandenen
   Variablen.
 
+## Das Kurzprofil oben links (seit v0.120.0)
+
+Nutzer-Ansage 24.09.2026: „Das Profil soll kompakt auf der Startseite oben
+links im Eck stehen, wo dein Name steht, mit Platz und Punkte, ganz links
+gross." Die oberste Zeile des Starts ist seitdem `.start-oben`: links
+`START._kurzprofilBauen()` (ein Knopf `.start-profil`), rechts unverändert
+`.start-kopf` mit dem Menüband.
+
+- **Inhalt:** ganz links der grosse Kreis mit dem Anfangsbuchstaben
+  (dieselbe Klasse `visitenkarte-bild` wie auf der Profilseite, 48 px),
+  daneben Name und darunter „Platz 1" und „522 Punkte" — die Zahlen gross.
+  Die Werte liefert `RANGLISTE.kurzprofil(id)` (dieselbe Zählung wie die
+  Tabelle über `gesamt` und `_platzVon`). Ohne Anmeldung fehlt das Feld;
+  steht man nicht (mehr) in der Spielerliste, bleibt nur der Name.
+- **Tipp:** `RANGLISTE.eigenesProfilOeffnen("start")` — „Zurück" führt
+  wieder zum Start.
+- **Warum neben und nicht in `.start-kopf`:** Der Kopf trägt genau einen
+  Knopf, das Menüband; ein Test wacht darüber („oben rechts EIN Knopf").
+  Der Menüpunkt „Profil" bleibt trotzdem — zwei Wege zur selben Seite.
+
 ## Die Seite wird zugelost — und der Wahl-Bildschirm entfällt (seit v0.66.0)
 
 **Die Regel `seiteZufaellig` ist ab Werk AN.** Dann gibt es den
@@ -278,7 +298,9 @@ vom Profil. Gebaut auf der Spieler-Profilseite der Rangliste
   (Datum der ersten beendeten Partie — die Spielerliste kennt kein
   Anlegedatum), Punkte; vier Kurzwerte (Partien, Siege, Quote, Serie);
   Bilanz-Balken mit Form der letzten `PROFIL_FORM_LAENGE` Ergebnisse
-  (`_bilanzBauen`); drei Abzeichen-Plätze — eigenes Profil: antippen führt
+  (`_bilanzBauen`; seit v0.120.0 beschriftet mit „Letzte N" und
+  ausgeschrieben „12 Siege · 1 Remis · 1 Niederlage" über `_ausgangWort` —
+  „Form" und „S/R/N" allein verstand der Nutzer nicht); drei Abzeichen-Plätze — eigenes Profil: antippen führt
   zu `abzeichenWaehlen`; fremdes Profil: der Freundschafts-Knopf
   (`_freundschaftBauen`) in den vier Lagen von `SPIELER.freundschaft`,
   geschrieben über `FREUNDE`.
