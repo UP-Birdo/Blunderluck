@@ -1151,44 +1151,198 @@ body.partie-fest .phasen-leiste {
 }
 
 /* ------------------------------------------------------------------ *
- * Die Profilseite (seit v0.119.0): Visitenkarte, Statistik, Abzeichen
+ * Die Profilseite (seit v0.119.0, kompakt seit v0.119.1): EINE
+ * Kopfkarte, drei Reiter, Einzelheiten im Popup
  * ------------------------------------------------------------------ */
 
+/* „Bearbeiten" rechts im klebenden Kopf. */
+.profil-bearbeiten {
+    margin-left: auto;
+}
+
+/* Zeile 1 der Kopfkarte: Kreis, Name mit Angaben, Punkte. */
 .visitenkarte-kopf {
     display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 10px;
+    align-items: center;
+    gap: 12px;
+}
+
+/* Der Kreis mit dem Anfangsbuchstaben — das „Spielerbild". */
+.visitenkarte-bild {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    border-radius: 999px;
+    background: var(--haupt);
+    color: var(--haupt-schrift);
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.visitenkarte-mitte {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
 }
 
 .visitenkarte-name {
-    font-size: 1.5rem;
+    font-size: 1.3rem;
     font-weight: 700;
+    line-height: 1.2;
     overflow-wrap: anywhere;
+}
+
+.visitenkarte-angaben {
+    font-size: 0.8rem;
+    color: var(--schrift-leise);
+}
+
+.visitenkarte-punktfeld {
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
 }
 
 .visitenkarte-punkte {
     font-size: 1.5rem;
+    line-height: 1.1;
     white-space: nowrap;
 }
 
-.visitenkarte-angaben {
-    margin: 4px 0 0;
-    font-size: 0.85rem;
+.visitenkarte-punkte-wort {
+    font-size: 0.7rem;
+    color: var(--schrift-leise);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Zeile 2: vier Kurzwerte, gleich breit, durch feine Linien getrennt. */
+.profil-kurzwerte {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    margin-top: 14px;
+    padding: 8px 0;
+    border-top: 1px solid var(--rahmen);
+    border-bottom: 1px solid var(--rahmen);
+}
+
+.profil-kurzwert {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 0;
+}
+
+.profil-kurzwert + .profil-kurzwert {
+    border-left: 1px solid var(--rahmen);
+}
+
+.profil-kurzwert-zahl {
+    font-size: 1.1rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.profil-kurzwert-wort {
+    font-size: 0.7rem;
     color: var(--schrift-leise);
 }
 
-/* Die drei Plätze der Visitenkarte, gleich breit. */
+/* Zeile 3: Bilanz-Balken, darunter Form und Zahlen. */
+.profil-bilanz {
+    margin-top: 12px;
+}
+
+.profil-bilanz-balken {
+    display: flex;
+    gap: 2px;
+    height: 6px;
+    border-radius: 999px;
+    overflow: hidden;
+    background: var(--karte-leise);
+}
+
+.profil-bilanz-teil {
+    flex: 1 1 0;
+    min-width: 4px;
+}
+
+.profil-bilanz-sieg {
+    background: var(--gut);
+}
+
+.profil-bilanz-remis {
+    background: var(--schrift-leise);
+}
+
+.profil-bilanz-niederlage {
+    background: var(--gefahr);
+}
+
+.profil-bilanz-zeile {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.profil-form {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.profil-form-wort,
+.profil-bilanz-text {
+    font-size: 0.75rem;
+    color: var(--schrift-leise);
+}
+
+.profil-form-wort {
+    margin-right: 2px;
+}
+
+/* Das Ergebnis-Kästchen (S / R / N) — in der Form-Zeile und je Partie. */
+.profil-marke {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 5px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #ffffff;
+}
+
+.profil-marke-sieg {
+    background: var(--gut);
+}
+
+.profil-marke-remis {
+    background: var(--schrift-leise);
+}
+
+.profil-marke-niederlage {
+    background: var(--gefahr);
+}
+
+/* Zeile 4: die drei Abzeichen-Plätze, gleich breit, Zeichen über Titel
+   (drei Marken nebeneinander sind auf 390 px nur rund 100 px breit). */
 .visitenkarte-abzeichen {
     display: flex;
     gap: 8px;
     margin-top: 12px;
 }
 
-/* Auf der Karte stehen die drei UNTEREINANDER beschriftet (Zeichen oben,
-   Titel darunter): Drei Marken nebeneinander sind auf 390 px nur rund
-   105 px breit, und „Erster Sieg" wurde zu „Erster …" — im Browser
-   gesehen, v0.119.0. */
 .visitenkarte-abzeichen .abzeichen {
     flex: 1 1 0;
     min-width: 0;
@@ -1199,14 +1353,33 @@ body.partie-fest .phasen-leiste {
     border-radius: 12px;
     white-space: normal;
     text-align: center;
-    font-size: 0.78rem;
+    font-size: 0.75rem;
     line-height: 1.15;
 }
 
 .visitenkarte-abzeichen .abzeichen-zeichen {
-    min-width: 32px;
-    height: 32px;
-    font-size: 0.8rem;
+    min-width: 30px;
+    height: 30px;
+    font-size: 0.78rem;
+}
+
+.visitenkarte-abzeichen .abzeichen-leer {
+    min-height: 62px;
+    font-size: 1.2rem;
+}
+
+.visitenkarte-fuss {
+    align-items: center;
+}
+
+/* Alles, was antippbar ist, ohne ein Knopf zu sein. */
+.antippbar {
+    cursor: pointer;
+}
+
+.antippbar:focus-visible {
+    outline: 2px solid var(--haupt);
+    outline-offset: 2px;
 }
 
 /* Ein Abzeichen: Zeichen im Kreis, Titel daneben. Verdiente tragen die
@@ -1264,99 +1437,194 @@ body.partie-fest .phasen-leiste {
     border-style: dashed;
 }
 
-.abzeichen-liste {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.abzeichen-zeile {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 6px 10px;
-}
-
-.abzeichen-text {
-    flex: 1 1 160px;
-    font-size: 0.82rem;
-    color: var(--schrift-leise);
-}
-
-/* Die Statistik-Kacheln: so viele nebeneinander, wie hineinpassen. */
-.statistik-raster {
+/* Die Reiter-Leiste: ein Band mit drei gleich breiten Feldern, das
+   offene hebt sich als Karte ab (wie ein Segment-Schalter). */
+.profil-reiter {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
-    gap: 8px;
-    margin-top: 6px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+    margin: var(--abstand) 0 8px;
+    padding: 4px;
+    border-radius: 12px;
+    background: var(--karte-leise);
 }
 
-.statistik-raster .profil-summe-zahl {
-    overflow-wrap: anywhere;
+.profil-reiter-knopf {
+    appearance: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 36px;
+    padding: 6px 4px;
+    border: none;
+    border-radius: 9px;
+    background: transparent;
+    color: var(--schrift-leise);
+    font: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
 }
 
-/* Die drei Summen nebeneinander, oben im Profil. */
-.profil-summen {
-    display: flex;
-    gap: 8px;
-    margin-top: 10px;
+.profil-reiter-aktiv {
+    background: var(--karte);
+    color: var(--schrift);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
 }
 
-.profil-summe {
-    flex: 1;
-    padding: 10px 6px;
-    border: 1px solid var(--rahmen);
-    border-radius: 10px;
-    text-align: center;
-}
-
-.profil-summe-zahl {
-    display: block;
-    font-size: 1.2rem;
-    font-weight: 700;
-}
-
-.profil-summe-titel {
-    display: block;
-    margin-top: 2px;
-    font-size: 0.72rem;
+.profil-reiter-zahl {
+    font-size: 0.7rem;
+    font-weight: 600;
     color: var(--schrift-leise);
 }
 
-/* Eine Partie oder Runde im Verlauf. */
-.profil-zeile {
-    padding: 10px 0;
+.profil-reiter-hinweis {
+    margin: 0 0 8px;
+    font-size: 0.8rem;
+    color: var(--schrift-leise);
+}
+
+.profil-reiter-inhalt {
+    margin-top: 0;
+}
+
+/* Reiter Statistik: Name links, Wert rechts. */
+.profil-werte {
+    margin: 0;
+}
+
+.profil-wert-zeile {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 9px 0;
     border-bottom: 1px solid var(--rahmen);
 }
 
-.profil-zeile:last-of-type {
+.profil-wert-zeile:last-child {
     border-bottom: none;
 }
 
-.profil-zeile-kopf {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 6px;
+.profil-wert-wort {
+    font-size: 0.88rem;
+    color: var(--schrift-leise);
 }
 
-.profil-titel {
+.profil-wert-zahl {
+    margin: 0;
+    font-weight: 700;
+    text-align: right;
+}
+
+/* Reiter Abzeichen: vier Marken je Zeile, Zeichen über Titel. */
+.abzeichen-raster {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+}
+
+.abzeichen-kachel {
+    appearance: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    min-width: 0;
+    padding: 10px 2px 8px;
+    border: 1px solid var(--rahmen);
+    border-radius: 12px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: 0.7rem;
+    font-weight: 600;
+    line-height: 1.15;
+    text-align: center;
+    cursor: pointer;
+}
+
+.abzeichen-kachel .abzeichen-zeichen {
+    min-width: 34px;
+    height: 34px;
+    font-size: 0.78rem;
+}
+
+/* Lange Namen („Unaufhaltsam", „Dauerbrenner") passen bei vier Spalten
+   auf 390 px nicht in eine Zeile — sie brechen um statt abgeschnitten zu
+   werden (im Browser gesehen, v0.119.1). */
+.abzeichen-kachel .abzeichen-titel {
+    max-width: 100%;
+    font-size: 0.66rem;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    hyphens: auto;
+}
+
+.abzeichen-kachel.abzeichen-offen {
+    opacity: 0.6;
+}
+
+/* Reiter Partien: je Partie eine antippbare Zeile. */
+.profil-partien {
+    display: flex;
+    flex-direction: column;
+}
+
+.profil-partie {
+    appearance: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 9px 0;
+    border: none;
+    border-bottom: 1px solid var(--rahmen);
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.profil-partie:last-child {
+    border-bottom: none;
+}
+
+.profil-partie .profil-marke {
+    width: 26px;
+    height: 26px;
+    font-size: 0.78rem;
+}
+
+.profil-partie-mitte {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.profil-partie-titel {
     font-weight: 600;
 }
 
-/* Die Punktzahl rechts — auch dann, wenn die Chips davor umbrechen. */
-.profil-punkte {
-    margin-left: auto;
-    font-weight: 700;
+.profil-partie-unter {
+    font-size: 0.78rem;
+    color: var(--schrift-leise);
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.profil-angaben,
-.profil-gegner {
-    display: block;
-    margin-top: 4px;
-    font-size: 0.8rem;
-    color: var(--schrift-leise);
+.profil-partie-punkte {
+    flex: none;
+    font-weight: 700;
+}
+
+.profil-mehr {
+    width: 100%;
+    margin-top: 8px;
 }
 
 /* Der i-Knopf neben der Überschrift des Punktestands. */

@@ -726,8 +726,8 @@ pruefe("Die Profilseite: Visitenkarte, Freundschafts-Knopf, Rueckweg — und ein
         if (mitKlasse("abzeichen").length < 3) {
             throw new Error("drei Abzeichen-Plaetze erwartet");
         }
-        if (mitKlasse("statistik-raster").length + mitKlasse("erklaerung").length === 0) {
-            throw new Error("weder Statistik-Kacheln noch ein Satz dazu");
+        if (mitKlasse("profil-werte").length + mitKlasse("erklaerung").length === 0) {
+            throw new Error("weder Statistik-Zeilen noch ein Satz dazu");
         }
 
         /* Freund anfragen — die Lage wechselt auf „gesendet". */
@@ -754,13 +754,19 @@ pruefe("Die Profilseite: Visitenkarte, Freundschafts-Knopf, Rueckweg — und ein
             throw new Error("das Profil ist noch offen");
         }
 
-        /* Das eigene Profil: Name, Passwort, Abzeichen waehlen. */
+        /* Das eigene Profil: Name, Passwort und Abzeichen liegen seit
+           v0.119.1 im Menue „Bearbeiten" (Popup). */
         RANGLISTE.profilOeffnen("id-anna");
+        if (!knopfMit("Bearbeiten")) {
+            throw new Error("auf dem eigenen Profil fehlt der Knopf Bearbeiten");
+        }
+        const menue = RANGLISTE._bearbeitenEintraege().map((e) => e.beschriftung).join("|");
         for (const text of ["Name ändern", "Passwort ändern", "Abzeichen wählen"]) {
-            if (!knopfMit(text)) {
-                throw new Error("auf dem eigenen Profil fehlt: " + text);
+            if (menue.indexOf(text) === -1) {
+                throw new Error("im Menue Bearbeiten fehlt: " + text);
             }
         }
+        knopfMit("Bearbeiten").ausloesen("click");
         if (knopfMit("Freund anfragen")) {
             throw new Error("sich selbst kann man nicht anfragen");
         }
@@ -786,6 +792,78 @@ pruefe("Die Profilseite: Visitenkarte, Freundschafts-Knopf, Rueckweg — und ein
         ANMELDUNG.abgleich.daten = gemerkteSpieler;
         RANGLISTE.offenesProfil = "";
         RANGLISTE.profilRueckweg = "";
+    }
+});
+
+pruefe("Die kompakte Profilseite: Kopfkarte, drei Reiter, Einzelheiten im Popup (v0.119.1)", () => {
+    /*
+     * NUTZER-ANSAGE 24.09.2026: „das Profil ist zu ueberladen, mache es
+     * schoener, kompakter — Untermenues oder Popups, wie andere Spiele-Apps".
+     */
+    const einsammeln = (element, passt, treffer) => {
+        for (const kind of element.kinder || []) {
+            if (passt(kind)) {
+                treffer.push(kind);
+            }
+            einsammeln(kind, passt, treffer);
+        }
+        return treffer;
+    };
+    const mitKlasse = (klasse) => einsammeln(RANGLISTE.wurzelEl, (kind) =>
+        String(kind.className || "").split(" ").indexOf(klasse) !== -1, []);
+    const reiterKnopf = (id) => einsammeln(RANGLISTE.wurzelEl, (kind) =>
+        kind.dataset && kind.dataset.reiter === id, [])[0];
+
+    try {
+        RANGLISTE.profilOeffnen("id-anna");
+
+        /* Kopfkarte: Kreis, vier Kurzwerte, drei Reiter. */
+        if (mitKlasse("visitenkarte-bild").length !== 1) {
+            throw new Error("der Kreis mit dem Anfangsbuchstaben fehlt");
+        }
+        if (mitKlasse("profil-kurzwert").length !== 4) {
+            throw new Error("vier Kurzwerte erwartet, gefunden: " + mitKlasse("profil-kurzwert").length);
+        }
+        if (mitKlasse("profil-reiter-knopf").length !== 3) {
+            throw new Error("drei Reiter erwartet");
+        }
+
+        /* Ein Profil beginnt bei der Statistik; die anderen Inhalte fehlen. */
+        if (RANGLISTE.profilReiter !== "statistik" || mitKlasse("abzeichen-raster").length !== 0) {
+            throw new Error("das Profil muss bei der Statistik beginnen, nur ein Reiter offen");
+        }
+
+        /* Reiter Abzeichen: Raster mit ALLEN Abzeichen, Antippen = Popup. */
+        reiterKnopf("abzeichen").ausloesen("click");
+        const kacheln = mitKlasse("abzeichen-kachel");
+        if (kacheln.length !== RANGLISTE.ABZEICHEN.length) {
+            throw new Error("im Raster muessen alle Abzeichen stehen, gefunden: " + kacheln.length);
+        }
+        kacheln[0].ausloesen("click");
+        if (mitKlasse("profil-werte").length !== 0) {
+            throw new Error("die Statistik steht noch, obwohl der Reiter gewechselt ist");
+        }
+
+        /* Reiter Partien: je Partie eine Zeile, Antippen = Popup. */
+        reiterKnopf("partien").ausloesen("click");
+        const zeilen = mitKlasse("profil-partie");
+        const verlauf = RANGLISTE.verlauf("id-anna", RANGLISTE._staende().schach);
+        if (zeilen.length !== Math.min(verlauf.length, RANGLISTE.PROFIL_PARTIEN_ANFANG)) {
+            throw new Error("Partien-Zeilen passen nicht zum Verlauf: " + zeilen.length);
+        }
+        if (zeilen.length > 0) {
+            zeilen[0].ausloesen("click");
+        }
+
+        /* Ein neu geoeffnetes Profil beginnt wieder bei der Statistik. */
+        RANGLISTE.profilOeffnen("id-bert");
+        if (RANGLISTE.profilReiter !== "statistik") {
+            throw new Error("der Reiter muss beim Oeffnen zurueckgesetzt werden");
+        }
+    } finally {
+        RANGLISTE.offenesProfil = "";
+        RANGLISTE.profilRueckweg = "";
+        RANGLISTE.profilReiter = "statistik";
     }
 });
 

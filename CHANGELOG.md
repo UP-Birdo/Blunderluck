@@ -3,6 +3,28 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.119.1 — 24.09.2026
+
+**Das Profil ist aufgeräumt: alles Wichtige auf einer Karte, der Rest in
+drei Reitern und Popups — statt fast drei Bildschirmhöhen untereinander.**
+
+- **Oben eine Kopfkarte** wie in Spiele-Apps: Kreis mit deinem
+  Anfangsbuchstaben, Name, Platz und Punkte; darunter in einer Zeile
+  Partien, Siege, Quote und aktuelle Serie; ein farbiger Bilanz-Balken
+  (Siege grün, Remis grau, Niederlagen rot) mit deiner **Form** — die
+  letzten fünf Ergebnisse als Kästchen; und die drei Abzeichen-Plätze.
+  Beim eigenen Profil führt ein Tipp auf einen Platz direkt zu „Abzeichen
+  wählen".
+- **Drei Reiter darunter**, immer nur einer offen: **Statistik** (eine
+  schlanke Liste statt elf Kacheln), **Abzeichen** (ein Raster, vier je
+  Zeile; antippen zeigt, wie man es bekommt) und **Partien** (je Partie
+  eine Zeile; antippen zeigt Dauer, Züge, Beute und Mitspieler). Lange
+  Partienlisten zeigen erst die jüngsten acht.
+- **Name ändern, Passwort ändern und Abzeichen wählen** liegen jetzt
+  gesammelt hinter „Bearbeiten" oben rechts.
+
+Gerechnet wird genau wie vorher — nur die Anordnung ist neu.
+
 ## v0.119.0 — 18.09.2026
 
 **Die Profilseite: Visitenkarte, Abzeichen, Statistik — und jeder Name in

@@ -1,5 +1,32 @@
 # Blunderluck - Entscheidungen / Entschieden - und warum
 
+## Profil kompakt: Kopfkarte, drei Reiter, Popups (24.09.2026, v0.119.1)
+
+**Nutzer-Ansage:** „Das Profil ist zu überladen, mache es schöner, kompakter
+— kannst ruhig Untermenüs benutzen oder Popups, nimm dir Beispiel an anderen
+Spiele-Apps."
+
+**Was vorher war (v0.119.0, auf 390 px gemessen):** vier Karten
+untereinander — Visitenkarte, elf Statistik-Kacheln, alle 14 Abzeichen mit
+Bedingungssatz, jede Partie mit drei Zeilen. Bei 14 Partien fast drei
+Bildschirmhöhen; Siege und Remis standen doppelt (Kachel und Satz).
+
+**Entschieden:** das Muster der Profilseiten in Spiele-Apps (chess.com,
+Clash Royale): oben EINE Kopfkarte mit allem für den ersten Blick
+(Spielerbild, Name, Platz, Punkte, vier Kurzwerte, Bilanz-Balken mit Form,
+die drei Abzeichen), darunter ein Segment-Schalter mit drei Reitern, von
+denen immer nur einer offen ist. Was man nur manchmal wissen will — die
+Bedingung eines Abzeichens, Dauer und Beute einer Partie — steht im Popup
+statt daneben. Name, Passwort und Abzeichen-Wahl liegen hinter
+„Bearbeiten", weil man sie selten braucht.
+
+**Bewusst so:** Gerechnet wird unverändert (`statistik`, `verlauf`,
+`abzeichenVon`); nur die Anordnung ist neu — deshalb eine PATCH. Die
+Klasse `karte visitenkarte` und der Knopf „Freund anfragen" bleiben, der
+Test von v0.119.0 hängt daran. Der Reiter beginnt bei jedem neu geöffneten
+Profil bei der Statistik, damit ein fremdes Profil nicht mitten in der
+Partienliste aufgeht.
+
 ## Sichtbarkeit: neue Runden öffentlich, alte privat; Abzeichen gerechnet, nicht vergeben (18.09.2026, v0.118.0 / v0.119.0)
 
 **Nutzer-Ansage:** „Standard soll öffentlich sein" (Sichtbarkeit) und

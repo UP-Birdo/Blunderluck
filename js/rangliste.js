@@ -455,6 +455,8 @@ const RANGLISTE = {
 
     profilOeffnen(spielerId, rueckweg) {
         RANGLISTE.offenesProfil = spielerId;
+        RANGLISTE.profilReiter = "statistik";
+        RANGLISTE.profilAllePartien = false;
         RANGLISTE.profilRueckweg = (typeof rueckweg === "string" && rueckweg !== "rangliste")
             ? rueckweg : "";
 
@@ -694,59 +696,203 @@ const RANGLISTE = {
 
     /* ---------------------------------------------------------------- *
      * Zeichnen der Profilseite
+     *
+     * SEIT v0.119.1 KOMPAKT (Nutzer-Ansage 24.09.2026: „das Profil ist zu
+     * überladen, mache es schöner, kompakter — kannst ruhig Untermenüs
+     * benutzen oder Popups, nimm dir Beispiel an anderen Spiele-Apps").
+     * Vorher standen Visitenkarte, elf Statistik-Kacheln, alle vierzehn
+     * Abzeichen mit Satz und jede Partie mit drei Zeilen untereinander —
+     * auf dem Handy fast drei Bildschirmhöhen.
+     *
+     * Jetzt, nach dem Muster der Profilseiten von Spiele-Apps:
+     *   1. EINE Kopfkarte: Kreis mit Anfangsbuchstaben, Name, Platz,
+     *      Punkte, vier Kurzwerte in einer Zeile, Bilanz-Balken mit Form
+     *      (letzte fünf) und die drei gewählten Abzeichen.
+     *   2. Drei Reiter darunter (Statistik / Abzeichen / Partien) — immer
+     *      nur einer offen.
+     *   3. Einzelheiten im Popup: ein Abzeichen antippen zeigt seine
+     *      Bedingung, eine Partie antippen ihre Angaben; „Bearbeiten"
+     *      sammelt Name, Passwort und Abzeichen in einem Menü.
+     * Gerechnet wird genau wie vorher (`statistik`, `verlauf`,
+     * `abzeichenVon`) — geändert hat sich nur die Anordnung.
      * ---------------------------------------------------------------- */
+
+    /* Welcher Reiter offen ist. Reines Anzeige-Gedächtnis; jedes neu
+       geöffnete Profil beginnt bei der Statistik. */
+    profilReiter: "statistik",
+
+    /* Ob die Partienliste ganz aufgeklappt ist (sonst die jüngsten). */
+    profilAllePartien: false,
+
+    PROFIL_REITER: [
+        { id: "statistik", titel: "Statistik" },
+        { id: "abzeichen", titel: "Abzeichen" },
+        { id: "partien", titel: "Partien" }
+    ],
+
+    /* So viele Partien zeigt der Reiter, bevor „Alle zeigen" nötig wird. */
+    PROFIL_PARTIEN_ANFANG: 8,
+
+    /* So viele Ergebnisse zeigt die Form-Zeile der Kopfkarte. */
+    PROFIL_FORM_LAENGE: 5,
 
     _profilZeichnen(wurzel, person, staende) {
         const ich = ICH.person();
         const istIch = !!ich && ich.id === person.id;
 
-        const kopf = RANGLISTE._element("div", "partie-kopf partie-kopf-klebt");
+        const kopf = RANGLISTE._element("div", "partie-kopf partie-kopf-klebt profil-kopf");
         kopf.appendChild(RANGLISTE._knopf("Zurück", "knopf-still knopf-klein",
             () => RANGLISTE.profilSchliessen()));
         kopf.appendChild(RANGLISTE._element("h2", "partie-titel",
             istIch ? "Dein Profil" : "Profil"));
+        if (istIch) {
+            kopf.appendChild(RANGLISTE._knopf("Bearbeiten", "knopf-still knopf-klein profil-bearbeiten",
+                () => RANGLISTE.profilBearbeiten()));
+        }
         wurzel.appendChild(kopf);
 
         const stat = RANGLISTE.statistik(person.id, staende);
-
-        wurzel.appendChild(RANGLISTE._visitenkarteBauen(person, staende, stat, istIch));
-        wurzel.appendChild(RANGLISTE._statistikKarteBauen(person, staende, stat));
-        wurzel.appendChild(RANGLISTE._abzeichenKarteBauen(person, staende, istIch));
-
         const verlauf = RANGLISTE.verlauf(person.id, staende.schach);
 
-        const karte = RANGLISTE._element("section", "karte");
-        karte.appendChild(RANGLISTE._element("h3", "", "Woher die Punkte kommen"));
+        wurzel.appendChild(RANGLISTE._visitenkarteBauen(person, staende, stat, verlauf, istIch));
+        wurzel.appendChild(RANGLISTE._profilReiterBauen(person, staende, verlauf));
 
-        if (verlauf.length === 0) {
-            karte.appendChild(RANGLISTE._element("p", "erklaerung",
-                "Noch nichts zu Ende gespielt. Erst ein Ergebnis bringt Punkte."));
+        const inhalt = RANGLISTE._element("section", "karte profil-reiter-inhalt");
+        if (RANGLISTE.profilReiter === "abzeichen") {
+            RANGLISTE._abzeichenReiterBauen(inhalt, person, staende, istIch);
+        } else if (RANGLISTE.profilReiter === "partien") {
+            RANGLISTE._partienReiterBauen(inhalt, verlauf, staende);
+        } else {
+            RANGLISTE._statistikReiterBauen(inhalt, staende, stat);
         }
+        wurzel.appendChild(inhalt);
+    },
 
-        for (const eintrag of verlauf) {
-            karte.appendChild(RANGLISTE._verlaufZeileBauen(eintrag, staende));
-        }
-
-        wurzel.appendChild(karte);
+    /* Reiter wechseln — zeichnet nur neu, holt nichts. */
+    profilReiterSetzen(id) {
+        RANGLISTE.profilReiter = id;
+        RANGLISTE.profilAllePartien = false;
+        RANGLISTE.zeichnen();
     },
 
     /*
-     * DIE VISITENKARTE: Name gross, darunter Platz und Punkte, die drei
-     * gewählten Abzeichen, und die Handlung — beim eigenen Profil Name,
-     * Passwort und Abzeichen, bei fremden der Freundschafts-Knopf.
+     * DAS BEARBEITEN-MENÜ des eigenen Profils: die drei Handlungen, die
+     * vorher als drei Knöpfe auf der Karte standen. Die Einträge stehen in
+     * einer eigenen Funktion, damit ein Test sie ohne Dialog prüfen kann.
      */
-    _visitenkarteBauen(person, staende, stat, istIch) {
+    _bearbeitenEintraege() {
+        return [
+            { beschriftung: "Abzeichen wählen", hinweis: "Bis zu drei auf deine Karte", wert: "abzeichen" },
+            { beschriftung: "Name ändern", hinweis: "So sehen dich die anderen", wert: "name" },
+            { beschriftung: "Passwort ändern", hinweis: "Für die Anmeldung auf einem neuen Gerät", wert: "passwort" }
+        ];
+    },
+
+    profilBearbeiten() {
+        return DIALOG.liste("Profil bearbeiten", "Was möchtest du ändern?",
+            RANGLISTE._bearbeitenEintraege(), "Schliessen")
+            .then((wahl) => {
+                if (wahl === "abzeichen") {
+                    RANGLISTE.abzeichenWaehlen();
+                } else if (wahl === "name") {
+                    ANMELDUNG.namenAendern(ANMELDUNG.ich());
+                } else if (wahl === "passwort") {
+                    ANMELDUNG.passwortAendern(ANMELDUNG.ich());
+                }
+            });
+    },
+
+    /*
+     * DIE KOPFKARTE (Klasse bleibt `visitenkarte`): alles, was man auf den
+     * ersten Blick wissen will, auf einer Karte.
+     */
+    _visitenkarteBauen(person, staende, stat, verlauf, istIch) {
         const karte = RANGLISTE._element("section", "karte visitenkarte");
 
+        /* Zeile 1: Kreis, Name mit Platz, Punkte rechts. */
         const kopf = RANGLISTE._element("div", "visitenkarte-kopf");
-        kopf.appendChild(RANGLISTE._element("span", "visitenkarte-name", person.name));
+        const name = String(person.name || "").trim();
+        kopf.appendChild(RANGLISTE._element("span", "visitenkarte-bild",
+            name ? name.charAt(0).toUpperCase() : "?"));
 
+        const mitte = RANGLISTE._element("div", "visitenkarte-mitte");
+        mitte.appendChild(RANGLISTE._element("span", "visitenkarte-name", person.name));
+
+        const angaben = [];
+        const platz = RANGLISTE._platzVon(person.id, staende);
+        if (platz.platz > 0) {
+            angaben.push("Platz " + platz.platz + " von " + platz.von);
+        }
+        angaben.push(stat.erstePartieAm > 0
+            ? "dabei seit " + RANGLISTE._datumText(stat.erstePartieAm)
+            : "noch keine Partie beendet");
+        mitte.appendChild(RANGLISTE._element("span", "visitenkarte-angaben", angaben.join(" · ")));
+        kopf.appendChild(mitte);
+
+        const punkte = RANGLISTE._element("div", "visitenkarte-punktfeld");
         const punkteEl = RANGLISTE._element("span", "punkte-zahl visitenkarte-punkte");
         RANGLISTE._zahlSetzen(punkteEl, "profil-" + person.id, person.gesamt);
-        kopf.appendChild(punkteEl);
+        punkte.appendChild(punkteEl);
+        punkte.appendChild(RANGLISTE._element("span", "visitenkarte-punkte-wort", "Punkte"));
+        kopf.appendChild(punkte);
         karte.appendChild(kopf);
 
-        /* Platz in der Wertung — dieselbe Zählung wie in der Tabelle. */
+        /* Zeile 2: vier Kurzwerte, durch feine Linien getrennt. */
+        const kurz = RANGLISTE._element("div", "profil-kurzwerte");
+        const kurzwerte = [
+            [String(stat.partien), "Partien"],
+            [String(stat.siege), stat.siege === 1 ? "Sieg" : "Siege"],
+            [stat.partien ? stat.siegquote + " %" : "–", "Quote"],
+            [String(stat.aktuelleSerie), "Serie"]
+        ];
+        for (const [zahl, wort] of kurzwerte) {
+            const feld = RANGLISTE._element("div", "profil-kurzwert");
+            feld.appendChild(RANGLISTE._element("span", "profil-kurzwert-zahl", zahl));
+            feld.appendChild(RANGLISTE._element("span", "profil-kurzwert-wort", wort));
+            kurz.appendChild(feld);
+        }
+        karte.appendChild(kurz);
+
+        /* Zeile 3: Bilanz-Balken und Form — nur, wenn es etwas zu zeigen gibt. */
+        if (stat.partien > 0) {
+            karte.appendChild(RANGLISTE._bilanzBauen(stat, verlauf));
+        }
+
+        /* Zeile 4: die drei Abzeichen. Beim eigenen Profil führt jeder
+           Platz in die Auswahl — so wie man in Spielen auf den Slot tippt. */
+        const reihe = RANGLISTE._element("div", "visitenkarte-abzeichen");
+        const gezeigt = RANGLISTE.gezeigteAbzeichen(person.id, staende);
+        for (const eintrag of gezeigt) {
+            const marke = RANGLISTE._abzeichenBauen(eintrag, true);
+            if (istIch) {
+                RANGLISTE._antippbar(marke, () => RANGLISTE.abzeichenWaehlen());
+            } else {
+                RANGLISTE._antippbar(marke, () => RANGLISTE._abzeichenZeigen(eintrag, true));
+            }
+            reihe.appendChild(marke);
+        }
+        for (let frei = gezeigt.length; frei < SPIELER.ABZEICHEN_PLAETZE; frei++) {
+            const leer = RANGLISTE._element("span", "abzeichen abzeichen-leer", istIch ? "+" : "–");
+            if (istIch) {
+                RANGLISTE._antippbar(leer, () => RANGLISTE.abzeichenWaehlen());
+                leer.setAttribute("aria-label", "Abzeichen wählen");
+            }
+            reihe.appendChild(leer);
+        }
+        karte.appendChild(reihe);
+
+        /* Bei fremden Profilen: die Freundschaft, in einer Zeile. */
+        if (!istIch) {
+            const fuss = RANGLISTE._element("div", "karte-fuss visitenkarte-fuss");
+            RANGLISTE._freundschaftBauen(fuss, person, staende);
+            karte.appendChild(fuss);
+        }
+
+        return karte;
+    },
+
+    /* Platz in der Wertung — dieselbe Zählung wie in der Tabelle. */
+    _platzVon(spielerId, staende) {
         const liste = RANGLISTE.gesamt(staende.spieler, staende.schach);
         let platz = 0;
         let letztePunkte = null;
@@ -755,50 +901,216 @@ const RANGLISTE = {
                 platz = stelle + 1;
                 letztePunkte = liste[stelle].gesamt;
             }
-            if (liste[stelle].id === person.id) {
-                break;
+            if (liste[stelle].id === spielerId) {
+                return { platz: platz, von: liste.length };
+            }
+        }
+        return { platz: 0, von: liste.length };
+    },
+
+    /*
+     * DER BILANZ-BALKEN: Siege, Remis und Niederlagen als drei Anteile
+     * eines Balkens, darunter links die Form (die jüngsten Ergebnisse als
+     * Kästchen, das Jüngste links) und rechts die Zahlen im Wortlaut.
+     */
+    _bilanzBauen(stat, verlauf) {
+        const block = RANGLISTE._element("div", "profil-bilanz");
+
+        const balken = RANGLISTE._element("div", "profil-bilanz-balken");
+        balken.setAttribute("aria-hidden", "true");
+        for (const [anzahl, klasse] of [[stat.siege, "sieg"], [stat.remis, "remis"],
+            [stat.niederlagen, "niederlage"]]) {
+            if (anzahl > 0) {
+                const teil = RANGLISTE._element("span", "profil-bilanz-teil profil-bilanz-" + klasse);
+                teil.style.flexGrow = String(anzahl);
+                balken.appendChild(teil);
+            }
+        }
+        block.appendChild(balken);
+
+        const zeile = RANGLISTE._element("div", "profil-bilanz-zeile");
+        const form = RANGLISTE._element("span", "profil-form");
+        form.appendChild(RANGLISTE._element("span", "profil-form-wort", "Form"));
+        for (const eintrag of verlauf.slice(0, RANGLISTE.PROFIL_FORM_LAENGE)) {
+            form.appendChild(RANGLISTE._element("span",
+                "profil-marke profil-marke-" + eintrag.ausgang,
+                RANGLISTE._ausgangKurz(eintrag.ausgang)));
+        }
+        zeile.appendChild(form);
+        zeile.appendChild(RANGLISTE._element("span", "profil-bilanz-text",
+            stat.siege + " S · " + stat.remis + " R · " + stat.niederlagen + " N"));
+        block.appendChild(zeile);
+
+        return block;
+    },
+
+    /* S / R / N — der eine Buchstabe im farbigen Kästchen. */
+    _ausgangKurz(ausgang) {
+        return { sieg: "S", remis: "R", niederlage: "N" }[ausgang] || "?";
+    },
+
+    /* Die Reiter-Leiste: drei Knöpfe, der offene hervorgehoben. */
+    _profilReiterBauen(person, staende, verlauf) {
+        const leiste = RANGLISTE._element("div", "profil-reiter");
+        leiste.setAttribute("role", "tablist");
+
+        const alle = RANGLISTE.abzeichenVon(person.id, staende);
+        const zahl = {
+            statistik: "",
+            abzeichen: alle.filter((eintrag) => eintrag.erreicht).length + "/" + alle.length,
+            partien: String(verlauf.length)
+        };
+
+        for (const reiter of RANGLISTE.PROFIL_REITER) {
+            const aktiv = (reiter.id === RANGLISTE.profilReiter);
+            const knopf = RANGLISTE._knopf(reiter.titel,
+                "profil-reiter-knopf" + (aktiv ? " profil-reiter-aktiv" : ""),
+                () => RANGLISTE.profilReiterSetzen(reiter.id));
+            knopf.setAttribute("role", "tab");
+            knopf.setAttribute("aria-selected", aktiv ? "true" : "false");
+            knopf.dataset.reiter = reiter.id;
+            if (zahl[reiter.id]) {
+                knopf.appendChild(RANGLISTE._element("span", "profil-reiter-zahl", zahl[reiter.id]));
+            }
+            leiste.appendChild(knopf);
+        }
+        return leiste;
+    },
+
+    /*
+     * REITER STATISTIK: Wert-Zeilen statt Kacheln — Name links, Zahl
+     * rechts, wie die Statistik-Seiten in Spielen. Was es nicht gibt, wird
+     * weggelassen statt als 0 behauptet.
+     */
+    _statistikReiterBauen(inhalt, staende, stat) {
+        if (stat.partien === 0) {
+            inhalt.appendChild(RANGLISTE._element("p", "erklaerung",
+                "Noch keine beendete Partie — die Zahlen kommen mit der ersten."));
+            return;
+        }
+
+        /* Siege, Remis und Niederlagen stehen schon im Bilanz-Balken der
+           Kopfkarte — hier nur, was dort fehlt. */
+        const zeilen = [
+            ["Längste Siegesserie", String(stat.laengsteSerie)]
+        ];
+        if (stat.siege > 0) {
+            zeilen.push(["Siege als Weiss / Schwarz", stat.siegeWeiss + " / " + stat.siegeSchwarz]);
+        }
+        if (stat.schnellsterSieg > 0) {
+            zeilen.push(["Schnellster Sieg", stat.schnellsterSieg + " Züge"]);
+        }
+        if (stat.laengstePartie > 0) {
+            zeilen.push(["Längste Partie", stat.laengstePartie + " Züge"]);
+        }
+        if (stat.zuege > 0) {
+            zeilen.push(["Züge gesamt", String(stat.zuege)]);
+        }
+        if (stat.dauerMs > 0) {
+            zeilen.push(["Zeit am Brett", RANGLISTE._dauerKurz(stat.dauerMs)]);
+        }
+        zeilen.push(["Punkte für Beute", String(stat.beute)]);
+
+        if (stat.lieblingsSpielart.id) {
+            const variante = SCHACH_VARIANTEN.holen(stat.lieblingsSpielart.id);
+            zeilen.push(["Lieblings-Brett", (variante ? variante.titel : stat.lieblingsSpielart.id)
+                + " (" + stat.lieblingsSpielart.anzahl + ")"]);
+        }
+        if (stat.haeufigsterGegner.id) {
+            const name = RANGLISTE._nameVon(stat.haeufigsterGegner.id, staende.spieler);
+            if (name) {
+                zeilen.push(["Häufigster Gegner", name + " (" + stat.haeufigsterGegner.anzahl + ")"]);
             }
         }
 
-        const angaben = [];
-        if (platz > 0) {
-            angaben.push("Platz " + platz + " von " + liste.length);
+        const liste = RANGLISTE._element("dl", "profil-werte");
+        for (const [wort, wert] of zeilen) {
+            const zeile = RANGLISTE._element("div", "profil-wert-zeile");
+            zeile.appendChild(RANGLISTE._element("dt", "profil-wert-wort", wort));
+            zeile.appendChild(RANGLISTE._element("dd", "profil-wert-zahl", wert));
+            liste.appendChild(zeile);
         }
-        if (stat.erstePartieAm > 0) {
-            angaben.push("dabei seit " + RANGLISTE._datumText(stat.erstePartieAm));
-        } else {
-            angaben.push("noch keine Partie beendet");
-        }
-        karte.appendChild(RANGLISTE._element("p", "visitenkarte-angaben",
-            angaben.join(" · ")));
+        inhalt.appendChild(liste);
+    },
 
-        /* Die drei Abzeichen. */
-        const reihe = RANGLISTE._element("div", "visitenkarte-abzeichen");
-        const gezeigt = RANGLISTE.gezeigteAbzeichen(person.id, staende);
-        for (const eintrag of gezeigt) {
-            reihe.appendChild(RANGLISTE._abzeichenBauen(eintrag, true));
-        }
-        for (let frei = gezeigt.length; frei < SPIELER.ABZEICHEN_PLAETZE; frei++) {
-            reihe.appendChild(RANGLISTE._element("span", "abzeichen abzeichen-leer",
-                istIch ? "frei" : "–"));
-        }
-        karte.appendChild(reihe);
-
-        /* Die Handlung. */
-        const fuss = RANGLISTE._element("div", "karte-fuss");
+    /*
+     * REITER ABZEICHEN: ein Raster aus Marken, verdiente farbig, offene
+     * blass. Die Bedingung steht nicht mehr daneben, sondern kommt beim
+     * Antippen im Popup.
+     */
+    _abzeichenReiterBauen(inhalt, person, staende, istIch) {
         if (istIch) {
-            fuss.appendChild(RANGLISTE._knopf("Name ändern", "knopf-still knopf-klein",
-                () => ANMELDUNG.namenAendern(ANMELDUNG.ich())));
-            fuss.appendChild(RANGLISTE._knopf("Passwort ändern", "knopf-still knopf-klein",
-                () => ANMELDUNG.passwortAendern(ANMELDUNG.ich())));
-            fuss.appendChild(RANGLISTE._knopf("Abzeichen wählen", "knopf-haupt knopf-klein",
+            const kopf = RANGLISTE._element("div", "karte-kopf");
+            kopf.appendChild(RANGLISTE._element("span", "profil-reiter-hinweis",
+                "Antippen zeigt, wie man es bekommt."));
+            kopf.appendChild(RANGLISTE._knopf("Abzeichen wählen", "knopf-haupt knopf-klein",
                 () => RANGLISTE.abzeichenWaehlen()));
-        } else {
-            RANGLISTE._freundschaftBauen(fuss, person, staende);
+            inhalt.appendChild(kopf);
         }
-        karte.appendChild(fuss);
 
-        return karte;
+        const raster = RANGLISTE._element("div", "abzeichen-raster");
+        for (const eintrag of RANGLISTE.abzeichenVon(person.id, staende)) {
+            const kachel = RANGLISTE._element("button",
+                "abzeichen-kachel" + (eintrag.erreicht ? " abzeichen-erreicht" : " abzeichen-offen"));
+            kachel.type = "button";
+            kachel.appendChild(RANGLISTE._element("span", "abzeichen-zeichen", eintrag.zeichen));
+            kachel.appendChild(RANGLISTE._element("span", "abzeichen-titel", eintrag.titel));
+            kachel.title = eintrag.text;
+            kachel.addEventListener("click", () => RANGLISTE._abzeichenZeigen(eintrag, eintrag.erreicht));
+            raster.appendChild(kachel);
+        }
+        inhalt.appendChild(raster);
+    },
+
+    /* Das Popup zu einem Abzeichen: Bedingung und ob es verdient ist. */
+    _abzeichenZeigen(eintrag, erreicht) {
+        return DIALOG.hinweis(eintrag.titel,
+            eintrag.text + (erreicht ? " Verdient." : " Noch nicht verdient."));
+    },
+
+    /*
+     * REITER PARTIEN: je Partie EINE Zeile (Ergebnis-Kästchen, Titel,
+     * wann und gegen wen, Punkte). Dauer, Züge und Beute kommen beim
+     * Antippen im Popup. Erst die jüngsten, der Rest auf Wunsch.
+     */
+    _partienReiterBauen(inhalt, verlauf, staende) {
+        inhalt.appendChild(RANGLISTE._element("p", "profil-reiter-hinweis",
+            "Woher die Punkte kommen — antippen für Einzelheiten."));
+
+        if (verlauf.length === 0) {
+            inhalt.appendChild(RANGLISTE._element("p", "erklaerung",
+                "Noch nichts zu Ende gespielt. Erst ein Ergebnis bringt Punkte."));
+            return;
+        }
+
+        const gezeigt = RANGLISTE.profilAllePartien
+            ? verlauf : verlauf.slice(0, RANGLISTE.PROFIL_PARTIEN_ANFANG);
+        const liste = RANGLISTE._element("div", "profil-partien");
+        for (const eintrag of gezeigt) {
+            liste.appendChild(RANGLISTE._verlaufZeileBauen(eintrag, staende));
+        }
+        inhalt.appendChild(liste);
+
+        if (gezeigt.length < verlauf.length) {
+            inhalt.appendChild(RANGLISTE._knopf("Alle " + verlauf.length + " Partien zeigen",
+                "knopf-still knopf-klein profil-mehr", () => {
+                    RANGLISTE.profilAllePartien = true;
+                    RANGLISTE.zeichnen();
+                }));
+        }
+    },
+
+    /* Macht ein Nicht-Knopf-Element antippbar (Maus, Finger, Tastatur). */
+    _antippbar(element, aktion) {
+        element.setAttribute("role", "button");
+        element.setAttribute("tabindex", "0");
+        element.classList.add("antippbar");
+        element.addEventListener("click", aktion);
+        element.addEventListener("keydown", (ereignis) => {
+            if (ereignis && (ereignis.key === "Enter" || ereignis.key === " ")) {
+                aktion();
+            }
+        });
     },
 
     /*
@@ -846,101 +1158,6 @@ const RANGLISTE = {
         marke.appendChild(RANGLISTE._element("span", "abzeichen-titel", eintrag.titel));
         marke.title = eintrag.text;
         return marke;
-    },
-
-    /*
-     * DIE STATISTIK-KARTE: Kacheln mit je einer Zahl und einem Wort — das
-     * Muster der Summen von Quizz-v3.3 (`profil-summe`). Was es nicht gibt
-     * (kein Sieg, keine Zeit), wird weggelassen statt als 0 behauptet.
-     */
-    _statistikKarteBauen(person, staende, stat) {
-        const karte = RANGLISTE._element("section", "karte");
-        karte.appendChild(RANGLISTE._element("h3", "", "Statistik"));
-
-        if (stat.partien === 0) {
-            karte.appendChild(RANGLISTE._element("p", "erklaerung",
-                "Noch keine beendete Partie — die Zahlen kommen mit der ersten."));
-            return karte;
-        }
-
-        const kacheln = [
-            [String(stat.partien), "Partien"],
-            [String(stat.siege), stat.siege === 1 ? "Sieg" : "Siege"],
-            [stat.siegquote + " %", "Siegquote"],
-            [String(stat.remis), "Remis"],
-            [String(stat.laengsteSerie), "längste Serie"],
-            [String(stat.aktuelleSerie), "Siege in Folge"]
-        ];
-        if (stat.schnellsterSieg > 0) {
-            kacheln.push([String(stat.schnellsterSieg), "Züge, schnellster Sieg"]);
-        }
-        if (stat.laengstePartie > 0) {
-            kacheln.push([String(stat.laengstePartie), "Züge, längste Partie"]);
-        }
-        if (stat.zuege > 0) {
-            kacheln.push([String(stat.zuege), "Züge gesamt"]);
-        }
-        if (stat.dauerMs > 0) {
-            kacheln.push([RANGLISTE._dauerKurz(stat.dauerMs), "am Brett"]);
-        }
-        kacheln.push([String(stat.beute), "Punkte für Beute"]);
-
-        const raster = RANGLISTE._element("div", "statistik-raster");
-        for (const [zahl, wort] of kacheln) {
-            const kachel = RANGLISTE._element("div", "profil-summe");
-            kachel.appendChild(RANGLISTE._element("span", "profil-summe-zahl", zahl));
-            kachel.appendChild(RANGLISTE._element("span", "profil-summe-titel", wort));
-            raster.appendChild(kachel);
-        }
-        karte.appendChild(raster);
-
-        /* Zwei Sätze, die eine Zahl nicht sagt. */
-        const saetze = [];
-        if (stat.lieblingsSpielart.id) {
-            const variante = SCHACH_VARIANTEN.holen(stat.lieblingsSpielart.id);
-            saetze.push("Am liebsten " + (variante ? variante.titel : stat.lieblingsSpielart.id)
-                + " (" + RANGLISTE._menge(stat.lieblingsSpielart.anzahl, "Partie", "Partien") + ").");
-        }
-        if (stat.haeufigsterGegner.id) {
-            const name = RANGLISTE._nameVon(stat.haeufigsterGegner.id, staende.spieler);
-            if (name) {
-                saetze.push("Am häufigsten gegen " + name + " ("
-                    + RANGLISTE._menge(stat.haeufigsterGegner.anzahl, "Partie", "Partien") + ").");
-            }
-        }
-        if (saetze.length > 0) {
-            karte.appendChild(RANGLISTE._element("p", "erklaerung", saetze.join(" ")));
-        }
-
-        return karte;
-    },
-
-    /* Alle Abzeichen — verdiente farbig, offene blass, jedes mit Satz. */
-    _abzeichenKarteBauen(person, staende, istIch) {
-        const karte = RANGLISTE._element("section", "karte");
-        const kopf = RANGLISTE._element("div", "karte-kopf");
-        kopf.appendChild(RANGLISTE._element("h3", "", "Abzeichen"));
-        const alle = RANGLISTE.abzeichenVon(person.id, staende);
-        const verdient = alle.filter((eintrag) => eintrag.erreicht).length;
-        kopf.appendChild(RANGLISTE._element("span", "chip chip-offen",
-            verdient + " von " + alle.length));
-        karte.appendChild(kopf);
-
-        const liste = RANGLISTE._element("div", "abzeichen-liste");
-        for (const eintrag of alle) {
-            const zeile = RANGLISTE._element("div", "abzeichen-zeile");
-            zeile.appendChild(RANGLISTE._abzeichenBauen(eintrag, eintrag.erreicht));
-            zeile.appendChild(RANGLISTE._element("span", "abzeichen-text", eintrag.text));
-            liste.appendChild(zeile);
-        }
-        karte.appendChild(liste);
-
-        if (istIch) {
-            karte.appendChild(RANGLISTE._element("p", "erklaerung",
-                "Drei davon dürfen auf deine Visitenkarte — oben über \"Abzeichen wählen\"."));
-        }
-
-        return karte;
     },
 
     /*
@@ -1030,57 +1247,68 @@ const RANGLISTE = {
             + "." + wann.getFullYear();
     },
 
+    /*
+     * Eine Partie im Reiter „Partien" — EINE Zeile, antippbar (seit
+     * v0.119.1). Die Angaben, die vorher zwei weitere Zeilen füllten,
+     * stehen jetzt im Popup (`_partieZeigen`).
+     */
     _verlaufZeileBauen(eintrag, staende) {
-        const zeile = RANGLISTE._element("div", "profil-zeile");
+        const zeile = RANGLISTE._element("button", "profil-partie");
+        zeile.type = "button";
 
-        const kopf = RANGLISTE._element("div", "profil-zeile-kopf");
-        kopf.appendChild(RANGLISTE._element("span", "profil-titel", eintrag.titel));
+        zeile.appendChild(RANGLISTE._element("span",
+            "profil-marke profil-marke-" + eintrag.ausgang,
+            RANGLISTE._ausgangKurz(eintrag.ausgang)));
 
-        const marke = { sieg: "gewonnen", remis: "remis", niederlage: "verloren" };
-        const stil = { sieg: "chip-fertig", remis: "chip-offen", niederlage: "chip-fehler" };
+        const mitte = RANGLISTE._element("span", "profil-partie-mitte");
+        mitte.appendChild(RANGLISTE._element("span", "profil-partie-titel", eintrag.titel));
 
-        kopf.appendChild(RANGLISTE._element("span",
-            "chip " + stil[eintrag.ausgang], marke[eintrag.ausgang]));
-
-        kopf.appendChild(RANGLISTE._element("span", "profil-punkte",
-            "+" + eintrag.punkte));
-        zeile.appendChild(kopf);
-
-        /* Wann, wie lange, wie viele Züge — was fehlt, wird weggelassen. */
-        const angaben = [];
-
+        const unter = [];
         if (eintrag.wann > 0) {
-            angaben.push(RANGLISTE._zeitpunktText(eintrag.wann));
+            unter.push(RANGLISTE._zeitpunktText(eintrag.wann));
         }
-        if (eintrag.dauerMs > 0) {
-            angaben.push("Dauer " + RANGLISTE._dauerText(eintrag.dauerMs));
-        }
-        if (eintrag.zuege > 0) {
-            angaben.push(eintrag.zuege + " Züge");
-        }
-        if (eintrag.beute > 0) {
-            angaben.push("davon " + eintrag.beute + " für geschlagene Figuren");
-        }
+        const gegen = RANGLISTE._namenText(eintrag.gegner, staende);
+        unter.push("gegen " + (gegen || "niemanden"));
+        mitte.appendChild(RANGLISTE._element("span", "profil-partie-unter", unter.join(" · ")));
+        zeile.appendChild(mitte);
 
-        if (angaben.length > 0) {
-            zeile.appendChild(RANGLISTE._element("span", "profil-angaben",
-                angaben.join(" · ")));
-        }
+        zeile.appendChild(RANGLISTE._element("span", "profil-partie-punkte", "+" + eintrag.punkte));
+        zeile.addEventListener("click", () => RANGLISTE._partieZeigen(eintrag, staende));
+        return zeile;
+    },
 
-        /* Mit wem und gegen wen. */
-        const namen = (ids) => ids
+    /* Die Namen zu einer Liste von Kennungen, mit Komma — Entfernte fehlen. */
+    _namenText(ids, staende) {
+        return ids
             .map((id) => RANGLISTE._nameVon(id, staende.spieler))
             .filter((name) => name !== "")
             .join(", ");
+    },
 
-        const gegen = namen(eintrag.gegner);
-        const mit = namen(eintrag.mitspieler);
+    /* Das Popup zu einer Partie: alles, was die Zeile weglässt. */
+    _partieZeigen(eintrag, staende) {
+        const marke = { sieg: "Gewonnen", remis: "Remis", niederlage: "Verloren" };
+        const zeilen = [marke[eintrag.ausgang] + ", +" + eintrag.punkte + " Punkte"];
 
-        zeile.appendChild(RANGLISTE._element("span", "profil-gegner",
-            "Gegen " + (gegen || "niemanden")
-            + (mit ? " — zusammen mit " + mit : " — allein im Team")));
+        if (eintrag.wann > 0) {
+            zeilen.push("Beendet: " + RANGLISTE._zeitpunktText(eintrag.wann));
+        }
+        if (eintrag.dauerMs > 0) {
+            zeilen.push("Dauer: " + RANGLISTE._dauerText(eintrag.dauerMs));
+        }
+        if (eintrag.zuege > 0) {
+            zeilen.push("Züge: " + eintrag.zuege);
+        }
+        if (eintrag.beute > 0) {
+            zeilen.push("Davon für geschlagene Figuren: " + eintrag.beute);
+        }
 
-        return zeile;
+        const gegen = RANGLISTE._namenText(eintrag.gegner, staende);
+        const mit = RANGLISTE._namenText(eintrag.mitspieler, staende);
+        zeilen.push("Gegen: " + (gegen || "niemanden"));
+        zeilen.push(mit ? "Zusammen mit: " + mit : "Allein im Team");
+
+        return DIALOG.hinweis(eintrag.titel, zeilen.join("\n"));
     },
 
     /*

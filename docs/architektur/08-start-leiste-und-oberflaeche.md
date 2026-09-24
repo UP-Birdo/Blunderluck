@@ -251,7 +251,7 @@ der Spielerzeile. Die wartende Partie ruft sie seit v0.61.0 gar nicht mehr.
   dieselbe Denkweise wie beim Zusammenführen der Spielerliste: Jeder ist Herr
   über seinen eigenen Eintrag.
 
-## Die Profilseite — Visitenkarte, Abzeichen, Statistik (seit v0.119.0)
+## Die Profilseite — Visitenkarte, Abzeichen, Statistik (seit v0.119.0, kompakt seit v0.119.1)
 
 Nutzer-Ansage 18.09.2026: Profil als ganze Seite statt Popup, drei
 Abzeichen, „coole" Statistiken, Namen überall anklickbar, Freundanfragen
@@ -265,12 +265,31 @@ vom Profil. Gebaut auf der Spieler-Profilseite der Rangliste
   macht jeden Namen zum Knopf (`.name-inline`): Vorraum-Plätze, Abschluss,
   Partie-Karten, Freundesliste (`_zeileBauen` mit `id`), offene Runden.
   Der Computer hat kein Profil und bleibt Text.
-- **Visitenkarte** (`_visitenkarteBauen`): Name, Punkte, Platz, „dabei seit"
+- **Aufbau seit v0.119.1** (Nutzer-Ansage 24.09.2026: „zu überladen …
+  Untermenüs oder Popups, wie andere Spiele-Apps"): EINE Kopfkarte, darunter
+  drei Reiter, Einzelheiten im Popup. `_profilZeichnen` baut klebenden Kopf
+  (Zurück, Titel, beim eigenen Profil „Bearbeiten" = `profilBearbeiten`,
+  ein `DIALOG.liste` aus `_bearbeitenEintraege`: Abzeichen wählen, Name
+  ändern, Passwort ändern), Kopfkarte, Reiter-Leiste und den Inhalt des
+  offenen Reiters. Welcher offen ist, merkt `profilReiter` (reines
+  Anzeige-Gedächtnis; `profilOeffnen` setzt auf „statistik" zurück).
+- **Kopfkarte** (`_visitenkarteBauen`, Klasse bleibt `karte visitenkarte`):
+  Kreis mit Anfangsbuchstaben, Name, Platz (`_platzVon`) und „dabei seit"
   (Datum der ersten beendeten Partie — die Spielerliste kennt kein
-  Anlegedatum), drei Abzeichen-Plätze; eigenes Profil: Name/Passwort ändern
-  (`ANMELDUNG.namenAendern`/`passwortAendern`), „Abzeichen wählen";
-  fremdes Profil: der Freundschafts-Knopf (`_freundschaftBauen`) in den vier
-  Lagen von `SPIELER.freundschaft`, geschrieben über `FREUNDE`.
+  Anlegedatum), Punkte; vier Kurzwerte (Partien, Siege, Quote, Serie);
+  Bilanz-Balken mit Form der letzten `PROFIL_FORM_LAENGE` Ergebnisse
+  (`_bilanzBauen`); drei Abzeichen-Plätze — eigenes Profil: antippen führt
+  zu `abzeichenWaehlen`; fremdes Profil: der Freundschafts-Knopf
+  (`_freundschaftBauen`) in den vier Lagen von `SPIELER.freundschaft`,
+  geschrieben über `FREUNDE`.
+- **Die drei Reiter** (`PROFIL_REITER`): Statistik (`_statistikReiterBauen`,
+  Wert-Zeilen `dl.profil-werte`; Siege/Remis/Niederlagen stehen nur im
+  Bilanz-Balken), Abzeichen (`_abzeichenReiterBauen`, Raster mit vier
+  Spalten, antippen = `_abzeichenZeigen`), Partien (`_partienReiterBauen`,
+  je Partie eine Zeile `_verlaufZeileBauen`, antippen = `_partieZeigen` mit
+  Dauer, Zügen, Beute und Mitspielern; erst `PROFIL_PARTIEN_ANFANG` = 8,
+  dann „Alle N Partien zeigen"). Stil: Block „Die Profilseite" in
+  `css\stil.css`.
 - **Statistik** (`RANGLISTE.statistik`): aus `verlauf` in Spielreihenfolge
   — Serien, Comebacks, schnellster Sieg, längste Partie, Züge, Zeit,
   Beute, Lieblings-Brett, häufigster Gegner. Nichts wird gespeichert.

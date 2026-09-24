@@ -25,6 +25,10 @@ wird. Die Liste dessen, was noch kommt, steht in [../ROADMAP.md](../ROADMAP.md).
 
 ## entschieden.md - Blunderluck-Eintraege
 
+- **Profil kompakt: Kopfkarte, drei Reiter, Popups** (24.09.2026, v0.119.1 —
+  Spiele-App-Muster: alles fuer den ersten Blick auf einer Karte, Rest in
+  Reitern (Statistik / Abzeichen / Partien), Einzelheiten im Popup,
+  Name/Passwort/Abzeichen hinter „Bearbeiten"; Rechnung unveraendert)
 - **Sichtbarkeit: neue Runden oeffentlich, alte privat; Abzeichen gerechnet,
   nicht vergeben** (18.09.2026, v0.118.0 / v0.119.0 — zwei Vorgaben fuer
   `regeln.sichtbarkeit` (Modell privat, Bildschirm oeffentlich), damit alte
