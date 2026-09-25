@@ -62,13 +62,30 @@ for (const name of dateien) {
 /* Einbindung in index.html. */
 const seite = dateisystem.readFileSync(pfad.join(projekt, "index.html"), "utf8");
 
+/*
+ * GEPRÜFT WIRD DER GANZE VERWEIS `src="js/<name>"`, nicht nur der Name
+ * (seit v0.140.1). Bis v0.140.0 genügte `indexOf("js/" + name)` — und
+ * `js/konfig.js.bak` enthält `js/konfig.js`. Genau so ging v0.140.0 live:
+ * index.html zeigte auf eine Sicherungsdatei, die es nicht gab, KONFIG
+ * fehlte, und die App stand beim Start mit dem Fehler-Streifen still.
+ */
+const skriptQuellen = [...seite.matchAll(/<script[^>]*\ssrc="([^"]+)"/g)].map((t) => t[1]);
+
 for (const name of dateien) {
     pruefe("js/" + name + " ist in index.html eingebunden", () => {
-        if (seite.indexOf("js/" + name) === -1) {
-            throw new Error("kein script-Verweis auf js/" + name + " in index.html");
+        if (skriptQuellen.indexOf("js/" + name) === -1) {
+            throw new Error("kein script-Verweis src=\"js/" + name + "\" in index.html");
         }
     });
 }
+
+pruefe("index.html bindet nur Skripte ein, die es gibt", () => {
+    const fehlen = skriptQuellen.filter((quelle) =>
+        !dateisystem.existsSync(pfad.join(projekt, quelle)));
+    if (fehlen.length > 0) {
+        throw new Error("Verweis ins Leere: " + fehlen.join(", "));
+    }
+});
 
 /*
  * Aufrufe ins Modell und in die Versiegelung müssen es wirklich geben.

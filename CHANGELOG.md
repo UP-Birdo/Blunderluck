@@ -3,6 +3,14 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.140.1 — 25.09.2026
+
+**Die App startet wieder.** Mit v0.140.0 blieb Blunderluck beim Öffnen
+hängen: Oben stand nur „Da ist etwas schiefgegangen … Neu laden", und neu
+laden half nicht. Die Startseite verwies auf eine Datei, die es nicht gab.
+Behoben — und eine Prüfung wacht jetzt darüber, dass jede eingebundene
+Datei auch wirklich da ist.
+
 ## v0.140.0 — 25.09.2026
 
 **Blunderluck fühlt sich an wie ein UPCrew-Spiel: Vibration, klare Zustände,
