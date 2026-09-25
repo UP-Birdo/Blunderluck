@@ -41,6 +41,13 @@ const VERWALTUNG = {
             return true;
         }
 
+        /* Mit UPCrew-Konto gibt es kein Verwaltungs-Passwort mehr (seit
+           v0.138.0): Wer nicht Admin ist, bekommt nur den Hinweis. */
+        if (typeof KONTO !== "undefined" && KONTO.aktiv()) {
+            await DIALOG.hinweis(titel, "Das dürfen nur Konten mit der Rolle Admin.");
+            return false;
+        }
+
         const passwort = await DIALOG.zahlen(
             titel,
             grund,

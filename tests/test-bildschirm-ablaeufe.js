@@ -2487,7 +2487,7 @@ pruefe("Die Account-Karte trennt Abmelden und Konto loeschen (v0.6.0)", () => {
     if (texte.indexOf("Abmelden") === -1) {
         throw new Error("kein Abmelden-Knopf in den Einstellungen");
     }
-    if (texte.indexOf("Konto löschen") === -1) {
+    if (texte.indexOf("UPCrew-Konto löschen") === -1) {
         throw new Error("kein Konto-loeschen-Knopf in den Einstellungen");
     }
     if (texte.indexOf("Ich bin raus") !== -1) {
@@ -2495,7 +2495,7 @@ pruefe("Die Account-Karte trennt Abmelden und Konto loeschen (v0.6.0)", () => {
     }
 
     /* Konto loeschen ist zerstoerend und muss rot sein — Abmelden nicht. */
-    const loeschen = knoepfe[texte.indexOf("Konto löschen")];
+    const loeschen = knoepfe[texte.indexOf("UPCrew-Konto löschen")];
     if (String(loeschen.className).indexOf("knopf-gefahr") === -1) {
         throw new Error("Konto loeschen ist nicht als Gefahr gekennzeichnet");
     }
@@ -4490,10 +4490,10 @@ pruefe("Das Anmelde-Vollbild prueft Name und Passwort live (v0.8.0)", () => {
         if (ANMELDUNG.wurzelEl.hidden !== false) {
             throw new Error("das Vollbild ist nicht sichtbar");
         }
-        if (!knopfMitText("Vorhandenes Konto")) {
+        if (!knopfMitText("Mit UPCrew-Konto anmelden")) {
             throw new Error("die Weiche hat keinen Knopf fuer das vorhandene Konto");
         }
-        const neu = knopfMitText("Neues Konto erstellen");
+        const neu = knopfMitText("Neues UPCrew-Konto erstellen");
         if (!neu) {
             throw new Error("die Weiche hat keinen Knopf fuer das neue Konto");
         }
@@ -4510,7 +4510,7 @@ pruefe("Das Anmelde-Vollbild prueft Name und Passwort live (v0.8.0)", () => {
             throw new Error("erwartet drei Fehlerzeilen, sind " + fehlerzeilen.length);
         }
 
-        const weiter = knopfMitText("Konto erstellen");
+        const weiter = knopfMitText("UPCrew-Konto erstellen");
         if (!weiter) {
             throw new Error("kein Erstellen-Knopf");
         }
@@ -4551,7 +4551,7 @@ pruefe("Das Anmelde-Vollbild prueft Name und Passwort live (v0.8.0)", () => {
 
         /* Zurueck fuehrt auf die Weiche. */
         knopfMitText("Zurück").ausloesen("click");
-        if (!knopfMitText("Vorhandenes Konto")) {
+        if (!knopfMitText("Mit UPCrew-Konto anmelden")) {
             throw new Error("Zurueck fuehrt nicht auf die Weiche");
         }
     } finally {

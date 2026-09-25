@@ -352,12 +352,28 @@ const APP = {
     starten() {
         DIALOG.aufbauen(document.getElementById("dialog"));
 
+        /* Das UPCrew-Intro legt sich über alles; die App lädt darunter
+           weiter, deshalb wird NICHT darauf gewartet (wie in Typoluck). */
+        INTRO.zeigen(document.getElementById("intro"));
+
+        /* ---- Das UPCrew-Konto (seit v0.138.0, js\konto.js) ----
+           Jede Anfrage an die Datenbank trägt den Anmelde-Schlüssel; die
+           Regeln lassen nur angemeldete Konten schreiben. Erkennt Firebase
+           die Sitzung nicht mehr an, fragt die Anmeldung neu. */
+        KONTO.einrichten(KONFIG);
+        if (KONTO.aktiv()) {
+            SpeicherGemeinsam.tokenGeber = () => KONTO.token();
+            KONTO.beiVerloren = () => ANMELDUNG.sitzungVerloren();
+        }
+
         /* ---- Spielerliste (Anmeldung) ---- */
         const spielerSpeicher = speicherErzeugen(
             KONFIG,
             KONFIG.speicher.pfad,
             KONFIG.speicher.lokalerSchluessel,
-            (roh) => SPIELER.normalisieren(roh)
+            (roh) => SPIELER.normalisieren(roh),
+            /* Die Konten-Rückwand schreibt nur den Eintrag dieses Kontos. */
+            KONTO.aktiv() ? () => KONTO.uid() : null
         );
 
         if (spielerSpeicher.hinweis) {
@@ -475,6 +491,10 @@ const APP = {
                 return;
             }
             START.wiedereinstieg();
+
+            /* Ein Gast wird hin und wieder gefragt, ob er seinen Spielstand
+               sichern will (seit v0.138.0, anmeldung-konto.js). */
+            ANMELDUNG.gastErinnern();
         };
 
         /* Angemeldet wird erst, wenn BEIDE Stände da sind: die

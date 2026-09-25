@@ -203,6 +203,15 @@ const DIALOG = {
      * Leerraum kommt gar nicht erst ins Feld.
      * Liefert das Passwort als Zeichenkette oder null bei Abbruch.
      */
+    /* Welche Passwort-Regel gilt: mit UPCrew-Konto die aus js\konto.js,
+       sonst die alte aus js\spieler.js. */
+    _passwortRegel() {
+        if (typeof KONTO !== "undefined" && KONTO.aktiv()) {
+            return { pruefen: KONTO.passwortPruefen, max: KONTO.PASSWORT_MAX };
+        }
+        return { pruefen: SPIELER.passwortPruefen, max: SPIELER.PASSWORT_MAX };
+    },
+
     passwort(titel, text, bestaetigenText, abbrechbar) {
         return DIALOG._zeigen({
             titel: titel,
@@ -370,8 +379,10 @@ const DIALOG = {
                        stillschweigend beim Speichern gekürzt würde er später
                        aussperren. */
                     feld.type = "password";
-                    feld.autocomplete = "off";
-                    feld.maxLength = SPIELER.PASSWORT_MAX;
+                    /* Passwort-Manager dürfen helfen (seit v0.138.0 —
+                       „off" sperrte sie aus, das ist nicht Best Practice). */
+                    feld.autocomplete = "current-password";
+                    feld.maxLength = DIALOG._passwortRegel().max;
                     feld.addEventListener("input", () => {
                         const ohneLeerraum = feld.value.replace(/\s/g, "");
                         if (feld.value !== ohneLeerraum) {
@@ -521,8 +532,9 @@ const DIALOG = {
                     }
                     if (vorgabe.eingabe.passwort) {
                         /* Die Regel kommt aus dem Modell — der Dialog rechnet
-                           nicht selbst (4 bis 8 Zeichen, kein Leerraum). */
-                        return SPIELER.passwortPruefen(feld.value) === "";
+                           nicht selbst (seit v0.138.0 mit UPCrew-Konto die
+                           UPCrew-Regel, sonst 4 bis 8 Zeichen). */
+                        return DIALOG._passwortRegel().pruefen(feld.value) === "";
                     }
                     return wert !== "";
                 };

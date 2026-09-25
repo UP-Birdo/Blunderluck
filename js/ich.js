@@ -51,6 +51,13 @@ const ICH = {
      * ---------------------------------------------------------------- */
 
     verwaltungAktiv() {
+        /* Mit UPCrew-Konto (seit v0.138.0) entscheidet die ROLLE des
+           angemeldeten Kontos (Admin oder UP#Plus), nicht ein Schalter auf
+           dem Gerät — die Regeln der Datenbank prüfen dieselbe Rolle. */
+        if (typeof KONTO !== "undefined" && KONTO.aktiv()) {
+            return typeof ANMELDUNG !== "undefined" && typeof ANMELDUNG.istAdmin === "function"
+                && ANMELDUNG.istAdmin();
+        }
         return ICH._lesen(ICH.SCHLUESSEL_VERWALTUNG) === true;
     },
 

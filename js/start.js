@@ -664,6 +664,15 @@ const START = {
             return;
         }
 
+        /* UP#Plus verwaltet nur (seit v0.138.0). */
+        if (typeof ANMELDUNG !== "undefined" && typeof ANMELDUNG.istOberAdmin === "function"
+                && ANMELDUNG.istOberAdmin()) {
+            await DIALOG.hinweis("Nicht mit UP#Plus",
+                "Mit dem Verwaltungskonto UP#Plus kann man nicht spielen. Melde "
+                    + "dich zum Spielen mit deinem Spieler-Konto an.");
+            return;
+        }
+
         START.spielenLaeuft = true;
         START._zeichnen();
 

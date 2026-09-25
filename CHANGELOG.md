@@ -3,6 +3,40 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.138.0 — 25.09.2026
+
+**Ein UPCrew-Konto für alle Spiele — mit Nummer, Gast-Zugang und sicherem Passwort.**
+
+- **Der UPCrew-Anfang:** Beim Öffnen erscheint kurz das UPCrew-Zeichen
+  („präsentiert"), die Anmeldung hat denselben schlichten Look wie in
+  Typoluck — beide Spiele beginnen gleich.
+- **Alles bei UPCrew:** Konten, Partien und Rangliste liegen jetzt in der
+  UPCrew-Datenbank. Dasselbe Konto gilt in Typoluck und allen weiteren
+  Spielen.
+- **Name mit Nummer:** Namen dürfen mehrfach vorkommen, jeder bekommt seine
+  eigene Nummer, zum Beispiel **Jonas#0001**. Angemeldet wird mit
+  Name#Nummer (oder nur dem Namen, wenn es ihn nur einmal gibt).
+- **Saubere Namen:** nur Buchstaben und Ziffern, 3 bis 16 Zeichen. Symbole
+  und Leerzeichen verschwinden beim Tippen sofort.
+- **Umzug:** Alle alten Konten ziehen um. Beim ersten Start meldest du dich
+  einmal mit deinem bisherigen Passwort an und legst ein neues fest. Partien,
+  Freunde und Abzeichen ziehen mit, alte Konten bekommen #0001.
+- **Sicheres Passwort:** 8 bis 12 Zeichen, mit Gross- und Kleinbuchstaben,
+  Ziffer und Sonderzeichen. Das Passwort prüft jetzt Firebase (Google); in der
+  Datenbank steht es nicht mehr. Keine E-Mail, kein Google-Konto.
+  Passwort-Manager dürfen helfen.
+- **Als Gast spielen:** ohne Konto, an dein Gerät gebunden. Hin und wieder
+  fragt Blunderluck, ob du deinen Spielstand sichern willst. Beim Sichern
+  wird aus dem Gast ein richtiges Konto, und alles bleibt.
+- **Admins statt Verwaltungs-Passwort:** Die Verwaltung öffnet sich nur für
+  Konten mit der Rolle Admin. Die Rolle vergibt das Studio-Konto UP#Plus,
+  das selbst nicht spielt.
+- **Passwort vergessen?** Ein Admin gibt dein Konto zum Neu-Verbinden frei.
+  Du meldest dich mit Name#Nummer an, legst ein neues Passwort fest und
+  behältst alles.
+- **Konto löschen** fragt noch einmal nach dem Passwort und löscht das Konto
+  in allen Spielen von UPCrew.
+
 ## v0.137.0 — 25.09.2026
 
 **Sicherer im Browser.**

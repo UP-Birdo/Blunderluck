@@ -553,8 +553,14 @@ const TEAM_SCHACH = {
         }
     },
 
-    /* Wer sitzt an diesem Gerät? Die Anmeldung läuft über den Würfel-Quizz. */
+    /* Wer sitzt an diesem Gerät? Die Anmeldung läuft über den Würfel-Quizz.
+       UP#Plus (AboveAdmin) spielt nicht (Nutzer 25.09.2026) — für das
+       Schach ist dann niemand angemeldet: keine Runde, kein Beitritt. */
     _ich() {
+        if (typeof ANMELDUNG !== "undefined" && typeof ANMELDUNG.istOberAdmin === "function"
+                && ANMELDUNG.istOberAdmin()) {
+            return null;
+        }
         return ICH.person();
     },
 

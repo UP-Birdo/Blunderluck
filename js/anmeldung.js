@@ -123,6 +123,16 @@ const ANMELDUNG = {
             }
 
             const nachgekommen = SPIELER.spielerFinden(daten, person.id);
+
+            /* Mit UPCrew-Konto (seit v0.138.0) gehört zur gemerkten Person
+               auch die Firebase-Sitzung. Fehlt sie — das Gerät stammt von
+               vor dem Umzug —, muss einmal das Passwort her; ein echter
+               Stand liegt vor, also darf jetzt gefragt werden. */
+            if (KONTO.aktiv() && !ANMELDUNG._sitzungPasst(nachgekommen)) {
+                ANMELDUNG.anmelden();
+                return;
+            }
+
             if (!nachgekommen) {
                 return;
             }
@@ -145,9 +155,69 @@ const ANMELDUNG = {
             return;
         }
         if (!SPIELER.spielerFinden(daten, ANMELDUNG.ichId)) {
+            /* Mit UPCrew-Konto erst beim Server nachfragen: Eine überholte
+               Antwort (abgeschickt vor dem Schreiben des eigenen Eintrags)
+               darf niemanden abmelden — das kostete ihn das Passwort. */
+            if (KONTO.aktiv()) {
+                ANMELDUNG._fehlendenEintragPruefen();
+                return;
+            }
             ANMELDUNG._ichIdSetzen(null);
             ICH.personVergessen();
             ANMELDUNG.anmelden();
+        }
+    },
+
+    /*
+     * Passt die Firebase-Sitzung dieses Geräts zum Eintrag? Ohne UPCrew-Konto
+     * (lokaler Modus) genügt, dass es den Eintrag gibt.
+     */
+    _sitzungPasst(spieler) {
+        if (!spieler) {
+            return false;
+        }
+        if (!KONTO.aktiv()) {
+            return true;
+        }
+        /* Ohne Nummer (#1234) stammt der Eintrag aus dem Zwischenstand vom
+           25.09.2026 nachts — dann einmal durch den Umzug. */
+        return KONTO.angemeldet() && spieler.uid === KONTO.uid() && !!spieler.tag;
+    },
+
+    _pruefeFehlend: false,
+
+    /* Der eigene Eintrag fehlt im geholten Stand: frisch nachsehen, und nur
+       wenn er wirklich weg ist (Verwaltung hat ihn entfernt), abmelden. */
+    async _fehlendenEintragPruefen() {
+        if (ANMELDUNG._pruefeFehlend) {
+            return;
+        }
+        ANMELDUNG._pruefeFehlend = true;
+        try {
+            const frisch = await ANMELDUNG.abgleich.speicher.laden();
+            if (ANMELDUNG.ichId && !ANMELDUNG.anmeldenLaeuft
+                    && !SPIELER.spielerFinden(frisch, ANMELDUNG.ichId)) {
+                ANMELDUNG._abmeldenOhneFrage();
+            }
+        } catch (fehler) {
+            /* Kein Netz: Der nächste Stand fragt wieder. */
+        } finally {
+            ANMELDUNG._pruefeFehlend = false;
+        }
+    },
+
+    /* Konto weg oder Sitzung verloren: Gerät vergisst alles, Anmeldung neu. */
+    _abmeldenOhneFrage() {
+        KONTO.abmelden();
+        ANMELDUNG._ichIdSetzen(null);
+        ICH.personVergessen();
+        ANMELDUNG.anmelden();
+    },
+
+    /* Firebase erkennt die Sitzung nicht mehr an (KONTO.beiVerloren). */
+    sitzungVerloren() {
+        if (ANMELDUNG.ichId || ICH.person()) {
+            ANMELDUNG._abmeldenOhneFrage();
         }
     },
 
@@ -175,7 +245,7 @@ const ANMELDUNG = {
         const person = ICH.person();
         if (person) {
             const bekannt = SPIELER.spielerFinden(ANMELDUNG.abgleich.daten, person.id);
-            if (bekannt) {
+            if (ANMELDUNG._sitzungPasst(bekannt)) {
                 ANMELDUNG._ichIdSetzen(bekannt.id);
                 if (bekannt.name !== person.name) {
                     ICH.personSetzen(bekannt.id, bekannt.name);
@@ -184,18 +254,30 @@ const ANMELDUNG = {
                 ANMELDUNG._angemeldetMelden();
                 return;
             }
+
+            /* Das Gerät kennt die Person, aber (noch) keine UPCrew-Sitzung —
+               der Normalfall beim ersten Start nach dem Umzug: gleich das
+               Anmelde-Formular mit dem Namen, nur das Passwort fehlt. */
+            if (KONTO.aktiv()) {
+                ANMELDUNG._vollbildZeigen(person.name);
+                return;
+            }
         }
 
         ANMELDUNG._vollbildZeigen();
     },
 
-    _vollbildZeigen() {
+    _vollbildZeigen(vorname) {
         if (!ANMELDUNG.wurzelEl) {
             return;
         }
         ANMELDUNG.anmeldenLaeuft = true;
         ANMELDUNG.wurzelEl.hidden = false;
-        ANMELDUNG._weicheZeigen();
+        if (KONTO.aktiv()) {
+            ANMELDUNG._kontoStartZeigen(vorname);
+        } else {
+            ANMELDUNG._weicheZeigen();
+        }
     },
 
     /* Angemeldet: Das Bild verschwindet, die App dahinter wird aufgefrischt. */
@@ -222,15 +304,16 @@ const ANMELDUNG = {
     _weicheZeigen() {
         const kasten = ANMELDUNG._kastenBauen(
             "Blunderluck",
-            "Schach mit Lootboxen. Melde dich an, um mitzuspielen."
+            "Schach mit Lootboxen. Du spielst mit deinem UPCrew-Konto — "
+                + "ein Konto für alle Spiele von UPCrew."
         );
 
         kasten.appendChild(ANMELDUNG._knopfBauen(
-            "Vorhandenes Konto", "knopf-haupt anmeldung-knopf",
+            "Mit UPCrew-Konto anmelden", "knopf-haupt anmeldung-knopf",
             () => ANMELDUNG._vorhandenesKontoZeigen()));
 
         kasten.appendChild(ANMELDUNG._knopfBauen(
-            "Neues Konto erstellen", "knopf-still anmeldung-knopf",
+            "Neues UPCrew-Konto erstellen", "knopf-still anmeldung-knopf",
             () => ANMELDUNG._neuesKontoZeigen()));
     },
 
@@ -245,9 +328,10 @@ const ANMELDUNG = {
      */
     _vorhandenesKontoZeigen() {
         const kasten = ANMELDUNG._kastenBauen(
-            "Vorhandenes Konto",
-            "Melde dich mit Benutzername und Passwort an — das geht von "
-                + "jedem Gerät aus. Eine alte 4-stellige PIN gilt weiter."
+            "UPCrew-Konto",
+            "Mit dem Namen und Passwort deines UPCrew-Kontos — von jedem "
+                + "Gerät aus. Dein bisheriges Blunderluck-Konto ist jetzt dein "
+                + "UPCrew-Konto; eine alte 4-stellige PIN gilt weiter."
         );
 
         const name = ANMELDUNG._feldBauen(kasten, "Benutzername", false);
@@ -277,7 +361,7 @@ const ANMELDUNG = {
 
             if (!spieler) {
                 name.fehler.textContent = "Diesen Namen gibt es hier nicht. "
-                    + "Neu hier? Dann erstell ein neues Konto.";
+                    + "Neu hier? Dann erstell ein UPCrew-Konto.";
                 pruefen();
                 return;
             }
@@ -355,8 +439,9 @@ const ANMELDUNG = {
      */
     _neuesKontoZeigen() {
         const kasten = ANMELDUNG._kastenBauen(
-            "Neues Konto",
-            "Diesen Namen sehen die anderen in der Runde."
+            "Neues UPCrew-Konto",
+            "Damit spielst du in allen UPCrew-Spielen. Deinen Namen sehen die "
+                + "anderen in der Runde."
         );
 
         const name = ANMELDUNG._feldBauen(kasten, "Benutzername", false);
@@ -367,7 +452,7 @@ const ANMELDUNG = {
             "Passwort wiederholen", true);
 
         const weiter = ANMELDUNG._knopfBauen(
-            "Konto erstellen", "knopf-haupt anmeldung-knopf anmeldung-weiter",
+            "UPCrew-Konto erstellen", "knopf-haupt anmeldung-knopf anmeldung-weiter",
             null);
 
         const pruefen = () => {
@@ -476,6 +561,13 @@ const ANMELDUNG = {
 
         const kasten = document.createElement("div");
         kasten.className = "anmeldung-kasten";
+
+        /* Oben steht das Studio: Das Konto gehört UPCrew, nicht dem Spiel
+           (seit v0.138.0, wie in Typoluck). */
+        const marke = document.createElement("div");
+        marke.className = "anmeldung-marke";
+        marke.textContent = "UPCrew";
+        kasten.appendChild(marke);
 
         const kopf = document.createElement("h2");
         kopf.textContent = titel;
@@ -642,7 +734,7 @@ const ANMELDUNG = {
                 },
                 {
                     beschriftung: "Passwort ändern",
-                    hinweis: SPIELER.hatPin(ich)
+                    hinweis: (SPIELER.hatPin(ich) || KONTO.aktiv())
                         ? "Für die Anmeldung auf anderen Geräten"
                         : "Noch kein Passwort hinterlegt",
                     wert: "passwort"
@@ -659,6 +751,12 @@ const ANMELDUNG = {
     },
 
     async namenAendern(ich) {
+        /* Mit UPCrew-Konto: Name mit Nummer (anmeldung-konto.js). */
+        if (KONTO.aktiv()) {
+            await ANMELDUNG._kontoNameAendern(ich);
+            return;
+        }
+
         const name = await DIALOG.eingabe(
             "Name ändern",
             "Unter welchem Namen sollen dich die anderen sehen?",
@@ -697,6 +795,11 @@ const ANMELDUNG = {
      * Passwort heben.
      */
     async passwortAendern(ich) {
+        if (KONTO.aktiv()) {
+            await ANMELDUNG._kontoPasswortAendern(ich);
+            return;
+        }
+
         if (SPIELER.hatPin(ich)) {
             const altes = await DIALOG.passwort(
                 "Bisheriges Passwort",
@@ -716,37 +819,9 @@ const ANMELDUNG = {
             }
         }
 
-        let neues = null;
-        while (neues === null) {
-            const eingabe = await DIALOG.passwort(
-                "Neues Passwort",
-                "Denk dir ein Passwort aus — " + SPIELER.PASSWORT_MIN + " bis "
-                    + SPIELER.PASSWORT_MAX + " Zeichen, Gross- und "
-                    + "Kleinschreibung zählt.",
-                "Weiter"
-            );
-            if (eingabe === null) {
-                return;
-            }
-
-            const wiederholung = await DIALOG.passwort(
-                "Neues Passwort wiederholen",
-                "Noch einmal dasselbe Passwort.",
-                "Speichern"
-            );
-            if (wiederholung === null) {
-                return;
-            }
-
-            if (eingabe === wiederholung) {
-                neues = eingabe;
-            } else {
-                await DIALOG.hinweis(
-                    "Die beiden stimmen nicht überein",
-                    "Damit du dich nicht aussperrst, muss das neue Passwort "
-                        + "zweimal gleich eingegeben werden. Noch einmal."
-                );
-            }
+        const neues = await ANMELDUNG._neuesPasswortErfragen();
+        if (neues === null) {
+            return;
         }
 
         /* Neues Salz zum neuen Passwort — sonst bliebe der alte Prüfwert
@@ -760,6 +835,47 @@ const ANMELDUNG = {
         );
 
         DIALOG.kurzmeldung("Passwort geändert");
+    },
+
+    /* Das neue Passwort zweimal erfragen. Liefert es, oder null bei
+       Abbruch (seit v0.138.0 eigene Funktion — auch das UPCrew-Konto
+       braucht sie). */
+    async _neuesPasswortErfragen() {
+        let neues = null;
+        while (neues === null) {
+            const eingabe = await DIALOG.passwort(
+                "Neues Passwort",
+                KONTO.aktiv()
+                    ? "Denk dir ein Passwort aus: " + KONTO.passwortRegelText() + "."
+                    : "Denk dir ein Passwort aus — " + SPIELER.PASSWORT_MIN + " bis "
+                        + SPIELER.PASSWORT_MAX + " Zeichen, Gross- und "
+                        + "Kleinschreibung zählt.",
+                "Weiter"
+            );
+            if (eingabe === null) {
+                return null;
+            }
+
+            const wiederholung = await DIALOG.passwort(
+                "Neues Passwort wiederholen",
+                "Noch einmal dasselbe Passwort.",
+                "Speichern"
+            );
+            if (wiederholung === null) {
+                return null;
+            }
+
+            if (eingabe === wiederholung) {
+                neues = eingabe;
+            } else {
+                await DIALOG.hinweis(
+                    "Die beiden stimmen nicht überein",
+                    "Damit du dich nicht aussperrst, muss das neue Passwort "
+                        + "zweimal gleich eingegeben werden. Noch einmal."
+                );
+            }
+        }
+        return neues;
     },
 
     /* ---------------------------------------------------------------- *
@@ -779,6 +895,18 @@ const ANMELDUNG = {
      * ---------------------------------------------------------------- */
 
     async verwaltungOeffnen() {
+        /* Mit UPCrew-Konto zählt die ROLLE des angemeldeten Kontos (Admin
+           oder UP#Plus) — kein Extra-Passwort (Nutzer 25.09.2026). */
+        if (KONTO.aktiv()) {
+            if (ANMELDUNG.istAdmin()) {
+                TABS.wechseln("verwaltung");
+            } else {
+                await DIALOG.hinweis("Nur für Admins",
+                    "Die Verwaltung öffnet sich nur für Konten mit der Rolle Admin.");
+            }
+            return;
+        }
+
         if (!ICH.verwaltungAktiv()) {
             const darf = await VERWALTUNG.verlangen(
                 "Verwaltung",
@@ -806,12 +934,30 @@ const ANMELDUNG = {
        Knöpfe dafür baut einstellungen.js). Betrifft absichtlich einen
        fremden Eintrag: ohne Zusammenführung schreiben. */
     spielerEntfernen(spielerId) {
+        /* Mit UPCrew-Konto (seit v0.138.0): nur dieser eine Knoten, und nur
+           mit den Rechten des Admin-Kontos (Regeln). */
+        if (KONTO.aktiv()) {
+            return ANMELDUNG._kontoAdminAendern(spielerId, "entfernen");
+        }
+
         ANMELDUNG.abgleich.aendern(
             SPIELER.spielerEntfernen(ANMELDUNG.abgleich.daten, spielerId),
             true,
             true
         );
         ANMELDUNG._anzeigenAuffrischen();
+    },
+
+    /*
+     * Zum Neu-Verbinden freigeben (seit v0.138.0, „Passwort vergessen"):
+     * Der Eintrag bekommt `neuVerbinden: true`. Meldet sich die Person danach
+     * mit Name#Nummer an, legt sie ein neues Passwort fest und behält alles
+     * (KONTO.neuVerbinden). Solange die Freigabe steht, könnte das JEDER mit
+     * diesem Namen und dieser Nummer — also erst freigeben, wenn die Person
+     * bereitsteht.
+     */
+    neuVerbindenFreigeben(spielerId) {
+        return ANMELDUNG._kontoAdminAendern(spielerId, "freigeben");
     },
 
     /* ---------------------------------------------------------------- *
@@ -830,6 +976,11 @@ const ANMELDUNG = {
     abmelden() {
         if (!ANMELDUNG.ichId) {
             return;
+        }
+        /* Mit UPCrew-Konto: Sitzung vergessen, ein Gast wird vorher gefragt
+           (anmeldung-konto.js). */
+        if (KONTO.aktiv()) {
+            return ANMELDUNG._kontoAbmelden();
         }
         ICH.personVergessen();
         ANMELDUNG._ichIdSetzen(null);
@@ -851,6 +1002,11 @@ const ANMELDUNG = {
         const ich = ANMELDUNG.ich();
         if (!ich) {
             return;
+        }
+
+        /* Mit UPCrew-Konto (seit v0.138.0): Eintrag UND Firebase-Konto. */
+        if (KONTO.aktiv()) {
+            return ANMELDUNG._kontoLoeschen(ich);
         }
 
         const id = ich.id;

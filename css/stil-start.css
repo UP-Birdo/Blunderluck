@@ -421,6 +421,219 @@ body.dialog-offen {
 }
 
 /* ------------------------------------------------------------------ *
+ * DER UPCREW-LOOK DES ANFANGS (seit v0.138.0, Nutzer-Ansage 25.09.2026:
+ * „das UPCrew-Menü am Anfang, das minimalistische Design — beide Apps
+ * gleich"). Vorlage ist Typoluck (Apps\Typoluck\css\stil.css, Abschnitte
+ * „Das UPCrew-Intro" und „Anmeldung"): Intro mit dem Studio-Zeichen, dann
+ * eine schlichte Karte mit der Marke UPCREW und violetten Tasten-Knöpfen.
+ *
+ * Die Farben gelten NUR im Anmelde-Vollbild und im Intro — das Spiel selbst
+ * behält seine Farben. Wer hier etwas ändert, zieht Typoluck mit.
+ * ------------------------------------------------------------------ */
+
+:root {
+    /* Die Studio-Farben — ohne Dunkel-Fassung, das Zeichen sieht überall
+       gleich aus. */
+    --upcrew-grund: #120e1c;
+    --upcrew-farbe: #7a5cf0;
+    --upcrew-schrift: #ffffff;
+
+    /* Zwischen Anmelde-Vollbild (90) und Dialog (100). */
+    --ebene-intro: 95;
+}
+
+.anmeldung-vollbild {
+    --flaeche: #f4f2fa;
+    --karte: #fdfcff;
+    --karte-leise: #efecf7;
+    --rahmen: #dcd7ea;
+    --schrift: #1d1a26;
+    --schrift-leise: #5f5a6e;
+    --haupt: #5b3cc4;
+    --haupt-schrift: #ffffff;
+    --haupt-kante: #3f2892;
+    --gefahr: #b3261e;
+    --still-kante: #c5bfd6;
+    --knopf-tiefe: 4px;
+    color: var(--schrift);
+    font-family: "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+    .anmeldung-vollbild {
+        --flaeche: #15131b;
+        --karte: #201d29;
+        --karte-leise: #2a2635;
+        --rahmen: #3a3547;
+        --schrift: #ece9f4;
+        --schrift-leise: #aaa4ba;
+        --haupt: #9a82f2;
+        --haupt-schrift: #120e1c;
+        --haupt-kante: #6a52c4;
+        --gefahr: #e05a52;
+        --still-kante: #4a4459;
+    }
+}
+
+.anmeldung-vollbild .anmeldung-kasten {
+    max-width: 400px;
+    padding: 24px 20px;
+    border-radius: 20px;
+}
+
+.anmeldung-marke {
+    margin-bottom: 4px;
+    color: var(--haupt);
+    font-size: 0.85rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.anmeldung-vollbild .anmeldung-kasten h2 {
+    margin: 0 0 8px;
+    font-size: 1.6rem;
+}
+
+.anmeldung-vollbild .erklaerung {
+    color: var(--schrift-leise);
+}
+
+/* Die Knöpfe: Tasten mit Kante, die beim Drücken einsinken (Typoluck 0.1.1). */
+.anmeldung-vollbild .knopf {
+    min-height: 44px;
+    padding: 10px 18px;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 var(--knopf-tiefe) 0 var(--still-kante);
+    transition: transform 80ms ease, box-shadow 80ms ease;
+}
+
+.anmeldung-vollbild .knopf:active:not(:disabled) {
+    transform: translateY(var(--knopf-tiefe));
+    box-shadow: 0 0 0 transparent;
+}
+
+.anmeldung-vollbild .knopf:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
+.anmeldung-vollbild .knopf-haupt {
+    background: var(--haupt);
+    color: var(--haupt-schrift);
+    box-shadow: 0 var(--knopf-tiefe) 0 var(--haupt-kante);
+}
+
+.anmeldung-vollbild .knopf-still {
+    background: var(--karte);
+    color: var(--schrift);
+    border-color: var(--rahmen);
+}
+
+.anmeldung-vollbild .anmeldung-knopf {
+    padding: 10px 18px;
+    margin-top: 10px;
+}
+
+.anmeldung-vollbild .anmeldung-knopf:first-of-type {
+    margin-top: 14px;
+}
+
+.anmeldung-vollbild .anmeldung-beschriftung {
+    margin: 12px 0 4px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--schrift);
+}
+
+.anmeldung-vollbild .anmeldung-feld {
+    min-height: 44px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: var(--karte-leise);
+}
+
+.anmeldung-vollbild .anmeldung-feld:focus {
+    outline: 2px solid var(--haupt);
+    outline-offset: 0;
+    border-color: var(--haupt);
+}
+
+/* Das UPCrew-Intro (js\intro.js) — Zeichen „UP" im violetten Block, dann
+   „Crew", darunter „präsentiert"; Einblenden mit leichtem Anwachsen,
+   Ausblenden 400 ms. Genau wie in Typoluck. */
+.intro {
+    position: fixed;
+    inset: 0;
+    z-index: var(--ebene-intro);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    background: var(--upcrew-grund);
+    color: var(--upcrew-schrift);
+    font-family: "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+    cursor: pointer;
+    transition: opacity 400ms ease;
+}
+
+.intro[hidden] {
+    display: none;
+}
+
+.intro-weg {
+    opacity: 0;
+}
+
+.intro-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 2.6rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    animation: intro-auftritt 700ms cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+}
+
+.intro-up {
+    padding: 4px 14px;
+    border-radius: 14px;
+    background: var(--upcrew-farbe);
+    color: var(--upcrew-schrift);
+}
+
+.intro-zeile {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.95rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    animation: intro-zeile 600ms ease 150ms both;
+}
+
+@keyframes intro-auftritt {
+    from { opacity: 0; transform: scale(0.8); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes intro-zeile {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .intro-logo,
+    .intro-zeile {
+        animation: none;
+    }
+}
+
+/* ------------------------------------------------------------------ *
  * DER STARTBILDSCHIRM (seit v0.9.0, Bündel A Schritt 4)
  *
  * Obere Hälfte das Vorschaubild der eingestellten Spielart, untere Hälfte

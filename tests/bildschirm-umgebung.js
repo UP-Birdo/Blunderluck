@@ -480,14 +480,17 @@ const bausteinNamen = ["KONFIG", "SPIELER", "ANMELDUNG", "SCHACH_VARIANTEN", "SC
     "VERWALTUNGS_BILDSCHIRM",
     "FAEHIGKEIT_ZEICHEN",
     "SpeicherGemeinsam",
+    /* Seit v0.138.0 das UPCrew-Konto und seine Rückwand. */
+    "KONTO",
+    "SpeicherKonten",
     /* Seit v0.76 auch der Abgleich: Sein Rennen mit der regelmaessigen Abfrage
        war der „Doppelzug-Fehler", und ohne Test kaeme es unbemerkt zurueck. */
     "Abgleich"];
 
 /* Die Reihenfolge ist dieselbe wie in index.html — die drei team-schach-Teile
    ergänzen das Objekt und müssen nach ihm kommen. */
-const dateien = ["konfig.js", "spieler.js", "speicher.js", "abgleich.js",
-    "anmeldung.js",
+const dateien = ["konfig.js", "konto.js", "spieler.js", "speicher.js", "abgleich.js",
+    "anmeldung.js", "anmeldung-konto.js",
     "faehigkeit-zeichen.js", "schach-varianten.js",
     "schach.js", "schach-runde.js", "schach-runde-faehigkeiten.js",
     "schach-tafel.js", "schach-speicher.js", "schach-bot.js",

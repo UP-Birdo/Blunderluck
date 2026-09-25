@@ -16,7 +16,7 @@ const KONFIG = {
     /* Version der App (SemVer: 0.MINOR.PATCH — die 0 vorne heisst "noch in
        Entwicklung", 1.0.0 erst bei erfuellten Fertig-Kriterien der ROADMAP).
        Wird im Kopf angezeigt und muss zu CHANGELOG.md passen. */
-    APP_VERSION: "0.137.0",
+    APP_VERSION: "0.138.0",
 
     speicher: {
 
@@ -27,20 +27,26 @@ const KONFIG = {
         modus: "gemeinsam",
 
         /* Basis-Adresse der Firebase Realtime Database, OHNE Schrägstrich am
-           Ende. Angelegt am 23.08.2026, Region europe-west1 (Belgien — die
-           einzige EU-Region der Realtime Database). Die Adresse ist kein
-           Geheimnis: Sie steht ohnehin im Quelltext jeder ausgelieferten
-           Seite. Anleitung und Regeln: docs\DEPLOYMENT.md, Abschnitt 2. */
-        firebaseBasis: "https://blunderluck-8b7f0-default-rtdb.europe-west1.firebasedatabase.app",
+           Ende. SEIT v0.138.0 DIE UPCREW-DATENBANK (Nutzer-Entscheidung
+           25.09.2026: „nur noch EINE Datenbank"): Die Konten gehören dem
+           Studio und gelten in jedem UPCrew-Spiel, Blunderluck hat daneben
+           seinen eigenen Bereich. Region europe-west1 (Belgien). Die Adresse
+           ist kein Geheimnis: Sie steht ohnehin im Quelltext jeder
+           ausgelieferten Seite. Regeln: SICHERHEIT.md (Hauptordner). Bis
+           v0.137.0 stand hier die eigene Blunderluck-Datenbank — sie wird
+           nur noch beim Umzug eines Kontos gelesen (`konto.altBasis`). */
+        firebaseBasis: "https://upcrew-7a29d-default-rtdb.europe-west1.firebasedatabase.app",
 
         /* Ablage-Pfade innerhalb der Datenbank. Jeder Stand hat seinen eigenen,
            damit sich die Teile nicht ins Gehege kommen.
            ACHTUNG: Für jeden Pfad braucht es in den Firebase-Regeln einen
-           eigenen Eintrag — siehe docs\DEPLOYMENT.md, Abschnitt 2.
-           "spieler" ist die Spielerliste (Namen, PIN-Prüfsummen) —
-           kein Spielstand, siehe js\spieler.js. */
+           eigenen Eintrag — siehe SICHERHEIT.md.
+           "spieler" sind die UPCrew-Konten, GETEILT mit allen UPCrew-Spielen
+           (seit v0.138.0 je Konto ein Knoten, js\speicher.js,
+           SpeicherKonten) — kein Spielstand, siehe js\spieler.js.
+           Das Schach liegt im Bereich, der nur Blunderluck gehört. */
         pfad: "spieler",
-        schachPfad: "team-schach",
+        schachPfad: "blunderluck/team-schach",
 
         /* Wie oft (in Millisekunden) nach fremden Änderungen gefragt wird.
            Gefragt wird nur, solange die Seite im Vordergrund ist — im
@@ -56,6 +62,34 @@ const KONFIG = {
         /* Schlüssel im Browser-Speicher für den lokalen Modus, je Stand einer. */
         lokalerSchluessel: "blunderluck.spieler",
         lokalerSchluesselSchach: "blunderluck.team-schach"
+    },
+
+    /*
+     * DAS UPCREW-KONTO (seit v0.138.0, js\konto.js): Anmeldung über
+     * Firebase Authentication, Projekt UPCrew. Beide Werte sind KEIN
+     * Geheimnis — sie stehen bei jeder Firebase-Web-App im Quelltext;
+     * geschützt wird über die Datenbank-Regeln (und später App Check).
+     * Eingetragen vom Nutzer am 25.09.2026.
+     */
+    konto: {
+        apiKey: "AIzaSyC-oWrTMnUaUbb7Sb14TvzfdYcRIOIYcmU",
+        appId: "1:355067454774:web:c97aeb6b21445897a53f97",
+
+        /* Die erfundene Adresse: `<kennung>@<domain>` — nie zustellbar,
+           ohne Namen. UNANTASTBAR, sobald das erste Konto besteht. */
+        domain: "konten.upcrew.invalid",
+
+        /*
+         * DIE ALTE BLUNDERLUCK-DATENBANK — nur für den Umzug. Wer sich
+         * anmeldet und noch kein UPCrew-Konto hat, wird hier gesucht: Stimmt
+         * sein Passwort mit der alten Prüfsumme, legt die App das UPCrew-Konto
+         * an und übernimmt Name, Freunde und Abzeichen (anmeldung.js). Die
+         * Prüfsummen selbst ziehen NICHT mit. Wenn der Nutzer die alte
+         * Datenbank löscht, wird dieser Wert leer ("") — dann fällt der
+         * Umzugsweg still weg.
+         */
+        altBasis: "https://blunderluck-8b7f0-default-rtdb.europe-west1.firebasedatabase.app",
+        altPfad: "spieler"
     },
 
     verwaltung: {

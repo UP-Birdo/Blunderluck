@@ -261,6 +261,31 @@ const SPIELER = {
         return neu;
     },
 
+    /*
+     * Einen fertigen Eintrag einsetzen (seit v0.138.0, UPCrew-Umzug): Gibt
+     * es die Kennung schon, wird ihr Eintrag ERSETZT, sonst angehängt. Für
+     * Einträge, die mehr mitbringen als Name und Kennung — ein umgezogenes
+     * oder neu verbundenes Konto kommt mit Freunden, Abzeichen und seiner
+     * Konto-Nummer (`uid`, `kennung`; fremde Felder im Sinne von
+     * `normalisieren`, sie wandern unverändert durch).
+     */
+    eintragEinsetzen(daten, eintrag, zeitpunkt) {
+        const neu = SPIELER.kopieren(daten);
+        const sauber = SPIELER.normalisieren({ spieler: [eintrag] }).spieler[0];
+        if (!sauber) {
+            return neu;
+        }
+
+        const stelle = neu.spieler.findIndex((spieler) => spieler.id === sauber.id);
+        if (stelle === -1) {
+            neu.spieler.push(sauber);
+        } else {
+            neu.spieler[stelle] = sauber;
+        }
+        neu.geaendertAm = (zeitpunkt === undefined) ? Date.now() : zeitpunkt;
+        return neu;
+    },
+
     spielerEntfernen(daten, id, zeitpunkt) {
         const neu = SPIELER.kopieren(daten);
         neu.spieler = neu.spieler.filter((spieler) => spieler.id !== id);
@@ -361,6 +386,12 @@ const SPIELER = {
             return false;
         }
 
+        /* Rollen der UPCrew-Konten (seit v0.138.0) — sonst sähe ein neuer
+           Admin seine Verwaltung erst nach einer anderen Änderung. */
+        if (JSON.stringify(einsA.rollen || null) !== JSON.stringify(einsB.rollen || null)) {
+            return false;
+        }
+
         for (let i = 0; i < einsA.spieler.length; i++) {
             const spielerA = einsA.spieler[i];
             const spielerB = einsB.spieler[i];
@@ -369,6 +400,15 @@ const SPIELER = {
                 || spielerA.name !== spielerB.name
                 || spielerA.pinPruefwert !== spielerB.pinPruefwert
                 || spielerA.pinSalz !== spielerB.pinSalz) {
+                return false;
+            }
+
+            /* Das UPCrew-Konto (seit v0.138.0): Konto-Nummer und die
+               Freigabe zum Neu-Verbinden — sonst zeigte die Verwaltung eine
+               Freigabe erst nach einer anderen Änderung. */
+            if (spielerA.uid !== spielerB.uid || spielerA.tag !== spielerB.tag
+                || !!spielerA.gast !== !!spielerB.gast
+                || !!spielerA.neuVerbinden !== !!spielerB.neuVerbinden) {
                 return false;
             }
 

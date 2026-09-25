@@ -7,8 +7,11 @@
          die Import-Karte des 3D-Bretts, über seinen Fingerabdruck), keine
          Plugins, keine fremden Formulare, Verbindungen nur zur eigenen Seite
          und zur Datenbank. Wer die Import-Karte oder die Datenbank-Adresse
-         ändert, zieht diese Zeile mit — tests\test-sicherheit.js prüft beides. -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-3IBak4uiv4l6wKD16ssX6AlPnBMuJNftin3Hcb/KpfM='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' data: blob: https://blunderluck-8b7f0-default-rtdb.europe-west1.firebasedatabase.app; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
+         ändert, zieht diese Zeile mit — tests\test-sicherheit.js prüft beides.
+         Seit v0.138.0 (UPCrew-Umzug): die UPCrew-Datenbank, die Anmeldung bei
+         Firebase (identitytoolkit, securetoken) und — nur bis sie gelöscht
+         ist — die ALTE Blunderluck-Datenbank für den Konto-Umzug. -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-3IBak4uiv4l6wKD16ssX6AlPnBMuJNftin3Hcb/KpfM='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' data: blob: https://upcrew-7a29d-default-rtdb.europe-west1.firebasedatabase.app https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://blunderluck-8b7f0-default-rtdb.europe-west1.firebasedatabase.app; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
     <!-- `viewport-fit=cover` lässt die Seite bis unter den iPhone-Balken
          reichen — das Dock hält sich den Streifen selbst frei
          (`env(safe-area-inset-bottom)` in der Stildatei, seit v0.113). -->
@@ -59,11 +62,18 @@
          ganzen App; nur die Dialoge liegen noch darüber. -->
     <div class="anmeldung-vollbild" id="anmeldung" hidden></div>
 
+    <!-- Das UPCrew-Intro (js/intro.js, seit v0.138.0): liegt beim Start kurz
+         über allem ausser den Dialogen — wie in Typoluck. -->
+    <div class="intro" id="intro" hidden></div>
+
     <div class="dialog-hintergrund" id="dialog" hidden></div>
 
     <!-- Reihenfolge zählt: erst Einstellungen und Datenlogik, dann die
          Bausteine, zuletzt der Startpunkt. -->
     <script src="js/konfig.js"></script>
+    <!-- Das UPCrew-Konto (Firebase Authentication, seit v0.138.0) — vor
+         Speicher und Anmeldung, die es beide brauchen. -->
+    <script src="js/konto.js"></script>
     <script src="js/spieler.js"></script>
     <script src="js/versiegelung.js"></script>
     <script src="js/ich.js"></script>
@@ -73,6 +83,9 @@
     <script src="js/dialog.js"></script>
     <script src="js/tabs.js"></script>
     <script src="js/anmeldung.js"></script>
+    <!-- Die Bildschirme des UPCrew-Kontos (seit v0.138.0) ergänzen
+         ANMELDUNG und müssen NACH anmeldung.js stehen. -->
+    <script src="js/anmeldung-konto.js"></script>
     <script src="js/faehigkeit-zeichen.js"></script>
     <script src="js/schach-varianten.js"></script>
     <script src="js/schach.js"></script>
@@ -113,6 +126,7 @@
          erreichbar über den Knopf „Verwaltung" in den Einstellungen. -->
     <script src="js/verwaltungs-bildschirm.js"></script>
     <script src="js/wunsch.js"></script>
+    <script src="js/intro.js"></script>
     <script src="js/app.js"></script>
 
     <!-- Das 3D-Brett (seit v0.122.0): three.js liegt als Datei im Projekt

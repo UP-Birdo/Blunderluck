@@ -79,21 +79,29 @@ const VERWALTUNGS_BILDSCHIRM = {
         if (!ICH.verwaltungAktiv()) {
             const hinweis = document.createElement("p");
             hinweis.className = "erklaerung";
-            hinweis.textContent = "Die Verwaltung ist auf diesem Gerät nicht "
-                + "freigeschaltet. Öffne sie über die Einstellungen — dort "
-                + "wird das Verwaltungs-Passwort abgefragt.";
+            hinweis.textContent = (typeof KONTO !== "undefined" && KONTO.aktiv())
+                ? "Die Verwaltung ist nur für Konten mit der Rolle Admin."
+                : "Die Verwaltung ist auf diesem Gerät nicht "
+                    + "freigeschaltet. Öffne sie über die Einstellungen — dort "
+                    + "wird das Verwaltungs-Passwort abgefragt.";
             karte.appendChild(hinweis);
             return;
         }
 
         const erklaerung = document.createElement("p");
         erklaerung.className = "erklaerung";
-        erklaerung.textContent = "Alle Mitspieler der Runde. Entfernen "
-            + "löscht den Eintrag aus Spielerliste und Rangliste — etwa bei "
-            + "doppelten Anmeldungen oder vergessenem Passwort.";
+        /* Seit dem UPCrew-Umzug sind es die Konten ALLER Spiele — Entfernen
+           wirkt überall, nicht nur in Blunderluck. */
+        erklaerung.textContent = "Alle UPCrew-Konten. Entfernen löscht das "
+            + "Konto in ALLEN Spielen von UPCrew, dazu aus Spielerliste und "
+            + "Rangliste — etwa bei doppelten Anmeldungen.";
         karte.appendChild(erklaerung);
 
-        karte.appendChild(VERWALTUNGS_BILDSCHIRM._tabelleBauen());
+        /* Mit UPCrew-Konto (seit v0.138.0): Name#Nummer, Rollen, Neu-Verbinden. */
+        const mitKonto = (typeof KONTO !== "undefined" && KONTO.aktiv());
+        karte.appendChild(mitKonto
+            ? VERWALTUNGS_BILDSCHIRM._kontoTabelleBauen()
+            : VERWALTUNGS_BILDSCHIRM._tabelleBauen());
 
         /*
          * BRETT-ANPASSUNG (seit v0.129.0, Nutzer-Ansage 24.09.2026): Farben,
@@ -131,12 +139,96 @@ const VERWALTUNGS_BILDSCHIRM = {
 
         /* Die Freischaltung sichtbar wieder schliessen — vorher tat das der
            Umschalt-Knopf in den Einstellungen. */
-        const fuss = document.createElement("div");
-        fuss.className = "karte-fuss";
-        fuss.appendChild(VERWALTUNGS_BILDSCHIRM._knopf(
-            "Verwaltung beenden", "knopf-still knopf-klein",
-            () => ANMELDUNG.verwaltungBeenden()));
-        karte.appendChild(fuss);
+        /* Mit UPCrew-Konto gibt es nichts zu beenden — die Rolle hängt am
+           Konto, nicht an einer Freischaltung auf dem Gerät. */
+        if (!mitKonto) {
+            const fuss = document.createElement("div");
+            fuss.className = "karte-fuss";
+            fuss.appendChild(VERWALTUNGS_BILDSCHIRM._knopf(
+                "Verwaltung beenden", "knopf-still knopf-klein",
+                () => ANMELDUNG.verwaltungBeenden()));
+            karte.appendChild(fuss);
+        }
+    },
+
+    /*
+     * Die Tabelle der UPCrew-Konten (seit v0.138.0). Wer was darf, prüfen
+     * die Regeln der Datenbank; hier werden nur die passenden Knöpfe
+     * gezeigt:
+     *   Neu verbinden  jeder Admin, für echte Konten („Passwort vergessen")
+     *   Admin geben    nur UP#Plus (AboveAdmin)
+     *   Entfernen      jeder Admin; nie UP#Plus, nie das eigene Konto
+     */
+    _kontoTabelleBauen() {
+        const rollbereich = document.createElement("div");
+        rollbereich.className = "tabelle-rollbereich";
+        const tabelle = document.createElement("table");
+        tabelle.className = "ergebnis-tabelle";
+
+        const tabellenkopf = document.createElement("thead");
+        const kopfzeile = document.createElement("tr");
+        for (const beschriftung of ["Name", "Konto", "Rolle", "Freunde", ""]) {
+            const zelle = document.createElement("th");
+            zelle.textContent = beschriftung;
+            kopfzeile.appendChild(zelle);
+        }
+        tabellenkopf.appendChild(kopfzeile);
+        tabelle.appendChild(tabellenkopf);
+
+        const koerper = document.createElement("tbody");
+        const daten = ANMELDUNG.abgleich.daten;
+        const meineUid = KONTO.uid();
+        const binOberAdmin = KONTO.istOberAdmin(daten, meineUid);
+
+        for (const spieler of SPIELER.normalisieren(daten).spieler) {
+            const binIch = spieler.uid === meineUid;
+            const istOber = KONTO.istOberAdmin(daten, spieler.uid);
+            const rolle = KONTO.rolleVon(daten, spieler.uid);
+
+            const zeile = document.createElement("tr");
+            if (binIch) {
+                zeile.className = "zeile-ich";
+            }
+            const zelle = (text) => {
+                const td = document.createElement("td");
+                td.textContent = text;
+                zeile.appendChild(td);
+                return td;
+            };
+            zelle(KONTO.anzeigeName(spieler) + (binIch ? " (du)" : ""));
+            zelle(spieler.gast === true ? "Gast"
+                : (spieler.neuVerbinden === true ? "freigegeben" : "verbunden"));
+            zelle(rolle || "-");
+            zelle(String(spieler.freunde.length));
+
+            const aktion = document.createElement("td");
+            aktion.className = "verwaltung-aktion";
+            if (!binIch && !istOber) {
+                if (spieler.gast !== true && spieler.neuVerbinden !== true) {
+                    aktion.appendChild(DIALOG.zweiSchritt(
+                        VERWALTUNGS_BILDSCHIRM._knopf("Neu verbinden",
+                            "knopf-still knopf-klein", null),
+                        () => ANMELDUNG.neuVerbindenFreigeben(spieler.id)));
+                }
+                if (binOberAdmin && spieler.gast !== true) {
+                    aktion.appendChild(DIALOG.zweiSchritt(
+                        VERWALTUNGS_BILDSCHIRM._knopf(
+                            rolle === "Admin" ? "Admin nehmen" : "Admin geben",
+                            "knopf-still knopf-klein", null),
+                        () => ANMELDUNG.rolleUmschalten(spieler.id)));
+                }
+                aktion.appendChild(DIALOG.zweiSchritt(
+                    VERWALTUNGS_BILDSCHIRM._knopf("Entfernen",
+                        "knopf-gefahr knopf-klein", null),
+                    () => ANMELDUNG.spielerEntfernen(spieler.id)));
+            }
+            zeile.appendChild(aktion);
+            koerper.appendChild(zeile);
+        }
+
+        tabelle.appendChild(koerper);
+        rollbereich.appendChild(tabelle);
+        return rollbereich;
     },
 
     /*

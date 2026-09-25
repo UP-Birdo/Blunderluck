@@ -234,8 +234,11 @@ class Abgleich {
             this.schreibZeitgeber = null;
         }
         if (this.aenderungOffen && !this.schreibtGerade) {
-            this.schreiben();
+            /* Das Versprechen geht zurück (seit v0.138.0): Das neue
+               UPCrew-Konto wartet, bis sein Eintrag wirklich steht. */
+            return this.schreiben();
         }
+        return Promise.resolve();
     }
 
     /*

@@ -29,7 +29,7 @@
  */
 
 /* Der Name des Zwischenspeichers. HIER STEHT DIE NUMMER GENAU EINMAL. */
-const SPEICHER_NAME = "blunderluck-v0.137.0";
+const SPEICHER_NAME = "blunderluck-v0.138.0";
 
 /*
  * BEIM BAUEN: NETZ ZUERST. IM BETRIEB: ZWISCHENSPEICHER ZUERST.
@@ -79,6 +79,7 @@ const DATEIEN = [
 
     /* Die Programmdateien in der Ladereihenfolge aus index.html. */
     "./js/konfig.js",
+    "./js/konto.js",
     "./js/spieler.js",
     "./js/versiegelung.js",
     "./js/ich.js",
@@ -88,6 +89,7 @@ const DATEIEN = [
     "./js/dialog.js",
     "./js/tabs.js",
     "./js/anmeldung.js",
+    "./js/anmeldung-konto.js",
     "./js/faehigkeit-zeichen.js",
     "./js/schach-varianten.js",
     "./js/schach.js",
@@ -110,6 +112,7 @@ const DATEIEN = [
     "./js/einstellungen.js",
     "./js/verwaltungs-bildschirm.js",
     "./js/wunsch.js",
+    "./js/intro.js",
     "./js/app.js",
 
     /* Das 3D-Brett (seit v0.122.0): das Modul, three.js aus dem Projekt

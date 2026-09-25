@@ -124,14 +124,17 @@ if ($adresse -eq "") {
 
 # Was gesichert wird. Die beiden Staende haben unterschiedliche Form, deshalb
 # steht je Stand dabei, WAS gezaehlt wird:
-#   spieler     -> { geaendertAm, spieler: [ ... ] }            (Liste)
+#   spieler     -> { geaendertAm, konten: { <uid>: ... } }      (Sammlung, seit v0.138.0)
 #   team-schach -> { geaendertAm, partien: { ... }, chronik: [] } (Sammlung + Liste)
+# Seit v0.138.0 (UPCrew-Umzug) liegen die Konten ALLER UPCrew-Spiele unter
+# `spieler`, das Schach unter `blunderluck/team-schach` - beides steht in
+# js\konfig.js, hier aendert sich nur, was gezaehlt wird.
 $staende = @(
     [pscustomobject]@{
-        Titel         = "Spielerliste"
+        Titel         = "UPCrew-Konten"
         Pfad          = $pfadSpiel
-        Zaehlfeld     = "spieler"
-        Einheit       = "Spieler"
+        Zaehlfeld     = "konten"
+        Einheit       = "Konten"
         Zusatzfeld    = ""
         ZusatzEinheit = ""
     },
@@ -323,6 +326,22 @@ foreach ($stand in $staende) {
         exit 1
     }
 
+    # GROESSENBREMSE (seit 25.09.2026, Sicherheits-Runde): Die Datenbank ist
+    # von aussen beschreibbar. Wer sie mit Unmengen fuellt, soll nicht auch
+    # noch diesen Rechner und OneDrive vollschreiben - dann wird NICHT
+    # gesichert, und die Meldung sagt warum. Heute: ~0,7 MB.
+    $grenzeMB = 50
+    if ($rohText.Length -gt ($grenzeMB * 1MB)) {
+        Write-Host ""
+        Write-Host "Der Pfad '$($stand.Pfad)' ist groesser als $grenzeMB MB - so gross war er nie." -ForegroundColor Red
+        Write-Host "Das kann ein Angriff sein (Datenbank mit Muell gefuellt). Es wurde nichts geschrieben." -ForegroundColor Yellow
+        Write-Host "Bitte in der Firebase-Konsole nachsehen, bevor weiter gesichert wird."
+        exit 1
+    }
+
+    # Die Sicherung ist REINER TEXT: Sie wird nur eingerueckt und gezaehlt,
+    # nie ausgefuehrt. Dateinamen kommen aus js\konfig.js, nie aus der
+    # Datenbank.
     $schoen = Format-JsonText -Text $rohText
     $bytes  = [System.Text.Encoding]::UTF8.GetByteCount($schoen)
 

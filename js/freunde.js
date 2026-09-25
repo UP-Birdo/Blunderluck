@@ -22,6 +22,19 @@
 
 const FREUNDE = {
 
+    /* Namen gibt es seit v0.138.0 mehrfach — eindeutig ist erst Name#Nummer
+       (js\konto.js). Ohne UPCrew-Konto bleibt es der blanke Name. */
+    _name(spieler) {
+        return (typeof KONTO !== "undefined" && KONTO.aktiv())
+            ? KONTO.anzeigeName(spieler) : spieler.name;
+    },
+
+    /* UP#Plus spielt nicht und taucht in der Suche nicht auf. */
+    _istOberAdmin(stand, spieler) {
+        return typeof KONTO !== "undefined" && KONTO.aktiv()
+            && KONTO.istOberAdmin(stand, spieler.uid);
+    },
+
     /* Der Suchtext überlebt das Neuzeichnen der Karte. */
     suchtext: "",
 
@@ -48,7 +61,7 @@ const FREUNDE = {
         if (sicht.offen.length > 0) {
             karte.appendChild(FREUNDE._erklaerung("Anfragen an dich:"));
             for (const anderer of sicht.offen) {
-                karte.appendChild(FREUNDE._zeileBauen(anderer.name, [
+                karte.appendChild(FREUNDE._zeileBauen(FREUNDE._name(anderer), [
                     FREUNDE._knopf("Annehmen", "knopf-still knopf-klein",
                         () => FREUNDE.annehmen(anderer.id)),
                     FREUNDE._knopf("Ablehnen", "knopf-still knopf-klein",
@@ -59,7 +72,7 @@ const FREUNDE = {
 
         if (sicht.freunde.length > 0) {
             for (const freund of sicht.freunde) {
-                karte.appendChild(FREUNDE._zeileBauen(freund.name, [
+                karte.appendChild(FREUNDE._zeileBauen(FREUNDE._name(freund), [
                     DIALOG.zweiSchritt(
                         FREUNDE._knopf("Entfernen", "knopf-gefahr knopf-klein", null),
                         () => FREUNDE.entfernen(freund.id))
@@ -75,7 +88,7 @@ const FREUNDE = {
         if (sicht.gesendet.length > 0) {
             karte.appendChild(FREUNDE._erklaerung("Deine offenen Anfragen:"));
             for (const anderer of sicht.gesendet) {
-                karte.appendChild(FREUNDE._zeileBauen(anderer.name, [
+                karte.appendChild(FREUNDE._zeileBauen(FREUNDE._name(anderer), [
                     FREUNDE._knopf("Zurückziehen", "knopf-still knopf-klein",
                         () => FREUNDE.zurueckziehen(anderer.id))
                 ], anderer.id));
@@ -88,7 +101,7 @@ const FREUNDE = {
         feld.className = "freunde-suche";
         feld.type = "text";
         feld.value = FREUNDE.suchtext;
-        feld.placeholder = "Namen suchen …";
+        feld.placeholder = "Name oder Name#Nummer …";
         feld.autocomplete = "off";
         feld.setAttribute("aria-label", "Freunde suchen");
         karte.appendChild(feld);
@@ -107,7 +120,8 @@ const FREUNDE = {
             const stand = SPIELER.normalisieren(ANMELDUNG.abgleich.daten);
             const gefunden = stand.spieler.filter((anderer) =>
                 anderer.id !== person.id
-                && anderer.name.toLowerCase().indexOf(gesucht) !== -1
+                && FREUNDE._name(anderer).toLowerCase().indexOf(gesucht) !== -1
+                && !FREUNDE._istOberAdmin(stand, anderer)
                 && SPIELER.freundschaft(stand, person.id, anderer.id) === "keine");
 
             if (gefunden.length === 0) {
@@ -117,7 +131,7 @@ const FREUNDE = {
             }
 
             for (const anderer of gefunden) {
-                treffer.appendChild(FREUNDE._zeileBauen(anderer.name, [
+                treffer.appendChild(FREUNDE._zeileBauen(FREUNDE._name(anderer), [
                     FREUNDE._knopf("Anfrage senden", "knopf-still knopf-klein",
                         () => FREUNDE.anfragen(anderer.id))
                 ], anderer.id));

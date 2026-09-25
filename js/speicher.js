@@ -68,6 +68,10 @@ class SpeicherGemeinsam {
         this.basis = String(basis).replace(/\/+$/, "");
         this.pfad = String(pfad).replace(/^\/+|\/+$/g, "");
         this.aufbereiten = aufbereiten;
+
+        /* Hängt den Anmelde-Schlüssel an (siehe `_rufen`). Nur das Lesen
+           der ALTEN Datenbank beim Umzug schaltet es ab. */
+        this.mitAnmeldung = true;
     }
 
     get adresse() {
@@ -150,7 +154,28 @@ class SpeicherGemeinsam {
         /* Ohne Angabe der ganze Stand — das ist der Normalfall und war bis
            v0.110.0 der einzige. Seit v0.111.0 fragt die Marke einen
            Unterpfad (siehe `marke`). */
-        const ziel = adresse || this.adresse;
+        let ziel = adresse || this.adresse;
+
+        /*
+         * DER ANMELDE-SCHLÜSSEL (seit v0.138.0, UPCrew-Umzug): Die Regeln
+         * der UPCrew-Datenbank lassen nur angemeldete Konten schreiben. Der
+         * Schlüssel wird geholt, BEVOR das Zeitlimit läuft — eine fällige
+         * Erneuerung (js\konto.js) soll die Marke nicht in ihre halbe
+         * Sekunde drängen. Ohne Schlüssel geht die Anfrage trotzdem hinaus:
+         * Lesen darf jeder.
+         */
+        if (this.mitAnmeldung && typeof SpeicherGemeinsam.tokenGeber === "function") {
+            let token = null;
+            try {
+                token = await SpeicherGemeinsam.tokenGeber();
+            } catch (fehler) {
+                token = null;
+            }
+            if (token) {
+                ziel += (ziel.indexOf("?") === -1 ? "?" : "&")
+                    + "auth=" + encodeURIComponent(token);
+            }
+        }
 
         /*
          * Ältere Browser ohne AbortController bekommen den Aufruf wie bisher —
@@ -288,6 +313,149 @@ SpeicherGemeinsam.ZEITLIMIT_MARKE_MS = 500;
  */
 SpeicherGemeinsam.MARKEN_FELD = "geaendertAm";
 
+/*
+ * Woher der Anmelde-Schlüssel kommt (seit v0.138.0) — `KONTO.token`, von
+ * app.js gesetzt. Fehlt er, laufen alle Anfragen ohne Schlüssel wie bis
+ * v0.137.0 (lokaler Modus, Tests).
+ */
+SpeicherGemeinsam.tokenGeber = null;
+
+/* ------------------------------------------------------------------ *
+ * Rückwand 3: die UPCrew-Konten (seit v0.138.0)
+ *
+ * WARUM EINE EIGENE RÜCKWAND: Bis v0.137.0 lag die Spielerliste als EINE
+ * Liste unter `spieler` und wurde als Ganzes geschrieben (PUT). Die Regeln
+ * der UPCrew-Datenbank lassen aber jeden nur seinen EIGENEN Eintrag
+ * schreiben — das geht nur, wenn jeder Eintrag seinen eigenen Knoten hat:
+ *
+ *     spieler/
+ *         geaendertAm: 1750000000000        (die Marke, wie bisher)
+ *         konten/
+ *             <uid>: { id, name, uid, kennung, freunde, abgelehnt, … }
+ *
+ * `<uid>` ist die Konto-Nummer von Firebase (js\konto.js). Der Rest der
+ * App merkt davon nichts: `laden` macht aus den Knoten die gewohnte Liste
+ * (`SPIELER.normalisieren` bleibt die eine Nachrüst-Stelle), `speichern`
+ * schreibt aus der Liste nur den eigenen Eintrag — und nur, wenn er sich
+ * gegenüber dem Server geändert hat. Fremde Einträge ändert allein
+ * `eintragSetzen`, und das nur mit den Rechten, die die Regeln geben
+ * (eigener Eintrag, Admin, freigegebenes Konto).
+ *
+ * Passwort-Prüfsummen schreibt diese Rückwand NIE — sie nimmt `pinPruefwert`
+ * und `pinSalz` heraus, und die Regeln lehnen einen Eintrag mit ihnen ab.
+ * ------------------------------------------------------------------ */
+
+class SpeicherKonten extends SpeicherGemeinsam {
+
+    /* `eigeneUid()` liefert die Konto-Nummer dieses Geräts oder null. */
+    constructor(basis, pfad, aufbereiten, eigeneUid) {
+        super(basis, pfad, aufbereiten);
+        this.eigeneUid = eigeneUid;
+
+        /* Der eigene Eintrag, wie er zuletzt auf dem Server stand (als
+           Text) — nur was davon abweicht, wird geschrieben. */
+        this.zuletzt = null;
+    }
+
+    /* Aus den Knoten die gewohnte Liste — sortiert nach Konto-Nummer, damit
+       jedes Gerät dieselbe Reihenfolge sieht (`inhaltGleich` vergleicht der
+       Reihe nach). */
+    static alsListe(roh) {
+        if (!roh || typeof roh !== "object") {
+            return null;
+        }
+
+        const stand = {};
+        for (const schluessel of Object.keys(roh)) {
+            if (schluessel !== "konten") {
+                stand[schluessel] = roh[schluessel];
+            }
+        }
+
+        const konten = (roh.konten && typeof roh.konten === "object") ? roh.konten : {};
+        stand.spieler = Object.keys(konten).sort()
+            .filter((uid) => konten[uid] && typeof konten[uid] === "object")
+            .map((uid) => Object.assign({}, konten[uid], { uid: uid }));
+        return stand;
+    }
+
+    /* Ein Eintrag, wie er auf den Server darf: ohne Passwort-Prüfsummen. */
+    static eintragFuerServer(spieler) {
+        const eintrag = JSON.parse(JSON.stringify(spieler));
+        delete eintrag.pinPruefwert;
+        delete eintrag.pinSalz;
+        return eintrag;
+    }
+
+    async laden() {
+        const antwort = await this._rufen({ cache: "no-store" },
+            SpeicherGemeinsam.ZEITLIMIT_LADEN_MS, "Das Laden");
+
+        if (!antwort.ok) {
+            throw new Error("Laden fehlgeschlagen (HTTP " + antwort.status + ")");
+        }
+
+        const daten = this.aufbereiten(SpeicherKonten.alsListe(await antwort.json()));
+        this._merken(daten);
+        return daten;
+    }
+
+    _eigener(daten) {
+        const uid = this.eigeneUid ? this.eigeneUid() : null;
+        if (!uid || !daten || !Array.isArray(daten.spieler)) {
+            return null;
+        }
+        return daten.spieler.find((spieler) => spieler.uid === uid) || null;
+    }
+
+    _merken(daten) {
+        const eigener = this._eigener(daten);
+        this.zuletzt = eigener
+            ? JSON.stringify(SpeicherKonten.eintragFuerServer(eigener)) : null;
+    }
+
+    async speichern(daten) {
+        const eigener = this._eigener(daten);
+        if (!eigener) {
+            /* Ohne eigenen Eintrag gibt es nichts, was dieses Gerät
+               schreiben dürfte. */
+            return;
+        }
+
+        const eintrag = SpeicherKonten.eintragFuerServer(eigener);
+        const text = JSON.stringify(eintrag);
+        if (text === this.zuletzt) {
+            return;
+        }
+
+        const aenderungen = {};
+        aenderungen["konten/" + eigener.uid] = eintrag;
+        aenderungen[SpeicherGemeinsam.MARKEN_FELD] = Date.now();
+        await this.teilSchreiben(aenderungen);
+        this.zuletzt = text;
+    }
+
+    /*
+     * Einen Eintrag gezielt setzen oder mit `null` löschen — für die Fälle,
+     * die absichtlich einen FREMDEN Eintrag betreffen (Verwaltung) oder den
+     * eigenen entfernen (Konto löschen). `weitere` sind zusätzliche Knoten
+     * im selben Schritt (Neu-Verbinden: neuer Eintrag und alter weg, beides
+     * oder keins).
+     */
+    async eintragSetzen(uid, eintrag, weitere) {
+        const aenderungen = Object.assign({}, weitere || {});
+        aenderungen["konten/" + uid] = (eintrag === null)
+            ? null : SpeicherKonten.eintragFuerServer(eintrag);
+        aenderungen[SpeicherGemeinsam.MARKEN_FELD] = Date.now();
+        await this.teilSchreiben(aenderungen);
+
+        if (this.eigeneUid && uid === this.eigeneUid()) {
+            this.zuletzt = (eintrag === null)
+                ? null : JSON.stringify(SpeicherKonten.eintragFuerServer(eintrag));
+        }
+    }
+}
+
 /* ------------------------------------------------------------------ *
  * Auswahl der Rückwand
  * ------------------------------------------------------------------ */
@@ -300,8 +468,19 @@ SpeicherGemeinsam.MARKEN_FELD = "geaendertAm";
  * dessen Normalisier-Funktion. So teilen sich beide Spiele dieselbe
  * Speicher-Schicht, ohne voneinander zu wissen.
  */
-function speicherErzeugen(konfig, pfad, lokalerSchluessel, aufbereiten) {
+function speicherErzeugen(konfig, pfad, lokalerSchluessel, aufbereiten, eigeneUid) {
     const einstellung = konfig.speicher;
+
+    /* Die Spielerliste mit UPCrew-Konten (seit v0.138.0): Wer `eigeneUid`
+       mitgibt und ein Konto eingerichtet hat, bekommt die Konten-Rückwand. */
+    if (eigeneUid && einstellung.modus === "gemeinsam" && einstellung.firebaseBasis
+            && konfig.konto && konfig.konto.apiKey) {
+        return {
+            speicher: new SpeicherKonten(einstellung.firebaseBasis, pfad,
+                aufbereiten, eigeneUid),
+            hinweis: ""
+        };
+    }
 
     if (einstellung.modus === "gemeinsam") {
         if (!einstellung.firebaseBasis) {

@@ -235,7 +235,20 @@ pruefe("Die Pruefsummen-Zutaten heissen blunderluck", () => {
     /* Und die Speicherpfade, die Adresse aller gespeicherten Daten. */
     const konfig = dateisystem.readFileSync(pfad.join(jsOrdner, "konfig.js"), "utf8");
 
-    for (const schluessel of ["pfad: \"spieler\"", "schachPfad: \"team-schach\"",
+    /* Seit v0.138.0 liegt das Schach im Blunderluck-Bereich der UPCrew-
+       Datenbank (UPCrew-Umzug) — der alte Pfad `team-schach` gilt nur noch in
+       der alten Datenbank. Dazu die zwei Werte des UPCrew-Kontos, ohne die
+       kein Passwort mehr passt (js\konto.js, js\konfig.js). */
+    const kontoDatei = dateisystem.readFileSync(pfad.join(jsOrdner, "konto.js"), "utf8");
+    for (const wert of ["OBER_NAME: \"UP\"", "OBER_TAG: \"Plus\"", "GAST_NAME: \"Gast\""]) {
+        if (kontoDatei.indexOf(wert) === -1) {
+            throw new Error("In konto.js fehlt " + wert + " — die Regeln der"
+                + " Datenbank und alle UPCrew-Spiele verlassen sich darauf.");
+        }
+    }
+
+    for (const schluessel of ["pfad: \"spieler\"", "schachPfad: \"blunderluck/team-schach\"",
+        "domain: \"konten.upcrew.invalid\"",
         "blunderluck.spieler", "blunderluck.team-schach"]) {
         if (konfig.indexOf(schluessel) === -1) {
             throw new Error("Der Speicherpfad \"" + schluessel + "\" fehlt in"

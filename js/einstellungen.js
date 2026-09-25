@@ -218,12 +218,13 @@ const EINSTELLUNGEN = {
          * vollständig im Fenster hinter dem i.
          */
         const karte = EINSTELLUNGEN._karteBauen("Account",
-            "Abmelden und Konto löschen",
-            "Abmelden: Dieses Gerät vergisst die Anmeldung, dein Konto "
+            "Abmelden und UPCrew-Konto löschen",
+            "Abmelden: Dieses Gerät vergisst die Anmeldung, dein UPCrew-Konto "
             + "bleibt samt Punkten und Partien bestehen. Du meldest dich "
             + "jederzeit wieder an."
-            + "\n\nKonto löschen: Dein Eintrag verschwindet aus Spielerliste "
-            + "und Rangliste — das lässt sich nicht rückgängig machen. "
+            + "\n\nUPCrew-Konto löschen: Dein Konto verschwindet — in ALLEN "
+            + "Spielen von UPCrew, nicht nur hier —, dazu aus Spielerliste "
+            + "und Rangliste. Das lässt sich nicht rückgängig machen. "
             + "Beendete Partien bleiben in der Chronik.");
 
         if (!person) {
@@ -237,7 +238,28 @@ const EINSTELLUNGEN = {
         const stand = document.createElement("p");
         stand.className = "erklaerung";
         stand.textContent = "Angemeldet als " + person.name + ".";
+
+        /* Mit UPCrew-Konto (seit v0.138.0): Name MIT Nummer, die Rolle, und
+           ein Gast sieht, dass er seinen Spielstand sichern kann. */
+        const mitKonto = (typeof KONTO !== "undefined" && KONTO.aktiv()
+            && typeof ANMELDUNG !== "undefined" && ANMELDUNG.abgleich);
+        const eintrag = mitKonto ? ANMELDUNG.ich() : null;
+        if (eintrag) {
+            const rolle = KONTO.rolleVon(ANMELDUNG.abgleich.daten, eintrag.uid);
+            stand.textContent = "Angemeldet als " + KONTO.anzeigeName(eintrag)
+                + (rolle ? " (" + rolle + ")" : "")
+                + (eintrag.gast === true ? " — dein Spielstand hängt an diesem Gerät." : ".");
+        }
         karte.appendChild(stand);
+
+        if (eintrag && eintrag.gast === true) {
+            const sichern = document.createElement("div");
+            sichern.className = "karte-fuss";
+            sichern.appendChild(EINSTELLUNGEN._knopf(
+                "Spielstand sichern", "knopf-haupt knopf-klein",
+                () => ANMELDUNG.gastSichernOeffnen()));
+            karte.appendChild(sichern);
+        }
 
         /* Beide Knöpfe in EINER Fusszeile — bis v0.107.0 hatte jeder seine
            eigene, weil zwischen ihnen ein Erklärabsatz stand. */
@@ -249,7 +271,7 @@ const EINSTELLUNGEN = {
             () => ANMELDUNG.abmelden()));
 
         leiste.appendChild(DIALOG.zweiSchritt(
-            EINSTELLUNGEN._knopf("Konto löschen", "knopf-gefahr knopf-klein", null),
+            EINSTELLUNGEN._knopf("UPCrew-Konto löschen", "knopf-gefahr knopf-klein", null),
             () => ANMELDUNG.austreten()));
 
         karte.appendChild(leiste);
@@ -269,9 +291,9 @@ const EINSTELLUNGEN = {
         const karte = EINSTELLUNGEN._karteBauen("Spieler",
             "Profil und Verwaltung",
             "Profil: dein Name und dein Passwort."
-            + "\n\nVerwaltung: die Liste aller Mitspieler dieses Hauses, mit "
-            + "der Möglichkeit, einen Eintrag zu entfernen. Sie ist durch ein "
-            + "eigenes Passwort geschützt.");
+            + "\n\nVerwaltung: die Liste aller UPCrew-Konten, mit der "
+            + "Möglichkeit, eines zu entfernen (gilt für alle Spiele). Sie öffnet "
+            + "sich nur für Konten mit der Rolle Admin.");
 
         /*
          * DAS „ANGEMELDET ALS …" STAND HIER DOPPELT (bis v0.107.0) — die
@@ -293,9 +315,14 @@ const EINSTELLUNGEN = {
            Verwaltungs-Passwort ab und öffnet dann den eigenen Bildschirm
            mit der Spieler-Tabelle (js\verwaltungs-bildschirm.js). Beendet
            wird die Verwaltung ebenfalls dort. */
-        leiste.appendChild(EINSTELLUNGEN._knopf(
-            "Verwaltung", "knopf-still knopf-klein",
-            () => ANMELDUNG.verwaltungOeffnen()));
+        /* Mit UPCrew-Konto nur für Admins (seit v0.138.0; ICH fragt dann
+           die Rolle, nicht mehr den Gerätespeicher). */
+        const nurAdmins = (typeof KONTO !== "undefined" && KONTO.aktiv());
+        if (!nurAdmins || ICH.verwaltungAktiv()) {
+            leiste.appendChild(EINSTELLUNGEN._knopf(
+                "Verwaltung", "knopf-still knopf-klein",
+                () => ANMELDUNG.verwaltungOeffnen()));
+        }
 
         /* Die Selbst-Löschung („Konto löschen") wohnt seit v0.6.0 in der
            Account-Karte darüber — hier bleiben Profil und Verwaltung. */
