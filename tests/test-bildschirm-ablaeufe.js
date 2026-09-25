@@ -2453,10 +2453,11 @@ pruefe("Version und Wunsch-Knopf stehen in den Einstellungen (v0.25.0)", () => {
             + zeile.textContent);
     }
 
+    /* Seit v0.143.0 heisst die Karte wie in Typoluck „Über <App>". */
     const ueberschriften = einsammeln(EINSTELLUNGEN.wurzelEl, (kind) =>
         kind.tagName === "h2", []).map((kind) => String(kind.textContent));
-    if (ueberschriften.indexOf("Über die App") === -1) {
-        throw new Error("keine Karte Über die App, nur: "
+    if (ueberschriften.indexOf("Über Blunderluck") === -1) {
+        throw new Error("keine Karte Über Blunderluck, nur: "
             + ueberschriften.join(", "));
     }
 });
@@ -5190,11 +5191,14 @@ pruefe("Die Einstellungen tragen keine Erklaer-Absaetze mehr (v0.108.0)", () => 
     const iKnoepfe = einsammeln(EINSTELLUNGEN.wurzelEl, (kind) =>
         String(kind.className || "").indexOf("info-knopf") !== -1, []);
 
-    /* Account, Spieler, Geraet (seit v0.140.0, Vibration) und Verbindung
-       tragen je ein i; „Ueber die App" braucht keins (dort erklaert der
-       Knopf sich selbst). */
-    if (iKnoepfe.length !== 4) {
-        throw new Error("erwartet vier i-Knoepfe in den Einstellungen, sind "
+    /* SEIT v0.143.0 KEIN i MEHR (UPCrew-Angleichung Runde 2, Auftrag:
+       „Stichworte statt i-Saetzen", wie Typoluck): Die Karten sagen in
+       Stichworten, was sie tun (Schalter mit Namen, Knoepfe mit Namen).
+       v0.108.0 bis v0.142 trugen Account, Spieler, Geraet und Verbindung
+       je ein i. Gewacht wird jetzt in beide Richtungen: keine langen
+       Absaetze (oben) UND kein i, hinter das sie zurueckwandern koennten. */
+    if (iKnoepfe.length !== 0) {
+        throw new Error("erwartet keinen i-Knopf in den Einstellungen, sind "
             + iKnoepfe.length);
     }
 });

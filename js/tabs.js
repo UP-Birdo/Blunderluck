@@ -11,9 +11,23 @@
  *         inLeiste:  false,                    // optional (seit v0.9.0): kein
  *                                              // Knopf — erreichbar nur über
  *                                              // TABS.wechseln (Startbildschirm)
+ *         zeichen:   "start",                  // seit v0.142.0: Symbol aus
+ *                                              // ZUSTAND.ZEICHEN über dem Wort
+ *         leisteText: "Aufgaben",              // optional: Wort in der Leiste,
+ *                                              // wenn es vom Titel abweicht
+ *         platzhalter: true,                   // optional: nur ein Platz in der
+ *                                              // Leiste, ausgegraut, ohne Inhalt
  *         aufbauen(behaelter),                 // legt das Gerüst einmalig an
  *         beimOeffnen()                        // optional: bei jedem Wechsel
  *     }
+ *
+ * DIE LEISTE WIE IN TYPOLUCK (seit v0.142.0, UPCrew-Angleichung Runde 2,
+ * Vorlage `Apps\Typoluck\css\stil.css` `.leiste`/`.knopf-leiste`): fest am
+ * unteren Rand, auf JEDER Breite und auf JEDEM Bildschirm — auch in den
+ * bisherigen „Fenstern" (Partie, Einstellungen, Profil); zurück geht es
+ * dort über den Pfeil in der Kopfzeile. Je Eintrag das Symbol über einem
+ * Wort, der aktive Eintrag in der Hauptfarbe mit einem kurzen Strich oben.
+ * Die Reihenfolge der Registrierung ist die Reihenfolge in der Leiste.
  *
  * Warum es `beimOeffnen` braucht: Das Gerüst eines Tabs entsteht erst, wenn er
  * zum ersten Mal geöffnet wird. Seine Daten können lange vorher geladen worden
@@ -54,20 +68,34 @@ const TABS = {
             const knopf = document.createElement("button");
             knopf.type = "button";
             knopf.className = "tab-knopf";
-            knopf.textContent = tab.titel;
-            knopf.dataset.tabId = tab.id;
             knopf.setAttribute("role", "tab");
-            knopf.addEventListener("click", () => TABS.wechseln(tab.id));
+            if (tab.zeichen && typeof ZUSTAND !== "undefined") {
+                knopf.appendChild(ZUSTAND.zeichen(tab.zeichen, "zeichen tab-zeichen"));
+            }
+            const wort = document.createElement("span");
+            wort.className = "tab-wort";
+            wort.textContent = tab.leisteText || tab.titel;
+            knopf.appendChild(wort);
+            if (tab.platzhalter) {
+                /* Sichtbar, aber erkennbar noch ohne Funktion (wie Typoluck). */
+                knopf.disabled = true;
+                knopf.classList.add("tab-knopf-platzhalter");
+            } else {
+                knopf.dataset.tabId = tab.id;
+                knopf.addEventListener("click", () => TABS.wechseln(tab.id));
+            }
             TABS.leisteEl.appendChild(knopf);
         }
 
         /*
          * DIE MARKIERUNG DES AKTIVEN TABS IST EIN EIGENES ELEMENT (seit
-         * v0.107, seit v0.111 eine Pille hinter dem Knopf statt eines
-         * Strichs darunter): Sie GLEITET beim Wechsel zum neuen Tab, statt
-         * hart umzuspringen. Ein Rahmen am Knopf selbst kann das nicht — er
-         * hängt am Element und kennt keine Position. Bei Grössenänderung des
-         * Fensters wird nachgemessen, ohne Gleiten.
+         * v0.107): Sie GLEITET beim Wechsel zum neuen Tab, statt hart
+         * umzuspringen. Ein Rahmen am Knopf selbst kann das nicht — er hängt
+         * am Element und kennt keine Position. Bei Grössenänderung des
+         * Fensters wird nachgemessen, ohne Gleiten. v0.111 bis v0.141 war sie
+         * eine Pille hinter dem Knopf; seit v0.142.0 ist sie so breit wie der
+         * Knopf, aber nur 3 px hoch am oberen Rand, und zeichnet darin mittig
+         * den kurzen Strich (32 × 3 px, css\stil.css `.tab-marker::before`).
          */
         TABS.markerEl = document.createElement("span");
         TABS.markerEl.className = "tab-marker";
@@ -152,11 +180,11 @@ const TABS = {
             return;
         }
 
+        /* Nur Lage und Breite — Höhe (3 px) und oberer Rand stehen in der
+           Stildatei (seit v0.142.0 ein Strich statt der Pille). */
         TABS.markerEl.classList.toggle("tab-marker-weich", weich === true);
         TABS.markerEl.style.left = aktiv.offsetLeft + "px";
-        TABS.markerEl.style.top = (aktiv.offsetTop + 6) + "px";
         TABS.markerEl.style.width = aktiv.offsetWidth + "px";
-        TABS.markerEl.style.height = (aktiv.offsetHeight - 12) + "px";
     },
 
     /* Merkt sich, ob gerade eine Runde als eigenes Fenster läuft. */
@@ -165,14 +193,15 @@ const TABS = {
 
     /*
      * EINE OFFENE RUNDE IST EIN EIGENES FENSTER (seit v0.113, Nutzer-Ansage
-     * 22.08.): Solange eine Partie oder ein Raum offen ist, verschwindet die
-     * Tab-Leiste — man ist IM Spiel und verlässt es über dessen eigenen
-     * Zurück-Knopf, nicht über die Tabs. Die Spiele melden ihren Zustand
-     * bei jedem Zeichnen; gezählt wird nur der sichtbare Tab, denn die
-     * regelmässige Abfrage zeichnet auch verdeckte Tabs.
+     * 22.08.): Solange eine Partie oder ein Raum offen ist, hat der
+     * Bildschirm seinen eigenen Zurück-Knopf. Die Spiele melden ihren
+     * Zustand bei jedem Zeichnen; gezählt wird nur der sichtbare Tab, denn
+     * die regelmässige Abfrage zeichnet auch verdeckte Tabs.
      *
-     * Die Klasse sitzt am body, das Ausblenden macht die Stildatei
-     * (`body.runde-offen .tab-leiste`).
+     * Die Klasse sitzt am body. Bis v0.141 blendete die Stildatei damit die
+     * Tab-Leiste aus; seit v0.142.0 bleibt die Leiste IMMER stehen
+     * (UPCrew-Angleichung, wie Typoluck) — die Klasse bleibt für alles
+     * andere, was ein Fenster anders macht (Kurzmeldung, Ränder).
      */
     /*
      * DER DRITTE WERT `fest` (seit v0.52.0): Dieser Bildschirm passt auf EINE
@@ -228,8 +257,14 @@ const TABS = {
 
         TABS.aktiveId = id;
 
+        /* Ein Bildschirm ohne eigenen Leisten-Knopf (Partie, Einstellungen,
+           Verwaltung) markiert den Eintrag, zu dem er gehört — ohne Angabe
+           den Start, von dem aus man ihn betritt (seit v0.142.0; vorher war
+           die Leiste dort ausgeblendet). */
+        const leisteId = tab.inLeiste === false ? (tab.leisteBei || "start") : id;
+
         for (const knopf of TABS.leisteEl.querySelectorAll(".tab-knopf")) {
-            const istAktiv = knopf.dataset.tabId === id;
+            const istAktiv = knopf.dataset.tabId === leisteId;
             knopf.classList.toggle("tab-knopf-aktiv", istAktiv);
             knopf.setAttribute("aria-selected", istAktiv ? "true" : "false");
         }

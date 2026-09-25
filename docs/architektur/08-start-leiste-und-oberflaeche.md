@@ -6,19 +6,31 @@ hierher gezogen worden: Sie beschreibt den gebauten Stand eines Bereichs, nicht
 eine Regel, die jede Arbeit betrifft. Wer an Start, Leiste, Fussleiste oder
 Zugang baut, liest sie; wer am Schachmodell baut, braucht sie nicht.
 
-## Die Leiste — Fähigkeiten / Start / Rangliste (seit v0.9.0)
+## Die Leiste — Aufgaben / Fähigkeiten / Start / Rangliste / Bald (seit v0.142.0)
 
-Drei Tabs hängen in der unteren Leiste: `js\faehigkeiten.js` (die Bibliothek
-als Seite), `js\start.js` (der Startbildschirm) und `js\rangliste.js`.
+**Seit v0.142.0 wie in Typoluck** (UPCrew-Angleichung Runde 2,
+`Design\3D-Schrift\docs\AUFTRAEGE-RUNDE-2.md`): fünf Plätze in der unteren
+Leiste, Start in der Mitte — `js\herausforderungen.js` („Aufgaben", vorerst
+ein Platzhalter-Bildschirm „Herausforderungen"), `js\faehigkeiten.js` (die
+Bibliothek als Seite), `js\start.js`, `js\rangliste.js` und der ausgegraute
+Platz `BALD`. Je Eintrag Symbol (`tab.zeichen`, Pfad in `ZUSTAND.ZEICHEN`)
+über dem Wort, aktiv in `--haupt` mit Strich oben. Die Leiste steht **auf
+jeder Breite unten und auf jedem Bildschirm**, auch in den Fenstern
+(Partie, Einstellungen, Profil); zurück geht es dort über den Pfeil in der
+Kopfzeile (`ZUSTAND.alsZurueck`). Bis v0.141: drei Tabs (Fähigkeiten /
+Start / Rangliste, seit v0.9.0), am Rechner oben, in Fenstern ausgeblendet.
 
-Team Schach und Einstellungen sind Tabs **ohne** Leisten-Knopf
+Team Schach, Einstellungen und Verwaltung sind Tabs **ohne** Leisten-Knopf
 (`inLeiste: false`) — betreten werden sie über den Spielen-Knopf bzw. das
-Zahnrad.
+Menü; in der Leiste markieren sie „Start" (`tab.leisteBei`, ohne Angabe
+„start").
 
 Zwei Regeln hängen daran:
 
-- **Während der eigenen laufenden Partie zeigt die App nur das Brett** (F10) —
-  keine Leiste, kein Ausgang.
+- **Während der eigenen laufenden Partie gibt es keinen Ausgang über den
+  Bildschirm selbst** (F10). Die Tab-Leiste steht seit v0.142.0 auch dort
+  (Auftrag Runde 2: „immer sichtbar"); ob ein Tipp darauf eine laufende
+  Partie verlassen darf, ist noch nicht entschieden.
 - **Je Person läuft höchstens eine Partie** (F11,
   `TEAM_SCHACH._zweitePartieVerhindern`).
 

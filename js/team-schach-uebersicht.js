@@ -99,8 +99,8 @@ Object.assign(TEAM_SCHACH, {
      */
     _auswahlKopfBauen() {
         const kopf = TEAM_SCHACH._element("div", "partie-kopf partie-kopf-klebt runde-kopf");
-        kopf.appendChild(TEAM_SCHACH._knopf("Zurück", "knopf-still knopf-klein",
-            () => TEAM_SCHACH.auswahlSchliessen()));
+        kopf.appendChild(ZUSTAND.alsZurueck(TEAM_SCHACH._knopf("Zurück", "knopf-still knopf-klein",
+            () => TEAM_SCHACH.auswahlSchliessen())));
         kopf.appendChild(TEAM_SCHACH._element("h2", "partie-titel", "Neue Runde"));
         kopf.appendChild(TEAM_SCHACH._regelnDauerBauen());
         return kopf;
@@ -1497,8 +1497,8 @@ Object.assign(TEAM_SCHACH, {
         /* Seit v0.9.0 hat das Team Schach keinen Leisten-Knopf mehr — man
            kommt über den Spielen-Knopf des Starts hierher und hier wieder
            zurück. */
-        kopf.appendChild(TEAM_SCHACH._knopf("Zurück", "knopf-still knopf-klein",
-            () => TABS.wechseln("start")));
+        kopf.appendChild(ZUSTAND.alsZurueck(TEAM_SCHACH._knopf("Zurück", "knopf-still knopf-klein",
+            () => TABS.wechseln("start"))));
 
         kopf.appendChild(TEAM_SCHACH._element("span", "phasen-text", "Spielen"));
 

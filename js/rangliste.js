@@ -19,6 +19,7 @@ const RANGLISTE = {
 
     id: "rangliste",
     titel: "Rangliste",
+    zeichen: "pokal",
 
     /*
      * Punkte im Schach, je beendeter Partie.
@@ -744,8 +745,8 @@ const RANGLISTE = {
         const istIch = !!ich && ich.id === person.id;
 
         const kopf = RANGLISTE._element("div", "partie-kopf partie-kopf-klebt profil-kopf");
-        kopf.appendChild(RANGLISTE._knopf("Zurück", "knopf-still knopf-klein",
-            () => RANGLISTE.profilSchliessen()));
+        kopf.appendChild(ZUSTAND.alsZurueck(RANGLISTE._knopf("Zurück", "knopf-still knopf-klein",
+            () => RANGLISTE.profilSchliessen())));
         kopf.appendChild(RANGLISTE._element("h2", "partie-titel",
             istIch ? "Dein Profil" : "Profil"));
         if (istIch) {

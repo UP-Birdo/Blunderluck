@@ -17,6 +17,7 @@ const ICH = {
     SCHLUESSEL_ANPASSUNG: "blunderluck.anpassung",
     SCHLUESSEL_ABSCHLUSS: "blunderluck.abschluss-gesehen",
     SCHLUESSEL_VIBRATION: "blunderluck.vibration",
+    SCHLUESSEL_DARSTELLUNG: "blunderluck.darstellung",
 
     /* ---------------------------------------------------------------- *
      * Wer bin ich
@@ -93,6 +94,24 @@ const ICH = {
             ICH._loeschen(ICH.SCHLUESSEL_VIBRATION);
         } else {
             ICH._schreiben(ICH.SCHLUESSEL_VIBRATION, false);
+        }
+    },
+
+    /*
+     * Die Darstellung (seit v0.141.0, wie Typoluck): "geraet", "hell" oder
+     * "dunkel". Ab Werk wie das Gerät — gespeichert wird deshalb nur eine
+     * feste Wahl. Was sie bewirkt, steht in js\darstellung.js.
+     */
+    darstellung() {
+        const wert = ICH._lesen(ICH.SCHLUESSEL_DARSTELLUNG);
+        return (wert === "hell" || wert === "dunkel") ? wert : "geraet";
+    },
+
+    darstellungSetzen(wert) {
+        if (wert === "hell" || wert === "dunkel") {
+            ICH._schreiben(ICH.SCHLUESSEL_DARSTELLUNG, wert);
+        } else {
+            ICH._loeschen(ICH.SCHLUESSEL_DARSTELLUNG);
         }
     },
 

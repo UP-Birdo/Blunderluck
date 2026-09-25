@@ -99,8 +99,11 @@
     --wirkung-dauer: 1600ms;
 }
 
+/* Zweimal, wie in stil.css (seit v0.141.0): Gerät dunkel ohne „Hell"-Wahl,
+   und „Dunkel" gewählt. --feld-hell/-dunkel und ihre Kanten setzt danach
+   die Farbwelt (js\darstellung.js); die Werte hier sind der Rückfall. */
 @media (prefers-color-scheme: dark) {
-    :root {
+    :root:not([data-darstellung="hell"]) {
         --feld-hell: #cfdcea;
         --feld-dunkel: #35608f;
         --feld-kante-hell: #97a9bc;
@@ -133,6 +136,40 @@
         --wirkung-schlecht: #e8544a;
         --wirkung-rand: #f4f7fb;
     }
+}
+
+:root[data-darstellung="dunkel"] {
+    --feld-hell: #cfdcea;
+    --feld-dunkel: #35608f;
+    --feld-kante-hell: #97a9bc;
+    --feld-kante-dunkel: #223f5f;
+    --feld-gewaehlt: #d9b64a;
+    --schach-feld: #c98136;
+    --schach-feld-kante: #935b1c;
+    --matt-feld: #a03328;
+    --matt-feld-kante: #6f1f17;
+    --figur-weiss: #ffffff;
+    --figur-schwarz: #14161a;
+    --figur-umriss-hell: #e9ebef;
+    --figur-umriss-dunkel: #14161a;
+    --bonus-feld: #4cb87a;
+
+    --ziel-kern: #0b1420;
+    --ziel-rand: #f4f7fb;
+    --schlag-kern: #8f1c16;
+    --schlag-rand: #ffd9d6;
+
+    --spur: #6f8f5c;
+    --spur-ende: #8fb877;
+    --spur-kante: #556e46;
+    --spur-ende-kante: #6f9459;
+    --pech: #ffe14d;
+    --pech-spur: #8a7a2a;
+    --pech-spur-kante: #6a5e20;
+
+    --wirkung-gut: #4a8fd6;
+    --wirkung-schlecht: #e8544a;
+    --wirkung-rand: #f4f7fb;
 }
 
 /* ------------------------------------------------------------------ *
@@ -350,10 +387,15 @@
  * hellere Kante ein Fremdkörper.
  */
 @media (prefers-color-scheme: dark) {
-    .team-knopf-schwarz,
-    .seitenwahl-zufall {
+    :root:not([data-darstellung="hell"]) .team-knopf-schwarz,
+    :root:not([data-darstellung="hell"]) .seitenwahl-zufall {
         border-color: var(--schrift-leise);
     }
+}
+
+:root[data-darstellung="dunkel"] .team-knopf-schwarz,
+:root[data-darstellung="dunkel"] .seitenwahl-zufall {
+    border-color: var(--schrift-leise);
 }
 
 /*
@@ -806,14 +848,21 @@
  * scrollen. Jetzt klebt der Fuss unten am Bildschirm, auf eigenem Grund,
  * und die Schildchen stehen in EINER Zeile, die man seitlich wischt.
  */
+/* Seit v0.142.0 klebt er ÜBER der Tab-Leiste (die bleibt jetzt stehen und
+   hält den iPhone-Balken selbst frei). Rollt nur der Spielbereich
+   (`body.partie-fest`), endet der schon über der Leiste — dann unten 0. */
 .vorraum-fuss {
     position: sticky;
-    bottom: 0;
+    bottom: calc(var(--leiste-hoehe) + env(safe-area-inset-bottom, 0px));
     z-index: 6;
     margin-top: 10px;
-    padding: 10px 0 calc(10px + env(safe-area-inset-bottom, 0px));
+    padding: 10px 0;
     background: var(--flaeche);
     box-shadow: 0 -1px 0 var(--rahmen);
+}
+
+body.partie-fest .vorraum-fuss {
+    bottom: 0;
 }
 
 @media (max-width: 600px) {
@@ -2061,16 +2110,21 @@
     align-self: flex-start;
 }
 
-/* „Spielen" klebt am unteren Rand — die Tab-Leiste ist in der Auswahl
-   ohnehin weg (seit v0.39.0), der Platz gehört ihm. */
+/* „Spielen" klebt am unteren Rand — v0.39.0 bis v0.141 war die Tab-Leiste
+   in der Auswahl weg; seit v0.142.0 bleibt sie, und der Fuss klebt über ihr
+   (wie `.vorraum-fuss`). */
 .runde-fuss {
     position: sticky;
-    bottom: 0;
+    bottom: calc(var(--leiste-hoehe) + env(safe-area-inset-bottom, 0px));
     z-index: var(--ebene-schwebend);
     margin: 0 calc(-1 * var(--inhalt-rand));
-    padding: 10px var(--inhalt-rand) calc(10px + env(safe-area-inset-bottom));
+    padding: 10px var(--inhalt-rand);
     background: var(--flaeche);
     border-top: 1px solid var(--rahmen);
+}
+
+body.partie-fest .runde-fuss {
+    bottom: 0;
 }
 
 .runde-spielen {

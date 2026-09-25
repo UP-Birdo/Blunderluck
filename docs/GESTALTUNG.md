@@ -32,10 +32,25 @@ Reihenfolge ist die Kaskade — nicht umstellen**):
 
 ## Die Farben
 
-Alle in `:root`; **jede ist zweimal da** — hell im ersten Block, dunkel im
-`@media (prefers-color-scheme: dark)`. Wer eine Farbe ergänzt, ergänzt sie an
-beiden Stellen, sonst fehlt sie im dunklen Modus. `color-scheme: light dark`
-sorgt dafür, dass auch Bildlaufleisten und Auswahlfelder mitziehen.
+Alle in `:root`; **jede dunkle ist seit v0.141.0 dreimal da** — hell im
+ersten Block, dunkel in `@media (prefers-color-scheme: dark)` unter
+`:root:not([data-darstellung="hell"])` (Gerät dunkel, nicht „Hell" gewählt)
+und noch einmal unter `:root[data-darstellung="dunkel"]` („Dunkel" gewählt).
+Das Attribut setzt `js\darstellung.js` aus der Einstellung Auto / Hell /
+Dunkel. Wer eine Farbe ergänzt, ergänzt sie an allen Stellen, sonst fehlt sie
+in einem der Fälle. `color-scheme: light dark` sorgt dafür, dass auch
+Bildlaufleisten und Auswahlfelder mitziehen.
+
+**Die Farbwelt (seit v0.141.0).** Die Oberflächen-Farben (`--flaeche` bis
+`--still-kante`, dazu das Brett `--feld-hell/-dunkel` und seine Kanten)
+überschreibt zur Laufzeit die Farbwelt an `<html>`:
+`js\upcrew-farbwelten.js` ist der gemeinsame Baustein aller UPCrew-Spiele
+aus `Design\3D-Schrift\final` (nur kopiert, nie hier abwandeln), vorerst
+immer die Welt „Werkstatt" (Orange). Die Werte in den Stildateien sind der
+Rückfall. Bedeutungsfarben (`--gefahr`, `--gut`, `--warnung*`), die Farben
+der Brettmarken und das violette Anmelde-Vollbild berührt die Farbwelt nicht.
+Das 3D-Brett liest seine Feldfarben für das Thema „Blunderluck" aus denselben
+Platzhaltern (`themaFarben()` in `js\brett-3d.js`).
 
 | Variable | Wofür sie da ist |
 |---|---|

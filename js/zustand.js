@@ -55,7 +55,24 @@ const ZUSTAND = {
            Handy mit Wellen, und dasselbe Handy ohne Wellen. */
         vibration: "M8.5 4 H15.5 V20 H8.5 Z M11 17 H13 M4.5 8.5 V15.5 M19.5 8.5 V15.5 "
             + "M2 10.5 V13.5 M22 10.5 V13.5",
-        "vibration-aus": "M8.5 4 H15.5 V20 H8.5 Z M11 17 H13 M4 4 L20 20"
+        "vibration-aus": "M8.5 4 H15.5 V20 H8.5 Z M11 17 H13 M4 4 L20 20",
+        /* Die Darstellung in den Einstellungen (seit v0.141.0): Sonne = hell,
+           Mond = dunkel, halb gefüllter Kreis = wie das Gerät. */
+        sonne: "M12 8 A4 4 0 1 0 12 16 A4 4 0 1 0 12 8 Z M12 2.5 V4.5 M12 19.5 V21.5 "
+            + "M2.5 12 H4.5 M19.5 12 H21.5 M5.3 5.3 L6.7 6.7 M17.3 17.3 L18.7 18.7 "
+            + "M5.3 18.7 L6.7 17.3 M17.3 6.7 L18.7 5.3",
+        mond: "M19.5 14.5 A8 8 0 1 1 9.5 4.5 A6.5 6.5 0 0 0 19.5 14.5 Z",
+        auto: "M12 4 A8 8 0 1 0 12 20 A8 8 0 1 0 12 4 Z M12 4 V20 "
+            + "M12 7 H15 M12 10 H17.5 M12 13 H17.5 M12 16 H15",
+        /* Die Tab-Leiste (seit v0.142.0, Pfade wie Typoluck
+           BAUSTEINE.ZEICHEN; „aufgaben" ist die gemeinsame Absprache der
+           Runde 2). Rangliste = der Pokal oben. */
+        aufgaben: "M4 20 L10 14 L14 17 L20 6 M15 6 H20 V11",
+        blitz: "M13.5 3 L5.5 13.5 H11.5 L10.5 21 L18.5 10.5 H12.5 Z",
+        start: "M3 11 L12 4 L21 11 M5.5 9.5 V20 H10 V14.5 H14 V20 H18.5 V9.5",
+        uhr: "M12 3.5 A8.5 8.5 0 1 0 12 20.5 A8.5 8.5 0 1 0 12 3.5 Z M12 7.5 V12 L15 14",
+        /* Der Pfeil zurück in der Kopfzeile (seit v0.142.0, wie Typoluck). */
+        zurueck: "M15 5 L8 12 L15 19"
     },
 
     /*
@@ -138,6 +155,22 @@ const ZUSTAND = {
         pfad.setAttribute("stroke-linejoin", "round");
         svg.appendChild(pfad);
         return svg;
+    },
+
+    /*
+     * DER PFEIL ZURÜCK IN DER KOPFZEILE (seit v0.142.0, wie Typoluck
+     * `.kopfzeile`): Aus einem fertigen „Zurück"-Knopf wird ein runder
+     * Pfeil-Knopf. Das Wort bleibt UNVERÄNDERT als Text im Knopf und wird
+     * nur von der Stildatei ausgeblendet (`font-size: 0`) — so lesen es
+     * Vorleseprogramme weiter, und die Tests, die Knöpfe an ihrem Text
+     * finden, finden ihn auch. Wer eine Kopfzeile baut, schickt seinen
+     * Zurück-Knopf hier durch; Aussehen: css\stil.css `.knopf-zurueck`.
+     */
+    alsZurueck(knopf) {
+        knopf.classList.add("knopf-zurueck");
+        knopf.setAttribute("aria-label", knopf.textContent || "Zurück");
+        knopf.appendChild(ZUSTAND.zeichen("zurueck", "zeichen"));
+        return knopf;
     },
 
     _feldBauen(klasse, zeichen, text) {

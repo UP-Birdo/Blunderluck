@@ -274,14 +274,16 @@ body.dialog-offen {
 }
 
 /*
- * DIE KURZMELDUNG (seit v0.114): kleine „hat geklappt"-Meldung am unteren
- * Rand, geht von selbst wieder (`DIALOG.kurzmeldung`). Dunkel auf hell und
- * umgekehrt — sie soll sich abheben, aber nichts verdecken.
+ * DIE KURZMELDUNG (seit v0.114): kleine „hat geklappt"-Meldung, geht von
+ * selbst wieder (`DIALOG.kurzmeldung`, `role="status"`). Dunkel auf hell und
+ * umgekehrt — sie soll sich abheben, aber nichts verdecken. Seit v0.143.0
+ * OBEN wie in Typoluck (UPCrew-Angleichung); bis v0.142 unten über der
+ * Tab-Leiste.
  */
 .kurzmeldung {
     position: fixed;
     left: 50%;
-    bottom: 24px;
+    top: calc(12px + env(safe-area-inset-top, 0px));
     transform: translateX(-50%);
     background: var(--schrift);
     color: var(--karte);
@@ -455,8 +457,11 @@ body.dialog-offen {
     font-family: "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
 }
 
+/* Zweimal, wie in stil.css (seit v0.141.0): Gerät dunkel ohne „Hell"-Wahl,
+   und „Dunkel" gewählt. Das violette Vollbild gehört dem Studio und bleibt
+   von der Farbwelt unberührt (seine Werte stehen am Element selbst). */
 @media (prefers-color-scheme: dark) {
-    .anmeldung-vollbild {
+    :root:not([data-darstellung="hell"]) .anmeldung-vollbild {
         --flaeche: #15131b;
         --karte: #201d29;
         --karte-leise: #2a2635;
@@ -469,6 +474,20 @@ body.dialog-offen {
         --gefahr: #e05a52;
         --still-kante: #4a4459;
     }
+}
+
+:root[data-darstellung="dunkel"] .anmeldung-vollbild {
+    --flaeche: #15131b;
+    --karte: #201d29;
+    --karte-leise: #2a2635;
+    --rahmen: #3a3547;
+    --schrift: #ece9f4;
+    --schrift-leise: #aaa4ba;
+    --haupt: #9a82f2;
+    --haupt-schrift: #120e1c;
+    --haupt-kante: #6a52c4;
+    --gefahr: #e05a52;
+    --still-kante: #4a4459;
 }
 
 .anmeldung-vollbild .anmeldung-kasten {
@@ -1302,34 +1321,10 @@ body.dialog-offen {
 @media (max-width: 600px) {
 
     /*
-     * DIE TAB-LEISTE IST AM HANDY EIN DOCK (seit v0.113, Nutzer-Ansage
-     * 22.08.): Sie klebt am unteren Rand — dort, wo der Daumen ist —, und
-     * die Tabs teilen sich die Breite zu gleichen Teilen. Die gleitende
-     * Pille funktioniert unverändert, sie misst ja die echte Lage.
-     * `env(safe-area-inset-bottom)` hält den Streifen des iPhone-Balkens
-     * frei; dafür steht `viewport-fit=cover` in der index.html.
+     * DIE TAB-LEISTE (v0.113 bis v0.141 nur am Handy ein Dock) steht seit
+     * v0.142.0 auf JEDER Breite unten — ihre Regeln stehen deshalb nur noch
+     * in css\stil.css, Abschnitt „Tabs".
      */
-    .tab-leiste {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        z-index: var(--ebene-schwebend);
-        border-bottom: none;
-        border-top: 1px solid var(--rahmen);
-        padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px)) 8px;
-        gap: 4px;
-        flex-wrap: nowrap;
-    }
-
-    .tab-knopf {
-        flex: 1 1 0;
-        min-width: 0;
-        padding: 10px 4px;
-        font-size: 0.85rem;
-        line-height: 1.2;
-        text-align: center;
-    }
 
     /*
      * DER RAND IST AM HANDY SCHMALER — und steht seit v0.72.0 als Variable
@@ -1341,29 +1336,18 @@ body.dialog-offen {
         --inhalt-rand: 12px;
     }
 
+    /* Der Rand um den Inhalt; der Platz unter ihm für die Leiste steht
+       seit v0.142.0 in css\stil.css (`.tab-inhalt`, auf jeder Breite). Die
+       Sonderregeln „im Fenster ohne Leiste" (Kurzmeldung tiefer, weniger
+       Rand unten) sind mit v0.142.0 entfallen — die Leiste bleibt. */
     .tab-inhalt {
         padding: var(--inhalt-rand);
-
-        /* Der Inhalt läuft nicht unter dem Dock hindurch. */
-        padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
-    }
-
-    /* Die Kurzmeldung schwebt über dem Dock, nicht dahinter. */
-    .kurzmeldung {
-        bottom: calc(78px + env(safe-area-inset-bottom, 0px));
-    }
-
-    body.runde-offen .kurzmeldung {
-        bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+        padding-bottom: calc(var(--leiste-hoehe) + 12px + env(safe-area-inset-bottom, 0px));
     }
 
     /* Die zwei Regeln zum Kopfbalken sind mit ihm entfallen (v0.25.0):
        Er wurde im Runden-Fenster ausgeblendet und bekam auf schmalen
        Schirmen weniger Innenabstand. */
-
-    body.runde-offen .tab-inhalt {
-        padding-bottom: 12px;
-    }
 
     .wuerfel-feld-halter {
         flex-basis: 56px;
@@ -1559,10 +1543,9 @@ body.dialog-offen {
         animation: none;
     }
 
-    /* Die Pille hinter dem aktiven Tab gleitet zum neuen Tab (`tabs.js`). */
+    /* Der Strich über dem aktiven Tab gleitet zum neuen Tab (`tabs.js`). */
     .tab-marker-weich {
-        transition: left 0.25s ease, top 0.25s ease, width 0.25s ease,
-            height 0.25s ease;
+        transition: left 0.25s ease, width 0.25s ease;
     }
 
     /*
@@ -1616,9 +1599,10 @@ body.dialog-offen {
     }
 
     @keyframes kurzmeldung-auf {
+        /* Seit v0.143.0 oben: kommt von oben herein, geht nach oben. */
         from {
             opacity: 0;
-            transform: translateX(-50%) translateY(10px);
+            transform: translateX(-50%) translateY(-10px);
         }
     }
 
@@ -1629,7 +1613,7 @@ body.dialog-offen {
     @keyframes kurzmeldung-zu {
         to {
             opacity: 0;
-            transform: translateX(-50%) translateY(6px);
+            transform: translateX(-50%) translateY(-6px);
         }
     }
 

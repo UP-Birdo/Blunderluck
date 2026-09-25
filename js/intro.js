@@ -27,9 +27,12 @@ const INTRO = {
     APP_NR: "01",
     APP_NAME: "Blunderluck",
 
-    /* Hell oder dunkel — Blunderluck hat keinen eigenen Schalter und folgt
-       nur dem Gerät (wie css\stil.css und das 3D-Brett). */
+    /* Hell oder dunkel — wie die App gerade aussieht: seit v0.141.0 die
+       Einstellung „Darstellung" (js\darstellung.js), sonst das Gerät. */
     modus() {
+        if (typeof DARSTELLUNG !== "undefined") {
+            return DARSTELLUNG.modus();
+        }
         const geraetDunkel = !!(window.matchMedia
             && window.matchMedia("(prefers-color-scheme: dark)").matches);
         return geraetDunkel ? "dunkel" : "hell";

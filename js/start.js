@@ -36,6 +36,7 @@ const START = {
 
     id: "start",
     titel: "Start",
+    zeichen: "start",
 
     wurzelEl: null,
 
@@ -557,7 +558,7 @@ const START = {
         zurueck.className = "knopf knopf-still knopf-klein";
         zurueck.textContent = "Zurück";
         zurueck.addEventListener("click", () => START.freundeSchliessen());
-        kopfzeile.appendChild(zurueck);
+        kopfzeile.appendChild(ZUSTAND.alsZurueck(zurueck));
 
         const titel = document.createElement("h2");
         titel.className = "partie-titel";
@@ -594,7 +595,7 @@ const START = {
         zurueck.className = "knopf knopf-still knopf-klein";
         zurueck.textContent = "Zurück";
         zurueck.addEventListener("click", () => START.verlaufSchliessen());
-        kopfzeile.appendChild(zurueck);
+        kopfzeile.appendChild(ZUSTAND.alsZurueck(zurueck));
 
         const titel = document.createElement("h2");
         titel.className = "partie-titel";

@@ -1025,8 +1025,8 @@ const TEAM_SCHACH = {
         /* 1. Kopf: Zurück (mit Rückfrage, wer eine Seite hat) und der Titel
            der Spielart — der Item-Hinweis des Kopfes bleibt, wo er war. */
         const kopf = TEAM_SCHACH._partieKopfBauen(partie,
-            TEAM_SCHACH._knopf("Zurück", "knopf-still knopf-klein",
-                () => TEAM_SCHACH._seitenwahlVerlassen(partie, person)));
+            ZUSTAND.alsZurueck(TEAM_SCHACH._knopf("Zurück", "knopf-still knopf-klein",
+                () => TEAM_SCHACH._seitenwahlVerlassen(partie, person))));
         kopf.className += " partie-kopf-klebt";
         kopf.appendChild(TEAM_SCHACH._element("span", "vorraum-titel", partie.titel));
         wurzel.appendChild(kopf);
@@ -1892,8 +1892,8 @@ const TEAM_SCHACH = {
 
     _spielEinstellungenZeichnen(wurzel, partie, person) {
         const kopf = TEAM_SCHACH._element("div", "partie-kopf partie-kopf-klebt");
-        kopf.appendChild(TEAM_SCHACH._knopf("Zurück", "knopf-still knopf-klein",
-            () => TEAM_SCHACH.spielEinstellungenSchliessen()));
+        kopf.appendChild(ZUSTAND.alsZurueck(TEAM_SCHACH._knopf("Zurück", "knopf-still knopf-klein",
+            () => TEAM_SCHACH.spielEinstellungenSchliessen())));
         kopf.appendChild(TEAM_SCHACH._element("h2", "partie-titel",
             "Partie-Einstellungen"));
         wurzel.appendChild(kopf);

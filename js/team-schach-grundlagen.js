@@ -50,8 +50,8 @@ Object.assign(TEAM_SCHACH, {
            dieselbe Lösung wie in der Bibliothek (seit v0.110, dort steht das
            Warum). */
         const kopf = TEAM_SCHACH._element("div", "partie-kopf partie-kopf-klebt");
-        kopf.appendChild(TEAM_SCHACH._knopf("Zurück", "knopf-still knopf-klein",
-            () => TEAM_SCHACH.grundlagenSchliessen()));
+        kopf.appendChild(ZUSTAND.alsZurueck(TEAM_SCHACH._knopf("Zurück", "knopf-still knopf-klein",
+            () => TEAM_SCHACH.grundlagenSchliessen())));
         kopf.appendChild(TEAM_SCHACH._element("h2", "partie-titel", "Schach lernen"));
 
         /*

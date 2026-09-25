@@ -57,8 +57,8 @@ const VERWALTUNGS_BILDSCHIRM = {
 
         const kopfzeile = document.createElement("div");
         kopfzeile.className = "partie-kopf";
-        kopfzeile.appendChild(VERWALTUNGS_BILDSCHIRM._knopf("Zurück",
-            "knopf-still knopf-klein", () => TABS.wechseln("einstellungen")));
+        kopfzeile.appendChild(ZUSTAND.alsZurueck(VERWALTUNGS_BILDSCHIRM._knopf("Zurück",
+            "knopf-still knopf-klein", () => TABS.wechseln("einstellungen"))));
 
         const kopfTitel = document.createElement("h2");
         kopfTitel.className = "partie-titel";

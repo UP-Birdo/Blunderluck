@@ -64,6 +64,38 @@ const THEMEN = {
     nacht:       { name: "Nacht",       hell: "#56607a", dunkel: "#262c3b", rahmen: "#0f1219", sockel: "#07090d" }
 };
 
+/*
+ * DAS STANDARD-THEMA FOLGT DER FARBWELT (seit v0.141.0, UPCrew-Angleichung
+ * Runde 2): „Blunderluck" nimmt seine beiden Feldfarben aus den Platzhaltern
+ * --feld-hell/--feld-dunkel, die js\darstellung.js aus der Farbwelt setzt
+ * (Werkstatt = Beige/Braun) — so passt das 3D-Brett zum 2D-Brett und zur
+ * Oberfläche, hell wie dunkel. Die festen Werte oben sind der Rückfall. Die
+ * übrigen Themen (Holz, Turnier, Marmor, Nacht) bleiben, wie sie sind.
+ * Jede Stelle, die Themenfarben braucht, fragt HIER, nie THEMEN direkt.
+ */
+function themaFarben() {
+    const thema = THEMEN[Z.einst.thema] || THEMEN[VORGABE.thema];
+    if (Z.einst.thema !== "blunderluck" || typeof getComputedStyle !== "function") {
+        return thema;
+    }
+    const stil = getComputedStyle(document.documentElement);
+    const lies = (name, ersatz) => {
+        const wert = stil.getPropertyValue(name).trim();
+        return /^#[0-9a-f]{6}$/i.test(wert) ? wert : ersatz;
+    };
+    return Object.assign({}, thema, {
+        hell: lies("--feld-hell", thema.hell),
+        dunkel: lies("--feld-dunkel", thema.dunkel)
+    });
+}
+
+/* Gilt gerade dunkel? Die Einstellung „Darstellung" (js\darstellung.js),
+   sonst das Gerät. */
+function istDunkel() {
+    if (typeof DARSTELLUNG !== "undefined") return DARSTELLUNG.modus() === "dunkel";
+    return !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+}
+
 const FIGUR_STILE = {
     /* Die Vorgabe trägt das Material der alten gerenderten Figuren
        (tools\Figuren-Blender.py: Rauheit 0,60, Glanz 0,25, kein Lack) —
@@ -74,12 +106,14 @@ const FIGUR_STILE = {
     metall:    { name: "Metall",    weiss: "#d9dde3", schwarz: "#8a5a2b", rau: 0.32, metall: 0.9, lack: 0.2, lackRau: 0.2 }
 };
 
-/* Blickwinkel als Abstand von der Senkrechten. Seit v0.132.0 höchstens
-   17 Grad: Bei 40 Grad verdeckte jede Figur die auf dem Feld dahinter
-   (Nutzer-Foto 24.09.2026). „Tief" (60 Grad) ist deshalb entfallen. */
+/* Blickwinkel als Abstand von der Senkrechten. v0.132.0 bis v0.140.3
+   höchstens 17 Grad (bei 40 Grad verdeckte jede Figur die dahinter,
+   Nutzer-Foto 24.09.2026). TEST 25.09.2026 (Nutzer: „der Blickwinkel soll
+   nicht mehr so steil sein", dazu grössere Figuren): „Schräg" 30 Grad —
+   Überdeckung wird dafür in Kauf genommen. */
 const BLICKE = {
     oben:    { name: "Oben",   winkel: THREE.MathUtils.degToRad(4) },
-    schraeg: { name: "Schräg", winkel: THREE.MathUtils.degToRad(17) }
+    schraeg: { name: "Schräg", winkel: THREE.MathUtils.degToRad(30) }
 };
 
 const KACHELN = {
@@ -127,13 +161,23 @@ const FARBE = {
    0,63 statt 0,74 (König 1,26 hoch): Zusammen mit dem Blickwinkel 17 Grad
    verdeckt keine Figur die auf dem Feld dahinter — gemessen mit
    `BRETT_3D.ueberdeckungen()` für Bretter von 4×4 bis 12×12, mit 5 Prozent
-   Sicherheit. Nutzer 24.09.2026: „sowas darf nie passieren". */
-const FIGUR_MASS = 0.63;
+   Sicherheit. Nutzer 24.09.2026: „sowas darf nie passieren".
+   TEST 25.09.2026 (Nutzer: „die Standplatte füllt das ganze Feld aus, bis
+   zum Rand aber nicht drüber hinaus, Proportionen beibehalten"): Die
+   Platte (0,84 im Modell) wird so gross wie die flache Oberseite der
+   Kachel — Kachel minus Fuge minus Fase an beiden Seiten, gerechnet mit
+   der breitesten Fuge („Rund"), damit sie auf keiner Kachelart übersteht.
+   Alle Figuren wachsen mit demselben Faktor (rund 1,02, König 2,05 hoch). */
+const SOCKEL_MODELL = 0.84;
+const PLATTE_ZIEL = 1 - KACHELN.rund.fuge - 2 * KACHELN.rund.fase;
+const FIGUR_MASS = PLATTE_ZIEL / SOCKEL_MODELL;
 const KACHEL_HOEHE = 0.2;
 const MULDE_RADIUS = 0.3;
 const MULDE_TIEFE = 0.115;
 const BOX_MASS = 0.46;
-const BOX_HUB = 1.8;            // so hoch steigt eine eingesammelte Box — über jede Figur
+/* So hoch steigt eine eingesammelte Box — über jede Figur: König (2,00 im
+   Modell) plus derselbe Abstand wie bis v0.140.3 (1,8 bei König 1,26). */
+const BOX_HUB = FIGUR_MASS * 2.0 + 0.54;
 
 const ARTEN = ["bauer", "springer", "laeufer", "turm", "dame", "koenig"];
 
@@ -321,7 +365,7 @@ function farbe(hex) {
 }
 
 function materialienBauen() {
-    const thema = THEMEN[Z.einst.thema];
+    const thema = themaFarben();
     const stil = FIGUR_STILE[Z.einst.figuren];
     const m = Z.mat;
 
@@ -364,7 +408,7 @@ function materialienBauen() {
 }
 
 function kachelMaterial(hell) {
-    const thema = THEMEN[Z.einst.thema];
+    const thema = themaFarben();
     return new THREE.MeshPhysicalMaterial({
         color: farbe(hell ? thema.hell : thema.dunkel),
         roughness: Z.einst.thema === "marmor" ? 0.25 : 0.5,
@@ -618,9 +662,8 @@ const SCHRIFT_ABSTAND = 0.62;   // Mitte der Schrift bis zur Brettkante
 const SCHRIFT_HOEHE = 0.02;     // knapp über der Steinoberseite (Nutzer: „nicht so aufdringlich")
 
 function schriftFarbe() {
-    const dunkel = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const thema = THEMEN[Z.einst.thema];
-    return dunkel ? thema.hell : thema.dunkel;
+    const thema = themaFarben();
+    return istDunkel() ? thema.hell : thema.dunkel;
 }
 
 function beschriftungBauen(beschreibung) {
@@ -2940,6 +2983,14 @@ function aussehenAnwenden(schluessel) {
     neuZeichnen(false);
 }
 
+/* Hell/Dunkel oder die Farbwelt hat gewechselt (js\darstellung.js, seit
+   v0.141.0): Feldfarben und Beschriftung neu lesen — wie ein Themenwechsel.
+   Vor dem ersten Aufbau gibt es noch nichts umzufärben. */
+document.addEventListener("darstellung-geaendert", () => {
+    if (!Z.bereit) return;
+    aussehenAnwenden("thema");
+});
+
 /* ------------------------------------------------------------------ *
  * Anbinden: nach jedem Zeichnen des 2D-Bretts
  * ------------------------------------------------------------------ */
@@ -3206,7 +3257,7 @@ function miniSignatur(b, draufsicht) {
 function miniFeldBauen(ziel, z, m, wegwerfen) {
     const oben = GEO.oberkante;
     const k = z.k;
-    const grund = farbe(z.hell ? THEMEN[Z.einst.thema].hell : THEMEN[Z.einst.thema].dunkel);
+    const grund = farbe(z.hell ? themaFarben().hell : themaFarben().dunkel);
     if (z.riss) {
         const grube = new THREE.Mesh(GEO.grube || (GEO.grube = new THREE.BoxGeometry(0.9, 0.04, 0.9)), Z.mat.grube);
         grube.position.set(m.x, 0.02, m.z);

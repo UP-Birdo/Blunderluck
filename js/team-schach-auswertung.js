@@ -1030,8 +1030,8 @@ Object.assign(TEAM_SCHACH, {
          * Rollen oben fest (`partie-kopf-klebt`): derselbe Nutzen, ein Knopf.
          */
         const kopf = TEAM_SCHACH._element("div", "partie-kopf partie-kopf-klebt");
-        kopf.appendChild(TEAM_SCHACH._knopf("Zurück", "knopf-still knopf-klein",
-            () => TEAM_SCHACH.infoSchliessen()));
+        kopf.appendChild(ZUSTAND.alsZurueck(TEAM_SCHACH._knopf("Zurück", "knopf-still knopf-klein",
+            () => TEAM_SCHACH.infoSchliessen())));
         kopf.appendChild(TEAM_SCHACH._element("h2", "partie-titel", "Fähigkeiten"));
         wurzel.appendChild(kopf);
 

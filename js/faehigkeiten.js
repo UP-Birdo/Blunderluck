@@ -18,6 +18,7 @@ const FAEHIGKEITEN = {
 
     id: "faehigkeiten",
     titel: "Fähigkeiten",
+    zeichen: "blitz",
 
     wurzelEl: null,
     gezeichnet: false,

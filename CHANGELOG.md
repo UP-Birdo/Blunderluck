@@ -3,6 +3,57 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.143.0 — 26.09.2026
+
+**Die Einstellungen wie in Typoluck** (UPCrew-Angleichung, Runde 2,
+dritter Teil).
+
+- **Drei Karten statt fünf:** „Dieses Gerät“, „UPCrew-Konto · alle
+  Spiele“ und „Über Blunderluck“.
+- **Dieses Gerät:** je Zeile ein Symbol mit Namen und daneben der
+  Umschalter — Darstellung Auto / Hell / Dunkel, Vibration An / Aus.
+- **UPCrew-Konto:** wer angemeldet ist, darunter alle Konto-Knöpfe
+  untereinander (Profil, Verwaltung, Abmelden, UPCrew-Konto löschen).
+- **Keine i-Erklärungen mehr** — Stichworte und Knöpfe sagen, was sie tun.
+- **Über Blunderluck:** Ein Spiel von UPCrew, Version, Verbindung (der
+  farbige Punkt), dazu „Wunsch“.
+- **Kurzmeldungen** („Anfrage gesendet“, „Passwort geändert“ …) erscheinen
+  jetzt oben statt unten.
+
+## v0.142.0 — 26.09.2026
+
+**Die Tab-Leiste wie in Typoluck** (UPCrew-Angleichung, Runde 2, zweiter
+Teil).
+
+- **Fünf Plätze unten, Start in der Mitte:** Aufgaben · Fähigkeiten ·
+  Start · Rangliste · Bald. Jeder mit Symbol über dem Wort; der aktive
+  leuchtet in Orange und trägt oben einen kurzen Strich.
+- **Neu: „Aufgaben“** — dahinter kommen später die Herausforderungen durch
+  beide Spiele. Bis dahin steht dort, dass sie bald kommen. „Bald“ ganz
+  rechts hält einen Platz frei (ausgegraut).
+- **Die Leiste bleibt immer stehen** — auch in der Partie, in den
+  Einstellungen, im Profil und in den übrigen Fenstern, und am Rechner
+  jetzt ebenfalls unten statt oben.
+- **Zurück ist ein Pfeil** oben links in der Kopfzeile, statt des Worts
+  „Zurück“.
+
+## v0.141.0 — 26.09.2026
+
+**Hell, Dunkel oder Auto — und die Werkstatt-Farben** (UPCrew-Angleichung,
+Runde 2, erster Teil).
+
+- **Neu in den Einstellungen, Karte „Gerät“:** Darstellung Auto / Hell /
+  Dunkel. Auto folgt dem Gerät wie bisher; Hell oder Dunkel gilt fest, nur
+  auf diesem Gerät.
+- **Die Werkstatt-Farben wie im Intro:** Hintergrund, Karten, Schrift und
+  Hauptknöpfe tragen jetzt die Farbwelt „Werkstatt“ (Orange auf warmem Grau
+  bzw. Beige) — dieselbe wie Typoluck. Das Brett ist Beige/Braun statt
+  Blau/Weiss, im 2D- wie im 3D-Brett (Thema „Blunderluck“; Holz, Turnier,
+  Marmor und Nacht bleiben, wie sie sind).
+- Rot, Grün und Gelb als Signal (Fehler, Gewinn, Warnung), die Farben der
+  Fähigkeiten und das violette Anmelde-Fenster bleiben unverändert.
+- Das Intro richtet sich nach deiner Wahl, nicht mehr nur nach dem Gerät.
+
 ## v0.140.3 — 25.09.2026
 
 **Das neue UPCrew-Studio-Intro** — dasselbe wie in Typoluck.

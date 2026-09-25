@@ -137,7 +137,8 @@ const DIALOG = {
 
     /*
      * DIE KURZMELDUNG (seit v0.114, ROADMAP Bündel X2): eine kleine Meldung
-     * am unteren Rand, die von selbst wieder geht — für reine „hat
+     * (seit v0.143.0 am oberen Rand, wie Typoluck), die von selbst wieder
+     * geht — für reine „hat
      * geklappt"-Rückmeldungen, die niemand wegklicken soll. Alles, was der
      * Nutzer LESEN muss (Fehler, Erklärungen), bleibt bei `DIALOG.hinweis`.
      */
