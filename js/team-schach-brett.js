@@ -1088,13 +1088,13 @@ Object.assign(TEAM_SCHACH, {
 
         karte.appendChild(TEAM_SCHACH._element("p", "erklaerung",
             gesetzt
-                ? ("Der grüne Rahmen zeigt, was passiert — auf "
+                ? ("Grüner Rahmen: "
                     + SCHACH.feldName(TEAM_SCHACH.zielVorschau, breite, hoehe)
-                    + ". Du kannst ihn verschieben: ein anderes helles Feld "
-                    + "antippen oder den Rahmen einfach hinziehen.")
-                : "Tippe eines der hell umrandeten Felder an — oder ziehe mit "
-                    + "dem Finger über das Brett. Der grüne Rahmen zeigt dann, "
-                    + "wohin die Wirkung wirklich geht."));
+                    + " · verschieben: helles Feld antippen "
+                    + "oder Rahmen ziehen")
+                : "Helles Feld antippen · oder übers Brett "
+                    + "ziehen · grüner Rahmen zeigt "
+                    + "die Wirkung"));
 
         const leiste = TEAM_SCHACH._element("div", "knopf-zeile");
 
@@ -1197,10 +1197,9 @@ Object.assign(TEAM_SCHACH, {
 
         karte.appendChild(TEAM_SCHACH._element("h3", "", titel + " läuft"));
         karte.appendChild(TEAM_SCHACH._element("p", "erklaerung",
-            titel + " IST dein Zug: Tippe deine Figur an, dann ihr Ziel. Etwas "
-            + "anderes geht in diesem Zug nicht mehr — wenn du es dir anders "
-            + "überlegst, brich hier ab. " + titel + " kommt dann zurück in "
-            + "deinen Vorrat."));
+            "Ersetzt deinen Zug · Figur, dann Ziel antippen · "
+            + "Abbrechen: " + titel + " zurück "
+            + "in den Vorrat"));
 
         const leiste = TEAM_SCHACH._element("div", "knopf-zeile");
         leiste.appendChild(TEAM_SCHACH._knopf("Abbrechen", "knopf-still",

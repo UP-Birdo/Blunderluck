@@ -304,8 +304,7 @@ const ANMELDUNG = {
     _weicheZeigen() {
         const kasten = ANMELDUNG._kastenBauen(
             "Blunderluck",
-            "Schach mit Lootboxen. Du spielst mit deinem UPCrew-Konto — "
-                + "ein Konto für alle Spiele von UPCrew."
+            "Schach mit Lootboxen · ein Konto für alle UPCrew-Spiele"
         );
 
         kasten.appendChild(ANMELDUNG._knopfBauen(
@@ -329,9 +328,7 @@ const ANMELDUNG = {
     _vorhandenesKontoZeigen() {
         const kasten = ANMELDUNG._kastenBauen(
             "UPCrew-Konto",
-            "Mit dem Namen und Passwort deines UPCrew-Kontos — von jedem "
-                + "Gerät aus. Dein bisheriges Blunderluck-Konto ist jetzt dein "
-                + "UPCrew-Konto; eine alte 4-stellige PIN gilt weiter."
+            "Name und Passwort · jedes Gerät · alte PIN gilt weiter"
         );
 
         const name = ANMELDUNG._feldBauen(kasten, "Benutzername", false);
@@ -360,8 +357,7 @@ const ANMELDUNG = {
                 ANMELDUNG.abgleich.daten, name.feld.value);
 
             if (!spieler) {
-                name.fehler.textContent = "Diesen Namen gibt es hier nicht. "
-                    + "Neu hier? Dann erstell ein UPCrew-Konto.";
+                name.fehler.textContent = "Name unbekannt · neues Konto?";
                 pruefen();
                 return;
             }
@@ -373,11 +369,9 @@ const ANMELDUNG = {
                Vollbild. */
             if (!SPIELER.hatPin(spieler)) {
                 const binIch = await DIALOG.frage(
-                    "Ohne Passwort angelegt",
-                    spieler.name + " hat kein Passwort hinterlegt, deshalb "
-                        + "lässt sich das hier nicht prüfen. Bist du das "
-                        + "wirklich?",
-                    "Ja, das bin ich"
+                    "Bist du das?",
+                    spieler.name + " · kein Passwort hinterlegt",
+                    "Das bin ich"
                 );
                 if (!binIch) {
                     pruefen();
@@ -386,8 +380,7 @@ const ANMELDUNG = {
                 ANMELDUNG._uebernehmen(spieler);
                 await ANMELDUNG._passwortVergeben(
                     spieler.id,
-                    "Jetzt fehlt nur noch dein Passwort. Damit kommst du "
-                        + "künftig von jedem Gerät wieder als du selbst hinein."
+                    "Fehlt noch · gilt auf jedem Gerät"
                 );
                 ANMELDUNG._vollbildSchliessen();
                 return;
@@ -406,18 +399,16 @@ const ANMELDUNG = {
             if (fehlversuche >= 3) {
                 await DIALOG.hinweis(
                     "Dreimal falsch",
-                    "Das Passwort stimmt nicht. Vergessen? Dann muss dich "
-                        + "jemand mit dem Verwaltungs-Zugang aus der Runde "
-                        + "entfernen."
+                    "Vergessen? · Verwaltung entfernt dich aus der Runde"
                 );
                 ANMELDUNG._weicheZeigen();
                 return;
             }
 
             passwort.feld.value = "";
-            passwort.fehler.textContent = "Das war nicht richtig. Noch "
+            passwort.fehler.textContent = "Falsch · noch "
                 + (3 - fehlversuche)
-                + (fehlversuche === 2 ? " Versuch." : " Versuche.");
+                + (fehlversuche === 2 ? " Versuch" : " Versuche");
             pruefen();
         });
 
@@ -440,14 +431,13 @@ const ANMELDUNG = {
     _neuesKontoZeigen() {
         const kasten = ANMELDUNG._kastenBauen(
             "Neues UPCrew-Konto",
-            "Damit spielst du in allen UPCrew-Spielen. Deinen Namen sehen die "
-                + "anderen in der Runde."
+            "Für alle UPCrew-Spiele · Name für alle sichtbar"
         );
 
         const name = ANMELDUNG._feldBauen(kasten, "Benutzername", false);
         const passwort = ANMELDUNG._feldBauen(kasten,
-            "Passwort (" + SPIELER.PASSWORT_MIN + " bis " + SPIELER.PASSWORT_MAX
-                + " Zeichen, Gross-/Kleinschreibung zählt)", true);
+            "Passwort · " + SPIELER.PASSWORT_MIN + " bis " + SPIELER.PASSWORT_MAX
+                + " Zeichen · Gross/klein zählt", true);
         const wiederholung = ANMELDUNG._feldBauen(kasten,
             "Passwort wiederholen", true);
 
@@ -466,7 +456,7 @@ const ANMELDUNG = {
             if (nameWert === "") {
                 gueltig = false;
             } else if (SPIELER.spielerNachName(ANMELDUNG.abgleich.daten, nameWert)) {
-                nameFehler = "Dieser Name ist schon vergeben.";
+                nameFehler = "Name vergeben";
                 gueltig = false;
             }
             name.fehler.textContent = nameFehler;
@@ -483,7 +473,7 @@ const ANMELDUNG = {
             if (wiederholung.feld.value === "") {
                 gueltig = false;
             } else if (wiederholung.feld.value !== passwortWert) {
-                wiederholungFehler = "Die beiden Passwörter stimmen nicht überein.";
+                wiederholungFehler = "Passwörter stimmen nicht";
                 gueltig = false;
             }
             wiederholung.fehler.textContent = wiederholungFehler;
@@ -681,7 +671,7 @@ const ANMELDUNG = {
             );
             const wiederholung = await DIALOG.passwort(
                 "Passwort wiederholen",
-                "Noch einmal dasselbe Passwort.",
+                "Noch einmal",
                 "Fertig", false
             );
 
@@ -689,9 +679,8 @@ const ANMELDUNG = {
                 passwort = eingabe;
             } else {
                 await DIALOG.hinweis(
-                    "Die beiden stimmen nicht überein",
-                    "Damit du dich später nicht aussperrst, muss das Passwort "
-                        + "zweimal gleich eingegeben werden. Noch einmal."
+                    "Nicht gleich",
+                    "Zweimal dasselbe Passwort · noch einmal"
                 );
             }
         }
@@ -719,13 +708,13 @@ const ANMELDUNG = {
         const ich = ANMELDUNG.ich();
         if (!ich) {
             await DIALOG.hinweis("Nicht angemeldet",
-                "Auf diesem Gerät ist gerade niemand angemeldet.");
+                "Niemand auf diesem Gerät");
             return;
         }
 
         const wahl = await DIALOG.liste(
-            "Dein Profil",
-            "Was möchtest du ändern?",
+            "Profil",
+            "Name · Passwort",
             [
                 {
                     beschriftung: "Name ändern",
@@ -735,8 +724,8 @@ const ANMELDUNG = {
                 {
                     beschriftung: "Passwort ändern",
                     hinweis: (SPIELER.hatPin(ich) || KONTO.aktiv())
-                        ? "Für die Anmeldung auf anderen Geräten"
-                        : "Noch kein Passwort hinterlegt",
+                        ? "Für andere Geräte"
+                        : "Noch keins",
                     wert: "passwort"
                 }
             ],
@@ -759,7 +748,7 @@ const ANMELDUNG = {
 
         const name = await DIALOG.eingabe(
             "Name ändern",
-            "Unter welchem Namen sollen dich die anderen sehen?",
+            "Für alle sichtbar",
             ich.name,
             "Übernehmen",
             true
@@ -773,8 +762,8 @@ const ANMELDUNG = {
         const vorhanden = SPIELER.spielerNachName(ANMELDUNG.abgleich.daten, name);
         if (vorhanden && vorhanden.id !== ich.id) {
             await DIALOG.hinweis(
-                "Name schon vergeben",
-                name + " spielt bereits mit. Nimm bitte einen anderen Namen."
+                "Name vergeben",
+                name + " · spielt schon mit"
             );
             return;
         }
@@ -803,8 +792,7 @@ const ANMELDUNG = {
         if (SPIELER.hatPin(ich)) {
             const altes = await DIALOG.passwort(
                 "Bisheriges Passwort",
-                "Zur Sicherheit zuerst dein bisheriges Passwort (oder deine "
-                    + "alte PIN).",
+                "Bisheriges Passwort oder alte PIN",
                 "Weiter"
             );
             if (altes === null) {
@@ -812,8 +800,8 @@ const ANMELDUNG = {
             }
             if (!await VERSIEGELUNG.pinPruefen(altes, ich.pinSalz, ich.pinPruefwert)) {
                 await DIALOG.hinweis(
-                    "Passwort stimmt nicht",
-                    "Das bisherige Passwort war falsch. Es wurde nichts geändert."
+                    "Passwort falsch",
+                    "Nichts geändert"
                 );
                 return;
             }
@@ -846,10 +834,10 @@ const ANMELDUNG = {
             const eingabe = await DIALOG.passwort(
                 "Neues Passwort",
                 KONTO.aktiv()
-                    ? "Denk dir ein Passwort aus: " + KONTO.passwortRegelText() + "."
-                    : "Denk dir ein Passwort aus — " + SPIELER.PASSWORT_MIN + " bis "
-                        + SPIELER.PASSWORT_MAX + " Zeichen, Gross- und "
-                        + "Kleinschreibung zählt.",
+                    ? KONTO.passwortRegelText()
+                    : SPIELER.PASSWORT_MIN + " bis "
+                        + SPIELER.PASSWORT_MAX + " Zeichen · Gross/klein "
+                        + "zählt",
                 "Weiter"
             );
             if (eingabe === null) {
@@ -858,7 +846,7 @@ const ANMELDUNG = {
 
             const wiederholung = await DIALOG.passwort(
                 "Neues Passwort wiederholen",
-                "Noch einmal dasselbe Passwort.",
+                "Noch einmal",
                 "Speichern"
             );
             if (wiederholung === null) {
@@ -869,9 +857,8 @@ const ANMELDUNG = {
                 neues = eingabe;
             } else {
                 await DIALOG.hinweis(
-                    "Die beiden stimmen nicht überein",
-                    "Damit du dich nicht aussperrst, muss das neue Passwort "
-                        + "zweimal gleich eingegeben werden. Noch einmal."
+                    "Nicht gleich",
+                    "Zweimal dasselbe Passwort · noch einmal"
                 );
             }
         }
@@ -902,7 +889,7 @@ const ANMELDUNG = {
                 TABS.wechseln("verwaltung");
             } else {
                 await DIALOG.hinweis("Nur für Admins",
-                    "Die Verwaltung öffnet sich nur für Konten mit der Rolle Admin.");
+                    "Rolle Admin nötig");
             }
             return;
         }
@@ -910,8 +897,7 @@ const ANMELDUNG = {
         if (!ICH.verwaltungAktiv()) {
             const darf = await VERWALTUNG.verlangen(
                 "Verwaltung",
-                "Passwort eingeben. Damit lassen sich Spieler aus der Runde "
-                    + "entfernen und fremde Partien löschen."
+                "Spieler entfernen · fremde Partien löschen"
             );
             if (!darf) {
                 return;

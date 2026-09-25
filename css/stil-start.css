@@ -30,7 +30,7 @@
     text-align: center;
     background: var(--karte);
     border: 2px solid var(--haupt);
-    border-radius: var(--radius);
+    border-radius: var(--rund-mittel);
 }
 
 .imposter-wort-rolle {
@@ -101,7 +101,7 @@
 
 .imposter-zeile-ich {
     background: var(--karte-leise);
-    border-radius: 6px;
+    border-radius: var(--rund-klein);
     padding: 8px;
 }
 
@@ -189,7 +189,7 @@ body.dialog-offen {
  */
 .dialog-kasten {
     background: var(--karte);
-    border-radius: var(--radius);
+    border-radius: var(--rund-mittel);
     border: 1px solid var(--rahmen);
     padding: 20px;
     max-width: 420px;
@@ -225,7 +225,7 @@ body.dialog-offen {
     color: var(--schrift);
     background: var(--karte);
     border: 1px solid var(--rahmen);
-    border-radius: 6px;
+    border-radius: var(--rund-klein);
 }
 
 /*
@@ -286,9 +286,9 @@ body.dialog-offen {
     background: var(--schrift);
     color: var(--karte);
     padding: 10px 18px;
-    border-radius: 999px;
+    border-radius: var(--rund-voll);
     font-size: 0.9rem;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 var(--karte-tiefe) 0 var(--still-kante);
     z-index: var(--ebene-dialog);
     max-width: calc(100vw - 32px);
     pointer-events: none;
@@ -355,7 +355,7 @@ body.dialog-offen {
     max-width: 420px;
     background: var(--karte);
     border: 1px solid var(--rahmen);
-    border-radius: var(--radius);
+    border-radius: var(--rund-mittel);
     padding: 24px;
     margin: auto 0;
 }
@@ -388,7 +388,7 @@ body.dialog-offen {
     color: var(--schrift);
     background: var(--karte);
     border: 1px solid var(--rahmen);
-    border-radius: 6px;
+    border-radius: var(--rund-klein);
 }
 
 .anmeldung-feld:focus {
@@ -424,21 +424,17 @@ body.dialog-offen {
  * DER UPCREW-LOOK DES ANFANGS (seit v0.138.0, Nutzer-Ansage 25.09.2026:
  * „das UPCrew-Menü am Anfang, das minimalistische Design — beide Apps
  * gleich"). Vorlage ist Typoluck (Apps\Typoluck\css\stil.css, Abschnitte
- * „Das UPCrew-Intro" und „Anmeldung"): Intro mit dem Studio-Zeichen, dann
- * eine schlichte Karte mit der Marke UPCREW und violetten Tasten-Knöpfen.
+ * „Das UPCrew-Intro" und „Anmeldung"): Intro mit dem Studio-Zeichen (seit
+ * v0.140.3 der gemeinsame Baustein css\upcrew-intro.css), dann eine
+ * schlichte Karte mit der Marke UPCREW und violetten Tasten-Knöpfen.
  *
- * Die Farben gelten NUR im Anmelde-Vollbild und im Intro — das Spiel selbst
- * behält seine Farben. Wer hier etwas ändert, zieht Typoluck mit.
+ * Die Farben gelten NUR im Anmelde-Vollbild — das Spiel selbst behält seine
+ * Farben. Wer hier etwas ändert, zieht Typoluck mit.
  * ------------------------------------------------------------------ */
 
 :root {
-    /* Die Studio-Farben — ohne Dunkel-Fassung, das Zeichen sieht überall
-       gleich aus. */
-    --upcrew-grund: #120e1c;
-    --upcrew-farbe: #7a5cf0;
-    --upcrew-schrift: #ffffff;
-
-    /* Zwischen Anmelde-Vollbild (90) und Dialog (100). */
+    /* Zwischen Anmelde-Vollbild (90) und Dialog (100). Die einzige Variable,
+       die der Intro-Baustein (css\upcrew-intro.css) von hier liest. */
     --ebene-intro: 95;
 }
 
@@ -478,7 +474,7 @@ body.dialog-offen {
 .anmeldung-vollbild .anmeldung-kasten {
     max-width: 400px;
     padding: 24px 20px;
-    border-radius: 20px;
+    border-radius: var(--rund-mittel);
 }
 
 .anmeldung-marke {
@@ -504,7 +500,7 @@ body.dialog-offen {
     min-height: 44px;
     padding: 10px 18px;
     border: 1px solid transparent;
-    border-radius: 12px;
+    border-radius: var(--rund-mittel);
     font: inherit;
     font-weight: 600;
     cursor: pointer;
@@ -553,7 +549,7 @@ body.dialog-offen {
 .anmeldung-vollbild .anmeldung-feld {
     min-height: 44px;
     padding: 10px 12px;
-    border-radius: 10px;
+    border-radius: var(--rund-mittel);
     background: var(--karte-leise);
 }
 
@@ -563,75 +559,10 @@ body.dialog-offen {
     border-color: var(--haupt);
 }
 
-/* Das UPCrew-Intro (js\intro.js) — Zeichen „UP" im violetten Block, dann
-   „Crew", darunter „präsentiert"; Einblenden mit leichtem Anwachsen,
-   Ausblenden 400 ms. Genau wie in Typoluck. */
-.intro {
-    position: fixed;
-    inset: 0;
-    z-index: var(--ebene-intro);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 14px;
-    background: var(--upcrew-grund);
-    color: var(--upcrew-schrift);
-    font-family: "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
-    cursor: pointer;
-    transition: opacity 400ms ease;
-}
-
-.intro[hidden] {
-    display: none;
-}
-
-.intro-weg {
-    opacity: 0;
-}
-
-.intro-logo {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 2.6rem;
-    font-weight: 800;
-    letter-spacing: -0.01em;
-    animation: intro-auftritt 700ms cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
-}
-
-.intro-up {
-    padding: 4px 14px;
-    border-radius: 14px;
-    background: var(--upcrew-farbe);
-    color: var(--upcrew-schrift);
-}
-
-.intro-zeile {
-    margin: 0;
-    color: rgba(255, 255, 255, 0.6);
-    font-size: 0.95rem;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    animation: intro-zeile 600ms ease 150ms both;
-}
-
-@keyframes intro-auftritt {
-    from { opacity: 0; transform: scale(0.8); }
-    to { opacity: 1; transform: scale(1); }
-}
-
-@keyframes intro-zeile {
-    from { opacity: 0; transform: translateY(6px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .intro-logo,
-    .intro-zeile {
-        animation: none;
-    }
-}
+/* Das UPCrew-Intro steht seit v0.140.3 NICHT mehr hier, sondern im
+   gemeinsamen Baustein css\upcrew-intro.css (Klassen mit „upi-", kopiert
+   aus Design\3D-Schrift\final, hier nie abwandeln). Von diesem Stil liest
+   er nur --ebene-intro (oben). */
 
 /* ------------------------------------------------------------------ *
  * DER STARTBILDSCHIRM (seit v0.9.0, Bündel A Schritt 4)
@@ -683,7 +614,7 @@ body.dialog-offen {
     min-width: 0;
     padding: 4px 12px 4px 4px;
     border: 1px solid var(--rahmen);
-    border-radius: 999px;
+    border-radius: var(--rund-voll);
     background: var(--karte);
     color: inherit;
     font: inherit;
@@ -738,7 +669,7 @@ body.dialog-offen {
     color: var(--schrift-leise);
     background: none;
     border: none;
-    border-radius: 8px;
+    border-radius: var(--rund-klein);
     cursor: pointer;
 }
 
@@ -787,13 +718,12 @@ body.dialog-offen {
 
     background: var(--karte);
     border: 1px solid var(--rahmen);
-    border-radius: 14px;
+    border-radius: var(--rund-mittel);
 
     /* Zwei Schatten: der weite trägt das Feld, der enge zeichnet die Kante
        nach — auf dunklem Grund wäre ein einzelner weicher Schatten nicht
        zu sehen. */
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18),
-        0 2px 6px rgba(0, 0, 0, 0.10);
+    box-shadow: 0 var(--karte-tiefe) 0 var(--still-kante);
 }
 
 .start-menue-eintrag {
@@ -811,7 +741,7 @@ body.dialog-offen {
 
     background: none;
     border: none;
-    border-radius: 10px;
+    border-radius: var(--rund-mittel);
     cursor: pointer;
 }
 
@@ -861,7 +791,7 @@ body.dialog-offen {
     color: inherit;
     background: none;
     border: none;
-    border-radius: 12px;
+    border-radius: var(--rund-mittel);
     cursor: pointer;
 }
 
@@ -1010,7 +940,7 @@ body.dialog-offen {
     background-size: calc(var(--code-zelle) * 6) 100%;
     background-repeat: no-repeat;
     border: none;
-    border-radius: 6px;
+    border-radius: var(--rund-klein);
 }
 
 .code-feld:focus {
@@ -1061,7 +991,7 @@ body.dialog-offen {
     color: var(--schrift);
     background: var(--karte);
     border: 1px solid var(--rahmen);
-    border-radius: 6px;
+    border-radius: var(--rund-klein);
 }
 
 .freunde-suche:focus {
@@ -1113,7 +1043,7 @@ body.dialog-offen {
     padding: 0;
     background: var(--karte-leise);
     border: 3px solid var(--stufe-farbe, var(--rahmen));
-    border-radius: 10px;
+    border-radius: var(--rund-mittel);
     cursor: pointer;
 }
 
@@ -1233,8 +1163,8 @@ body.dialog-offen {
     padding: 10px 14px;
     background: var(--karte);
     border: 1px solid var(--rahmen);
-    border-radius: 10px;
-    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
+    border-radius: var(--rund-mittel);
+    box-shadow: 0 var(--karte-tiefe) 0 var(--still-kante);
     animation: banner-herein 0.25s ease-out;
 }
 
@@ -1282,7 +1212,7 @@ body.dialog-offen {
     color: var(--schrift);
     background: var(--karte-leise);
     border: 1px solid var(--rahmen);
-    border-radius: 8px;
+    border-radius: var(--rund-klein);
     cursor: pointer;
 }
 
@@ -1524,7 +1454,7 @@ body.dialog-offen {
     .schalter-kasten {
         width: 46px;
         height: 28px;
-        border-radius: 14px;
+        border-radius: var(--rund-mittel);
     }
 
     .schalter-kasten::after {

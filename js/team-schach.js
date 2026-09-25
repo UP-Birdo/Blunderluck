@@ -630,8 +630,7 @@ const TEAM_SCHACH = {
         const person = TEAM_SCHACH._ich();
         if (!person) {
             wurzel.appendChild(TEAM_SCHACH._element("p", "erklaerung",
-                "Melde dich zuerst mit deinem Namen an — dann bist du auch hier "
-                + "mit deinem Namen dabei."));
+                "Nicht angemeldet"));
             return;
         }
 
@@ -1040,10 +1039,8 @@ const TEAM_SCHACH = {
         if (SCHACH_BOT.botVorgesehen(partie) && !SCHACH_BOT.istBotPartie(partie)) {
             wurzel.appendChild(TEAM_SCHACH._element("p", "erklaerung",
                 meinTeam
-                    ? "Der Computer setzt sich auf die andere Seite, sobald "
-                        + "du deine Seite antippst."
-                    : "Such dir eine Seite aus — der Computer nimmt die "
-                        + "andere."));
+                    ? "Computer nimmt Gegenseite"
+                    : "Seite wählen · Computer nimmt Gegenseite"));
         }
 
         /* 3. Einladen — nur solange jemand fehlt und es kein Computer ist,
@@ -1060,7 +1057,7 @@ const TEAM_SCHACH = {
             const zufall = TEAM_SCHACH._knopf("Zufall",
                 "team-knopf team-knopf-zufall seitenwahl-zufall",
                 () => TEAM_SCHACH.zufaelligBeitreten(partie));
-            zufall.setAttribute("aria-label", "Zufällig einer Seite zuteilen");
+            zufall.setAttribute("aria-label", "Zufällige Seite");
             wurzel.appendChild(zufall);
         }
 
@@ -1113,7 +1110,7 @@ const TEAM_SCHACH = {
                 fuss.appendChild(TEAM_SCHACH._wuerfelKnopfBauen(partie, meinTeam));
             }
             fuss.appendChild(TEAM_SCHACH._knopf(
-                "Niemand da? Gegen den Computer spielen",
+                "Gegen Computer",
                 "knopf-still vorraum-computer",
                 () => TEAM_SCHACH.gegenComputerWechseln(partie)));
             fussGefuellt = true;
@@ -1152,20 +1149,20 @@ const TEAM_SCHACH = {
             const frei = ["weiss", "schwarz"].some(
                 (farbe) => partie.teams[farbe].length === 0);
             text = frei
-                ? "Such dir eine Seite aus."
-                : "Beide Seiten sind besetzt — du schaust zu.";
+                ? "Seite wählen"
+                : "Besetzt · Zuschauer";
         } else if (gegner.length === 0) {
-            text = "Warte auf einen Mitspieler …";
+            text = "Warte auf Mitspieler …";
             wartet = true;
         } else if (partie.aufstellungBereit[meinTeam] !== true) {
             text = partie.aufstellungBereit[gegnerFarbe]
-                ? gegnerName + " ist bereit — und du?"
-                : gegnerName + " ist da — bereit?";
+                ? gegnerName + " bereit"
+                : gegnerName + " da";
         } else if (partie.aufstellungBereit[gegnerFarbe] !== true) {
             text = "Warte auf " + gegnerName + " …";
             wartet = true;
         } else {
-            text = "Beide bereit — es geht los.";
+            text = "Beide bereit";
         }
 
         const zeile = TEAM_SCHACH._element("div",
@@ -1190,7 +1187,7 @@ const TEAM_SCHACH = {
         const block = TEAM_SCHACH._element("div", "vorraum-einladen");
 
         block.appendChild(TEAM_SCHACH._element("div", "vorraum-einladen-text",
-            "Gib den Code weiter — oder lade jemanden ein."));
+            "Code teilen · einladen"));
         block.appendChild(TEAM_SCHACH._codeKnopfBauen(
             partie, person, "einladung-code vorraum-code code-knopf"));
 
@@ -1596,8 +1593,7 @@ const TEAM_SCHACH = {
         }
 
         const ja = await DIALOG.frage("Runde verlassen?",
-            "Du gehst aus dieser Runde heraus. Sitzt danach niemand mehr "
-            + "darin, wird sie geschlossen.",
+            "Ohne Spieler · Runde schließt",
             "Verlassen", true);
 
         if (ja) {
@@ -1699,7 +1695,7 @@ const TEAM_SCHACH = {
         const text = (listen.wartend.length > 0)
             ? "Eingeladen: " + listen.wartend.map(
                 (id) => TEAM_SCHACH._nameVon(id)).join(", ")
-            : "Der Eingeladene findet die Runde unter „Runde beitreten“.";
+            : "Beitritt · Code oder Runde beitreten";
 
         /* Die Kennungen der letzten Mitspieler — ohne den Computer, der kein
            Konto hat und niemanden einlädt. */
@@ -1899,13 +1895,11 @@ const TEAM_SCHACH = {
         kopf.appendChild(TEAM_SCHACH._knopf("Zurück", "knopf-still knopf-klein",
             () => TEAM_SCHACH.spielEinstellungenSchliessen()));
         kopf.appendChild(TEAM_SCHACH._element("h2", "partie-titel",
-            "Einstellungen für diese Partie"));
+            "Partie-Einstellungen"));
         wurzel.appendChild(kopf);
 
         wurzel.appendChild(TEAM_SCHACH._element("p", "erklaerung",
-            "Hier stehen die Einstellungen, die nur für diese Partie gelten. "
-            + "Alles, was dein Gerät betrifft, findest du wie gewohnt unter "
-            + "dem Zahnrad auf dem Startbildschirm."));
+            "Nur diese Partie · Gerät: Zahnrad am Start"));
 
         /*
          * DER WUNSCH-KNOPF STEHT AUCH HIER (seit v0.78.0).
@@ -2027,7 +2021,7 @@ const TEAM_SCHACH = {
             leiste.appendChild(TEAM_SCHACH._element("span", "chip chip-fertig", text));
         } else if (!partie.laeuft) {
             leiste.appendChild(TEAM_SCHACH._element("span", "chip chip-offen",
-                "Noch nicht gestartet"));
+                "Nicht gestartet"));
         }
 
         /*
@@ -2087,7 +2081,7 @@ const TEAM_SCHACH = {
 
             if (rest > 0) {
                 leiste.appendChild(TEAM_SCHACH._element("span", "chip chip-fehler",
-                    "Sicht getrübt: noch " + rest + (rest === 1 ? " Halbzug" : " Halbzüge")));
+                    "Sicht getrübt · " + rest + (rest === 1 ? " Halbzug" : " Halbzüge")));
             }
         }
 
@@ -2252,14 +2246,14 @@ const TEAM_SCHACH = {
             zeile.dataset.eckKasten = "1";
             zeile.setAttribute("aria-expanded",
                 TEAM_SCHACH.eckMenueOffen ? "true" : "false");
-            zeile.title = "Einstellungen und Zugverlauf";
+            zeile.title = "Einstellungen · Zugverlauf";
             zeile.addEventListener("click",
                 () => TEAM_SCHACH.eckMenueUmschalten());
         } else if (namen.length > 1) {
             zeile.className += " spieler-zeile-tippbar";
             zeile.setAttribute("role", "button");
             zeile.setAttribute("tabindex", "0");
-            zeile.title = "Wer spielt auf dieser Seite?";
+            zeile.title = "Spieler dieser Seite";
             zeile.addEventListener("click",
                 () => TEAM_SCHACH._teamKastenOeffnen(farbe, namen));
         }
@@ -2434,8 +2428,8 @@ const TEAM_SCHACH = {
         } else {
             zahnrad.textContent = "E";
         }
-        zahnrad.setAttribute("aria-label", "Einstellungen für diese Partie");
-        zahnrad.title = "Einstellungen für diese Partie";
+        zahnrad.setAttribute("aria-label", "Partie-Einstellungen");
+        zahnrad.title = "Partie-Einstellungen";
         ziel.appendChild(zahnrad);
 
         const verlauf = TEAM_SCHACH._knopf("", "knopf-still knopf-klein eck-knopf",
@@ -2446,8 +2440,8 @@ const TEAM_SCHACH = {
             verlauf.textContent = "Z";
         }
         verlauf.setAttribute("aria-label",
-            "Zugverlauf, " + partie.verlauf.length + " Züge");
-        verlauf.title = "Zugverlauf, " + partie.verlauf.length + " Züge";
+            "Zugverlauf · " + partie.verlauf.length + " Züge");
+        verlauf.title = "Zugverlauf · " + partie.verlauf.length + " Züge";
         ziel.appendChild(verlauf);
 
         if (namen.length > 1) {
@@ -2455,8 +2449,8 @@ const TEAM_SCHACH = {
                 "knopf-still knopf-klein eck-knopf",
                 mitStopp(() => TEAM_SCHACH._teamKastenOeffnen(farbe, namen)));
             team.setAttribute("aria-label",
-                "Wer spielt auf dieser Seite? (" + namen.length + ")");
-            team.title = "Wer spielt auf dieser Seite?";
+                "Spieler dieser Seite (" + namen.length + ")");
+            team.title = "Spieler dieser Seite";
             ziel.appendChild(team);
         }
     },
@@ -2509,7 +2503,7 @@ const TEAM_SCHACH = {
             eigenerName.charAt(0).toUpperCase()));
         menue.setAttribute("aria-label", "Spiel-Menü");
         menue.setAttribute("aria-expanded", TEAM_SCHACH.eckMenueOffen ? "true" : "false");
-        menue.title = "Spiel-Menü: Einstellungen, Zugverlauf";
+        menue.title = "Einstellungen · Zugverlauf";
         links.appendChild(menue);
 
         /* Die letzte Falle als rotes Zeichen (seit v0.136.0). */
@@ -2616,7 +2610,7 @@ const TEAM_SCHACH = {
             knopf.appendChild(bild);
         }
         const titel = SCHACH_VARIANTEN.pechTitel(art);
-        knopf.setAttribute("aria-label", "Falle noch einmal zeigen: " + titel);
+        knopf.setAttribute("aria-label", "Falle zeigen: " + titel);
         knopf.title = titel;
         return knopf;
     },
@@ -2994,9 +2988,8 @@ const TEAM_SCHACH = {
 
         DIALOG.hinweis("Team " + wer,
             (namen.length === 1)
-                ? "Auf dieser Seite spielt einer."
-                : "Auf dieser Seite spielen " + namen.length + " — in der "
-                    + "Reihenfolge ihres Beitritts.",
+                ? "1 Spieler"
+                : namen.length + " Spieler · nach Beitritt",
             liste);
     },
 
@@ -3420,12 +3413,9 @@ const TEAM_SCHACH = {
             TEAM_SCHACH.abgleich.daten, code);
 
         if (!partie) {
-            await DIALOG.hinweis(
-                "Kein Treffer",
-                "Zu diesem Code läuft keine offene Runde. Vertippt? Der "
-                    + "Code hat " + SCHACH_RUNDE.CODE_LAENGE + " Zeichen — "
-                    + "0, O, 1, I und L kommen darin nie vor."
-            );
+            await DIALOG.fehler("Kein Treffer", {
+                folge: SCHACH_RUNDE.CODE_LAENGE + " Zeichen · ohne 0, O, 1, I, L"
+            });
             return;
         }
 
@@ -3902,9 +3892,9 @@ const TEAM_SCHACH = {
             if (SCHACH.artVon(figur) === "B" && SCHACH.reiheVon(nach, breite) === letzteReihe) {
                 const wahl = await DIALOG.liste(
                     "Bauer wandelt um",
-                    "In welche Figur soll der Bauer umgewandelt werden?",
+                    "Figur wählen",
                     [
-                        { beschriftung: "Dame", hinweis: "die übliche Wahl", wert: "D" },
+                        { beschriftung: "Dame", hinweis: "üblich", wert: "D" },
                         { beschriftung: "Turm", hinweis: "", wert: "T" },
                         { beschriftung: "Läufer", hinweis: "", wert: "L" },
                         { beschriftung: "Springer", hinweis: "manchmal stärker", wert: "S" }
@@ -4435,9 +4425,8 @@ const TEAM_SCHACH = {
 
         await DIALOG.hinweis(
             "Du spielst schon",
-            "Du steckst noch in der laufenden Partie \"" + eigene[0].titel
-                + "\". Mehr als eine gleichzeitig gibt es nicht — spiel sie "
-                + "zu Ende oder verlass sie, dann kannst du neu starten."
+            "Läuft: " + eigene[0].titel
+                + " · max. 1 Partie · erst beenden oder verlassen"
         );
         return true;
     },
@@ -4581,7 +4570,7 @@ const TEAM_SCHACH = {
                 abgleich.daten = tafel;
                 TABS.wechseln("team-schach");
                 TEAM_SCHACH.partieOeffnen(alte.id);
-                DIALOG.kurzmeldung("In deiner Runde wartet schon jemand auf dich");
+                DIALOG.kurzmeldung("Mitspieler wartet");
                 return;
             }
 
@@ -4765,8 +4754,7 @@ const TEAM_SCHACH = {
     async partieLoeschen(partie) {
         const darf = await VERWALTUNG.verlangen(
             "Partie löschen",
-            "Eine laufende Partie ist danach für alle weg — auch für die, die "
-                + "gerade mitspielen. Das darf nur, wer das Passwort kennt."
+            "Für alle weg · Passwort nötig"
         );
         if (!darf) {
             return;
@@ -5256,7 +5244,7 @@ const TEAM_SCHACH = {
         banner.setAttribute("role", "status");
 
         banner.appendChild(TEAM_SCHACH._element("span", "einladung-text",
-            "Du bist eingeladen: " + partie.titel));
+            "Eingeladen: " + partie.titel));
 
         const weg = () => {
             if (banner.parentNode) {
@@ -5334,11 +5322,10 @@ const TEAM_SCHACH = {
             }));
 
             const gewaehlt = await DIALOG.liste(
-                "Diese Items sind drin (" + vorrat.length + ")",
-                "Nur diese Fähigkeiten kommen in dieser Partie vor, für beide "
-                    + "Seiten dieselben. Tippe eine an.",
+                "Items (" + vorrat.length + ")",
+                "Nur diese · beide Seiten gleich",
                 eintraege,
-                "Los geht's");
+                "Los");
 
             if (!gewaehlt) {
                 return;
@@ -5448,7 +5435,7 @@ const TEAM_SCHACH = {
                 TEAM_SCHACH._zusatzWahl(art));
 
             if (felder.length === 0) {
-                TEAM_SCHACH._handHinweisZeigen("Gerade kein Feld frei");
+                TEAM_SCHACH._handHinweisZeigen("Kein Feld frei");
                 return;
             }
         }
@@ -5494,15 +5481,12 @@ const TEAM_SCHACH = {
 
         if (beschreibung.art === "sofort" && wandelnd > 0) {
             const wahl = await DIALOG.liste(
-                (wandelnd === 1) ? "Ein Bauer wandelt um" : wandelnd + " Bauern wandeln um",
+                (wandelnd === 1) ? "Bauer wandelt um" : wandelnd + " Bauern wandeln um",
                 (wandelnd === 1)
-                    ? "Der Schub bringt einen Bauern auf die letzte Reihe. In welche "
-                        + "Figur soll er umgewandelt werden?"
-                    : "Der Schub bringt " + wandelnd + " Bauern auf die letzte Reihe. "
-                        + "In welche Figur sollen sie umgewandelt werden? Die Wahl "
-                        + "gilt für alle.",
+                    ? "Figur wählen"
+                    : "Figur wählen · gilt für alle " + wandelnd,
                 [
-                    { beschriftung: "Dame", hinweis: "die übliche Wahl", wert: "D" },
+                    { beschriftung: "Dame", hinweis: "üblich", wert: "D" },
                     { beschriftung: "Turm", hinweis: "", wert: "T" },
                     { beschriftung: "Läufer", hinweis: "", wert: "L" },
                     { beschriftung: "Springer", hinweis: "manchmal stärker", wert: "S" }
@@ -5546,7 +5530,7 @@ const TEAM_SCHACH = {
             return;
         }
         if (angebote.length === 0) {
-            TEAM_SCHACH._handHinweisZeigen("Gerade kein Tausch");
+            TEAM_SCHACH._handHinweisZeigen("Kein Tausch");
             return;
         }
 
@@ -5646,9 +5630,8 @@ const TEAM_SCHACH = {
         const beute = SCHACH_RUNDE.diebesBeute(partie, farbe);
 
         if (!beute) {
-            await DIALOG.hinweis("Beim Gegner ist nichts zu holen",
-                "Der Gegner hat gerade nichts im Vorrat. Der Dieb bleibt dir "
-                + "erhalten, bis sich der Griff lohnt.");
+            await DIALOG.hinweis("Nichts zu holen",
+                "Gegner-Vorrat leer · Dieb bleibt");
             return;
         }
 
@@ -5656,16 +5639,14 @@ const TEAM_SCHACH = {
             .map((eine) => SCHACH_VARIANTEN.faehigkeitTitel(eine));
 
         const ja = await DIALOG.frage(
-            "Der Dieb greift zu",
-            "Du nimmst dem Gegner ab:\n\n"
+            "Dieb greift zu",
+            "Beute:\n\n"
                 + titel.map((eine) => "• " + eine).join("\n") + "\n\n"
                 + (titel.length === 1
-                    ? "Mehr hat er nicht — das ist alles, was er besitzt.\n\n"
+                    ? "Sein ganzer Vorrat\n\n"
                     : "")
-                + "Sie wandern sofort in deinen Vorrat, und im Verlauf steht, was "
-                + "du genommen hast. Nimmst du an, ist danach der Gegner am Zug. "
-                + "Lehnst du ab, behältst du den Dieb — nach dem nächsten Zug "
-                + "greift er woanders zu.",
+                + "Klauen · danach Gegner am Zug\n"
+                + "Abbrechen · Dieb bleibt",
             "Klauen",
             false
         );
@@ -5736,18 +5717,12 @@ const TEAM_SCHACH = {
             const imSchach = meineFarbeJetzt
                 && SCHACH.imSchach(partie.stand, meineFarbeJetzt);
 
-            await DIALOG.hinweis("Geht gerade nicht",
-                imSchach
-                    ? "Dein König steht im Schach. Dann geht nichts, was deinen "
-                        + "Zug beendet — du müsstest das Schach dabei ja auflösen. "
-                        + "Die Fähigkeit bleibt dir erhalten."
+            await DIALOG.fehler("Geht nicht", {
+                folge: imSchach
+                    ? "König im Schach · Fähigkeit bleibt"
                     : (beschreibung.imGegenzug
-                        ? "Die Fähigkeit lässt sich nur einsetzen, solange die "
-                            + "Partie läuft und du in einem Team bist. Sie bleibt "
-                            + "dir erhalten."
-                        : "Auf dem Brett hat sich etwas geändert — dein Team ist "
-                            + "gerade nicht am Zug, oder das Feld geht nicht mehr. "
-                            + "Die Fähigkeit bleibt dir erhalten."));
+                        ? "Nur im Team, Partie läuft · Fähigkeit bleibt"
+                        : "Brett geändert · Fähigkeit bleibt") });
             TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
             return;
         }
@@ -5767,8 +5742,7 @@ const TEAM_SCHACH = {
     async neuAufstellen(partie) {
         const ja = await DIALOG.frage(
             "Neu aufstellen?",
-            "Das Brett wird zurückgesetzt. Die Teams bleiben, beide Seiten müssen "
-                + "erneut bereit drücken.",
+            "Brett zurück · Teams bleiben · neu bereit",
             "Neu aufstellen",
             true
         );

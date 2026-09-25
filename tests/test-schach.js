@@ -449,7 +449,7 @@ pruefe("In der Grundstellung steht die Rochade noch nicht offen", () => {
     gleich(lage.length, 2, "zwei Seiten");
     gleich(lage[0].seite, "kurz", "erst kurz");
     gleich(lage[0].moeglich, false, "kurz gesperrt");
-    wahr(lage[0].grund.indexOf("steht noch eine Figur") !== -1, "Grund: Figuren im Weg");
+    wahr(lage[0].grund.indexOf("Figur zwischen König und Turm") !== -1, "Grund: Figuren im Weg");
     gleich(lage[1].moeglich, false, "lang gesperrt");
 });
 
@@ -500,7 +500,7 @@ pruefe("Auch auf dem kleinen Brett steht die Rochade in der Grundstellung nicht 
 
     gleich(lage.length, 2, "zwei Seiten");
     gleich(lage[0].moeglich, false, "gesperrt");
-    wahr(lage[0].grund.indexOf("steht noch eine Figur") !== -1, "Grund: Figuren im Weg");
+    wahr(lage[0].grund.indexOf("Figur zwischen König und Turm") !== -1, "Grund: Figuren im Weg");
 });
 
 pruefe("Die Lage passt zu den Zuegen, die es wirklich gibt", () => {
@@ -540,9 +540,9 @@ pruefe("Aus einer echten Partie: Weiss hat rochiert, Schwarz kann noch nicht", (
 
     const schwarz = SCHACH.rochadeLage(stand, SCHACH.SCHWARZ);
     gleich(schwarz[0].moeglich, false, "Schwarz kurz nicht");
-    wahr(schwarz[0].grund.indexOf("steht noch eine Figur") !== -1, "Grund kurz: Figur im Weg");
+    wahr(schwarz[0].grund.indexOf("Figur zwischen König und Turm") !== -1, "Grund kurz: Figur im Weg");
     gleich(schwarz[1].moeglich, false, "Schwarz lang nicht");
-    wahr(schwarz[1].grund.indexOf("steht noch eine Figur") !== -1, "Grund lang: Figur im Weg");
+    wahr(schwarz[1].grund.indexOf("Figur zwischen König und Turm") !== -1, "Grund lang: Figur im Weg");
 });
 
 /* ------------------------------------------------------------------ *

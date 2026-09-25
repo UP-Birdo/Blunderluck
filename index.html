@@ -35,6 +35,9 @@
     <link rel="stylesheet" href="css/stil-effekte.css">
     <link rel="stylesheet" href="css/stil-auswertung.css">
     <link rel="stylesheet" href="css/stil-start.css">
+    <!-- Das UPCrew-Studio-Intro: gemeinsamer Baustein aller UPCrew-Apps,
+         kopiert aus Design\3D-Schrift\final (seit v0.140.3). -->
+    <link rel="stylesheet" href="css/upcrew-intro.css">
 </head>
 <body>
 
@@ -62,9 +65,10 @@
          ganzen App; nur die Dialoge liegen noch darüber. -->
     <div class="anmeldung-vollbild" id="anmeldung" hidden></div>
 
-    <!-- Das UPCrew-Intro (js/intro.js, seit v0.138.0): liegt beim Start kurz
-         über allem ausser den Dialogen — wie in Typoluck. -->
-    <div class="intro" id="intro" hidden></div>
+    <!-- Das UPCrew-Intro (js/upcrew-intro.js, angepasst in js/intro.js):
+         liegt beim Start kurz über allem ausser den Dialogen — wie in
+         Typoluck. -->
+    <div class="upi" id="intro" hidden></div>
 
     <div class="dialog-hintergrund" id="dialog" hidden></div>
 
@@ -131,6 +135,7 @@
          erreichbar über den Knopf „Verwaltung" in den Einstellungen. -->
     <script src="js/verwaltungs-bildschirm.js"></script>
     <script src="js/wunsch.js"></script>
+    <script src="js/upcrew-intro.js"></script>
     <script src="js/intro.js"></script>
     <script src="js/app.js"></script>
 

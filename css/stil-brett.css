@@ -156,7 +156,7 @@
     min-width: 0;
     padding: 6px 10px;
     border: 1px solid var(--rahmen);
-    border-radius: 8px;
+    border-radius: var(--rund-klein);
     background: var(--karte);
     font-size: 0.92rem;
 }
@@ -168,7 +168,7 @@
     flex: 0 0 auto;
     width: 14px;
     height: 14px;
-    border-radius: 50%;
+    border-radius: var(--rund-voll);
     border: 1px solid var(--rahmen);
 }
 
@@ -318,7 +318,7 @@
 .team-knopf {
     width: 100%;
     min-height: 44px;
-    border-radius: 10px;
+    border-radius: var(--rund-mittel);
     border: 1px solid var(--rahmen);
     font-weight: 600;
 }
@@ -443,7 +443,7 @@
     margin: 0 auto 10px;
     min-height: 56px;
     font-size: 1.05rem;
-    border-radius: 12px;
+    border-radius: var(--rund-mittel);
     background: linear-gradient(100deg,
         var(--figur-weiss) 0 calc(50% - 1px),
         var(--rahmen) calc(50% - 1px) calc(50% + 1px),
@@ -471,7 +471,7 @@
 .seitenwahl-spalte .team-knopf {
     min-height: 72px;
     font-size: 1.05rem;
-    border-radius: 12px;
+    border-radius: var(--rund-mittel);
 }
 
 /*
@@ -498,7 +498,7 @@
     min-height: 160px;
     padding: 8px;
     border: 1px solid var(--rahmen);
-    border-radius: 10px;
+    border-radius: var(--rund-mittel);
     background: var(--karte-leise);
 }
 
@@ -655,7 +655,7 @@
     max-width: 460px;
     margin: 8px auto 12px;
     padding: 10px 14px;
-    border-radius: 12px;
+    border-radius: var(--rund-mittel);
     background: var(--karte-leise);
     border: 1px solid var(--rahmen);
     font-size: 1rem;
@@ -672,7 +672,7 @@
     flex: 0 0 auto;
     width: 10px;
     height: 10px;
-    border-radius: 50%;
+    border-radius: var(--rund-voll);
     background: var(--haupt);
     animation: vorraum-pulsen 1.6s ease-in-out infinite;
 }
@@ -702,7 +702,7 @@
     max-width: 460px;
     margin: 0 auto 14px;
     padding: 14px 12px;
-    border-radius: 12px;
+    border-radius: var(--rund-mittel);
     border: 1px solid var(--haupt);
     background: var(--karte);
 }
@@ -746,7 +746,7 @@
 .vorraum-platz .team-knopf {
     min-height: 64px;
     font-size: 1.05rem;
-    border-radius: 12px;
+    border-radius: var(--rund-mittel);
 }
 
 .vorraum-platz .seitenwahl-liste {
@@ -771,7 +771,7 @@
 .vorraum-platz-punkt {
     width: 14px;
     height: 14px;
-    border-radius: 50%;
+    border-radius: var(--rund-voll);
     border: 1px solid var(--rahmen);
 }
 
@@ -813,7 +813,7 @@
     margin-top: 10px;
     padding: 10px 0 calc(10px + env(safe-area-inset-bottom, 0px));
     background: var(--flaeche);
-    box-shadow: 0 -10px 14px -10px rgba(0, 0, 0, 0.45);
+    box-shadow: 0 -1px 0 var(--rahmen);
 }
 
 @media (max-width: 600px) {
@@ -917,7 +917,7 @@
  */
 .seiten-reihe .spieler-zeile {
     padding: 10px 14px;
-    border-radius: 12px;
+    border-radius: var(--rund-mittel);
 }
 
 .seiten-reihe-oben .spieler-zeile {
@@ -948,7 +948,7 @@
     gap: 8px;
     padding: 6px 10px;
     border: 1px solid var(--rahmen);
-    border-radius: 8px;
+    border-radius: var(--rund-klein);
     background: var(--karte);
 }
 
@@ -1027,7 +1027,7 @@
     max-width: min(var(--brett-max, 520px), 100%);
     margin: 0 auto;
     border: 2px solid var(--rahmen);
-    border-radius: 6px;
+    border-radius: var(--rund-klein);
     overflow: hidden;
     /* Bezugspunkt für alles, was in den Feldern absolut liegt. */
     position: relative;
@@ -1172,7 +1172,7 @@
     width: 14px;
     height: 14px;
     flex: none;
-    border-radius: 4px;
+    border-radius: 4px; /* UPCrew-Ausnahme: Spielgrafik */
     background: var(--stufe-farbe, var(--rahmen));
 }
 
@@ -1256,7 +1256,7 @@
  */
 .schalter-gruppe {
     background: var(--karte-leise);
-    border-radius: 10px;
+    border-radius: var(--rund-mittel);
     padding: 2px 12px;
     margin: 2px 0 8px;
 }
@@ -1275,7 +1275,7 @@
     margin: 0;
     flex: none;
     border: 1px solid var(--rahmen);
-    border-radius: 12px;
+    border-radius: var(--rund-mittel);
     background: var(--karte-leise);
     position: relative;
     cursor: pointer;
@@ -1288,9 +1288,9 @@
     left: 2px;
     width: 18px;
     height: 18px;
-    border-radius: 50%;
+    border-radius: var(--rund-voll);
     background: var(--karte);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 2px 0 var(--still-kante);
 }
 
 .schalter-kasten:checked {
@@ -1398,7 +1398,7 @@
     padding: 4px;
     background: var(--karte-leise);
     border: 1px solid var(--rahmen);
-    border-radius: 10px;
+    border-radius: var(--rund-mittel);
 }
 
 .mengen-knopf,
@@ -1496,7 +1496,7 @@
 
 .armee-muster-feld {
     aspect-ratio: 1 / 1;
-    border-radius: 1px;
+    border-radius: 1px; /* UPCrew-Ausnahme: Spielgrafik */
     background: currentColor;
     opacity: 0.18;
 }
@@ -1557,7 +1557,7 @@
 
     /* Ein Pixel mehr als der Knopf darunter — die Pille liegt ja auch ein
        Pixel weiter aussen, sonst blitzten die Ecken durch. */
-    border-radius: 7px;
+    border-radius: var(--rund-mittel);
     background: var(--haupt);
     z-index: -1;
     pointer-events: none;

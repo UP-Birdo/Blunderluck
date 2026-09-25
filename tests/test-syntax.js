@@ -457,12 +457,23 @@ pruefe("_figurKlasse vergibt Marker- und Art-Klasse (v0.121, erweitert v0.122)",
  * Geprueft wird nur, was OHNE Ausweichwert benutzt wird: `var(--x, 12px)`
  * traegt seinen Ersatz selbst und darf von aussen kommen (das JS setzt ein
  * paar Werte zur Laufzeit, etwa `--wirkung-dauer`).
+ *
+ * DAS STUDIO-INTRO (seit v0.140.3): css\upcrew-intro.css liest `--t0`, `--i`,
+ * `--aus`, `--an`, die js\upcrew-intro.js je Element im `style`-Attribut
+ * setzt. Der Baustein wird aus Design\3D-Schrift\final nur KOPIERT, nie
+ * abgewandelt — deshalb zählt hier, was er selbst setzt, als definiert.
  */
 pruefe("Jede benutzte CSS-Variable ohne Ausweichwert ist auch definiert", () => {
 
     const definiert = new Set();
     for (const treffer of stil.matchAll(/(--[a-z0-9-]+)\s*:/g)) {
         definiert.add(treffer[1]);
+    }
+    const introSkript = dateisystem.readFileSync(pfad.join(jsOrdner, "upcrew-intro.js"), "utf8");
+    for (const treffer of introSkript.matchAll(/style="([^"]*)"/g)) {
+        for (const variable of treffer[1].matchAll(/(--[a-z0-9-]+)\s*:/g)) {
+            definiert.add(variable[1]);
+        }
     }
 
     const fehlend = new Set();
@@ -843,9 +854,18 @@ pruefe("app.js meldet den Service Worker abgesichert an", () => {
  * ERLAUBT BLEIBT `element.innerHTML = ""` — das Leeren eines Behälters vor
  * dem Neuzeichnen. Es setzt nichts ein und ist im ganzen Projekt die einzige
  * Verwendung (heute 15 Stellen in 11 Dateien).
+ *
+ * DIE EINE AUSNAHME (seit v0.140.3): das Studio-Intro js\upcrew-intro.js,
+ * gemeinsamer Baustein aus Design\3D-Schrift\final (nur kopiert, nie
+ * abgewandelt). Es setzt sein Bild als SVG-Text ein — genau EINE Zeile,
+ * wörtlich unten. Durchgesehen am 25.09.2026: kein Spielername kommt
+ * hinein; App-Name und Version laufen durch seine Maskierung `text()`, die
+ * Farbwelt aus dem Browser-Speicher gilt nur, wenn sie in WELTEN steht.
+ * Jede ANDERE innerHTML-Zeile in der Datei schlägt weiter an.
  */
 pruefe("innerHTML leert nur, es setzt nichts ein (Stored XSS)", () => {
     const erlaubt = /\.innerHTML\s*=\s*""\s*;/;
+    const introAusnahme = "behaelter.innerHTML = `<div class=\"upi-buehne\">${html}</div>`;";
     const funde = [];
 
     for (const name of dateien) {
@@ -857,6 +877,9 @@ pruefe("innerHTML leert nur, es setzt nichts ein (Stored XSS)", () => {
                 return;
             }
             if (erlaubt.test(zeile)) {
+                return;
+            }
+            if (name === "upcrew-intro.js" && zeile.trim() === introAusnahme) {
                 return;
             }
             funde.push(name + ":" + (nummer + 1) + "  " + zeile.trim());
@@ -871,7 +894,7 @@ pruefe("innerHTML leert nur, es setzt nichts ein (Stored XSS)", () => {
 });
 
 /*
- * DER UPCREW-STANDARD (seit v0.140.0, `Apps\UPCrew-STANDARD.md`): keine
+ * DER UPCREW-STANDARD (seit v0.140.0, `Apps\UPCrew\UPCrew-STANDARD.md`): keine
  * Begrüssungen, keine Lade-Sätze, keine Fehlersätze mit technischer
  * Meldung. Diese Wendungen kamen bis v0.139.0 in sichtbaren Texten vor und
  * sind durch ZUSTAND (Laden/Leer/Fehler), DIALOG.fehler (mit „Nochmal")
@@ -914,6 +937,66 @@ pruefe("Kein Bildschirm vibriert am Baustein vorbei (UPCrew-Standard)", () => {
         && /navigator\.vibrate/.test(dateisystem.readFileSync(pfad.join(jsOrdner, name), "utf8")));
     if (funde.length > 0) {
         throw new Error("navigator.vibrate ausserhalb von fuehlen.js: " + funde.join(", "));
+    }
+});
+
+/*
+ * DIE FORMEN DES UPCREW-STANDARDS (seit v0.140.2, Werte von Typoluck):
+ * jede Rundung ist 0 oder eine der drei Stufen `--rund-klein/-mittel/-voll`,
+ * kein Schatten ist verschwommen und keiner ist eine graue Wolke
+ * (`rgba(0, 0, 0 …)`). Ausgenommen ist nur, was auf derselben Zeile die
+ * Marke „UPCrew-Ausnahme" trägt — Spielgrafik (winzige Brettfelder, Mauern,
+ * Konfetti, die Dicke der 3D-Felder) und das Leuchten als Signal.
+ */
+function formFunde(quelle) {
+    const markiert = quelle.replace(/\/\*\s*UPCrew-Ausnahme[\s\S]*?\*\//g, "@@AUSNAHME@@");
+    const ohne = markiert.replace(/\/\*[\s\S]*?\*\//g, "");
+    const rundungen = [];
+    const schatten = [];
+    const erlaubt = (ende) => ohne.slice(ende, ohne.indexOf("\n", ende)).indexOf("@@AUSNAHME@@") !== -1;
+
+    for (const treffer of ohne.matchAll(/border-radius:\s*([^;]+);/g)) {
+        const ende = treffer.index + treffer[0].length;
+        const gut = treffer[1].trim().split(/\s+/)
+            .every((teil) => teil === "0" || /^var\(--rund-(klein|mittel|voll)\)$/.test(teil));
+        if (!gut && !erlaubt(ende)) {
+            rundungen.push(treffer[0]);
+        }
+    }
+    for (const treffer of ohne.matchAll(/(box-shadow|--[a-z-]*schatten):\s*([^;]+);/g)) {
+        const ende = treffer.index + treffer[0].length;
+        const wert = treffer[2];
+        const weich = /-?\d+(\.\d+)?px\s+-?\d+(\.\d+)?px\s+[1-9]\d*(\.\d+)?px/.test(wert)
+            || /rgba\(0,\s*0,\s*0/.test(wert);
+        if (weich && !erlaubt(ende)) {
+            schatten.push(treffer[0]);
+        }
+    }
+    return { rundungen, schatten };
+}
+
+for (const name of stilNamen) {
+    const funde = formFunde(dateisystem.readFileSync(pfad.join(projekt, "css", name), "utf8"));
+    pruefe("css/" + name + ": nur die drei Rundungen (UPCrew-Standard)", () => {
+        if (funde.rundungen.length > 0) {
+            throw new Error(funde.rundungen.length + " feste Rundung(en): "
+                + funde.rundungen.slice(0, 5).join(" | "));
+        }
+    });
+    pruefe("css/" + name + ": keine weichen Schatten (UPCrew-Standard)", () => {
+        if (funde.schatten.length > 0) {
+            throw new Error(funde.schatten.length + " weiche(r) Schatten: "
+                + funde.schatten.slice(0, 5).map((s) => s.replace(/\s+/g, " ")).join(" | "));
+        }
+    });
+}
+
+pruefe("Die drei Rundungen und die Kanten sind festgelegt (UPCrew-Standard)", () => {
+    const grund = dateisystem.readFileSync(pfad.join(projekt, "css", "stil.css"), "utf8");
+    const fehlt = ["--rund-klein:", "--rund-mittel:", "--rund-voll:", "--knopf-tiefe:",
+        "--karte-tiefe:", "--haupt-kante:", "--still-kante:"].filter((v) => grund.indexOf(v) === -1);
+    if (fehlt.length > 0) {
+        throw new Error("fehlt in stil.css: " + fehlt.join(", "));
     }
 });
 

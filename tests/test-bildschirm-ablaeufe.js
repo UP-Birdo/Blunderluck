@@ -3295,7 +3295,7 @@ pruefe("Die Grundeinstellungen tragen oben eine klebende Dauer-Zeile, die mit de
         TEAM_SCHACH.abgleich.daten = Object.assign({}, TEAM_SCHACH.abgleich.daten,
             { partien: partien });
         TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
-        if (text("regeln-dauer-quelle").indexOf("2 gespielten Partien") === -1) {
+        if (text("regeln-dauer-quelle").indexOf("geschätzt · 2 Partien") === -1) {
             throw new Error("die Quelle nennt nicht die zwei gemessenen Partien: \""
                 + text("regeln-dauer-quelle") + "\"");
         }

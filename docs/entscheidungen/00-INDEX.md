@@ -92,6 +92,11 @@ wird. Die Liste dessen, was noch kommt, steht in [../ROADMAP.md](../ROADMAP.md).
   Play-Store-Umbau braeuchte - Referenz: docs\uebergabe-schach-app.md)
 
 ## erkenntnisse.md - Teuer erkaufte Erkenntnisse
+- **Ein Verweis-Test mit `indexOf` laesst `konfig.js.bak` durch — v0.140.0
+  startete nicht** (gemeldet 25.09.2026, behoben v0.140.1: index.html band
+  eine geloeschte Sicherungsdatei ein; Test prueft jetzt den ganzen
+  `src`-Verweis und dass die Datei existiert; vor dem Ausliefern die echte
+  index.html kopflos starten)
 - **„Nochmal" wiederholt erst NACH dem `finally` — und ein Zeichen in einer
   Bild-Reihe heisst `bild-zeichen`** (v0.140.0, beim Bauen gefunden: sonst
   laeuft der zweite Versuch, bevor der erste abgemeldet ist; ein Weg ohne

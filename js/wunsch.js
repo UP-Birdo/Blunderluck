@@ -28,7 +28,7 @@ const WUNSCH = {
         knopf.type = "button";
         knopf.className = "knopf knopf-still knopf-klein";
         knopf.textContent = "Wunsch";
-        knopf.title = "Einen Wunsch oder Fehler melden";
+        knopf.title = "Wunsch oder Fehler melden";
         knopf.addEventListener("click", () => WUNSCH.oeffnen());
 
         behaelter.appendChild(knopf);
@@ -40,9 +40,7 @@ const WUNSCH = {
            sah. */
         const text = await DIALOG.eingabe(
             "Wunsch oder Fehler",
-            "Was fehlt dir, was stört dich? Schreib so viel, wie du willst — das "
-                + "Feld wächst mit. Der Text landet als Eintrag auf GitHub, von "
-                + "dort wandert er in die Aufgabenliste.",
+            "Was fehlt · was stört · landet auf GitHub",
             "",
             "Weiter",
             true,
@@ -56,7 +54,7 @@ const WUNSCH = {
         if (!WUNSCH.formularOeffnen(text.trim())) {
             /* Blockiert der Browser das Fenster, bleibt der Text nicht liegen. */
             await DIALOG.hinweis("Fenster blockiert",
-                "Der Browser hat das GitHub-Formular nicht geöffnet. Dein Text:\n\n"
+                "GitHub-Formular nicht geöffnet · dein Text:\n\n"
                 + text.trim());
         }
     },

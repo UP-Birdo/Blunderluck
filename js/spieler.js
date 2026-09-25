@@ -260,12 +260,12 @@ const SPIELER = {
         const wert = (text === undefined || text === null) ? "" : String(text);
 
         if (/\s/.test(wert)) {
-            return "Leerzeichen sind im Passwort nicht erlaubt.";
+            return "Ohne Leerzeichen";
         }
         if (wert.length < SPIELER.PASSWORT_MIN
                 || wert.length > SPIELER.PASSWORT_MAX) {
-            return "Das Passwort braucht " + SPIELER.PASSWORT_MIN + " bis "
-                + SPIELER.PASSWORT_MAX + " Zeichen.";
+            return SPIELER.PASSWORT_MIN + " bis "
+                + SPIELER.PASSWORT_MAX + " Zeichen";
         }
         return "";
     },

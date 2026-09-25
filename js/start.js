@@ -202,7 +202,7 @@ const START = {
 
             const titel = document.createElement("span");
             titel.className = "start-zurueck-titel";
-            titel.textContent = "Zurück in deine Runde";
+            titel.textContent = "Zurück zur Runde";
             zurueck.appendChild(titel);
 
             const lage = document.createElement("span");
@@ -210,7 +210,7 @@ const START = {
             lage.textContent = eigeneOffene.titel + " — "
                 + (eigeneOffene.laeuft
                     ? "läuft"
-                    : "wartet auf einen Mitspieler");
+                    : "wartet auf Mitspieler");
             zurueck.appendChild(lage);
 
             zurueck.addEventListener("click", () => {
@@ -287,7 +287,7 @@ const START = {
         return [
             {
                 name: "Profil",
-                hinweis: "Visitenkarte, Abzeichen, Statistik",
+                hinweis: "Visitenkarte · Abzeichen · Statistik",
                 zeichen: () => START._profilZeichenBauen(),
                 /* Seit v0.119.0 die ganze Profilseite statt des Popups
                    (Nutzer-Ansage 18.09.2026); Name und Passwort ändert man
@@ -297,7 +297,7 @@ const START = {
             },
             {
                 name: "Freunde",
-                hinweis: "Freunde suchen und verwalten",
+                hinweis: "Suchen · Verwalten",
                 zeichen: () => START._freundeZeichenBauen(),
                 tun: () => START.freundeOeffnen()
             },
@@ -309,7 +309,7 @@ const START = {
             },
             {
                 name: "Schach lernen",
-                hinweis: "Die Grundregeln: Figuren, Schach, Matt und Patt",
+                hinweis: "Figuren · Schach · Matt · Patt",
                 zeichen: () => START._lernenZeichenBauen(),
                 tun: () => {
                     TABS.wechseln("team-schach");
@@ -321,7 +321,7 @@ const START = {
                in den meisten Apps das Letzte im Menü. */
             {
                 name: "Einstellungen",
-                hinweis: "Account, Spieler, Verbindung",
+                hinweis: "Account · Spieler · Verbindung",
                 zeichen: () => START._zahnradBauen(),
                 tun: () => TABS.wechseln("einstellungen")
             }
@@ -682,8 +682,8 @@ const START = {
         if (typeof ANMELDUNG !== "undefined" && typeof ANMELDUNG.istOberAdmin === "function"
                 && ANMELDUNG.istOberAdmin()) {
             await DIALOG.hinweis("Nicht mit UP#Plus",
-                "Mit dem Verwaltungskonto UP#Plus kann man nicht spielen. Melde "
-                    + "dich zum Spielen mit deinem Spieler-Konto an.");
+                "Verwaltungskonto · spielt nicht · "
+                    + "mit Spieler-Konto anmelden");
             return;
         }
 
@@ -779,9 +779,8 @@ const START = {
          */
         const aufraeumen = await DIALOG.frage(
             "Mehrere laufende Partien",
-            "Du steckst in " + eigene.length + " laufenden Partien — mehr "
-                + "als eine gleichzeitig ist nicht vorgesehen. Sollen alle "
-                + "bis auf die jüngste verlassen werden?",
+            eigene.length + " laufende Partien · "
+                + "nur jüngste behalten?",
             "Aufräumen"
         );
         if (!aufraeumen) {

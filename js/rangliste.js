@@ -489,7 +489,7 @@ const RANGLISTE = {
         const ich = ICH.person();
         if (!ich) {
             DIALOG.hinweis("Nicht angemeldet",
-                "Auf diesem Gerät ist gerade niemand angemeldet.");
+                "Dieses Gerät · niemand angemeldet");
             return;
         }
         RANGLISTE.profilOeffnen(ich.id, rueckweg);
@@ -785,14 +785,14 @@ const RANGLISTE = {
      */
     _bearbeitenEintraege() {
         return [
-            { beschriftung: "Abzeichen wählen", hinweis: "Bis zu drei auf deine Karte", wert: "abzeichen" },
-            { beschriftung: "Name ändern", hinweis: "So sehen dich die anderen", wert: "name" },
-            { beschriftung: "Passwort ändern", hinweis: "Für die Anmeldung auf einem neuen Gerät", wert: "passwort" }
+            { beschriftung: "Abzeichen wählen", hinweis: "Bis zu 3 · auf der Karte", wert: "abzeichen" },
+            { beschriftung: "Name ändern", hinweis: "Für alle sichtbar", wert: "name" },
+            { beschriftung: "Passwort ändern", hinweis: "Anmeldung · neues Gerät", wert: "passwort" }
         ];
     },
 
     profilBearbeiten() {
-        return DIALOG.liste("Profil bearbeiten", "Was möchtest du ändern?",
+        return DIALOG.liste("Profil bearbeiten", "Was ändern",
             RANGLISTE._bearbeitenEintraege(), "Schliessen")
             .then((wahl) => {
                 if (wahl === "abzeichen") {
@@ -828,7 +828,7 @@ const RANGLISTE = {
         }
         angaben.push(stat.erstePartieAm > 0
             ? "dabei seit " + RANGLISTE._datumText(stat.erstePartieAm)
-            : "noch keine Partie beendet");
+            : "0 Partien beendet");
         mitte.appendChild(RANGLISTE._element("span", "visitenkarte-angaben", angaben.join(" · ")));
         kopf.appendChild(mitte);
 
@@ -1083,7 +1083,7 @@ const RANGLISTE = {
         if (istIch) {
             const kopf = RANGLISTE._element("div", "karte-kopf");
             kopf.appendChild(RANGLISTE._element("span", "profil-reiter-hinweis",
-                "Antippen zeigt, wie man es bekommt."));
+                "Antippen · Bedingung"));
             kopf.appendChild(RANGLISTE._knopf("Abzeichen wählen", "knopf-haupt knopf-klein",
                 () => RANGLISTE.abzeichenWaehlen()));
             inhalt.appendChild(kopf);
@@ -1116,7 +1116,7 @@ const RANGLISTE = {
      */
     _partienReiterBauen(inhalt, verlauf, staende) {
         inhalt.appendChild(RANGLISTE._element("p", "profil-reiter-hinweis",
-            "Woher die Punkte kommen — antippen für Einzelheiten."));
+            "Antippen · Einzelheiten"));
 
         if (verlauf.length === 0) {
             inhalt.appendChild(RANGLISTE._leerOhnePartie());
@@ -1179,7 +1179,7 @@ const RANGLISTE = {
                 () => { FREUNDE.zurueckziehen(person.id); danach(); }));
         } else if (lage === "offen") {
             fuss.appendChild(RANGLISTE._element("span", "chip chip-laeuft",
-                person.name + " möchte mit dir befreundet sein"));
+                person.name + " · Freundschaftsanfrage"));
             fuss.appendChild(RANGLISTE._knopf("Annehmen", "knopf-haupt knopf-klein",
                 () => { FREUNDE.annehmen(person.id); danach(); }));
             fuss.appendChild(RANGLISTE._knopf("Ablehnen", "knopf-still knopf-klein",
@@ -1216,7 +1216,7 @@ const RANGLISTE = {
 
         if (verdient.length === 0) {
             DIALOG.hinweis("Noch kein Abzeichen",
-                "Spiel eine Partie zu Ende — das erste Abzeichen wartet schon.");
+                "1 Partie beenden · erstes Abzeichen");
             return;
         }
 
@@ -1236,7 +1236,7 @@ const RANGLISTE = {
                             wahl.splice(wahl.indexOf(eintrag.id), 1);
                         } else if (wahl.length >= SPIELER.ABZEICHEN_PLAETZE) {
                             DIALOG.kurzmeldung("Höchstens " + SPIELER.ABZEICHEN_PLAETZE
-                                + " Abzeichen — nimm erst eins weg.");
+                                + " Abzeichen · erst eins abwählen");
                             return;
                         } else {
                             wahl.push(eintrag.id);
@@ -1251,7 +1251,7 @@ const RANGLISTE = {
         fuellen();
 
         DIALOG.hinweis("Abzeichen wählen",
-            "Bis zu drei stehen auf deiner Visitenkarte.", halter)
+            "Bis zu 3 · auf der Visitenkarte", halter)
             .then(() => {
                 ANMELDUNG.abgleich.aendern(
                     SPIELER.abzeichenSetzen(ANMELDUNG.abgleich.daten, ich.id, wahl), true);

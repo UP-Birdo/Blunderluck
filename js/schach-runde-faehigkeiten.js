@@ -140,15 +140,15 @@ Object.assign(SCHACH_RUNDE, {
                 ? "remis"
                 : ((stand.ergebnis === farbe) ? "sieg" : "niederlage"));
 
-        let ende = "Die Partie läuft noch.";
+        let ende = "Partie läuft";
         if (lage.art === "matt") {
-            ende = "Schachmatt — der König konnte dem Angriff nicht mehr entkommen.";
+            ende = "Schachmatt · König ohne Ausweg";
         } else if (lage.art === "patt") {
-            ende = "Patt — die Seite am Zug hatte keinen einzigen erlaubten Zug mehr.";
+            ende = "Patt · kein erlaubter Zug";
         } else if (lage.art === "remis") {
-            ende = lage.text || "Unentschieden.";
+            ende = lage.text || "Unentschieden";
         } else if (stand.ergebnis) {
-            ende = "Aufgegeben — die Partie wurde vorzeitig beendet.";
+            ende = "Aufgegeben · vorzeitig beendet";
         }
 
         const wendepunkte = stand.verlauf
@@ -1446,7 +1446,7 @@ Object.assign(SCHACH_RUNDE, {
 
         neu.verlauf.push({
             text: "Fähigkeit " + SCHACH_VARIANTEN.faehigkeitTitel(art)
-                + " abgebrochen — sie bleibt im Vorrat",
+                + " abgebrochen · bleibt im Vorrat",
             wer: "",
             farbe: farbe,
             von: -1,
@@ -1588,8 +1588,7 @@ Object.assign(SCHACH_RUNDE, {
              */
             if (SCHACH.felderVon(runde.stand) !== SCHACH.felderVon(altStand)) {
                 runde.verlauf.push({
-                    text: "Eine zweite Unglücks-Lootbox verpufft — das Brett hat sich "
-                        + "gerade verändert",
+                    text: "Zweite Unglücks-Lootbox verpufft · Brett verändert",
                     wer: wer || "",
                     farbe: farbe,
                     von: -1,
@@ -1789,7 +1788,7 @@ Object.assign(SCHACH_RUNDE, {
             /* Auch ein wirkungsloser Unglückswürfel wird festgehalten: Sonst
                stünde im Verlauf ein Einsammeln ohne Folge, und niemand wüsste,
                warum nichts passiert ist. */
-            text += " — ohne Wirkung";
+            text += " · ohne Wirkung";
         }
 
         /*

@@ -1,85 +1,49 @@
 /*
- * intro.js — das UPCrew-Intro beim Start (seit v0.138.0).
+ * intro.js — das UPCrew-Studio-Intro beim Start: der Anpasser für Blunderluck.
  *
  * UPCrew ist das Studio hinter allen Spielen. Beim Öffnen erscheint kurz
  * das Studio-Zeichen, dann das Spiel — in JEDER UPCrew-App gleich (Nutzer-
- * Ansage 25.09.2026: „beide Apps gleich"). Vorlage mit Aufbau und Zeiten:
- * Apps\Typoluck\js\intro.js; die Stil-Regeln stehen in css\stil-start.css.
+ * Ansage 25.09.2026: „beide Apps gleich").
  *
- * Drei Regeln, damit es nicht nervt:
- *   - höchstens einmal je Besuch (sessionStorage), nicht bei jedem Neuladen;
+ * SEIT v0.140.3 STECKT DAS INTRO SELBST IN js\upcrew-intro.js (+ css\upcrew-
+ * intro.css) — dem gemeinsamen Baustein aller UPCrew-Apps. Quelle ist
+ * dev\Design\3D-Schrift\final\; dort wird er geändert und in die Apps
+ * KOPIERT, hier nie abgewandelt (Schnittstelle und Regeln:
+ * Design\3D-Schrift\docs\EINBAU-INTRO.md). Diese Datei sagt ihm nur, was
+ * nur Blunderluck weiss: hell oder dunkel, Nummer, Name und Version der App.
+ * Vorlage war Apps\Typoluck\js\intro.js (0.6.1).
+ *
+ * Die Regeln (Nutzer-Entscheidung 25.09.2026):
+ *   - bei JEDEM Start (die Sperre „einmal je Besuch" ist weg);
+ *   - jeder Start zeigt die nächste von sechs Arten (Zähler im Baustein,
+ *     gemeinsam mit den anderen UPCrew-Apps);
  *   - ein Tipp oder eine Taste überspringt es sofort;
  *   - die App lädt darunter weiter — das Intro hält nichts auf.
  */
 
 const INTRO = {
 
-    STEHT_MS: 1800,
-    AUSBLENDEN_MS: 400,
+    /* Nummer und Name im Studio (Blunderluck 01, Typoluck 02, Trainer 03). */
+    APP_NR: "01",
+    APP_NAME: "Blunderluck",
 
-    /* Derselbe Schlüssel wie in Typoluck: Wer das Zeichen in dieser Sitzung
-       schon gesehen hat, sieht es nicht noch einmal. */
-    SCHLUESSEL: "upcrew.intro-gesehen",
-
-    faellig() {
-        try {
-            return window.sessionStorage.getItem(INTRO.SCHLUESSEL) !== "ja";
-        } catch (fehler) {
-            return true;
-        }
+    /* Hell oder dunkel — Blunderluck hat keinen eigenen Schalter und folgt
+       nur dem Gerät (wie css\stil.css und das 3D-Brett). */
+    modus() {
+        const geraetDunkel = !!(window.matchMedia
+            && window.matchMedia("(prefers-color-scheme: dark)").matches);
+        return geraetDunkel ? "dunkel" : "hell";
     },
 
+    /* Zeigt das Intro im Behälter und liefert ein Versprechen, das nach dem
+       Ausblenden erfüllt ist (mit { art, welt, modus } oder null). */
     zeigen(behaelter) {
-        return new Promise((fertig) => {
-            if (!behaelter || !INTRO.faellig()) {
-                fertig();
-                return;
-            }
-            try {
-                window.sessionStorage.setItem(INTRO.SCHLUESSEL, "ja");
-            } catch (fehler) {
-                /* Ohne Sitzungsspeicher kommt es eben jedes Mal. */
-            }
-
-            const element = (tag, klasse, text) => {
-                const el = document.createElement(tag);
-                el.className = klasse;
-                if (text) {
-                    el.textContent = text;
-                }
-                return el;
-            };
-
-            behaelter.innerHTML = "";
-            const logo = element("div", "intro-logo");
-            logo.setAttribute("role", "img");
-            logo.setAttribute("aria-label", "UPCrew");
-            logo.appendChild(element("span", "intro-up", "UP"));
-            logo.appendChild(element("span", "intro-crew", "Crew"));
-            behaelter.appendChild(logo);
-            behaelter.appendChild(element("p", "intro-zeile", "präsentiert"));
-            behaelter.hidden = false;
-
-            let vorbei = false;
-            const beenden = () => {
-                if (vorbei) {
-                    return;
-                }
-                vorbei = true;
-                clearTimeout(uhr);
-                document.removeEventListener("keydown", beenden);
-                behaelter.classList.add("intro-weg");
-                setTimeout(() => {
-                    behaelter.hidden = true;
-                    behaelter.classList.remove("intro-weg");
-                    behaelter.innerHTML = "";
-                    fertig();
-                }, INTRO.AUSBLENDEN_MS);
-            };
-
-            const uhr = setTimeout(beenden, INTRO.STEHT_MS);
-            behaelter.addEventListener("click", beenden, { once: true });
-            document.addEventListener("keydown", beenden);
+        if (!behaelter || typeof UPCREW_INTRO === "undefined") {
+            return Promise.resolve(null);
+        }
+        return UPCREW_INTRO.zeigen(behaelter, {
+            modus: INTRO.modus(),
+            app: { nr: INTRO.APP_NR, name: INTRO.APP_NAME, version: KONFIG.APP_VERSION }
         });
     }
 };

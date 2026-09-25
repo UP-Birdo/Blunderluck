@@ -644,7 +644,7 @@ const DIALOG = {
         feld.setAttribute("aria-label", platzhalter);
 
         const leer = DIALOG._zeile("dialog-liste-leer",
-            "Niemand gefunden, der dazu passt.");
+            "Niemand gefunden");
         leer.hidden = true;
         liste.appendChild(leer);
 

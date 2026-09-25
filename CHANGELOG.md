@@ -3,6 +3,40 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.140.3 — 25.09.2026
+
+**Das neue UPCrew-Studio-Intro** — dasselbe wie in Typoluck.
+
+- Beim Start kommt jetzt das neue Studio-Intro — bei **jedem** Start, nicht
+  nur einmal je Besuch.
+- Jeder Start zeigt die nächste von sechs Arten; der Zähler ist mit den
+  anderen UPCrew-Spielen gemeinsam.
+- Hell und dunkel: Das Intro folgt dem Gerät, wie die App selbst.
+  Standardfarbe ist Werkstatt-Orange statt Violett.
+- Antippen oder eine Taste überspringt es weiter sofort; die App lädt
+  darunter.
+
+## v0.140.2 — 25.09.2026
+
+**Blunderluck sieht jetzt aus wie Typoluck: runde Formen, feste Kanten**
+(UPCrew-Standard, zweiter Teil).
+
+- **Drei Rundungen statt zwanzig:** Knöpfe, Karten, Menüs und Fenster sind
+  gleich rund wie in Typoluck, kleine Felder und Marken etwas weniger,
+  Pillen und Kreise ganz. Das Brett selbst bleibt, wie es ist.
+- **Knöpfe zum Anfassen:** Jeder Knopf steht auf einer festen Kante und
+  sinkt beim Drücken hinein. Karten, Menü, Kurzmeldungen und Fenster
+  stehen ebenfalls auf einer Kante statt auf einem verschwommenen Schatten.
+- Das Leuchten auf dem Brett (Schild, Falle, „du bist am Zug") bleibt —
+  es ist ein Signal, kein Schatten.
+- **Weniger Text:** Rund 180 Stellen, an denen die App einen ganzen Satz
+  sagte, sind jetzt Stichworte — zum Beispiel „Code teilen · einladen",
+  „Angemeldet · Anna", „Gegen Computer", „Schachmatt · Weiss gewinnt".
+  Regeln erklären weiterhin in ganzen Sätzen: hinter den i-Knöpfen, in
+  „Schach lernen", bei den Fähigkeiten und Abzeichen.
+- Noch offen: die eigene runde Schrift (wählst du nach Bild, gemeinsam für
+  alle UPCrew-Spiele).
+
 ## v0.140.1 — 25.09.2026
 
 **Die App startet wieder.** Mit v0.140.0 blieb Blunderluck beim Öffnen

@@ -454,7 +454,7 @@ Object.assign(TEAM_SCHACH, {
         } else {
             /* Wer die Runde sieht — nur, wenn Menschen dazukommen sollen. */
             const bilder = { oeffentlich: "welt", freunde: "menschen", privat: "schloss" };
-            const sicht = TEAM_SCHACH._abschnittBauen("Wer sieht die Runde?",
+            const sicht = TEAM_SCHACH._abschnittBauen("Sichtbar für wen?",
                 SCHACH_RUNDE.SICHTBARKEITEN.map((stufe) => stufe.titel + ": " + stufe.hinweis)
                     .join("\n")
                 + "\n\nDen Code gibt es in jeder Stufe — wer ihn hat, kommt immer hinein.");
@@ -514,7 +514,7 @@ Object.assign(TEAM_SCHACH, {
         (id) => TEAM_SCHACH._regelSetzen("faehigkeiten", id === "an")));
 
         /* Der Weg in die Bibliothek: alle Fähigkeiten mit Bildanleitung. */
-        an.appendChild(TEAM_SCHACH._knopf("Alle Fähigkeiten ansehen",
+        an.appendChild(TEAM_SCHACH._knopf("Alle Fähigkeiten",
             "knopf-still knopf-klein runde-bibliothek", () => TEAM_SCHACH.faehigkeitenOeffnen()));
         seite.appendChild(an);
 
@@ -559,7 +559,7 @@ Object.assign(TEAM_SCHACH, {
         seite.appendChild(vorrat);
 
         /* Sieht man, was drin ist? Ein Bild für jede Antwort. */
-        const seltenheit = TEAM_SCHACH._abschnittBauen("Sieht man, was drin ist?",
+        const seltenheit = TEAM_SCHACH._abschnittBauen("Inhalt sichtbar?",
             "Farbig: Jede Lootbox trägt schon auf dem Brett die Farbe ihrer Stufe, "
             + "eine schlechte ihr Fragezeichen. Verdeckt: Alle sehen gleich aus — "
             + "man weiss erst beim Einsammeln, was es war.");
@@ -701,9 +701,9 @@ Object.assign(TEAM_SCHACH, {
         const gezaehlt = SCHACH_RUNDE.messungVon(partien).gezaehlt;
         zeile.appendChild(TEAM_SCHACH._element("span", "regeln-dauer-quelle",
             (gezaehlt > 0)
-                ? ("geschätzt aus " + gezaehlt
-                    + ((gezaehlt === 1) ? " gespielten Partie" : " gespielten Partien"))
-                : "Richtwert — noch keine gespielte Partie gemessen"));
+                ? ("geschätzt · " + gezaehlt
+                    + ((gezaehlt === 1) ? " Partie" : " Partien"))
+                : "Richtwert · noch nicht gemessen"));
 
         return zeile;
     },
@@ -940,9 +940,9 @@ Object.assign(TEAM_SCHACH, {
 
         TEAM_SCHACH._itemAuswahlFuellen(halter);
 
-        DIALOG.hinweis("Welche Items kommen vor?",
-            "Angehakt ist, was in dieser Partie vorkommen kann. Mindestens eins "
-            + "bleibt stehen.",
+        DIALOG.hinweis("Welche Items?",
+            "Angehakt = kommt vor · "
+            + "mindestens eins",
             halter).then(() => TEAM_SCHACH.weichZeichnen());
     },
 
@@ -995,7 +995,7 @@ Object.assign(TEAM_SCHACH, {
 
                 if (bleibt === 0) {
                     DIALOG.hinweis("Mindestens ein Item",
-                        "Sonst wäre jede Lootbox leer. Hake erst ein anderes an.");
+                        "Sonst Lootboxen leer · erst anderes anhaken");
                     return;
                 }
 
@@ -1525,7 +1525,7 @@ Object.assign(TEAM_SCHACH, {
             SCHACH_RUNDE.istEingeladen(partie, person.id));
         if (einladungen.length > 0) {
             beitreten.appendChild(TEAM_SCHACH._element("p", "erklaerung",
-                "Du bist eingeladen:"));
+                "Einladungen"));
             for (const partie of einladungen) {
                 const zeile = TEAM_SCHACH._element("div", "freunde-zeile");
                 zeile.appendChild(TEAM_SCHACH._element("span", "freunde-name",
@@ -1601,7 +1601,7 @@ Object.assign(TEAM_SCHACH, {
            zu lesen, und er sagt genau das eine, was man wissen muss: wo der
            Code steht. Seit v0.47.0 ist das die mitlaufende Leiste oben rechts. */
         beitreten.appendChild(TEAM_SCHACH._element("p", "erklaerung code-hinweis",
-            "Rechts oben in einer Runde steht der Code."));
+            "Code · rechts oben in der Runde"));
 
         wurzel.appendChild(beitreten);
 
@@ -1649,7 +1649,7 @@ Object.assign(TEAM_SCHACH, {
                 !SCHACH_RUNDE.teamVon(partie, person.id));
             if (fremde.length > 0) {
                 wurzel.appendChild(TEAM_SCHACH._element("p", "erklaerung",
-                    "Alle offenen Partien (Verwaltung):"));
+                    "Offene Partien · Verwaltung"));
             }
             for (const partie of fremde) {
                 wurzel.appendChild(TEAM_SCHACH._partieKarteBauen(partie, person));
@@ -1775,8 +1775,8 @@ Object.assign(TEAM_SCHACH, {
         const jetzt = SCHACH_RUNDE._appVersion();
         if (partie.angelegtMit && jetzt && partie.angelegtMit !== jetzt) {
             karte.appendChild(TEAM_SCHACH._element("p", "partie-zeile partie-herkunft",
-                "Angelegt mit v" + partie.angelegtMit + " — die Seite läuft mit v"
-                + jetzt + "."));
+                "Angelegt v" + partie.angelegtMit + " · Seite v"
+                + jetzt));
         }
 
         /* Bei einer beendeten Partie trägt jede Seite dazu, wie sie

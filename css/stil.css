@@ -57,7 +57,32 @@
     --warnung-flaeche: #fff4d6;
     --fehler-flaeche: #fbe6e5;
     --abstand: 16px;
-    --radius: 10px;
+
+    /*
+     * DIE RUNDUNGEN — DREI STUFEN, SONST KEINE (UPCrew-Standard, seit
+     * v0.140.2; bis dahin `--radius: 10px` und rund 15 feste Werte). Die
+     * Werte hat Typoluck festgelegt (0.4.0), Blunderluck übernimmt sie.
+     *   klein   Felder, Chips, Balken, kleine Marken
+     *   mittel  Knöpfe, Karten, Dialoge, Menüs, Leisten
+     *   voll    Pillen, Kreise, Zähler
+     * Ausgenommen ist nur Spielgrafik (winzige Brettfelder, Mauern,
+     * Konfetti) — jede solche Stelle trägt die Marke „UPCrew-Ausnahme",
+     * `tests\test-syntax.js` zählt alles Übrige.
+     */
+    --rund-klein: 8px;
+    --rund-mittel: 14px;
+    --rund-voll: 999px;
+
+    /*
+     * DIE HARTE KANTE statt weicher Schatten (UPCrew-Standard, seit
+     * v0.140.2, Werte wie Typoluck): ein Schatten ohne Unschärfe, wenige
+     * Pixel nach unten, in einem dunkleren Ton. Knöpfe sinken beim Drücken
+     * um `--knopf-tiefe` auf ihre Kante.
+     */
+    --knopf-tiefe: 4px;
+    --karte-tiefe: 3px;
+    --haupt-kante: #16457a;
+    --still-kante: #c3c8d0;
 
     /*
      * DER SEITENRAND DES INHALTS (seit v0.72.0) — eigene Variable, weil er
@@ -83,6 +108,8 @@
         --schrift-leise: #a3abb8;
         --haupt: #4a8fd6;
         --haupt-schrift: #0d1116;
+        --haupt-kante: #2f6aa8;
+        --still-kante: #454b56;
         --gefahr: #e05a52;
         --gut: #4cb87a;
         --gut-flaeche: #1d3327;
@@ -203,7 +230,7 @@ body {
 
 *::-webkit-scrollbar-thumb {
     background: var(--rahmen);
-    border-radius: 6px;
+    border-radius: var(--rund-klein);
 
     /* Der Rand ist durchsichtig und lässt die Fläche darunter durchscheinen —
        so wirkt der Greifer schmaler als seine Klickfläche. */
@@ -251,7 +278,7 @@ body {
 .status-punkt {
     width: 10px;
     height: 10px;
-    border-radius: 50%;
+    border-radius: var(--rund-voll);
     background: var(--schrift-leise);
     flex: none;
 }
@@ -377,7 +404,7 @@ body {
     font: inherit;
     color: var(--schrift-leise);
     cursor: pointer;
-    border-radius: 999px;
+    border-radius: var(--rund-voll);
 
     /* Der Text liegt ÜBER der Pille (`.tab-marker`), die als Geschwister-
        Element hinter ihm gleitet. */
@@ -399,7 +426,7 @@ body {
 .tab-marker {
     position: absolute;
     background: var(--haupt);
-    border-radius: 999px;
+    border-radius: var(--rund-voll);
     pointer-events: none;
     z-index: 0;
 }
@@ -626,10 +653,12 @@ body.partie-fest .phasen-leiste {
  * Karten
  * ------------------------------------------------------------------ */
 
+/* Die Karte steht auf einer harten Kante (UPCrew-Standard, seit v0.140.2). */
 .karte {
     background: var(--karte);
     border: 1px solid var(--rahmen);
-    border-radius: var(--radius);
+    border-radius: var(--rund-mittel);
+    box-shadow: 0 var(--karte-tiefe) 0 var(--still-kante);
     padding: var(--abstand);
     margin-bottom: 12px;
 }
@@ -700,7 +729,7 @@ body.partie-fest .phasen-leiste {
 .chip {
     display: inline-block;
     padding: 2px 8px;
-    border-radius: 999px;
+    border-radius: var(--rund-voll);
     font-size: 0.78rem;
     font-weight: 600;
     line-height: 1.2;
@@ -744,7 +773,7 @@ body.partie-fest .phasen-leiste {
 .meldung {
     margin: 10px 0 0 0;
     padding: 8px 12px;
-    border-radius: 6px;
+    border-radius: var(--rund-klein);
     font-size: 0.88rem;
 }
 
@@ -875,7 +904,7 @@ body.partie-fest .phasen-leiste {
     color: var(--schrift);
     background: var(--karte);
     border: 1px solid var(--rahmen);
-    border-radius: 6px;
+    border-radius: var(--rund-klein);
 }
 
 .wuerfel-anzeige {
@@ -890,7 +919,7 @@ body.partie-fest .phasen-leiste {
     justify-content: center;
     min-width: 42px;
     padding: 6px 10px;
-    border-radius: 8px;
+    border-radius: var(--rund-klein);
     border: 1px solid var(--rahmen);
     background: var(--karte-leise);
     font-weight: 600;
@@ -937,7 +966,7 @@ body.partie-fest .phasen-leiste {
     height: 38px;
     padding: 0;
     flex: none;
-    border-radius: 8px;
+    border-radius: var(--rund-klein);
     border: 1px solid var(--rahmen);
     background: var(--karte-leise);
     color: var(--schrift-leise);
@@ -1175,7 +1204,7 @@ body.partie-fest .phasen-leiste {
     justify-content: center;
     width: 52px;
     height: 52px;
-    border-radius: 999px;
+    border-radius: var(--rund-voll);
     background: var(--haupt);
     color: var(--haupt-schrift);
     font-size: 1.5rem;
@@ -1263,7 +1292,7 @@ body.partie-fest .phasen-leiste {
     display: flex;
     gap: 2px;
     height: 6px;
-    border-radius: 999px;
+    border-radius: var(--rund-voll);
     overflow: hidden;
     background: var(--karte-leise);
 }
@@ -1318,7 +1347,7 @@ body.partie-fest .phasen-leiste {
     justify-content: center;
     width: 20px;
     height: 20px;
-    border-radius: 5px;
+    border-radius: var(--rund-klein);
     font-size: 0.7rem;
     font-weight: 700;
     color: #ffffff;
@@ -1351,7 +1380,7 @@ body.partie-fest .phasen-leiste {
     justify-content: center;
     gap: 4px;
     padding: 8px 4px;
-    border-radius: 12px;
+    border-radius: var(--rund-mittel);
     white-space: normal;
     text-align: center;
     font-size: 0.75rem;
@@ -1391,7 +1420,7 @@ body.partie-fest .phasen-leiste {
     gap: 6px;
     padding: 4px 10px 4px 4px;
     border: 1px solid var(--rahmen);
-    border-radius: 999px;
+    border-radius: var(--rund-voll);
     font-size: 0.82rem;
     font-weight: 600;
     white-space: nowrap;
@@ -1406,7 +1435,7 @@ body.partie-fest .phasen-leiste {
     min-width: 26px;
     height: 26px;
     padding: 0 5px;
-    border-radius: 999px;
+    border-radius: var(--rund-voll);
     background: var(--haupt);
     color: var(--haupt-schrift);
     font-size: 0.72rem;
@@ -1446,7 +1475,7 @@ body.partie-fest .phasen-leiste {
     gap: 4px;
     margin: var(--abstand) 0 8px;
     padding: 4px;
-    border-radius: 12px;
+    border-radius: var(--rund-mittel);
     background: var(--karte-leise);
 }
 
@@ -1459,7 +1488,7 @@ body.partie-fest .phasen-leiste {
     min-height: 36px;
     padding: 6px 4px;
     border: none;
-    border-radius: 9px;
+    border-radius: var(--rund-klein);
     background: transparent;
     color: var(--schrift-leise);
     font: inherit;
@@ -1471,7 +1500,7 @@ body.partie-fest .phasen-leiste {
 .profil-reiter-aktiv {
     background: var(--karte);
     color: var(--schrift);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+    box-shadow: 0 2px 0 var(--still-kante);
 }
 
 .profil-reiter-zahl {
@@ -1535,7 +1564,7 @@ body.partie-fest .phasen-leiste {
     min-width: 0;
     padding: 10px 2px 8px;
     border: 1px solid var(--rahmen);
-    border-radius: 12px;
+    border-radius: var(--rund-mittel);
     background: transparent;
     color: inherit;
     font: inherit;
@@ -1635,7 +1664,7 @@ body.partie-fest .phasen-leiste {
     width: 26px;
     height: 26px;
     padding: 0;
-    border-radius: 50%;
+    border-radius: var(--rund-voll);
     border: 1px solid var(--rahmen);
     background: var(--karte);
     color: var(--schrift-leise);
@@ -1681,13 +1710,27 @@ body.partie-fest .phasen-leiste {
     border-top: 1px solid var(--rahmen);
 }
 
+/*
+ * DER KNOPF STEHT AUF EINER HARTEN KANTE (UPCrew-Standard, seit v0.140.2,
+ * wie Typoluck): ein Schatten ohne Unschärfe in der Kantenfarbe; beim
+ * Drücken sinkt der Knopf um genau diese Tiefe ein. Kleine Knöpfe stehen
+ * etwas flacher. Wo ein Knopf ausdrücklich flach sein soll (Bild-Reihen
+ * mit Pille, Karten der Hand), setzt seine eigene Regel `box-shadow: none`.
+ */
 .knopf {
     appearance: none;
     font: inherit;
     padding: 10px 18px;
-    border-radius: 6px;
+    border-radius: var(--rund-mittel);
     border: 1px solid transparent;
     cursor: pointer;
+    box-shadow: 0 var(--knopf-tiefe) 0 var(--still-kante);
+    transition: transform 80ms ease, box-shadow 80ms ease, background-color 120ms ease;
+}
+
+.knopf:active:not(:disabled) {
+    transform: translateY(var(--knopf-tiefe));
+    box-shadow: 0 0 0 transparent;
 }
 
 .knopf:disabled {
@@ -1696,6 +1739,7 @@ body.partie-fest .phasen-leiste {
 }
 
 .knopf-klein {
+    --knopf-tiefe: 3px;
     padding: 6px 12px;
     font-size: 0.88rem;
 }
@@ -1704,18 +1748,22 @@ body.partie-fest .phasen-leiste {
     background: var(--haupt);
     color: var(--haupt-schrift);
     font-weight: 600;
+    box-shadow: 0 var(--knopf-tiefe) 0 var(--haupt-kante);
 }
 
+/* Still und Gefahr stehen seit v0.140.2 auf der Kartenfläche statt
+   durchsichtig — sonst schiene die Kante durch den Knopf hindurch. */
 .knopf-still {
-    background: transparent;
+    background: var(--karte);
     color: var(--schrift-leise);
     border-color: var(--rahmen);
 }
 
 .knopf-gefahr {
-    background: transparent;
+    background: var(--karte);
     color: var(--gefahr);
     border-color: var(--gefahr);
+    box-shadow: 0 var(--knopf-tiefe) 0 var(--gefahr);
 }
 
 .knopf-gefahr:hover {
@@ -1756,8 +1804,7 @@ body.partie-fest .phasen-leiste {
  * UPCrew-Standard, Abschnitt 3: kein Satz, sondern ein festes Bild je
  * Zustand. Laden = graue Balken in der Form des Inhalts, sanft pulsierend;
  * Leer und Fehler = Zeichen, wenige Worte, ein Knopf. Dieselben Klassen
- * wie in Typoluck. Die Rundungen nehmen vorerst die vorhandenen Werte
- * (`--radius`, 50 %) — die drei Stufen `--rund-*` kommen mit Typoluck.
+ * wie in Typoluck.
  * ------------------------------------------------------------------ */
 
 .zustand-laden {
@@ -1769,7 +1816,7 @@ body.partie-fest .phasen-leiste {
 .zustand-balken {
     display: block;
     height: 40px;
-    border-radius: var(--radius);
+    border-radius: var(--rund-mittel);
     background: var(--karte-leise);
 }
 
@@ -1792,7 +1839,7 @@ body.partie-fest .phasen-leiste {
     justify-content: center;
     width: 56px;
     height: 56px;
-    border-radius: 50%;
+    border-radius: var(--rund-voll);
     background: var(--karte-leise);
     color: var(--schrift-leise);
 }

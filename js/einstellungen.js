@@ -268,14 +268,14 @@ const EINSTELLUNGEN = {
         if (!person) {
             const stand = document.createElement("p");
             stand.className = "erklaerung";
-            stand.textContent = "Auf diesem Gerät ist niemand angemeldet.";
+            stand.textContent = "Nicht angemeldet";
             karte.appendChild(stand);
             return karte;
         }
 
         const stand = document.createElement("p");
         stand.className = "erklaerung";
-        stand.textContent = "Angemeldet als " + person.name + ".";
+        stand.textContent = "Angemeldet · " + person.name;
 
         /* Mit UPCrew-Konto (seit v0.138.0): Name MIT Nummer, die Rolle, und
            ein Gast sieht, dass er seinen Spielstand sichern kann. */
@@ -284,9 +284,9 @@ const EINSTELLUNGEN = {
         const eintrag = mitKonto ? ANMELDUNG.ich() : null;
         if (eintrag) {
             const rolle = KONTO.rolleVon(ANMELDUNG.abgleich.daten, eintrag.uid);
-            stand.textContent = "Angemeldet als " + KONTO.anzeigeName(eintrag)
-                + (rolle ? " (" + rolle + ")" : "")
-                + (eintrag.gast === true ? " — dein Spielstand hängt an diesem Gerät." : ".");
+            stand.textContent = "Angemeldet · " + KONTO.anzeigeName(eintrag)
+                + (rolle ? " · " + rolle : "")
+                + (eintrag.gast === true ? " · Spielstand nur auf diesem Gerät" : "");
         }
         karte.appendChild(stand);
 

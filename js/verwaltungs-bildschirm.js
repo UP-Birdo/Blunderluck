@@ -80,10 +80,9 @@ const VERWALTUNGS_BILDSCHIRM = {
             const hinweis = document.createElement("p");
             hinweis.className = "erklaerung";
             hinweis.textContent = (typeof KONTO !== "undefined" && KONTO.aktiv())
-                ? "Die Verwaltung ist nur für Konten mit der Rolle Admin."
-                : "Die Verwaltung ist auf diesem Gerät nicht "
-                    + "freigeschaltet. Öffne sie über die Einstellungen — dort "
-                    + "wird das Verwaltungs-Passwort abgefragt.";
+                ? "Nur Rolle Admin"
+                : "Nicht freigeschaltet · über Einstellungen "
+                    + "mit Verwaltungs-Passwort";
             karte.appendChild(hinweis);
             return;
         }
@@ -92,9 +91,8 @@ const VERWALTUNGS_BILDSCHIRM = {
         erklaerung.className = "erklaerung";
         /* Seit dem UPCrew-Umzug sind es die Konten ALLER Spiele — Entfernen
            wirkt überall, nicht nur in Blunderluck. */
-        erklaerung.textContent = "Alle UPCrew-Konten. Entfernen löscht das "
-            + "Konto in ALLEN Spielen von UPCrew, dazu aus Spielerliste und "
-            + "Rangliste — etwa bei doppelten Anmeldungen.";
+        erklaerung.textContent = "Alle UPCrew-Konten · Entfernen gilt in "
+            + "ALLEN Spielen · samt Spielerliste und Rangliste";
         karte.appendChild(erklaerung);
 
         /* Mit UPCrew-Konto (seit v0.138.0): Name#Nummer, Rollen, Neu-Verbinden. */
@@ -118,8 +116,8 @@ const VERWALTUNGS_BILDSCHIRM = {
         const anpassungText = document.createElement("p");
         anpassungText.className = "erklaerung";
         anpassungText.textContent = an
-            ? "An: Am Brett steht der Paletten-Knopf für Farben, Figuren und Blick."
-            : "Aus: Am Brett gibt es keinen Paletten-Knopf.";
+            ? "An · Paletten-Knopf am Brett · Farben, Figuren, Blick"
+            : "Aus · kein Paletten-Knopf am Brett";
         anpassung.appendChild(anpassungText);
         const schalter = VERWALTUNGS_BILDSCHIRM._knopf(
             an ? "Ausschalten" : "Einschalten",

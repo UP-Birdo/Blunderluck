@@ -1610,22 +1610,19 @@ const SCHACH_RUNDE = {
             id: "oeffentlich",
             titel: "Öffentlich",
             schild: "Öffentlich",
-            hinweis: "Jeder sieht die Runde unter \"Runde beitreten\" und kann "
-                + "beitreten."
+            hinweis: "Für alle · unter \"Runde beitreten\""
         },
         {
             id: "freunde",
             titel: "Freunde",
             schild: "Nur Freunde",
-            hinweis: "Nur deine Freunde sehen die Runde dort. Den Code gibt "
-                + "es trotzdem."
+            hinweis: "Nur für Freunde · Code geht auch"
         },
         {
             id: "privat",
             titel: "Privat",
             schild: "Privat",
-            hinweis: "Niemand sieht die Runde — hinein kommt nur, wer den "
-                + "Code hat."
+            hinweis: "Unsichtbar · nur mit Code"
         }
     ],
 
@@ -2393,7 +2390,7 @@ const SCHACH_RUNDE = {
 
             SCHACH_RUNDE._zugZurueckSetzen(neu, alt.stand, von, nach, farbe,
                 geschlagen, zugEintrag, bericht.stolperHalt,
-                " — der Zug bricht dort ab");
+                " · Zug bricht ab");
         }
 
         /* Und alle paar Züge erscheint ein neuer Würfel. */
@@ -2431,9 +2428,9 @@ const SCHACH_RUNDE = {
             neu.laeuft = false;
 
             neu.verlauf.push({
-                text: "Zurückgestolpert ins Schach — "
+                text: "Ins Schach gestolpert · "
                     + ((farbe === SCHACH.WEISS) ? "Weiss" : "Schwarz")
-                    + " verliert die Partie",
+                    + " verliert",
                 wer: "",
                 farbe: farbe,
                 von: -1,
@@ -2548,7 +2545,7 @@ const SCHACH_RUNDE = {
         }
 
         SCHACH_RUNDE._zugZurueckSetzen(runde, altStand, von, nach, farbe,
-            geschlagen, zugEintrag, halt, " — der Zug bricht davor ab");
+            geschlagen, zugEintrag, halt, " · Zug bricht davor ab");
 
         return true;
     },
@@ -3051,16 +3048,16 @@ const SCHACH_RUNDE = {
             return "Unentschieden";
         }
         if (stand.ergebnis) {
-            return (stand.ergebnis === "weiss") ? "Weiss hat gewonnen" : "Schwarz hat gewonnen";
+            return (stand.ergebnis === "weiss") ? "Weiss gewonnen" : "Schwarz gewonnen";
         }
         if (stand.laeuft) {
             return ((stand.stand.amZug === "weiss") ? "Weiss" : "Schwarz")
-                + " ist am Zug (Zug " + stand.stand.zugNummer + ")";
+                + " am Zug · Zug " + stand.stand.zugNummer;
         }
         if (stand.teams.weiss.length === 0 && stand.teams.schwarz.length === 0) {
             return "Wartet auf Mitspieler";
         }
-        return "Noch nicht gestartet";
+        return "Nicht gestartet";
     },
 
     /* ---------------------------------------------------------------- *

@@ -80,10 +80,9 @@ Object.assign(ANMELDUNG, {
 
     /* Geräte von vor dem Umzug: alle sind abgemeldet, mit Hinweis. */
     _kontoUmzugHinweisZeigen(vorname) {
-        const kasten = ANMELDUNG._kastenBauen("Blunderluck zieht zu UPCrew",
-            "Alle Konten sind jetzt UPCrew-Konten. Melde dich einmal mit deinem "
-                + "bisherigen Passwort an und leg danach ein neues fest. Deine "
-                + "Partien, Freunde und Abzeichen ziehen mit.");
+        const kasten = ANMELDUNG._kastenBauen("Umzug zu UPCrew",
+            "Einmal altes Passwort · dann neues · Partien, Freunde, "
+                + "Abzeichen ziehen mit");
         kasten.appendChild(ANMELDUNG._knopfBauen("Weiter",
             "knopf-haupt anmeldung-knopf", () => ANMELDUNG._kontoAnmeldenZeigen(vorname)));
         kasten.appendChild(ANMELDUNG._knopfBauen("Anderes Konto",
@@ -92,8 +91,8 @@ Object.assign(ANMELDUNG, {
 
     _kontoAnmeldenZeigen(vorbelegt) {
         const kasten = ANMELDUNG._kastenBauen("Anmelden",
-            "Mit Name#Nummer (z. B. Jonas#0001) und Passwort. Dein altes "
-                + "Blunderluck-Konto? Dann Name und bisheriges Passwort.");
+            "Name#Nummer, z. B. Jonas#0001 · altes Konto: Name und "
+                + "altes Passwort");
         const name = ANMELDUNG._kontoFeld(kasten, "Name#Nummer", "username");
         const passwort = ANMELDUNG._kontoFeld(kasten, "Passwort", "current-password");
         name.feld.addEventListener("input", () => {
@@ -136,9 +135,8 @@ Object.assign(ANMELDUNG, {
                 fehlversuche += 1;
                 passwort.feld.value = "";
                 passwort.fehler.textContent = fehlversuche >= 3
-                    ? "Wieder falsch. Passwort vergessen? Bitte einen Admin, dein "
-                        + "Konto zum Neu-Verbinden freizugeben."
-                    : "Das Passwort stimmt nicht.";
+                    ? "Falsch · vergessen? Admin gibt Neu-Verbinden frei"
+                    : "Passwort falsch";
             } else {
                 (ergebnis.feld === "name" ? name : passwort).fehler.textContent = ergebnis.text;
             }
@@ -190,7 +188,7 @@ Object.assign(ANMELDUNG, {
         const altSpieler = SPIELER.spielerNachName(alt.daten, teile.name);
         if (!altSpieler) {
             return { fehler: "unbekannt", feld: "name",
-                text: "Dieses Konto gibt es nicht. Neu hier? Dann erstell ein UPCrew-Konto." };
+                text: "Konto unbekannt · neues Konto?" };
         }
         if (!SPIELER.hatPin(altSpieler)
                 || !await VERSIEGELUNG.pinPruefen(passwort, altSpieler.pinSalz,
@@ -207,11 +205,11 @@ Object.assign(ANMELDUNG, {
     _kontoNeuesPasswortZeigen(art, spieler, altesPasswort) {
         const umzug = (art === "umzug");
         const kasten = ANMELDUNG._kastenBauen(
-            umzug ? "Neues Passwort für UPCrew" : "Konto neu verbinden",
+            umzug ? "UPCrew-Passwort" : "Neu verbinden",
             (umzug
-                ? "Das alte Passwort stimmt. Leg jetzt dein UPCrew-Passwort fest — "
-                : "Leg ein neues Passwort fest — ")
-                + KONTO.passwortRegelText() + ".");
+                ? "Altes Passwort stimmt · neues: "
+                : "Neues Passwort: ")
+                + KONTO.passwortRegelText());
 
         const name = umzug ? ANMELDUNG._kontoFeld(kasten, "Name", "username") : null;
         if (name) {
@@ -220,7 +218,7 @@ Object.assign(ANMELDUNG, {
         }
         const passwort = ANMELDUNG._kontoFeld(kasten, "Neues Passwort", "new-password");
         const wiederholung = ANMELDUNG._kontoFeld(kasten, "Passwort wiederholen", "new-password");
-        const los = ANMELDUNG._knopfBauen(umzug ? "Zu UPCrew umziehen" : "Neu verbinden",
+        const los = ANMELDUNG._knopfBauen(umzug ? "Umziehen" : "Neu verbinden",
             "knopf-haupt anmeldung-knopf anmeldung-weiter", null);
 
         const pruefen = ANMELDUNG._kontoFormularPruefen(name, passwort, wiederholung, los);
@@ -253,9 +251,8 @@ Object.assign(ANMELDUNG, {
 
     _kontoNeuZeigen() {
         const kasten = ANMELDUNG._kastenBauen("Neues UPCrew-Konto",
-            "Damit spielst du in allen UPCrew-Spielen. Deine Nummer (#1234) "
-                + "bekommst du automatisch.");
-        const name = ANMELDUNG._kontoFeld(kasten, "Name (nur Buchstaben und Ziffern)", "username");
+            "Für alle UPCrew-Spiele · Nummer (#1234) automatisch");
+        const name = ANMELDUNG._kontoFeld(kasten, "Name · Buchstaben, Ziffern", "username");
         ANMELDUNG._nameFeldSaeubern(name.feld);
         const passwort = ANMELDUNG._kontoFeld(kasten,
             "Passwort (" + KONTO.passwortRegelText() + ")", "new-password");
@@ -317,9 +314,8 @@ Object.assign(ANMELDUNG, {
             return;
         }
         const jetzt = await DIALOG.frage("Spielstand sichern?",
-            "Als Gast hängt dein Spielstand an diesem Gerät — geht es verloren "
-                + "oder meldest du dich ab, ist er weg. Mit einem UPCrew-Konto "
-                + "nimmst du alles mit.", "Jetzt sichern");
+            "Gast · Spielstand nur auf diesem Gerät · mit Konto überall",
+            "Sichern");
         if (jetzt) {
             ANMELDUNG.gastSichernOeffnen();
         }
@@ -334,9 +330,9 @@ Object.assign(ANMELDUNG, {
         ANMELDUNG.wurzelEl.hidden = false;
 
         const kasten = ANMELDUNG._kastenBauen("Spielstand sichern",
-            "Such dir einen Namen und ein Passwort aus. Alles, was du als "
-                + KONTO.anzeigeName(eintrag) + " gespielt hast, bleibt.");
-        const name = ANMELDUNG._kontoFeld(kasten, "Name (nur Buchstaben und Ziffern)", "username");
+            "Name und Passwort · alles als "
+                + KONTO.anzeigeName(eintrag) + " bleibt");
+        const name = ANMELDUNG._kontoFeld(kasten, "Name · Buchstaben, Ziffern", "username");
         ANMELDUNG._nameFeldSaeubern(name.feld);
         const passwort = ANMELDUNG._kontoFeld(kasten,
             "Passwort (" + KONTO.passwortRegelText() + ")", "new-password");
@@ -370,8 +366,8 @@ Object.assign(ANMELDUNG, {
 
     async _kontoNameAendern(ich) {
         const eingabe = await DIALOG.eingabe("Name ändern",
-            "Nur Buchstaben und Ziffern. Der Name gilt in allen UPCrew-Spielen; "
-                + "deine Nummer bleibt, wenn sie frei ist.", ich.name, "Übernehmen", true);
+            "Buchstaben, Ziffern · alle UPCrew-Spiele · Nummer bleibt, "
+                + "wenn frei", ich.name, "Übernehmen", true);
         if (!eingabe) {
             return;
         }
@@ -382,18 +378,18 @@ Object.assign(ANMELDUNG, {
         const ergebnis = await KONTO.nameAendern(ANMELDUNG.abgleich.speicher,
             ANMELDUNG.abgleich.daten, ich, name);
         if (!ergebnis.ok) {
-            await DIALOG.hinweis("Das geht nicht", ergebnis.text);
+            await DIALOG.hinweis("Geht nicht", ergebnis.text);
             return;
         }
         await ANMELDUNG._kontoNachladen();
         ICH.personSetzen(ich.id, name);
         ANMELDUNG._anzeigenAuffrischen();
-        DIALOG.kurzmeldung("Du heisst jetzt " + KONTO.anzeigeName(ergebnis.eintrag));
+        DIALOG.kurzmeldung("Umbenannt · " + KONTO.anzeigeName(ergebnis.eintrag));
     },
 
     async _kontoPasswortAendern(ich) {
         const altes = await DIALOG.passwort("Bisheriges Passwort",
-            "Zur Sicherheit zuerst dein bisheriges Passwort.", "Weiter");
+            "Zur Sicherheit", "Weiter");
         if (altes === null || altes === undefined) {
             return;
         }
@@ -421,7 +417,7 @@ Object.assign(ANMELDUNG, {
             return false;
         }
         if (KONTO.istOberAdmin(ANMELDUNG.abgleich.daten, spieler.uid)) {
-            await DIALOG.hinweis("Geht nicht", "UP#Plus lässt sich nicht ändern.");
+            await DIALOG.hinweis("Geht nicht", "UP#Plus ist fest");
             return false;
         }
         const speicher = ANMELDUNG.abgleich.speicher;
@@ -436,7 +432,7 @@ Object.assign(ANMELDUNG, {
         }
         if (!ergebnis.ok) {
             await DIALOG.hinweis("Nicht gespeichert",
-                "Das darf dein Konto nicht, oder die Verbindung fehlt.");
+                "Keine Berechtigung · oder kein Netz");
             return false;
         }
         await ANMELDUNG._kontoNachladen();
@@ -454,8 +450,8 @@ Object.assign(ANMELDUNG, {
         const ich = ANMELDUNG.ich();
         if (ich && ich.gast === true) {
             const sicher = await DIALOG.frage("Als Gast abmelden?",
-                "Dein Gast-Spielstand ist danach weg. Sichern kannst du ihn in den "
-                    + "Einstellungen (Spielstand sichern).", "Trotzdem abmelden", true);
+                "Spielstand weg · vorher sichern: Einstellungen",
+                "Trotzdem abmelden", true);
             if (!sicher) {
                 return;
             }
@@ -476,8 +472,7 @@ Object.assign(ANMELDUNG, {
             KONTO.abmelden();
         } else {
             const passwort = await DIALOG.passwort("UPCrew-Konto löschen",
-                "Zur Sicherheit noch einmal dein Passwort. Danach ist dein Konto "
-                    + "weg - in allen Spielen von UPCrew.", "Endgültig löschen");
+                "Konto weg · in allen UPCrew-Spielen", "Endgültig löschen");
             if (passwort === null || passwort === undefined) {
                 return;
             }
@@ -577,7 +572,7 @@ Object.assign(ANMELDUNG, {
 
             const gleich = wiederholung.feld.value === passwort.feld.value;
             wiederholung.fehler.textContent = (wiederholung.feld.value !== "" && !gleich)
-                ? "Die beiden Passwörter stimmen nicht überein." : "";
+                ? "Passwörter stimmen nicht" : "";
             gueltig = gueltig && wiederholung.feld.value !== "" && gleich;
             knopf.disabled = !gueltig;
         };

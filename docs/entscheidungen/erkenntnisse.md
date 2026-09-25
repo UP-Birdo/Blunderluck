@@ -2,6 +2,32 @@
 
 ## Teuer erkaufte Erkenntnisse
 
+### Ein Verweis-Test mit `indexOf` lässt `konfig.js.bak` durch — v0.140.0 startete nicht (gemeldet 25.09.2026, behoben v0.140.1)
+
+**Passiert:** Nach dem Ausliefern von v0.140.0 kam der Nutzer nicht mehr in
+die App — oben nur der Fehler-Streifen „Neu laden", bei jedem Öffnen.
+`index.html` band `js/konfig.js.bak` statt `js/konfig.js` ein; die
+`.bak`-Datei war eine Sicherung beim Hochsetzen der Versionsnummer
+(`sed -i.bak`) und wurde danach gelöscht. Ohne KONFIG warf `APP.starten`
+sofort `ReferenceError`. **Wahrscheinlicher Weg** (nicht nachgemessen):
+`sed -i.bak` BENENNT das Original in `konfig.js.bak` UM und schreibt eine
+neue `konfig.js` — und VS Code zieht Verweise in HTML-Dateien bei einer
+Umbenennung nach. Dafür spricht, dass ZWEI Seiten gleichzeitig betroffen
+waren: `index.html` und `_werkstatt-3d.html` (dort gefunden und behoben
+bei v0.140.2).
+
+**Warum die 1845 Prüfungen es nicht sahen:** `test-syntax.js` prüfte
+`seite.indexOf("js/" + name)`, und `js/konfig.js.bak` enthält
+`js/konfig.js`. Die Bildschirm-Tests laden die Dateien selbst, nie über
+`index.html`. **Gefunden** wurde es nur, indem die echte `index.html`
+kopflos lief und jeder Fehler auf die Seite geschrieben wurde.
+
+**Regeln seitdem:** (1) Der Test vergleicht den ganzen `src`-Verweis und
+verlangt, dass jede eingebundene Datei existiert. (2) Keine `.bak`-Kopien
+im Projekt anlegen (`sed -i.bak`) — Einzelzeilen per Edit. (3) Vor jeder
+Auslieferung einmal die echte `index.html` kopflos starten, nicht nur die
+Bausteine einzeln ansehen.
+
 ### „Nochmal" wiederholt erst NACH dem `finally` — und ein Zeichen in einer Bild-Reihe heisst `bild-zeichen` (v0.140.0)
 
 **Beim Bauen gefunden, 25.09.2026 (UPCrew-Standard, Fehler mit „Nochmal").**

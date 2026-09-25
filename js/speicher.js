@@ -197,8 +197,8 @@ class SpeicherGemeinsam {
                Meldung, sonst sucht man an der falschen Stelle. */
             if (fehler && fehler.name === "AbortError") {
                 throw new Error(was + " hat zu lange gedauert (über "
-                    + Math.round(zeitlimit / 1000) + " Sekunden). Die Verbindung "
-                    + "ist gerade zu schlecht.");
+                    + Math.round(zeitlimit / 1000) + " s) · Verbindung "
+                    + "zu schlecht");
             }
             throw fehler;
         } finally {
@@ -486,8 +486,8 @@ function speicherErzeugen(konfig, pfad, lokalerSchluessel, aufbereiten, eigeneUi
         if (!einstellung.firebaseBasis) {
             return {
                 speicher: new SpeicherLokal(lokalerSchluessel, aufbereiten),
-                hinweis: "Gemeinsamer Modus ist eingestellt, aber in js\\konfig.js "
-                    + "steht keine Datenbank-Adresse. Es wird nur lokal gespeichert."
+                hinweis: "Keine Datenbank-Adresse in js\\konfig.js · "
+                    + "speichert nur lokal"
             };
         }
         return {

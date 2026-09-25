@@ -1956,7 +1956,7 @@ pruefe("Das Code-Feld traegt den Hinweis darunter, nicht darin (v0.51.0)", () =>
     if (text.indexOf("Gib den Beitritts-Code ein") !== -1) {
         throw new Error("der alte Erklaersatz steht noch da");
     }
-    if (text.indexOf("Rechts oben in einer Runde steht der Code") === -1) {
+    if (text.indexOf("Code · rechts oben in der Runde") === -1) {
         throw new Error("der neue Hinweis fehlt");
     }
 
@@ -2102,7 +2102,7 @@ pruefe("Nach einer Bot-Partie kommt kein Punkte-Schirm (v0.32.0)", () => {
         if (text.indexOf("Punktestand ansehen") !== -1) {
             throw new Error("der Weg in die Rangliste ist noch offen");
         }
-        if (text.indexOf("Gegen den Computer gibt es keine Punkte") === -1) {
+        if (text.indexOf("Gegen Computer · keine Punkte") === -1) {
             throw new Error("der erklaerende Satz fehlt — sonst sucht man die Punkte"
                 + " (gezeichnet wurde: " + text.slice(0, 200) + ")");
         }

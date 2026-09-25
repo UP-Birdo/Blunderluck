@@ -166,8 +166,7 @@ Object.assign(TEAM_SCHACH, {
 
         if (gegenComputer) {
             flaeche.appendChild(TEAM_SCHACH._element("p", "erklaerung",
-                "Gegen den Computer gibt es keine Punkte — die Rangliste "
-                + "bleibt, wie sie war."));
+                "Gegen Computer · keine Punkte"));
 
             const nurZurueck = TEAM_SCHACH._element("div", "abschluss-leiste");
             nurZurueck.appendChild(TEAM_SCHACH._knopf("Zurück zur Übersicht",
@@ -185,7 +184,7 @@ Object.assign(TEAM_SCHACH, {
         kasten.appendChild(TEAM_SCHACH._element("span", "abschluss-zahl",
             "+" + teil.punkte));
         kasten.appendChild(TEAM_SCHACH._element("span", "abschluss-punkte-text",
-            "Punkte für die Rangliste"));
+            "Ranglisten-Punkte"));
         flaeche.appendChild(kasten);
 
         flaeche.appendChild(TEAM_SCHACH._aufschluesselungBauen(partie, meinTeam, teil));
@@ -270,7 +269,7 @@ Object.assign(TEAM_SCHACH, {
 
         const brettSpalte = TEAM_SCHACH._element("div", "rueckschau-brett");
         brettSpalte.appendChild(TEAM_SCHACH._element("span", "rueckschau-marke",
-            "So stand es am Ende"));
+            "Schlussstellung"));
         /* Ein Bild fast ohne Markierung: kein Tipp, kein Pfeil, kein
            Zielfeld — die Stellung, wie sie stehen geblieben ist. Nur das rote
            Matt-Feld bleibt stehen (Nutzer-Wunsch 27.08.2026): Es GEHÖRT zur
@@ -304,8 +303,8 @@ Object.assign(TEAM_SCHACH, {
             bilanz.appendChild(eintrag);
         };
 
-        zeile("Dein Team hat verloren (Figurenwert)", schau.wert.eigen);
-        zeile("Der Gegner hat verloren (Figurenwert)", schau.wert.gegner);
+        zeile("Figurenverlust · dein Team", schau.wert.eigen);
+        zeile("Figurenverlust · Gegner", schau.wert.gegner);
 
         /*
          * WAS AM ENDE NOCH AUF DEM BRETT STAND (seit v0.76).
@@ -317,18 +316,17 @@ Object.assign(TEAM_SCHACH, {
          * v0.75 wurde der Satz darunter aus den VERLUSTEN gerechnet und
          * widersprach deshalb dem, was man auf dem Brett daneben sah.
          */
-        zeile("Auf dem Brett standen noch (dein Team)", schau.stellung.eigen);
-        zeile("Auf dem Brett standen noch (Gegner)", schau.stellung.gegner);
+        zeile("Am Brett übrig · dein Team", schau.stellung.eigen);
+        zeile("Am Brett übrig · Gegner", schau.stellung.gegner);
         textSpalte.appendChild(bilanz);
 
         const abstand = schau.stellung.eigen - schau.stellung.gegner;
         textSpalte.appendChild(TEAM_SCHACH._element("p", "abschluss-grund",
             (abstand === 0)
-                ? "Am Material lag es nicht — am Ende stand auf beiden Seiten "
-                    + "gleich viel."
+                ? "Material gleich"
                 : ((abstand > 0)
-                    ? "Beim Material lagt ihr vorn, um " + abstand + "."
-                    : "Beim Material lagt ihr hinten, um " + (-abstand) + ".")));
+                    ? "Material · " + abstand + " vorn"
+                    : "Material · " + (-abstand) + " hinten")));
 
         /* Die Wendepunkte — Fähigkeiten und Unglückswürfel, in der Reihenfolge,
            in der sie geschahen. */
@@ -336,8 +334,7 @@ Object.assign(TEAM_SCHACH, {
 
         if (schau.wendepunkte.length === 0) {
             liste.appendChild(TEAM_SCHACH._element("p", "erklaerung",
-                "Keine Fähigkeit und keine Unglücks-Lootbox — diese Partie wurde "
-                + "allein mit Zügen entschieden."));
+                "Keine Fähigkeit · keine Unglücks-Lootbox"));
         }
 
         for (const punkt of schau.wendepunkte) {
@@ -356,7 +353,7 @@ Object.assign(TEAM_SCHACH, {
         textSpalte.appendChild(liste);
 
         const leiste = TEAM_SCHACH._element("div", "abschluss-leiste");
-        leiste.appendChild(TEAM_SCHACH._knopf("Weiter zum Ergebnis", "knopf-haupt",
+        leiste.appendChild(TEAM_SCHACH._knopf("Zum Ergebnis", "knopf-haupt",
             () => {
                 TEAM_SCHACH.abschluss.schritt = 1;
                 TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
@@ -584,7 +581,7 @@ Object.assign(TEAM_SCHACH, {
                 "faehigkeit-zeile faehigkeit-reihe faehigkeit-reihe-ziel");
             warten.appendChild(TEAM_SCHACH._element("span", "erklaerung",
                 SCHACH_VARIANTEN.faehigkeitTitel(TEAM_SCHACH.zielFaehigkeit)
-                + ": tippe eines der hervorgehobenen Felder an."));
+                + ": hervorgehobenes Feld antippen"));
             warten.appendChild(TEAM_SCHACH._knopf("Abbrechen", "knopf-still knopf-klein",
                 () => {
                     TEAM_SCHACH._auswahlAufheben();
@@ -822,14 +819,14 @@ Object.assign(TEAM_SCHACH, {
 
         let grund = "";
         if (leererVorrat) {
-            grund = "Gerade nicht möglich: Es ist niemand mehr da, den sie "
-                + "zurückholen könnte. Sobald wieder eine Figur fällt, geht sie.";
+            grund = "Gerade nicht möglich · keine Figur gefallen · "
+                + "geht wieder, sobald eine fällt";
         } else if (nichtsZuHolen && art === "dieb") {
-            grund = "Gerade nicht möglich: Der Gegner hat keine einzige Fähigkeit "
-                + "im Vorrat. Sobald er eine Lootbox einsammelt, geht es wieder.";
+            grund = "Gerade nicht möglich · Gegner hat keine Fähigkeit · "
+                + "geht wieder nach seiner nächsten Lootbox";
         } else if (nichtsZuHolen) {
-            grund = "Gerade nicht möglich: Für den Tausch fehlen dir die Figuren, "
-                + "die er haben will. Sein Angebot wechselt mit jedem Zug.";
+            grund = "Gerade nicht möglich · dir fehlen die Tausch-Figuren · "
+                + "Angebot wechselt jeden Zug";
         }
 
         /*
@@ -1464,7 +1461,7 @@ Object.assign(TEAM_SCHACH, {
         aufklapper.className = "mehr-text";
 
         const griff = document.createElement("summary");
-        griff.textContent = "Die ganze Beschreibung";
+        griff.textContent = "Ganze Beschreibung";
         aufklapper.appendChild(griff);
 
         aufklapper.appendChild(TEAM_SCHACH._element("p", "mehr-text-satz", voll));
@@ -1630,8 +1627,8 @@ Object.assign(TEAM_SCHACH, {
          * sieht genau das aus wie ein Fehler.
          */
         halter.appendChild(TEAM_SCHACH._element("p", "erklaerung",
-            "Dein Gerät ist auf weniger Bewegung eingestellt — deshalb stehen alle "
-            + "Bilder nebeneinander, statt abgespielt zu werden."));
+            "Weniger Bewegung eingestellt · "
+            + "Bilder nebeneinander"));
 
         for (let nummer = 0; nummer < schritte.length; nummer++) {
             const kasten = TEAM_SCHACH._element("div", "anleitung-bild");
@@ -2380,6 +2377,6 @@ Object.assign(TEAM_SCHACH, {
         const anzahl = partie.verlauf.length;
         const liste = TEAM_SCHACH._zugListeBauen(partie);
         DIALOG.hinweis("Züge (" + anzahl + ")",
-            liste ? "Neueste zuerst." : "Noch kein Zug.", liste);
+            liste ? "Neueste zuerst" : "Noch kein Zug", liste);
     },
 });

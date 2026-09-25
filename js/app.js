@@ -145,14 +145,13 @@ const FEHLERFANG = {
 
         const titel = document.createElement("p");
         titel.className = "fehler-streifen-titel";
-        titel.textContent = "Da ist etwas schiefgegangen.";
+        titel.textContent = "Etwas schiefgegangen";
         textTeil.appendChild(titel);
 
         const satz = document.createElement("p");
         satz.className = "fehler-streifen-satz";
-        satz.textContent = "Die App hat einen Fehler gemacht — nicht du."
-            + " Meistens hilft Neu laden. Passiert es wieder, melde es bitte:"
-            + " die technische Meldung ist im Formular schon eingetragen.";
+        satz.textContent = "Fehler der App, nicht deiner · meist hilft Neu laden"
+            + " · kommt es wieder: Fehler melden, die Technik steht schon drin";
         textTeil.appendChild(satz);
 
         const zaehler = document.createElement("p");

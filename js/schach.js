@@ -2029,7 +2029,7 @@ const SCHACH = {
                 zielFeld: -1,
                 turmZiel: -1,
                 moeglich: false,
-                grund: "Das Recht ist verfallen: König oder Turm haben sich schon bewegt."
+                grund: "Recht verfallen (König oder Turm bewegt)."
             }];
         }
 
@@ -2048,12 +2048,12 @@ const SCHACH = {
             };
 
             if (!SCHACH._imBrett(stand, reihe, zielSpalte)) {
-                weg.grund = "Der König hätte keine zwei Felder Platz.";
+                weg.grund = "Keine zwei Felder Platz.";
                 wege.push(weg);
                 continue;
             }
             if (SCHACH.figurAuf(stand, koenigFeld) !== koenig) {
-                weg.grund = "Der König steht nicht mehr auf seinem Startfeld.";
+                weg.grund = "König nicht auf Startfeld.";
                 wege.push(weg);
                 continue;
             }
@@ -2067,7 +2067,7 @@ const SCHACH = {
                 }
             }
             if (!frei) {
-                weg.grund = "Zwischen König und Turm steht noch eine Figur.";
+                weg.grund = "Figur zwischen König und Turm.";
                 wege.push(weg);
                 continue;
             }
@@ -2086,7 +2086,7 @@ const SCHACH = {
             }
             if (mauerImWeg || SCHACH.gesperrt(stand, weg.zielFeld)
                 || SCHACH.gesperrt(stand, weg.turmZiel)) {
-                weg.grund = "Eine Mauer steht im Weg.";
+                weg.grund = "Mauer im Weg.";
                 wege.push(weg);
                 continue;
             }
@@ -2094,7 +2094,7 @@ const SCHACH = {
             /* Auf Brettern ohne Schach entfällt die Bedrohungsprüfung. */
             if (!variante.koenigSchlagbar) {
                 if (SCHACH.imSchach(stand, farbe)) {
-                    weg.grund = "Der König steht im Schach.";
+                    weg.grund = "König im Schach.";
                     wege.push(weg);
                     continue;
                 }
@@ -2102,12 +2102,12 @@ const SCHACH = {
                 const ueber = SCHACH._feld(stand, reihe, spalte + richtung);
 
                 if (SCHACH._feldBedroht(stand, ueber, gegner)) {
-                    weg.grund = "Der König müsste über ein bedrohtes Feld ziehen.";
+                    weg.grund = "Weg über bedrohtes Feld.";
                     wege.push(weg);
                     continue;
                 }
                 if (SCHACH._feldBedroht(stand, weg.zielFeld, gegner)) {
-                    weg.grund = "Der König stünde danach im Schach.";
+                    weg.grund = "Zielfeld bedroht.";
                     wege.push(weg);
                     continue;
                 }
@@ -2446,7 +2446,7 @@ const SCHACH = {
      * warum nicht:
      *
      *     [ { seite: "kurz", turmFeld: 63, zielFeld: 62,
-     *         moeglich: false, grund: "Zwischen König und Turm steht noch eine Figur." } ]
+     *         moeglich: false, grund: "Figur zwischen König und Turm." } ]
      *
      * Warum das ins Regelwerk gehört und nicht in den Bildschirm: Die Frage
      * „warum darf ich gerade nicht rochieren" ist eine REGELFRAGE. Würde der
@@ -2460,9 +2460,9 @@ const SCHACH = {
         if (!variante.rochade) {
             return [
                 { seite: "kurz", turmFeld: -1, zielFeld: -1, moeglich: false,
-                    grund: "In dieser Spielart gibt es keine Rochade." },
+                    grund: "Spielart ohne Rochade." },
                 { seite: "lang", turmFeld: -1, zielFeld: -1, moeglich: false,
-                    grund: "In dieser Spielart gibt es keine Rochade." }
+                    grund: "Spielart ohne Rochade." }
             ];
         }
 
@@ -2493,7 +2493,7 @@ const SCHACH = {
                     turmFeld: -1,
                     zielFeld: -1,
                     moeglich: false,
-                    grund: "Das Recht ist verfallen: König oder Turm haben sich schon bewegt."
+                    grund: "Recht verfallen (König oder Turm bewegt)."
                 });
             }
         }
@@ -4646,8 +4646,8 @@ const SCHACH = {
                     return {
                         art: "matt",
                         sieger: sieger,
-                        text: "Kein König mehr — "
-                            + ((sieger === SCHACH.WEISS) ? "Weiss" : "Schwarz") + " gewinnt."
+                        text: "Kein König mehr · "
+                            + ((sieger === SCHACH.WEISS) ? "Weiss" : "Schwarz") + " gewinnt"
                     };
                 }
             }
@@ -4656,9 +4656,9 @@ const SCHACH = {
         /* Bretter ohne Schach-Begriff sind damit fertig. */
         if (variante.koenigSchlagbar) {
             if (SCHACH.alleZuege(stand).length === 0) {
-                return { art: "patt", sieger: "", text: "Patt — unentschieden." };
+                return { art: "patt", sieger: "", text: "Patt · Unentschieden" };
             }
-            return { art: "laeuft", sieger: "", text: amZugName + " ist am Zug." };
+            return { art: "laeuft", sieger: "", text: amZugName + " am Zug" };
         }
 
         const hatZuege = SCHACH.alleZuege(stand).length > 0;
@@ -4669,27 +4669,27 @@ const SCHACH = {
             return {
                 art: "matt",
                 sieger: sieger,
-                text: "Schachmatt — " + ((sieger === SCHACH.WEISS) ? "Weiss" : "Schwarz") + " gewinnt."
+                text: "Schachmatt · " + ((sieger === SCHACH.WEISS) ? "Weiss" : "Schwarz") + " gewinnt"
             };
         }
 
         if (!hatZuege) {
-            return { art: "patt", sieger: "", text: "Patt — unentschieden." };
+            return { art: "patt", sieger: "", text: "Patt · Unentschieden" };
         }
 
         if (stand.halbzuege >= 100) {
             return {
                 art: "remis",
                 sieger: "",
-                text: "Unentschieden nach der Fünfzig-Züge-Regel."
+                text: "Remis · 50-Züge-Regel"
             };
         }
 
         if (schach) {
-            return { art: "laeuft", sieger: "", text: amZugName + " steht im Schach." };
+            return { art: "laeuft", sieger: "", text: amZugName + " im Schach" };
         }
 
-        return { art: "laeuft", sieger: "", text: amZugName + " ist am Zug." };
+        return { art: "laeuft", sieger: "", text: amZugName + " am Zug" };
     }
 };
 
