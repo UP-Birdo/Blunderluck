@@ -2719,9 +2719,14 @@ function blickSetzen(weich) {
     if (!Z.masse) return;
     const winkel = BLICKE[Z.einst.blick].winkel;
     const { spalten, reihen } = Z.masse;
-    /* Die Schrift steht nur links (Reihen) und unten (Linien) — dort Platz
-       für sie, rechts und oben nur die Steine. */
-    const xs = [-(spalten / 2 + SCHRIFT_ABSTAND + 0.15), spalten / 2 + 0.1];
+    /* Die Schrift steht nur links (Reihen) und unten (Linien). Unten bekommt
+       sie ihren Platz; links und rechts ist der Rand seit v0.143.1 GLEICH
+       breit — so steht das Brett selbst in der Mitte, nicht Brett samt
+       Zahlen (Nutzer 26.09.2026: „die Zahlen an der linken Seite zählen
+       nicht mit, richte das Brett immer mittig aus"). Bis dahin nur links
+       Platz: Das Brett sass um rund ein Drittel Feld nach rechts. */
+    const seitlich = spalten / 2 + SCHRIFT_ABSTAND + 0.15;
+    const xs = [-seitlich, seitlich];
     const zs = [-(reihen / 2 + 0.1), reihen / 2 + SCHRIFT_ABSTAND + 0.15];
     /* Mit Friedhof-Ablage (laufende Partie) gehört sie ins Bild. */
     if (Z.mitAblage) zs[1] = ablageMitte() + ABLAGE_TIEFE / 2 + 0.05;

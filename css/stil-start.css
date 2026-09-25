@@ -1495,8 +1495,10 @@ body.dialog-offen {
      */
 
     /* Die Randbeschriftung des Bretts darf schmaler sein. */
-    .brett-rand-reihen {
-        width: 12px;
+    /* Die Zahlenspalte ist am Handy schmaler — über die Variable, damit der
+       gleich breite Rand rechts mitzieht (seit v0.143.1, stil-brett.css). */
+    .brett-rahmen {
+        --brett-rand-breite: 12px;
     }
 
     /* Friedhof und Züge: mehr Platz für den Finger am Aufklapp-Knopf. */

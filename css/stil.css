@@ -538,9 +538,20 @@ body {
 /*
  * EINE OFFENE RUNDE IST EIN EIGENES FENSTER (seit v0.113, Nutzer-Ansage
  * 22.08.): Die Partie hat ihren eigenen Zurück-Knopf. Bis v0.141 blendete
- * `body.runde-offen` hier die Tab-Leiste aus; seit v0.142.0 bleibt sie
- * stehen (UPCrew-Angleichung). Die Klasse setzt weiter `TABS.rundeSetzen`.
+ * `body.runde-offen` hier die Tab-Leiste aus; seit v0.142.0 bleibt sie in
+ * Fenstern stehen (UPCrew-Angleichung). Die Klasse setzt weiter
+ * `TABS.rundeSetzen`.
+ *
+ * AUSNAHME: DIE LAUFENDE PARTIE (seit v0.143.1, Nutzer 26.09.2026: „in
+ * Partie ausblenden" — die alte Regel F10 „während der laufenden Partie nur
+ * das Brett, kein Ausgang" gilt wieder). Erkannt an `body.partie-fest`: die
+ * feste Seite gibt es genau dann, wenn die geöffnete Partie läuft
+ * (`TEAM_SCHACH`, `rundeSetzen(…, true, offene.laeuft)`). Vor dem Anpfiff
+ * (Vorraum) und nach dem Ende steht die Leiste.
  */
+body.partie-fest .tab-leiste {
+    display: none;
+}
 
 /* ------------------------------------------------------------------ *
  * DER PFEIL ZURÜCK IN DER KOPFZEILE (seit v0.142.0, wie Typoluck
@@ -725,15 +736,15 @@ body.partie-fest {
     overflow: hidden;
 }
 
-/* Unten bleibt genau die Tab-Leiste frei (seit v0.142.0 steht sie auch
-   in der Partie); sie hält selbst den Streifen des iPhone-Balkens frei. */
+/* In der laufenden Partie gibt es keine Tab-Leiste (siehe „Tabs",
+   v0.143.1) — unten bleibt kein Platz für sie frei. */
 body.partie-fest .tab-inhalt {
     flex: 1 1 auto;
     min-height: 0;
     display: flex;
     flex-direction: column;
     padding-top: 0;
-    padding-bottom: calc(var(--leiste-hoehe) + env(safe-area-inset-bottom, 0px));
+    padding-bottom: 0;
     width: 100%;
 }
 
@@ -743,8 +754,8 @@ body.partie-fest .schach {
     display: flex;
     flex-direction: column;
 
-    /* Den iPhone-Balken hält seit v0.142.0 die Tab-Leiste frei (oben). */
-    padding-bottom: 0;
+    /* Der iPhone-Balken unten hält sich seinen Streifen selbst frei. */
+    padding-bottom: env(safe-area-inset-bottom, 0px);
     overflow-y: auto;
 
     /*
@@ -1075,9 +1086,15 @@ body.partie-fest .phasen-leiste {
     text-align: left;
 }
 
+/* Steht das Brett allein in seiner Zeile (am Handy rutscht der Text
+   darunter), sitzt es seit v0.143.1 mittig statt links (Nutzer-Foto
+   26.09.2026). Neben dem Text nimmt die Textspalte den freien Platz — dort
+   bleiben die automatischen Ränder null, es ändert sich nichts. */
 .rueckschau-brett {
     flex: 0 1 320px;
     min-width: 220px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .rueckschau-marke {

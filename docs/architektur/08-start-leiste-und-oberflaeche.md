@@ -27,10 +27,11 @@ Menü; in der Leiste markieren sie „Start" (`tab.leisteBei`, ohne Angabe
 
 Zwei Regeln hängen daran:
 
-- **Während der eigenen laufenden Partie gibt es keinen Ausgang über den
-  Bildschirm selbst** (F10). Die Tab-Leiste steht seit v0.142.0 auch dort
-  (Auftrag Runde 2: „immer sichtbar"); ob ein Tipp darauf eine laufende
-  Partie verlassen darf, ist noch nicht entschieden.
+- **Während der laufenden Partie zeigt die App nur das Brett** (F10) —
+  keine Leiste, kein Ausgang. In v0.142.0/v0.143.0 stand die Leiste auch
+  dort (Auftrag „immer sichtbar"); seit v0.143.1 ist sie in der laufenden
+  Partie wieder weg (Nutzer 26.09.2026: „in Partie ausblenden"). Erkannt an
+  `body.partie-fest`, der festen Seite der laufenden Partie.
 - **Je Person läuft höchstens eine Partie** (F11,
   `TEAM_SCHACH._zweitePartieVerhindern`).
 

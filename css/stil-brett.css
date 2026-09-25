@@ -1028,13 +1028,24 @@ body.partie-fest .vorraum-fuss {
  * schmalen Spalte daneben. Beides wächst mit dem Brett — auch auf dem
  * Doppelbrett mit sechzehn Spalten.
  */
+/*
+ * DAS BRETT SELBST STEHT MITTIG, NICHT BRETT SAMT ZAHLEN (seit v0.143.1,
+ * Nutzer 26.09.2026: „die Zahlen an der linken Seite zählen nicht mit,
+ * richte das Brett immer mittig aus"). Rechts bleibt deshalb genau so viel
+ * frei, wie links die Zahlenspalte samt Lücke braucht (`--brett-rand-breite`
+ * + 2 px). Die 3D-Leinwand liegt über diesem Rahmen und ist damit ebenfalls
+ * mittig über dem Brett; ihre Kamera lässt links und rechts gleich viel
+ * Platz (`blickSetzen` in js\brett-3d.js).
+ */
 .brett-rahmen {
+    --brett-rand-breite: 16px;
     display: grid;
     grid-template-columns: auto 1fr;
     gap: 2px;
     width: 100%;
-    max-width: min(calc(var(--brett-max, 520px) + 18px), 100%);
+    max-width: min(calc(var(--brett-max, 520px) + 2 * (var(--brett-rand-breite) + 2px)), 100%);
     margin: 0 auto;
+    padding-right: calc(var(--brett-rand-breite) + 2px);
 }
 
 .brett-rand {
@@ -1049,7 +1060,7 @@ body.partie-fest .vorraum-fuss {
     grid-template-rows: repeat(var(--brett-reihen, 8), 1fr);
     align-items: center;
     justify-items: center;
-    width: 16px;
+    width: var(--brett-rand-breite, 16px);
 }
 
 .brett-rand-spalten {

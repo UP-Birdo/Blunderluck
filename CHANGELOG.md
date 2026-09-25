@@ -3,6 +3,15 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.143.1 — 26.09.2026
+
+- **In der laufenden Partie ist die Tab-Leiste wieder weg** — dort zählt nur
+  das Brett, und ein versehentlicher Tipp unten verlässt die Partie nicht
+  mehr. Vor dem Anpfiff und nach dem Ende steht die Leiste wie überall.
+- **Das Brett steht mittig** — beim Spielen (flach und in 3D) und in der
+  Schlussstellung. Bisher zählten die Zahlen am linken Rand mit, das Brett
+  sass deshalb etwas rechts; am Handy stand das Schlussbrett ganz links.
+
 ## v0.143.0 — 26.09.2026
 
 **Die Einstellungen wie in Typoluck** (UPCrew-Angleichung, Runde 2,
