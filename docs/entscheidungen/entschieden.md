@@ -1,5 +1,16 @@
 # Blunderluck - Entscheidungen / Entschieden - und warum
 
+## UP#Plus ist in allen UPCrew-Spielen nur Rollen-Verteiler (25.09.2026, v0.139.0)
+
+Nutzer: „UP soll nicht in der Rangliste erscheinen, auch keine Freunde
+annehmen können, auch nicht wenn man sucht angezeigt werden, reiner Admin-
+Rollen-Verteiler-Account" — und: „in allen UPCrew-Games soll das so sein".
+Umgesetzt in der Datenschicht (`SPIELER.istVerteiler`, `SPIELER.mitspieler`,
+`freundschaft` immer „keine", `freundHinzufuegen` tut nichts), nicht nur in
+der Oberfläche — so kann kein Bildschirm es vergessen. Erkannt an der Nummer
+„Plus", die laut Datenbank-Regeln nur UP#Plus haben kann. Gleich in Typoluck
+0.2.1; jedes neue UPCrew-Spiel übernimmt es.
+
 ## Echtes 3D statt Bildfolgen — und das 3D-Brett liest das 2D-Brett (24.09.2026, v0.122.0)
 
 **Entschieden vom Nutzer:** die offene VISION-Frage „Bildfolgen oder echtes

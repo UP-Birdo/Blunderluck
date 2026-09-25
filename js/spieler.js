@@ -211,6 +211,26 @@ const SPIELER = {
             (spieler) => spieler.name.trim().toLowerCase() === gesucht) || null;
     },
 
+    /*
+     * DAS VERTEILER-KONTO UP#Plus (Nutzer 25.09.2026: „reiner Admin-Rollen-
+     * Verteiler-Account"): steht in keiner Rangliste, in keiner Suche, hat
+     * keine Freunde und kann keine annehmen. Erkennbar an der Nummer „Plus"
+     * — alle anderen Konten haben vier Ziffern, das erzwingen die Regeln
+     * (SICHERHEIT.md §11), und ein Eintrag passt nur zu seinem eigenen
+     * Namens-Platz.
+     */
+    istVerteiler(spieler) {
+        return !!spieler && spieler.tag === "Plus"
+            && String(spieler.name || "").trim().toLowerCase() === "up";
+    },
+
+    /* Die Spielerliste ohne das Verteiler-Konto — für alles, was Menschen
+       zeigt, die mitspielen (Rangliste, Suche). */
+    mitspieler(daten) {
+        return SPIELER.normalisieren(daten).spieler
+            .filter((spieler) => !SPIELER.istVerteiler(spieler));
+    },
+
     /* Hat der Spieler eine PIN hinterlegt? Nur dann ist er von einem fremden
        Gerät aus prüfbar erreichbar. (Seit v0.7.0 ist die „PIN" ein Passwort —
        die Feldnamen bleiben, der Datenvertrag ist additiv.) */
@@ -474,7 +494,7 @@ const SPIELER = {
         const stand = SPIELER.normalisieren(daten);
         const ich = stand.spieler.find((spieler) => spieler.id === ichId);
         const anderer = stand.spieler.find((spieler) => spieler.id === andererId);
-        if (!ich || !anderer) {
+        if (!ich || !anderer || SPIELER.istVerteiler(ich) || SPIELER.istVerteiler(anderer)) {
             return "keine";
         }
 
@@ -521,6 +541,10 @@ const SPIELER = {
      */
     freundHinzufuegen(daten, ichId, andererId, zeitpunkt) {
         const neu = SPIELER.kopieren(daten);
+        if (SPIELER.istVerteiler(SPIELER.spielerFinden(neu, ichId))
+                || SPIELER.istVerteiler(SPIELER.spielerFinden(neu, andererId))) {
+            return neu;
+        }
         for (const spieler of neu.spieler) {
             if (spieler.id === ichId && ichId !== andererId) {
                 if (spieler.freunde.indexOf(andererId) === -1) {

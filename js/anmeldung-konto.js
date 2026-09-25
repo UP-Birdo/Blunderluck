@@ -66,10 +66,10 @@ Object.assign(ANMELDUNG, {
     },
 
     _kontoWeicheZeigen() {
-        const kasten = ANMELDUNG._kastenBauen("Willkommen bei Blunderluck",
-            "Schach mit Lootboxen. Du spielst mit deinem UPCrew-Konto — ein "
-                + "Konto für alle Spiele von UPCrew. Hast du schon eins, melde "
-                + "dich einfach an.");
+        /* Keine Begrüssung (UPCrew-Standard, seit v0.140.0; bis v0.139.0
+           „Willkommen bei Blunderluck" plus drei Sätze) — wie in Typoluck. */
+        const kasten = ANMELDUNG._kastenBauen("Blunderluck",
+            "Ein Konto · alle UPCrew-Spiele");
         kasten.appendChild(ANMELDUNG._knopfBauen("Mit UPCrew-Konto anmelden",
             "knopf-haupt anmeldung-knopf", () => ANMELDUNG._kontoAnmeldenZeigen("")));
         kasten.appendChild(ANMELDUNG._knopfBauen("Neues UPCrew-Konto erstellen",
@@ -131,6 +131,7 @@ Object.assign(ANMELDUNG, {
                 ergebnis.weiter();
                 return;
             }
+            FUEHLEN.fehler();
             if (ergebnis.fehler === "falsch") {
                 fehlversuche += 1;
                 passwort.feld.value = "";
@@ -236,7 +237,7 @@ Object.assign(ANMELDUNG, {
                     passwort.feld.value, altesPasswort)
                 : await KONTO.neuVerbinden(speicher, daten, spieler, passwort.feld.value);
             await ANMELDUNG._kontoFertig(ergebnis, passwort, pruefen,
-                umzug ? "Umgezogen! Du bist jetzt " : "Willkommen zurück, ");
+                umzug ? "Umgezogen · " : "Angemeldet · ");
         });
 
         kasten.appendChild(los);
@@ -271,7 +272,7 @@ Object.assign(ANMELDUNG, {
             los.disabled = true;
             const ergebnis = await KONTO.kontoAnlegen(ANMELDUNG.abgleich.speicher,
                 ANMELDUNG.abgleich.daten, name.feld.value, passwort.feld.value);
-            await ANMELDUNG._kontoFertig(ergebnis, name, pruefen, "Willkommen, ");
+            await ANMELDUNG._kontoFertig(ergebnis, name, pruefen, "Angemeldet · ");
         });
 
         kasten.appendChild(los);
@@ -292,7 +293,7 @@ Object.assign(ANMELDUNG, {
         await ANMELDUNG._kontoNachladen();
         ANMELDUNG._uebernehmen(ergebnis.eintrag);
         ANMELDUNG._vollbildSchliessen();
-        DIALOG.kurzmeldung("Du spielst als " + KONTO.anzeigeName(ergebnis.eintrag));
+        DIALOG.kurzmeldung("Gast · " + KONTO.anzeigeName(ergebnis.eintrag));
     },
 
     /* ---------------------------------------------------------------- *
@@ -352,7 +353,7 @@ Object.assign(ANMELDUNG, {
             los.disabled = true;
             const ergebnis = await KONTO.gastSichern(ANMELDUNG.abgleich.speicher,
                 ANMELDUNG.abgleich.daten, eintrag, name.feld.value, passwort.feld.value);
-            await ANMELDUNG._kontoFertig(ergebnis, name, pruefen, "Gesichert! Du bist jetzt ");
+            await ANMELDUNG._kontoFertig(ergebnis, name, pruefen, "Gesichert · ");
         });
 
         kasten.appendChild(los);
@@ -589,6 +590,7 @@ Object.assign(ANMELDUNG, {
        übernehmen, Bild zu — oder die Meldung unter das Feld. */
     async _kontoFertig(ergebnis, meldungFeld, pruefen, gruss) {
         if (!ergebnis.ok) {
+            FUEHLEN.fehler();
             meldungFeld.fehler.textContent = ergebnis.text;
             pruefen();
             return;
@@ -596,6 +598,9 @@ Object.assign(ANMELDUNG, {
         await ANMELDUNG._kontoNachladen();
         ANMELDUNG._uebernehmen(ergebnis.eintrag);
         ANMELDUNG._vollbildSchliessen();
+        /* Erfolg spürt man (UPCrew-Standard, seit v0.140.0); die Meldung
+           ist ein Stichwort und der Name, kein Ausruf. */
+        FUEHLEN.erfolg();
         DIALOG.kurzmeldung(gruss + KONTO.anzeigeName(ergebnis.eintrag));
     },
 

@@ -95,6 +95,7 @@ const EINSTELLUNGEN = {
 
         wurzel.appendChild(EINSTELLUNGEN._accountKarteBauen());
         wurzel.appendChild(EINSTELLUNGEN._spielerKarteBauen());
+        wurzel.appendChild(EINSTELLUNGEN._geraetKarteBauen());
         wurzel.appendChild(EINSTELLUNGEN._statusKarteBauen());
         wurzel.appendChild(EINSTELLUNGEN._ueberKarteBauen());
     },
@@ -133,6 +134,39 @@ const EINSTELLUNGEN = {
         }
         karte.appendChild(fuss);
 
+        return karte;
+    },
+
+    /* ---------------------------------------------------------------- *
+     * Die Karte „Gerät" (seit v0.140.0, UPCrew-Standard, Abschnitt 5)
+     *
+     * Vibration an oder aus — gilt nur auf diesem Gerät (js\ich.js), ab
+     * Werk an. Gebaut als dieselbe Bild-Reihe wie die Regler beim Anlegen
+     * (`TEAM_SCHACH._bildReiheBauen`): Bild oben, Wort darunter, kein Satz.
+     * Kann das Gerät gar nicht vibrieren (iPhone), sagt es das i — der
+     * Schalter bleibt trotzdem da, damit er auf dem nächsten Gerät gilt.
+     * ---------------------------------------------------------------- */
+
+    _geraetKarteBauen() {
+        const kannVibrieren = (typeof FUEHLEN !== "undefined") && FUEHLEN.verfuegbar();
+        const karte = EINSTELLUNGEN._karteBauen("Gerät", "Vibration",
+            kannVibrieren
+                ? "Antippen: kurz · Sieg und Fehler: lang · nur dieses Gerät"
+                : "Hier keine Vibration (iPhone: nicht für Web-Apps) · nur dieses Gerät");
+
+        if (typeof TEAM_SCHACH === "undefined" || !TEAM_SCHACH._bildReiheBauen) {
+            return karte;
+        }
+        const an = (typeof FUEHLEN === "undefined") || FUEHLEN.an();
+        karte.appendChild(TEAM_SCHACH._bildReiheBauen("vibration", [
+            { id: "an", titel: "Vibration", bild: ZUSTAND.zeichen("vibration", "bild-zeichen") },
+            { id: "aus", titel: "Aus", bild: ZUSTAND.zeichen("vibration-aus", "bild-zeichen") }
+        ], an ? "an" : "aus", (id) => {
+            FUEHLEN.anSetzen(id === "an");
+            /* Man spürt sofort, was man eingeschaltet hat. */
+            FUEHLEN.tippen();
+            EINSTELLUNGEN._zeichnen();
+        }));
         return karte;
     },
 
@@ -184,9 +218,13 @@ const EINSTELLUNGEN = {
 
         const stand = (typeof APP !== "undefined") ? APP.status : "laedt";
         const text = (typeof APP !== "undefined") ? APP.statusText : "";
+        const technik = (typeof APP !== "undefined") ? (APP.statusTechnik || "") : "";
 
         EINSTELLUNGEN.statusEl.setAttribute("data-status", stand);
         EINSTELLUNGEN.statusTextEl.textContent = text;
+        /* Die technische Meldung nur beim Darüberfahren (seit v0.140.0) —
+           im Bild stehen ein, zwei Wörter. */
+        EINSTELLUNGEN.statusTextEl.title = technik;
     },
 
     /* ---------------------------------------------------------------- *

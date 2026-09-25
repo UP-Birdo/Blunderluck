@@ -314,6 +314,14 @@ pruefe("Ohne Spieler ist die Wertung leer", () => {
         0, "leer");
 });
 
+pruefe("UP#Plus steht nicht in der Wertung (v0.139.0)", () => {
+    const daten = spielerMitDrei();
+    daten.spieler.push(Object.assign(SPIELER.neuerSpieler("UP", "id-up"), { tag: "Plus" }));
+    const liste = RANGLISTE.gesamt(daten, SCHACH_TAFEL.leereTafel(1000));
+    gleich(liste.length, 3, "nur die drei Mitspieler");
+    wahr(!liste.some((eintrag) => eintrag.id === "id-up"), "UP fehlt");
+});
+
 pruefe("Jeder Mitspieler steht in der Wertung, auch ohne Punkte", () => {
     const liste = RANGLISTE.gesamt(spielerMitDrei(), SCHACH_TAFEL.leereTafel(1000));
 

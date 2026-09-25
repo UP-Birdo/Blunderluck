@@ -608,10 +608,20 @@ Object.assign(TEAM_SCHACH, {
             && !SCHACH_RUNDE.teamVon(partie, person.id)
             && SCHACH_RUNDE.sichtbarFuer(partie, person.id, istFreund));
 
+        /* Leer mit Ausweg (UPCrew-Standard, seit v0.140.0): Wartet keine
+           Runde, macht man selbst eine auf — derselbe Weg wie „Spielen" auf
+           dem Start. Hier erscheinen öffentliche Runden und die der Freunde. */
         if (wartende.length === 0) {
-            karte.appendChild(TEAM_SCHACH._element("p", "erklaerung",
-                "Gerade wartet keine Runde, die du sehen kannst. Öffentliche "
-                + "Runden und die deiner Freunde erscheinen hier."));
+            karte.appendChild(ZUSTAND.leer({
+                zeichen: "leer", text: "Keine Runde offen",
+                aktion: {
+                    text: "Selbst starten",
+                    beiKlick: () => {
+                        TABS.wechseln("start");
+                        START.spielen();
+                    }
+                }
+            }));
             return karte;
         }
 

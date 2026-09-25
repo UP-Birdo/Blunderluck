@@ -5,7 +5,7 @@
  * Schnittstelle und weiß nicht, welche Rückwand gerade arbeitet:
  *
  *     art           "lokal" | "gemeinsam"
- *     beschreibung  kurzer Satz für die Statusanzeige im Kopf
+ *     beschreibung  ein, zwei Wörter für die Statusanzeige (kein Satz)
  *     laden()       Versprechen auf einen normalisierten Datenstand
  *     speichern(d)  Versprechen; wirft bei Fehler
  *
@@ -27,7 +27,7 @@ class SpeicherLokal {
      */
     constructor(schluessel, aufbereiten) {
         this.art = "lokal";
-        this.beschreibung = "Nur auf diesem Gerät gespeichert";
+        this.beschreibung = "Nur dieses Gerät";
         this.schluessel = schluessel;
         this.aufbereiten = aufbereiten;
     }
@@ -64,7 +64,7 @@ class SpeicherGemeinsam {
 
     constructor(basis, pfad, aufbereiten) {
         this.art = "gemeinsam";
-        this.beschreibung = "Gemeinsamer Stand für alle Besucher";
+        this.beschreibung = "Verbunden";
         this.basis = String(basis).replace(/\/+$/, "");
         this.pfad = String(pfad).replace(/^\/+|\/+$/g, "");
         this.aufbereiten = aufbereiten;

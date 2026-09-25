@@ -155,7 +155,7 @@ const RANGLISTE = {
      * sonst stünden Kennungen ohne Namen in der Liste.
      */
     gesamt(spielerDaten, schachTafel) {
-        const mitspieler = SPIELER.normalisieren(spielerDaten).spieler;
+        const mitspieler = SPIELER.mitspieler(spielerDaten);
         const schach = RANGLISTE.schachPunkte(schachTafel);
 
         const liste = mitspieler.map((eintrag) => {
@@ -330,9 +330,12 @@ const RANGLISTE = {
         bereich.appendChild(kopf);
 
         if (liste.length === 0) {
-            bereich.appendChild(RANGLISTE._element("p", "erklaerung",
-                "Noch niemand dabei. Die Anmeldung fragt beim ersten Öffnen "
-                + "nach dem Namen."));
+            /* Laden oder leer (UPCrew-Standard, seit v0.140.0): Solange die
+               Spielerliste noch nicht angekommen ist, ist „leer" gelogen. */
+            const abgleich = ANMELDUNG.abgleich;
+            bereich.appendChild((abgleich && abgleich.geladen === false)
+                ? ZUSTAND.laden({ zeilen: 4, nochmal: () => abgleich.fremdenStandHolen() })
+                : ZUSTAND.leer({ zeichen: "pokal", text: "Noch niemand" }));
             wurzel.appendChild(bereich);
             return;
         }
@@ -1023,8 +1026,7 @@ const RANGLISTE = {
      */
     _statistikReiterBauen(inhalt, staende, stat) {
         if (stat.partien === 0) {
-            inhalt.appendChild(RANGLISTE._element("p", "erklaerung",
-                "Noch keine beendete Partie — die Zahlen kommen mit der ersten."));
+            inhalt.appendChild(RANGLISTE._leerOhnePartie());
             return;
         }
 
@@ -1117,8 +1119,7 @@ const RANGLISTE = {
             "Woher die Punkte kommen — antippen für Einzelheiten."));
 
         if (verlauf.length === 0) {
-            inhalt.appendChild(RANGLISTE._element("p", "erklaerung",
-                "Noch nichts zu Ende gespielt. Erst ein Ergebnis bringt Punkte."));
+            inhalt.appendChild(RANGLISTE._leerOhnePartie());
             return;
         }
 
@@ -1161,7 +1162,7 @@ const RANGLISTE = {
      */
     _freundschaftBauen(fuss, person, staende) {
         const ich = ICH.person();
-        if (!ich) {
+        if (!ich || SPIELER.istVerteiler(ich) || SPIELER.istVerteiler(person)) {
             return;
         }
         const lage = SPIELER.freundschaft(staende.spieler, ich.id, person.id);
@@ -1446,6 +1447,24 @@ const RANGLISTE = {
             DIALOG.hinweis("Gesamtwertung", RANGLISTE.erklaerung());
         });
         return knopf;
+    },
+
+    /*
+     * Noch keine beendete Partie (Statistik und Partien im Profil, seit
+     * v0.140.0 EIN Bild statt zweier Sätze): Zeichen, zwei Wörter, und der
+     * Knopf, der weiterhilft — zum Start, dort wird gespielt.
+     */
+    _leerOhnePartie() {
+        return ZUSTAND.leer({
+            zeichen: "pokal", text: "Keine Partie",
+            aktion: {
+                text: "Spielen",
+                beiKlick: () => {
+                    RANGLISTE.offenesProfil = "";
+                    TABS.wechseln("start");
+                }
+            }
+        });
     },
 
     _element(tag, klasse, text) {

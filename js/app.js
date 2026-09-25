@@ -347,10 +347,15 @@ const APP = {
      * beim Zeichnen ab (EINSTELLUNGEN.statusAktualisieren).
      */
     status: "laedt",
-    statusText: "Wird geladen …",
+    statusText: "Lädt",
+    statusTechnik: "",
 
     starten() {
         DIALOG.aufbauen(document.getElementById("dialog"));
+
+        /* Jeder Knopf vibriert kurz beim Antippen (UPCrew-Standard, seit
+           v0.140.0) — EIN Zuhörer für die ganze Seite, js\fuehlen.js. */
+        FUEHLEN.einrichten(document);
 
         /* Das UPCrew-Intro legt sich über alles; die App lädt darunter
            weiter, deshalb wird NICHT darauf gewartet (wie in Typoluck). */
@@ -398,7 +403,7 @@ const APP = {
                     START._zeichnen();
                 }
             },
-            beiStatus: (status, text) => APP.statusZeigen(status, text),
+            beiStatus: (status, text, technik) => APP.statusZeigen(status, text, technik),
             leereDaten: () => SPIELER.leereDaten(),
             inhaltGleich: (a, b) => SPIELER.inhaltGleich(a, b),
             zusammenfuehren: (fremd, eigen, id) => SPIELER.zusammenfuehren(fremd, eigen, id)
@@ -536,9 +541,10 @@ const APP = {
      * gerade offen sind (seit Wunsch 2). Wer sie öffnet, sieht den
      * aktuellen Stand, weil die Karte ihn beim Zeichnen abholt.
      */
-    statusZeigen(status, text) {
+    statusZeigen(status, text, technik) {
         APP.status = status;
         APP.statusText = text;
+        APP.statusTechnik = technik || "";
 
         if (typeof EINSTELLUNGEN !== "undefined"
                 && EINSTELLUNGEN.statusAktualisieren) {

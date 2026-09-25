@@ -20,7 +20,8 @@ das es so nicht mehr gibt.
 | `test-bildschirm.js` | Bildschirm-Code gegen ein nachgebautes DOM: Übersicht, Brett, Partie-Fenster |
 | `test-bildschirm-anzeigen.js` | Anzeigen am Bildschirm: die drei Punkte aus v0.76, Rangliste, Zugweg, Vorrat-Zeichen |
 | `test-bildschirm-ablaeufe.js` | Abläufe am Bildschirm: Start, Abgleich, Fenster, Tabs, globaler Fehlerfang — samt der asynchronen Prüfungen |
-| `test-syntax.js` | Übersetzbarkeit, Einbindung, Aufrufe, Version, Service Worker |
+| `test-syntax.js` | Übersetzbarkeit, Einbindung, Aufrufe, Version, Service Worker; seit v0.140.0 auch die Wächter des UPCrew-Standards (keine Floskeln in Zeichenketten, Ladereihenfolge, Vibration nur über `FUEHLEN`) |
+| `test-zustand-fuehlen.js` | Die Bausteine des UPCrew-Standards (v0.140.0): Laden/Leer/Fehler (`ZUSTAND`, samt 10-Sekunden-Grenze), Vibration (`FUEHLEN`: Muster, Aus-Schalter, iPhone ohne Vibration, gesperrte Knöpfe und das 3D-Brett vibrieren nicht) |
 
 Dazu kommt **`bildschirm-umgebung.js`** — die gemeinsame Testumgebung der drei
 Bildschirm-Testdateien (nachgebautes DOM, echte `js\`-Dateien im vm-Kontext,

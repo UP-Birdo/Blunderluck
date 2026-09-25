@@ -1642,6 +1642,7 @@
 .reihen-pille-einigkeit { view-transition-name: einigkeit-aktiv; }
 .reihen-pille-lootbox { view-transition-name: lootbox-aktiv; }
 .reihen-pille-seltenheit { view-transition-name: seltenheit-aktiv; }
+.reihen-pille-vibration { view-transition-name: vibration-aktiv; }
 
 /*
  * DIE ANKREUZLISTE DER ITEMS (seit v0.100) — seit v0.105 im Popup.

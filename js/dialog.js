@@ -60,6 +60,37 @@ const DIALOG = {
     },
 
     /*
+     * DER FEHLER-DIALOG (seit v0.140.0, UPCrew-Standard, Abschnitt 3):
+     * Zeichen, ein bis zwei Wörter, Knopf „Nochmal". Er ersetzt die Sätze
+     * der Art „Die Partie konnte nicht gespeichert werden: " plus
+     * technische Meldung.
+     *
+     *     const nochmal = await DIALOG.fehler("Nicht gesendet", {
+     *         folge: "Zug zurück", technik: fehler.message, nochmal: true });
+     *
+     *   folge    höchstens drei Wörter unter dem Zeichen: was jetzt gilt
+     *   technik  die technische Meldung — nur beim Darüberfahren sichtbar
+     *   nochmal  true = Knopf „Nochmal" anbieten
+     *
+     * Liefert true, wenn „Nochmal" gedrückt wurde. Den Schritt wiederholt
+     * der AUFRUFER — nur er weiss, was genau fehlgeschlagen ist.
+     */
+    fehler(titel, angaben) {
+        const einstellung = angaben || {};
+        const bild = ZUSTAND.fehler({ text: einstellung.folge || "", technik: einstellung.technik });
+        const knoepfe = einstellung.nochmal
+            ? [
+                { beschriftung: "Schließen", wert: false, stil: "knopf-still" },
+                { beschriftung: "Nochmal", wert: true, stil: "knopf-haupt" }
+            ]
+            : [{ beschriftung: "Schließen", wert: false, stil: "knopf-haupt" }];
+        if (typeof FUEHLEN !== "undefined") {
+            FUEHLEN.fehler();
+        }
+        return DIALOG._zeigen({ titel: titel, text: null, zusatz: bild, knoepfe: knoepfe });
+    },
+
+    /*
      * DIE ZWEI-SCHRITT-BESTÄTIGUNG AM KNOPF SELBST (seit v0.112, Nutzer-
      * Entscheidung 22.08., ROADMAP Bündel X6): Der erste Druck stellt die
      * Frage IM Knopf — er wird rot und zeigt „Wirklich?" —, erst der zweite
@@ -283,9 +314,13 @@ const DIALOG = {
             ueberschrift.textContent = vorgabe.titel;
             kasten.appendChild(ueberschrift);
 
-            const absatz = document.createElement("p");
-            absatz.textContent = vorgabe.text;
-            kasten.appendChild(absatz);
+            /* `text: null` = bewusst kein Absatz (der Fehler-Dialog zeigt ein
+               Zeichen statt eines Satzes, seit v0.140.0). */
+            if (vorgabe.text !== null) {
+                const absatz = document.createElement("p");
+                absatz.textContent = vorgabe.text;
+                kasten.appendChild(absatz);
+            }
 
             /* Optionaler Zusatz: ein fertiges Element unter dem Text. */
             if (vorgabe.zusatz) {

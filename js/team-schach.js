@@ -4178,11 +4178,8 @@ const TEAM_SCHACH = {
                 if (fremdePartie && fremdePartie.zugZaehler !== erwarteterZaehler) {
                     abgleich.daten = fremd;
                     TEAM_SCHACH.zeichnen(fremd);
-                    await DIALOG.hinweis(
-                        "Jemand war schneller",
-                        "Aus deinem Team hat gerade schon jemand gezogen. Dein Zug "
-                            + "wurde deshalb nicht ausgeführt."
-                    );
+                    /* Kein „Nochmal": Der Zug des Mitspielers gilt. */
+                    await DIALOG.fehler("Jemand war schneller", { folge: "Dein Zug entfällt" });
                     return false;
                 }
                 tafel = SCHACH_TAFEL.partieEinsetzen(fremd, neuePartie);
@@ -4193,17 +4190,25 @@ const TEAM_SCHACH = {
             TEAM_SCHACH.zeichnen(tafel);
             return true;
         } catch (fehler) {
+            /* Zurücknehmen: Auf einem Brett weiterzuspielen, das sonst
+               niemand sieht, wäre schlimmer als ein Rücksprung. */
             abgleich.daten = vorher;
             TEAM_SCHACH.zeichnen(vorher);
 
-            await DIALOG.hinweis("Nicht gespeichert",
-                "Die Änderung konnte nicht gesendet werden: " + fehler.message
-                    + "\n\nDein Zug wurde deshalb zurückgenommen — sonst würdest du "
-                    + "auf einem Brett weiterspielen, das sonst niemand sieht.");
-            return false;
+            const nochmal = await DIALOG.fehler("Nicht gesendet", {
+                folge: "Zug zurück", technik: fehler.message, nochmal: true });
+            if (!nochmal) {
+                return false;
+            }
         } finally {
             abgleich.eigenerVorgangEndet();
         }
+
+        /* „Nochmal" (seit v0.140.0): derselbe Zug, erst NACH dem `finally`,
+           damit der eigene Vorgang sauber beendet ist. Die Zugzähler-
+           Prüfung läuft dabei neu — war inzwischen jemand schneller, gilt
+           dessen Zug. */
+        return TEAM_SCHACH._sendenMitPruefung(neuePartie, erwarteterZaehler);
     },
 
     /*
@@ -4242,6 +4247,7 @@ const TEAM_SCHACH = {
         }
 
         abgleich.eigenerVorgangBeginnt();
+        let nochmal = false;
 
         try {
             /* Im lokalen Betrieb gibt es kein Rennen — dort ist der eigene
@@ -4251,8 +4257,7 @@ const TEAM_SCHACH = {
             const frisch = SCHACH_TAFEL.partie(tafel, partie.id);
 
             if (!frisch) {
-                await DIALOG.hinweis("Partie nicht gefunden",
-                    "Die Partie gibt es nicht mehr.");
+                await DIALOG.fehler("Partie gelöscht", {});
                 return;
             }
 
@@ -4260,10 +4265,10 @@ const TEAM_SCHACH = {
                 frisch, person.id, art, zielFeld, person.name, undefined, umwandlung);
 
             if (!neu) {
-                await DIALOG.hinweis("Zu spät",
-                    SCHACH_VARIANTEN.faehigkeitTitel(art) + " liess sich gerade nicht "
-                        + "mehr einsetzen — auf dem Brett hat sich inzwischen etwas "
-                        + "geändert. Die Fähigkeit bleibt dir erhalten.");
+                /* Auf dem Brett hat sich inzwischen etwas geändert; was nicht
+                   gewirkt hat, wird nicht verbraucht (Wunsch #29). */
+                await DIALOG.fehler("Zu spät", {
+                    folge: SCHACH_VARIANTEN.faehigkeitTitel(art) + " bleibt" });
 
                 abgleich.daten = tafel;
                 TEAM_SCHACH.zeichnen(tafel);
@@ -4280,11 +4285,17 @@ const TEAM_SCHACH = {
             TEAM_SCHACH.zeichnen(geschrieben);
 
         } catch (fehler) {
-            await DIALOG.hinweis("Nicht gespeichert",
-                "Die Fähigkeit konnte nicht gesendet werden: " + fehler.message
-                    + "\n\nSie bleibt dir erhalten.");
+            nochmal = await DIALOG.fehler("Nicht gesendet", {
+                folge: "Fähigkeit bleibt", technik: fehler.message, nochmal: true });
         } finally {
             abgleich.eigenerVorgangEndet();
+        }
+
+        /* „Nochmal" (seit v0.140.0): holt den Stand wieder frisch — sicher,
+           weil hier ohnehin zusammengeführt statt geprüft wird (siehe oben).
+           Erst NACH dem `finally`, damit der eigene Vorgang beendet ist. */
+        if (nochmal) {
+            await TEAM_SCHACH._faehigkeitImGegenzugSenden(partie, art, zielFeld, umwandlung);
         }
     },
 
@@ -4521,8 +4532,12 @@ const TEAM_SCHACH = {
                     abgleich.speicher, person.id, abgleich.daten);
             }
         } catch (fehler) {
-            await DIALOG.hinweis("Nicht angelegt",
-                "Der aktuelle Stand konnte nicht geladen werden: " + fehler.message);
+            /* „Nochmal" (seit v0.140.0) fängt von vorn an — noch ist nichts
+               geschrieben, und die Sperre `legtGeradeAn` hält der Aufrufer. */
+            if (await DIALOG.fehler("Nicht angelegt", {
+                    technik: fehler.message, nochmal: true })) {
+                return TEAM_SCHACH._rundeAnlegen(person, varianteId, regelnWunsch);
+            }
             return;
         }
 
@@ -4702,6 +4717,7 @@ const TEAM_SCHACH = {
          * die Auswahl offen, diesmal verschwindet die Partie unter ihr.
          */
         abgleich.eigenerVorgangBeginnt();
+        let nochmal = false;
 
         try {
             await TEAM_SCHACH._tafelSchreiben(ergebnis.tafel,
@@ -4724,10 +4740,17 @@ const TEAM_SCHACH = {
                 START.spielartMerken(varianteId);
             }
         } catch (fehler) {
-            await DIALOG.hinweis("Nicht angelegt",
-                "Die Partie konnte nicht gespeichert werden: " + fehler.message);
+            nochmal = await DIALOG.fehler("Nicht angelegt", {
+                technik: fehler.message, nochmal: true });
         } finally {
             abgleich.eigenerVorgangEndet();
+        }
+
+        /* „Nochmal": von vorn, auf frischem Stand. Kam das Schreiben doch
+           an, ersetzt die Prüfung oben die eigene wartende Runde, statt
+           eine zweite anzulegen (v0.114.2). */
+        if (nochmal) {
+            await TEAM_SCHACH._rundeAnlegen(person, varianteId, regelnWunsch);
         }
     },
 
@@ -4759,25 +4782,32 @@ const TEAM_SCHACH = {
         /* Auch hier wird am Abgleich vorbei geschrieben — sonst holt die
            regelmässige Abfrage die eben gelöschte Partie zurück (seit v0.52,
            siehe `spielartGewaehlt`). */
-        abgleich.eigenerVorgangBeginnt();
+        /* „Nochmal" (seit v0.140.0) wiederholt NUR das Löschen, nicht die
+           Passwort-Schranke oben — deshalb die Schleife statt eines neuen
+           Aufrufs. Löschen ist wiederholbar: Was schon weg ist, bleibt weg. */
+        let nochmal = true;
+        while (nochmal) {
+            nochmal = false;
+            abgleich.eigenerVorgangBeginnt();
 
-        try {
-            if (abgleich.speicher.art === "gemeinsam") {
-                tafel = await TEAM_SCHACH._frischHolen(partie.id);
-            }
-            const neueTafel = SCHACH_TAFEL.partieEntfernen(tafel, partie.id);
-            await TEAM_SCHACH._tafelSchreiben(neueTafel, [partie.id]);
-            abgleich.daten = neueTafel;
+            try {
+                if (abgleich.speicher.art === "gemeinsam") {
+                    tafel = await TEAM_SCHACH._frischHolen(partie.id);
+                }
+                const neueTafel = SCHACH_TAFEL.partieEntfernen(tafel, partie.id);
+                await TEAM_SCHACH._tafelSchreiben(neueTafel, [partie.id]);
+                abgleich.daten = neueTafel;
 
-            if (TEAM_SCHACH.offeneId === partie.id) {
-                TEAM_SCHACH.offeneId = "";
+                if (TEAM_SCHACH.offeneId === partie.id) {
+                    TEAM_SCHACH.offeneId = "";
+                }
+                TEAM_SCHACH.zeichnen(neueTafel);
+            } catch (fehler) {
+                nochmal = await DIALOG.fehler("Nicht gelöscht", {
+                    technik: fehler.message, nochmal: true });
+            } finally {
+                abgleich.eigenerVorgangEndet();
             }
-            TEAM_SCHACH.zeichnen(neueTafel);
-        } catch (fehler) {
-            await DIALOG.hinweis("Nicht gelöscht",
-                "Die Partie konnte nicht entfernt werden: " + fehler.message);
-        } finally {
-            abgleich.eigenerVorgangEndet();
         }
     },
 
@@ -4925,6 +4955,7 @@ const TEAM_SCHACH = {
     async _verwaisteRundeSchliessen(partie) {
         const abgleich = TEAM_SCHACH.abgleich;
         abgleich.eigenerVorgangBeginnt();
+        let nochmal = false;
 
         try {
             let tafel = abgleich.daten;
@@ -4943,12 +4974,16 @@ const TEAM_SCHACH = {
             DIALOG.kurzmeldung("Runde geschlossen");
 
         } catch (fehler) {
-            await DIALOG.hinweis("Nicht geschlossen",
-                "Die Runde konnte nicht geschlossen werden: " + fehler.message
-                    + "\n\nDu bist trotzdem nicht mehr dabei, sobald es "
-                    + "wieder geht.");
+            nochmal = await DIALOG.fehler("Nicht geschlossen", {
+                technik: fehler.message, nochmal: true });
         } finally {
             abgleich.eigenerVorgangEndet();
+        }
+
+        /* „Nochmal" (seit v0.140.0): Schliessen ist wiederholbar — was schon
+           weg ist, bleibt weg. Erst NACH dem `finally`. */
+        if (nochmal) {
+            await TEAM_SCHACH._verwaisteRundeSchliessen(partie);
         }
     },
 
@@ -5005,8 +5040,7 @@ const TEAM_SCHACH = {
                 if (!frisch) {
                     abgleich.daten = fremd;
                     TEAM_SCHACH.zeichnen(fremd);
-                    await DIALOG.hinweis("Partie nicht gefunden",
-                        "Die Runde gibt es nicht mehr.");
+                    await DIALOG.fehler("Runde gelöscht", {});
                     return false;
                 }
 
@@ -5055,13 +5089,19 @@ const TEAM_SCHACH = {
             abgleich.daten = vorher;
             TEAM_SCHACH.zeichnen(vorher);
 
-            await DIALOG.hinweis("Nicht gespeichert",
-                "Die Änderung konnte nicht gesendet werden: " + fehler.message
-                    + "\n\nSie wurde deshalb zurückgenommen.");
-            return false;
+            const nochmal = await DIALOG.fehler("Nicht gesendet", {
+                folge: "Zurückgenommen", technik: fehler.message, nochmal: true });
+            if (!nochmal) {
+                return false;
+            }
         } finally {
             abgleich.eigenerVorgangEndet();
         }
+
+        /* „Nochmal" (seit v0.140.0): dieselbe Änderung auf frischem Stand,
+           erst NACH dem `finally`. Wie ein zweiter Druck auf denselben
+           Knopf — mehr nicht. */
+        return TEAM_SCHACH._aufFrischemSenden(partie, aenderung, nachkontrolle);
     },
 
     /* Abstand der zweiten Nachkontrolle — gross genug, dass der Schreib-

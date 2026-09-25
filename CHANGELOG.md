@@ -3,6 +3,42 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.140.0 — 25.09.2026
+
+**Blunderluck fühlt sich an wie ein UPCrew-Spiel: Vibration, klare Zustände,
+weniger Text** (UPCrew-Standard, erster Teil).
+
+- **Vibration:** Jeder Knopf gibt beim Drücken einen kurzen Stups, ein Sieg
+  und ein Fehler fühlen sich verschieden an. Abschaltbar in den
+  Einstellungen, neue Karte „Gerät". Auf dem iPhone vibrieren Web-Apps
+  grundsätzlich nicht — dort bleibt es still.
+- **Wenn etwas schiefgeht, gibt es „Nochmal":** Ein Zug, eine Fähigkeit,
+  eine neue Runde oder das Löschen, das nicht beim Server ankam, lässt sich
+  mit einem Druck wiederholen. Statt eines langen Satzes mit technischer
+  Meldung stehen ein Zeichen und zwei Wörter da.
+- **Leere Listen helfen weiter:** Keine Freunde, keine Partie, keine offene
+  Runde — jeweils ein Zeichen, zwei Wörter und ein Knopf, der dorthin
+  führt, wo es weitergeht („Suchen", „Spielen", „Selbst starten").
+- **Laden sieht man:** Solange Rangliste oder vergangene Matches noch nicht
+  da sind, stehen graue Platzhalter statt „noch niemand dabei". Nach zehn
+  Sekunden ohne Antwort wird daraus „Keine Antwort" mit „Nochmal".
+- **Keine Begrüßungen mehr:** Die Anmeldung beginnt mit „Blunderluck · Ein
+  Konto · alle UPCrew-Spiele", nach dem Anmelden steht kurz „Angemeldet ·
+  Name". Das Ende einer Partie sagt „Gewonnen" oder „Verloren" ohne
+  Zusatzsatz.
+- Noch nicht dabei (kommt, sobald Typoluck es festgelegt hat): die neue
+  runde Schrift und die einheitlichen Rundungen.
+
+## v0.139.0 — 25.09.2026
+
+**UP#Plus ist nur noch der Rollen-Verteiler.**
+
+- Das Konto UP#Plus steht in keiner Rangliste mehr und taucht in keiner
+  Suche auf.
+- UP#Plus hat keine Freunde: Niemand kann ihm eine Anfrage schicken, und es
+  kann keine annehmen. Unter „Freunde" steht bei UP#Plus nur ein Hinweis.
+- Im Profil eines anderen Spielers zeigt UP#Plus keinen Freundschafts-Knopf.
+
 ## v0.138.0 — 25.09.2026
 
 **Ein UPCrew-Konto für alle Spiele — mit Nummer, Gast-Zugang und sicherem Passwort.**

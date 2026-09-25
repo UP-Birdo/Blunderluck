@@ -1749,3 +1749,81 @@ body.partie-fest .phasen-leiste {
     white-space: nowrap;
 }
 
+
+/* ------------------------------------------------------------------ *
+ * Die drei Zustände — Laden, Leer, Fehler (js\zustand.js, seit v0.140.0)
+ *
+ * UPCrew-Standard, Abschnitt 3: kein Satz, sondern ein festes Bild je
+ * Zustand. Laden = graue Balken in der Form des Inhalts, sanft pulsierend;
+ * Leer und Fehler = Zeichen, wenige Worte, ein Knopf. Dieselben Klassen
+ * wie in Typoluck. Die Rundungen nehmen vorerst die vorhandenen Werte
+ * (`--radius`, 50 %) — die drei Stufen `--rund-*` kommen mit Typoluck.
+ * ------------------------------------------------------------------ */
+
+.zustand-laden {
+    display: grid;
+    gap: 10px;
+    padding: 4px 0;
+}
+
+.zustand-balken {
+    display: block;
+    height: 40px;
+    border-radius: var(--radius);
+    background: var(--karte-leise);
+}
+
+.zustand-balken:nth-child(2n) {
+    width: 85%;
+}
+
+.zustand {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 0 4px;
+    text-align: center;
+}
+
+.zustand-bild {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--karte-leise);
+    color: var(--schrift-leise);
+}
+
+.zustand-bild .zeichen {
+    width: 28px;
+    height: 28px;
+}
+
+.zustand-fehler .zustand-bild {
+    color: var(--gefahr);
+}
+
+.zustand-text {
+    margin: 0;
+    color: var(--schrift-leise);
+    font-weight: 600;
+}
+
+/* Im Fehler-Dialog steht der Zustand ohne eigenen Absatz darüber. */
+.dialog-kasten .zustand {
+    padding: 4px 0 12px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .zustand-balken {
+        animation: zustand-pulsieren 1.2s ease-in-out infinite alternate;
+    }
+
+    @keyframes zustand-pulsieren {
+        from { opacity: 1; }
+        to { opacity: 0.45; }
+    }
+}

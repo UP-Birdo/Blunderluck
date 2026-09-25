@@ -16,6 +16,7 @@ const ICH = {
     SCHLUESSEL_VERWALTUNG: "blunderluck.verwaltung",
     SCHLUESSEL_ANPASSUNG: "blunderluck.anpassung",
     SCHLUESSEL_ABSCHLUSS: "blunderluck.abschluss-gesehen",
+    SCHLUESSEL_VIBRATION: "blunderluck.vibration",
 
     /* ---------------------------------------------------------------- *
      * Wer bin ich
@@ -75,6 +76,23 @@ const ICH = {
             ICH._schreiben(ICH.SCHLUESSEL_ANPASSUNG, true);
         } else {
             ICH._loeschen(ICH.SCHLUESSEL_ANPASSUNG);
+        }
+    },
+
+    /*
+     * Der Schalter „Vibration" (seit v0.140.0, UPCrew-Standard): ab Werk AN.
+     * Gespeichert wird deshalb nur das Abschalten — ein Gerät, das nie
+     * etwas gesetzt hat, vibriert.
+     */
+    vibrationAn() {
+        return ICH._lesen(ICH.SCHLUESSEL_VIBRATION) !== false;
+    },
+
+    vibrationSetzen(an) {
+        if (an) {
+            ICH._loeschen(ICH.SCHLUESSEL_VIBRATION);
+        } else {
+            ICH._schreiben(ICH.SCHLUESSEL_VIBRATION, false);
         }
     },
 

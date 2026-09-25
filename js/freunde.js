@@ -29,12 +29,6 @@ const FREUNDE = {
             ? KONTO.anzeigeName(spieler) : spieler.name;
     },
 
-    /* UP#Plus spielt nicht und taucht in der Suche nicht auf. */
-    _istOberAdmin(stand, spieler) {
-        return typeof KONTO !== "undefined" && KONTO.aktiv()
-            && KONTO.istOberAdmin(stand, spieler.uid);
-    },
-
     /* Der Suchtext überlebt das Neuzeichnen der Karte. */
     suchtext: "",
 
@@ -50,8 +44,13 @@ const FREUNDE = {
         const daten = (typeof ANMELDUNG !== "undefined" && ANMELDUNG.abgleich)
             ? ANMELDUNG.abgleich.daten : null;
         if (!person || !daten) {
-            karte.appendChild(FREUNDE._erklaerung(
-                "Melde dich an, um Freunde zu verwalten."));
+            karte.appendChild(ZUSTAND.leer({ zeichen: "menschen", text: "Nicht angemeldet" }));
+            return karte;
+        }
+
+        /* UP#Plus verteilt nur Rollen und hat keine Freunde. */
+        if (SPIELER.istVerteiler(person)) {
+            karte.appendChild(ZUSTAND.leer({ zeichen: "menschen", text: "Nur Rollen" }));
             return karte;
         }
 
@@ -59,7 +58,7 @@ const FREUNDE = {
 
         /* Offene Anfragen zuerst — sie warten auf eine Antwort. */
         if (sicht.offen.length > 0) {
-            karte.appendChild(FREUNDE._erklaerung("Anfragen an dich:"));
+            karte.appendChild(FREUNDE._erklaerung("Anfragen an dich"));
             for (const anderer of sicht.offen) {
                 karte.appendChild(FREUNDE._zeileBauen(FREUNDE._name(anderer), [
                     FREUNDE._knopf("Annehmen", "knopf-still knopf-klein",
@@ -79,14 +78,25 @@ const FREUNDE = {
                 ], freund.id));
             }
         } else {
-            karte.appendChild(FREUNDE._erklaerung(
-                "Noch keine Freunde. Such unten nach einem Namen und stell "
-                + "eine Anfrage — nimmt die andere Seite an, seid ihr "
-                + "Freunde."));
+            /* Leer-Zustand mit Ausweg (UPCrew-Standard): Der Knopf springt
+               in das Suchfeld unten. Das Feld gibt es erst weiter unten —
+               gesucht wird es deshalb erst beim Klick. */
+            karte.appendChild(ZUSTAND.leer({
+                zeichen: "menschen", text: "Keine Freunde",
+                aktion: {
+                    text: "Suchen",
+                    beiKlick: () => {
+                        const suche = karte.querySelector(".freunde-suche");
+                        if (suche) {
+                            suche.focus();
+                        }
+                    }
+                }
+            }));
         }
 
         if (sicht.gesendet.length > 0) {
-            karte.appendChild(FREUNDE._erklaerung("Deine offenen Anfragen:"));
+            karte.appendChild(FREUNDE._erklaerung("Gesendet"));
             for (const anderer of sicht.gesendet) {
                 karte.appendChild(FREUNDE._zeileBauen(FREUNDE._name(anderer), [
                     FREUNDE._knopf("Zurückziehen", "knopf-still knopf-klein",
@@ -118,15 +128,13 @@ const FREUNDE = {
             }
 
             const stand = SPIELER.normalisieren(ANMELDUNG.abgleich.daten);
-            const gefunden = stand.spieler.filter((anderer) =>
+            const gefunden = SPIELER.mitspieler(stand).filter((anderer) =>
                 anderer.id !== person.id
                 && FREUNDE._name(anderer).toLowerCase().indexOf(gesucht) !== -1
-                && !FREUNDE._istOberAdmin(stand, anderer)
                 && SPIELER.freundschaft(stand, person.id, anderer.id) === "keine");
 
             if (gefunden.length === 0) {
-                treffer.appendChild(FREUNDE._erklaerung(
-                    "Niemand gefunden, der dazu passt."));
+                treffer.appendChild(ZUSTAND.leer({ zeichen: "lupe", text: "Niemand gefunden" }));
                 return;
             }
 

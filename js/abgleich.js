@@ -56,6 +56,11 @@ class Abgleich {
         this.brauchtAlles = rueckrufe.brauchtAlles || null;
 
         this.daten = this.leereDaten();
+
+        /* Ist schon einmal ein echter Stand angekommen (seit v0.140.0)? Bis
+           dahin ist `daten` nur der leere Anfangswert — ein Bildschirm zeigt
+           dann den Lade-Platzhalter (ZUSTAND.laden), nicht „leer". */
+        this.geladen = false;
         this.schreibZeitgeber = null;
         this.schreibtGerade = false;
         this.aenderungOffen = false;
@@ -169,14 +174,18 @@ class Abgleich {
     async starten() {
         let geladen = false;
 
-        this.melden("laedt", "Wird geladen …");
+        /* Kurze Wörter statt Sätzen (UPCrew-Standard, seit v0.140.0); die
+           technische Meldung geht als dritte Angabe mit und steht in den
+           Einstellungen nur beim Darüberfahren. */
+        this.melden("laedt", "Lädt");
         try {
             this.daten = await this._standLaden(true);
+            this.geladen = true;
             this.beiDaten(this.daten);
             this.melden("bereit", this.speicher.beschreibung);
             geladen = true;
         } catch (fehler) {
-            this.melden("fehler", "Laden fehlgeschlagen: " + fehler.message);
+            this.melden("fehler", "Kein Netz", fehler.message);
         }
 
         if (this.speicher.art === "gemeinsam") {
@@ -278,7 +287,7 @@ class Abgleich {
     async schreiben() {
         this.schreibZeitgeber = null;
         this.schreibtGerade = true;
-        this.melden("schreibt", "Wird gespeichert …");
+        this.melden("schreibt", "Speichert");
 
         try {
             /*
@@ -311,7 +320,7 @@ class Abgleich {
         } catch (fehler) {
             /* Die Änderung bleibt offen und wird beim nächsten Versuch erneut
                geschrieben — nichts geht verloren, solange das Fenster offen ist. */
-            this.melden("fehler", "Nicht gespeichert: " + fehler.message);
+            this.melden("fehler", "Nicht gespeichert", fehler.message);
             this.schreibenPlanen();
         } finally {
             this.schreibtGerade = false;
@@ -425,7 +434,9 @@ class Abgleich {
                 return;
             }
 
-            if (!this.inhaltGleich(fremd, this.daten)) {
+            const ersterStand = !this.geladen;
+            this.geladen = true;
+            if (ersterStand || !this.inhaltGleich(fremd, this.daten)) {
                 this.daten = fremd;
                 this.beiDaten(this.daten);
             }
@@ -439,13 +450,13 @@ class Abgleich {
             }
             this.melden("bereit", this.speicher.beschreibung);
         } catch (fehler) {
-            this.melden("fehler", "Keine Verbindung: " + fehler.message);
+            this.melden("fehler", "Kein Netz", fehler.message);
         }
     }
 
-    melden(status, text) {
+    melden(status, text, technik) {
         if (this.beiStatus) {
-            this.beiStatus(status, text);
+            this.beiStatus(status, text, technik || "");
         }
     }
 }

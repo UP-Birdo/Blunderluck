@@ -2,6 +2,28 @@
 
 ## Teuer erkaufte Erkenntnisse
 
+### „Nochmal" wiederholt erst NACH dem `finally` — und ein Zeichen in einer Bild-Reihe heisst `bild-zeichen` (v0.140.0)
+
+**Beim Bauen gefunden, 25.09.2026 (UPCrew-Standard, Fehler mit „Nochmal").**
+Die Schreibwege im Schach (`_sendenMitPruefung`, `_aufFrischemSenden`,
+`_faehigkeitImGegenzugSenden`, `_rundeAnlegen`, `_verwaisteRundeSchliessen`,
+`partieLoeschen`) melden sich mit `eigenerVorgangBeginnt()` an und im
+`finally` wieder ab. Wer im `catch` gleich neu sendet (`return await
+X(...)`), startet den zweiten Versuch, BEVOR der erste abgemeldet ist — der
+Zähler steht dann doppelt, und die Sperre gegen fremde Stände gilt länger
+als gedacht. **Regel:** Im `catch` nur fragen (`DIALOG.fehler` liefert
+true/false), die Wiederholung kommt HINTER das `finally`. Zweite Falle
+dabei: `_faehigkeitImGegenzugSenden` hat im Erfolgsfall kein `return` —
+Code hinter dem `finally` läuft dort auch nach Erfolg. Deshalb ein Merker
+(`nochmal`), keine Annahme über den Weg dorthin. `partieLoeschen` wiederholt
+in einer Schleife, weil ein neuer Aufruf die Passwort-Schranke noch einmal
+fragen würde.
+
+**Zeichen:** `TEAM_SCHACH._bildReiheBauen` gibt nur SVGs mit der Klasse
+`bild-zeichen` eine Grösse (`css\stil-brett.css`). Ein Zeichen mit anderer
+Klasse ist dort unsichtbar — die Tests sehen das nicht, erst das Bild zeigte
+den leeren Vibrations-Schalter. Abhilfe: `ZUSTAND.zeichen(name, "bild-zeichen")`.
+
 ### Eine Test-Seite mit Testkonto braucht einen Port, auf dem es die echte Startseite nicht gibt (v0.123.0)
 
 **Passiert am 24.09.2026.** Die 3D-Werkstatt (`_werkstatt-3d.html`) legt ein

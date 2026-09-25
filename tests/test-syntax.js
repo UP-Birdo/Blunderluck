@@ -94,7 +94,10 @@ const bausteine = {
     SCHACH_TAFEL: globalThis.SCHACH_TAFEL,
     SCHACH_BOT: globalThis.SCHACH_BOT,
     RANGLISTE: require(pfad.join(jsOrdner, "rangliste.js")),
-    VERSIEGELUNG: require(pfad.join(jsOrdner, "versiegelung.js"))
+    VERSIEGELUNG: require(pfad.join(jsOrdner, "versiegelung.js")),
+    /* Die Bausteine des UPCrew-Standards (seit v0.140.0). */
+    ZUSTAND: require(pfad.join(jsOrdner, "zustand.js")),
+    FUEHLEN: require(pfad.join(jsOrdner, "fuehlen.js"))
 };
 
 for (const name of dateien) {
@@ -847,6 +850,53 @@ pruefe("innerHTML leert nur, es setzt nichts ein (Stored XSS)", () => {
         throw new Error("innerHTML wird nicht nur zum Leeren benutzt — jeder"
             + " Nutzertext gehoert ueber textContent in den Baum:\n        "
             + funde.join("\n        "));
+    }
+});
+
+/*
+ * DER UPCREW-STANDARD (seit v0.140.0, `Apps\UPCrew-STANDARD.md`): keine
+ * Begrüssungen, keine Lade-Sätze, keine Fehlersätze mit technischer
+ * Meldung. Diese Wendungen kamen bis v0.139.0 in sichtbaren Texten vor und
+ * sind durch ZUSTAND (Laden/Leer/Fehler), DIALOG.fehler (mit „Nochmal")
+ * und kurze Stichworte ersetzt. Geprüft werden NUR Zeichenketten im Code —
+ * Kommentare dürfen die alten Sätze als Geschichte nennen.
+ */
+function zeichenkettenOhneKommentare(quelle) {
+    const ohne = quelle
+        .replace(/\/\*[\s\S]*?\*\//g, "")
+        .replace(/^\s*\/\/.*$/gm, "");
+    return ohne.match(/"(?:[^"\\\n]|\\.)*"/g) || [];
+}
+
+pruefe("Keine Floskeln und Lade-Sätze in sichtbaren Texten (UPCrew-Standard)", () => {
+    const verboten = [/Willkommen/, /Wird geladen/, /Wird gespeichert/,
+        /konnte nicht .*werden/, /Keine Verbindung:/];
+    const funde = [];
+    for (const name of dateien) {
+        const quelle = dateisystem.readFileSync(pfad.join(jsOrdner, name), "utf8");
+        for (const kette of zeichenkettenOhneKommentare(quelle)) {
+            if (verboten.some((muster) => muster.test(kette))) {
+                funde.push(name + ": " + kette);
+            }
+        }
+    }
+    if (funde.length > 0) {
+        throw new Error("verbotene Wendung:\n        " + funde.join("\n        "));
+    }
+});
+
+pruefe("fuehlen.js und zustand.js laden vor dialog.js (UPCrew-Standard)", () => {
+    const stelle = (name) => seite.indexOf("js/" + name + "\"");
+    if (!(stelle("fuehlen.js") < stelle("dialog.js") && stelle("zustand.js") < stelle("dialog.js"))) {
+        throw new Error("DIALOG.fehler braucht ZUSTAND und FUEHLEN — beide vor dialog.js einbinden");
+    }
+});
+
+pruefe("Kein Bildschirm vibriert am Baustein vorbei (UPCrew-Standard)", () => {
+    const funde = dateien.filter((name) => name !== "fuehlen.js"
+        && /navigator\.vibrate/.test(dateisystem.readFileSync(pfad.join(jsOrdner, name), "utf8")));
+    if (funde.length > 0) {
+        throw new Error("navigator.vibrate ausserhalb von fuehlen.js: " + funde.join(", "));
     }
 });
 

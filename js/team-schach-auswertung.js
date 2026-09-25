@@ -36,6 +36,11 @@ Object.assign(TEAM_SCHACH, {
        nur Anzeige-Gedächtnis (wie `animiertBis`). */
     _konfettiGespielt: {},
 
+    /* Dasselbe für die Vibration am Ende (seit v0.140.0) — sonst vibrierte
+       das Gerät bei jedem Neuzeichnen. Anders als das Konfetti auch bei
+       „weniger Bewegung": Vibration ist keine Bewegung auf dem Schirm. */
+    _abschlussGespuert: {},
+
     /*
      * DER KONFETTIREGEN ZUM SIEG (seit v0.116): zwei Dutzend fallende,
      * trudelnde Farbstücke über der Gewonnen-Fläche. Ohne Zufall — Lage und
@@ -101,14 +106,25 @@ Object.assign(TEAM_SCHACH, {
             TEAM_SCHACH._konfettiStreuen(flaeche, partie.id);
         }
 
+        /* Das Ergebnis spürt man, einmal je Partie (UPCrew-Standard, seit
+           v0.140.0): Sieg = Erfolg, Niederlage = Fehler, Remis = nichts. */
+        if (!remis && !TEAM_SCHACH._abschlussGespuert[partie.id]) {
+            TEAM_SCHACH._abschlussGespuert[partie.id] = true;
+            if (gewonnen) {
+                FUEHLEN.erfolg();
+            } else {
+                FUEHLEN.fehler();
+            }
+        }
+
         const lage = SCHACH.lage(partie.stand);
-        flaeche.appendChild(TEAM_SCHACH._element("p", "abschluss-text",
-            remis
-                ? "Keine Seite konnte die Partie für sich entscheiden."
-                : (gewonnen
-                    ? "Euer Team hat die Partie gewonnen."
-                    : ((partie.ergebnis === "weiss") ? "Weiss" : "Schwarz")
-                        + " hat die Partie gewonnen.")));
+        /* Kein Satz (UPCrew-Standard, seit v0.140.0; bis v0.139.0 „Euer Team
+           hat die Partie gewonnen." u. a.) — der Titel sagt es schon. Nur
+           wer verloren hat, erfährt, welche Farbe gewann. */
+        if (!remis && !gewonnen) {
+            flaeche.appendChild(TEAM_SCHACH._element("p", "abschluss-text",
+                ((partie.ergebnis === "weiss") ? "Weiss" : "Schwarz") + " gewinnt"));
+        }
 
         if (lage.text && lage.art !== "laeuft") {
             flaeche.appendChild(TEAM_SCHACH._element("p", "abschluss-grund", lage.text));
@@ -425,8 +441,7 @@ Object.assign(TEAM_SCHACH, {
         const liste = RANGLISTE.gesamt(spielerDaten, TEAM_SCHACH.abgleich.daten);
 
         if (liste.length === 0) {
-            flaeche.appendChild(TEAM_SCHACH._element("p", "erklaerung",
-                "Noch keine Punkte."));
+            flaeche.appendChild(ZUSTAND.leer({ zeichen: "pokal", text: "Keine Punkte" }));
         } else {
             const tabelle = TEAM_SCHACH._element("div", "abschluss-tabelle");
 

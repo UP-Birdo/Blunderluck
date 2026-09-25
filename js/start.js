@@ -615,11 +615,25 @@ const START = {
             return;
         }
 
-        const leer = document.createElement("p");
-        leer.className = "erklaerung";
-        leer.textContent = "Noch keine beendete Partie. Was du spielst, "
-            + "landet hier, sobald es vorbei ist.";
-        wurzel.appendChild(leer);
+        /* Laden oder leer (UPCrew-Standard, seit v0.140.0): Solange die
+           Partien noch nicht angekommen sind, ist „leer" gelogen. Leer
+           bekommt den Knopf, der weiterhilft — derselbe wie „Spielen" auf
+           dem Start. */
+        if (abgleich && abgleich.geladen === false) {
+            wurzel.appendChild(ZUSTAND.laden({
+                zeilen: 3, nochmal: () => abgleich.fremdenStandHolen() }));
+            return;
+        }
+        wurzel.appendChild(ZUSTAND.leer({
+            zeichen: "leer", text: "Keine Partie",
+            aktion: {
+                text: "Spielen",
+                beiKlick: () => {
+                    START.verlaufSchliessen();
+                    START.spielen();
+                }
+            }
+        }));
     },
 
     verlaufOeffnen() {

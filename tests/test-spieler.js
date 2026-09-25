@@ -423,6 +423,29 @@ pruefe("Eine Liste als Objekt (Firebase mit Lücken) geht nicht verloren (v0.137
     gleich(daten.spieler[1].id, "b", "in der Reihenfolge");
 });
 
+pruefe("UP#Plus ist reiner Rollen-Verteiler: keine Rangliste, keine Freunde (v0.139.0)", () => {
+    const roh = { spieler: [
+        { id: "id-anna", name: "Anna", tag: "0001", freunde: ["id-up"] },
+        { id: "id-up", name: "UP", tag: "Plus", freunde: ["id-anna"] },
+        { id: "id-uwe", name: "up", tag: "0002" }
+    ] };
+
+    wahr(SPIELER.istVerteiler(SPIELER.spielerFinden(roh, "id-up")), "UP#Plus erkannt");
+    wahr(!SPIELER.istVerteiler(SPIELER.spielerFinden(roh, "id-uwe")), "up#0002 ist ein Mensch");
+    gleich(SPIELER.mitspieler(roh).map((s) => s.id).join(","), "id-anna,id-uwe", "mitspieler ohne UP");
+
+    /* Selbst beiderseitige Einträge ergeben keine Freundschaft. */
+    gleich(SPIELER.freundschaft(roh, "id-anna", "id-up"), "keine", "Anna sieht keine Freundschaft");
+    gleich(SPIELER.freundschaft(roh, "id-up", "id-anna"), "keine", "UP sieht keine Freundschaft");
+    gleich(SPIELER.freundeVon(roh, "id-anna").freunde.length, 0, "keine Freunde bei Anna");
+
+    /* Anfragen und Annehmen tun nichts — in beide Richtungen. */
+    const a = SPIELER.freundHinzufuegen(roh, "id-uwe", "id-up", 2000);
+    gleich(SPIELER.spielerFinden(a, "id-uwe").freunde.length, 0, "an UP geht keine Anfrage");
+    const b = SPIELER.freundHinzufuegen(roh, "id-up", "id-uwe", 2000);
+    gleich(SPIELER.spielerFinden(b, "id-up").freunde.join(","), "id-anna", "UP nimmt nichts an");
+});
+
 /* ------------------------------------------------------------------ */
 
 console.log(anzahlOk + " ok, " + anzahlFehler + " Fehler");

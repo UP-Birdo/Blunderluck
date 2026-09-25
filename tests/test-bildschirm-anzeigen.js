@@ -726,8 +726,10 @@ pruefe("Die Profilseite: Visitenkarte, Freundschafts-Knopf, Rueckweg — und ein
         if (mitKlasse("abzeichen").length < 3) {
             throw new Error("drei Abzeichen-Plaetze erwartet");
         }
-        if (mitKlasse("profil-werte").length + mitKlasse("erklaerung").length === 0) {
-            throw new Error("weder Statistik-Zeilen noch ein Satz dazu");
+        /* Ohne beendete Partie steht seit v0.140.0 der Leer-Zustand
+           (ZUSTAND.leer) statt eines Satzes. */
+        if (mitKlasse("profil-werte").length + mitKlasse("zustand-leer").length === 0) {
+            throw new Error("weder Statistik-Zeilen noch der Leer-Zustand");
         }
 
         /* Freund anfragen — die Lage wechselt auf „gesendet". */

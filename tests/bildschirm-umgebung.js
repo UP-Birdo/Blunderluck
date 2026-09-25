@@ -409,6 +409,11 @@ vm.createContext(umgebung);
 umgebung.ICH = {
     person: () => ({ id: "id-anna", name: "Anna" }),
 
+    /* Die Vibration (v0.140.0) ist hier an — ein `navigator` fehlt, also
+       vibriert trotzdem nichts (FUEHLEN.verfuegbar). */
+    vibrationAn: () => true,
+    vibrationSetzen() { },
+
     /* Der Gerätespeicher, so weit der Bildschirm ihn braucht. */
     _gesehen: {},
     abschlussGesehen(id) { return umgebung.ICH._gesehen[id] === true; },
@@ -427,6 +432,10 @@ umgebung.ICH = {
  */
 umgebung.DIALOG = {
     hinweis: async () => true,
+
+    /* Der Fehler-Dialog (v0.140.0) sagt „Schließen", nie „Nochmal" — sonst
+       wiederholte ein Ablauf, dessen Senden im Test scheitert, endlos. */
+    fehler: async () => false,
     frage: async () => true,
     eingabe: async () => null,
     liste: async () => null,
@@ -489,7 +498,8 @@ const bausteinNamen = ["KONFIG", "SPIELER", "ANMELDUNG", "SCHACH_VARIANTEN", "SC
 
 /* Die Reihenfolge ist dieselbe wie in index.html — die drei team-schach-Teile
    ergänzen das Objekt und müssen nach ihm kommen. */
-const dateien = ["konfig.js", "konto.js", "spieler.js", "speicher.js", "abgleich.js",
+const dateien = ["konfig.js", "fuehlen.js", "zustand.js",
+    "konto.js", "spieler.js", "speicher.js", "abgleich.js",
     "anmeldung.js", "anmeldung-konto.js",
     "faehigkeit-zeichen.js", "schach-varianten.js",
     "schach.js", "schach-runde.js", "schach-runde-faehigkeiten.js",

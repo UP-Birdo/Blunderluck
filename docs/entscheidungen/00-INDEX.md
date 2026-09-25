@@ -92,6 +92,11 @@ wird. Die Liste dessen, was noch kommt, steht in [../ROADMAP.md](../ROADMAP.md).
   Play-Store-Umbau braeuchte - Referenz: docs\uebergabe-schach-app.md)
 
 ## erkenntnisse.md - Teuer erkaufte Erkenntnisse
+- **„Nochmal" wiederholt erst NACH dem `finally` — und ein Zeichen in einer
+  Bild-Reihe heisst `bild-zeichen`** (v0.140.0, beim Bauen gefunden: sonst
+  laeuft der zweite Versuch, bevor der erste abgemeldet ist; ein Weg ohne
+  `return` im Erfolg; Zeichen ohne `bild-zeichen` sind in der Reihe
+  unsichtbar)
 - **Eine Messung, die nie etwas misst, faellt nicht auf — bis jemand ihre
   Quelle sehen will** (v0.93, gefunden 18.09.2026, behoben v0.116.0: die
   Dauer-Schaetzung bekam vom Bildschirm immer `[]`, weil `partien` eine

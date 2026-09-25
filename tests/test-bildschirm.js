@@ -930,11 +930,13 @@ pruefe("Sichtbarkeit: Dreier-Reihe in den Grundeinstellungen, und die offenen Ru
             throw new Error("je ein Schildchen Freund und Oeffentlich erwartet, da: " + chips.join(","));
         }
 
-        /* Ohne sichtbare Runde: der Satz statt einer leeren Karte. */
+        /* Ohne sichtbare Runde: der Leer-Zustand mit Ausweg statt einer
+           leeren Karte (seit v0.140.0 ZUSTAND.leer statt eines Satzes). */
         const leer = TEAM_SCHACH._offeneRundenBauen(SCHACH_TAFEL.leereTafel(5000),
             { id: "id-anna", name: "Anna" });
-        if (mitKlasse(leer, "erklaerung").length !== 1) {
-            throw new Error("ohne Runden fehlt der Erklaersatz");
+        if (mitKlasse(leer, "zustand-leer").length !== 1
+                || mitKlasse(leer, "knopf").length !== 1) {
+            throw new Error("ohne Runden fehlt der Leer-Zustand mit Knopf");
         }
     } finally {
         ANMELDUNG.abgleich.daten = gemerkteSpieler;

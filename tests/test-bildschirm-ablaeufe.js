@@ -5190,10 +5190,11 @@ pruefe("Die Einstellungen tragen keine Erklaer-Absaetze mehr (v0.108.0)", () => 
     const iKnoepfe = einsammeln(EINSTELLUNGEN.wurzelEl, (kind) =>
         String(kind.className || "").indexOf("info-knopf") !== -1, []);
 
-    /* Account, Spieler und Verbindung tragen je ein i; „Ueber die App"
-       braucht keins (dort erklaert der Knopf sich selbst). */
-    if (iKnoepfe.length !== 3) {
-        throw new Error("erwartet drei i-Knoepfe in den Einstellungen, sind "
+    /* Account, Spieler, Geraet (seit v0.140.0, Vibration) und Verbindung
+       tragen je ein i; „Ueber die App" braucht keins (dort erklaert der
+       Knopf sich selbst). */
+    if (iKnoepfe.length !== 4) {
+        throw new Error("erwartet vier i-Knoepfe in den Einstellungen, sind "
             + iKnoepfe.length);
     }
 });
