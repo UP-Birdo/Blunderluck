@@ -25,6 +25,12 @@ wird. Die Liste dessen, was noch kommt, steht in [../ROADMAP.md](../ROADMAP.md).
 
 ## entschieden.md - Blunderluck-Eintraege
 
+- **Runde 3: ein Aussehen, Knoepfe ueber einen Waechter, Knopf-Familie in
+  einer eigenen Ebene, 3D als Freischaltung** (26.09.2026, v0.144.0 —
+  `js\knoepfe.js` statt 130 Einzelstellen, `@layer upcrew` damit eigene
+  Groessen gelten, Aussehen am Konto ueber den Spieler-Abgleich,
+  `SPERRE_3D` aus bis zur Arena-Leiter, 2D ist Vorgabe, Werkstatt nur
+  localhost, Leisten-Woerter schrumpfen)
 - **Neue Runde: ein Bildschirm, drei Reiter, Bilder statt Haken**
   (24.09.2026, v0.121.0 — nimmt Wunsch 8 zurueck (zwei Bildschirme),
   Spielen direkt unten, Kachel bleibt stehen, Zeichen mit Wort statt
@@ -92,6 +98,12 @@ wird. Die Liste dessen, was noch kommt, steht in [../ROADMAP.md](../ROADMAP.md).
   Play-Store-Umbau braeuchte - Referenz: docs\uebergabe-schach-app.md)
 
 ## erkenntnisse.md - Teuer erkaufte Erkenntnisse
+- **`-NurFazit` meldet „0 Fehler", wenn eine Testdatei gar nicht startet**
+  (26.09.2026, v0.144.0 — abgestuerzte Datei zaehlt keine Pruefungen; gruen
+  ist nur „0 Fehler UND Exit 0", Pruefungszahl vergleichen)
+- **Kopflos: Leisten-Markierung „steht falsch" = Farbuebergang unter
+  virtueller Zeit** (26.09.2026, v0.144.0 — DOM-Stand mitschreiben, laengeres
+  Budget)
 - **Ein Verweis-Test mit `indexOf` laesst `konfig.js.bak` durch — v0.140.0
   startete nicht** (gemeldet 25.09.2026, behoben v0.140.1: index.html band
   eine geloeschte Sicherungsdatei ein; Test prueft jetzt den ganzen

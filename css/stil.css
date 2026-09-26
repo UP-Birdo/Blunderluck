@@ -51,6 +51,10 @@
     --haupt: #1f5fa8;
     --haupt-schrift: #ffffff;
     --gefahr: #b3261e;
+    /* Kante und Schrift des roten Knopfs (Knopf-Familie K1–K6,
+       css\upcrew-knoepfe.css, seit v0.144.0). */
+    --gefahr-kante: #7f1b15;
+    --gefahr-schrift: #ffffff;
     --gut: #1e7d43;
     --gut-flaeche: #e4f4ea;
     --warnung: #8a5a00;
@@ -76,10 +80,10 @@
     /*
      * DIE HARTE KANTE statt weicher Schatten (UPCrew-Standard, seit
      * v0.140.2, Werte wie Typoluck): ein Schatten ohne Unschärfe, wenige
-     * Pixel nach unten, in einem dunkleren Ton. Knöpfe sinken beim Drücken
-     * um `--knopf-tiefe` auf ihre Kante.
+     * Pixel nach unten, in einem dunkleren Ton. Die Kante der Knöpfe
+     * (bis v0.143 `--knopf-tiefe`) kommt seit v0.144.0 aus der
+     * Knopf-Familie (css\upcrew-knoepfe.css, `--kn-tiefe`).
      */
-    --knopf-tiefe: 4px;
     --karte-tiefe: 3px;
     --haupt-kante: #16457a;
     --still-kante: #c3c8d0;
@@ -122,6 +126,8 @@
         --haupt-kante: #2f6aa8;
         --still-kante: #454b56;
         --gefahr: #e05a52;
+        --gefahr-kante: #a33a33;
+        --gefahr-schrift: #1c0d0c;
         --gut: #4cb87a;
         --gut-flaeche: #1d3327;
         --warnung: #e0b458;
@@ -147,6 +153,8 @@
     --haupt-kante: #2f6aa8;
     --still-kante: #454b56;
     --gefahr: #e05a52;
+    --gefahr-kante: #a33a33;
+    --gefahr-schrift: #1c0d0c;
     --gut: #4cb87a;
     --gut-flaeche: #1d3327;
     --warnung: #e0b458;
@@ -170,9 +178,20 @@ body {
     padding: 0;
     background: var(--flaeche);
     color: var(--schrift);
-    font-family: "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
+    /* Die Schrift wählt der Spieler (seit v0.144.0): js\upcrew-aussehen.js
+       setzt --schrift-familie an <html>. Hier steht nur der Rückfall. */
+    font-family: var(--schrift-familie, "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif);
     font-size: 16px;
     line-height: 1.45;
+}
+
+/* Knöpfe, Felder und Auswahllisten erben die Schrift sonst NICHT — der
+   Browser gibt ihnen seine eigene. */
+button,
+input,
+textarea,
+select {
+    font-family: inherit;
 }
 
 /* ------------------------------------------------------------------ *
@@ -455,11 +474,19 @@ body {
     align-items: center;
     justify-content: center;
     gap: 2px;
-    padding: 6px 4px;
+    /*
+     * DIE WÖRTER PASSEN AUCH IN DER BREITESTEN SCHRIFT (seit v0.144.0):
+     * Gemessen in Edge bei 390 und 360 px mit allen sechs Crew-Schriften —
+     * „Fähigkeiten" braucht bei 12 px bis zu 74 px, Platz waren 65 (schon
+     * mit der alten Schrift abgeschnitten). Deshalb nur 1 px Seitenrand und
+     * eine Schrift, die unter 420 px Breite mitschrumpft (höchstens 12 px,
+     * bei 360 px rund 10 px).
+     */
+    padding: 6px 1px;
     border: none;
     background: none;
     font: inherit;
-    font-size: 0.75rem;
+    font-size: min(0.75rem, 2.85vw);
     font-weight: 600;
     line-height: 1.2;
     color: var(--schrift-leise);
@@ -561,6 +588,8 @@ body.partie-fest .tab-leiste {
 
 /* `font-size: 0` blendet das Wort aus, das im Knopf stehen bleibt (siehe
    `ZUSTAND.alsZurueck`); das Symbol hat feste Masse und bleibt sichtbar. */
+/* Seit v0.144.0 ein UPCrew-Knopf mit `up-rund` (js\knoepfe.js) — Rundung
+   und Kante kommen aus der Knopf-Familie, hier nur Größe und Anordnung. */
 .knopf.knopf-zurueck {
     width: 44px;
     height: 44px;
@@ -569,7 +598,6 @@ body.partie-fest .tab-leiste {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border-radius: var(--rund-voll);
     font-size: 0;
 }
 
@@ -699,6 +727,22 @@ body.partie-fest .tab-leiste {
 
 .platzhalter-feld {
     padding: 32px 16px;
+}
+
+/*
+ * DER TAB „ANPASSEN" (seit v0.144.0, js\anpassen.js): Das Aussehen des
+ * Inhalts steht im gemeinsamen Baustein css\upcrew-anpassen.css. Hier nur,
+ * wie er in Blunderluck sitzt: über die volle Breite (der Baustein rückt
+ * selbst 14 px ein), und seine klebende Knopf-Leiste unten hält Abstand zur
+ * festen Tab-Leiste — der Baustein kennt sie nicht und klebt sonst
+ * dahinter.
+ */
+.anpassen-ort {
+    margin: 0 calc(-1 * var(--inhalt-rand));
+}
+
+.anpassen .upa-aktion {
+    bottom: calc(var(--leiste-hoehe) + env(safe-area-inset-bottom, 0px));
 }
 
 /* ------------------------------------------------------------------ *
@@ -1925,7 +1969,7 @@ body.partie-fest .phasen-leiste {
     border: 1px solid var(--rahmen);
     background: var(--karte);
     color: var(--schrift-leise);
-    font-family: Georgia, "Times New Roman", serif;
+    /* Die Schrift der App (bis v0.143 Georgia), kursiv als Zeichen. */
     font-style: italic;
     font-size: 0.95rem;
     line-height: 1;
@@ -1968,26 +2012,41 @@ body.partie-fest .phasen-leiste {
 }
 
 /*
- * DER KNOPF STEHT AUF EINER HARTEN KANTE (UPCrew-Standard, seit v0.140.2,
- * wie Typoluck): ein Schatten ohne Unschärfe in der Kantenfarbe; beim
- * Drücken sinkt der Knopf um genau diese Tiefe ein. Kleine Knöpfe stehen
- * etwas flacher. Wo ein Knopf ausdrücklich flach sein soll (Bild-Reihen
- * mit Pille, Karten der Hand), setzt seine eigene Regel `box-shadow: none`.
+ * DIE KNÖPFE SIND UPCREW-KNÖPFE (seit v0.144.0, Runde 3): Rundung, Kante,
+ * Schatten, Rahmen, Flächen- und Schriftfarbe und das Einsinken beim
+ * Drücken stehen NUR noch im gemeinsamen Baustein css\upcrew-knoepfe.css
+ * (Familie K1–K6, gewählt im Tab „Anpassen"). js\knoepfe.js hängt jedem
+ * Haus-Knopf die Klassen dafür an (knopf-haupt → up-haupt, knopf-still →
+ * up-zweit, knopf-gefahr → up-gefahr).
+ *
+ * DER BAUSTEIN LIEGT IN EINER EIGENEN EBENE (`@layer upcrew`, geladen über
+ * css\upcrew-schicht.css). Regeln ausserhalb einer Ebene gewinnen immer
+ * gegen Regeln in einer Ebene — egal wie genau der Selektor ist. Deshalb
+ * bleiben alle eigenen Größen- und Anordnungsregeln (kleiner Knopf,
+ * Eck-Knopf, Steuer-Knöpfe am Spieler …) gültig, ohne dass jede einzeln
+ * gegen `.up-kn` ankämpfen muss. Die Kehrseite: Eine eigene Regel, die
+ * Rundung, Kante, Schatten, Rahmen oder Fläche eines Haus-Knopfs setzt,
+ * schlägt die Familie — solche Regeln gibt es deshalb nicht mehr, und
+ * `tests\test-syntax.js` wacht darüber.
+ *
+ * Hier bleibt nur, was der Baustein nicht festlegt, und was für Knöpfe
+ * gilt, die bewusst KEINE UPCrew-Knöpfe sind (Spielgrafik und
+ * Auswahl-Reihen, Liste in js\knoepfe.js).
+ *
+ * Bis v0.143 standen hier Kante (--knopf-tiefe), Rundung und Farben der
+ * drei Knopf-Arten selbst.
  */
 .knopf {
     appearance: none;
-    font: inherit;
-    padding: 10px 18px;
-    border-radius: var(--rund-mittel);
-    border: 1px solid transparent;
     cursor: pointer;
-    box-shadow: 0 var(--knopf-tiefe) 0 var(--still-kante);
-    transition: transform 80ms ease, box-shadow 80ms ease, background-color 120ms ease;
 }
 
-.knopf:active:not(:disabled) {
-    transform: translateY(var(--knopf-tiefe));
-    box-shadow: 0 0 0 transparent;
+/* Die Schrift und den Innenabstand eines UPCrew-Knopfs bestimmt die
+   Familie (K3 schreibt kleiner in Versalien und rückt für den Leuchtpunkt
+   ein) — alle übrigen Knöpfe wie bisher. */
+.knopf:not(.up-kn) {
+    font: inherit;
+    padding: 10px 18px;
 }
 
 .knopf:disabled {
@@ -1995,37 +2054,30 @@ body.partie-fest .phasen-leiste {
     cursor: not-allowed;
 }
 
-.knopf-klein {
-    --knopf-tiefe: 3px;
-    padding: 6px 12px;
-    font-size: 0.88rem;
+/* Ein versteckter UPCrew-Knopf bleibt versteckt — die Familie setzt
+   `display: inline-flex`, und das schlägt sonst das hidden-Attribut. */
+.up-kn[hidden] {
+    display: none;
 }
 
-.knopf-haupt {
+/* Der kleine Knopf behält seine Größe (Auftrag: „Größe und Anordnung
+   bleiben"); die Schrift folgt der Familie, nur etwas kleiner. */
+.knopf-klein {
+    min-height: 34px;
+    padding: 6px 12px 6px calc(12px + var(--kn-taste, 0) * 8px);
+    font-size: calc(var(--kn-groesse, 0.98rem) * 0.9);
+}
+
+/* Knöpfe ausserhalb der Familie (Spielgrafik): die bisherigen Farben. */
+.knopf-haupt:not(.up-kn) {
     background: var(--haupt);
     color: var(--haupt-schrift);
     font-weight: 600;
-    box-shadow: 0 var(--knopf-tiefe) 0 var(--haupt-kante);
 }
 
-/* Still und Gefahr stehen seit v0.140.2 auf der Kartenfläche statt
-   durchsichtig — sonst schiene die Kante durch den Knopf hindurch. */
-.knopf-still {
+.knopf-still:not(.up-kn) {
     background: var(--karte);
     color: var(--schrift-leise);
-    border-color: var(--rahmen);
-}
-
-.knopf-gefahr {
-    background: var(--karte);
-    color: var(--gefahr);
-    border-color: var(--gefahr);
-    box-shadow: 0 var(--knopf-tiefe) 0 var(--gefahr);
-}
-
-.knopf-gefahr:hover {
-    background: var(--gefahr);
-    color: var(--karte);
 }
 
 /*

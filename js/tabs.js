@@ -18,7 +18,9 @@
  *         platzhalter: true,                   // optional: nur ein Platz in der
  *                                              // Leiste, ausgegraut, ohne Inhalt
  *         aufbauen(behaelter),                 // legt das Gerüst einmalig an
- *         beimOeffnen()                        // optional: bei jedem Wechsel
+ *         beimOeffnen(),                       // optional: bei jedem Wechsel
+ *         beimVerlassen()                      // optional (seit v0.144.0):
+ *                                              // wenn ein ANDERER Tab kommt
  *     }
  *
  * DIE LEISTE WIE IN TYPOLUCK (seit v0.142.0, UPCrew-Angleichung Runde 2,
@@ -254,6 +256,13 @@ const TABS = {
         /* Beim ersten Aufruf steht der Strich noch nirgends — dann wird er
            gesetzt statt geschoben. */
         const ersterWechsel = (TABS.aktiveId === null);
+
+        /* Der bisherige Tab räumt auf, wenn er es will (seit v0.144.0, der
+           Tab „Anpassen" baut seinen Baustein ab). */
+        const vorher = TABS.liste.find((eintrag) => eintrag.id === TABS.aktiveId);
+        if (vorher && vorher.id !== id && typeof vorher.beimVerlassen === "function") {
+            vorher.beimVerlassen();
+        }
 
         TABS.aktiveId = id;
 

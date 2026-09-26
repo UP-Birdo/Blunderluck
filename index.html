@@ -38,6 +38,12 @@
     <!-- Das UPCrew-Studio-Intro: gemeinsamer Baustein aller UPCrew-Apps,
          kopiert aus Design\3D-Schrift\final (seit v0.140.3). -->
     <link rel="stylesheet" href="css/upcrew-intro.css">
+    <!-- Knöpfe und Tab „Anpassen": gemeinsame Bausteine aller UPCrew-Spiele
+         aus Design\3D-Schrift\final, nur kopiert (seit v0.144.0), NACH dem
+         eigenen Stil. Die Knopf-Familie K1–K6 (upcrew-knoepfe.css) lädt
+         über upcrew-schicht.css in eine eigene Ebene — warum, steht dort. -->
+    <link rel="stylesheet" href="css/upcrew-schicht.css">
+    <link rel="stylesheet" href="css/upcrew-anpassen.css">
 </head>
 <body>
 
@@ -80,20 +86,30 @@
          brauchen. fuehlen.js fragt ICH erst beim Vibrieren. -->
     <script src="js/fuehlen.js"></script>
     <script src="js/zustand.js"></script>
+    <!-- Macht jeden Haus-Knopf zum UPCrew-Knopf (seit v0.144.0) — vor
+         allem, was Knöpfe baut, damit der Wächter von Anfang an läuft. -->
+    <script src="js/knoepfe.js"></script>
     <!-- Das UPCrew-Konto (Firebase Authentication, seit v0.138.0) — vor
          Speicher und Anmeldung, die es beide brauchen. -->
     <script src="js/konto.js"></script>
     <script src="js/spieler.js"></script>
     <script src="js/versiegelung.js"></script>
     <script src="js/ich.js"></script>
-    <!-- Hell/Dunkel/Gerät und die Farbwelt (seit v0.141.0) — so früh wie
-         möglich, damit nichts in der falschen Farbe aufblitzt. Die
-         Farbwelten brauchen die Grundfarben aus dem Intro-Baustein, die
-         Darstellung braucht ICH. Beide Bausteine aus Design\3D-Schrift\final,
-         nur kopiert. -->
+    <!-- Das Aussehen: Hell/Dunkel, Farbwelt, Schrift, Knöpfe — EIN Aussehen
+         für alle UPCrew-Spiele (upcrew-aussehen.js, seit v0.144.0). So früh
+         wie möglich, damit nichts in der falschen Farbe oder Schrift
+         aufblitzt. Die Farbwelten brauchen die Grundfarben aus dem
+         Intro-Baustein. Die drei Bausteine aus Design\3D-Schrift\final, nur
+         kopiert. darstellung.js ist der frühe Aufruf
+         `UPCREW_AUSSEHEN.anwenden()` (eingebettete Skripte verbietet die
+         Sperre im Kopf) und übergibt vorher einmalig die alte Wahl. -->
     <script src="js/upcrew-intro.js"></script>
     <script src="js/upcrew-farbwelten.js"></script>
+    <script src="js/upcrew-aussehen.js"></script>
     <script src="js/darstellung.js"></script>
+    <!-- Was schon freigeschaltet ist, darunter 2D/3D (seit v0.144.0) —
+         vor dem Partie-Bildschirm und dem 3D-Brett, die beide fragen. -->
+    <script src="js/freischaltung.js"></script>
     <script src="js/verwaltung.js"></script>
     <script src="js/speicher.js"></script>
     <script src="js/abgleich.js"></script>
@@ -103,6 +119,9 @@
     <!-- Die Bildschirme des UPCrew-Kontos (seit v0.138.0) ergänzen
          ANMELDUNG und müssen NACH anmeldung.js stehen. -->
     <script src="js/anmeldung-konto.js"></script>
+    <!-- Das Aussehen wandert mit dem Konto (seit v0.144.0) — braucht
+         ANMELDUNG und SPIELER vor sich. -->
+    <script src="js/aussehen-konto.js"></script>
     <script src="js/faehigkeit-zeichen.js"></script>
     <script src="js/schach-varianten.js"></script>
     <script src="js/schach.js"></script>
@@ -136,8 +155,12 @@
          Laufzeit Bausteine von TEAM_SCHACH und stehen deshalb dahinter.
          Die Freundesliste (v0.11.0) hängt auf dem Zwischenbildschirm. -->
     <script src="js/start.js"></script>
-    <!-- Der Tab „Aufgaben" und der Platz „Bald" (seit v0.142.0). -->
+    <!-- Der Tab „Aufgaben" (seit v0.142.0). -->
     <script src="js/herausforderungen.js"></script>
+    <!-- Der Tab „Anpassen" (seit v0.144.0): der gemeinsame Baustein und
+         der Blunderluck-Anpasser dazu (Regal „Brett"). -->
+    <script src="js/upcrew-anpassen.js"></script>
+    <script src="js/anpassen.js"></script>
     <script src="js/faehigkeiten.js"></script>
     <script src="js/freunde.js"></script>
     <script src="js/einstellungen.js"></script>

@@ -3,6 +3,34 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.144.0 — 26.09.2026
+
+**Ein Aussehen für alle UPCrew-Spiele, eigene Schrift, eigene Knöpfe und
+der neue Tab „Anpassen“** (UPCrew-Angleichung, Runde 3).
+
+- **Neu: Tab „Anpassen“ ganz rechts** (statt „Bald“). Oben eine Vorschau,
+  die jede Wahl sofort zeigt — umschaltbar zwischen Blunderluck und
+  Typoluck, mit Zufalls-Würfel. Darunter die Regale Brett, Farbwelt,
+  Schrift, Knöpfe, Darstellung und drei Sets zum Merken von
+  Lieblings-Kombinationen. „Übernehmen“ gilt sofort in der ganzen App.
+- **Ein Aussehen für beide Spiele:** Hell/Dunkel, Farbwelt, Schrift und
+  Knöpfe stellst du einmal ein — Typoluck zieht mit. Angemeldet (nicht als
+  Gast) kommt die Wahl auch auf deine anderen Geräte.
+- **Eigene Schrift:** sechs Crew-Schriften zur Wahl, auch offline. In den
+  Einstellungen neu: **„Standard-Schrift“** — dann gilt immer die gut
+  lesbare Grundschrift, egal was gewählt ist. Und eine Zeile
+  **„Anpassen“**, die direkt in den neuen Tab springt.
+- **Eigene Knöpfe:** alle Knöpfe der App gehören jetzt zu einer von sechs
+  Knopf-Familien (Stufe, Kissen, Taste, Stempel, Kapsel, Ecke). Karten,
+  Brettfelder und Auswahl-Reihen bleiben, wie sie sind.
+- **Freischalten:** Vorerst ist nur der Standard frei (Werkstatt, Crew 1,
+  Stufe); alles andere zeigt die Vorschau mit Schloss. Die Stufen kommen
+  mit dem Herausforderungs-Pfad.
+- **Das 3D-Brett ist jetzt eine Wahl:** Ab Werk spielst du auf dem flachen
+  2D-Brett; 3D stellst du im Tab „Anpassen“ (Regal „Brett“) oder mit dem
+  kleinen „3D“ am Brett ein. Später wird 3D ab Arena 2 freigeschaltet —
+  bis die Arena-Leiter da ist, ist es für alle frei.
+
 ## v0.143.1 — 26.09.2026
 
 - **In der laufenden Partie ist die Tab-Leiste wieder weg** — dort zählt nur

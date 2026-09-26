@@ -2024,13 +2024,11 @@ Object.assign(TEAM_SCHACH, {
         if (window.BRETT_3D_AUS || performance.now() > TEAM_SCHACH.BRETT_3D_GEDULD_MS) {
             return false;
         }
-        try {
-            const einst = JSON.parse(localStorage.getItem("blunderluck.brett3d") || "{}") || {};
-            if (einst.an === false) {
-                return false;
-            }
-        } catch (fehler) {
-            /* dann gilt die Vorgabe: 3D an */
+        /* Seit v0.144.0 ist 2D die Vorgabe und 3D eine Freischaltung —
+           gewartet wird nur, wenn 3D gewählt UND frei ist
+           (js\freischaltung.js). */
+        if (typeof FREISCHALTUNG === "undefined" || FREISCHALTUNG.brett() !== "3d") {
+            return false;
         }
         return !window.BRETT_3D || window.BRETT_3D.laedt();
     },

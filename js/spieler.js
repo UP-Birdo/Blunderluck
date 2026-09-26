@@ -23,7 +23,15 @@
  *                 "pinPruefwert": "7c1f…",   // Prüfsumme der PIN, "" = keine
  *                 "pinSalz": "a91b…",        // offen; jedes Gerät muss prüfen können
  *                 "freunde": ["9d2a…"],      // wen ICH als Freund führe (seit v0.11.0)
- *                 "abgelehnt": []            // wen ich abgelehnt oder entfernt habe
+ *                 "abgelehnt": [],           // wen ich abgelehnt oder entfernt habe
+ *                 "aussehen": {              // seit v0.144.0: das gemeinsame
+ *                     "darstellung": "hell", // UPCrew-Aussehen, damit es auf
+ *                     "farbwelt": "werkstatt", // jedes Gerät mitkommt
+ *                     "schrift": "S1",       // (js\aussehen-konto.js); fehlt
+ *                     "knoepfe": "K1",       // bei Gästen und bei jedem, der
+ *                     "leseschrift": false,  // nie etwas umgestellt hat
+ *                     "stand": 1750000000000
+ *                 }
  *             }
  *         ]
  *     }
@@ -173,10 +181,22 @@ const SPIELER = {
                     .slice(0, SPIELER.ABZEICHEN_PLAETZE);
             }
 
+            /* Das Aussehen (seit v0.144.0): nur ein Objekt zählt, fremder
+               Müll fliegt raus. Die Werte darin prüft der Baustein
+               js\upcrew-aussehen.js beim Übernehmen — was eine neuere App
+               ergänzt hat, wandert hier unverändert durch. */
+            if ("aussehen" in spieler && !SPIELER._istObjekt(spieler.aussehen)) {
+                delete spieler.aussehen;
+            }
+
             daten.spieler.push(spieler);
         }
 
         return daten;
+    },
+
+    _istObjekt(wert) {
+        return !!wert && typeof wert === "object" && !Array.isArray(wert);
     },
 
     /* Eine tiefe Kopie über JSON — der Stand kommt ohnehin als JSON. */
@@ -432,6 +452,13 @@ const SPIELER = {
                 return false;
             }
 
+            /* Das Aussehen (seit v0.144.0) — sonst käme eine Umstellung von
+               einem anderen Gerät erst mit der nächsten anderen Änderung an
+               (js\aussehen-konto.js liest es nach jedem neuen Stand). */
+            if (JSON.stringify(spielerA.aussehen || null) !== JSON.stringify(spielerB.aussehen || null)) {
+                return false;
+            }
+
             /* Auch die Freundes-Sicht (seit v0.11.0) — sonst zeichnet die
                App eine neue Anfrage nicht (Entwurf, Abschnitt 3.4). */
             if (spielerA.freunde.join("|") !== spielerB.freunde.join("|")
@@ -465,6 +492,36 @@ const SPIELER = {
         for (const spieler of neu.spieler) {
             if (spieler.id === id) {
                 spieler.abzeichen = sauber;
+            }
+        }
+        neu.geaendertAm = (zeitpunkt === undefined) ? Date.now() : zeitpunkt;
+        return neu;
+    },
+
+    /*
+     * Das gemeinsame UPCrew-Aussehen am eigenen Eintrag (seit v0.144.0,
+     * js\aussehen-konto.js). Geschrieben werden genau die sechs Felder des
+     * Bausteins, jedes nur mit dem passenden Typ — so bleibt der Eintrag
+     * innerhalb der Regel, die SICHERHEIT.md §11 dafür vorschlägt.
+     */
+    AUSSEHEN_TEXTE: ["darstellung", "farbwelt", "schrift", "knoepfe"],
+
+    aussehenSetzen(daten, id, aussehen, zeitpunkt) {
+        const neu = SPIELER.kopieren(daten);
+        const sauber = {};
+        const roh = SPIELER._istObjekt(aussehen) ? aussehen : {};
+        for (const feld of SPIELER.AUSSEHEN_TEXTE) {
+            if (typeof roh[feld] === "string" && roh[feld] !== "" && roh[feld].length <= 20) {
+                sauber[feld] = roh[feld];
+            }
+        }
+        sauber.leseschrift = roh.leseschrift === true;
+        sauber.stand = (typeof roh.stand === "number" && isFinite(roh.stand) && roh.stand > 0)
+            ? roh.stand : 0;
+
+        for (const spieler of neu.spieler) {
+            if (spieler.id === id) {
+                spieler.aussehen = sauber;
             }
         }
         neu.geaendertAm = (zeitpunkt === undefined) ? Date.now() : zeitpunkt;

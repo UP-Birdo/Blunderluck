@@ -1,5 +1,55 @@
 # Blunderluck - Entscheidungen / Entschieden - und warum
 
+## Runde 3: ein Aussehen, Knöpfe über einen Wächter, Knopf-Familie in einer eigenen Ebene, 3D als Freischaltung (26.09.2026, v0.144.0)
+
+Auftrag: `Design\3D-Schrift\docs\AUFTRAEGE-RUNDE-3.md`, Block Blunderluck.
+Vorgegeben war dort das WAS (Bausteine kopieren, ein Aussehen, Schrift,
+Knöpfe, Tab „Anpassen", Regal „Brett", Konto-Abgleich). Beim Bau
+entschieden wurde das WIE:
+
+- **Knöpfe über einen Wächter (`js\knoepfe.js`) statt 130 Einzelstellen.**
+  Knöpfe entstehen an rund 130 Stellen in 17 Dateien, über ein halbes
+  Dutzend eigener `_knopf`-Helfer, und viele ändern später Text oder Klasse
+  (Zwei-Schritt-Knopf, „Übernommen"). Ein `MutationObserver` am body hängt
+  jedem Haus-Knopf die UPCrew-Klassen und das `up-led` an — beim Einhängen
+  und nach jeder solchen Änderung. Verworfen: jede Stelle von Hand — hätte
+  jeden künftigen Knopf zur Fehlerquelle gemacht. Die Ausnahmen (Karten,
+  Armee-Wahl, Vorrats-Haken, Friedhofleiste, Segment-Reihen) stehen als zwei
+  Listen in der Datei; `tests\test-aussehen.js` prüft Zuordnung und
+  Ausnahmen.
+- **Die Knopf-Familie lädt in eine eigene CSS-Ebene** (`css\upcrew-schicht.css`,
+  `@import … layer(upcrew)`). Ohne Ebene hätte `.up-kn` (lädt nach dem
+  eigenen Stil) rund dreißig eigene Größenregeln geschlagen — kleine Knöpfe,
+  Eck-Knopf, Steuer-Knöpfe wären 44 px hoch geworden. Mit Ebene gewinnt
+  jede eigene Regel; deshalb durfte keine eigene Form-Regel (Rundung, Kante,
+  Schatten, Rahmen, Fläche) für Haus-Knöpfe übrig bleiben — der Wächter in
+  `test-aussehen.js` zählt sie (gegengeprüft: schlägt bei den alten Regeln
+  an). Der Baustein selbst ist unverändert; Typoluck darf ihn anders laden.
+- **`darstellung.js` bleibt als Anpasser** und ist der „frühe Aufruf"
+  (eingebettete Skripte verbietet die Sperre im Kopf von `index.html`). Die
+  Schnittstelle `DARSTELLUNG.*` blieb gleich, damit Einstellungen und
+  3D-Brett nichts merken.
+- **Das Aussehen am Konto geht über den Spieler-Abgleich**, als Feld
+  `aussehen` am eigenen Eintrag (`SPIELER.aussehenSetzen`) — kein zweiter
+  Schreibweg auf `konten/<uid>/aussehen`. Grund: Der Abgleich schreibt den
+  eigenen Eintrag immer als Ganzes; ein getrennter Schreibvorgang wäre beim
+  nächsten Speichern (Freunde, Abzeichen) wieder überschrieben worden.
+  `inhaltGleich` vergleicht `aussehen` mit, sonst käme eine Umstellung von
+  einem anderen Gerät nicht an.
+- **3D ist eine Freischaltung, aber `SPERRE_3D` steht AUS**
+  (`js\freischaltung.js`). Die Arena-Leiter gibt es noch nicht — scharf
+  geschaltet hätte niemand 3D. Was sich trotzdem sofort ändert (Nutzer:
+  „kein Bestandsschutz"): 2D ist die Vorgabe (`VORGABE.an = false`), die
+  Wahl 2D/3D gilt jetzt für jeden (vorher las das 3D-Brett ohne
+  Admin-Freigabe gar nichts aus dem Speicher und stand immer auf 3D).
+- **Werkstatt-Modus = `?werkstatt` NUR auf localhost** — im Netz könnte
+  sich sonst jeder alles freischalten.
+- **Leisten-Wörter schrumpfen auf schmalen Handys** (`min(0.75rem,
+  2.85vw)`, 1 px Seitenrand): gemessen passte „Fähigkeiten" schon mit der
+  alten Schrift nicht (70 statt 65 px bei 390 px), mit den breiten
+  Crew-Schriften auch „Aufgaben", „Rangliste", „Anpassen" nicht. Jetzt
+  passt alles, alle sechs Schriften, 390 und 360 px.
+
 ## UP#Plus ist in allen UPCrew-Spielen nur Rollen-Verteiler (25.09.2026, v0.139.0)
 
 Nutzer: „UP soll nicht in der Rangliste erscheinen, auch keine Freunde

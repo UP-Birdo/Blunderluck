@@ -2,6 +2,29 @@
 
 ## Teuer erkaufte Erkenntnisse
 
+### `-NurFazit` meldet „0 Fehler", wenn eine Testdatei gar nicht startet — nur der Exit-Code verrät es (26.09.2026, v0.144.0)
+
+**Beim Bauen gefunden.** Ein typografisches „ in einem JS-Text von
+`tests\test-aussehen.js` brach die Datei (SyntaxError). Die Zeile von
+`tools\Test-Blunderluck.ps1 -NurFazit` lautete trotzdem „1894 Pruefungen,
+0 Fehler" — die abgestürzte Datei hat keine Prüfungen gezählt, also auch
+keine Fehler. Einziger Hinweis: `(Exit 1)` am Ende. **Regel:** Grün ist nur
+„0 Fehler UND Exit 0". Steht Exit 1 bei 0 Fehlern, die volle Ausgabe von
+`tests\Tests-Ausfuehren.ps1` nach „FEHLGESCHLAGEN" durchsuchen. Und: die
+Prüfungszahl mit der vorigen Runde vergleichen — eine neue Testdatei muss
+sie erhöhen.
+
+### Kopflos: Die Leisten-Markierung „steht falsch" — es ist nur ein Farbübergang unter virtueller Zeit (26.09.2026, v0.144.0)
+
+**Beim Ansehen gefunden.** Mit Edge `--virtual-time-budget` zeigte ein Bild
+den Tab „Start" orange markiert, obwohl „Anpassen" offen war. Gemessen: Die
+Klassen (`tab-knopf-aktiv`) und der Marker standen richtig, nur
+`getComputedStyle(…).color` war noch die alte Farbe — der Farbübergang
+(`transition`) war unter virtueller Zeit nicht fertig, besonders wenn eine
+Schrift nachlädt. Mit längerem Budget stimmte das Bild. **Regel:** Bevor ein
+kopfloses Bild als Fehler gilt, den DOM-Stand mitschreiben (Klasse, Lage)
+und das Bild mit längerem Budget wiederholen.
+
 ### Ein Verweis-Test mit `indexOf` lässt `konfig.js.bak` durch — v0.140.0 startete nicht (gemeldet 25.09.2026, behoben v0.140.1)
 
 **Passiert:** Nach dem Ausliefern von v0.140.0 kam der Nutzer nicht mehr in

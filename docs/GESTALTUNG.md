@@ -45,9 +45,11 @@ Bildlaufleisten und Auswahlfelder mitziehen.
 `--still-kante`, dazu das Brett `--feld-hell/-dunkel` und seine Kanten)
 überschreibt zur Laufzeit die Farbwelt an `<html>`:
 `js\upcrew-farbwelten.js` ist der gemeinsame Baustein aller UPCrew-Spiele
-aus `Design\3D-Schrift\final` (nur kopiert, nie hier abwandeln), vorerst
-immer die Welt „Werkstatt" (Orange). Die Werte in den Stildateien sind der
-Rückfall. Bedeutungsfarben (`--gefahr`, `--gut`, `--warnung*`), die Farben
+aus `Design\3D-Schrift\final` (nur kopiert, nie hier abwandeln). **Welche
+Welt gilt, wählt seit v0.144.0 der Spieler** im Tab „Anpassen" — gemeinsam
+für alle UPCrew-Spiele (`js\upcrew-aussehen.js`); Standard und heute
+einzige freie Welt ist „Werkstatt" (Orange). Die Werte in den Stildateien
+sind der Rückfall. Bedeutungsfarben (`--gefahr`, `--gut`, `--warnung*`), die Farben
 der Brettmarken und das violette Anmelde-Vollbild berührt die Farbwelt nicht.
 Das 3D-Brett liest seine Feldfarben für das Thema „Blunderluck" aus denselben
 Platzhaltern (`themaFarben()` in `js\brett-3d.js`).
@@ -95,27 +97,43 @@ Grundgerüst.
 
 ## Schrift
 
-- **Grundschrift:** die Systemschrift (`"Segoe UI", system-ui, …`), 16 px,
-  Zeilenhöhe 1,45. Keine geladene Schriftart — die App soll ohne Netz
-  vollständig aussehen.
+- **Grundschrift (seit v0.144.0): eine der sechs Crew-Schriften** (S1–S6,
+  Dateien in `schrift\`, im Service Worker — also auch offline), gewählt im
+  Tab „Anpassen", gemeinsam für alle UPCrew-Spiele. `js\upcrew-aussehen.js`
+  setzt `--schrift-familie` an `<html>`; **jede Stelle liest nur diese
+  Variable** (`body`, dazu `button, input, textarea, select` per
+  `inherit`, die Leinwand des 3D-Bretts über `schriftFamilie()`). Rückfall
+  ist die Systemschrift. „Standard-Schrift" in den Einstellungen erzwingt
+  S1. 16 px, Zeilenhöhe 1,45. Bis v0.143 stand „Segoe UI" fest.
 - **Schreibmaschinenschrift** (`ui-monospace, "Cascadia Mono", Consolas`) nur
   dort, wo Zeichen einzeln abgelesen oder abgetippt werden: Beitritts-Code,
-  technische Zeilen.
-- **Georgia kursiv** trägt genau ein Zeichen: das `i` hinter Überschriften
-  (`.info-knopf`). Es ist absichtlich das einzige serife Zeichen der App —
-  daran erkennt man es wieder.
+  technische Zeilen. Die einzige feste Schrift, die bleibt
+  (`tests\test-aussehen.js` wacht).
+- Das `i` hinter Überschriften (`.info-knopf`) steht kursiv in der
+  Schrift der App (bis v0.143 Georgia).
 - Grössen werden in `rem` angegeben, nicht in Pixeln, damit die Systemschrift
   des Nutzers durchschlägt.
 
 ## Knöpfe
 
-| Klasse | Wann |
-|---|---|
-| `knopf` | Die Grundform — trägt jeder Knopf, immer zusätzlich zu einer der folgenden |
-| `knopf-haupt` | **Die eine Hauptaktion des Bildschirms**, blau gefüllt |
-| `knopf-still` | Alles Übrige: Umriss, leise Schrift |
-| `knopf-gefahr` | Nur Zerstörendes, roter Umriss |
-| `knopf-klein` | Zusatz für Knöpfe in Kopfzeilen und Leisten |
+**Seit v0.144.0 UPCrew-Knöpfe:** Wie ein Knopf aussieht (Rundung, Kante,
+Schatten, Rahmen, Flächen- und Schriftfarbe, Einsinken), bestimmt allein
+die **Knopf-Familie** K1–K6, gewählt im Tab „Anpassen"
+(`css\upcrew-knoepfe.css`, gemeinsamer Baustein, geladen in die Ebene
+`upcrew` über `css\upcrew-schicht.css`). `js\knoepfe.js` hängt jedem
+Haus-Knopf die Klassen an; die Haus-Klassen unten bleiben und sagen weiter,
+WELCHE Art Knopf es ist. Eigene Regeln bestimmen nur noch Größe und
+Anordnung. Ausgenommen (Spielgrafik): Fähigkeiten-/Unglücks-Karten,
+Armee-Wahl, Vorrats-Haken, Friedhofleiste, Segment-Reihen.
+
+| Klasse | Wann | wird zu |
+|---|---|---|
+| `knopf` | Die Grundform — trägt jeder Knopf, immer zusätzlich zu einer der folgenden | `up-kn` |
+| `knopf-haupt` | **Die eine Hauptaktion des Bildschirms**, in der Hauptfarbe | `up-haupt` |
+| `knopf-still` | Alles Übrige | `up-zweit` |
+| `knopf-gefahr` | Nur Zerstörendes (Kante `--gefahr-kante`, Schrift `--gefahr-schrift`) | `up-gefahr` |
+| `knopf-klein` | Zusatz für Knöpfe in Kopfzeilen und Leisten (34 px hoch) | — |
+| `knopf-zurueck` | Der Pfeil in der Kopfzeile (`ZUSTAND.alsZurueck`) | `up-rund` |
 
 **Eine Hauptaktion je Bildschirm** (Haus-Regel, `CLAUDE.md`). Kleine
 zerstörende Aktionen laufen über `DIALOG.zweiSchritt(knopf, aktion)`, grosse

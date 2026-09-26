@@ -1,0 +1,18 @@
+/*
+ * upcrew-schicht.css — lädt die Knopf-Familie K1–K6 (css\upcrew-knoepfe.css,
+ * gemeinsamer Baustein aus Design\3D-Schrift\final, nur kopiert) in eine
+ * EIGENE EBENE (seit v0.144.0).
+ *
+ * Warum eine Ebene: Regeln ausserhalb einer Ebene gewinnen immer gegen
+ * Regeln in einer Ebene, egal wie genau ihr Selektor ist. So bestimmt die
+ * Familie Rundung, Kante, Schatten, Rahmen und Farben jedes UPCrew-Knopfs,
+ * während die rund dreissig eigenen Größen- und Anordnungsregeln der
+ * Blunderluck-Knöpfe (kleiner Knopf, Eck-Knopf, Steuer-Knöpfe …) weiter
+ * gelten — ohne dass jede einzelne gegen `.up-kn` ankämpfen muss.
+ * Begründung: docs\entscheidungen\entschieden.md, „Knopf-Familie in einer
+ * eigenen Ebene".
+ *
+ * Der Baustein selbst bleibt unverändert; nur WIE er geladen wird, steht
+ * hier. Diese Datei steht in index.html nach den eigenen Stildateien.
+ */
+@import url("upcrew-knoepfe.css") layer(upcrew);

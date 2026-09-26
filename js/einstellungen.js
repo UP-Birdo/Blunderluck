@@ -6,9 +6,12 @@
  * statt Erklärsätzen hinter i-Knöpfen.
  *
  *   1. DIESES GERÄT — je Zeile Symbol + Name links, Umschalter rechts:
- *      Darstellung (Auto / Hell / Dunkel, js\darstellung.js) und Vibration
- *      (An / Aus, js\fuehlen.js; kann das Gerät nicht vibrieren, steht
- *      „nicht möglich" da statt eines Schalters ohne Wirkung).
+ *      Darstellung (Auto / Hell / Dunkel, js\darstellung.js), seit v0.144.0
+ *      Standard-Schrift (An / Aus) und der Weg in den Tab „Anpassen" —
+ *      diese drei gelten über das gemeinsame UPCrew-Aussehen auch in
+ *      Typoluck —, dazu Vibration (An / Aus, js\fuehlen.js; kann das Gerät
+ *      nicht vibrieren, steht „nicht möglich" da statt eines Schalters ohne
+ *      Wirkung).
  *   2. UPCREW-KONTO · ALLE SPIELE — wer angemeldet ist (Name#Nummer, Rolle)
  *      und alle Konto-Knöpfe untereinander: Spielstand sichern (nur Gast),
  *      Profil, Verwaltung (nur Admins), Abmelden, UPCrew-Konto löschen
@@ -54,6 +57,16 @@ const EINSTELLUNGEN = {
     aufbauen(behaelter) {
         EINSTELLUNGEN.wurzelEl = behaelter;
         EINSTELLUNGEN._zeichnen();
+        /* Stellt Typoluck (oder das Konto) das Aussehen um, während die
+           Einstellungen offen sind, ziehen die Umschalter mit. */
+        if (typeof DARSTELLUNG !== "undefined") {
+            DARSTELLUNG.beiAenderung((aussehen, quelle) => {
+                if (quelle !== "selbst" && typeof TABS !== "undefined"
+                        && TABS.aktiveId === EINSTELLUNGEN.id) {
+                    EINSTELLUNGEN._zeichnen();
+                }
+            });
+        }
     },
 
     beimOeffnen() {
@@ -96,8 +109,11 @@ const EINSTELLUNGEN = {
     _geraetKarteBauen() {
         const karte = EINSTELLUNGEN._karteBauen("Dieses Gerät");
 
-        /* Hell / dunkel / wie das Gerät (seit v0.141.0). Fehlt der
-           Baustein (Bildschirm-Tests), bleibt die Zeile weg. */
+        /* Hell / dunkel / wie das Gerät (seit v0.141.0). Seit v0.144.0
+           schreibt die Wahl ins gemeinsame UPCrew-Aussehen
+           (js\darstellung.js → js\upcrew-aussehen.js) und gilt damit auch
+           in Typoluck. Fehlt der Baustein (Bildschirm-Tests), bleibt die
+           Zeile weg. */
         if (typeof DARSTELLUNG !== "undefined") {
             karte.appendChild(EINSTELLUNGEN._zeileBauen("auto", "Darstellung",
                 EINSTELLUNGEN._segmentBauen([
@@ -108,6 +124,28 @@ const EINSTELLUNGEN = {
                     DARSTELLUNG.themaSetzen(wert);
                     EINSTELLUNGEN._zeichnen();
                 }, "Darstellung")));
+        }
+
+        /* Standard-Schrift (seit v0.144.0): An = immer die gut lesbare
+           Grundschrift, egal welche Crew-Schrift im Tab „Anpassen" gewählt
+           ist. Gilt in allen UPCrew-Spielen. */
+        if (typeof UPCREW_AUSSEHEN !== "undefined") {
+            karte.appendChild(EINSTELLUNGEN._zeileBauen("schrift", "Standard-Schrift",
+                EINSTELLUNGEN._segmentBauen([
+                    { wert: true, text: "An" },
+                    { wert: false, text: "Aus" }
+                ], UPCREW_AUSSEHEN.lesen().leseschrift === true, (wert) => {
+                    UPCREW_AUSSEHEN.setzen({ leseschrift: wert });
+                    EINSTELLUNGEN._zeichnen();
+                }, "Standard-Schrift")));
+        }
+
+        /* Der Weg zum Tab „Anpassen" (seit v0.144.0) — Farbwelt, Schrift,
+           Knöpfe und Brett stehen dort, nicht hier. */
+        if (typeof ANPASSEN !== "undefined") {
+            karte.appendChild(EINSTELLUNGEN._zeileBauen("anpassen", "Anpassen",
+                EINSTELLUNGEN._knopf("Öffnen", "knopf-still knopf-klein",
+                    () => TABS.wechseln(ANPASSEN.id))));
         }
 
         /* Vibration (seit v0.140.0, UPCrew-Standard Abschnitt 5): ab Werk

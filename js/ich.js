@@ -101,6 +101,12 @@ const ICH = {
      * Die Darstellung (seit v0.141.0, wie Typoluck): "geraet", "hell" oder
      * "dunkel". Ab Werk wie das Gerät — gespeichert wird deshalb nur eine
      * feste Wahl. Was sie bewirkt, steht in js\darstellung.js.
+     *
+     * SEIT v0.144.0 NUR NOCH ALTBESTAND: Die Darstellung steht im
+     * gemeinsamen UPCrew-Aussehen (js\upcrew-aussehen.js). darstellung.js
+     * liest diesen Wert genau einmal, um ihn per `migrieren` zu übergeben;
+     * geschrieben wird er nicht mehr. Die Funktionen bleiben (additiver
+     * Datenvertrag).
      */
     darstellung() {
         const wert = ICH._lesen(ICH.SCHLUESSEL_DARSTELLUNG);

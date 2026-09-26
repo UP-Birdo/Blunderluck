@@ -89,6 +89,18 @@ function themaFarben() {
     });
 }
 
+/* Die Schrift der App für Zeichen auf der Leinwand (seit v0.144.0): der
+   Baustein js\upcrew-aussehen.js setzt --schrift-familie an <html>. Ist die
+   gewählte Schrift noch nicht geladen, nimmt die Leinwand den Rückfall. */
+function schriftFamilie() {
+    if (typeof getComputedStyle === "function") {
+        const wert = getComputedStyle(document.documentElement)
+            .getPropertyValue("--schrift-familie").trim();
+        if (wert) return wert;
+    }
+    return "system-ui, sans-serif";
+}
+
 /* Gilt gerade dunkel? Die Einstellung „Darstellung" (js\darstellung.js),
    sonst das Gerät. */
 function istDunkel() {
@@ -126,8 +138,10 @@ const TEMPI = {
     normal: { name: "Normal", faktor: 1.0 }
 };
 
+/* `an` ist seit v0.144.0 ab Werk AUS: 3D ist eine Freischaltung
+   (js\freischaltung.js), wer nichts gewählt hat, spielt 2D. */
 const VORGABE = {
-    an: true, thema: "blunderluck", figuren: "emaille", blick: "schraeg",
+    an: false, thema: "blunderluck", figuren: "emaille", blick: "schraeg",
     kacheln: "rund", schatten: true, tempo: "normal"
 };
 
@@ -239,12 +253,25 @@ function einstellungenLaden() {
        noch ein älteres eigenes Aussehen gespeichert ist (seit v0.129.0). */
     if (!anpassungErlaubt()) gespeichert = {};
     const einst = Object.assign({}, VORGABE, gespeichert);
+    /* 2D oder 3D wählt seit v0.144.0 jeder selbst (Tab „Anpassen") — die
+       Wahl gilt also auch ohne Admin-Freigabe, aber nur, solange 3D frei
+       ist. Die Antwort gibt allein js\freischaltung.js. */
+    einst.an = dreiDGilt();
     if (!THEMEN[einst.thema]) einst.thema = VORGABE.thema;
     if (!FIGUR_STILE[einst.figuren]) einst.figuren = VORGABE.figuren;
     if (!BLICKE[einst.blick]) einst.blick = VORGABE.blick;
     if (!KACHELN[einst.kacheln]) einst.kacheln = VORGABE.kacheln;
     if (!TEMPI[einst.tempo]) einst.tempo = VORGABE.tempo;
     return einst;
+}
+
+/* Gilt gerade 3D? Ohne js\freischaltung.js (darf nicht sein) bleibt es 2D. */
+function dreiDGilt() {
+    return typeof FREISCHALTUNG !== "undefined" && FREISCHALTUNG.brett() === "3d";
+}
+
+function dreiDFrei() {
+    return typeof FREISCHALTUNG !== "undefined" && FREISCHALTUNG.dreiDFrei();
 }
 
 function einstellungenSpeichern() {
@@ -2501,7 +2528,7 @@ function restzeitSetzen(feld, text) {
     c.fillStyle = "#1d2330";
     c.beginPath(); c.arc(32, 32, 28, 0, Math.PI * 2); c.fill();
     c.fillStyle = "#ffffff";
-    c.font = "700 34px system-ui, sans-serif";
+    c.font = "700 34px " + schriftFamilie();
     c.textAlign = "center"; c.textBaseline = "middle";
     c.fillText(text, 32, 34);
     const tex = new THREE.CanvasTexture(lw);
@@ -2941,10 +2968,8 @@ function tafelUmschalten() {
     zwei.className = "knopf knopf-still knopf-klein";
     zwei.textContent = "Flaches 2D-Brett";
     zwei.addEventListener("click", () => {
-        Z.einst.an = false;
-        einstellungenSpeichern();
         tafelUmschalten();
-        abbinden();
+        FREISCHALTUNG.brettSetzen("2d");
     });
     const zu = document.createElement("button");
     zu.type = "button";
@@ -3012,22 +3037,42 @@ function abbinden() {
     }
 }
 
-/* Auf dem flachen Brett ein kleiner Knopf zurück ins 3D. */
+/* Auf dem flachen Brett ein kleiner Knopf zurück ins 3D — seit v0.144.0
+   nur, wenn 3D freigeschaltet ist (gesperrt: kein Umschalter). */
 function zweiDKnopf(halter) {
     const rahmen = halter && halter.querySelector(".brett-rahmen");
-    if (!rahmen || rahmen.querySelector(".brett-3d-zurueck")) return;
+    if (!rahmen) return;
+    const alt = rahmen.querySelector(".brett-3d-zurueck");
+    if (!dreiDFrei()) {
+        if (alt) alt.remove();
+        return;
+    }
+    if (alt) return;
     const knopf = document.createElement("button");
     knopf.type = "button";
     knopf.className = "brett-3d-zurueck";
     knopf.textContent = "3D";
     knopf.title = "Brett in 3D zeigen";
     knopf.addEventListener("click", () => {
-        Z.einst.an = true;
-        einstellungenSpeichern();
         knopf.remove();
-        neuZeichnen(false);
+        FREISCHALTUNG.brettSetzen("3d");
     });
     rahmen.appendChild(knopf);
+}
+
+/* Die Wahl 2D/3D hat sich geändert (js\freischaltung.js `brettSetzen`,
+   Tab „Anpassen" oder die Knöpfe oben): übernehmen und neu zeichnen. */
+function wahlUebernehmen(an) {
+    if (!Z.einst) return;
+    Z.einst.an = an === true;
+    if (!Z.einst.an) {
+        abbinden();
+        if (Z.letzte && Z.letzte.halter) zweiDKnopf(Z.letzte.halter);
+        return;
+    }
+    const alt = Z.letzte && Z.letzte.halter && Z.letzte.halter.querySelector(".brett-3d-zurueck");
+    if (alt) alt.remove();
+    neuZeichnen(false);
 }
 
 function neuZeichnen(animieren) {
@@ -4315,6 +4360,9 @@ window.BRETT_3D = {
     aktiv() {
         return Z.bereit && Z.einst && Z.einst.an;
     },
+    /* 2D/3D umschalten (seit v0.144.0) — gerufen NUR aus
+       js\freischaltung.js, das die Wahl vorher speichert und prüft. */
+    wahlUebernehmen,
     /* Formen noch unterwegs? Dann verbirgt der Bildschirm das flache Brett. */
     laedt() {
         return !Z.bereit && !Z.fehler;

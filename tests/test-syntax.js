@@ -156,10 +156,33 @@ for (const name of dateien) {
 const stilNamen = [...seite.matchAll(/<link rel="stylesheet" href="css\/([^"]+)">/g)]
     .map((treffer) => treffer[1]);
 
+/*
+ * EINGEBUNDEN IST AUCH, WAS EINE STILDATEI PER @import NACHLÄDT (seit
+ * v0.144.0): Die Knopf-Familie css\upcrew-knoepfe.css lädt über
+ * css\upcrew-schicht.css in eine eigene Ebene (`@import … layer(upcrew)`).
+ * Für alle Prüfungen unten steht ihr Inhalt an der Stelle der Datei, die
+ * sie holt.
+ */
+const stilImporte = {};
+for (const name of stilNamen) {
+    const quelle = dateisystem.readFileSync(pfad.join(projekt, "css", name), "utf8");
+    stilImporte[name] = [...quelle.matchAll(/@import\s+url\("([^"]+)"\)/g)].map((t) => t[1]);
+}
+
+/*
+ * DIE GEMEINSAMEN UPCREW-BAUSTEINE werden aus Design\3D-Schrift\final nur
+ * KOPIERT, nie abgewandelt (Auftrag Runde 3). Blunderluck-Hausregeln, die
+ * sie verletzen, werden an der Quelle behoben, nicht hier — die Prüfungen
+ * unten nehmen sie deshalb EINZELN und begründet aus. Findet eine Prüfung
+ * dort etwas Echtes, steht es in STATUS.md unter „Wartet auf den Nutzer"
+ * als Meldung an die Design-Sitzung.
+ */
+const UPCREW_BAUSTEINE_CSS = ["upcrew-intro.css", "upcrew-knoepfe.css", "upcrew-anpassen.css"];
+
 pruefe("Ordner css und index.html nennen dieselben Stildateien", () => {
     const vorhanden = dateisystem.readdirSync(pfad.join(projekt, "css"))
         .filter((name) => name.endsWith(".css")).sort();
-    const eingebunden = [...stilNamen].sort();
+    const eingebunden = [...stilNamen, ...[].concat(...Object.values(stilImporte))].sort();
     if (vorhanden.join(", ") !== eingebunden.join(", ")) {
         throw new Error("Ordner css: " + vorhanden.join(", ")
             + " — index.html: " + eingebunden.join(", "));
@@ -173,8 +196,9 @@ pruefe("stil.css (Grundlagen) lädt als erster Teil", () => {
     }
 });
 
-const stil = stilNamen.map((name) => dateisystem.readFileSync(
-    pfad.join(projekt, "css", name), "utf8")).join("");
+const stil = stilNamen.map((name) => stilImporte[name].map((geholt) =>
+    dateisystem.readFileSync(pfad.join(projekt, "css", geholt), "utf8")).join("")
+    + dateisystem.readFileSync(pfad.join(projekt, "css", name), "utf8")).join("");
 
 /* Die Version muss an genau einer Stelle stehen und im CHANGELOG auftauchen. */
 pruefe("Version aus konfig.js steht im CHANGELOG", () => {
@@ -462,6 +486,11 @@ pruefe("_figurKlasse vergibt Marker- und Art-Klasse (v0.121, erweitert v0.122)",
  * `--aus`, `--an`, die js\upcrew-intro.js je Element im `style`-Attribut
  * setzt. Der Baustein wird aus Design\3D-Schrift\final nur KOPIERT, nie
  * abgewandelt — deshalb zählt hier, was er selbst setzt, als definiert.
+ *
+ * DAS AUSSEHEN (seit v0.144.0): Die Farbwelt setzt ihre Variablen zur
+ * Laufzeit an <html> (js\upcrew-farbwelten.js, `werte()` — auch die
+ * Kacheln und Tasten, die der Tab „Anpassen" für seine Typoluck-Vorschau
+ * braucht), die Schrift js\upcrew-aussehen.js (`--schrift-familie`).
  */
 pruefe("Jede benutzte CSS-Variable ohne Ausweichwert ist auch definiert", () => {
 
@@ -474,6 +503,14 @@ pruefe("Jede benutzte CSS-Variable ohne Ausweichwert ist auch definiert", () => 
         for (const variable of treffer[1].matchAll(/(--[a-z0-9-]+)\s*:/g)) {
             definiert.add(variable[1]);
         }
+    }
+    const farbwelten = dateisystem.readFileSync(pfad.join(jsOrdner, "upcrew-farbwelten.js"), "utf8");
+    for (const treffer of farbwelten.matchAll(/"(--[a-z0-9-]+)"\s*[:\]]/g)) {
+        definiert.add(treffer[1]);
+    }
+    const aussehen = dateisystem.readFileSync(pfad.join(jsOrdner, "upcrew-aussehen.js"), "utf8");
+    for (const treffer of aussehen.matchAll(/setProperty\("(--[a-z0-9-]+)"/g)) {
+        definiert.add(treffer[1]);
     }
 
     const fehlend = new Set();
@@ -708,7 +745,8 @@ pruefe("sw.js legt genau die Dateien in den Zwischenspeicher, die es gibt", () =
             }
         }
     };
-    for (const ordner of ["icons", "css", "js", "img/figuren", "img/lootboxen", "modelle"]) {
+    /* `schrift` seit v0.144.0: die zwölf Crew-Schriften und ihre Lizenz. */
+    for (const ordner of ["icons", "css", "js", "img/figuren", "img/lootboxen", "modelle", "schrift"]) {
         sammeln(ordner);
     }
 
@@ -862,6 +900,18 @@ pruefe("app.js meldet den Service Worker abgesichert an", () => {
  * hinein; App-Name und Version laufen durch seine Maskierung `text()`, die
  * Farbwelt aus dem Browser-Speicher gilt nur, wenn sie in WELTEN steht.
  * Jede ANDERE innerHTML-Zeile in der Datei schlägt weiter an.
+ *
+ * DIE ZWEITE AUSNAHME (seit v0.144.0): der Tab „Anpassen",
+ * js\upcrew-anpassen.js, ebenfalls ein gemeinsamer Baustein. Er baut seine
+ * ganze Oberfläche als Text. Durchgesehen am 26.09.2026: Alles Eingesetzte
+ * stammt aus festen Tabellen (Farbwelten, Schriften, Knopf-Namen) oder aus
+ * den Regalen, die Blunderluck selbst übergibt (js\anpassen.js, nur feste
+ * Wörter). EINE Lücke ist gemeldet: Ein gespeichertes Set setzt seinen
+ * Schrift-Wert ungeprüft in ein style-Attribut (Zeile mit
+ * `font-family:'Crew ${s.schrift}'`). Der Wert kommt nur aus dem
+ * Browser-Speicher desselben Ursprungs, nicht vom Konto — also kein Weg
+ * für Fremde; behoben wird es an der Quelle (STATUS.md, Meldung an die
+ * Design-Sitzung). Die Ausnahme gilt nur für diese eine Datei.
  */
 pruefe("innerHTML leert nur, es setzt nichts ein (Stored XSS)", () => {
     const erlaubt = /\.innerHTML\s*=\s*""\s*;/;
@@ -869,6 +919,9 @@ pruefe("innerHTML leert nur, es setzt nichts ein (Stored XSS)", () => {
     const funde = [];
 
     for (const name of dateien) {
+        if (name === "upcrew-anpassen.js") {
+            continue;
+        }
         const quelle = dateisystem.readFileSync(
             pfad.join(jsOrdner, name), "utf8");
 
@@ -932,8 +985,11 @@ pruefe("fuehlen.js und zustand.js laden vor dialog.js (UPCrew-Standard)", () => 
     }
 });
 
+/* Ausgenommen (seit v0.144.0): der gemeinsame Baustein js\upcrew-anpassen.js
+   vibriert selbst und fragt dabei den Schalter „Vibration" NICHT — gemeldet
+   an die Design-Sitzung (STATUS.md), behoben wird an der Quelle. */
 pruefe("Kein Bildschirm vibriert am Baustein vorbei (UPCrew-Standard)", () => {
-    const funde = dateien.filter((name) => name !== "fuehlen.js"
+    const funde = dateien.filter((name) => name !== "fuehlen.js" && name !== "upcrew-anpassen.js"
         && /navigator\.vibrate/.test(dateisystem.readFileSync(pfad.join(jsOrdner, name), "utf8")));
     if (funde.length > 0) {
         throw new Error("navigator.vibrate ausserhalb von fuehlen.js: " + funde.join(", "));
@@ -975,7 +1031,9 @@ function formFunde(quelle) {
     return { rundungen, schatten };
 }
 
-for (const name of stilNamen) {
+/* Die gemeinsamen Bausteine prüft ihre Quelle (siehe UPCREW_BAUSTEINE_CSS) —
+   dort gelten ihre eigenen Formen, etwa die Kapsel-Knöpfe mit 999px. */
+for (const name of stilNamen.filter((n) => UPCREW_BAUSTEINE_CSS.indexOf(n) === -1)) {
     const funde = formFunde(dateisystem.readFileSync(pfad.join(projekt, "css", name), "utf8"));
     pruefe("css/" + name + ": nur die drei Rundungen (UPCrew-Standard)", () => {
         if (funde.rundungen.length > 0) {
@@ -993,8 +1051,11 @@ for (const name of stilNamen) {
 
 pruefe("Die drei Rundungen und die Kanten sind festgelegt (UPCrew-Standard)", () => {
     const grund = dateisystem.readFileSync(pfad.join(projekt, "css", "stil.css"), "utf8");
-    const fehlt = ["--rund-klein:", "--rund-mittel:", "--rund-voll:", "--knopf-tiefe:",
-        "--karte-tiefe:", "--haupt-kante:", "--still-kante:"].filter((v) => grund.indexOf(v) === -1);
+    /* `--knopf-tiefe` gibt es seit v0.144.0 nicht mehr — die Kante der Knöpfe
+       kommt aus der Knopf-Familie; dafür braucht der rote Knopf seine Kante. */
+    const fehlt = ["--rund-klein:", "--rund-mittel:", "--rund-voll:",
+        "--karte-tiefe:", "--haupt-kante:", "--still-kante:", "--gefahr-kante:",
+        "--gefahr-schrift:"].filter((v) => grund.indexOf(v) === -1);
     if (fehlt.length > 0) {
         throw new Error("fehlt in stil.css: " + fehlt.join(", "));
     }

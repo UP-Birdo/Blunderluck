@@ -71,6 +71,11 @@ const ZUSTAND = {
         blitz: "M13.5 3 L5.5 13.5 H11.5 L10.5 21 L18.5 10.5 H12.5 Z",
         start: "M3 11 L12 4 L21 11 M5.5 9.5 V20 H10 V14.5 H14 V20 H18.5 V9.5",
         uhr: "M12 3.5 A8.5 8.5 0 1 0 12 20.5 A8.5 8.5 0 1 0 12 3.5 Z M12 7.5 V12 L15 14",
+        /* Anpassen: zwei Schieberegler (seit v0.144.0, gemeinsame
+           Absprache Runde 3, in Typoluck gleich). */
+        anpassen: "M4 7 H13 M17 7 H20 M15 5 V9 M4 17 H7 M11 17 H20 M9 15 V19",
+        /* Schrift: ein A (Einstellungen, Zeile „Standard-Schrift"). */
+        schrift: "M5 20 L12 4 L19 20 M8 14 H16",
         /* Der Pfeil zurück in der Kopfzeile (seit v0.142.0, wie Typoluck). */
         zurueck: "M15 5 L8 12 L15 19"
     },

@@ -6,7 +6,23 @@ hierher gezogen worden: Sie beschreibt den gebauten Stand eines Bereichs, nicht
 eine Regel, die jede Arbeit betrifft. Wer an Start, Leiste, Fussleiste oder
 Zugang baut, liest sie; wer am Schachmodell baut, braucht sie nicht.
 
-## Die Leiste — Aufgaben / Fähigkeiten / Start / Rangliste / Bald (seit v0.142.0)
+## Die Leiste — Aufgaben / Fähigkeiten / Start / Rangliste / Anpassen (seit v0.144.0)
+
+**Seit v0.144.0 steht ganz rechts „Anpassen"** statt des Platzhalters
+„Bald" (UPCrew-Angleichung Runde 3): `js\anpassen.js` baut die Kopfzeile
+(wie „Fähigkeiten", klebt oben) und übergibt den Rest dem gemeinsamen
+Baustein `js\upcrew-anpassen.js` (`UPCREW_ANPASSEN.zeigen`, mit
+`app: "blunderluck"`, Stufe und Werkstatt aus `js\freischaltung.js` und dem
+eigenen Regal „Brett" 2D/3D). Beim Verlassen baut `TABS` ihn über den neuen
+Haken `tab.beimVerlassen()` wieder ab. Seine klebende Knopf-Leiste unten hält
+Abstand zur Tab-Leiste (`.anpassen .upa-aktion` in `css\stil.css`). Die
+Wörter der Leiste schrumpfen unter 420 px Breite mit (`min(0.75rem,
+2.85vw)`), damit sie in jeder Crew-Schrift passen.
+
+Der Abschnitt unten beschreibt den Stand von v0.142.0; nur der fünfte Platz
+hat sich seither geändert.
+
+### Stand v0.142.0 — Aufgaben / Fähigkeiten / Start / Rangliste / Bald
 
 **Seit v0.142.0 wie in Typoluck** (UPCrew-Angleichung Runde 2,
 `Design\3D-Schrift\docs\AUFTRAEGE-RUNDE-2.md`): fünf Plätze in der unteren

@@ -29,7 +29,7 @@
  */
 
 /* Der Name des Zwischenspeichers. HIER STEHT DIE NUMMER GENAU EINMAL. */
-const SPEICHER_NAME = "blunderluck-v0.143.1";
+const SPEICHER_NAME = "blunderluck-v0.144.0";
 
 /*
  * BEIM BAUEN: NETZ ZUERST. IM BETRIEB: ZWISCHENSPEICHER ZUERST.
@@ -77,18 +77,41 @@ const DATEIEN = [
     "./css/stil-auswertung.css",
     "./css/stil-start.css",
     "./css/upcrew-intro.css",
+    "./css/upcrew-schicht.css",
+    "./css/upcrew-knoepfe.css",
+    "./css/upcrew-anpassen.css",
+
+    /* Die zwölf Crew-Schriften und ihre Lizenz (seit v0.144.0) — sie
+       laden erst, wenn Text sie braucht; offline müssen alle da sein,
+       sonst fällt die gewählte Schrift ohne Netz auf den Rückfall. */
+    "./schrift/LIZENZ.txt",
+    "./schrift/crew-S1-normal.woff2",
+    "./schrift/crew-S1-fett.woff2",
+    "./schrift/crew-S2-normal.woff2",
+    "./schrift/crew-S2-fett.woff2",
+    "./schrift/crew-S3-normal.woff2",
+    "./schrift/crew-S3-fett.woff2",
+    "./schrift/crew-S4-normal.woff2",
+    "./schrift/crew-S4-fett.woff2",
+    "./schrift/crew-S5-normal.woff2",
+    "./schrift/crew-S5-fett.woff2",
+    "./schrift/crew-S6-normal.woff2",
+    "./schrift/crew-S6-fett.woff2",
 
     /* Die Programmdateien in der Ladereihenfolge aus index.html. */
     "./js/konfig.js",
     "./js/fuehlen.js",
     "./js/zustand.js",
+    "./js/knoepfe.js",
     "./js/konto.js",
     "./js/spieler.js",
     "./js/versiegelung.js",
     "./js/ich.js",
     "./js/upcrew-intro.js",
     "./js/upcrew-farbwelten.js",
+    "./js/upcrew-aussehen.js",
     "./js/darstellung.js",
+    "./js/freischaltung.js",
     "./js/verwaltung.js",
     "./js/speicher.js",
     "./js/abgleich.js",
@@ -96,6 +119,7 @@ const DATEIEN = [
     "./js/tabs.js",
     "./js/anmeldung.js",
     "./js/anmeldung-konto.js",
+    "./js/aussehen-konto.js",
     "./js/faehigkeit-zeichen.js",
     "./js/schach-varianten.js",
     "./js/schach.js",
@@ -114,6 +138,8 @@ const DATEIEN = [
     "./js/rangliste.js",
     "./js/start.js",
     "./js/herausforderungen.js",
+    "./js/upcrew-anpassen.js",
+    "./js/anpassen.js",
     "./js/faehigkeiten.js",
     "./js/freunde.js",
     "./js/einstellungen.js",

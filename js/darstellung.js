@@ -1,70 +1,92 @@
 /*
- * darstellung.js — wie die App aussieht: hell, dunkel oder wie das Gerät,
- * und in welcher Farbwelt (seit v0.141.0, UPCrew-Angleichung Runde 2).
+ * darstellung.js — der Blunderluck-Anpasser für EIN Aussehen aller
+ * UPCrew-Spiele (seit v0.144.0, UPCrew-Angleichung Runde 3,
+ * Design\3D-Schrift\docs\AUFTRAEGE-RUNDE-3.md).
  *
- * EIN Baustein, wie in Typoluck (Apps\Typoluck\js\darstellung.js):
+ * WER WAS FÜHRT:
+ *
+ *   Hell/Dunkel, Farbwelt, Schrift und Knöpfe stehen NUR noch im
+ *   gemeinsamen Baustein js\upcrew-aussehen.js (`UPCREW_AUSSEHEN`, Kopie aus
+ *   Design\3D-Schrift\final, nie abwandeln) unter `upcrew.aussehen`. Stellt
+ *   Typoluck im selben Browser um, zieht Blunderluck sofort mit — und
+ *   umgekehrt. Diese Datei schreibt nichts Eigenes mehr, sie ergänzt nur,
+ *   was der Baustein nicht kennt:
+ *
+ *     - die Kanten der Brettfelder (--feld-kante-hell/-dunkel), abgedunkelt
+ *       aus den Feldfarben mit demselben Maß wie die übrigen Kanten;
+ *     - die Farbe der Browser-Leiste am Handy (meta theme-color);
+ *     - das Ereignis „darstellung-geaendert" an `document` — daran hängen
+ *       das 3D-Brett (js\brett-3d.js liest seine Feldfarben neu) und alles
+ *       andere, was Farben selbst ausrechnet.
+ *
+ *   Bis v0.143 stand die Wahl je Gerät in ICH (`blunderluck.darstellung`)
+ *   und die Farbwelt war fest „werkstatt". Diese alte Wahl wird beim ersten
+ *   Start EINMAL per `UPCREW_AUSSEHEN.migrieren` übergeben und danach nicht
+ *   mehr gelesen.
+ *
+ * DIE SCHNITTSTELLE bleibt, wie sie war (Einstellungen, 3D-Brett):
  *
  *     DARSTELLUNG.thema()            "geraet" | "hell" | "dunkel"
- *     DARSTELLUNG.themaSetzen(wert)  merkt die Wahl und wendet sie an
+ *     DARSTELLUNG.themaSetzen(wert)  schreibt über UPCREW_AUSSEHEN.setzen
  *     DARSTELLUNG.modus()            "hell" | "dunkel" — was gerade gilt
- *     DARSTELLUNG.anwenden()         schreibt alles an <html>
- *
- * WIE ES WIRKT, in zwei Schritten:
- *
- *   1. Das Attribut `data-darstellung` ("hell"/"dunkel"; fehlt es, gilt das
- *      Gerät) an <html>. Die Stildateien tauschen daraufhin ihre Variablen
- *      (Muster im Kopf von css\stil.css) — das deckt alle Farben ab, auch
- *      Bedeutungs- und Brettmarken-Farben, die keine Farbwelt kennt.
- *   2. Die Farbwelt: js\upcrew-farbwelten.js (gemeinsamer Baustein aus
- *      Design\3D-Schrift\final, nur kopiert) setzt die Oberflächen-Farben
- *      (--flaeche … --still-kante) und das Brett (--feld-hell/-dunkel)
- *      direkt an <html>. Welt ist vorerst IMMER „werkstatt" — das
- *      Freischalten weiterer Welten kommt später (Runde 3), auch wenn im
- *      Browser-Speicher `upcrew.farbwelt` schon etwas anderes steht.
- *
- * Die Kanten der Brettfelder (--feld-kante-hell/-dunkel) liefert der
- * Baustein nicht; sie werden hier aus den Feldfarben abgedunkelt, mit
- * demselben Maß wie seine übrigen Kanten.
- *
- * Nach jedem Anwenden geht das Ereignis „darstellung-geaendert" an
- * `document` — das 3D-Brett (js\brett-3d.js) liest daraufhin seine Farben
- * neu. Ab Werk: wie das Gerät; gespeichert je Gerät in ICH, wie die
- * Vibration.
+ *     DARSTELLUNG.anwenden()         Baustein anwenden + die Ergänzungen oben
+ *     DARSTELLUNG.beiAenderung(fn)   fn(aussehen, quelle) nach jeder Änderung,
+ *                                    auch aus der anderen App (Konto-Abgleich)
  *
  * Angewendet wird SOFORT beim Laden dieser Datei (ganz unten) — sie steht
- * früh in index.html, damit kein Bild in der falschen Farbe aufblitzt.
+ * in index.html direkt hinter dem Baustein und ist damit der „frühe Aufruf"
+ * aus der Absprache: kein Bild in falscher Farbe oder Schrift.
+ *
+ * Fehlt der Baustein (Bildschirm-Tests im nachgebauten DOM), bleibt es beim
+ * Gerät und den Werten aus den Stildateien — nichts bricht.
  */
 
 const DARSTELLUNG = {
 
     THEMEN: ["geraet", "hell", "dunkel"],
 
-    /* Die Farbwelt dieser Runde (siehe Kopf). */
-    WELT: "werkstatt",
-
     /* Kanten: so stark abgedunkelt wie im Farbwelten-Baustein. */
     KANTE_ANTEIL: 0.28,
 
     EREIGNIS: "darstellung-geaendert",
 
+    /* Wer nach einer Änderung Bescheid haben will (Konto-Abgleich). */
+    _horcher: [],
+
+    _baustein() {
+        return (typeof UPCREW_AUSSEHEN !== "undefined") ? UPCREW_AUSSEHEN : null;
+    },
+
     thema() {
-        return ICH.darstellung();
+        const baustein = DARSTELLUNG._baustein();
+        return baustein ? baustein.lesen().darstellung : "geraet";
     },
 
     themaSetzen(wert) {
-        ICH.darstellungSetzen(DARSTELLUNG.THEMEN.indexOf(wert) !== -1 ? wert : "geraet");
-        DARSTELLUNG.anwenden();
+        const baustein = DARSTELLUNG._baustein();
+        if (!baustein) {
+            return;
+        }
+        /* `setzen` wendet selbst an und meldet „selbst" an alle Beobachter
+           — die Ergänzungen unten laufen über `_beobachten`. */
+        baustein.setzen({ darstellung: DARSTELLUNG.THEMEN.indexOf(wert) !== -1 ? wert : "geraet" });
     },
 
     /* Was gerade gilt: die feste Wahl, sonst das Gerät. */
     modus() {
-        const thema = DARSTELLUNG.thema();
-        if (thema === "hell" || thema === "dunkel") {
-            return thema;
+        const baustein = DARSTELLUNG._baustein();
+        if (baustein) {
+            return baustein.modus();
         }
-        const geraetDunkel = typeof window !== "undefined" && !!(window.matchMedia
-            && window.matchMedia("(prefers-color-scheme: dark)").matches);
-        return geraetDunkel ? "dunkel" : "hell";
+        const geraetHell = typeof window !== "undefined" && !!(window.matchMedia
+            && window.matchMedia("(prefers-color-scheme: light)").matches);
+        return geraetHell ? "hell" : "dunkel";
+    },
+
+    beiAenderung(fn) {
+        if (typeof fn === "function") {
+            DARSTELLUNG._horcher.push(fn);
+        }
     },
 
     anwenden() {
@@ -72,24 +94,28 @@ const DARSTELLUNG = {
             return;
         }
         const wurzel = document.documentElement;
-        const thema = DARSTELLUNG.thema();
-        if (thema === "geraet") {
-            delete wurzel.dataset.darstellung;
-        } else {
-            wurzel.dataset.darstellung = thema;
-        }
-
-        const modus = DARSTELLUNG.modus();
-        if (typeof UPCREW_FARBWELTEN !== "undefined") {
+        const baustein = DARSTELLUNG._baustein();
+        if (baustein) {
             try {
-                const werte = UPCREW_FARBWELTEN.anwenden(DARSTELLUNG.WELT, modus, wurzel);
-                wurzel.style.setProperty("--feld-kante-hell",
-                    DARSTELLUNG._abdunkeln(werte["--feld-hell"]));
-                wurzel.style.setProperty("--feld-kante-dunkel",
-                    DARSTELLUNG._abdunkeln(werte["--feld-dunkel"]));
+                baustein.anwenden(wurzel);
             } catch (fehler) {
-                /* Fehlt der Intro-Baustein (er trägt die Grundfarben), bleiben
-                   die Werte aus den Stildateien stehen — die App läuft weiter. */
+                /* Fehlt der Intro-Baustein (er trägt die Grundfarben),
+                   bleiben die Werte aus den Stildateien stehen. */
+            }
+        }
+        DARSTELLUNG._ergaenzen(wurzel);
+    },
+
+    /* Was der Baustein nicht kennt (siehe Kopf). */
+    _ergaenzen(wurzel) {
+        if (wurzel.style && typeof wurzel.style.getPropertyValue === "function") {
+            const hell = wurzel.style.getPropertyValue("--feld-hell");
+            const dunkel = wurzel.style.getPropertyValue("--feld-dunkel");
+            if (hell) {
+                wurzel.style.setProperty("--feld-kante-hell", DARSTELLUNG._abdunkeln(hell));
+            }
+            if (dunkel) {
+                wurzel.style.setProperty("--feld-kante-dunkel", DARSTELLUNG._abdunkeln(dunkel));
             }
         }
 
@@ -103,7 +129,8 @@ const DARSTELLUNG = {
         }
 
         if (typeof CustomEvent === "function") {
-            document.dispatchEvent(new CustomEvent(DARSTELLUNG.EREIGNIS, { detail: { modus: modus } }));
+            document.dispatchEvent(new CustomEvent(DARSTELLUNG.EREIGNIS,
+                { detail: { modus: DARSTELLUNG.modus() } }));
         }
     },
 
@@ -121,28 +148,37 @@ const DARSTELLUNG = {
             .join("");
     },
 
-    /* Folgt die App dem Gerät, zieht sie mit, wenn das Gerät umschaltet. */
-    _geraetBeobachten() {
-        if (typeof window === "undefined" || !window.matchMedia) {
+    /*
+     * Beim Laden: die alte eigene Wahl einmalig übergeben, anwenden, und
+     * jede Änderung beobachten — eigene (Einstellungen, Anpassen), aus der
+     * anderen App, vom Konto oder vom Gerät (Hell/Dunkel des Systems). Der
+     * Baustein hat dann schon angewendet; hier kommen die Ergänzungen dazu
+     * und die Meldung an die eigenen Horcher.
+     */
+    _starten() {
+        const baustein = DARSTELLUNG._baustein();
+        if (baustein && typeof ICH !== "undefined") {
+            baustein.migrieren({ darstellung: ICH.darstellung() });
+        }
+        DARSTELLUNG.anwenden();
+        if (!baustein) {
             return;
         }
-        const frage = window.matchMedia("(prefers-color-scheme: dark)");
-        const aenderung = () => {
-            if (DARSTELLUNG.thema() === "geraet") {
-                DARSTELLUNG.anwenden();
+        baustein.beobachten((aussehen, quelle) => {
+            DARSTELLUNG._ergaenzen(document.documentElement);
+            for (const fn of DARSTELLUNG._horcher) {
+                try {
+                    fn(aussehen, quelle);
+                } catch (fehler) {
+                    console.error(fehler);
+                }
             }
-        };
-        if (typeof frage.addEventListener === "function") {
-            frage.addEventListener("change", aenderung);
-        } else if (typeof frage.addListener === "function") {
-            frage.addListener(aenderung);
-        }
+        });
     }
 };
 
 if (typeof document !== "undefined") {
-    DARSTELLUNG.anwenden();
-    DARSTELLUNG._geraetBeobachten();
+    DARSTELLUNG._starten();
 }
 
 if (typeof module !== "undefined" && module.exports) {

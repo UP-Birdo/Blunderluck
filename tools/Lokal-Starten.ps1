@@ -37,6 +37,10 @@ $inhaltstypen = @{
     ".ico"  = "image/x-icon"
     ".md"   = "text/plain; charset=utf-8"
     ".glb"  = "model/gltf-binary"
+    # Die Crew-Schriften (seit v0.144.0) - ohne passenden Typ lehnt der
+    # Browser die Schrift ab und faellt auf den Rueckfall.
+    ".woff2" = "font/woff2"
+    ".txt"  = "text/plain; charset=utf-8"
 }
 
 $zuhoerer = New-Object System.Net.HttpListener

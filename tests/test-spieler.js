@@ -446,6 +446,54 @@ pruefe("UP#Plus ist reiner Rollen-Verteiler: keine Rangliste, keine Freunde (v0.
     gleich(SPIELER.spielerFinden(b, "id-up").freunde.join(","), "id-anna", "UP nimmt nichts an");
 });
 
+/*
+ * DAS AUSSEHEN AM KONTO (seit v0.144.0, js\aussehen-konto.js): Setzen
+ * schreibt genau die sechs Felder des Bausteins mit passendem Typ, die
+ * Normalisierung wirft Nicht-Objekte weg, lässt Objekte aber durch (was
+ * eine neuere App ergänzt, bleibt), und beim Zusammenführen gewinnt die
+ * eigene Wahl.
+ */
+pruefe("Aussehen am Konto: sechs Felder, Müll fliegt, eigene Wahl gewinnt (v0.144.0)", () => {
+    let daten = mitDrei();
+    wahr(!("aussehen" in SPIELER.spielerFinden(daten, "id-anna")), "ohne Wahl kein Feld");
+
+    daten = SPIELER.aussehenSetzen(daten, "id-anna", {
+        darstellung: "hell", farbwelt: "studio", schrift: "S3", knoepfe: "K2",
+        leseschrift: true, stand: 1234, fremd: "weg", farbwelt2: 7
+    }, 3000);
+    const aussehen = SPIELER.spielerFinden(daten, "id-anna").aussehen;
+    gleich(Object.keys(aussehen).sort().join(","),
+        "darstellung,farbwelt,knoepfe,leseschrift,schrift,stand", "genau die sechs Felder");
+    gleich(aussehen.farbwelt, "studio", "Farbwelt");
+    gleich(aussehen.leseschrift, true, "Standard-Schrift");
+    gleich(aussehen.stand, 1234, "Zeitpunkt der Wahl");
+    gleich(daten.geaendertAm, 3000, "Marke gesetzt");
+
+    /* Falsche Typen werden nicht geschrieben. */
+    const schief = SPIELER.aussehenSetzen(daten, "id-anna",
+        { darstellung: 5, schrift: "x".repeat(40), leseschrift: "ja", stand: -3 }, 3100);
+    const s = SPIELER.spielerFinden(schief, "id-anna").aussehen;
+    wahr(!("darstellung" in s) && !("schrift" in s), "falsche Texte fliegen");
+    gleich(s.leseschrift, false, "nur true zählt als an");
+    gleich(s.stand, 0, "negativer Zeitpunkt wird 0");
+
+    /* Normalisieren: Nicht-Objekt fliegt, Objekt bleibt samt fremdem Feld. */
+    const roh = SPIELER.kopieren(daten);
+    roh.spieler[0].aussehen = "hell";
+    roh.spieler[1].aussehen = { farbwelt: "gold", neuerWert: 1 };
+    const normal = SPIELER.normalisieren(roh);
+    wahr(!("aussehen" in normal.spieler[0]), "Text statt Objekt fliegt raus");
+    gleich(normal.spieler[1].aussehen.neuerWert, 1, "was eine neuere App ergänzt, bleibt");
+
+    /* Zusammenführen: meine Wahl steht, die fremde kommt vom Server. */
+    const fremd = SPIELER.aussehenSetzen(daten, "id-bert", { farbwelt: "feld", stand: 5 }, 3200);
+    const eigen = SPIELER.aussehenSetzen(daten, "id-anna", { farbwelt: "gold", stand: 9 }, 3300);
+    const zusammen = SPIELER.zusammenfuehren(fremd, eigen, "id-anna");
+    gleich(SPIELER.spielerFinden(zusammen, "id-anna").aussehen.farbwelt, "gold", "eigene Wahl");
+    gleich(SPIELER.spielerFinden(zusammen, "id-bert").aussehen.farbwelt, "feld", "Berts Wahl");
+    wahr(!SPIELER.inhaltGleich(daten, eigen), "inhaltGleich sieht die Änderung");
+});
+
 /* ------------------------------------------------------------------ */
 
 console.log(anzahlOk + " ok, " + anzahlFehler + " Fehler");
