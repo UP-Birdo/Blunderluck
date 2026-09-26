@@ -2,6 +2,12 @@
     <title>Blunderluck</title>
 
     <!--
+        SEIT v0.144.1 NICHT MEHR DAS ZEICHEN DER APP. Die App zeigt die
+        gerenderten 3D-Bilder in icons\ (aus Design\3D-Schrift, docs\ICON-3D.md);
+        index.html und manifest.webmanifest verweisen nicht mehr hierher.
+        Die Datei bleibt, weil _werkstatt-3d.html sie noch als Tab-Zeichen
+        nutzt. Beschreibung des alten Zeichens:
+
         Das Zeichen der App: ein Springer und ein goldener Funke.
 
         WARUM GENAU DIESE ZWEI FORMEN

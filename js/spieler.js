@@ -397,7 +397,7 @@ const SPIELER = {
 
         for (const spieler of fremdStand.spieler) {
             if (meiner && spieler.id === eigeneId) {
-                ergebnis.spieler.push(meiner);
+                ergebnis.spieler.push(SPIELER._neueresAussehen(meiner, spieler));
                 selbstGefunden = true;
             } else {
                 ergebnis.spieler.push(spieler);
@@ -410,6 +410,25 @@ const SPIELER = {
         }
 
         return ergebnis;
+    },
+
+    /*
+     * DAS AUSSEHEN IST DIE EINE AUSNAHME VON „DER EIGENE EINTRAG GEWINNT"
+     * (seit v0.144.1). Typoluck schreibt NUR das Feld
+     * `konten/<uid>/aussehen` (Apps\Typoluck\js\aussehen-abgleich.js),
+     * Blunderluck immer den ganzen eigenen Eintrag. Ohne diese Ausnahme
+     * überschriebe Blunderluck beim nächsten Speichern (Freunde, Abzeichen)
+     * eine eben in Typoluck getroffene, NEUERE Wahl mit seiner älteren.
+     * Deshalb: beim Aussehen zählt der Zeitpunkt der Wahl (`stand`), sonst
+     * bleibt alles am eigenen Eintrag, wie es ist.
+     */
+    _neueresAussehen(meiner, vomServer) {
+        const standVon = (eintrag) => (eintrag && SPIELER._istObjekt(eintrag.aussehen)
+            && typeof eintrag.aussehen.stand === "number") ? eintrag.aussehen.stand : -1;
+        if (standVon(vomServer) <= standVon(meiner)) {
+            return meiner;
+        }
+        return Object.assign({}, meiner, { aussehen: SPIELER._tiefKopie(vomServer.aussehen) });
     },
 
     /* ---------------------------------------------------------------- *

@@ -184,8 +184,12 @@ dauerhaft und gehören deshalb in die Architektur-Doku, nicht in einen Stand.
 
 - **Die Stufenfarben:** `STUFEN` in `js\schach-varianten.js` UND in
   `tools\Lootbox-Blender.py` — danach die Lootboxen neu rendern.
-- **Das App-Zeichen:** `icon.svg` und dieselben Koordinaten in
-  `tools\Icons-Erzeugen.ps1` — danach in 32 Pixeln ansehen.
+- **Das App-Zeichen:** seit v0.144.1 KEINE zwei Stellen mehr — die PNG in
+  `icons\` sind gerenderte 3D-Bilder aus `Design\3D-Schrift`
+  (`docs\ICON-3D.md`), verteilt mit `tools\Icons-Verteilen.cmd` dort
+  (vorläufig, später `-Stufe final`). `icon.svg` und
+  `tools\Icons-Erzeugen.ps1` sind Altbestand (das Werkzeug bricht ohne
+  `-AltesZeichen` ab, sonst überschriebe es die neuen Bilder).
 - **Licht und Kamera der beiden Blender-Werkstätten:**
   `tools\Figuren-Blender.py` und `tools\Lootbox-Blender.py`. Laufen sie
   auseinander, sehen Figur und Würfel nach zwei Welten aus. Vertrag:

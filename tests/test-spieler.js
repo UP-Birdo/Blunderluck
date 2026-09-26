@@ -485,13 +485,34 @@ pruefe("Aussehen am Konto: sechs Felder, Müll fliegt, eigene Wahl gewinnt (v0.1
     wahr(!("aussehen" in normal.spieler[0]), "Text statt Objekt fliegt raus");
     gleich(normal.spieler[1].aussehen.neuerWert, 1, "was eine neuere App ergänzt, bleibt");
 
-    /* Zusammenführen: meine Wahl steht, die fremde kommt vom Server. */
+    /* Zusammenführen: meine NEUERE Wahl steht, die fremde kommt vom Server. */
     const fremd = SPIELER.aussehenSetzen(daten, "id-bert", { farbwelt: "feld", stand: 5 }, 3200);
-    const eigen = SPIELER.aussehenSetzen(daten, "id-anna", { farbwelt: "gold", stand: 9 }, 3300);
+    const eigen = SPIELER.aussehenSetzen(daten, "id-anna", { farbwelt: "gold", stand: 9000 }, 3300);
     const zusammen = SPIELER.zusammenfuehren(fremd, eigen, "id-anna");
     gleich(SPIELER.spielerFinden(zusammen, "id-anna").aussehen.farbwelt, "gold", "eigene Wahl");
     gleich(SPIELER.spielerFinden(zusammen, "id-bert").aussehen.farbwelt, "feld", "Berts Wahl");
     wahr(!SPIELER.inhaltGleich(daten, eigen), "inhaltGleich sieht die Änderung");
+});
+
+/*
+ * TYPOLUCK SCHREIBT NUR DAS FELD `aussehen` (v0.144.1): Hat Anna dort eben
+ * NEUER umgestellt, darf Blunderluck das beim nächsten Speichern seines
+ * ganzen Eintrags nicht mit der älteren Wahl überschreiben. Alles andere
+ * am eigenen Eintrag gewinnt weiter wie immer.
+ */
+pruefe("Aussehen: die neuere Wahl vom Server überlebt das Zusammenführen (v0.144.1)", () => {
+    const basis = mitDrei();
+    const eigen = SPIELER.freundHinzufuegen(
+        SPIELER.aussehenSetzen(basis, "id-anna", { farbwelt: "werkstatt", stand: 100 }, 1000),
+        "id-anna", "id-bert", 1100);
+    const server = SPIELER.aussehenSetzen(basis, "id-anna", { farbwelt: "tiefsee", stand: 200 }, 1200);
+    const anna = SPIELER.spielerFinden(SPIELER.zusammenfuehren(server, eigen, "id-anna"), "id-anna");
+    gleich(anna.aussehen.farbwelt, "tiefsee", "neuere Wahl vom Server gewinnt");
+    gleich(anna.freunde.join(","), "id-bert", "die eigene Freundes-Sicht gewinnt weiter");
+
+    /* Ohne Aussehen am Server bleibt das eigene. */
+    const ohne = SPIELER.spielerFinden(SPIELER.zusammenfuehren(basis, eigen, "id-anna"), "id-anna");
+    gleich(ohne.aussehen.farbwelt, "werkstatt", "eigene Wahl bleibt, wenn der Server keine hat");
 });
 
 /* ------------------------------------------------------------------ */

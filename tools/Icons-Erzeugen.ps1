@@ -17,9 +17,27 @@
         powershell -ExecutionPolicy Bypass -File "<Pfad>\tools\Icons-Erzeugen.ps1"
 
     Das Skript findet seine Pfade relativ zu sich selbst.
+
+    SEIT v0.144.1 STILLGELEGT: Die App-Zeichen sind gerenderte 3D-Bilder aus
+    Design\3D-Schrift (docs\ICON-3D.md: weisser Koenig vor weissem Stab).
+    Sie kommen fertig ueber Design\3D-Schrift\tools\Icons-Verteilen.cmd nach
+    icons\. Dieses Skript wuerde sie mit dem alten Springer ueberschreiben -
+    deshalb bricht es ab. Wer das alte Zeichen wirklich zurueck will, ruft
+    es mit -AltesZeichen auf.
 #>
 
+param(
+    [switch]$AltesZeichen
+)
+
 $ErrorActionPreference = "Stop"
+
+if (-not $AltesZeichen) {
+    Write-Host "Abgebrochen: Die App-Zeichen kommen seit v0.144.1 aus Design\3D-Schrift" -ForegroundColor Yellow
+    Write-Host "(tools\Icons-Verteilen.cmd). Dieses Skript wuerde sie mit dem alten Springer" -ForegroundColor Yellow
+    Write-Host "ueberschreiben. Nur mit -AltesZeichen wird es trotzdem gezeichnet." -ForegroundColor Yellow
+    exit 1
+}
 
 Add-Type -AssemblyName System.Drawing
 

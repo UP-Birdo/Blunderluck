@@ -83,6 +83,6 @@ anderer Speicher-Dienst kostet genau eine neue Klasse in `speicher.js`.
 | `img/figuren/` | Die zwölf Figuren-Bilder des 3D-Looks (aus `tools/Figuren-Blender.py`). |
 | `tests/` | Regressionstests, siehe `tests\README.md`. |
 | `tools/` | Lokaler Test-Server, Deploy, Wunsch-Abholer, Icon- und Figuren-Erzeugung, Testkette. |
-| `icon.svg`, `icons/` | Das Zeichen der App (noch das geerbte Quizz-Würfel-Motiv — eigenes Schach-Icon ist ROADMAP-Punkt). |
+| `icons/` | Das Zeichen der App: seit v0.144.1 gerenderter weisser König vor weissem Stab (vorläufige Fassung aus `Design\3D-Schrift`, `docs\ICON-3D.md`). `icon.svg` ist Altbestand (alter Springer), nur noch in `_werkstatt-3d.html`. |
 | `manifest.webmanifest` | Macht die Seite auf dem Startbildschirm zur App (Name, Farben, Zeichen). |
 | `docs/` | Diese Dokumentation. |

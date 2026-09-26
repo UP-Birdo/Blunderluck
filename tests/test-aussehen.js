@@ -321,5 +321,26 @@ pruefe("Die zwölf Crew-Schriften liegen bei und gehen offline mit", () => {
     wahr(dateisystem.existsSync(pfad.join(projekt, "schrift", "LIZENZ.txt")), "LIZENZ.txt fehlt");
 });
 
+/*
+ * DIE APP-ZEICHEN SIND DIE GERENDERTEN PNG (seit v0.144.1, Design\3D-Schrift
+ * docs\ICON-3D.md). Das alte icon.svg (Springer) darf weder Tab-Zeichen
+ * noch Manifest-Zeichen sein — moderne Browser und Android zögen es sonst
+ * dem neuen Bild vor. Und das alte Zeichen-Werkzeug bricht ohne Schalter ab.
+ */
+pruefe("App-Zeichen nur als PNG, das alte SVG hängt nirgends mehr (v0.144.1)", () => {
+    wahr(seite.indexOf("href=\"icon.svg\"") === -1, "index.html verweist noch auf icon.svg");
+    wahr(/<link rel="icon" type="image\/png" sizes="32x32" href="icons\/icon-32\.png">/.test(seite),
+        "Tab-Zeichen icon-32.png fehlt");
+    wahr(/<link rel="apple-touch-icon" href="icons\/icon-180\.png">/.test(seite), "iPhone-Zeichen fehlt");
+    const manifest = JSON.parse(dateisystem.readFileSync(pfad.join(projekt, "manifest.webmanifest"), "utf8"));
+    const quellen = manifest.icons.map((i) => i.src).sort().join(",");
+    gleich(quellen, "icons/icon-192.png,icons/icon-512.png", "Manifest-Zeichen");
+    for (const groesse of [32, 180, 192, 512]) {
+        wahr(dateisystem.existsSync(pfad.join(projekt, "icons", "icon-" + groesse + ".png")), "icon-" + groesse + ".png fehlt");
+    }
+    const werkzeug = dateisystem.readFileSync(pfad.join(projekt, "tools", "Icons-Erzeugen.ps1"), "utf8");
+    wahr(/if \(-not \$AltesZeichen\)[\s\S]*?exit 1/.test(werkzeug), "Icons-Erzeugen.ps1 ohne Sperre");
+});
+
 console.log(anzahlOk + " ok, " + anzahlFehler + " Fehler");
 process.exit(anzahlFehler === 0 ? 0 : 1);

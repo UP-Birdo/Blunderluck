@@ -3,6 +3,18 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.144.1 — 26.09.2026
+
+- **Neues App-Zeichen:** der weisse König vor einem leuchtenden weissen
+  Streifen — gleiche Machart wie die Zeichen von Typoluck und Trainer
+  (zusammen ergeben die Streifen am Handy ein Plus). Vorerst eine
+  vorläufige Fassung; die endgültige in voller Schärfe folgt. Auch im
+  Browser-Tab steht jetzt das neue Zeichen statt des alten Springers.
+- **Eine Aussehen-Wahl aus Typoluck geht nicht mehr verloren.** Hast du in
+  Typoluck umgestellt und Blunderluck hat kurz danach etwas an deinem Konto
+  gespeichert (etwa eine Freundschaft), konnte es die ältere Wahl
+  zurückschreiben. Jetzt gilt beim Aussehen immer die neuere.
+
 ## v0.144.0 — 26.09.2026
 
 **Ein Aussehen für alle UPCrew-Spiele, eigene Schrift, eigene Knöpfe und
