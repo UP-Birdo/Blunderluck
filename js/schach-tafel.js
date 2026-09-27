@@ -543,6 +543,14 @@ const SCHACH_TAFEL = {
             partie.regeln.botStufe = (typeof regeln.botStufe === "string")
                 ? regeln.botStufe.slice(0, 20)
                 : "";
+
+            /* Die Turm-Stufe (seit v0.147.0) — dieselbe Falle wie oben:
+               ohne diese Zeile wüsste die Partie nicht, dass sie zum Turm
+               gehört, und gäbe keine Figur. */
+            partie.regeln.turm = SCHACH_RUNDE.turmAngabe(regeln.turm);
+
+            /* Das Tagesbrett (seit v0.149.0) — dieselbe Falle. */
+            partie.regeln.tagesbrett = SCHACH_RUNDE.tagesbrettAngabe(regeln.tagesbrett);
         }
 
         /*

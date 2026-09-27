@@ -115,14 +115,90 @@ const START = {
         seite.appendChild(oben);
 
         /*
-         * Obere Hälfte: das Vorschaubild der eingestellten Spielart (F2).
-         *
-         * SEIT v0.20.0 (Wunsch 7) IST SIE DRÜCKBAR: „Die Schachbrett-
-         * Vorschau über Spielen wird drückbar: Ein Tipp darauf öffnet die
-         * Wahl der Brettform." Sie ist deshalb ein Knopf und kein `div`
-         * mehr — mit Beschriftung für Vorleseprogramme, denn zu sehen ist
-         * nur ein Brett.
+         * DIE ART BESTIMMT DIE OBERE HÄLFTE (seit v0.147.0, Runde 5): Im
+         * TURM steht dort der Weg durch das aktuelle Stockwerk
+         * (js\start-turm.js), in FREI wie bisher die Vorschau der
+         * eingestellten Spielart. Gewählt wird am Quadrat neben „Spielen".
          */
+        const imTurm = (typeof START.art === "function") && START.art() === "turm";
+        if (imTurm) {
+            seite.appendChild(START._turmKarteBauen());
+        } else {
+            seite.appendChild(START._freiVorschauBauen());
+        }
+
+        /* Untere Hälfte: Spielen (zwei Drittel) und das Quadrat der Art. */
+        const zeile = document.createElement("div");
+        zeile.className = "start-spielen-zeile";
+
+        const spielen = document.createElement("button");
+        spielen.type = "button";
+        spielen.className = "knopf knopf-haupt start-spielen";
+        spielen.textContent = "Spielen";
+        spielen.addEventListener("click", () => (imTurm ? START.turmSpielen() : START.spielen()));
+
+        /* Im Turm sagt eine zweite Zeile, was „Spielen" startet. */
+        if (imTurm && !START.spielenLaeuft) {
+            const unter = START._turmSpielenText();
+            if (unter) {
+                const klein = document.createElement("small");
+                klein.className = "start-spielen-unter";
+                klein.textContent = unter;
+                spielen.appendChild(klein);
+            }
+        }
+
+        /* Während des Anlegens gesperrt und beschriftet (v0.114.2, siehe
+           `spielen`). `aria-busy` sagt es auch dem Vorleseprogramm. */
+        if (START.spielenLaeuft) {
+            spielen.textContent = "Wird angelegt …";
+            spielen.disabled = true;
+            spielen.setAttribute("aria-busy", "true");
+        }
+        zeile.appendChild(spielen);
+
+        /* Das Quadrat: bis v0.146 die Grundeinstellungen (Pfeil), seit
+           v0.147.0 die Wahl der Art (Turm · Frei). Die Grundeinstellungen
+           erreicht man in Frei über die Vorschau (Reiter „Gegner"). */
+        zeile.appendChild((typeof START._artKnopfBauen === "function")
+            ? START._artKnopfBauen()
+            : START._matchKnopfBauen());
+
+        seite.appendChild(zeile);
+
+        START._untenBauen(seite);
+        wurzel.appendChild(seite);
+
+        /* Ein neu erreichter Ort wird einmal gefeiert (seit v0.147.0). */
+        if (imTurm && typeof START._neuerOrtPruefen === "function") {
+            START._neuerOrtPruefen();
+        }
+    },
+
+    /* Das Pfeil-Quadrat der Grundeinstellungen (bis v0.146 immer neben
+       „Spielen"; bleibt als Rückfall, falls js\start-turm.js fehlt). */
+    _matchKnopfBauen() {
+        const match = document.createElement("button");
+        match.type = "button";
+        match.className = "knopf knopf-still start-match";
+        match.setAttribute("aria-label", "Grundeinstellungen");
+        match.title = "Grundeinstellungen";
+        match.appendChild(START._pfeilBauen());
+        match.addEventListener("click", () => START.matchEinstellungen());
+        return match;
+    },
+
+    /*
+     * Die obere Hälfte in FREI: das Vorschaubild der eingestellten Spielart
+     * (F2) — so wie der Start bis v0.146 immer aussah.
+     *
+     * SEIT v0.20.0 (Wunsch 7) IST SIE DRÜCKBAR: „Die Schachbrett-
+     * Vorschau über Spielen wird drückbar: Ein Tipp darauf öffnet die
+     * Wahl der Brettform." Sie ist deshalb ein Knopf und kein `div`
+     * mehr — mit Beschriftung für Vorleseprogramme, denn zu sehen ist
+     * nur ein Brett.
+     */
+    _freiVorschauBauen() {
         const variante = START._spielart();
 
         const vorschau = document.createElement("button");
@@ -149,38 +225,12 @@ const START = {
          * steht — sonst gibt es den Namen zweimal.
          */
 
-        seite.appendChild(vorschau);
+        return vorschau;
+    },
 
-        /* Untere Hälfte: Spielen (zwei Drittel) und das Pfeil-Quadrat. */
-        const zeile = document.createElement("div");
-        zeile.className = "start-spielen-zeile";
-
-        const spielen = document.createElement("button");
-        spielen.type = "button";
-        spielen.className = "knopf knopf-haupt start-spielen";
-        spielen.textContent = "Spielen";
-        spielen.addEventListener("click", () => START.spielen());
-
-        /* Während des Anlegens gesperrt und beschriftet (v0.114.2, siehe
-           `spielen`). `aria-busy` sagt es auch dem Vorleseprogramm. */
-        if (START.spielenLaeuft) {
-            spielen.textContent = "Wird angelegt …";
-            spielen.disabled = true;
-            spielen.setAttribute("aria-busy", "true");
-        }
-        zeile.appendChild(spielen);
-
-        const match = document.createElement("button");
-        match.type = "button";
-        match.className = "knopf knopf-still start-match";
-        match.setAttribute("aria-label", "Grundeinstellungen");
-        match.title = "Grundeinstellungen";
-        match.appendChild(START._pfeilBauen());
-        match.addEventListener("click", () => START.matchEinstellungen());
-        zeile.appendChild(match);
-
-        seite.appendChild(zeile);
-
+    /* Unter der Spielen-Zeile, in beiden Arten gleich: der Weg zurück in
+       die eigene Runde und „Runde beitreten". */
+    _untenBauen(seite) {
         /*
          * ZURÜCK IN DIE EIGENE RUNDE (seit v0.34.0).
          *
@@ -233,8 +283,6 @@ const START = {
         beitreten.textContent = "Runde beitreten";
         beitreten.addEventListener("click", () => START.beitreten());
         seite.appendChild(beitreten);
-
-        wurzel.appendChild(seite);
     },
 
     /* ---------------------------------------------------------------- *
@@ -358,7 +406,29 @@ const START = {
         const bild = document.createElement("span");
         bild.className = "visitenkarte-bild start-profil-bild";
         bild.textContent = String(name || "").trim().charAt(0).toUpperCase() || "?";
-        knopf.appendChild(bild);
+
+        /*
+         * DAS LEVEL AM PROFILBILD (seit v0.146.0, Runde 5, FORTSCHRITT.md:
+         * „Ring = XP, Zahl = Level"): Der Ring füllt sich mit den XP des
+         * laufenden Levels, unten rechts steht die Zahl. Ab Level 5 trägt
+         * der Ring den Rahmen des Levels (Kupfer, Silber …).
+         */
+        if (typeof FORTSCHRITT_KONTO !== "undefined") {
+            const lv = FORTSCHRITT_KONTO.level();
+            const rahmen = FORTSCHRITT.rahmenVon(lv.level);
+            const ring = document.createElement("span");
+            ring.className = "level-ring start-profil-ring" + (rahmen ? " level-rahmen-" + rahmen.id : "");
+            ring.style.setProperty("--lv-anteil", lv.anteil.toFixed(3));
+            ring.appendChild(bild);
+            const zahl = document.createElement("span");
+            zahl.className = "level-zahl";
+            zahl.textContent = String(lv.level);
+            ring.appendChild(zahl);
+            knopf.appendChild(ring);
+            knopf.setAttribute("aria-label", "Dein Profil · Level " + lv.level);
+        } else {
+            knopf.appendChild(bild);
+        }
 
         const text = document.createElement("span");
         text.className = "start-profil-text";

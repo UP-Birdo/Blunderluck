@@ -21,11 +21,11 @@
  *      damit der Balken immer ganz unten bleibt;
  *   4. unten der Balken „Zurück / Übernehmen", bündig auf der Leiste.
  *
- * FREI IST HEUTE: 2D (immer), 3D (solange `SPERRE_3D` aus ist), das
- * Brett-Thema „Farbwelt" und die Figuren „Emaille". Die übrigen Themen und
- * Figuren nur mit Admin-Freigabe oder in der Werkstatt
- * (`BRETT_3D.aussehenFrei`); sonst tragen sie ein Schloss mit dem Ort, der
- * sie später freischaltet — freigeschaltet wird über den Turm (Runde 5).
+ * FREI IST: 2D (immer), das Brett-Thema „Farbwelt" und die Figuren
+ * „Emaille". 3D, die übrigen Themen und Figuren schaltet seit v0.147.0 der
+ * Turm frei (js\freischaltung.js: 3D und Holz/Matt ab Holzhalle …); bis
+ * dahin tragen sie ein Schloss mit dem Ort. Admin-Freigabe und Werkstatt
+ * schalten alles frei.
  * In der reinen Sammlung ist in dieser Runde alles „da" (Taten = Runde 5).
  *
  * Beim Verlassen wird der Baustein abgebaut, beim nächsten Öffnen neu
@@ -215,9 +215,13 @@ const SAMMLUNG = {
     },
 
     /* Die Regale „Brett-Thema · 3D" und „Figuren · 3D": gleich gebaut, nur
-       Liste und Schlüssel unterscheiden sich. */
+       Liste und Schlüssel unterscheiden sich. Frei ist ein Stück seit
+       v0.147.0 JE STÜCK, sobald sein Ort im Turm erreicht ist
+       (`FREISCHALTUNG.brettStueckFrei`, dort auch Admin und Werkstatt). */
     _stilRegal(schluessel, titel, liste) {
-        const frei = SAMMLUNG.aussehenFrei();
+        const alleFrei = SAMMLUNG.aussehenFrei();
+        const stueckFrei = (wert) => (typeof FREISCHALTUNG.brettStueckFrei === "function")
+            ? FREISCHALTUNG.brettStueckFrei(schluessel, wert) : alleFrei;
         return {
             schluessel: schluessel,
             titel: titel,
@@ -225,7 +229,7 @@ const SAMMLUNG = {
             stuecke: liste.map((eintrag) => ({
                 wert: eintrag.wert,
                 name: eintrag.name,
-                frei: !eintrag.ort || frei,
+                frei: !eintrag.ort || stueckFrei(eintrag.wert),
                 ab: eintrag.ort || "",
                 bild: SAMMLUNG._bild(eintrag.bild)
             })),

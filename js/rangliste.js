@@ -759,6 +759,11 @@ const RANGLISTE = {
         const verlauf = RANGLISTE.verlauf(person.id, staende.schach);
 
         wurzel.appendChild(RANGLISTE._visitenkarteBauen(person, staende, stat, verlauf, istIch));
+        const levelKarte = RANGLISTE._levelKarteBauen(
+            SPIELER.spielerFinden(staende.spieler, person.id) || person, istIch);
+        if (levelKarte) {
+            wurzel.appendChild(levelKarte);
+        }
         wurzel.appendChild(RANGLISTE._profilReiterBauen(person, staende, verlauf));
 
         const inhalt = RANGLISTE._element("section", "karte profil-reiter-inhalt");
@@ -893,6 +898,103 @@ const RANGLISTE = {
         }
 
         return karte;
+    },
+
+    /*
+     * DIE LEVEL-KARTE (seit v0.146.0, Runde 5, FORTSCHRITT.md: „Level …
+     * Einzelheiten im Profil-Blatt"): Level und Titel, der XP-Balken des
+     * laufenden Levels und — nur im eigenen Profil — die nächsten drei
+     * Level mit dem, was sie bringen, und woher XP kommen.
+     *
+     * Das eigene Level kommt aus js\fortschritt-konto.js (Gerät + Konto),
+     * ein fremdes aus dem Feld `fortschritt` seines Eintrags. Ohne den
+     * Baustein (Tests) gibt es keine Karte.
+     */
+    _levelKarteBauen(person, istIch) {
+        if (typeof FORTSCHRITT === "undefined") {
+            return null;
+        }
+        const lv = (istIch && typeof FORTSCHRITT_KONTO !== "undefined")
+            ? FORTSCHRITT_KONTO.level()
+            : FORTSCHRITT.level(person.fortschritt || null);
+
+        const karte = RANGLISTE._element("section", "karte level-karte");
+
+        const kopf = RANGLISTE._element("div", "level-kopf");
+        kopf.appendChild(RANGLISTE._element("span", "level-gross", "Level " + lv.level));
+        kopf.appendChild(RANGLISTE._element("span", "level-titel", FORTSCHRITT.titelVon(lv.level).name));
+        karte.appendChild(kopf);
+
+        const balken = RANGLISTE._element("div", "level-balken");
+        balken.setAttribute("role", "progressbar");
+        balken.setAttribute("aria-valuemin", "0");
+        balken.setAttribute("aria-valuemax", String(lv.kosten));
+        balken.setAttribute("aria-valuenow", String(lv.imLevel));
+        const fuellung = RANGLISTE._element("span", "level-balken-fuellung");
+        fuellung.style.width = (lv.anteil * 100).toFixed(1) + "%";
+        balken.appendChild(fuellung);
+        karte.appendChild(balken);
+        karte.appendChild(RANGLISTE._element("span", "level-xp", lv.imLevel + " / " + lv.kosten + " XP"));
+
+        if (!istIch) {
+            return karte;
+        }
+
+        /* Woher XP kommen (FORTSCHRITT.md: Partie, neue Figur,
+           Tagesaufgabe, beide Spiele, Serie). */
+        const quellen = RANGLISTE._element("div", "level-quellen");
+        quellen.appendChild(RANGLISTE._element("span", "level-quelle", "Partie +" + FORTSCHRITT.XP.partie));
+        quellen.appendChild(RANGLISTE._element("span", "level-quelle", "Neue Figur im Turm +" + FORTSCHRITT.XP.figur));
+        /* Seit v0.151.0 nach Schwierigkeit (FORTSCHRITT.TAGES_GRUND). */
+        quellen.appendChild(RANGLISTE._element("span", "level-quelle", "Tagesaufgabe +"
+            + FORTSCHRITT.tagesGrund(1) + "…" + FORTSCHRITT.tagesGrund(3)));
+        quellen.appendChild(RANGLISTE._element("span", "level-quelle", "Beide Spiele ×1,5"));
+        quellen.appendChild(RANGLISTE._element("span", "level-quelle",
+            "Serie +" + FORTSCHRITT.SERIE_XP + "…" + FORTSCHRITT.SERIE_XP_MAX));
+        karte.appendChild(quellen);
+
+        const stufen = (typeof UPCREW_ANPASSEN !== "undefined") ? UPCREW_ANPASSEN.STUFEN : {};
+        const naechste = RANGLISTE._element("div", "level-naechste");
+        for (let l = lv.level + 1; l <= lv.level + 3; l++) {
+            const zeile = RANGLISTE._element("div", "level-naechste-zeile");
+            zeile.appendChild(RANGLISTE._element("span", "level-naechste-nr", String(l)));
+            const belohnungen = FORTSCHRITT.belohnungen(l, stufen);
+            const chips = RANGLISTE._element("span", "level-naechste-chips");
+            if (belohnungen.length === 0) {
+                chips.appendChild(RANGLISTE._element("span", "level-chip level-chip-leer", "–"));
+            }
+            for (const belohnung of belohnungen) {
+                chips.appendChild(RANGLISTE._element("span",
+                    "level-chip level-chip-" + belohnung.art, RANGLISTE._belohnungWort(belohnung)));
+            }
+            zeile.appendChild(chips);
+            naechste.appendChild(zeile);
+        }
+        karte.appendChild(naechste);
+        return karte;
+    },
+
+    /* Wie eine Belohnung in der Liste heisst: „Farbwelt Studio", „Crew 4",
+       „Knöpfe Kapsel", „Rahmen Kupfer", „Titel Stammgast". */
+    _belohnungWort(belohnung) {
+        if (belohnung.art === "farbwelt") {
+            const welten = (typeof UPCREW_INTRO !== "undefined" && UPCREW_INTRO.WELTEN) || {};
+            return "Farbwelt " + ((welten[belohnung.wert] && welten[belohnung.wert].name) || belohnung.wert);
+        }
+        if (belohnung.art === "schrift") {
+            return "Schrift Crew " + String(belohnung.wert).replace(/^S/, "");
+        }
+        if (belohnung.art === "knoepfe") {
+            const namen = { K1: "Stufe", K2: "Kissen", K3: "Taste", K4: "Stempel", K5: "Kapsel", K6: "Ecke" };
+            return "Knöpfe " + (namen[belohnung.wert] || belohnung.wert);
+        }
+        if (belohnung.art === "rahmen") {
+            return "Rahmen " + belohnung.name;
+        }
+        if (belohnung.art === "titel") {
+            return "Titel " + belohnung.name;
+        }
+        return belohnung.name;
     },
 
     /*

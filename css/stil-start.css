@@ -625,6 +625,64 @@ body.dialog-offen {
     font-size: 1.4rem;
 }
 
+/*
+ * DER LEVEL-RING UM DAS PROFILBILD (seit v0.146.0, Runde 5): ein Kreis
+ * aus zwei Farben — die XP des laufenden Levels in der Hauptfarbe, der
+ * Rest leise. `--lv-anteil` setzt js\start.js (0 bis unter 1). Innen
+ * liegt das Bild mit 3 px Abstand, unten rechts die Level-Zahl. Ab Level 5
+ * färbt der Rahmen den Rest des Rings (Kupfer, Silber, Gold, Platin).
+ */
+.level-ring {
+    --lv-rest: var(--karte-leise);
+    position: relative;
+    flex: none;
+    display: inline-flex;
+    padding: 3px;
+    border-radius: var(--rund-voll);
+    background: conic-gradient(var(--haupt) calc(var(--lv-anteil, 0) * 360deg),
+        var(--lv-rest) 0);
+}
+
+.level-ring > .visitenkarte-bild {
+    box-shadow: 0 0 0 2px var(--karte);
+}
+
+.level-rahmen-kupfer {
+    --lv-rest: #b8733f;
+}
+
+.level-rahmen-silber {
+    --lv-rest: #aeb7c2;
+}
+
+.level-rahmen-gold {
+    --lv-rest: #e0b84a;
+}
+
+.level-rahmen-platin {
+    --lv-rest: #9fd6d2;
+}
+
+.level-zahl {
+    position: absolute;
+    right: -4px;
+    bottom: -4px;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 5px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--rund-voll);
+    border: 2px solid var(--karte);
+    background: var(--haupt);
+    color: var(--haupt-schrift);
+    font-size: 0.72rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+}
+
 .start-profil-text {
     display: flex;
     flex-direction: column;
@@ -828,6 +886,613 @@ body.dialog-offen {
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+/* Die zweite Zeile im Spielen-Knopf (Turm: „Stufe 2", „Boss") —
+   UNTER dem Wort, nicht daneben. */
+.start-spielen:has(.start-spielen-unter) {
+    flex-direction: column;
+    gap: 0;
+    padding-top: 12px;
+    padding-bottom: 12px;
+}
+
+.start-spielen-unter {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 600;
+    opacity: 0.85;
+}
+
+/* ------------------------------------------------------------------ *
+ * DIE ART-WAHL AM QUADRAT (seit v0.147.0, js\start-turm.js): Das Quadrat
+ * zeigt das Zeichen der Art und einen kleinen Pfeil; die Wahl klappt nach
+ * OBEN auf, damit sie den Spielen-Knopf nicht verdeckt.
+ * ------------------------------------------------------------------ */
+
+.start-art-halter {
+    position: relative;
+    flex: 0 0 auto;
+    display: flex;
+}
+
+.start-art-knopf {
+    position: relative;
+    height: 100%;
+    flex-direction: column;
+    gap: 0;
+}
+
+.start-art-zeichen {
+    width: 26px;
+    height: 26px;
+}
+
+.start-art-pfeil {
+    width: 14px;
+    height: 14px;
+    opacity: 0.6;
+}
+
+.start-art-menue {
+    position: absolute;
+    right: 0;
+    bottom: calc(100% + 8px);
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 170px;
+    padding: 6px;
+    background: var(--karte);
+    border: 1px solid var(--rahmen);
+    border-radius: var(--rund-mittel);
+    box-shadow: 0 var(--karte-tiefe) 0 var(--still-kante);
+}
+
+.start-art-eintrag {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    font: inherit;
+    font-weight: 700;
+    color: var(--schrift);
+    background: none;
+    border: none;
+    border-radius: var(--rund-mittel);
+    cursor: pointer;
+    text-align: left;
+}
+
+.start-art-eintrag:hover,
+.start-art-eintrag[aria-checked="true"] {
+    background: var(--karte-leise);
+}
+
+.start-art-haken {
+    margin-left: auto;
+    color: var(--haupt);
+}
+
+.turm-zeichen {
+    display: block;
+    width: 22px;
+    height: 22px;
+}
+
+/* ------------------------------------------------------------------ *
+ * DER TURM AUF DEM START (seit v0.147.0, js\start-turm.js; Entwurf
+ * Design\3D-Schrift\entwuerfe\Herausforderungen\, `weg`): der Weg durch
+ * das Stockwerk als Punkte im Zickzack, unten Stufe 1, oben die Tür.
+ * Jeder Ort hat eine eigene Farbe (`--turm-farbe`).
+ * ------------------------------------------------------------------ */
+
+.turm-ort-1 { --turm-farbe: #e0913f; }
+.turm-ort-2 { --turm-farbe: #a86a3a; }
+.turm-ort-3 { --turm-farbe: #7b8fa8; }
+.turm-ort-4 { --turm-farbe: #c43a8e; }
+.turm-ort-5 { --turm-farbe: #b8903a; }
+.turm-ort-6 { --turm-farbe: #d4af37; }
+
+.turm-karte {
+    position: relative;
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 340px;
+    padding: 12px;
+    border: 2px solid var(--rahmen);
+    border-radius: var(--rund-mittel);
+    background: linear-gradient(180deg,
+        color-mix(in srgb, var(--turm-farbe) 22%, var(--karte)) 0%, var(--karte) 70%);
+    overflow: hidden;
+}
+
+.turm-kopf {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.turm-ortname {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 12px 4px 4px;
+    font: inherit;
+    font-size: 1.05rem;
+    color: var(--schrift);
+    background: var(--karte);
+    border: 1px solid var(--rahmen);
+    border-radius: var(--rund-voll);
+    cursor: pointer;
+}
+
+.turm-ort-nr {
+    min-width: 26px;
+    height: 26px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--rund-voll);
+    background: var(--turm-farbe);
+    color: #fff;
+    font-weight: 800;
+    font-size: 0.85rem;
+}
+
+.turm-summe {
+    margin-left: auto;
+    margin-right: 40px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    color: var(--schrift-leise);
+}
+
+.turm-summe-figur {
+    width: 16px;
+    height: 16px;
+    color: var(--turm-farbe);
+}
+
+.turm-weg {
+    position: relative;
+    flex: 1 1 auto;
+    min-height: 300px;
+    margin-right: 36px;
+}
+
+.turm-linien {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.turm-linie {
+    fill: none;
+    stroke: var(--rahmen);
+    stroke-width: 3;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+    stroke-dasharray: 2 6;
+    stroke-linecap: round;
+}
+
+.turm-linie-fertig {
+    stroke: var(--turm-farbe);
+    stroke-dasharray: none;
+}
+
+.turm-punkt {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 0;
+    font: inherit;
+    color: var(--schrift);
+    background: none;
+    border: none;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.turm-kreis {
+    width: 44px;
+    height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--rund-voll);
+    border: 3px solid var(--rahmen);
+    background: var(--karte);
+    font-weight: 800;
+    font-size: 1rem;
+    box-shadow: 0 4px 0 var(--still-kante);
+}
+
+.turm-punkt-fertig .turm-kreis {
+    border-color: var(--turm-farbe);
+    background: var(--turm-farbe);
+    color: #fff;
+}
+
+.turm-punkt-offen .turm-kreis {
+    border-color: var(--turm-farbe);
+}
+
+.turm-punkt-zu .turm-kreis {
+    color: var(--schrift-leise);
+    opacity: 0.7;
+}
+
+.turm-punkt-jetzt .turm-kreis {
+    width: 54px;
+    height: 54px;
+    border-color: var(--haupt);
+    background: var(--haupt);
+    color: var(--haupt-schrift);
+    box-shadow: 0 5px 0 var(--haupt-kante);
+}
+
+.turm-du {
+    width: 30px;
+    height: 30px;
+}
+
+/* Der Boss: grösser, dunkelrot, mit Maske. */
+.turm-boss .turm-kreis {
+    width: 56px;
+    height: 56px;
+    border-color: #8e1f30;
+    background: #b3263b;
+    color: #fff;
+    box-shadow: 0 5px 0 #6a1523;
+}
+
+.turm-boss.turm-punkt-zu .turm-kreis {
+    background: #5a2029;
+}
+
+.turm-tuer .turm-kreis {
+    border-radius: var(--rund-mittel) var(--rund-mittel) 0 0;
+    width: 40px;
+    height: 50px;
+    color: var(--schrift-leise);
+}
+
+.turm-tuer.offen .turm-kreis {
+    border-color: var(--turm-farbe);
+    background: color-mix(in srgb, var(--turm-farbe) 35%, var(--karte));
+    color: var(--schrift);
+}
+
+.turm-figuren {
+    display: inline-flex;
+    gap: 1px;
+}
+
+.turm-figur {
+    width: 13px;
+    height: 13px;
+    color: var(--rahmen);
+}
+
+.turm-figur.an {
+    color: var(--turm-farbe, var(--haupt));
+}
+
+.turm-schloss {
+    position: absolute;
+    inset: 30% 10% auto 10%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 14px;
+    border-radius: var(--rund-mittel);
+    background: var(--karte);
+    border: 1px solid var(--rahmen);
+    color: var(--schrift-leise);
+    font-weight: 700;
+}
+
+.turm-blaettern {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+
+.turm-bl {
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    color: var(--schrift);
+    background: var(--karte);
+    border: 1px solid var(--rahmen);
+    border-radius: var(--rund-voll);
+    cursor: pointer;
+}
+
+.turm-bl:disabled {
+    opacity: 0.35;
+    cursor: default;
+}
+
+.turm-bl .turm-zeichen {
+    width: 18px;
+    height: 18px;
+}
+
+.turm-bl-punkte {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.turm-bl-punkte i {
+    width: 7px;
+    height: 7px;
+    border-radius: var(--rund-voll);
+    background: var(--rahmen);
+}
+
+.turm-bl-punkte i.du {
+    background: var(--haupt);
+}
+
+.turm-bl-punkte i.da {
+    box-shadow: 0 0 0 2px var(--schrift);
+}
+
+.turm-zu-dir {
+    position: absolute;
+    left: 12px;
+    bottom: 12px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .turm-rein-oben .turm-weg {
+        animation: turm-rein-oben 0.3s ease-out;
+    }
+
+    .turm-rein-unten .turm-weg {
+        animation: turm-rein-unten 0.3s ease-out;
+    }
+
+    .turm-punkt-jetzt .turm-kreis {
+        animation: turm-atmen 1.8s ease-in-out infinite;
+    }
+}
+
+@keyframes turm-rein-oben {
+    from {
+        opacity: 0;
+        transform: translateY(-30px);
+    }
+}
+
+@keyframes turm-rein-unten {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+}
+
+@keyframes turm-atmen {
+    50% {
+        transform: scale(1.06);
+    }
+}
+
+/* ------------------------------------------------------------------ *
+ * DIE VORSTELLUNG VOR DER PARTIE („VS", seit v0.147.0): der Gegner oben,
+ * man selbst unten; der Boss dunkelrot mit „BOSS" und kurzem Beben.
+ * ------------------------------------------------------------------ */
+
+.turm-vs {
+    position: fixed;
+    inset: 0;
+    z-index: var(--ebene-vollbild);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: max(24px, env(safe-area-inset-top, 0px)) 20px max(24px, env(safe-area-inset-bottom, 0px));
+    background: linear-gradient(180deg,
+        color-mix(in srgb, var(--turm-farbe) 55%, #111) 0%, #15171c 55%, var(--flaeche) 100%);
+    color: #fff;
+    opacity: 0;
+    transition: opacity 0.22s ease;
+}
+
+.turm-vs.da {
+    opacity: 1;
+}
+
+.turm-vs-boss {
+    background: linear-gradient(180deg, #5a0f1b 0%, #1a0508 60%, #15171c 100%);
+}
+
+.turm-vs-oben,
+.turm-vs-unten {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    text-align: center;
+    transition: transform 0.35s ease-out;
+}
+
+.turm-vs-oben {
+    transform: translateY(-40px);
+}
+
+.turm-vs-unten {
+    transform: translateY(40px);
+    color: var(--schrift);
+}
+
+.turm-vs.da .turm-vs-oben,
+.turm-vs.da .turm-vs-unten {
+    transform: none;
+}
+
+.turm-vs-lage {
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0.8;
+}
+
+.turm-vs-bosswort {
+    font-size: 2.2rem;
+    font-weight: 900;
+    letter-spacing: 0.12em;
+    color: #ff5a6a;
+}
+
+.turm-vs-gesicht {
+    width: 96px;
+    height: 96px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--rund-voll);
+    background: color-mix(in srgb, var(--turm-farbe) 70%, #000);
+    border: 3px solid rgb(255 255 255 / 0.5);
+}
+
+.turm-vs-boss .turm-vs-gesicht {
+    background: #8e1f30;
+    border-color: #ff5a6a;
+}
+
+.turm-vs-gesicht .turm-zeichen {
+    width: 56px;
+    height: 56px;
+}
+
+.turm-vs-name {
+    font-size: 1.5rem;
+}
+
+.turm-vs-eigen {
+    padding: 4px 12px;
+    border-radius: var(--rund-voll);
+    background: rgb(255 255 255 / 0.15);
+    font-weight: 700;
+}
+
+.turm-vs-mitte {
+    align-self: center;
+    font-size: 3rem;
+    font-weight: 900;
+    font-style: italic;
+    color: var(--haupt);
+}
+
+.turm-vs-ich {
+    width: 64px;
+    height: 64px;
+    font-size: 1.8rem;
+}
+
+.turm-vs-figuren .turm-figur {
+    width: 18px;
+    height: 18px;
+}
+
+.turm-vs-knoepfe {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+    max-width: 420px;
+    margin-top: 8px;
+}
+
+.turm-vs-los {
+    flex: 1;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .turm-vs-boss.da .turm-vs-oben {
+        animation: turm-beben 0.45s ease-in-out 0.3s;
+    }
+}
+
+@keyframes turm-beben {
+    20% { transform: translateX(-6px); }
+    40% { transform: translateX(6px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+}
+
+/* Das Banner „Neuer Ort" oben (seit v0.147.0). */
+.turm-banner {
+    position: fixed;
+    left: 50%;
+    top: max(16px, env(safe-area-inset-top, 0px));
+    z-index: var(--ebene-vollbild);
+    transform: translateX(-50%);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+    width: min(92vw, 420px);
+    padding: 14px 16px;
+    border-radius: var(--rund-mittel);
+    background: var(--turm-farbe);
+    color: #fff;
+    box-shadow: 0 5px 0 color-mix(in srgb, var(--turm-farbe) 60%, #000);
+    text-align: center;
+    transition: opacity 0.4s ease;
+}
+
+.turm-banner.weg {
+    opacity: 0;
+}
+
+.turm-banner-klein {
+    width: 100%;
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.turm-banner b {
+    width: 100%;
+    font-size: 1.3rem;
+}
+
+.turm-banner-chip {
+    padding: 3px 10px;
+    border-radius: var(--rund-voll);
+    background: rgb(255 255 255 / 0.22);
+    font-weight: 700;
+    font-size: 0.85rem;
+}
+
+.abschluss-figuren .turm-figur {
+    width: 20px;
+    height: 20px;
 }
 
 /*

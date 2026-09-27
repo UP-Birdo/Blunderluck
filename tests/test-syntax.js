@@ -71,8 +71,28 @@ const seite = dateisystem.readFileSync(pfad.join(projekt, "index.html"), "utf8")
  */
 const skriptQuellen = [...seite.matchAll(/<script[^>]*\ssrc="([^"]+)"/g)].map((t) => t[1]);
 
+/* Begründete Ausnahmen: Dateien, die NICHT als <script> laden, sondern
+   anders — geprüft wird dann, dass der andere Weg wirklich auf sie zeigt. */
+const NICHT_IN_INDEX = {
+    /* Der Web Worker der Wertung (seit v0.151.0): `new Worker(WERTUNG.RECHNER)`. */
+    "wertung-rechner.js": () => {
+        const wertung = dateisystem.readFileSync(pfad.join(jsOrdner, "wertung.js"), "utf8");
+        const sw = dateisystem.readFileSync(pfad.join(projekt, "sw.js"), "utf8");
+        if (wertung.indexOf("RECHNER: \"js/wertung-rechner.js\"") === -1) {
+            throw new Error("WERTUNG.RECHNER zeigt nicht auf js/wertung-rechner.js");
+        }
+        if (sw.indexOf("\"./js/wertung-rechner.js\"") === -1) {
+            throw new Error("js/wertung-rechner.js fehlt in sw.js (offline kein Rechner)");
+        }
+    }
+};
+
 for (const name of dateien) {
     pruefe("js/" + name + " ist in index.html eingebunden", () => {
+        if (NICHT_IN_INDEX[name]) {
+            NICHT_IN_INDEX[name]();
+            return;
+        }
         if (skriptQuellen.indexOf("js/" + name) === -1) {
             throw new Error("kein script-Verweis src=\"js/" + name + "\" in index.html");
         }

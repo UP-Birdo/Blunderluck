@@ -314,7 +314,10 @@ pruefe("JEDE Einstellung aus der Auswahl kommt in der Partie an (v0.91)", () => 
         regenStufe: "wird aus lootboxMenge gerechnet",
         itemPool: "wird beim Anlegen ausgelost, nicht uebergeben",
         itemAuswahl: "die Eingabe zum Pool, eigener Test weiter unten",
-        armeeFassung: "keine Einstellung, sondern die Fassung der Rechnung"
+        armeeFassung: "keine Einstellung, sondern die Fassung der Rechnung",
+        turm: "ein Objekt { ort, stufe } — das Durchreichen prüft test-turm.js"
+            + " („Die Partie trägt ihre Turm-Stufe durch Anlegen und Normalisieren\")",
+        tagesbrett: "ein Objekt { datum, nr, zuege } — das Durchreichen prüft test-heute.js"
     };
 
     for (const feld of Object.keys(SCHACH_RUNDE.leereRunde().regeln)) {

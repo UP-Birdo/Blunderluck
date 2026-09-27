@@ -31,7 +31,11 @@
  *                     "knoepfe": "K1",       // bei Gästen und bei jedem, der
  *                     "leseschrift": false,  // nie etwas umgestellt hat
  *                     "stand": 1750000000000
- *                 }
+ *                 },
+ *                 "fortschritt": {           // seit v0.146.0: XP je Spiel
+ *                     "version": 1,          // (js\fortschritt.js, dort der
+ *                     "spiele": { … }        // ganze Vertrag); fehlt bei
+ *                 }                          // jedem, der noch nie spielte
  *             }
  *         ]
  *     }
@@ -187,6 +191,12 @@ const SPIELER = {
                ergänzt hat, wandert hier unverändert durch. */
             if ("aussehen" in spieler && !SPIELER._istObjekt(spieler.aussehen)) {
                 delete spieler.aussehen;
+            }
+
+            /* Der Fortschritt (seit v0.146.0): ebenso nur als Objekt. Die
+               Werte darin prüft js\fortschritt.js — hier wandert er durch. */
+            if ("fortschritt" in spieler && !SPIELER._istObjekt(spieler.fortschritt)) {
+                delete spieler.fortschritt;
             }
 
             daten.spieler.push(spieler);
@@ -397,7 +407,8 @@ const SPIELER = {
 
         for (const spieler of fremdStand.spieler) {
             if (meiner && spieler.id === eigeneId) {
-                ergebnis.spieler.push(SPIELER._neueresAussehen(meiner, spieler));
+                ergebnis.spieler.push(SPIELER._fortschrittZusammen(
+                    SPIELER._neueresAussehen(meiner, spieler), spieler));
                 selbstGefunden = true;
             } else {
                 ergebnis.spieler.push(spieler);
@@ -429,6 +440,29 @@ const SPIELER = {
             return meiner;
         }
         return Object.assign({}, meiner, { aussehen: SPIELER._tiefKopie(vomServer.aussehen) });
+    },
+
+    /*
+     * DER FORTSCHRITT IST DIE ZWEITE AUSNAHME (seit v0.146.0): Er trägt je
+     * Spiel einen eigenen Zweig (js\fortschritt.js). Typoluck schreibt
+     * seinen, Blunderluck seinen — beim Zusammenführen gewinnt JE ZWEIG der
+     * neuere `stand`. Ohne das löschte Blunderluck beim nächsten Speichern
+     * die XP, die Typoluck inzwischen dazugeschrieben hat.
+     *
+     * Ohne js\fortschritt.js (ältere Tests) bleibt der eigene Eintrag, wie
+     * er ist.
+     */
+    _fortschrittZusammen(meiner, vomServer) {
+        if (typeof FORTSCHRITT === "undefined"
+                || !vomServer || !SPIELER._istObjekt(vomServer.fortschritt)) {
+            return meiner;
+        }
+        if (!SPIELER._istObjekt(meiner.fortschritt)) {
+            return Object.assign({}, meiner, { fortschritt: SPIELER._tiefKopie(vomServer.fortschritt) });
+        }
+        return Object.assign({}, meiner, {
+            fortschritt: FORTSCHRITT.zusammenfuehren(meiner.fortschritt, vomServer.fortschritt)
+        });
     },
 
     /* ---------------------------------------------------------------- *
@@ -475,6 +509,12 @@ const SPIELER = {
                einem anderen Gerät erst mit der nächsten anderen Änderung an
                (js\aussehen-konto.js liest es nach jedem neuen Stand). */
             if (JSON.stringify(spielerA.aussehen || null) !== JSON.stringify(spielerB.aussehen || null)) {
+                return false;
+            }
+
+            /* Der Fortschritt (seit v0.146.0) — sonst stünde das Level
+               eines anderen Geräts erst nach einer anderen Änderung da. */
+            if (JSON.stringify(spielerA.fortschritt || null) !== JSON.stringify(spielerB.fortschritt || null)) {
                 return false;
             }
 
@@ -541,6 +581,32 @@ const SPIELER = {
         for (const spieler of neu.spieler) {
             if (spieler.id === id) {
                 spieler.aussehen = sauber;
+            }
+        }
+        neu.geaendertAm = (zeitpunkt === undefined) ? Date.now() : zeitpunkt;
+        return neu;
+    },
+
+    /*
+     * Den Fortschritt am eigenen Eintrag setzen (seit v0.146.0,
+     * js\fortschritt-konto.js). Übergeben wird der GANZE Fortschritt; er
+     * geht vorher durch `FORTSCHRITT.normalisieren` (ohne den Baustein —
+     * nur in Tests denkbar — als Kopie, wenn es ein Objekt ist).
+     */
+    fortschrittSetzen(daten, id, fortschritt, zeitpunkt) {
+        const neu = SPIELER.kopieren(daten);
+        let sauber = null;
+        if (typeof FORTSCHRITT !== "undefined") {
+            sauber = FORTSCHRITT.normalisieren(fortschritt);
+        } else if (SPIELER._istObjekt(fortschritt)) {
+            sauber = SPIELER._tiefKopie(fortschritt);
+        }
+        if (!sauber) {
+            return neu;
+        }
+        for (const spieler of neu.spieler) {
+            if (spieler.id === id) {
+                spieler.fortschritt = sauber;
             }
         }
         neu.geaendertAm = (zeitpunkt === undefined) ? Date.now() : zeitpunkt;

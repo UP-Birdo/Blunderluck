@@ -176,18 +176,25 @@ globalThis.location = { hostname: "up-birdo.github.io", search: "" };
 
 const FREISCHALTUNG = require(pfad.join(projekt, "js", "freischaltung.js"));
 
-pruefe("Freischaltung: 2D ist die Vorgabe, 3D wählbar, solange die Sperre aus ist", () => {
-    gleich(FREISCHALTUNG.SPERRE_3D, false, "SPERRE_3D steht aus, bis die Arena-Leiter live ist");
-    gleich(FREISCHALTUNG.stufe(), 0, "Pfad gibt es noch nicht");
-    gleich(FREISCHALTUNG.brett(), "2d", "ohne Wahl 2D");
-    gleich(FREISCHALTUNG.brettSetzen("3d"), "3d", "3D wählbar");
-    gleich(FREISCHALTUNG.brett(), "3d", "3D gemerkt");
-    gleich(JSON.parse(speicher["blunderluck.brett3d"]).an, true, "im Speicher des 3D-Bretts");
-    FREISCHALTUNG.brettSetzen("2d");
-    gleich(FREISCHALTUNG.brett(), "2d", "zurück auf 2D");
+pruefe("Freischaltung: 2D ist die Vorgabe, 3D wählbar, wenn die Sperre aus ist", () => {
+    /* Seit v0.147.0 steht die Sperre AN (der Turm ist die Leiter) — hier
+       wird der Fall ohne Sperre ausdrücklich hergestellt. */
+    gleich(FREISCHALTUNG.SPERRE_3D, true, "SPERRE_3D steht seit v0.147.0 an");
+    FREISCHALTUNG.SPERRE_3D = false;
+    try {
+        gleich(FREISCHALTUNG.stufe(), 0, "ohne Fortschritt Stufe 0");
+        gleich(FREISCHALTUNG.brett(), "2d", "ohne Wahl 2D");
+        gleich(FREISCHALTUNG.brettSetzen("3d"), "3d", "3D wählbar");
+        gleich(FREISCHALTUNG.brett(), "3d", "3D gemerkt");
+        gleich(JSON.parse(speicher["blunderluck.brett3d"]).an, true, "im Speicher des 3D-Bretts");
+        FREISCHALTUNG.brettSetzen("2d");
+        gleich(FREISCHALTUNG.brett(), "2d", "zurück auf 2D");
+    } finally {
+        FREISCHALTUNG.SPERRE_3D = true;
+    }
 });
 
-pruefe("Freischaltung: mit Sperre gilt 3D erst ab Arena 2 oder in der Werkstatt", () => {
+pruefe("Freischaltung: mit Sperre gilt 3D erst ab Arena 2 (Holzhalle) oder in der Werkstatt", () => {
     FREISCHALTUNG.SPERRE_3D = true;
     try {
         speicher["blunderluck.brett3d"] = JSON.stringify({ an: true, thema: "holz" });
@@ -210,7 +217,7 @@ pruefe("Freischaltung: mit Sperre gilt 3D erst ab Arena 2 oder in der Werkstatt"
         gleich(FREISCHALTUNG.dreiDFrei(), false, "Arena 1 noch nicht");
         FREISCHALTUNG.arena = arena;
     } finally {
-        FREISCHALTUNG.SPERRE_3D = false;
+        FREISCHALTUNG.SPERRE_3D = true;
         globalThis.location = { hostname: "up-birdo.github.io", search: "" };
     }
 });
@@ -355,6 +362,8 @@ pruefe("Leiste: Symbole Aufgaben, Sammlung und Bald wie abgesprochen (Runde 4)",
  * ------------------------------------------------------------------ */
 
 globalThis.FREISCHALTUNG = FREISCHALTUNG;
+/* Die Orte des Turms schalten Themen und Figuren frei (seit v0.147.0). */
+globalThis.TURM = require(pfad.join(projekt, "js", "turm.js"));
 const SAMMLUNG = require(pfad.join(projekt, "js", "sammlung.js"));
 const BRETT_QUELLE = dateisystem.readFileSync(pfad.join(projekt, "js", "brett-3d.js"), "utf8");
 
@@ -407,11 +416,12 @@ pruefe("Sammlung: der Anteil zählt Regale, Baustein-Stücke und reine Sammlung"
     globalThis.UPCREW_ANPASSEN = { STUFEN: { farbwelt: { a: 0, b: 2 }, schrift: { c: 0 }, knoepfe: { d: 0, e: 3 } } };
     try {
         const anteil = SAMMLUNG.anteil();
-        /* Regale: 2 + 5 + 4 = 11 Stücke, frei 2 (2D, 3D) + 1 + 1 = 4.
-           Baustein: 5 Stücke, frei 3. Reine Sammlung: 4 Karten + 2 Formen, alle da. */
+        /* Regale: 2 + 5 + 4 = 11 Stücke, frei 1 (2D; 3D erst ab Holzhalle,
+           seit v0.147.0) + 1 + 1 = 3. Baustein: 5 Stücke, frei 3. Reine
+           Sammlung: 4 Karten + 2 Formen, alle da. */
         gleich(anteil.alle, 11 + 5 + 6, "alle");
-        gleich(anteil.hat, 4 + 3 + 6, "gesammelt");
-        gleich(anteil.prozent, Math.round(13 / 22 * 100), "Prozent");
+        gleich(anteil.hat, 3 + 3 + 6, "gesammelt");
+        gleich(anteil.prozent, Math.round(12 / 22 * 100), "Prozent");
     } finally {
         delete globalThis.SCHACH_VARIANTEN;
         delete globalThis.UPCREW_ANPASSEN;
@@ -428,7 +438,7 @@ pruefe("3D-Brett: Sammlung-Schnittstelle da, Vorschau ändert das echte Brett ni
         "die Wahl wird nicht zurückgesetzt");
     wahr(!/einstellungenSpeichern/.test(mit), "die Vorschau speichert");
     const waehlen = BRETT_QUELLE.match(/function aussehenWaehlen\(schluessel, wert\) \{([\s\S]*?)\n\}/)[1];
-    wahr(/!aussehenFrei\(\)\) return false/.test(waehlen), "Wählen prüft die Freigabe nicht");
+    wahr(/!stueckFrei\(schluessel, wert\)\) return false/.test(waehlen), "Wählen prüft die Freigabe nicht");
 });
 
 pruefe("Die zwölf Crew-Schriften liegen bei und gehen offline mit", () => {

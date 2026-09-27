@@ -41,6 +41,80 @@ Object.assign(TEAM_SCHACH, {
        „weniger Bewegung": Vibration ist keine Bewegung auf dem Schirm. */
     _abschlussGespuert: {},
 
+    /* Was eine Partie an XP gebracht hat, je Partie-Kennung (seit
+       v0.146.0, gesetzt in `zeichnen` beim Zählen). Nur Anzeige-Gedächtnis:
+       Nach dem Neuladen steht die Zeile nicht mehr da, die XP bleiben. */
+    _xpGewinn: {},
+
+    /*
+     * DIE WERTUNG EINER TURM-PARTIE (seit v0.148.0, js\wertung.js): die
+     * Genauigkeit gross, darunter je Klasse (!! ! ✓ ?! ? ??) die Zahl der
+     * Züge, und das Glück (eingesammelte Lootboxen) getrennt — es zählt
+     * nicht. Zu wenige gewertete Züge: nur das Glück.
+     */
+    _wertungBauen(partie, meinTeam) {
+        if (typeof WERTUNG === "undefined" || !partie.regeln || !partie.regeln.turm) {
+            return null;
+        }
+        const w = WERTUNG.zusammenfassung(partie.id, meinTeam);
+        const block = TEAM_SCHACH._element("div", "wertung");
+        /* Rechnet der Worker noch (seit v0.151.0), steht statt der Zahl
+           „…" — sobald er fertig ist, zeichnet der Abschluss neu. */
+        const rechnet = typeof WERTUNG.rechnetNoch === "function" && WERTUNG.rechnetNoch(partie.id);
+
+        const kopf = TEAM_SCHACH._element("div", "wertung-kopf");
+        kopf.appendChild(TEAM_SCHACH._element("span", "wertung-zahl",
+            rechnet ? "…" : ((typeof w.genauigkeit === "number") ? w.genauigkeit + " %" : "–")));
+        kopf.appendChild(TEAM_SCHACH._element("span", "wertung-wort", "Genauigkeit"));
+        block.appendChild(kopf);
+
+        if (w.gewertet > 0) {
+            const klassen = TEAM_SCHACH._element("div", "wertung-klassen");
+            for (const klasse of WERTUNG.KLASSEN) {
+                const zahl = w.klassen[klasse.id];
+                const feld = TEAM_SCHACH._element("span",
+                    "wertung-klasse wertung-" + klasse.id + (zahl ? "" : " wertung-null"));
+                feld.title = klasse.name;
+                feld.appendChild(TEAM_SCHACH._element("i", "wertung-zeichen", klasse.zeichen));
+                feld.appendChild(TEAM_SCHACH._element("b", "", String(zahl)));
+                klassen.appendChild(feld);
+            }
+            block.appendChild(klassen);
+        }
+
+        block.appendChild(TEAM_SCHACH._element("p", "wertung-glueck",
+            "Glück · " + w.glueck + (w.glueck === 1 ? " Lootbox" : " Lootboxen") + " · zählt nicht"));
+        return block;
+    },
+
+    /* Die Zeile „+10 XP", bei einem neuen Level dazu „Level N". */
+    _xpZeileBauen(partieId) {
+        const gewinn = TEAM_SCHACH._xpGewinn[partieId];
+        if (!gewinn) {
+            return null;
+        }
+        const zeile = TEAM_SCHACH._element("p", "abschluss-xp");
+        /* Die Figuren einer Turm-Partie (seit v0.147.0) oder des
+           Tagesbretts (seit v0.149.0) vor den XP. */
+        const figuren = (gewinn.turm && gewinn.turm.figuren) || (gewinn.heute && gewinn.heute.figuren) || 0;
+        if (figuren > 0 && typeof START !== "undefined" && typeof START._figurenBauen === "function") {
+            zeile.appendChild(START._figurenBauen(figuren, "abschluss-figuren"));
+        }
+        zeile.appendChild(TEAM_SCHACH._element("span", "abschluss-xp-wert", "+" + gewinn.xp + " XP"));
+        if (gewinn.levelNachher > gewinn.levelVorher) {
+            zeile.appendChild(TEAM_SCHACH._element("span", "abschluss-xp-level",
+                "Level " + gewinn.levelNachher));
+        }
+        /* Die Tür ist auf: der nächste Ort (seit v0.147.0). Das Banner
+           dazu zeigt der Start. */
+        if (gewinn.turm && gewinn.turm.ortNachher > gewinn.turm.ortVorher
+                && typeof TURM !== "undefined" && TURM.ort(gewinn.turm.ortNachher)) {
+            zeile.appendChild(TEAM_SCHACH._element("span", "abschluss-xp-level",
+                "Neuer Ort · " + TURM.ort(gewinn.turm.ortNachher).name));
+        }
+        return zeile;
+    },
+
     /*
      * DER KONFETTIREGEN ZUM SIEG (seit v0.116): zwei Dutzend fallende,
      * trudelnde Farbstücke über der Gewonnen-Fläche. Ohne Zufall — Lage und
@@ -98,12 +172,29 @@ Object.assign(TEAM_SCHACH, {
         const flaeche = TEAM_SCHACH._element("div", "abschluss abschluss-" + art);
 
         flaeche.appendChild(TEAM_SCHACH._element("p", "abschluss-marke", partie.titel));
+        /* Das Tagesbrett (seit v0.149.0) wird geschafft oder nicht — es
+           wird nicht gewonnen. */
+        const tagesbrett = !!(partie.regeln && partie.regeln.tagesbrett);
         flaeche.appendChild(TEAM_SCHACH._element("h2", "abschluss-titel",
-            remis ? "Unentschieden" : (gewonnen ? "Gewonnen" : "Verloren")));
+            tagesbrett
+                ? (gewonnen ? "Geschafft" : "Nicht geschafft")
+                : (remis ? "Unentschieden" : (gewonnen ? "Gewonnen" : "Verloren"))));
 
         /* Zum Sieg regnet einmal Konfetti (seit v0.116). */
         if (gewonnen) {
             TEAM_SCHACH._konfettiStreuen(flaeche, partie.id);
+        }
+
+        /* Die Wertung einer Turm-Partie (seit v0.148.0). */
+        const wertung = TEAM_SCHACH._wertungBauen(partie, meinTeam);
+        if (wertung) {
+            flaeche.appendChild(wertung);
+        }
+
+        /* Was die Partie fürs Level gebracht hat (seit v0.146.0). */
+        const xpZeile = TEAM_SCHACH._xpZeileBauen(partie.id);
+        if (xpZeile) {
+            flaeche.appendChild(xpZeile);
         }
 
         /* Das Ergebnis spürt man, einmal je Partie (UPCrew-Standard, seit

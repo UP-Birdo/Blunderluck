@@ -3,6 +3,131 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.151.0 — 27.09.2026
+
+**Die Wertung im Turm ist repariert, die Tagesaufgabe zählt nach
+Schwierigkeit** (Runde 6, Nachtrag).
+
+- **Kein Stillstand mehr nach deinem Zug:** Die Wertung rechnet jetzt im
+  Hintergrund. Bisher stand die Seite nach jedem eigenen Turm-Zug ein bis
+  drei Sekunden. Im Abschluss steht „…", bis sie fertig ist.
+- **Die Wertung ist ehrlicher:** Bisher bekamen selbst zufällige Züge
+  über 80 %. Jetzt zählt, wie viel ein Zug gegenüber dem besten kostet
+  (in Bauern), und Züge in längst entschiedenen Stellungen zählen nicht
+  mit. Gemessen: Zufall 26–40 %, gutes Spiel 70–90 %.
+- **Springer und König neu eingestellt:** Werkbank ab 60 % / 80 % bis
+  Meisterliga ab 75 % / 90 %.
+- **Tagesaufgabe nach Schwierigkeit:** Matt in 1 bringt 15 XP, Matt in 2
+  20, Matt in 3 30 — dazu 10 XP je Figur, ×1,5 und Serie wie bisher. Die
+  Schwierigkeit steht als 1–3 Punkte auf der Karte „Tagesbrett". In
+  Typoluck gilt dieselbe Rechnung.
+- **Rahmen erst ab Level 10**, dann alle 5 Level (Silber 10, Gold 15,
+  Platin 20, danach Glanz) — gleich wie in Typoluck.
+
+## v0.150.0 — 27.09.2026
+
+**Neu: ein Fortschritt für Blunderluck UND Typoluck** (Runde 6, Teil A).
+
+- **Level, Serie und „Heute" teilen sich jetzt einen Speicher mit
+  Typoluck.** Spielst du beide im selben Browser, zählen die XP beider
+  Spiele zu EINEM Level, und das Tageswort aus Typoluck zeigt sich auf der
+  Karte „Tageswort" im Tab Aufgaben — samt ×1,5, wenn du beides schaffst.
+  (Wirkt, sobald Typoluck 0.11.0 dasselbe Format schreibt.)
+- **Nichts geht verloren:** Wer schon Level oder Turm-Figuren hatte, dem
+  wird der alte Stand einmalig übernommen.
+- **Am Konto** wird der Fortschritt erst gespeichert, wenn die neue
+  Datenbank-Regel eingespielt ist (`SICHERHEIT.md` §11b) — bis dahin gilt
+  er je Gerät.
+
+## v0.149.1 — 27.09.2026
+
+**Das Tagesbrett hat jetzt seine Aufgaben** (Nachtrag zu v0.149.0).
+
+- **40 Stellungen** (10× Matt in 1, 18× Matt in 2, 12× Matt in 3) aus
+  Partien Bob gegen Bob, jede mit einem Löser geprüft: Matt in genau N
+  Zügen, kein kürzeres, bei Matt in 2 und 3 genau EIN erster Zug, der
+  dorthin führt. Jeden Tag ist die nächste dran, für alle gleich.
+- **Springer und König im Turm sind schwerer geworden:** gegen Bob
+  nachgerechnet, lagen die alten Schwellen so tief, dass jeder Sieg den
+  König gebracht hätte. Jetzt Werkbank 88 % / 93 % bis Meisterliga
+  93 % / 98 %.
+
+## v0.149.0 — 27.09.2026
+
+**Neu: Heute** (Runde 5, vierter Teil) — der Tab „Aufgaben" ganz links.
+
+- **Das Tagesbrett:** jeden Tag eine Schach-Aufgabe („Matt in 2" …), für
+  alle gleich. „Lösen" startet sie gegen Bob; nach N Zügen ohne Matt ist
+  sie verfehlt, „Nochmal" geht immer. Im ersten Versuch gibt es drei
+  Figuren, im zweiten zwei, danach eine.
+- **XP:** Tagesaufgabe +20, dazu die Serie (+5 je Tag am Stück, höchstens
+  +35). Schaffst du am selben Tag auch das Tageswort in Typoluck, gibt es
+  ×1,5.
+- **Die Serie:** sieben Flammen für die letzten sieben Tage, darunter die
+  Tage am Stück. Ab Level 11 bringt jedes Level einen **Serien-Schutz**, der
+  einen verpassten Tag überbrückt.
+- Die Karte **Tageswort** zeigt, ob du es in Typoluck heute geschafft hast,
+  und führt mit „Zu Typoluck" hinüber.
+
+## v0.148.0 — 27.09.2026
+
+**Neu: die Wertung im Turm** (Runde 5, dritter Teil) — wie bei Chess.com.
+
+- **Jeder deiner Züge in einer Turm-Partie wird bewertet:** Brillant !! ·
+  Stark ! · Gut ✓ · Ungenau ?! · Fehler ? · Blunder ??. Daraus ergibt sich
+  deine **Genauigkeit** in Prozent — sie steht nach der Partie im Abschluss,
+  mit den Zügen je Klasse.
+- **Springer und König:** Ein Sieg bringt den Bauern; mit genug Genauigkeit
+  dazu den Springer, mit sehr hoher den König. Jeder Ort verlangt etwas mehr
+  (Werkbank ab 60 % bzw. 75 %).
+- **Glück zählt nicht:** Züge, mit denen du eine Lootbox einsammelst,
+  werden nicht bewertet — sie stehen getrennt als „Glück". Fähigkeiten und
+  Züge ohne Wahl ebenso.
+- Die Rechnung ist eine Näherung (sie schaut zwei Züge weit plus alle
+  Schlagabtausche) und läuft nur auf deinem Gerät.
+
+## v0.147.0 — 27.09.2026
+
+> **Achtung: Das 3D-Brett ist jetzt eine Belohnung.** Wer bisher in 3D
+> gespielt hat, spielt ab jetzt 2D, bis er im Turm die **Holzhalle**
+> erreicht (Werkbank schaffen). So war es entschieden (kein Bestandsschutz).
+
+**Neu: der Turm** (Runde 5, zweiter Teil).
+
+- **Der Start hat zwei Arten: Turm und Frei.** Gewählt wird am Quadrat
+  rechts neben „Spielen". Frei ist der Start wie bisher (Brett antippen =
+  Spielart und Grundeinstellungen).
+- **Im Turm steht oben der Weg durch dein Stockwerk:** ein Punkt je Stufe,
+  oben die Tür. Mit ▲▼ blätterst du durch die sechs Orte — Werkbank,
+  Holzhalle, Marmorsaal, Nachtclub, Turniersaal, Meisterliga.
+- **Jede Stufe ist ein eigener Gegner** mit einer eigenen Regel (Schwarz,
+  viele Lootboxen, Kreuzbrett, Fallen unsichtbar …). Wer es ist, siehst du
+  erst beim Start. Die letzte Stufe ist der **Boss** — erst spielbar, wenn
+  alle davor geschafft sind. Ist der Boss besiegt, geht die Tür auf und der
+  nächste Ort ist frei („Neuer Ort").
+- **Figuren als Wertung:** Ein Sieg bringt den Bauern. Springer und König
+  (für genaues Spielen) kommen mit der nächsten Version. Jede neue Figur
+  gibt +10 XP.
+- **Die Orte schalten frei:** 3D-Brett, Brett Holz und Figuren Matt ab der
+  Holzhalle, Marmor und Porzellan ab dem Marmorsaal, Nacht und Metall ab dem
+  Nachtclub, Turnier ab dem Turniersaal.
+
+## v0.146.0 — 27.09.2026
+
+**Neu: Level** (Runde 5, erster Teil — Turm, Wertung und „Heute" folgen).
+
+- **Jede beendete Partie bringt +10 XP** — auch verloren, auch gegen Bob.
+  Nach der Partie steht „+10 XP", bei einem Aufstieg „Level N".
+- **Ring ums Profilbild** oben links auf dem Start: Er füllt sich mit den
+  XP bis zum nächsten Level, die Zahl ist dein Level. Ab Level 5 trägt der
+  Ring einen Rahmen (Kupfer, Silber, Gold, Platin).
+- **Im Profil eine Level-Karte:** Level, Titel, XP-Balken und die nächsten
+  drei Level mit dem, was sie freischalten.
+- **Das Level schaltet Aussehen frei:** Farbwelten, Schriften und Knöpfe in
+  der Sammlung werden mit dem Level frei (Schloss mit der Level-Zahl).
+- Mit Konto gilt das Level auf allen Geräten und zählt später auch die XP
+  aus Typoluck mit; als Gast bleibt es auf diesem Gerät.
+
 ## v0.145.0 — 27.09.2026
 
 **Neue Leiste unten und der Tab „Sammlung“** (UPCrew-Angleichung, Runde 4 —

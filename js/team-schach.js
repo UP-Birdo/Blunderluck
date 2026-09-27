@@ -540,6 +540,28 @@ const TEAM_SCHACH = {
         TEAM_SCHACH.wurzelEl = document.createElement("div");
         TEAM_SCHACH.wurzelEl.className = "schach";
         behaelter.appendChild(TEAM_SCHACH.wurzelEl);
+        /* Ist die Wertung einer Partie fertig gerechnet (seit v0.151.0 im
+           Worker), neu zeichnen — dann zählt der Abschluss die Figuren. */
+        if (typeof WERTUNG !== "undefined" && typeof WERTUNG.beiFertig === "function") {
+            WERTUNG.beiFertig((partieId) => {
+                if (!TEAM_SCHACH.abgleich) {
+                    return;
+                }
+                const tafel = TEAM_SCHACH.abgleich.daten;
+                /* Steht ihr Abschluss schon offen, sucht `zeichnen` nicht
+                   mehr nach Abschlüssen — dann hier zählen. */
+                const partie = tafel ? SCHACH_TAFEL.partie(tafel, partieId) : null;
+                const person = ICH.person();
+                if (partie && partie.ergebnis && person && typeof FORTSCHRITT_KONTO !== "undefined"
+                        && TEAM_SCHACH.abschluss && TEAM_SCHACH.abschluss.id === partieId) {
+                    const gewinn = FORTSCHRITT_KONTO.partieBeendet(partie, person.id);
+                    if (gewinn) {
+                        TEAM_SCHACH._xpGewinn[partieId] = gewinn;
+                    }
+                }
+                TEAM_SCHACH.zeichnen(tafel);
+            });
+        }
     },
 
     /*
@@ -721,6 +743,33 @@ const TEAM_SCHACH = {
                 && !ICH.abschlussGesehen(partie.id)
                 && SCHACH_RUNDE.teamVon(partie, person.id));
 
+            /*
+             * JEDE BEENDETE EIGENE PARTIE GIBT EINMAL XP (seit v0.146.0,
+             * Runde 5): hier, weil genau hier jede Partie ankommt, deren
+             * Abschluss dieses Gerät noch nicht gezeigt hat — auch die
+             * älteren, die unten gleich als gesehen gelten. Doppelt zählt
+             * nichts: Der Fortschritt merkt sich die Kennung (auch über das
+             * Konto, also geräteübergreifend). Was es gab, zeigt der
+             * Abschluss (`_xpGewinn`).
+             */
+            /* Rechnet die Wertung (seit v0.151.0 im Worker) für eine
+               Partie noch, wartet ihr Zählen — und sie gilt auch noch nicht
+               als gesehen. Ist alles gerechnet, zeichnet `WERTUNG.beiFertig`
+               neu, und sie wird hier gezählt. */
+            const wertungRechnet = (partie) => typeof WERTUNG !== "undefined"
+                && typeof WERTUNG.rechnetNoch === "function" && WERTUNG.rechnetNoch(partie.id);
+            if (typeof FORTSCHRITT_KONTO !== "undefined") {
+                for (const beendet of offeneAbschluesse) {
+                    if (wertungRechnet(beendet)) {
+                        continue;
+                    }
+                    const gewinn = FORTSCHRITT_KONTO.partieBeendet(beendet, person.id);
+                    if (gewinn) {
+                        TEAM_SCHACH._xpGewinn[beendet.id] = gewinn;
+                    }
+                }
+            }
+
             const fertig = offeneAbschluesse
                 .slice()
                 .sort((einer, anderer) =>
@@ -729,7 +778,7 @@ const TEAM_SCHACH = {
             /* Die älteren gleich mit abhaken, sonst kämen sie beim nächsten
                Öffnen doch wieder — eine nach der anderen. */
             for (const aeltere of offeneAbschluesse) {
-                if (!fertig || aeltere.id !== fertig.id) {
+                if ((!fertig || aeltere.id !== fertig.id) && !wertungRechnet(aeltere)) {
                     ICH.abschlussMerken(aeltere.id);
                 }
             }
@@ -3911,11 +3960,17 @@ const TEAM_SCHACH = {
 
             /* Braucht die Partie Einigkeit, wird der Zug erst vorgeschlagen.
                Ist man allein im Team, zieht `zugVorschlagen` sofort. */
-            const neu = SCHACH_RUNDE.brauchtEinigkeit(partie)
+            let neu = SCHACH_RUNDE.brauchtEinigkeit(partie)
                 ? SCHACH_RUNDE.zugVorschlagen(
                     partie, person.id, von, nach, umwandlung, person.name)
                 : SCHACH_RUNDE.ziehen(
                     partie, person.id, von, nach, umwandlung, person.name);
+
+            /* Das Tagesbrett endet nach N eigenen Zügen ohne Matt (seit
+               v0.149.0, js\tagesbrett.js): „Matt in 3" heisst drei Züge. */
+            if (neu && typeof TAGESBRETT !== "undefined") {
+                neu = TAGESBRETT.nachZug(neu, SCHACH_RUNDE.teamVon(partie, person.id));
+            }
 
             if (!neu) {
                 TEAM_SCHACH._auswahlAufheben();
@@ -3924,6 +3979,16 @@ const TEAM_SCHACH = {
             }
 
             TEAM_SCHACH._auswahlAufheben();
+
+            /*
+             * DIE WERTUNG IM TURM (seit v0.148.0, js\wertung.js): Jeder
+             * eigene Zug in einer Turm-Partie wird gegen den besten
+             * verglichen. Seit v0.151.0 rechnet das ein Web Worker
+             * (js\wertung-rechner.js) — der Bildschirm steht nie still. Der
+             * Abschluss zählt die Figuren erst, wenn für die Partie nichts
+             * mehr rechnet (`WERTUNG.rechnetNoch`, siehe `zeichnen`).
+             */
+            TEAM_SCHACH._zugWertenAnstossen(partie, person, von, nach, umwandlung);
             await TEAM_SCHACH._sendenMitPruefung(neu, partie.zugZaehler);
         } finally {
             TEAM_SCHACH.ziehtGerade = false;
@@ -3933,6 +3998,21 @@ const TEAM_SCHACH = {
             if (TEAM_SCHACH.abgleich) {
                 TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
             }
+        }
+    },
+
+    /* Die Wertung eines eigenen Zugs anstossen — nur in Turm-Partien (seit
+       v0.148.0, im Hintergrund seit v0.151.0). Ein Fehler beim Werten darf
+       den Zug nie stören: Er wird gemeldet und übergangen. */
+    _zugWertenAnstossen(partie, person, von, nach, umwandlung) {
+        if (typeof WERTUNG === "undefined" || !partie.regeln || !partie.regeln.turm) {
+            return;
+        }
+        try {
+            WERTUNG.zugMerkenImHintergrund(partie, SCHACH_RUNDE.teamVon(partie, person.id),
+                von, nach, umwandlung);
+        } catch (fehler) {
+            console.error("Wertung nicht möglich:", fehler);
         }
     },
 
@@ -4506,8 +4586,16 @@ const TEAM_SCHACH = {
         const wunsch = regelnWunsch || TEAM_SCHACH._regelnVorgabe();
 
         /* Den Anzeigetitel vergibt die App (Wunsch 1) — gefragt wird nicht
-           mehr. Er steht auf den Karten und in den Hinweisen. */
-        const titel = variante.titel;
+           mehr. Er steht auf den Karten und in den Hinweisen. Eine
+           Turm-Partie (seit v0.147.0) heisst nach ihrem Ort: „Werkbank · 2". */
+        const turmAngabe = SCHACH_RUNDE.turmAngabe(wunsch.turm);
+        const tagesbrett = SCHACH_RUNDE.tagesbrettAngabe(wunsch.tagesbrett);
+        let titel = variante.titel;
+        if (turmAngabe && typeof TURM !== "undefined") {
+            titel = TURM.titel(turmAngabe.ort, turmAngabe.stufe);
+        } else if (tagesbrett) {
+            titel = "Tagesbrett · Matt in " + tagesbrett.zuege;
+        }
 
         /* Angelegt wird auf dem Stand vom Server, damit keine fremde Partie
            verloren geht — seit v0.114.3 über die Übersicht: nur die offenen
@@ -4613,7 +4701,13 @@ const TEAM_SCHACH = {
              */
             botStufe: (gegenComputer && SCHACH_BOT.gibtEsStufe(wunsch.botStufe))
                 ? wunsch.botStufe
-                : (gegenComputer ? SCHACH_BOT.STUFE_VORGABE : "")
+                : (gegenComputer ? SCHACH_BOT.STUFE_VORGABE : ""),
+
+            /* Die Turm-Stufe (seit v0.147.0) — nur gegen Bob. */
+            turm: gegenComputer ? turmAngabe : null,
+
+            /* Das Tagesbrett (seit v0.149.0) — nur gegen Bob. */
+            tagesbrett: gegenComputer ? tagesbrett : null
         };
 
         const ergebnis = SCHACH_TAFEL.partieAnlegen(
@@ -4682,6 +4776,44 @@ const TEAM_SCHACH = {
             if (!SCHACH_RUNDE.teamVon(partie, person.id)) {
                 partie = SCHACH_RUNDE.teamBeitreten(partie, person.id, "weiss");
             }
+        } else if (regeln.tagesbrett && wunsch.stellung) {
+            /*
+             * DAS TAGESBRETT (seit v0.149.0): Die Partie beginnt nicht mit
+             * der Grundstellung, sondern mit der Aufgabe des Tages. Das
+             * Brett wird VOR dem ersten Schreiben ersetzt; Rochade und en
+             * passant gibt es in der Aufgabe nicht. Der Mensch spielt die
+             * Seite am Zug, Bob verteidigt — beide sofort bereit, die
+             * Partie läuft.
+             */
+            const stellung = wunsch.stellung;
+            const stand = Object.assign({}, partie.stand, {
+                brett: (typeof partie.stand.brett === "string")
+                    ? stellung.brett : stellung.brett.split(""),
+                amZug: stellung.amZug,
+                rochade: "",
+                rochadeFelder: [],
+                rochadeKoenige: [],
+                enPassant: ""
+            });
+            partie = Object.assign({}, partie, { stand: stand, bonus: [] });
+            const seite = stellung.amZug;
+            partie = SCHACH_RUNDE.bereitSetzen(
+                SCHACH_RUNDE.teamBeitreten(partie, person.id, seite), seite, true);
+            partie = SCHACH_BOT.inRundeSetzen(partie, SCHACH.gegner(seite));
+        } else if (regeln.turm) {
+            /*
+             * IM TURM IST DIE SEITE FEST (seit v0.147.0): Die Stufe sagt,
+             * ob man Weiss oder Schwarz spielt („Du bist Schwarz"). Mensch
+             * und Bob sitzen deshalb schon vor dem ersten Schreiben auf
+             * ihren Seiten, beide mit der ersten Zusage — die Seitenwahl
+             * entfällt, man steht sofort vor der Aufstellung und drückt
+             * „Bereit". Derselbe Weg wie sonst beim „Bereit" (`bereitSetzen`,
+             * `SCHACH_BOT.inRundeSetzen`), nur vorweggenommen.
+             */
+            const seite = (wunsch.turmSeite === "schwarz") ? "schwarz" : "weiss";
+            partie = SCHACH_RUNDE.bereitSetzen(
+                SCHACH_RUNDE.teamBeitreten(partie, person.id, seite), seite, true);
+            partie = SCHACH_BOT.inRundeSetzen(partie, SCHACH.gegner(seite));
         }
 
         ergebnis.tafel = SCHACH_TAFEL.partieEinsetzen(ergebnis.tafel, partie);
@@ -4724,8 +4856,9 @@ const TEAM_SCHACH = {
             TEAM_SCHACH.partieOeffnen(ergebnis.partie.id);
 
             /* Der Startbildschirm merkt sich die Spielart fürs
-               Vorschaubild (seit v0.9.0). */
-            if (typeof START !== "undefined") {
+               Vorschaubild (seit v0.9.0) — nicht die einer Turm-Stufe, die
+               ist nicht selbst gewählt (seit v0.147.0). */
+            if (typeof START !== "undefined" && !regeln.turm && !regeln.tagesbrett) {
                 START.spielartMerken(varianteId);
             }
         } catch (fehler) {

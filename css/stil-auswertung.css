@@ -94,6 +94,101 @@
     font-size: 1.05rem;
 }
 
+/* Die Wertung einer Turm-Partie (seit v0.148.0): Genauigkeit, sechs
+   Klassen mit ihren Farben (wie Chess.com), Glück getrennt. */
+.wertung {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.wertung-kopf {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.wertung-zahl {
+    font-size: 2rem;
+    font-weight: 900;
+    font-variant-numeric: tabular-nums;
+}
+
+.wertung-wort {
+    color: var(--schrift-leise);
+    font-weight: 700;
+}
+
+.wertung-klassen {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+}
+
+.wertung-klasse {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 9px 3px 3px;
+    border-radius: var(--rund-voll);
+    background: var(--karte-leise);
+    font-variant-numeric: tabular-nums;
+}
+
+.wertung-null {
+    opacity: 0.45;
+}
+
+.wertung-zeichen {
+    min-width: 24px;
+    height: 24px;
+    padding: 0 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--rund-voll);
+    font-style: normal;
+    font-weight: 900;
+    font-size: 0.78rem;
+    color: #fff;
+}
+
+.wertung-brillant .wertung-zeichen { background: #1fb89a; }
+.wertung-stark .wertung-zeichen { background: #4f9be8; }
+.wertung-gut .wertung-zeichen { background: #7bb661; }
+.wertung-ungenau .wertung-zeichen { background: #e6b84a; }
+.wertung-fehler .wertung-zeichen { background: #ec8a36; }
+.wertung-blunder .wertung-zeichen { background: #e5484d; }
+
+.wertung-glueck {
+    margin: 0;
+    color: var(--schrift-leise);
+    font-size: 0.85rem;
+}
+
+/* „+10 XP · Level 3" nach der Partie (seit v0.146.0). */
+.abschluss-xp {
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    font-weight: 800;
+}
+
+.abschluss-xp-wert,
+.abschluss-xp-level {
+    padding: 3px 12px;
+    border-radius: var(--rund-voll);
+    background: var(--karte-leise);
+}
+
+.abschluss-xp-level {
+    background: var(--haupt);
+    color: var(--haupt-schrift);
+}
+
 .abschluss-grund {
     margin: 0;
     color: var(--schrift-leise);

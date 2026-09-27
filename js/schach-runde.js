@@ -116,6 +116,30 @@ const SCHACH_RUNDE = {
             : "";
     },
 
+    /* Eine gültige Turm-Angabe { ort, stufe } oder null (seit v0.147.0).
+       Die Grenzen sind grosszügig — welche Stufen es gibt, weiss nur
+       js\turm.js, und das lädt nach dieser Datei. */
+    turmAngabe(roh) {
+        if (!roh || typeof roh !== "object"
+                || !Number.isInteger(roh.ort) || roh.ort < 1 || roh.ort > 50
+                || !Number.isInteger(roh.stufe) || roh.stufe < 0 || roh.stufe > 50) {
+            return null;
+        }
+        return { ort: roh.ort, stufe: roh.stufe };
+    },
+
+    /* Eine gültige Tagesbrett-Angabe { datum, nr, zuege } oder null (seit
+       v0.149.0). */
+    tagesbrettAngabe(roh) {
+        if (!roh || typeof roh !== "object" || typeof roh.datum !== "string"
+                || !/^\d{4}-\d{2}-\d{2}$/.test(roh.datum)
+                || !Number.isInteger(roh.nr) || roh.nr < 0 || roh.nr > 1000
+                || !Number.isInteger(roh.zuege) || roh.zuege < 1 || roh.zuege > 10) {
+            return null;
+        }
+        return { datum: roh.datum, nr: roh.nr, zuege: roh.zuege };
+    },
+
     leereRunde(zeitpunkt, varianteId, id, titel) {
         const variante = SCHACH_VARIANTEN.holen(varianteId);
         const wann = (zeitpunkt === undefined) ? 0 : zeitpunkt;
@@ -438,7 +462,25 @@ const SCHACH_RUNDE = {
                  * sondern in den Teams (Kennung `bot`) — eine Aussage, eine
                  * Quelle.
                  */
-                botStufe: ""
+                botStufe: "",
+
+                /*
+                 * ZU WELCHER TURM-STUFE DIESE PARTIE GEHÖRT (seit v0.147.0,
+                 * Runde 5): { ort, stufe } — Ort ab 1, Stufe ab 0; null bei
+                 * jeder anderen Partie. Gedeutet wird es NUR in js\turm.js
+                 * und im Fortschritt; das Spiel selbst läuft wie jede
+                 * Partie gegen Bob.
+                 */
+                turm: null,
+
+                /*
+                 * DAS TAGESBRETT (seit v0.149.0, Runde 5): { datum, nr,
+                 * zuege } — die Aufgabe des Tages, gespielt gegen Bob aus
+                 * einer festen Stellung; `zuege` ist das N aus „Matt in N".
+                 * null bei jeder anderen Partie. Gedeutet in
+                 * js\tagesbrett.js und im Fortschritt.
+                 */
+                tagesbrett: null
             },
 
             /*
@@ -1411,6 +1453,13 @@ const SCHACH_RUNDE = {
             runde.regeln.botStufe = (typeof roh.regeln.botStufe === "string")
                 ? roh.regeln.botStufe.slice(0, 20)
                 : "";
+
+            /* Die Turm-Stufe (seit v0.147.0) — nur zwei kleine ganze Zahlen,
+               sonst keine (siehe `turm` bei den Vorgaben). */
+            runde.regeln.turm = SCHACH_RUNDE.turmAngabe(roh.regeln.turm);
+
+            /* Das Tagesbrett (seit v0.149.0). */
+            runde.regeln.tagesbrett = SCHACH_RUNDE.tagesbrettAngabe(roh.regeln.tagesbrett);
         }
 
         if (roh.vorschlag && typeof roh.vorschlag === "object") {

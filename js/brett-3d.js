@@ -252,9 +252,14 @@ function einstellungenLaden() {
     /* Ohne Admin-Freigabe gilt die Vorgabe — auch wenn auf diesem Gerät
        noch ein älteres eigenes Aussehen gespeichert ist (seit v0.129.0).
        Seit v0.145.0 zählt die Werkstatt mit (`aussehenFrei`), wie im Tab
-       „Sammlung". */
-    if (!aussehenFrei()) gespeichert = {};
-    const einst = Object.assign({}, VORGABE, gespeichert);
+       „Sammlung". Brett-Thema und Figuren gelten seit v0.147.0 JE STÜCK,
+       sobald ihr Ort im Turm erreicht ist (js\freischaltung.js). */
+    const einst = Object.assign({}, VORGABE, aussehenFrei() ? gespeichert : {});
+    for (const schluessel of ["thema", "figuren"]) {
+        if (typeof gespeichert[schluessel] === "string" && stueckFrei(schluessel, gespeichert[schluessel])) {
+            einst[schluessel] = gespeichert[schluessel];
+        }
+    }
     /* 2D oder 3D wählt seit v0.144.0 jeder selbst (Tab „Anpassen") — die
        Wahl gilt also auch ohne Admin-Freigabe, aber nur, solange 3D frei
        ist. Die Antwort gibt allein js\freischaltung.js. */
@@ -2918,6 +2923,15 @@ function aussehenFrei() {
         || (typeof FREISCHALTUNG !== "undefined" && FREISCHALTUNG.werkstatt());
 }
 
+/* Ein einzelnes Thema oder ein Figuren-Stil frei? (seit v0.147.0) Die
+   Antwort gibt js\freischaltung.js — der Turm schaltet sie je Ort frei. */
+function stueckFrei(schluessel, wert) {
+    if (typeof FREISCHALTUNG !== "undefined" && typeof FREISCHALTUNG.brettStueckFrei === "function") {
+        return FREISCHALTUNG.brettStueckFrei(schluessel, wert);
+    }
+    return aussehenFrei() || wert === VORGABE[schluessel];
+}
+
 /* Was gerade gilt — auch vor dem ersten Aufbau (dann aus dem Speicher). */
 function aussehenLesen() {
     const einst = Z.einst || einstellungenLaden();
@@ -2932,7 +2946,7 @@ function aussehenLesen() {
  */
 function aussehenWaehlen(schluessel, wert) {
     const liste = schluessel === "thema" ? THEMEN : schluessel === "figuren" ? FIGUR_STILE : null;
-    if (!liste || !liste[wert] || !aussehenFrei()) return false;
+    if (!liste || !liste[wert] || !stueckFrei(schluessel, wert)) return false;
     if (!Z.einst) {
         /* Noch nicht aufgebaut: `Z.einst` bleibt leer (daran erkennen
            andere Stellen „noch nicht da"), nur der Speicher bekommt es. */

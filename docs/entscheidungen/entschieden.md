@@ -1,5 +1,179 @@
 # Blunderluck - Entscheidungen / Entschieden - und warum
 
+## Wertung repariert, Tages-XP nach Schwierigkeit, Rahmen ab 10 (27.09.2026, v0.151.0)
+
+Auftrag: `Design\3D-Schrift\docs\AUFTRAEGE-RUNDE-6.md`, D0 Nachtrag
+(„erst reparieren, dann BEIDE zusammen ausliefern"). Die Schwellen-Tabelle
+im Eintrag v0.149.1 darunter ist damit ÜBERHOLT.
+
+- **Worker statt Hauptstrang:** `js\wertung-rechner.js` lädt per
+  `importScripts` dieselben Dateien wie die Seite und ruft
+  `WERTUNG.zugWerten`. Ohne Worker (Node, `file://`, Ladefehler) rechnet
+  `zugMerkenImHintergrund` auf dem Hauptstrang. Weil das Ergebnis jetzt
+  später kommt, zählt der Abschluss die Figuren erst, wenn
+  `WERTUNG.rechnetNoch(partie)` falsch ist; `WERTUNG.beiFertig` zählt dann
+  nach und zeichnet neu. Im Browser gemessen: Hauptstrang 1 ms, Ergebnis
+  nach ~1,5 s (mit Worker-Start, unter Last).
+- **Formel:** Verlust = bester − gespielter Wert in Hundertstel-Bauern
+  (beide auf ±1500 begrenzt), Genauigkeit 100·e^(−Verlust/80). Die
+  Lichess-Kurve über Gewinnchancen wurde verworfen: Sie wird nahe 0/100 %
+  flach, wer klar verliert, verliert mit jedem Zug „nichts".
+- **Keine echte Wahl = nicht werten:** Liegen bester und gespielter Wert
+  beide jenseits ±1500 auf derselben Seite (entschieden), zählt der Zug
+  nicht — ausser für die Seite am Zug steht ein Matt auf dem Brett.
+  An rohen Verlusten gemessen: dieser eine Schritt senkte Zufallszüge von
+  71 auf 34 %. Maßstab 60/80/100/150 verglichen, 80 trennt am klarsten.
+- **Schneller:** erst der gespielte Zug, dann die anderen nur gegen
+  „besser als der gespielte?" (Alpha = gespielt). Dauer je Zug am
+  Bürorechner (Node): **Mittel 464 ms, höchstens 1,9 s** (vorher 1,3 s /
+  2,7 s) — im Worker, also ohne Stillstand.
+- **Gemessen** (4 Partien je Paarung, reine Schachpartien bis 90
+  Halbzüge, Genauigkeit je Partie: Mittel, Spanne):
+
+  | Spieler \ Bob | leicht | mittel | schwer | meister |
+  |---|---|---|---|---|
+  | zufällig | 26 (0–38) | 39 (24–63) | 40 (34–52) | 26 (15–37) |
+  | leicht | 63 (48–80) | 39 (11–57) | 29 (1–49) | 62 (44–74) |
+  | mittel | 92 (83–100) | 79 (69–84) | 77 (72–85) | 72 (49–87) |
+  | schwer | 78 (63–88) | 81 (77–89) | 63 (52–75) | 71 (62–82) |
+  | meister | 84 (78–98) | 85 (73–96) | 92 (81–98) | 88 (85–93) |
+
+  Zufall und leicht liegen klar unter mittel/schwer/Meister, Meister klar
+  oben. **Mittel und schwer trennt die Wertung NICHT:** Sie rechnet selbst
+  nur zwei Züge tief wie Bob „mittel"; was „schwer" tiefer sieht, kann sie
+  nicht belohnen.
+- **Schwellen neu: 60/80 · 63/82 · 66/84 · 69/86 · 72/88 · 75/90**
+  (Springer/König, Werkbank … Meisterliga). Springer = ordentlich gespielt
+  (über Zufall/leicht), König = nahe Meister-Niveau.
+- **Tages-XP nach Schwierigkeit** (in Typoluck gleich): Grund 15/20/30 für
+  Matt in 1/2/3 (`FORTSCHRITT.TAGES_GRUND`, `TAGESBRETT.schwierigkeit`),
+  ×1,5 nur auf den Grund, +10 je Figur, Serie wie bisher. Die Karte zeigt
+  1–3 Punkte.
+- **Rahmen:** EINE Regel mit Typoluck 0.14.0 — Silber 10, Gold 15, Platin
+  20, ab 25 alle 5 Level „Glanz". Kupfer ab 5 entfällt. Ein Test prüft
+  Level 1–60: Rahmen genau bei 10, 15, 20 …
+- **Ans Konto nur, was §11b erlaubt:** `FORTSCHRITT.fuerKonto` filtert
+  beide Zweige (`umzug`, flache 0.10.0-Felder, fremde Spiele fallen weg,
+  Zahlen begrenzt). Abgeglichen mit dem Zweig-Kopf von Typolucks
+  `js\fortschritt.js` (gelesen, nicht geändert).
+
+## Tagesbrett-Aufgaben und Turm-Schwellen gemessen (27.09.2026, v0.149.1)
+
+**Die 40 Aufgaben in `TAGESBRETT.AUFGABEN`** (10× Matt in 1, 18× Matt in 2,
+12× Matt in 3) stammen aus Partien Bob gegen Bob (Stufen leicht/mittel/
+schwer gemischt, die ersten 4 Halbzüge zufällig). Geprüft wurden die
+Stellungen 1, 3 und 5 Halbzüge vor einem Matt mit einem VOLLSTÄNDIGEN
+Löser (alle Züge, alle Antworten, kein Budget; Rochade und en passant
+gelöscht wie im Spiel): Matt in genau N, kein kürzeres; bei N = 2 und 3
+genau EIN erster Zug (Feldpaar), der es erzwingt; keine Umwandlung als
+Lösung; höchstens zwei Damen je Seite. Laufzeit rund 25 Minuten. Die
+Reihenfolge mischt die Längen (2, 1, 3, 2, 2, 1, 3, 2 …). Das erste
+Verfahren (alle Stellungen jeder Partie, teure Prüfung nur bei höchstens
+16 Zügen) fand in 40 Partien kein einziges Matt in 2 — verworfen.
+
+**Die Schwellen der Orte** (Genauigkeit für Springer/König): Der Entwurf
+nannte 60/75 … 78/90. Gemessen mit `WERTUNG.zugWerten`, 6 Partien je
+Paarung, reine Schachpartien bis 100 Halbzüge (Mittel je Partie, Spanne):
+
+| Spieler \ Bob | leicht | mittel | schwer | meister |
+|---|---|---|---|---|
+| zufällig | 88 (81–91) | 89 (71–98) | 85 (71–96) | 82 (59–98) |
+| leicht | 88 (79–98) | 91 (77–99) | 87 (83–92) | 90 (75–99) |
+| mittel | 98 (95–100) | 98 (95–100) | 94 (90–97) | 96 (93–99) |
+| schwer | 92 (85–96) | 94 (89–100) | 96 (93–99) | 95 (90–100) |
+| meister | 97 (94–100) | 98 (96–100) | 97 (91–100) | 98 (95–100) |
+
+Schon zufälliges Ziehen liegt über allen Entwurfs-Schwellen — jeder Sieg
+hätte den König gebracht. Die Rechnung (Mittel der Zug-Genauigkeiten,
+Lichess-Formel) drängt die Werte nach oben, weil viele ruhige Züge nichts
+verlieren. **Neu: 88/93 · 89/94 · 90/95 · 91/96 · 92/97 · 93/98.** Grund:
+Unter 88 liegen Zufall und schwache Spieler; Springer verlangt „ordentlich",
+König verlangt Bob-Niveau, oben fast fehlerfrei. Menschen sind nicht
+gemessen — nach den ersten echten Turm-Partien nachsehen.
+
+**Befund Rechenzeit (offen, an den Nutzer):** `zugWerten` dauert am
+Bürorechner im Mittel 1,3 s, höchstens 2,7 s je Zug (ohne Last gemessen;
+Budget 1,5 Mio. je Suche, zwei Suchen je Zug) — und läuft im
+Hauptstrang nach dem Senden. Am Handy steht die Seite damit nach jedem
+eigenen Turm-Zug einige Sekunden. Vorschlag: Budget deutlich senken oder
+in einen Worker; das ändert die Werte, danach die Schwellen neu messen.
+
+## Runde 6 Teil A: gemeinsamer Datenvertrag mit Typoluck (27.09.2026, v0.150.0)
+
+Auftrag: `Design\3D-Schrift\docs\AUFTRAEGE-RUNDE-6.md`, Teil A (dort
+entschieden: Zweig-Modell, Schlüssel `upcrew.fortschritt`). Beim Bau
+entschieden:
+
+- **Schlüssel je Person = Spieler-`id` des eigenen Konto-Eintrags, sonst
+  „gast".** Beide Spiele lesen denselben Konto-Eintrag, die `id` ist also
+  gleich; die uid wäre es auch, steht aber nicht in `ICH`. Gäste beider
+  Spiele teilen sich „gast" — nur so gibt es ×1,5 auch ohne Konto.
+- **Umzug beim ersten SCHREIBEN, nicht beim Lesen.** Der Altstand
+  `blunderluck.fortschritt` wird beim Lesen eingerechnet und erst beim
+  ersten Speichern in den Eintrag der dann angemeldeten Person übernommen
+  (danach Schlüssel weg). Sonst landete er bei „gast", wenn die Anmeldung
+  beim ersten Lesen noch nicht fertig war.
+- **Frisch lesen, nur den eigenen Zweig ersetzen.** Beim Schreiben wird der
+  gemeinsame Schlüssel neu gelesen; oben im Eintrag gewinnt der gelesene
+  Stand (Typolucks flache 0.10.0-Felder bleiben), in `spiele` je Zweig der
+  neuere `stand`. Andere Personen bleiben unberührt.
+- **Ans Konto erst mit Regel** (`AM_KONTO = false`, Vertrag: „bis dahin
+  Gerät-only"). Grund: Kommt die Regel mit `$anderes: false`, lehnt die
+  Datenbank bei einem Formfehler den GANZEN Konto-Eintrag ab (Freunde,
+  Abzeichen). Regel §11b und Schalter gehen deshalb zusammen. Ans Konto
+  gehen dann nur `version` und `spiele`, nie die flachen Gerätefelder.
+- **Kein Lesen von Typolucks flachem 0.10.0-Stand** (kein Rückfall für
+  `heute.wort`): Typoluck zieht mit 0.11.0 selbst um; ein Rückfall hier wäre
+  Code auf Vorrat, der nach einer Version tot ist.
+
+## Runde 5 gebaut: Level, Turm, Wertung, Heute (27.09.2026, v0.146.0–v0.149.0)
+
+Auftrag: `Design\3D-Schrift\docs\AUFTRAEGE-RUNDE-5.md`; Regeln und Zahlen:
+`Apps\UPCrew\docs\FORTSCHRITT.md` („GÜLTIGER STAND"); die sechs Antworten
+stehen im Eintrag darunter. Beim Bau entschieden:
+
+- **Vier Versionen statt einer** (Level, Turm, Wertung, Heute) — jede für
+  sich lauffähig und getestet, damit ein Fehler in einem Teil nicht den
+  Rest aufhält.
+- **Fortschritt am Konto je Spiel ein Zweig** (`fortschritt.spiele.<app>`),
+  zusammengeführt je Zweig nach dem neueren `stand`. Eine gemeinsame Summe
+  hätten Blunderluck und Typoluck sich gegenseitig überschrieben. Level =
+  Summe aller Zweige. Gäste: nur Gerät. Datenvertrag im Kopf von
+  `js\fortschritt.js`; `Apps\UPCrew\docs\PROFIL.md` und Typoluck müssen ihn
+  übernehmen (Meldung an Design/UPCrew und Typoluck).
+- **Der Turm-Stand wird gerechnet, nicht gespeichert:** nur die Figuren je
+  Stufe liegen im Fortschritt; der erreichte Ort ergibt sich daraus (erste
+  geschlossene Tür). So können Ort und Figuren nie auseinanderlaufen.
+- **Eine Turm-Stufe ist eine gewöhnliche Partie gegen Bob** mit Einstellungen
+  aus `js\turm.js` und `regeln.turm` an der Partie — keine eigene
+  Spiel-Mechanik. Die Seite ist fest (Mensch und Bob sitzen schon beim
+  Anlegen); Turm-Runden sind privat.
+- **Die Eigenheit eines Gegners ist die Regel seiner Partie** (Schwarz,
+  viele Lootboxen, Kreuz …), nicht ein Verhalten wie im Entwurf („zieht fast
+  nur Bauern") — Bob kann das nicht, und ein Versprechen, das nicht
+  eintritt, wäre eine Falschaussage.
+- **3D-Sperre scharf** (`SPERRE_3D = true`, 3D ab Holzhalle), kein
+  Bestandsschutz (Nutzer 26.09.2026). Themen/Figuren je Stück über den Ort
+  (`FREISCHALTUNG.brettStueckFrei`).
+- **Die Wertung rechnet auf dem Gerät, vor dem Senden nur beim letzten Zug**
+  (sonst danach), mit eigener kleiner Suche (Tiefe 2 + Schlagzüge, erkennt
+  Matt), Formeln von Lichess. Gespeichert nur auf dem Gerät — kein
+  zusätzliches Schreiben je Zug in die Datenbank.
+- **Das Tagesbrett ist eine Partie aus fester Stellung gegen Bob (Meister)**
+  — derselbe Partie-Bildschirm, kein zweiter. Nach N eigenen Zügen ohne Matt
+  gibt die Partie für den Spieler auf (verfehlt). Die Stellungen stammen aus
+  Partien Bob gegen Bob, herausgesucht und geprüft von einem Löser (Matt in
+  genau N, kein kürzeres, eindeutiger erster Zug); `tests\test-heute.js`
+  rechnet sie bei jedem Lauf nach (Matt in 3 nur teilweise, sonst zu
+  langsam).
+- **Serie über alle Spiele, Schutz nur für die laufende Serie** (Vereinfachung
+  in `FORTSCHRITT.serie`). ×1,5 rechnet jedes Spiel auf seine eigene
+  Tagesaufgabe, wenn das andere heute schon fertig ist.
+- **Nicht gebaut (bewusst, für später):** Schwur-Halle über dem letzten Ort,
+  Album-Taten (Frage 5: Bestandsschutz — es gibt noch keine neuen Stücke,
+  die Taten bräuchten), Abzeichen im Profil nach FORTSCHRITT.md, Rahmen und
+  Titel als sichtbare Profil-Deko ausser am Ring.
+
 ## Runde 4: Leiste als Baustein, Tab „Sammlung" (27.09.2026, v0.145.0)
 
 Auftrag: `Design\3D-Schrift\docs\AUFTRAEGE-RUNDE-4.md`, Block Gemeinsam +

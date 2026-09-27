@@ -100,6 +100,12 @@
          Speicher und Anmeldung, die es beide brauchen. -->
     <script src="js/konto.js"></script>
     <script src="js/spieler.js"></script>
+    <!-- XP und Level über alle UPCrew-Spiele (seit v0.146.0) — die reine
+         Rechnung; spieler.js führt den Fortschritt damit zusammen. -->
+    <script src="js/fortschritt.js"></script>
+    <!-- Der Turm (seit v0.147.0): Orte, Gegner, Stufen — die reine
+         Tabelle; Fortschritt und Freischaltung fragen sie. -->
+    <script src="js/turm.js"></script>
     <script src="js/versiegelung.js"></script>
     <script src="js/ich.js"></script>
     <!-- Das Aussehen: Hell/Dunkel, Farbwelt, Schrift, Knöpfe — EIN Aussehen
@@ -129,6 +135,9 @@
     <!-- Das Aussehen wandert mit dem Konto (seit v0.144.0) — braucht
          ANMELDUNG und SPIELER vor sich. -->
     <script src="js/aussehen-konto.js"></script>
+    <!-- Wo XP und Level wohnen: Gerät und Konto (seit v0.146.0) — braucht
+         ANMELDUNG und SPIELER vor sich, wie das Aussehen. -->
+    <script src="js/fortschritt-konto.js"></script>
     <script src="js/faehigkeit-zeichen.js"></script>
     <script src="js/schach-varianten.js"></script>
     <script src="js/schach.js"></script>
@@ -144,6 +153,11 @@
          SCHACH liefert, und zieht ueber SCHACH_RUNDE — beide muessen vor
          ihm stehen. -->
     <script src="js/schach-bot.js"></script>
+    <!-- Die Wertung der Turm-Partien (seit v0.148.0) rechnet mit Bobs
+         Bausteinen und steht deshalb nach ihm. -->
+    <script src="js/wertung.js"></script>
+    <!-- Die Schach-Aufgabe des Tages (seit v0.149.0). -->
+    <script src="js/tagesbrett.js"></script>
     <!-- Die Bildanleitung rechnet mit den Regeln oben und muss deshalb nach
          ihnen stehen. -->
     <script src="js/schach-vorschau.js"></script>
@@ -162,6 +176,9 @@
          Laufzeit Bausteine von TEAM_SCHACH und stehen deshalb dahinter.
          Die Freundesliste (v0.11.0) hängt auf dem Zwischenbildschirm. -->
     <script src="js/start.js"></script>
+    <!-- Der Turm auf dem Start (seit v0.147.0) ergänzt START und muss
+         NACH start.js stehen. -->
+    <script src="js/start-turm.js"></script>
     <!-- Der Tab „Aufgaben" (seit v0.142.0). -->
     <script src="js/herausforderungen.js"></script>
     <!-- Der Tab „Sammlung" (seit v0.145.0): der gemeinsame Baustein
