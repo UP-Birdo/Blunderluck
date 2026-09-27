@@ -1523,11 +1523,6 @@ body.dialog-offen {
         animation: none;
     }
 
-    /* Der Strich über dem aktiven Tab gleitet zum neuen Tab (`tabs.js`). */
-    .tab-marker-weich {
-        transition: left 0.25s ease, width 0.25s ease;
-    }
-
     /*
      * Der Status-Punkt im Kopf atmet, solange die App lädt oder schreibt —
      * so sieht man auf einen Blick, dass gerade etwas unterwegs ist. Der
@@ -1636,7 +1631,6 @@ body.dialog-offen {
     /* UPCrew-Knöpfe sinken seit v0.144.0 nach ihrer Familie ein
        (css\upcrew-knoepfe.css) — hier nur noch alle übrigen. */
     .knopf:not(.up-kn),
-    .tab-knopf,
     .info-knopf,
     .dialog-listeneintrag {
         transition: background-color 0.15s ease, color 0.15s ease,

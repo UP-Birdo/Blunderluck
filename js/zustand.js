@@ -67,13 +67,18 @@ const ZUSTAND = {
         /* Die Tab-Leiste (seit v0.142.0, Pfade wie Typoluck
            BAUSTEINE.ZEICHEN; „aufgaben" ist die gemeinsame Absprache der
            Runde 2). Rangliste = der Pokal oben. */
-        aufgaben: "M4 20 L10 14 L14 17 L20 6 M15 6 H20 V11",
+        aufgaben: "M3 18 L9 12 L13 16 L21 8 M15 8 H21 V14",
         blitz: "M13.5 3 L5.5 13.5 H11.5 L10.5 21 L18.5 10.5 H12.5 Z",
         start: "M3 11 L12 4 L21 11 M5.5 9.5 V20 H10 V14.5 H14 V20 H18.5 V9.5",
         uhr: "M12 3.5 A8.5 8.5 0 1 0 12 20.5 A8.5 8.5 0 1 0 12 3.5 Z M12 7.5 V12 L15 14",
         /* Anpassen: zwei Schieberegler (seit v0.144.0, gemeinsame
            Absprache Runde 3, in Typoluck gleich). */
         anpassen: "M4 7 H13 M17 7 H20 M15 5 V9 M4 17 H7 M11 17 H20 M9 15 V19",
+        /* Sammlung: vier Kästchen, und Bald: eine Uhr — beide gemeinsame
+           Absprache Runde 4 (Design\3D-Schrift\docs\AUFTRAEGE-RUNDE-4.md),
+           in Typoluck gleich. Seit v0.145.0. */
+        sammlung: "M4 4 H10 V10 H4 Z M14 4 H20 V10 H14 Z M4 14 H10 V20 H4 Z M14 14 H20 V20 H14 Z",
+        bald: "M12 7 V12 L15 14 M12 3 A9 9 0 1 0 12.01 3",
         /* Schrift: ein A (Einstellungen, Zeile „Standard-Schrift"). */
         schrift: "M5 20 L12 4 L19 20 M8 14 H16",
         /* Der Pfeil zurück in der Kopfzeile (seit v0.142.0, wie Typoluck). */

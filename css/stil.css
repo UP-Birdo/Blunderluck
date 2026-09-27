@@ -435,123 +435,52 @@ select {
 }
 
 /* ------------------------------------------------------------------ *
- * Tabs — DIE LEISTE UNTEN WIE IN TYPOLUCK (seit v0.142.0)
+ * Tabs — DIE LEISTE UNTEN IST DER GEMEINSAME BAUSTEIN (seit v0.145.0)
  *
- * UPCrew-Angleichung Runde 2: dieselbe Leiste wie Typoluck
- * (`Apps\Typoluck\css\stil.css` `.leiste`/`.knopf-leiste`, Stand vor
- * Runde 2) — fest am unteren Rand, auf JEDER Breite und JEDEM Bildschirm,
- * Höhe 60 px, Grund `--karte`, oben 1 px `--rahmen`, je Eintrag das Symbol
- * (24 px) über einem Wort (.75rem, 600), leise Schrift; der aktive Eintrag
- * in `--haupt` mit einem Strich 32 × 3 px oben; der Platzhalter mit
- * Deckkraft .4. Bis v0.141 war sie am Rechner oben, am Handy unten, mit
- * einer Pille hinter dem aktiven Tab, und verschwand in jedem Fenster.
+ * UPCrew-Angleichung Runde 4: Aussehen und Bewegung der Leiste stehen
+ * NUR in css\upcrew-leiste.css (Kopie aus Design\3D-Schrift\final, lädt
+ * nach diesem Stil, in Typoluck gleich): nur Symbole, der Name nur am
+ * aktiven Eintrag, der auf einer gehobenen Kachel in der Hauptfarbe sitzt.
+ * Die eigenen Regeln für Schriftgröße, Farbstrich oben und Knopfhöhe sind
+ * entfallen (v0.142.0 bis v0.144: Symbol über Wort, gleitender Strich).
+ *
+ * Hier steht nur, WIE die Leiste in Blunderluck sitzt — die ANORDNUNG
+ * bleibt: fest am unteren Rand, auf jeder Breite und jedem Bildschirm, auf
+ * breiten Schirmen mittig auf 820 px. Die Regeln tragen `.tab-leiste
+ * .up-leiste` (zwei Klassen), damit sie den Baustein schlagen, obwohl er
+ * später lädt.
+ *
+ * DIE HÖHE: 64 px wie im Baustein PLUS der Streifen unter dem iPhone-Balken.
+ * Der Baustein rechnet den Streifen in seine 64 px hinein
+ * (`height: 64px` mit `padding-bottom: env(…)`) — am iPhone blieben so nur
+ * rund 30 px für die Symbole. Gemeldet an die Design-Sitzung (STATUS.md).
  * ------------------------------------------------------------------ */
 
 :root {
-    --leiste-hoehe: 60px;
+    --leiste-hoehe: 64px;
+    /* So weit ragt die gehobene Kachel des aktiven Eintrags samt Schatten
+       über die Leiste (Baustein: 52 px Kachel, um 78 % nach oben
+       verschoben — rund 9 px, mit Schatten rund 12). Was auf der Leiste
+       klebt (Vorraum „Bereit", „Spielen" in der Auswahl), hält unten so
+       viel Innenabstand mehr, damit die Kachel keinen Knopf verdeckt. */
+    --leiste-kachel: 12px;
 }
 
-.tab-leiste {
+.tab-leiste.up-leiste {
     position: fixed;
     left: 0;
     right: 0;
     bottom: 0;
     z-index: var(--ebene-schwebend);
-    display: flex;
-    justify-content: center;
+    height: calc(var(--leiste-hoehe) + env(safe-area-inset-bottom, 0px));
     padding: 0 max(8px, calc((100% - 820px) / 2)) env(safe-area-inset-bottom, 0px);
-    background: var(--karte);
-    border-top: 1px solid var(--rahmen);
 }
 
-.tab-knopf {
-    appearance: none;
-    flex: 1 1 0;
-    min-width: 0;
-    min-height: var(--leiste-hoehe);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 2px;
-    /*
-     * DIE WÖRTER PASSEN AUCH IN DER BREITESTEN SCHRIFT (seit v0.144.0):
-     * Gemessen in Edge bei 390 und 360 px mit allen sechs Crew-Schriften —
-     * „Fähigkeiten" braucht bei 12 px bis zu 74 px, Platz waren 65 (schon
-     * mit der alten Schrift abgeschnitten). Deshalb nur 1 px Seitenrand und
-     * eine Schrift, die unter 420 px Breite mitschrumpft (höchstens 12 px,
-     * bei 360 px rund 10 px).
-     */
-    padding: 6px 1px;
-    border: none;
-    background: none;
-    font: inherit;
-    font-size: min(0.75rem, 2.85vw);
-    font-weight: 600;
-    line-height: 1.2;
-    color: var(--schrift-leise);
-    cursor: pointer;
-    position: relative;
-}
-
-.tab-knopf .tab-zeichen {
-    width: 24px;
-    height: 24px;
-    flex: none;
-}
-
-.tab-knopf .tab-zeichen path {
-    stroke-width: 2;
-}
-
-.tab-wort {
-    max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.tab-knopf:hover:not(:disabled) {
-    color: var(--schrift);
-}
-
-.tab-knopf:active:not(:disabled) {
-    background: var(--karte-leise);
-}
-
-.tab-knopf-aktiv,
-.tab-knopf-aktiv:hover:not(:disabled) {
-    color: var(--haupt);
-}
-
-/* Der Platzhalter: sichtbar, aber erkennbar noch ohne Funktion. */
-.tab-knopf-platzhalter:disabled {
-    opacity: 0.4;
-    cursor: default;
-}
-
-/*
- * Die Markierung des aktiven Tabs ist seit v0.107 ein EIGENES Element
- * (`tabs.js` setzt Lage und Breite) und gleitet beim Wechsel dorthin. Seit
- * v0.142.0 ist sie ein Streifen über die Knopfbreite am oberen Rand, der
- * mittig den kurzen Strich trägt — so erkennt man den aktiven Eintrag auch
- * ohne Farbsehen (wie Typoluck `.knopf-leiste-aktiv::before`).
- */
-.tab-marker {
-    position: absolute;
-    top: 0;
-    height: 3px;
-    display: flex;
-    justify-content: center;
-    pointer-events: none;
-}
-
-.tab-marker::before {
-    content: "";
-    width: 32px;
-    height: 3px;
-    border-radius: var(--rund-voll);
-    background: var(--haupt);
+/* Die Symbole kommen aus ZUSTAND.zeichen, das jedem Pfad eine eigene
+   Strichstärke mitgibt; ohne diese Regel gälte am Pfad weiter 1,8 statt
+   der Stärke des Bausteins. */
+.tab-leiste .up-tab path {
+    stroke-width: inherit;
 }
 
 /* Der Inhalt läuft nicht unter der Leiste hindurch. */
@@ -576,7 +505,7 @@ select {
  * (`TEAM_SCHACH`, `rundeSetzen(…, true, offene.laeuft)`). Vor dem Anpfiff
  * (Vorraum) und nach dem Ende steht die Leiste.
  */
-body.partie-fest .tab-leiste {
+body.partie-fest .tab-leiste.up-leiste {
     display: none;
 }
 
@@ -730,19 +659,150 @@ body.partie-fest .tab-leiste {
 }
 
 /*
- * DER TAB „ANPASSEN" (seit v0.144.0, js\anpassen.js): Das Aussehen des
- * Inhalts steht im gemeinsamen Baustein css\upcrew-anpassen.css. Hier nur,
- * wie er in Blunderluck sitzt: über die volle Breite (der Baustein rückt
- * selbst 14 px ein), und seine klebende Knopf-Leiste unten hält Abstand zur
- * festen Tab-Leiste — der Baustein kennt sie nicht und klebt sonst
- * dahinter.
+ * DER TAB „SAMMLUNG" (seit v0.145.0, js\sammlung.js; bis v0.144 Tab
+ * „Anpassen"): Das Aussehen des Anpassen-Teils steht im gemeinsamen
+ * Baustein css\upcrew-anpassen.css. Hier nur, wie er in Blunderluck sitzt:
+ *   - über die volle Breite (der Baustein rückt selbst 14 px ein);
+ *   - OBEN BÜNDIG: Die Kopfzeile klebt, die Vorschau klebt direkt darunter
+ *     (`--upa-oben` = Höhe der Kopfzeile, setzt sammlung.js). Der übliche
+ *     Abstand unter der Kopfzeile fällt weg — sonst rollte der Inhalt
+ *     sichtbar durch die Lücke zwischen beiden;
+ *   - UNTEN BÜNDIG: Der Balken „Zurück / Übernehmen" klebt auf der festen
+ *     Leiste (der Baustein kennt sie nicht und klebte sonst dahinter), und
+ *     der Tab hat unten keinen eigenen Innenabstand, sonst stünde unter dem
+ *     Balken ein Streifen, durch den Inhalt rollt. Die gehobene Kachel der
+ *     Leiste ragt dabei in den unteren Innenrand des Balkens (12 px), nicht
+ *     auf seine Knöpfe.
  */
-.anpassen-ort {
+.sammlung-ort {
     margin: 0 calc(-1 * var(--inhalt-rand));
 }
 
-.anpassen .upa-aktion {
+.sammlung > .sammlung-kopf {
+    margin-bottom: 0;
+}
+
+.sammlung-anteil {
+    margin-left: auto;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--haupt);
+}
+
+.sammlung .upa-aktion {
     bottom: calc(var(--leiste-hoehe) + env(safe-area-inset-bottom, 0px));
+}
+
+.tab-inhalt:has(> .sammlung:not([hidden])) {
+    padding-bottom: calc(var(--leiste-hoehe) + env(safe-area-inset-bottom, 0px));
+}
+
+/* Die kleinen Bilder in den Regalen Brett, Brett-Thema und Figuren. */
+.sammlung-bild {
+    display: block;
+    width: 50px;
+    height: 40px;
+    object-fit: contain;
+}
+
+/* Die echte Start-Vorschau statt des gezeichneten 6×6 (sammlung.js
+   `_vorschau`): so gross, dass sie mit Kopf und Knöpfen in die feste
+   Höhe der Vorschau passt (280 px im Baustein). */
+.sammlung-buehne {
+    align-self: center;
+    width: 150px;
+    flex: none;
+}
+
+.sammlung-buehne .vorschau {
+    font-size: calc(150px / var(--vorschau-spalten, 8) * 0.8);
+}
+
+/* Im Kleinen frisst der Abstand von 4 px zwischen den Steinen (3D-Look,
+   css\stil-effekte.css) ein Viertel der Breite — die Steine würden schmal
+   und hoch. Angesehen am 27.09.2026 bei 390 px. */
+body.design-3d .sammlung-buehne .vorschau {
+    gap: 2px;
+}
+
+/*
+ * DIE REINE SAMMLUNG (Fähigkeiten, Brettformen): steht in der Fläche des
+ * Bausteins, darum dieselben Überschriften (`.upa-regal h2`) und derselbe
+ * Einzug von 14 px. Die Bibliothek darin ist dieselbe wie im Spiel.
+ */
+.sammel-rest {
+    padding-bottom: 12px;
+}
+
+.sammel-zahl {
+    font-weight: 600;
+    letter-spacing: 0;
+}
+
+.sammel-innen {
+    padding: 0 14px;
+}
+
+.album-gitter {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+    padding: 2px 14px 8px;
+}
+
+.stueck {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    min-width: 0;
+    padding: 10px 2px 8px;
+    font: inherit;
+    font-size: 0.66rem;
+    font-weight: 700;
+    color: var(--schrift-leise);
+    background: var(--karte);
+    border: 1px solid var(--rahmen);
+    border-radius: var(--rund-mittel);
+    cursor: pointer;
+}
+
+.stueck.da {
+    color: var(--schrift);
+}
+
+/* Zwei Zeilen statt „…": abgeschnitten sahen „Großes Brett" und „Großes
+   Kreuz" fast gleich aus (angesehen am 27.09.2026). */
+.stueck-name {
+    max-width: 100%;
+    padding: 0 3px;
+    text-align: center;
+    line-height: 1.2;
+    overflow-wrap: break-word;
+}
+
+/* Die Form einer Spielart: winziges Feldraster, 36 px an der längeren
+   Seite, das Seitenverhältnis kommt aus Spalten und Reihen. */
+.stueck-form {
+    display: grid;
+    grid-template-columns: repeat(var(--form-spalten, 8), 1fr);
+    width: 36px;
+    aspect-ratio: var(--form-spalten, 8) / var(--form-reihen, 8);
+    max-height: 36px;
+    border-radius: 3px; /* UPCrew-Ausnahme: Spielgrafik, winziges Brett */
+    overflow: hidden;
+}
+
+.stueck-form i {
+    display: block;
+}
+
+.stueck-form .form-hell {
+    background: var(--feld-hell);
+}
+
+.stueck-form .form-dunkel {
+    background: var(--feld-dunkel);
 }
 
 /* ------------------------------------------------------------------ *
@@ -2090,7 +2150,6 @@ body.partie-fest .phasen-leiste {
  */
 .wuerfel-feld:focus-visible,
 .knopf:focus-visible,
-.tab-knopf:focus-visible,
 .dialog-feld:focus {
     outline: 2px solid var(--haupt);
     outline-offset: 1px;

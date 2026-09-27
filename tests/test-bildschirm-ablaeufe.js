@@ -3445,14 +3445,22 @@ pruefe("Der Start fuehrt zum Beitreten und Spielen ist die Hauptaktion (Wunsch 1
     umgebung.TABS.gewechseltZu = "";
 });
 
-pruefe("Der Faehigkeiten-Tab zeichnet die Bibliothek ohne Zurueck (v0.9.0)", () => {
-    const FAEHIGKEITEN = umgebung.FAEHIGKEITEN;
-    if (!FAEHIGKEITEN || FAEHIGKEITEN.id !== "faehigkeiten") {
-        throw new Error("der Faehigkeiten-Baustein fehlt");
+/*
+ * SEIT v0.145.0 STEHT DIE BIBLIOTHEK IM TAB „SAMMLUNG" (Runde 4): Der Tab
+ * „Fähigkeiten" ist dort aufgegangen, als Teil „Fähigkeiten n/m" der reinen
+ * Sammlung (`SAMMLUNG._faehigkeitenBauen`). Die Prüfungen unten gelten
+ * unverändert für diesen Teil — er ist derselbe Inhalt.
+ */
+function sammlungFaehigkeiten() {
+    const SAMMLUNG = umgebung.SAMMLUNG;
+    if (!SAMMLUNG || SAMMLUNG.id !== "sammlung") {
+        throw new Error("der Sammlung-Baustein fehlt");
     }
+    return { wurzelEl: SAMMLUNG._faehigkeitenBauen() };
+}
 
-    FAEHIGKEITEN.aufbauen(neuesElement("div"));
-    FAEHIGKEITEN.beimOeffnen();
+pruefe("Die Sammlung zeichnet die Faehigkeiten-Bibliothek ohne Zurueck (v0.9.0, seit v0.145.0 in der Sammlung)", () => {
+    const FAEHIGKEITEN = sammlungFaehigkeiten();
 
     const einsammeln = (element, passt, treffer) => {
         for (const kind of element.kinder || []) {
@@ -3503,10 +3511,7 @@ pruefe("Der Faehigkeiten-Tab zeichnet die Bibliothek ohne Zurueck (v0.9.0)", () 
 });
 
 pruefe("Das Icon-Raster zeigt jede Faehigkeit mit Stufenrahmen (v0.12.0)", () => {
-    const FAEHIGKEITEN = umgebung.FAEHIGKEITEN;
-    FAEHIGKEITEN.gezeichnet = false;
-    FAEHIGKEITEN.aufbauen(neuesElement("div"));
-    FAEHIGKEITEN.beimOeffnen();
+    const FAEHIGKEITEN = sammlungFaehigkeiten();
 
     const einsammeln = (element, passt, treffer) => {
         for (const kind of element.kinder || []) {
@@ -4699,28 +4704,26 @@ pruefe("Der Nudelholz-Knopf nennt den Rand aus Sicht des Spielers (v0.73.0)", ()
 });
 
 /* ------------------------------------------------------------------ *
- * DIE PILLE DER TAB-LEISTE BEIM DREHEN (v0.74.0)
+ * DIE LEISTE UNTEN IST DER GEMEINSAME BAUSTEIN (v0.145.0, Runde 4)
  *
- * Nutzer-Meldung 26.08.2026: „Wenn man den Bildschirm dreht, schiebt sich die
- * blaue Pille aus dem Hauptmenü hin und her."
+ * Nutzer 27.09.2026: „keine Schrift bis auf den Tab, wo man derzeit ist,
+ * und das Symbol nach vorne gehoben". Das Aussehen steht in
+ * css\upcrew-leiste.css; `js\tabs.js` muss nur genau den Aufbau liefern,
+ * den der Baustein erwartet: je Eintrag `button.up-tab` mit `aria-label`
+ * und dem Namen, der aktive Eintrag mit `aria-current="page"`, der
+ * Platzhalter gesperrt und `up-tab-still`.
+ *
+ * Bis v0.144 stand hier die Prüfung der gleitenden Pille beim Drehen
+ * (v0.74.0) — die Pille gibt es nicht mehr, die Kachel des Bausteins
+ * bewegt sich selbst und misst nichts.
  *
  * Geprüft wird das ECHTE `js\tabs.js` in einem eigenen Kontext — im
  * Haupt-Kontext ist TABS durch einen Stellvertreter ersetzt.
- *
- * Der Kern: Gemessen werden darf ERST, wenn der Browser das neue Layout
- * gerechnet hat. Der Test hält deshalb fest, dass beim Ereignis noch NICHTS
- * gemessen wird und die Messung im angemeldeten Bild nachkommt — und dass
- * mehrere Ereignisse nur EIN Bild anmelden.
  * ------------------------------------------------------------------ */
 
-pruefe("Die Tab-Pille misst erst im naechsten Bild und nur einmal (v0.74.0)", () => {
-    const bilder = [];
+pruefe("Die Leiste baut den Baustein-Aufbau, nur der aktive Eintrag traegt aria-current (v0.145.0)", () => {
     const tabUmgebung = {
         console: console,
-        requestAnimationFrame(funktion) {
-            bilder.push(funktion);
-            return bilder.length;
-        },
         document: {
             createElement: neuesElement,
             body: neuesElement("body")
@@ -4738,59 +4741,91 @@ pruefe("Die Tab-Pille misst erst im naechsten Bild und nur einmal (v0.74.0)", ()
 
     const TABS_ECHT = tabUmgebung.TABS;
 
-    /* Eine Leiste mit einem aktiven Knopf, dessen Masse sich „beim Drehen"
-       aendern — mehr braucht `_markerSetzen` nicht. */
-    const knopf = neuesElement("button");
-    knopf.className = "tab-knopf tab-knopf-aktiv";
-    knopf.offsetLeft = 10;
-    knopf.offsetTop = 0;
-    knopf.offsetWidth = 100;
-    knopf.offsetHeight = 40;
+    /* Drei Einträge wie in der App (Sammlung, Start, der stille Platz 5)
+       und ein Bildschirm ohne Leisten-Knopf, der beim Start mitleuchtet. */
+    const geoeffnet = [];
+    const tab = (id, titel, weiteres) => Object.assign({
+        id: id,
+        titel: titel,
+        aufbauen() { },
+        beimOeffnen() { geoeffnet.push(id); }
+    }, weiteres || {});
+    TABS_ECHT.registrieren(tab("sammlung", "Sammlung"));
+    TABS_ECHT.registrieren(tab("start", "Start"));
+    TABS_ECHT.registrieren(tab("bald", "Bald", { platzhalter: true }));
+    TABS_ECHT.registrieren(tab("team-schach", "Team Schach", { inLeiste: false }));
 
     const leiste = neuesElement("nav");
-    leiste.querySelector = (wahl) =>
-        (wahl === ".tab-knopf-aktiv" ? knopf : null);
+    TABS_ECHT.starten(leiste, neuesElement("main"), "start");
 
-    TABS_ECHT.leisteEl = leiste;
-    TABS_ECHT.markerEl = neuesElement("span");
-    TABS_ECHT._markerFrame = 0;
-
-    /* Drei Ereignisse kurz hintereinander — wie beim Drehen. */
-    TABS_ECHT._markerNachmessen();
-    TABS_ECHT._markerNachmessen();
-    TABS_ECHT._markerNachmessen();
-
-    if (bilder.length !== 1) {
-        throw new Error("drei Ereignisse melden " + bilder.length
-            + " Bilder an statt genau eines");
+    const eintraege = leiste.querySelectorAll(".up-tab");
+    if (eintraege.length !== 3) {
+        throw new Error("erwartet drei Eintraege (ohne Team Schach), sind " + eintraege.length);
     }
-    if (TABS_ECHT.markerEl.style.left !== undefined
-            && TABS_ECHT.markerEl.style.left !== "") {
-        throw new Error("die Pille wurde schon beim Ereignis gesetzt statt "
-            + "erst im Bild — genau das misst die alte Lage");
+    const [sammlung, start, bald] = eintraege;
+    for (const [eintrag, name] of [[sammlung, "Sammlung"], [start, "Start"], [bald, "Bald"]]) {
+        if (eintrag.attribute["aria-label"] !== name) {
+            throw new Error("Eintrag ohne aria-label " + name + " (Vorleseprogramme)");
+        }
+        const wort = eintrag.kinder.find((kind) => kind.tagName === "span");
+        if (!wort || wort.textContent !== name) {
+            throw new Error("Eintrag " + name + " traegt seinen Namen nicht als span");
+        }
     }
 
-    /* Jetzt rechnet der Browser: neue Masse, dann das Bild. */
-    knopf.offsetLeft = 250;
-    knopf.offsetWidth = 60;
-    bilder[0]();
-
-    if (TABS_ECHT.markerEl.style.left !== "250px"
-            || TABS_ECHT.markerEl.style.width !== "60px") {
-        throw new Error("die Pille uebernimmt die neuen Masse nicht: left="
-            + TABS_ECHT.markerEl.style.left + " width="
-            + TABS_ECHT.markerEl.style.width);
+    const aktiv = () => eintraege.filter((eintrag) => eintrag.attribute["aria-current"] === "page");
+    if (aktiv().length !== 1 || aktiv()[0] !== start) {
+        throw new Error("nach dem Start muss genau Start aria-current tragen");
     }
 
-    /* Ohne Gleiten — sonst wandert sie beim Drehen sichtbar hinterher. */
-    if (String(TABS_ECHT.markerEl.className || "").indexOf("tab-marker-weich") !== -1) {
-        throw new Error("die Pille gleitet beim Drehen, statt zu springen");
+    /* Der stille Platz: gesperrt, erkennbar, ohne Tab-Kennung. */
+    if (bald.disabled !== true || !bald.classList.contains("up-tab-still")
+            || bald.dataset.tabId !== undefined) {
+        throw new Error("der Platzhalter Bald ist antippbar oder nicht still");
     }
 
-    /* Nach dem Bild ist wieder eines anmeldbar. */
-    TABS_ECHT._markerNachmessen();
-    if (bilder.length !== 2) {
-        throw new Error("nach dem Bild laesst sich kein neues anmelden");
+    /* Tippen auf Sammlung: das Merkmal wandert, beim Start ist es WEG
+       (nicht „false"). */
+    sammlung.ausloesen("click");
+    if (aktiv().length !== 1 || aktiv()[0] !== sammlung
+            || "aria-current" in start.attribute) {
+        throw new Error("nach dem Wechsel steht aria-current nicht allein an der Sammlung");
+    }
+
+    /* Ein Bildschirm ohne Leisten-Knopf markiert den Start. */
+    TABS_ECHT.wechseln("team-schach");
+    if (aktiv().length !== 1 || aktiv()[0] !== start) {
+        throw new Error("Team Schach markiert nicht den Start in der Leiste");
+    }
+});
+
+pruefe("Alte Tab-Kennungen fuehren in die Sammlung (v0.145.0)", () => {
+    const tabUmgebung = {
+        console: console,
+        document: { createElement: neuesElement, body: neuesElement("body") },
+        window: { addEventListener() { } }
+    };
+    tabUmgebung.globalThis = tabUmgebung;
+    vm.createContext(tabUmgebung);
+    vm.runInContext(
+        dateisystem.readFileSync(pfad.join(jsOrdner, "tabs.js"), "utf8")
+            + "\nglobalThis.TABS = TABS;",
+        tabUmgebung,
+        { filename: "tabs.js" }
+    );
+    const TABS_ECHT = tabUmgebung.TABS;
+    const geoeffnet = [];
+    for (const id of ["sammlung", "start"]) {
+        TABS_ECHT.registrieren({ id: id, titel: id, aufbauen() { }, beimOeffnen() { geoeffnet.push(id); } });
+    }
+    TABS_ECHT.starten(neuesElement("nav"), neuesElement("main"), "start");
+
+    for (const alt of ["faehigkeiten", "anpassen"]) {
+        TABS_ECHT.wechseln("start");
+        TABS_ECHT.wechseln(alt);
+        if (TABS_ECHT.aktiveId !== "sammlung") {
+            throw new Error("die alte Kennung " + alt + " fuehrt nach " + TABS_ECHT.aktiveId);
+        }
     }
 });
 
@@ -5062,7 +5097,6 @@ pruefe("Der Melde-Weg traegt die technische Meldung schon in sich (v0.105.0)", (
  * ------------------------------------------------------------------ */
 
 pruefe("Der Umschalter zeigt entweder Faehigkeiten oder Ungluecke (v0.107.0)", () => {
-    const FAEHIGKEITEN = umgebung.FAEHIGKEITEN;
     const TEAM_SCHACH = umgebung.TEAM_SCHACH;
 
     /* Der Zustand ueberlebt eine Sitzung — fuer diesen Test wird er auf die
@@ -5070,11 +5104,7 @@ pruefe("Der Umschalter zeigt entweder Faehigkeiten oder Ungluecke (v0.107.0)", (
        Pruefungen laeuft. */
     TEAM_SCHACH.infoKartenArt = "faehigkeit";
 
-    FAEHIGKEITEN.gezeichnet = false;
-    FAEHIGKEITEN.aufbauen(neuesElement("div"));
-    FAEHIGKEITEN.beimOeffnen();
-
-    const wurzel = FAEHIGKEITEN.wurzelEl;
+    const wurzel = sammlungFaehigkeiten().wurzelEl;
     const knoepfe = wurzel.querySelectorAll(".karten-knopf");
 
     if (knoepfe.length !== 2) {

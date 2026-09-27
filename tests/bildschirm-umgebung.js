@@ -199,6 +199,10 @@ function neuesElement(tag) {
 
         setAttribute(name, wert) { this.attribute[name] = wert; },
 
+        /* Seit v0.145.0: Die Leiste nimmt `aria-current` vom Eintrag, der
+           nicht mehr aktiv ist (js\tabs.js). */
+        removeAttribute(name) { delete this.attribute[name]; },
+
         /* Seit v0.23.0: Die Lootbox setzt ihr Bild zusaetzlich ueber die alte
            xlink-Schreibweise. Der Namensraum spielt hier keine Rolle —
            gemerkt wird unter demselben Namen wie bei setAttribute. */
@@ -485,7 +489,7 @@ umgebung.TABS = {
  */
 const bausteinNamen = ["KONFIG", "SPIELER", "ANMELDUNG", "SCHACH_VARIANTEN", "SCHACH", "SCHACH_RUNDE",
     "SCHACH_TAFEL", "SCHACH_SPEICHER", "SCHACH_BOT", "SCHACH_VORSCHAU", "SCHACH_GRUNDLAGEN", "TEAM_SCHACH",
-    "RANGLISTE", "START", "FAEHIGKEITEN", "FREUNDE", "EINSTELLUNGEN",
+    "RANGLISTE", "START", "SAMMLUNG", "FREUNDE", "EINSTELLUNGEN",
     "VERWALTUNGS_BILDSCHIRM",
     "FAEHIGKEIT_ZEICHEN",
     "SpeicherGemeinsam",
@@ -509,7 +513,10 @@ const dateien = ["konfig.js", "fuehlen.js", "zustand.js",
     "team-schach.js",
     "team-schach-uebersicht.js", "team-schach-brett.js", "team-schach-auswertung.js",
     "team-schach-grundlagen.js",
-    "rangliste.js", "start.js", "faehigkeiten.js", "freunde.js",
+    /* sammlung.js seit v0.145.0 statt faehigkeiten.js — geprüft wird dort
+       die reine Sammlung (Fähigkeiten, Brettformen); der gemeinsame
+       Baustein „Anpassen" läuft hier nicht mit. */
+    "rangliste.js", "start.js", "sammlung.js", "freunde.js",
     "einstellungen.js",
     /* Die Spieler-Verwaltung als eigener Bildschirm mit Tabelle. */
     "verwaltungs-bildschirm.js",

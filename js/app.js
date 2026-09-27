@@ -454,11 +454,12 @@ const APP = {
         /*
          * ---- Tabs ----
          * Die Reihenfolge der Registrierung ist die Reihenfolge in der
-         * Leiste — seit v0.142.0 fünf Plätze wie in der UPCrew-Absprache:
-         * Aufgaben / Fähigkeiten / Start / Rangliste / Anpassen (bis v0.143
-         * stand ganz rechts der Platzhalter „Bald"), der Start in der Mitte
-         * und als Erstes offen (v0.9.0 bis v0.141: Fähigkeiten / Start /
-         * Rangliste). Team Schach und die
+         * Leiste — fünf Plätze wie in der UPCrew-Absprache, seit v0.145.0
+         * (Runde 4) in beiden Spielen: Aufgaben / Sammlung / Start /
+         * Rangliste / Bald (Platz 5 still). Der Start in der Mitte und als
+         * Erstes offen. Davor: v0.144 Aufgaben / Fähigkeiten / Start /
+         * Rangliste / Anpassen, v0.9.0 bis v0.141 Fähigkeiten / Start /
+         * Rangliste. Team Schach und die
          * Einstellungen sind registriert, stehen aber NICHT in der Leiste
          * (`inLeiste: false`) — sie werden über den Startbildschirm
          * betreten (Spielen-Knopf bzw. Zahnrad). Die Anmeldung
@@ -466,10 +467,10 @@ const APP = {
          * (seit v0.8.0).
          */
         TABS.registrieren(HERAUSFORDERUNGEN);
-        TABS.registrieren(FAEHIGKEITEN);
+        TABS.registrieren(SAMMLUNG);
         TABS.registrieren(START);
         TABS.registrieren(RANGLISTE);
-        TABS.registrieren(ANPASSEN);
+        TABS.registrieren(BALD);
         TABS.registrieren(TEAM_SCHACH);
         TABS.registrieren(EINSTELLUNGEN);
         /* Die Spieler-Verwaltung als eigener Bildschirm (Nutzer-Ansage

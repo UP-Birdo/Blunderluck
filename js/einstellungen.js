@@ -140,12 +140,13 @@ const EINSTELLUNGEN = {
                 }, "Standard-Schrift")));
         }
 
-        /* Der Weg zum Tab „Anpassen" (seit v0.144.0) — Farbwelt, Schrift,
-           Knöpfe und Brett stehen dort, nicht hier. */
-        if (typeof ANPASSEN !== "undefined") {
+        /* Der Weg zum Anpassen (seit v0.144.0) — Farbwelt, Schrift, Knöpfe
+           und Brett stehen dort, nicht hier. Seit v0.145.0 im Tab
+           „Sammlung" (Runde 4). */
+        if (typeof SAMMLUNG !== "undefined") {
             karte.appendChild(EINSTELLUNGEN._zeileBauen("anpassen", "Anpassen",
                 EINSTELLUNGEN._knopf("Öffnen", "knopf-still knopf-klein",
-                    () => TABS.wechseln(ANPASSEN.id))));
+                    () => TABS.wechseln(SAMMLUNG.id))));
         }
 
         /* Vibration (seit v0.140.0, UPCrew-Standard Abschnitt 5): ab Werk

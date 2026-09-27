@@ -177,7 +177,9 @@ for (const name of stilNamen) {
  * dort etwas Echtes, steht es in STATUS.md unter „Wartet auf den Nutzer"
  * als Meldung an die Design-Sitzung.
  */
-const UPCREW_BAUSTEINE_CSS = ["upcrew-intro.css", "upcrew-knoepfe.css", "upcrew-anpassen.css"];
+const UPCREW_BAUSTEINE_CSS = ["upcrew-intro.css", "upcrew-knoepfe.css", "upcrew-anpassen.css",
+    /* seit v0.145.0 (Runde 4): die Leiste unten */
+    "upcrew-leiste.css"];
 
 pruefe("Ordner css und index.html nennen dieselben Stildateien", () => {
     const vorhanden = dateisystem.readdirSync(pfad.join(projekt, "css"))
@@ -745,8 +747,9 @@ pruefe("sw.js legt genau die Dateien in den Zwischenspeicher, die es gibt", () =
             }
         }
     };
-    /* `schrift` seit v0.144.0: die zwölf Crew-Schriften und ihre Lizenz. */
-    for (const ordner of ["icons", "css", "js", "img/figuren", "img/lootboxen", "modelle", "schrift"]) {
+    /* `schrift` seit v0.144.0: die zwölf Crew-Schriften und ihre Lizenz.
+       `img/sammlung` seit v0.145.0: die Bilder der Regale im Tab Sammlung. */
+    for (const ordner of ["icons", "css", "js", "img/figuren", "img/lootboxen", "img/sammlung", "modelle", "schrift"]) {
         sammeln(ordner);
     }
 
@@ -905,8 +908,9 @@ pruefe("app.js meldet den Service Worker abgesichert an", () => {
  * js\upcrew-anpassen.js, ebenfalls ein gemeinsamer Baustein. Er baut seine
  * ganze Oberfläche als Text. Durchgesehen am 26.09.2026: Alles Eingesetzte
  * stammt aus festen Tabellen (Farbwelten, Schriften, Knopf-Namen) oder aus
- * den Regalen, die Blunderluck selbst übergibt (js\anpassen.js, nur feste
- * Wörter). EINE Lücke ist gemeldet: Ein gespeichertes Set setzt seinen
+ * den Regalen, die Blunderluck selbst übergibt (seit v0.145.0
+ * js\sammlung.js: nur feste Wörter und feste Bildpfade). EINE Lücke ist
+ * gemeldet: Ein gespeichertes Set setzt seinen
  * Schrift-Wert ungeprüft in ein style-Attribut (Zeile mit
  * `font-family:'Crew ${s.schrift}'`). Der Wert kommt nur aus dem
  * Browser-Speicher desselben Ursprungs, nicht vom Konto — also kein Weg
@@ -985,11 +989,12 @@ pruefe("fuehlen.js und zustand.js laden vor dialog.js (UPCrew-Standard)", () => 
     }
 });
 
-/* Ausgenommen (seit v0.144.0): der gemeinsame Baustein js\upcrew-anpassen.js
-   vibriert selbst und fragt dabei den Schalter „Vibration" NICHT — gemeldet
-   an die Design-Sitzung (STATUS.md), behoben wird an der Quelle. */
+/* Bis v0.144 war der gemeinsame Baustein js\upcrew-anpassen.js hier
+   ausgenommen: Er vibrierte selbst, ohne den Schalter „Vibration" zu fragen.
+   An der Quelle behoben (Design-Sitzung, 26.09.2026) und mit v0.145.0 neu
+   kopiert — seither gilt die Regel ohne Ausnahme. */
 pruefe("Kein Bildschirm vibriert am Baustein vorbei (UPCrew-Standard)", () => {
-    const funde = dateien.filter((name) => name !== "fuehlen.js" && name !== "upcrew-anpassen.js"
+    const funde = dateien.filter((name) => name !== "fuehlen.js"
         && /navigator\.vibrate/.test(dateisystem.readFileSync(pfad.join(jsOrdner, name), "utf8")));
     if (funde.length > 0) {
         throw new Error("navigator.vibrate ausserhalb von fuehlen.js: " + funde.join(", "));

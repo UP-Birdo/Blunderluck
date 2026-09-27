@@ -29,7 +29,7 @@
  */
 
 /* Der Name des Zwischenspeichers. HIER STEHT DIE NUMMER GENAU EINMAL. */
-const SPEICHER_NAME = "blunderluck-v0.144.1";
+const SPEICHER_NAME = "blunderluck-v0.145.0";
 
 /*
  * BEIM BAUEN: NETZ ZUERST. IM BETRIEB: ZWISCHENSPEICHER ZUERST.
@@ -80,6 +80,7 @@ const DATEIEN = [
     "./css/upcrew-schicht.css",
     "./css/upcrew-knoepfe.css",
     "./css/upcrew-anpassen.css",
+    "./css/upcrew-leiste.css",
 
     /* Die zwölf Crew-Schriften und ihre Lizenz (seit v0.144.0) — sie
        laden erst, wenn Text sie braucht; offline müssen alle da sein,
@@ -139,8 +140,7 @@ const DATEIEN = [
     "./js/start.js",
     "./js/herausforderungen.js",
     "./js/upcrew-anpassen.js",
-    "./js/anpassen.js",
-    "./js/faehigkeiten.js",
+    "./js/sammlung.js",
     "./js/freunde.js",
     "./js/einstellungen.js",
     "./js/verwaltungs-bildschirm.js",
@@ -193,7 +193,19 @@ const DATEIEN = [
     "./img/lootboxen/lootbox-lila.png",
     "./img/lootboxen/lootbox-lila-pech.png",
     "./img/lootboxen/lootbox-unbekannt.png",
-    "./img/lootboxen/lootbox-unbekannt-pech.png"
+    "./img/lootboxen/lootbox-unbekannt-pech.png",
+
+    /* Die kleinen Bilder der Regale im Tab Sammlung (seit v0.145.0) —
+       `js\sammlung.js` hängt sie zur Laufzeit ein (BILD_ORDNER). */
+    "./img/sammlung/klein-brett-2d.png",
+    "./img/sammlung/klein-brett-3d.png",
+    "./img/sammlung/klein-brett-3d-holz.png",
+    "./img/sammlung/klein-brett-3d-marmor.png",
+    "./img/sammlung/klein-brett-3d-nacht.png",
+    "./img/sammlung/klein-brett-3d-turnier.png",
+    "./img/sammlung/klein-figuren-matt.png",
+    "./img/sammlung/klein-figuren-porzellan.png",
+    "./img/sammlung/klein-figuren-metall.png"
 ];
 
 /* ------------------------------------------------------------------ *

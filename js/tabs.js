@@ -12,9 +12,9 @@
  *                                              // Knopf — erreichbar nur über
  *                                              // TABS.wechseln (Startbildschirm)
  *         zeichen:   "start",                  // seit v0.142.0: Symbol aus
- *                                              // ZUSTAND.ZEICHEN über dem Wort
- *         leisteText: "Aufgaben",              // optional: Wort in der Leiste,
- *                                              // wenn es vom Titel abweicht
+ *                                              // ZUSTAND.ZEICHEN
+ *         leisteText: "Aufgaben",              // optional: Name in der Leiste,
+ *                                              // wenn er vom Titel abweicht
  *         platzhalter: true,                   // optional: nur ein Platz in der
  *                                              // Leiste, ausgegraut, ohne Inhalt
  *         aufbauen(behaelter),                 // legt das Gerüst einmalig an
@@ -23,13 +23,21 @@
  *                                              // wenn ein ANDERER Tab kommt
  *     }
  *
- * DIE LEISTE WIE IN TYPOLUCK (seit v0.142.0, UPCrew-Angleichung Runde 2,
- * Vorlage `Apps\Typoluck\css\stil.css` `.leiste`/`.knopf-leiste`): fest am
- * unteren Rand, auf JEDER Breite und auf JEDEM Bildschirm — auch in den
- * bisherigen „Fenstern" (Partie, Einstellungen, Profil); zurück geht es
- * dort über den Pfeil in der Kopfzeile. Je Eintrag das Symbol über einem
- * Wort, der aktive Eintrag in der Hauptfarbe mit einem kurzen Strich oben.
+ * DIE LEISTE IST DER GEMEINSAME BAUSTEIN (seit v0.145.0, UPCrew-Angleichung
+ * Runde 4, css\upcrew-leiste.css aus Design\3D-Schrift\final, in Typoluck
+ * gleich). Nutzer 27.09.2026: „keine Schrift bis auf den Tab, wo man
+ * derzeit ist, und das Symbol nach vorne gehoben". Je Eintrag ein
+ * `button.up-tab` mit Symbol und Namen; der Name ist nur am aktiven Eintrag
+ * zu sehen (`aria-current="page"`), der auf einer gehobenen Kachel in der
+ * Hauptfarbe sitzt. Für Vorleseprogramme trägt jeder Eintrag seinen Namen
+ * als `aria-label`. Die Leiste steht fest am unteren Rand, auf JEDER Breite
+ * und JEDEM Bildschirm (seit v0.142.0) — ausser in der laufenden Partie.
  * Die Reihenfolge der Registrierung ist die Reihenfolge in der Leiste.
+ *
+ * Bis v0.144 zeichnete diese Datei eine eigene Leiste (Symbol über Wort,
+ * ein gleitender Strich über dem aktiven Eintrag, `.tab-knopf`,
+ * `.tab-marker`). Die Kachel des Bausteins bewegt sich selbst — der Strich
+ * und sein Nachmessen beim Drehen sind deshalb entfallen.
  *
  * Warum es `beimOeffnen` braucht: Das Gerüst eines Tabs entsteht erst, wenn er
  * zum ersten Mal geöffnet wird. Seine Daten können lange vorher geladen worden
@@ -46,9 +54,16 @@ const TABS = {
     inhaltEl: null,
     aufgebaut: {},
 
-    /* Die gleitende Markierung des aktiven Tabs (seit v0.107; seit v0.111
-       eine Pille hinter dem Knopf statt eines Strichs darunter). */
-    markerEl: null,
+    /*
+     * ALTE TAB-KENNUNGEN FÜHREN WEITER (seit v0.145.0): Die Tabs
+     * „Fähigkeiten" und „Anpassen" sind im Tab „Sammlung" aufgegangen. Wer
+     * noch eine alte Kennung ruft (ein gemerkter Rückweg, ein vergessener
+     * Aufruf), landet dort statt im Nichts.
+     */
+    UMLEITUNGEN: {
+        faehigkeiten: "sammlung",
+        anpassen: "sammlung"
+    },
 
     registrieren(tab) {
         TABS.liste.push(tab);
@@ -67,51 +82,7 @@ const TABS = {
             if (tab.inLeiste === false) {
                 continue;
             }
-            const knopf = document.createElement("button");
-            knopf.type = "button";
-            knopf.className = "tab-knopf";
-            knopf.setAttribute("role", "tab");
-            if (tab.zeichen && typeof ZUSTAND !== "undefined") {
-                knopf.appendChild(ZUSTAND.zeichen(tab.zeichen, "zeichen tab-zeichen"));
-            }
-            const wort = document.createElement("span");
-            wort.className = "tab-wort";
-            wort.textContent = tab.leisteText || tab.titel;
-            knopf.appendChild(wort);
-            if (tab.platzhalter) {
-                /* Sichtbar, aber erkennbar noch ohne Funktion (wie Typoluck). */
-                knopf.disabled = true;
-                knopf.classList.add("tab-knopf-platzhalter");
-            } else {
-                knopf.dataset.tabId = tab.id;
-                knopf.addEventListener("click", () => TABS.wechseln(tab.id));
-            }
-            TABS.leisteEl.appendChild(knopf);
-        }
-
-        /*
-         * DIE MARKIERUNG DES AKTIVEN TABS IST EIN EIGENES ELEMENT (seit
-         * v0.107): Sie GLEITET beim Wechsel zum neuen Tab, statt hart
-         * umzuspringen. Ein Rahmen am Knopf selbst kann das nicht — er hängt
-         * am Element und kennt keine Position. Bei Grössenänderung des
-         * Fensters wird nachgemessen, ohne Gleiten. v0.111 bis v0.141 war sie
-         * eine Pille hinter dem Knopf; seit v0.142.0 ist sie so breit wie der
-         * Knopf, aber nur 3 px hoch am oberen Rand, und zeichnet darin mittig
-         * den kurzen Strich (32 × 3 px, css\stil.css `.tab-marker::before`).
-         */
-        TABS.markerEl = document.createElement("span");
-        TABS.markerEl.className = "tab-marker";
-        TABS.markerEl.setAttribute("aria-hidden", "true");
-        TABS.leisteEl.appendChild(TABS.markerEl);
-
-        /*
-         * NACH DEM DREHEN WIRD NEU GEMESSEN — aber erst im nächsten Bild
-         * (seit v0.74.0). Warum, steht bei `_markerNachmessen`.
-         */
-        if (typeof window !== "undefined"
-                && typeof window.addEventListener === "function") {
-            window.addEventListener("resize", TABS._markerNachmessen);
-            window.addEventListener("orientationchange", TABS._markerNachmessen);
+            TABS.leisteEl.appendChild(TABS._eintragBauen(tab));
         }
 
         if (TABS.liste.length > 0) {
@@ -122,71 +93,38 @@ const TABS = {
     },
 
     /*
-     * Schiebt die Pille hinter den aktiven Knopf (seit v0.111 eine volle
-     * Fläche statt des Strichs darunter — dasselbe Muster wie die
-     * Segment-Reihen beim Anlegen). Gemessen wird die echte Lage im
-     * Leisten-Element — damit stimmt es auch, wenn die Leiste auf
-     * schmalen Geräten umbricht (`offsetTop`). `weich = false` setzt ohne
-     * Gleiten: beim ersten Zeichnen und nach Fenster-Grössenänderung.
+     * EIN EINTRAG DER LEISTE, genau im Aufbau aus dem Kopf von
+     * css\upcrew-leiste.css:
+     *     <button type="button" class="up-tab" aria-label="Start">
+     *         <svg …><path d="…"/></svg><span>Start</span>
+     *     </button>
+     * Das Symbol kommt aus ZUSTAND.ZEICHEN (24er-Raster). Strichstärke und
+     * Farbe setzt der Baustein über `.up-tab svg`; die Strichstärke, die
+     * `ZUSTAND.zeichen` am Pfad mitgibt, nimmt css\stil.css zurück
+     * (`.tab-leiste .up-tab path`), sonst gälte am Pfad weiter 1,8.
      */
-    /* Ein angemeldetes Bild; 0 heisst „keines unterwegs". */
-    _markerFrame: 0,
-
-    /*
-     * DIE PILLE NACH DEM DREHEN NEU MESSEN (seit v0.74.0).
-     *
-     * Nutzer-Meldung 26.08.2026: „Wenn man den Bildschirm dreht, schiebt sich
-     * die blaue Pille aus dem Hauptmenü hin und her."
-     *
-     * URSACHE, UND SIE IST HIER SCHON EINMAL AUFGETRETEN: `_markerSetzen`
-     * schreibt gemessene PIXELWERTE (`offsetLeft`, `offsetWidth`). Das
-     * `resize`-Ereignis meldet sich aber, BEVOR der Browser das neue Layout
-     * gerechnet hat — gemessen wird also die ALTE Lage. Beim Drehen feuert
-     * `resize` mehrfach, und jedes Mal setzt sich die Pille auf einen
-     * veralteten Zwischenstand: Sie zappelt hin und her.
-     *
-     * Exakt derselbe Fehler steckte bis v0.88 im Brett („schwarze Streifen
-     * beim Drehen", `_groessenWaechterStarten` in `team-schach-brett.js`).
-     * Dort wurde er mit `requestAnimationFrame` behoben — die Pille hatte
-     * diesen Schutz nie, weil sie aus einer anderen Runde stammt. Beide
-     * Stellen schreiben gemessene Pixel, und beide müssen deshalb NACH dem
-     * Neusetzen messen.
-     *
-     * `orientationchange` KOMMT DAZU, nicht ersatzweise: Auf älteren iPhones
-     * ist es das einzige Ereignis, das beim Drehen zuverlässig eintrifft —
-     * dieselbe Begründung wie beim Brett.
-     *
-     * Mehrere Ereignisse im selben Bild melden nur EIN Bild an; sonst liefe
-     * beim Drehen ein Dutzend Messungen für dasselbe Ergebnis.
-     */
-    _markerNachmessen() {
-        if (typeof requestAnimationFrame !== "function") {
-            TABS._markerSetzen(false);
-            return;
+    _eintragBauen(tab) {
+        const name = tab.leisteText || tab.titel;
+        const knopf = document.createElement("button");
+        knopf.type = "button";
+        knopf.className = "up-tab";
+        knopf.setAttribute("aria-label", name);
+        if (tab.zeichen && typeof ZUSTAND !== "undefined") {
+            knopf.appendChild(ZUSTAND.zeichen(tab.zeichen, "up-tab-zeichen"));
         }
-        if (TABS._markerFrame) {
-            return;
+        const wort = document.createElement("span");
+        wort.textContent = name;
+        knopf.appendChild(wort);
+        if (tab.platzhalter) {
+            /* Sichtbar, aber erkennbar noch ohne Funktion (Baustein:
+               `up-tab-still`, nicht antippbar). */
+            knopf.disabled = true;
+            knopf.classList.add("up-tab-still");
+        } else {
+            knopf.dataset.tabId = tab.id;
+            knopf.addEventListener("click", () => TABS.wechseln(tab.id));
         }
-
-        TABS._markerFrame = requestAnimationFrame(() => {
-            TABS._markerFrame = 0;
-            TABS._markerSetzen(false);
-        });
-    },
-
-    _markerSetzen(weich) {
-        const aktiv = TABS.leisteEl
-            ? TABS.leisteEl.querySelector(".tab-knopf-aktiv") : null;
-
-        if (!aktiv || !TABS.markerEl || typeof aktiv.offsetLeft !== "number") {
-            return;
-        }
-
-        /* Nur Lage und Breite — Höhe (3 px) und oberer Rand stehen in der
-           Stildatei (seit v0.142.0 ein Strich statt der Pille). */
-        TABS.markerEl.classList.toggle("tab-marker-weich", weich === true);
-        TABS.markerEl.style.left = aktiv.offsetLeft + "px";
-        TABS.markerEl.style.width = aktiv.offsetWidth + "px";
+        return knopf;
     },
 
     /* Merkt sich, ob gerade eine Runde als eigenes Fenster läuft. */
@@ -239,26 +177,17 @@ const TABS = {
         }
         TABS._rundeOffen = soll;
         document.body.classList.toggle("runde-offen", soll);
-
-        /* Kommt die Leiste zurück, steht die Pille noch auf den Massen von
-           vorher — nachmessen, ohne Gleiten. */
-        if (!soll) {
-            TABS._markerSetzen(false);
-        }
     },
 
-    wechseln(id) {
+    wechseln(gewuenscht) {
+        const id = TABS.UMLEITUNGEN[gewuenscht] || gewuenscht;
         const tab = TABS.liste.find((eintrag) => eintrag.id === id);
         if (!tab) {
             return;
         }
 
-        /* Beim ersten Aufruf steht der Strich noch nirgends — dann wird er
-           gesetzt statt geschoben. */
-        const ersterWechsel = (TABS.aktiveId === null);
-
-        /* Der bisherige Tab räumt auf, wenn er es will (seit v0.144.0, der
-           Tab „Anpassen" baut seinen Baustein ab). */
+        /* Der bisherige Tab räumt auf, wenn er es will (seit v0.144.0; der
+           Tab „Sammlung" baut seinen Baustein ab). */
         const vorher = TABS.liste.find((eintrag) => eintrag.id === TABS.aktiveId);
         if (vorher && vorher.id !== id && typeof vorher.beimVerlassen === "function") {
             vorher.beimVerlassen();
@@ -272,13 +201,17 @@ const TABS = {
            die Leiste dort ausgeblendet). */
         const leisteId = tab.inLeiste === false ? (tab.leisteBei || "start") : id;
 
-        for (const knopf of TABS.leisteEl.querySelectorAll(".tab-knopf")) {
-            const istAktiv = knopf.dataset.tabId === leisteId;
-            knopf.classList.toggle("tab-knopf-aktiv", istAktiv);
-            knopf.setAttribute("aria-selected", istAktiv ? "true" : "false");
+        /* Der aktive Eintrag trägt `aria-current="page"` — daran hängt der
+           Baustein Kachel und Namen. Die übrigen verlieren das Merkmal ganz
+           (ein „false" wäre für den Baustein kein Unterschied, für
+           Vorleseprogramme aber eine überflüssige Ansage). */
+        for (const knopf of TABS.leisteEl.querySelectorAll(".up-tab")) {
+            if (knopf.dataset.tabId === leisteId) {
+                knopf.setAttribute("aria-current", "page");
+            } else {
+                knopf.removeAttribute("aria-current");
+            }
         }
-
-        TABS._markerSetzen(!ersterWechsel);
 
         for (const bereich of TABS.inhaltEl.querySelectorAll(".tab-bereich")) {
             const zeigen = bereich.dataset.tabId === id;

@@ -3,6 +3,29 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.145.0 — 27.09.2026
+
+**Neue Leiste unten und der Tab „Sammlung“** (UPCrew-Angleichung, Runde 4 —
+in Typoluck gleich).
+
+- **Die Leiste unten zeigt nur noch Symbole.** Der Name steht nur beim Tab,
+  auf dem du gerade bist — der sitzt auf einer farbigen Kachel, die sich
+  nach oben hebt. Reihenfolge wie in Typoluck: Aufgaben · Sammlung · Start
+  · Rangliste · Bald.
+- **Neu: Tab „Sammlung“** statt der Tabs „Fähigkeiten“ und „Anpassen“ —
+  alles auf einer Fläche, ohne extra Knopf. Oben die Vorschau, darunter die
+  Regale zum Anpassen, darunter deine Sammlung: alle Fähigkeiten und
+  Unglücke (wie bisher antippen für Erklärung und Anleitung) und alle
+  Brettformen. Oben rechts steht, wie viel Prozent du schon gesammelt hast.
+- **Die Vorschau zeigt jetzt dein echtes Brett** — dieselbe Spielart wie
+  auf dem Start, in 2D oder 3D.
+- **Neue Regale „Brett-Thema · 3D“ und „Figuren · 3D“:** Holz, Marmor,
+  Nacht, Turnier bzw. Matt, Porzellan, Metall. Vorerst mit Schloss — sie
+  werden später über die Orte im Turm freigeschaltet (das Schloss nennt
+  den Ort). Frei sind die Farbwelt und die Emaille-Figuren.
+- In den Einstellungen springt die Zeile **„Anpassen“** jetzt in die
+  Sammlung.
+
 ## v0.144.1 — 26.09.2026
 
 - **Neues App-Zeichen:** der weisse König vor einem leuchtenden weissen

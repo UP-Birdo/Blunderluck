@@ -1,5 +1,79 @@
 # Blunderluck - Entscheidungen / Entschieden - und warum
 
+## Runde 4: Leiste als Baustein, Tab „Sammlung" (27.09.2026, v0.145.0)
+
+Auftrag: `Design\3D-Schrift\docs\AUFTRAEGE-RUNDE-4.md`, Block Gemeinsam +
+Blunderluck. Vorgegeben war das WAS; beim Bau entschieden wurde das WIE:
+
+- **Die Leiste sitzt über zwei Klassen fest unten** (`.tab-leiste.up-leiste`
+  in `stil.css`). Der Baustein lädt nach dem eigenen Stil und setzt
+  `position: relative`; mit einer Klasse hätte er gewonnen. Die Höhe ist
+  64 px PLUS iPhone-Streifen — der Baustein rechnet den Streifen in die
+  64 px hinein (gemeldet an die Design-Sitzung, STATUS c(6)).
+- **Die gleitende Pille und ihr Nachmessen beim Drehen sind entfallen**
+  (samt Test von v0.74.0): Die Kachel des Bausteins hängt an
+  `aria-current` und misst nichts — es gibt nichts mehr, was beim Drehen
+  auf alten Massen stehen bleiben kann.
+- **Alte Tab-Kennungen leiten weiter** (`TABS.UMLEITUNGEN`: faehigkeiten,
+  anpassen → sammlung) statt jede Aufrufstelle zu suchen — ein gemerkter
+  Rückweg (Profil) oder ein übersehener Aufruf landet so nicht im Nichts.
+- **Regal-Bilder sind die kopierten Werkstatt-Aufnahmen**
+  (`img\sammlung\`, 9 PNG, ~160 KB), nicht live gerechnet. Der Auftrag
+  nannte „live" als besser; verworfen, weil live jedes Öffnen neun
+  3D-Bilder bräuchte, ohne WebGL leer bliebe und das 3D-Modul in Tests
+  fehlt. Die VORSCHAU dagegen ist live (`BRETT_3D.standbildMit`) — dort
+  zählt die echte Stellung.
+- **`standbildMit` setzt die Wahl nur für ein Bild** und stellt danach
+  Thema, Figuren und die Figuren-Materialien des grossen Bretts zurück;
+  gespeichert wird nichts. So zeigt die Vorschau Gesperrtes, ohne dass sich
+  das echte Brett ändert (Auftrag: „das ändert erst Übernehmen").
+- **Thema und Figuren sind frei mit Admin-Freigabe ODER in der Werkstatt**
+  (`aussehenFrei`), und das 3D-Brett liest gespeicherte Werte unter
+  derselben Bedingung. Vorher zählte nur die Admin-Freigabe — in der
+  Werkstatt wäre eine Wahl nach dem Neuladen verloren gewesen.
+- **Das Schloss am 3D-Brett nennt „Holzhalle"** statt „Arena 2" (Runde 5:
+  3D ab Holzhalle). Solange `SPERRE_3D` aus ist, sieht man es nicht.
+- **„Fähigkeiten n/m" zählt Fähigkeiten UND Unglücke** — die Bibliothek
+  darunter zeigt beide (Umschalter), eine Zahl nur für eine Hälfte wäre
+  falsch. **„NN %" zählt** eigene Regale, Farbwelt/Schrift/Knöpfe und die
+  reine Sammlung; nicht Darstellung (eine Einstellung) und nicht Sets
+  (eigene Merkplätze).
+- **Die reine Sammlung wird einmal gebaut** und bei jedem Öffnen wieder
+  eingehängt (der Baustein wird dagegen jedes Mal neu gebaut). Sonst
+  meldete sich die Bibliothek bei jedem Öffnen erneut bei
+  `TEAM_SCHACH._kartenWurzeln` an.
+
+## Runde 5 (Turm, Heute, Level): die sechs offenen Fragen beantwortet (27.09.2026, noch nicht gebaut)
+
+Auftrag: `Design\3D-Schrift\docs\AUFTRAEGE-RUNDE-5.md`, Abschnitt „Offene
+Fragen". Claude hat je Frage einen Vorschlag gemacht, der Nutzer hat am
+27.09.2026 geantwortet: „ja alles so machen wie deine vorschläge". Gebaut
+wird Runde 5 erst nach Runde 4 und auf eigenes Go.
+
+1. **Wertung (Genauigkeit):** Gewertet werden NUR normale Schachzüge. Züge
+   mit einer Fähigkeit und Züge, die eine Lootbox verändert hat, zählen
+   weder für noch gegen den Spieler. Grund: Bei Fähigkeiten und
+   Sonderbrettern ist der „beste Zug" unscharf; so bleibt die Zahl ehrlich
+   und nachprüfbar.
+2. **Stufen je Ort und Schwellen:** so übernehmen wie im Entwurf (4–6
+   Stufen, Werkbank 60/75 … Meisterliga 78/90) — aber vor dem Bau einmal
+   gegen den Bot durchrechnen (viele Partien), ob die Schwellen erreichbar
+   sind; erst dann festschreiben.
+3. **Tagesbrett:** eine handgeprüfte Liste fester Stellungen; welche dran
+   ist, ergibt sich aus dem Datum (für alle gleich). Aufgaben selbst
+   erzeugen wäre ein eigenes Vorhaben.
+4. **Typoluck-Turm:** jetzt NICHT festlegen. Typoluck bekommt zuerst nur
+   „Heute" und Level — das baut die Typoluck-Sitzung.
+5. **Album-Taten:** Bestandsschutz. Was heute frei ist, bleibt frei; nur
+   NEUE Stücke laufen über Taten. Sonst verlören Spieler, was sie haben.
+6. **Level nach 10:** Rahmen alle 5 Level plus Serien-Schutz — so
+   übernehmen.
+
+Achtung für den Bau: Führend für Regeln und Zahlen ist laut Auftrag
+`Apps\UPCrew\docs\FORTSCHRITT.md` („GÜLTIGER STAND"). Die Antworten oben
+wurden gegeben, ohne dass diese Datei gelesen war — vor dem Bau
+abgleichen; steht dort etwas anderes, beim Nutzer nachfragen.
+
 ## Runde 3: ein Aussehen, Knöpfe über einen Wächter, Knopf-Familie in einer eigenen Ebene, 3D als Freischaltung (26.09.2026, v0.144.0)
 
 Auftrag: `Design\3D-Schrift\docs\AUFTRAEGE-RUNDE-3.md`, Block Blunderluck.

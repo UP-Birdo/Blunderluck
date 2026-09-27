@@ -1041,7 +1041,8 @@ Object.assign(TEAM_SCHACH, {
     /*
      * Der INHALT der Bibliothek, ohne Kopfzeile — seit v0.9.0 getrennt,
      * weil ihn zwei Ansichten brauchen: die Bibliothek im Spiel (oben, mit
-     * Zurück-Knopf) und der Tab „Fähigkeiten" (faehigkeiten.js, die Leiste
+     * Zurück-Knopf) und die Sammlung (seit v0.145.0 sammlung.js, bis v0.144
+     * der Tab „Fähigkeiten" in faehigkeiten.js; die Leiste
      * ist dort der Weg zurück).
      */
     _infoInhaltBauen(wurzel) {

@@ -295,18 +295,140 @@ pruefe("Aussehen lädt früh: Farbwelten → Aussehen → darstellung.js direkt 
     gleich(skripte[i + 2], "darstellung.js", "der frühe Aufruf direkt danach");
     wahr(skripte.indexOf("knoepfe.js") < skripte.indexOf("dialog.js"), "Knopf-Wächter vor allem, was Knöpfe baut");
     wahr(skripte.indexOf("freischaltung.js") < skripte.indexOf("team-schach-brett.js"), "Freischaltung vor dem Partie-Bildschirm");
-    wahr(skripte.indexOf("upcrew-anpassen.js") < skripte.indexOf("anpassen.js"), "Baustein vor dem Anpasser");
+    wahr(skripte.indexOf("upcrew-anpassen.js") !== -1
+        && skripte.indexOf("upcrew-anpassen.js") < skripte.indexOf("sammlung.js"), "Baustein vor der Sammlung");
     wahr(/<link rel="stylesheet" href="css\/upcrew-schicht\.css">/.test(seite)
         && !/href="css\/upcrew-knoepfe\.css"/.test(seite), "Knopf-Familie nur über die Ebene");
     const schicht = dateisystem.readFileSync(pfad.join(projekt, "css", "upcrew-schicht.css"), "utf8");
     wahr(/@import url\("upcrew-knoepfe\.css"\) layer\(upcrew\);/.test(schicht), "Import in die Ebene upcrew");
 });
 
-pruefe("Leiste: Aufgaben · Fähigkeiten · Start · Rangliste · Anpassen", () => {
+/*
+ * RUNDE 4 (seit v0.145.0): in BEIDEN Spielen dieselbe Reihenfolge
+ * „Aufgaben · Sammlung · Start · Rangliste · Bald", der Start in der Mitte,
+ * Platz 5 still. Die Tabs „Fähigkeiten" und „Anpassen" sind in der
+ * Sammlung aufgegangen.
+ */
+pruefe("Leiste: Aufgaben · Sammlung · Start · Rangliste · Bald (v0.145.0)", () => {
     const app = dateisystem.readFileSync(pfad.join(projekt, "js", "app.js"), "utf8");
     const reihe = [...app.matchAll(/TABS\.registrieren\(([A-Z_]+)\)/g)].map((t) => t[1]);
-    gleich(reihe.slice(0, 5).join(","), "HERAUSFORDERUNGEN,FAEHIGKEITEN,START,RANGLISTE,ANPASSEN", "Reihenfolge");
-    wahr(reihe.indexOf("BALD") === -1, "der Platzhalter Bald ist weg");
+    gleich(reihe.slice(0, 5).join(","), "HERAUSFORDERUNGEN,SAMMLUNG,START,RANGLISTE,BALD", "Reihenfolge");
+    wahr(reihe.indexOf("FAEHIGKEITEN") === -1 && reihe.indexOf("ANPASSEN") === -1,
+        "Fähigkeiten und Anpassen sind keine eigenen Tabs mehr");
+    const { BALD } = require(pfad.join(projekt, "js", "herausforderungen.js"));
+    gleich(BALD.platzhalter, true, "Bald ist der stille Platzhalter");
+    gleich(skripte.indexOf("faehigkeiten.js") + skripte.indexOf("anpassen.js"), -2,
+        "die alten Tab-Dateien laden nicht mehr");
+});
+
+/*
+ * DIE LEISTE IST DER GEMEINSAME BAUSTEIN (seit v0.145.0): css\upcrew-leiste.css
+ * lädt NACH dem eigenen Stil und geht offline mit; die eigenen Regeln, die
+ * sie jetzt schlagen müssen (fest unten), tragen zwei Klassen. Die Symbole
+ * sind die gemeinsame Absprache (in Typoluck gleich).
+ */
+pruefe("Leiste: Baustein upcrew-leiste.css eingebunden, nach dem eigenen Stil, offline (v0.145.0)", () => {
+    const links = [...seite.matchAll(/<link rel="stylesheet" href="css\/([^"]+)">/g)].map((t) => t[1]);
+    const stelle = links.indexOf("upcrew-leiste.css");
+    wahr(stelle !== -1, "upcrew-leiste.css ist nicht eingebunden");
+    wahr(links.filter((n) => /^stil/.test(n)).every((n) => links.indexOf(n) < stelle), "lädt vor einem eigenen Stil");
+    const sw = dateisystem.readFileSync(pfad.join(projekt, "sw.js"), "utf8");
+    wahr(sw.indexOf("\"./css/upcrew-leiste.css\"") !== -1, "fehlt in sw.js");
+    wahr(/<nav class="tab-leiste up-leiste" id="tab-leiste"/.test(seite), "die Leiste trägt up-leiste");
+
+    const grund = dateisystem.readFileSync(pfad.join(projekt, "css", "stil.css"), "utf8");
+    wahr(/\.tab-leiste\.up-leiste\s*\{[^}]*position:\s*fixed/.test(grund), "fest unten mit zwei Klassen");
+    wahr(!/\.tab-knopf|\.tab-marker|\.tab-wort/.test(dateisystem.readFileSync(pfad.join(projekt, "css", "stil.css"), "utf8")
+        + dateisystem.readFileSync(pfad.join(projekt, "css", "stil-start.css"), "utf8")), "alte Leisten-Regeln sind weg");
+});
+
+pruefe("Leiste: Symbole Aufgaben, Sammlung und Bald wie abgesprochen (Runde 4)", () => {
+    const zustand = dateisystem.readFileSync(pfad.join(projekt, "js", "zustand.js"), "utf8");
+    const pfadVon = (name) => (zustand.match(new RegExp("\\b" + name + ": \"([^\"]+)\"")) || [])[1];
+    gleich(pfadVon("aufgaben"), "M3 18 L9 12 L13 16 L21 8 M15 8 H21 V14", "Aufgaben");
+    gleich(pfadVon("sammlung"), "M4 4 H10 V10 H4 Z M14 4 H20 V10 H14 Z M4 14 H10 V20 H4 Z M14 14 H20 V20 H14 Z", "Sammlung");
+    gleich(pfadVon("bald"), "M12 7 V12 L15 14 M12 3 A9 9 0 1 0 12.01 3", "Bald");
+});
+
+/* ------------------------------------------------------------------ *
+ * Der Tab „Sammlung" (seit v0.145.0)
+ * ------------------------------------------------------------------ */
+
+globalThis.FREISCHALTUNG = FREISCHALTUNG;
+const SAMMLUNG = require(pfad.join(projekt, "js", "sammlung.js"));
+const BRETT_QUELLE = dateisystem.readFileSync(pfad.join(projekt, "js", "brett-3d.js"), "utf8");
+
+pruefe("Sammlung: Themen und Figuren sind genau die des 3D-Bretts", () => {
+    const schluessel = (block) => {
+        const text = BRETT_QUELLE.match(new RegExp("const " + block + " = \\{([\\s\\S]*?)\\n\\};"))[1];
+        return [...text.matchAll(/^\s{4}([a-z]+):/gm)].map((t) => t[1]).sort().join(",");
+    };
+    gleich(SAMMLUNG.THEMEN.map((t) => t.wert).sort().join(","), schluessel("THEMEN"), "Brett-Themen");
+    gleich(SAMMLUNG.FIGUREN.map((t) => t.wert).sort().join(","), schluessel("FIGUR_STILE"), "Figuren-Stile");
+    gleich(SAMMLUNG.THEMEN[0].wert, "blunderluck", "die Vorgabe (Farbwelt) steht vorn");
+    gleich(SAMMLUNG.FIGUREN[0].wert, "emaille", "die Vorgabe (Emaille) steht vorn");
+    for (const eintrag of SAMMLUNG.THEMEN.concat(SAMMLUNG.FIGUREN).concat([{ bild: "brett-2d" }])) {
+        const datei = pfad.join(projekt, "img", "sammlung", "klein-" + eintrag.bild + ".png");
+        wahr(dateisystem.existsSync(datei), "Bild fehlt: klein-" + eintrag.bild + ".png");
+    }
+});
+
+pruefe("Sammlung: ohne Freigabe nur die Vorgaben frei, mit Ort am Schloss", () => {
+    globalThis.location = { hostname: "up-birdo.github.io", search: "" };
+    const thema = SAMMLUNG.themaRegal();
+    gleich(thema.wert, "blunderluck", "ohne 3D-Modul gilt die Vorgabe");
+    gleich(thema.stuecke.filter((s) => s.frei).map((s) => s.wert).join(","), "blunderluck", "nur Farbwelt frei");
+    gleich(thema.stuecke.find((s) => s.wert === "holz").ab, "Holzhalle", "Holz ab Holzhalle");
+    gleich(thema.stuecke.find((s) => s.wert === "turnier").ab, "Turniersaal", "Turnier ab Turniersaal");
+    const figuren = SAMMLUNG.figurenRegal();
+    gleich(figuren.stuecke.filter((s) => s.frei).map((s) => s.wert).join(","), "emaille", "nur Emaille frei");
+    gleich(figuren.stuecke.find((s) => s.wert === "metall").ab, "Nachtclub", "Metall ab Nachtclub");
+
+    globalThis.location = { hostname: "localhost", search: "?werkstatt" };
+    try {
+        wahr(SAMMLUNG.themaRegal().stuecke.every((s) => s.frei), "in der Werkstatt alles frei");
+    } finally {
+        globalThis.location = { hostname: "up-birdo.github.io", search: "" };
+    }
+});
+
+pruefe("Sammlung: Reihenfolge der eigenen Regale Brett · Brett-Thema · Figuren", () => {
+    gleich(SAMMLUNG.regale().map((r) => r.schluessel).join(","), "brett,thema,figuren", "Reihenfolge");
+    gleich(SAMMLUNG.regale().map((r) => r.titel).join(" | "), "Brett | Brett-Thema · 3D | Figuren · 3D", "Titel");
+});
+
+pruefe("Sammlung: der Anteil zählt Regale, Baustein-Stücke und reine Sammlung", () => {
+    globalThis.SCHACH_VARIANTEN = {
+        STUFEN: [{ id: "a" }, { id: "b" }],
+        faehigkeitenDerStufe: (id) => (id === "a" ? ["x", "y"] : ["z"]),
+        pechDerStufe: (id) => (id === "a" ? ["p"] : []),
+        zurAuswahl: () => [{ id: "k" }, { id: "r" }]
+    };
+    globalThis.UPCREW_ANPASSEN = { STUFEN: { farbwelt: { a: 0, b: 2 }, schrift: { c: 0 }, knoepfe: { d: 0, e: 3 } } };
+    try {
+        const anteil = SAMMLUNG.anteil();
+        /* Regale: 2 + 5 + 4 = 11 Stücke, frei 2 (2D, 3D) + 1 + 1 = 4.
+           Baustein: 5 Stücke, frei 3. Reine Sammlung: 4 Karten + 2 Formen, alle da. */
+        gleich(anteil.alle, 11 + 5 + 6, "alle");
+        gleich(anteil.hat, 4 + 3 + 6, "gesammelt");
+        gleich(anteil.prozent, Math.round(13 / 22 * 100), "Prozent");
+    } finally {
+        delete globalThis.SCHACH_VARIANTEN;
+        delete globalThis.UPCREW_ANPASSEN;
+    }
+});
+
+pruefe("3D-Brett: Sammlung-Schnittstelle da, Vorschau ändert das echte Brett nicht", () => {
+    for (const name of ["standbildMit", "aussehen: aussehenLesen", "aussehenFrei", "aussehenWaehlen"]) {
+        wahr(new RegExp("window\\.BRETT_3D = \\{[\\s\\S]*\\b" + name.replace(/[:]/g, "\\:") + "\\b").test(BRETT_QUELLE),
+            "BRETT_3D." + name.split(":")[0] + " fehlt");
+    }
+    const mit = BRETT_QUELLE.match(/function standbildMit\(el, wahl\) \{([\s\S]*?)\n\}/)[1];
+    wahr(/finally\s*\{[\s\S]*Z\.einst\.an = alt\.an;[\s\S]*Z\.einst\.thema = alt\.thema;[\s\S]*Z\.einst\.figuren = alt\.figuren;/.test(mit),
+        "die Wahl wird nicht zurückgesetzt");
+    wahr(!/einstellungenSpeichern/.test(mit), "die Vorschau speichert");
+    const waehlen = BRETT_QUELLE.match(/function aussehenWaehlen\(schluessel, wert\) \{([\s\S]*?)\n\}/)[1];
+    wahr(/!aussehenFrei\(\)\) return false/.test(waehlen), "Wählen prüft die Freigabe nicht");
 });
 
 pruefe("Die zwölf Crew-Schriften liegen bei und gehen offline mit", () => {

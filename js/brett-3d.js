@@ -250,8 +250,10 @@ function einstellungenLaden() {
         gespeichert = {};
     }
     /* Ohne Admin-Freigabe gilt die Vorgabe — auch wenn auf diesem Gerät
-       noch ein älteres eigenes Aussehen gespeichert ist (seit v0.129.0). */
-    if (!anpassungErlaubt()) gespeichert = {};
+       noch ein älteres eigenes Aussehen gespeichert ist (seit v0.129.0).
+       Seit v0.145.0 zählt die Werkstatt mit (`aussehenFrei`), wie im Tab
+       „Sammlung". */
+    if (!aussehenFrei()) gespeichert = {};
     const einst = Object.assign({}, VORGABE, gespeichert);
     /* 2D oder 3D wählt seit v0.144.0 jeder selbst (Tab „Anpassen") — die
        Wahl gilt also auch ohne Admin-Freigabe, aber nur, solange 3D frei
@@ -2904,6 +2906,51 @@ function anpassungErlaubt() {
         && !!ICH.anpassungAn && ICH.anpassungAn();
 }
 
+/*
+ * BRETT-THEMA UND FIGUREN SIND FREI (seit v0.145.0, Tab „Sammlung",
+ * Runde 4): mit der Admin-Freigabe oben ODER in der Werkstatt
+ * (js\freischaltung.js). Für alle anderen gilt die Vorgabe, bis der Turm
+ * (Runde 5) die Themen über Orte freischaltet. Der Paletten-Knopf am
+ * Brett bleibt dem Admin vorbehalten (`anpassungZeigen`).
+ */
+function aussehenFrei() {
+    return anpassungErlaubt()
+        || (typeof FREISCHALTUNG !== "undefined" && FREISCHALTUNG.werkstatt());
+}
+
+/* Was gerade gilt — auch vor dem ersten Aufbau (dann aus dem Speicher). */
+function aussehenLesen() {
+    const einst = Z.einst || einstellungenLaden();
+    return { thema: einst.thema, figuren: einst.figuren };
+}
+
+/*
+ * Brett-Thema oder Figuren wählen (seit v0.145.0, „Übernehmen" im Tab
+ * „Sammlung"). Nur Bekanntes und nur, wenn es frei ist; gespeichert wird
+ * wie über die Paletten-Tafel. Ohne fertiges Brett wird nur gespeichert —
+ * der Aufbau liest es dann.
+ */
+function aussehenWaehlen(schluessel, wert) {
+    const liste = schluessel === "thema" ? THEMEN : schluessel === "figuren" ? FIGUR_STILE : null;
+    if (!liste || !liste[wert] || !aussehenFrei()) return false;
+    if (!Z.einst) {
+        /* Noch nicht aufgebaut: `Z.einst` bleibt leer (daran erkennen
+           andere Stellen „noch nicht da"), nur der Speicher bekommt es. */
+        const einst = einstellungenLaden();
+        einst[schluessel] = wert;
+        try {
+            localStorage.setItem(SPEICHER_SCHLUESSEL, JSON.stringify(einst));
+        } catch (fehler) {
+            /* privates Fenster: dann eben nur für diese Sitzung */
+        }
+        return true;
+    }
+    Z.einst[schluessel] = wert;
+    einstellungenSpeichern();
+    if (Z.bereit) aussehenAnwenden(schluessel);
+    return true;
+}
+
 function anpassungZeigen() {
     if (!Z.knopfLeiste) return;
     const erlaubt = anpassungErlaubt();
@@ -3485,6 +3532,40 @@ function standbild(el) {
     bild.src = url;
     el.classList.add("vorschau-3d");
     el.appendChild(bild);
+}
+
+/*
+ * EIN STANDBILD MIT FREMDER WAHL (seit v0.145.0, Vorschau im Tab
+ * „Sammlung"): zeigt das Gitter in 3D mit dem Brett-Thema und den Figuren
+ * des ENTWURFS — auch wenn gerade 2D gilt oder das Thema gesperrt ist
+ * (Vorschau zeigt auch Gesperrtes). Das echte Brett ändert sich dabei
+ * nicht: Die Wahl gilt nur für die Dauer dieses einen Bildes und wird
+ * danach zurückgesetzt, samt der Figuren-Materialien des grossen Bretts.
+ * Gibt zurück, ob ein Bild entstanden ist (ohne fertiges 3D: nein).
+ */
+function standbildMit(el, wahl) {
+    if (!el || !Z.bereit || Z.fehler) return false;
+    const alt = { an: Z.einst.an, thema: Z.einst.thema, figuren: Z.einst.figuren };
+    const w = wahl || {};
+    Z.einst.an = true;
+    if (THEMEN[w.thema]) Z.einst.thema = w.thema;
+    if (FIGUR_STILE[w.figuren]) Z.einst.figuren = w.figuren;
+    const figurenAnders = Z.einst.figuren !== alt.figuren;
+    if (figurenAnders) materialienBauen();
+    try {
+        standbild(el);
+    } finally {
+        Z.einst.an = alt.an;
+        Z.einst.thema = alt.thema;
+        Z.einst.figuren = alt.figuren;
+        if (figurenAnders) {
+            materialienBauen();
+            for (const g of Z.figuren.values()) {
+                g.userData.netz.material = Z.mat[g.userData.farbe];
+            }
+        }
+    }
+    return !!el.querySelector(":scope > .vorschau-3d-bild");
 }
 
 /* ------------------------------------------------------------------ *
@@ -4369,6 +4450,12 @@ window.BRETT_3D = {
     },
     /* Kleine Bretter (`.vorschau`) als 3D-Standbild. */
     standbild,
+    /* Tab „Sammlung" (seit v0.145.0): Vorschau mit der Wahl des Entwurfs,
+       Brett-Thema und Figuren lesen, frei?, wählen. */
+    standbildMit,
+    aussehen: aussehenLesen,
+    aussehenFrei,
+    aussehenWaehlen,
     /* Die letzte Falle noch einmal zeigen (seit v0.136.0); `art` ohne
        gespeicherte Szene: die Karte dieser Art (Wiederholen nach Neuladen). */
     falleZeigen(art, felder) {

@@ -8,8 +8,9 @@
  * Bildschirm nur, dass er kommt — Titel und Satz sind die gemeinsame
  * Absprache und stehen in Typoluck wörtlich gleich.
  *
- * Bis v0.143 stand hier auch der Platzhalter „Bald" für den fünften Platz;
- * seit v0.144.0 ist dort der Tab „Anpassen" (js\anpassen.js).
+ * Hier steht auch der Platzhalter „Bald" für den fünften Platz der Leiste
+ * (bis v0.143 und wieder seit v0.145.0, Runde 4: „Anpassen" ist im Tab
+ * „Sammlung" aufgegangen, js\sammlung.js). Er ist nicht antippbar.
  */
 
 const HERAUSFORDERUNGEN = {
@@ -49,6 +50,17 @@ const HERAUSFORDERUNGEN = {
     }
 };
 
+/* Platz 5 der Leiste: still, ohne Inhalt (`platzhalter`, js\tabs.js). */
+const BALD = {
+    id: "bald",
+    titel: "Bald",
+    zeichen: "bald",
+    platzhalter: true,
+    aufbauen() {
+        /* Nie geöffnet — der Knopf ist gesperrt. */
+    }
+};
+
 if (typeof module !== "undefined" && module.exports) {
-    module.exports = { HERAUSFORDERUNGEN };
+    module.exports = { HERAUSFORDERUNGEN, BALD };
 }

@@ -1402,9 +1402,11 @@ Object.assign(TEAM_SCHACH, {
      * je Spielart wäre die zweite Wahrheit, die irgendwann von der ersten
      * abweicht.
      */
-    _vorschauBauen(variante, brett) {
+    _vorschauBauen(variante, brett, ohne3d) {
         /* `brett` ist wahlfrei — ohne Angabe die feste Aufstellung der
-           Spielart (seit v0.83; davor gab es nur diese eine Quelle). */
+           Spielart (seit v0.83; davor gab es nur diese eine Quelle).
+           `ohne3d` (seit v0.145.0): kein Standbild darüber — der Tab
+           „Sammlung" entscheidet selbst, ob und wie es 3D wird. */
         const stellung = brett || variante.aufstellung;
 
         const vorschau = TEAM_SCHACH._element("div", "vorschau");
@@ -1459,7 +1461,9 @@ Object.assign(TEAM_SCHACH, {
         }
 
         /* Seit v0.123.0 legt das 3D-Brett ein Standbild darüber. */
-        TEAM_SCHACH._standbild3d(vorschau);
+        if (ohne3d !== true) {
+            TEAM_SCHACH._standbild3d(vorschau);
+        }
 
         return vorschau;
     },

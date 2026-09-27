@@ -2,8 +2,8 @@
  * freischaltung.js — was ein Spieler schon freigeschaltet hat (seit
  * v0.144.0, UPCrew-Angleichung Runde 3).
  *
- * EINE Stelle für alle Fragen „darf er das schon?" — der Tab „Anpassen"
- * (js\anpassen.js), das 3D-Brett (js\brett-3d.js) und der Partie-Bildschirm
+ * EINE Stelle für alle Fragen „darf er das schon?" — der Tab „Sammlung"
+ * (js\sammlung.js, bis v0.144 Tab „Anpassen"), das 3D-Brett (js\brett-3d.js) und der Partie-Bildschirm
  * (js\team-schach-brett.js) fragen nur hier, nie selbst.
  *
  *   stufe()       Stufe im gemeinsamen Herausforderungs-Pfad beider Spiele.
