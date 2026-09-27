@@ -845,7 +845,9 @@ const TEAM_SCHACH = {
              * wurde von einem möglichst grossen Brett an den Rand gedrückt.
              * Solange gewählt wird, rollt die Seite also wie jede andere.
              */
-            TABS.rundeSetzen("team-schach", true, offene.laeuft === true);
+            /* Vierter Wert (seit v0.151.3): Solange die Partie nicht zu Ende
+               ist — auch schon im Vorraum —, ist die Tab-Leiste weg. */
+            TABS.rundeSetzen("team-schach", true, offene.laeuft === true, !offene.ergebnis);
 
             /* Die stille Zeitmessung läuft nur, solange eine Partie offen ist
                (v0.93) — siehe `_zeitMessungStarten`. */
@@ -1271,12 +1273,10 @@ const TEAM_SCHACH = {
      * schon offen haben und ihn nur eintippen wollen.
      */
     _einladungsText(partie) {
-        const code = SCHACH_RUNDE.beitrittsCode(partie.id);
-        const adresse = (typeof window !== "undefined" && window.location)
-            ? String(window.location.href).split("#")[0].split("?")[0]
-            : "";
-        return "Spiel mit mir Blunderluck — Code " + code
-            + (adresse ? ": " + TEAM_SCHACH.einladungsAdresse(adresse, code) : "");
+        /* Seit v0.151.6 aus `_einladungsTeile` — Text und Link in einem
+           (für „Kopieren" und Geräte, die keinen Link teilen können). */
+        const teile = TEAM_SCHACH._einladungsTeile(partie);
+        return teile.text + (teile.url ? ": " + teile.url : "");
     },
 
     /* Die Adresse der App mit angehängtem Code — die eine Stelle, die
@@ -1347,7 +1347,33 @@ const TEAM_SCHACH = {
 
         TABS.wechseln("team-schach");
         TEAM_SCHACH.codeBeitreten(code);
+        /* Ein Gast wird nach dem Ende dieser Runde einmal nach einem Konto
+           gefragt (seit v0.151.7, anmeldung-konto.js). */
+        if (typeof ANMELDUNG !== "undefined" && typeof ANMELDUNG.einladungsGastMerken === "function") {
+            ANMELDUNG.einladungsGastMerken();
+        }
         return true;
+    },
+
+    /*
+     * WAS GETEILT WIRD (seit v0.151.6, Nutzer 27.09.2026: „das Vorschaubild
+     * soll angepasst werden, nicht leer sein"): Text und Link GETRENNT. Bis
+     * v0.151.5 ging nur `text` (mit dem Link darin) an `navigator.share` —
+     * iOS zeigte oben im Teilen-Blatt ein leeres Text-Symbol. Mit `url`
+     * holt das Teilen-Blatt bzw. WhatsApp die Vorschau der Seite
+     * (og:image in index.html). Die Adresse kommt aus `location`, also
+     * lokal die lokale. Liefert { text, url } — `url` leer, wenn es keine
+     * Adresse gibt.
+     */
+    _einladungsTeile(partie) {
+        const code = SCHACH_RUNDE.beitrittsCode(partie.id);
+        const adresse = (typeof window !== "undefined" && window.location)
+            ? String(window.location.href).split("#")[0].split("?")[0]
+            : "";
+        return {
+            text: "Spiel mit mir Blunderluck — Code " + code,
+            url: adresse ? TEAM_SCHACH.einladungsAdresse(adresse, code) : ""
+        };
     },
 
     _codeTeilen(partie) {
@@ -1355,7 +1381,14 @@ const TEAM_SCHACH = {
             TEAM_SCHACH._codeKopieren(partie);
             return;
         }
-        navigator.share({ text: TEAM_SCHACH._einladungsText(partie) })
+        const teile = TEAM_SCHACH._einladungsTeile(partie);
+        const mitLink = { title: "Blunderluck", text: teile.text, url: teile.url };
+        /* Kann das Gerät keinen Link teilen (`canShare` sagt nein), bleibt
+           es beim Text mit Link darin — wie bis v0.151.5. */
+        const daten = (teile.url && (typeof navigator.canShare !== "function" || navigator.canShare(mitLink)))
+            ? mitLink
+            : { text: TEAM_SCHACH._einladungsText(partie) };
+        navigator.share(daten)
             .catch(() => { /* Abgebrochen — dann eben nicht. */ });
     },
 

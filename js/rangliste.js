@@ -155,8 +155,13 @@ const RANGLISTE = {
      * mitspielt. Wer dort entfernt wurde, taucht auch hier nicht mehr auf —
      * sonst stünden Kennungen ohne Namen in der Liste.
      */
-    gesamt(spielerDaten, schachTafel) {
-        const mitspieler = SPIELER.mitspieler(spielerDaten);
+    gesamt(spielerDaten, schachTafel, ichId) {
+        /* Gäste stehen seit v0.151.3 in keiner Rangliste — ausser der Gast
+           sieht seine eigene (sonst fehlten ihm Profil und Platz). `ichId`
+           ohne Angabe: die Person dieses Geräts. */
+        const eigene = (ichId !== undefined) ? ichId
+            : ((typeof ICH !== "undefined" && ICH.person()) ? ICH.person().id : "");
+        const mitspieler = SPIELER.mitspieler(spielerDaten, eigene);
         const schach = RANGLISTE.schachPunkte(schachTafel);
 
         const liste = mitspieler.map((eintrag) => {
@@ -798,13 +803,18 @@ const RANGLISTE = {
     },
 
     profilBearbeiten() {
+        /* „Nummer ändern" (seit v0.151.8) nur mit Konto — aus ANMELDUNG. */
+        const nummer = (typeof ANMELDUNG !== "undefined" && typeof ANMELDUNG._nummerEintrag === "function")
+            ? ANMELDUNG._nummerEintrag(ANMELDUNG.ich()) : [];
         return DIALOG.liste("Profil bearbeiten", "Was ändern",
-            RANGLISTE._bearbeitenEintraege(), "Schliessen")
+            RANGLISTE._bearbeitenEintraege().concat(nummer), "Schliessen")
             .then((wahl) => {
                 if (wahl === "abzeichen") {
                     RANGLISTE.abzeichenWaehlen();
                 } else if (wahl === "name") {
                     ANMELDUNG.namenAendern(ANMELDUNG.ich());
+                } else if (wahl === "nummer") {
+                    ANMELDUNG.nummerAendern(ANMELDUNG.ich());
                 } else if (wahl === "passwort") {
                     ANMELDUNG.passwortAendern(ANMELDUNG.ich());
                 }

@@ -322,6 +322,20 @@ pruefe("UP#Plus steht nicht in der Wertung (v0.139.0)", () => {
     wahr(!liste.some((eintrag) => eintrag.id === "id-up"), "UP fehlt");
 });
 
+pruefe("Gäste stehen in keiner Rangliste und keiner Suche — nur in ihrer eigenen Ansicht (v0.151.3)", () => {
+    const daten = spielerMitDrei();
+    daten.spieler.push(Object.assign(SPIELER.neuerSpieler("Gast", "id-gast"), { gast: true }));
+    const fremd = RANGLISTE.gesamt(daten, SCHACH_TAFEL.leereTafel(1000), "id-anna");
+    gleich(fremd.length, 3, "Anna sieht nur die drei Konten");
+    wahr(!fremd.some((eintrag) => eintrag.id === "id-gast"), "Gast fehlt");
+    const ohneIch = RANGLISTE.gesamt(daten, SCHACH_TAFEL.leereTafel(1000), "");
+    gleich(ohneIch.length, 3, "ohne eigene Person: auch ohne Gast");
+    const eigen = RANGLISTE.gesamt(daten, SCHACH_TAFEL.leereTafel(1000), "id-gast");
+    wahr(eigen.some((eintrag) => eintrag.id === "id-gast"), "der Gast sieht sich selbst");
+    gleich(SPIELER.mitspieler(daten).length, 3, "Suche (Freunde) ohne Gast");
+    gleich(SPIELER.istGast(daten.spieler[3]), true, "istGast");
+});
+
 pruefe("Jeder Mitspieler steht in der Wertung, auch ohne Punkte", () => {
     const liste = RANGLISTE.gesamt(spielerMitDrei(), SCHACH_TAFEL.leereTafel(1000));
 

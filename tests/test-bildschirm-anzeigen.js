@@ -390,7 +390,8 @@ pruefe("Die feste Seite gilt erst, wenn das Match laeuft (v0.55.0)", () => {
         throw new Error("die feste Seite gilt wieder ausnahmslos —"
             + " dann ist sie auch beim Team-Aussuchen an");
     }
-    if (quelle.indexOf("rundeSetzen(\"team-schach\", true, offene.laeuft === true)") === -1) {
+    /* Seit v0.151.3 folgt ein vierter Wert (`spielt`) — der dritte bleibt. */
+    if (quelle.indexOf("rundeSetzen(\"team-schach\", true, offene.laeuft === true") === -1) {
         throw new Error("der dritte Wert haengt nicht mehr an laeuft");
     }
 });

@@ -204,7 +204,10 @@ const SAMMLUNG = {
             titel: "Brett",
             wert: FREISCHALTUNG.brett(),
             stuecke: [
-                { wert: "2d", name: "2D", bild: SAMMLUNG._bild("brett-2d") },
+                /* Seit v0.151.3 echtes 2D: das Bild zeigt die flachen
+                   Figuren (js\figuren-flach.js) statt der alten Aufnahme. */
+                { wert: "2d", name: "2D", bild: (typeof FIGUREN_FLACH !== "undefined")
+                    ? FIGUREN_FLACH.miniBrett() : SAMMLUNG._bild("brett-2d") },
                 { wert: "3d", name: "3D", frei: FREISCHALTUNG.dreiDFrei(), ab: "Holzhalle",
                     bild: SAMMLUNG._bild("brett-3d") }
             ],

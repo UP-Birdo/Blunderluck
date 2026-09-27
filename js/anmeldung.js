@@ -264,7 +264,24 @@ const ANMELDUNG = {
             }
         }
 
+        /* Weg 3 (seit v0.151.7): NIEMAND auf dem Gerät und ein
+           Einladungslink (`?code=…`) — still als Gast anmelden und direkt
+           beitreten, ohne Anmelde-Bild (anmeldung-konto.js). */
+        if (!person && ANMELDUNG.einladungOhneAnmeldung()) {
+            ANMELDUNG.einladungAlsGast();
+            return;
+        }
+
         ANMELDUNG._vollbildZeigen();
+    },
+
+    /* Gilt der stille Gast-Weg? Nur mit UPCrew-Konten und einem gültigen
+       Code in der Adresse. */
+    einladungOhneAnmeldung() {
+        return typeof KONTO !== "undefined" && KONTO.aktiv()
+            && typeof ANMELDUNG.einladungAlsGast === "function"
+            && typeof TEAM_SCHACH !== "undefined" && typeof window !== "undefined" && !!window.location
+            && TEAM_SCHACH.einladungsCodeAusAdresse(window.location.href) !== "";
     },
 
     _vollbildZeigen(vorname) {
@@ -728,15 +745,27 @@ const ANMELDUNG = {
                         : "Noch keins",
                     wert: "passwort"
                 }
-            ],
+            ].concat(ANMELDUNG._nummerEintrag(ich)),
             "Schließen"
         );
 
         if (wahl === "name") {
             await ANMELDUNG.namenAendern(ich);
+        } else if (wahl === "nummer") {
+            await ANMELDUNG.nummerAendern(ich);
         } else if (wahl === "passwort") {
             await ANMELDUNG.passwortAendern(ich);
         }
+    },
+
+    /* Der Eintrag „Nummer ändern" (seit v0.151.8) — nur mit UPCrew-Konto,
+       nicht für Gäste; sonst eine leere Liste. */
+    _nummerEintrag(ich) {
+        if (!ich || ich.gast === true || typeof KONTO === "undefined" || !KONTO.aktiv()
+                || typeof ANMELDUNG.nummerAendern !== "function") {
+            return [];
+        }
+        return [{ beschriftung: "Nummer ändern", hinweis: "Zurzeit #" + ich.tag, wert: "nummer" }];
     },
 
     async namenAendern(ich) {

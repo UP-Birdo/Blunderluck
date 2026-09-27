@@ -52,6 +52,11 @@ const EINSTELLUNGEN = {
             return;
         }
         document.body.classList.add("design-3d");
+        /* Seit v0.151.3: im 2D-Brett flache Figuren statt der gerenderten
+           3D-Bilder (js\figuren-flach.js, Klasse `brett-flach`). */
+        if (typeof FIGUREN_FLACH !== "undefined") {
+            FIGUREN_FLACH.anwenden();
+        }
     },
 
     aufbauen(behaelter) {
@@ -217,6 +222,12 @@ const EINSTELLUNGEN = {
            der Pfeil dort führt in die Einstellungen zurück. */
         spalte.appendChild(EINSTELLUNGEN._knopf("Profil", "knopf-still",
             () => RANGLISTE.eigenesProfilOeffnen("einstellungen")));
+
+        /* Die eigene Nummer ändern (seit v0.151.8) — nur mit Konto. */
+        if (eintrag && eintrag.gast !== true && typeof ANMELDUNG.nummerAendern === "function") {
+            spalte.appendChild(EINSTELLUNGEN._knopf("Nummer ändern", "knopf-still",
+                () => ANMELDUNG.nummerAendern(ANMELDUNG.ich()).then(() => EINSTELLUNGEN._zeichnen())));
+        }
 
         /* EIN Knopf statt einer eingebetteten Mitspieler-Liste (seit
            v0.100.0): Er öffnet den eigenen Bildschirm mit der Tabelle

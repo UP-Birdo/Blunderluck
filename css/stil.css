@@ -440,7 +440,9 @@ select {
  * UPCrew-Angleichung Runde 4: Aussehen und Bewegung der Leiste stehen
  * NUR in css\upcrew-leiste.css (Kopie aus Design\3D-Schrift\final, lädt
  * nach diesem Stil, in Typoluck gleich): nur Symbole, der Name nur am
- * aktiven Eintrag, der auf einer gehobenen Kachel in der Hauptfarbe sitzt.
+ * aktiven Eintrag — seit v0.151.3 eine breite Kapsel in der Hauptfarbe,
+ * Symbol und Name nebeneinander (Variante C; bis v0.151.2 eine gehobene
+ * Kachel mit dem Namen darunter).
  * Die eigenen Regeln für Schriftgröße, Farbstrich oben und Knopfhöhe sind
  * entfallen (v0.142.0 bis v0.144: Symbol über Wort, gleitender Strich).
  *
@@ -458,12 +460,14 @@ select {
 
 :root {
     --leiste-hoehe: 64px;
-    /* So weit ragt die gehobene Kachel des aktiven Eintrags samt Schatten
-       über die Leiste (Baustein: 52 px Kachel, um 78 % nach oben
-       verschoben — rund 9 px, mit Schatten rund 12). Was auf der Leiste
-       klebt (Vorraum „Bereit", „Spielen" in der Auswahl), hält unten so
-       viel Innenabstand mehr, damit die Kachel keinen Knopf verdeckt. */
-    --leiste-kachel: 12px;
+    /* So weit ragt der aktive Eintrag über die Leiste. Bis v0.151.2 eine
+       gehobene Kachel (rund 12 px mit Schatten); seit v0.151.3 die Kapsel
+       (Baustein-Variante C, Nutzer 27.09.2026): 44 px hoch, um 62 % statt
+       50 % verschoben — ihre Oberkante liegt rund 5 px INNERHALB der
+       Leiste, nach oben ragt nichts mehr. 4 px bleiben als Luft für
+       Kante und Rundung. Was auf der Leiste klebt (Vorraum „Bereit",
+       „Spielen" in der Auswahl), hält unten so viel Innenabstand mehr. */
+    --leiste-kachel: 4px;
 }
 
 .tab-leiste.up-leiste {
@@ -505,8 +509,20 @@ select {
  * (`TEAM_SCHACH`, `rundeSetzen(…, true, offene.laeuft)`). Vor dem Anpfiff
  * (Vorraum) und nach dem Ende steht die Leiste.
  */
-body.partie-fest .tab-leiste.up-leiste {
+body.partie-fest .tab-leiste.up-leiste,
+body.partie-spielt .tab-leiste.up-leiste {
     display: none;
+}
+
+/*
+ * SEIT v0.151.3 AUCH SCHON IM VORRAUM (Nutzer 27.09.2026: „während spielen
+ * bei beiden games soll das band unten verschwinden"): `body.partie-spielt`
+ * = eine Partie ist offen und nicht zu Ende (`TABS.rundeSetzen`, vierter
+ * Wert). Ohne Leiste bleibt unten kein Platz für sie frei — nur der
+ * iPhone-Streifen.
+ */
+body.partie-spielt .tab-inhalt {
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
 }
 
 /* ------------------------------------------------------------------ *
@@ -886,16 +902,32 @@ body.design-3d .heute-bild .vorschau {
  *   - UNTEN BÜNDIG: Der Balken „Zurück / Übernehmen" klebt auf der festen
  *     Leiste (der Baustein kennt sie nicht und klebte sonst dahinter), und
  *     der Tab hat unten keinen eigenen Innenabstand, sonst stünde unter dem
- *     Balken ein Streifen, durch den Inhalt rollt. Die gehobene Kachel der
- *     Leiste ragt dabei in den unteren Innenrand des Balkens (12 px), nicht
- *     auf seine Knöpfe.
+ *     Balken ein Streifen, durch den Inhalt rollt. Seit v0.151.3 ragt die
+ *     Kapsel der Leiste nicht mehr in den Balken (`--leiste-kachel` 4 px).
  */
 .sammlung-ort {
     margin: 0 calc(-1 * var(--inhalt-rand));
 }
 
+/* Die Kopfzeile klebt über die VOLLE Breite (seit v0.151.4). Bis v0.151.3
+   ließ sie links und rechts den Innenrand der Seite (12 px) frei — dort
+   schaute beim Rollen der Inhalt vorbei, am Handy als orangefarbener
+   Bogen neben „Sammlung" (die Kante einer gewählten Kachel; Nutzer-Bild
+   27.09.2026). */
 .sammlung > .sammlung-kopf {
-    margin-bottom: 0;
+    margin: 0 calc(-1 * var(--inhalt-rand));
+    padding-left: var(--inhalt-rand);
+    padding-right: var(--inhalt-rand);
+}
+
+/* Klarer Abschluss unter der klebenden Vorschau (seit v0.151.4): eine
+   kräftigere Kante statt der Haarlinie, damit die Regale sichtbar DARUNTER
+   verschwinden statt halb hervorzuschauen. Harte Kante, kein weicher
+   Schatten (UPCrew-Standard). */
+.sammlung .upa-vorschau-rahmen {
+    border-bottom: 2px solid var(--rahmen);
+    box-shadow: 0 4px 0 color-mix(in srgb, var(--flaeche) 70%, transparent);
+    margin-bottom: 8px;
 }
 
 .sammlung-anteil {
@@ -907,6 +939,11 @@ body.design-3d .heute-bild .vorschau {
 
 .sammlung .upa-aktion {
     bottom: calc(var(--leiste-hoehe) + env(safe-area-inset-bottom, 0px));
+    /* Seit v0.151.4 etwas flacher (8 statt 10/12 px): Mit der Kapsel-Leiste
+       ragt nichts mehr herein, und Balken plus Leiste kosteten am Handy
+       viel Höhe (Nutzer-Bild 27.09.2026). */
+    padding-top: 8px;
+    padding-bottom: 8px;
 }
 
 .tab-inhalt:has(> .sammlung:not([hidden])) {

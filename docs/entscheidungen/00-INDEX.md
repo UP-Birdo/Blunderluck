@@ -99,6 +99,7 @@ wird. Die Liste dessen, was noch kommt, steht in [../ROADMAP.md](../ROADMAP.md).
 
 ## erkenntnisse.md - Teuer erkaufte Erkenntnisse
 
+- Weisse Seite nach einem Update: Worker-Wechsel ohne Rückweg (27.09.2026, v0.151.5)
 - Ein neuer Service Worker übernimmt — die offene Seite bleibt trotzdem alt (27.09.2026, v0.151.2)
 - **`-NurFazit` meldet „0 Fehler", wenn eine Testdatei gar nicht startet**
   (26.09.2026, v0.144.0 — abgestuerzte Datei zaehlt keine Pruefungen; gruen

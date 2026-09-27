@@ -120,6 +120,10 @@ const FREISCHALTUNG = {
                 && typeof window.BRETT_3D.wahlUebernehmen === "function") {
             window.BRETT_3D.wahlUebernehmen(an);
         }
+        /* Echtes 2D (seit v0.151.3): flache Figuren an/aus. */
+        if (typeof FIGUREN_FLACH !== "undefined") {
+            FIGUREN_FLACH.anwenden();
+        }
         return an ? "3d" : "2d";
     }
 };

@@ -362,6 +362,11 @@ const APP = {
     statusTechnik: "",
 
     starten() {
+        /* Für den Notfall-Weg in index.html (seit v0.151.5): Die App ist
+           angekommen. Steht als ERSTES — auch wenn danach etwas stolpert,
+           sind die Dateien da, und ein Neuladen würde nichts retten. */
+        window.BLUNDERLUCK_GESTARTET = true;
+
         DIALOG.aufbauen(document.getElementById("dialog"));
 
         /* Jeder Knopf vibriert kurz beim Antippen (UPCrew-Standard, seit

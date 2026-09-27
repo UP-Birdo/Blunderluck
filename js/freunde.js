@@ -23,10 +23,32 @@
 const FREUNDE = {
 
     /* Namen gibt es seit v0.138.0 mehrfach — eindeutig ist erst Name#Nummer
-       (js\konto.js). Ohne UPCrew-Konto bleibt es der blanke Name. */
+       (js\konto.js). Gezeigt wird seit v0.151.8 nur der Name (Nutzer
+       27.09.2026: um die Nummer soll sich niemand sorgen müssen). */
     _name(spieler) {
-        return (typeof KONTO !== "undefined" && KONTO.aktiv())
-            ? KONTO.anzeigeName(spieler) : spieler.name;
+        return spieler.name;
+    },
+
+    /* Die Nummer leise hinter dem Namen — nur, wenn es den Namen unter den
+       Mitspielern mehrmals gibt; sonst "". */
+    _nummerZusatz(liste, spieler) {
+        if (!spieler || !spieler.tag || typeof KONTO === "undefined") {
+            return "";
+        }
+        const schluessel = KONTO.nameSchluessel(spieler.name);
+        const gleich = liste.filter((anderer) =>
+            KONTO.nameSchluessel(anderer.name) === schluessel).length;
+        return gleich > 1 ? "#" + spieler.tag : "";
+    },
+
+    /* Passt der Spieler zum Suchtext? Name, oder Name#Nummer, wenn die
+       Nummer mitgetippt wurde. */
+    _passt(spieler, gesucht) {
+        if (spieler.name.toLowerCase().indexOf(gesucht) !== -1) {
+            return true;
+        }
+        return gesucht.indexOf("#") !== -1 && !!spieler.tag
+            && (spieler.name + "#" + spieler.tag).toLowerCase().indexOf(gesucht) !== -1;
     },
 
     /* Der Suchtext überlebt das Neuzeichnen der Karte. */
@@ -55,6 +77,8 @@ const FREUNDE = {
         }
 
         const sicht = SPIELER.freundeVon(daten, person.id);
+        const alle = SPIELER.mitspieler(daten);
+        const zusatz = (spieler) => FREUNDE._nummerZusatz(alle, spieler);
 
         /* Offene Anfragen zuerst — sie warten auf eine Antwort. */
         if (sicht.offen.length > 0) {
@@ -65,7 +89,7 @@ const FREUNDE = {
                         () => FREUNDE.annehmen(anderer.id)),
                     FREUNDE._knopf("Ablehnen", "knopf-still knopf-klein",
                         () => FREUNDE.ablehnen(anderer.id))
-                ], anderer.id));
+                ], anderer.id, zusatz(anderer)));
             }
         }
 
@@ -75,7 +99,7 @@ const FREUNDE = {
                     DIALOG.zweiSchritt(
                         FREUNDE._knopf("Entfernen", "knopf-gefahr knopf-klein", null),
                         () => FREUNDE.entfernen(freund.id))
-                ], freund.id));
+                ], freund.id, zusatz(freund)));
             }
         } else {
             /* Leer-Zustand mit Ausweg (UPCrew-Standard): Der Knopf springt
@@ -101,7 +125,7 @@ const FREUNDE = {
                 karte.appendChild(FREUNDE._zeileBauen(FREUNDE._name(anderer), [
                     FREUNDE._knopf("Zurückziehen", "knopf-still knopf-klein",
                         () => FREUNDE.zurueckziehen(anderer.id))
-                ], anderer.id));
+                ], anderer.id, zusatz(anderer)));
             }
         }
 
@@ -111,7 +135,7 @@ const FREUNDE = {
         feld.className = "freunde-suche";
         feld.type = "text";
         feld.value = FREUNDE.suchtext;
-        feld.placeholder = "Name oder Name#Nummer …";
+        feld.placeholder = "Name …";
         feld.autocomplete = "off";
         feld.setAttribute("aria-label", "Freunde suchen");
         karte.appendChild(feld);
@@ -130,7 +154,7 @@ const FREUNDE = {
             const stand = SPIELER.normalisieren(ANMELDUNG.abgleich.daten);
             const gefunden = SPIELER.mitspieler(stand).filter((anderer) =>
                 anderer.id !== person.id
-                && FREUNDE._name(anderer).toLowerCase().indexOf(gesucht) !== -1
+                && FREUNDE._passt(anderer, gesucht)
                 && SPIELER.freundschaft(stand, person.id, anderer.id) === "keine");
 
             if (gefunden.length === 0) {
@@ -142,7 +166,7 @@ const FREUNDE = {
                 treffer.appendChild(FREUNDE._zeileBauen(FREUNDE._name(anderer), [
                     FREUNDE._knopf("Anfrage senden", "knopf-still knopf-klein",
                         () => FREUNDE.anfragen(anderer.id))
-                ], anderer.id));
+                ], anderer.id, FREUNDE._nummerZusatz(SPIELER.mitspieler(stand), anderer)));
             }
         };
 
@@ -215,18 +239,29 @@ const FREUNDE = {
      * ---------------------------------------------------------------- */
 
     /* `id` (seit v0.119.0) macht den Namen zum Knopf ins Profil. */
-    _zeileBauen(name, knoepfe, id) {
+    _zeileBauen(name, knoepfe, id, nummer) {
         const zeile = document.createElement("div");
         zeile.className = "freunde-zeile";
 
+        /* Name und (nur bei gleichen Namen) die leise Nummer bleiben links
+           beisammen. */
+        const wer = document.createElement("span");
+        wer.className = "freunde-wer";
         if (id && typeof TEAM_SCHACH !== "undefined" && TEAM_SCHACH._nameKnopfBauen) {
-            zeile.appendChild(TEAM_SCHACH._nameKnopfBauen(id, "freunde-name"));
+            wer.appendChild(TEAM_SCHACH._nameKnopfBauen(id, "freunde-name"));
         } else {
             const beschriftung = document.createElement("span");
             beschriftung.className = "freunde-name";
             beschriftung.textContent = name;
-            zeile.appendChild(beschriftung);
+            wer.appendChild(beschriftung);
         }
+        if (nummer) {
+            const leise = document.createElement("span");
+            leise.className = "freunde-nummer";
+            leise.textContent = nummer;
+            wer.appendChild(leise);
+        }
+        zeile.appendChild(wer);
 
         const leiste = document.createElement("span");
         leiste.className = "freunde-knoepfe";

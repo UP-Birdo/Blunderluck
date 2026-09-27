@@ -3,6 +3,94 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.151.8 — 27.09.2026
+
+**Anmelden nur mit Name und Passwort — um die Nummer musst du dich nicht kümmern.**
+
+- Beim Anmelden gibst du nur deinen Namen und dein Passwort ein. Gibt es
+  den Namen mehrmals, findet die App dein Konto selbst. Stimmt es nicht,
+  heißt es „Name oder Passwort falsch".
+- Beim neuen Konto (und beim Sichern als Gast) gibst du nur Name und
+  Passwort ein. Danach steht kurz „Angemeldet · Name" — ohne Nummer.
+- Namen erscheinen überall ohne Nummer. Nur bei Freunden und in der
+  Freundessuche steht sie klein und blass dahinter, wenn es denselben
+  Namen zweimal gibt.
+- Deine Nummer siehst und änderst du in den Einstellungen (Konto) oder
+  im Profil: würfeln oder selbst eine freie wählen. Freunde, Partien und
+  Fortschritt bleiben.
+- In den Beispieltexten steht kein echter Name mehr.
+
+## v0.151.7 — 27.09.2026
+
+**Einladungslink: sofort mitspielen, ohne Anmeldung.**
+
+- Wer einen geteilten Link zum ersten Mal öffnet, landet direkt in der
+  Runde — kein Anmelde-Fenster. Die App legt dafür still einen Gast an
+  („Gast#1234"). Wer schon angemeldet ist, tritt wie bisher direkt bei.
+- Klappt das wegen des Netzes nicht, kommt „Nochmal" — der Code bleibt.
+- Nach dem Ende dieser Runde fragt die App den Gast einmal kurz: „Konto
+  erstellen?" — mit Konto bleiben Partie, Fortschritt und Freunde. Nach
+  „Später" erst wieder nach der nächsten Einladung.
+
+## v0.151.6 — 27.09.2026
+
+**Geteilte Einladungen mit Vorschaubild.**
+
+- „Teilen" im Code-Bildschirm gibt jetzt Text UND Link getrennt weiter.
+  Dadurch zeigt das Teilen-Blatt am iPhone bzw. WhatsApp ein Bild von
+  Blunderluck (König, „Schach mit Lootboxen") statt eines leeren
+  Text-Symbols.
+- Wer den Link öffnet, landet wie bisher direkt beim Beitreten mit dem
+  Code. „Kopieren" kopiert weiter Text und Link.
+
+## v0.151.5 — 27.09.2026
+
+**Schutz gegen die weisse Seite nach einem Update.**
+
+- In Typoluck blieb am iPhone nach einem Update einmal nur eine weisse
+  Seite. Blunderluck hat denselben Aufbau und ist jetzt genauso geschützt:
+  Die App holt ihre Dateien beim Update nur noch aus ihrem EIGENEN
+  Zwischenspeicher (nie aus dem von Typoluck oder einer alten Fassung) und
+  legt neue Dateien garantiert frisch ab.
+- **Notfall-Weg:** Kommt die App 10 Sekunden nach dem Öffnen nicht hoch,
+  räumt sie ihren Zwischenspeicher auf und lädt einmal neu. Klappt auch
+  das nicht, steht dort nur „Neu laden" — keine Endlosschleife.
+
+## v0.151.4 — 27.09.2026
+
+**Sammlung aufgeräumt, Anmeldung in deinen Farben.**
+
+- **Kein orangefarbener Bogen mehr oben links in der Sammlung:** Beim
+  Rollen schaute neben „Sammlung" der Rand einer gewählten Kachel vorbei.
+  Die Kopfzeile deckt jetzt die ganze Breite.
+- **Klarer Abschluss unter der Vorschau:** Eine deutliche Kante trennt die
+  klebende Vorschau von den Regalen, die darunter verschwinden.
+- **Weniger Höhe unten:** Der Balken „Zurück · Übernehmen" ist etwas
+  flacher und sitzt bündig auf der neuen Leiste.
+- **Anmeldung nicht mehr violett:** Das Anmelde-Fenster folgt jetzt deiner
+  Farbwelt und Hell/Dunkel — ab Werk Orange. Violett gibt es nur noch als
+  Farbwelt „Studio".
+
+## v0.151.3 — 27.09.2026
+
+**Echtes 2D, keine Gäste in der Rangliste, und beim Spielen ist die Leiste
+unten weg.**
+
+- **Echtes 2D:** Im 2D-Brett stehen jetzt flache Figuren — im Stil der
+  kleinen Figuren im Turm (Bauer, Springer, König), hell mit dunkler Kante
+  bzw. dunkel mit heller Kante, mitten auf dem Feld. Bisher zeigte auch das
+  2D-Brett die gerenderten Bilder der 3D-Figuren. Gilt für Brett, Vorschau
+  auf dem Start und das Bild „2D" in der Sammlung. 3D bleibt 3D.
+- **Gäste nicht in der Rangliste:** Wer „Als Gast" spielt, steht in keiner
+  Rangliste und taucht in keiner Suche auf. Der Gast selbst sieht seinen
+  Platz weiter.
+- **Leiste weg beim Spielen:** Sobald eine Partie offen ist — schon ab
+  „Bereit" —, ist die Leiste unten weg und der Platz frei. Nach dem Ende
+  ist sie wieder da.
+- **Neue Leiste unten:** Der aktive Tab ist jetzt eine breite Kapsel in der
+  Hauptfarbe, Symbol und Name nebeneinander — passt auch auf schmale
+  Handys („Sammlung" bei 320 px). Gleich wie in Typoluck.
+
 ## v0.151.2 — 27.09.2026
 
 **Neue Versionen kommen jetzt auch an.**

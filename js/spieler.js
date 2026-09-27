@@ -254,11 +254,20 @@ const SPIELER = {
             && String(spieler.name || "").trim().toLowerCase() === "up";
     },
 
-    /* Die Spielerliste ohne das Verteiler-Konto — für alles, was Menschen
-       zeigt, die mitspielen (Rangliste, Suche). */
-    mitspieler(daten) {
+    /* Ein Gast-Konto (anonym, „Als Gast spielen") — seit v0.151.3 in keiner
+       Liste, die andere sehen (Nutzer 27.09.2026: „Gäste sollen nicht in
+       Rangliste angezeigt werden"). */
+    istGast(spieler) {
+        return !!spieler && spieler.gast === true;
+    },
+
+    /* Die Spielerliste ohne das Verteiler-Konto und ohne Gäste — für alles,
+       was Menschen zeigt, die mitspielen (Rangliste, Suche). `auchId`: diese
+       eine Person bleibt drin, auch als Gast (die eigene Anzeige). */
+    mitspieler(daten, auchId) {
         return SPIELER.normalisieren(daten).spieler
-            .filter((spieler) => !SPIELER.istVerteiler(spieler));
+            .filter((spieler) => !SPIELER.istVerteiler(spieler)
+                && (!SPIELER.istGast(spieler) || (!!auchId && spieler.id === auchId)));
     },
 
     /* Hat der Spieler eine PIN hinterlegt? Nur dann ist er von einem fremden

@@ -474,5 +474,27 @@ pruefe("App-Zeichen nur als PNG, das alte SVG hängt nirgends mehr (v0.144.1)", 
     wahr(/if \(-not \$AltesZeichen\)[\s\S]*?exit 1/.test(werkzeug), "Icons-Erzeugen.ps1 ohne Sperre");
 });
 
+/*
+ * DIE ANMELDUNG FOLGT DER FARBWELT (seit v0.151.4, Nutzer 27.09.2026: „die
+ * Farben stimmen nicht"). Bis v0.151.3 setzte das Anmelde-Vollbild eigene
+ * UPCrew-Violett-Werte. Keine Regel für `.anmeldung…` darf eine
+ * Farbwelt-Variable neu setzen oder einen festen Farbwert tragen.
+ */
+pruefe("Anmeldung ohne eigene Farben: erbt Farbwelt und Darstellung (v0.151.4)", () => {
+    const funde = [];
+    for (const name of EIGENE_STILE) {
+        for (const regel of regeln(dateisystem.readFileSync(pfad.join(projekt, "css", name), "utf8"))) {
+            if (regel.selektor.indexOf(".anmeldung") === -1) {
+                continue;
+            }
+            if (/--(flaeche|karte|karte-leise|rahmen|schrift|schrift-leise|haupt|haupt-schrift|haupt-kante|still-kante)\s*:/.test(regel.inhalt)
+                    || /#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(/.test(regel.inhalt)) {
+                funde.push(name + ": " + regel.selektor);
+            }
+        }
+    }
+    gleich(funde.join(" | "), "", "feste Farben in der Anmeldung");
+});
+
 console.log(anzahlOk + " ok, " + anzahlFehler + " Fehler");
 process.exit(anzahlFehler === 0 ? 0 : 1);

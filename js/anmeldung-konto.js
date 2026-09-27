@@ -10,7 +10,8 @@
  * Gast, Rollen) stehen in js\konto.js; hier wird nur gefragt und gezeigt.
  *
  * DIE WEGE HINEIN (Nutzer-Aufträge 25.09.2026):
- *   - Mit UPCrew-Konto anmelden: „Name#Nummer" und Passwort.
+ *   - Mit UPCrew-Konto anmelden: Name und Passwort (seit v0.151.8; die
+ *     Nummer muss niemand kennen — „Name#Nummer" geht weiter direkt).
  *   - Neues UPCrew-Konto: Name (nur Buchstaben und Ziffern) und Passwort
  *     nach der UPCrew-Regel; die Nummer kommt von selbst.
  *   - Als Gast spielen: ohne alles, an das Gerät gebunden. Hin und wieder
@@ -91,9 +92,8 @@ Object.assign(ANMELDUNG, {
 
     _kontoAnmeldenZeigen(vorbelegt) {
         const kasten = ANMELDUNG._kastenBauen("Anmelden",
-            "Name#Nummer, z. B. Jonas#0001 · altes Konto: Name und "
-                + "altes Passwort");
-        const name = ANMELDUNG._kontoFeld(kasten, "Name#Nummer", "username");
+            "Name und Passwort · altes Konto: Name und altes Passwort");
+        const name = ANMELDUNG._kontoFeld(kasten, "Name", "username");
         const passwort = ANMELDUNG._kontoFeld(kasten, "Passwort", "current-password");
         name.feld.addEventListener("input", () => {
             const sauber = KONTO.eingabeSaeubern(name.feld.value);
@@ -134,9 +134,12 @@ Object.assign(ANMELDUNG, {
             if (ergebnis.fehler === "falsch") {
                 fehlversuche += 1;
                 passwort.feld.value = "";
+                /* Wurden mehrere Konten gleichen Namens versucht, bleibt
+                   offen, ob Name oder Passwort falsch ist (seit v0.151.8). */
+                const wasFalsch = ergebnis.reihum ? "Name oder Passwort falsch" : "Passwort falsch";
                 passwort.fehler.textContent = fehlversuche >= 3
-                    ? "Falsch · vergessen? Admin gibt Neu-Verbinden frei"
-                    : "Passwort falsch";
+                    ? wasFalsch + " · vergessen? Admin gibt Neu-Verbinden frei"
+                    : wasFalsch;
             } else {
                 (ergebnis.feld === "name" ? name : passwort).fehler.textContent = ergebnis.text;
             }
@@ -251,7 +254,7 @@ Object.assign(ANMELDUNG, {
 
     _kontoNeuZeigen() {
         const kasten = ANMELDUNG._kastenBauen("Neues UPCrew-Konto",
-            "Für alle UPCrew-Spiele · Nummer (#1234) automatisch");
+            "Für alle UPCrew-Spiele · Name und Passwort genügen");
         const name = ANMELDUNG._kontoFeld(kasten, "Name · Buchstaben, Ziffern", "username");
         ANMELDUNG._nameFeldSaeubern(name.feld);
         const passwort = ANMELDUNG._kontoFeld(kasten,
@@ -290,7 +293,116 @@ Object.assign(ANMELDUNG, {
         await ANMELDUNG._kontoNachladen();
         ANMELDUNG._uebernehmen(ergebnis.eintrag);
         ANMELDUNG._vollbildSchliessen();
-        DIALOG.kurzmeldung("Gast · " + KONTO.anzeigeName(ergebnis.eintrag));
+        DIALOG.kurzmeldung("Gast · " + ergebnis.eintrag.name);
+    },
+
+    /* ---------------------------------------------------------------- *
+     * Einladungslink ohne Anmeldung (seit v0.151.7)
+     *
+     * Nutzer 27.09.2026: „mach den teilbaren Link so, dass man in die Runde
+     * kommt, ohne sich anmelden zu müssen — also einen Gast-Account im
+     * Hintergrund erstellen, und wenn man fertig ist mit der Runde, soll man
+     * gefragt werden: Account erstellen".
+     *
+     * Kommt jemand OHNE Person auf dem Gerät über einen Link mit `?code=`,
+     * legt `anmelden` still einen Gast an (derselbe Weg wie „Als Gast
+     * spielen": anonymes Firebase-Konto + Eintrag „Gast#1234") — ohne
+     * Vollbild. Danach läuft der gewohnte Weg: `beiAngemeldet` → der Code
+     * aus der Adresse → beitreten. Scheitert es, kommt „Nochmal"; der Code
+     * bleibt in der Adresse, bis das Beitreten wirklich läuft.
+     * ---------------------------------------------------------------- */
+
+    /* Merker auf dem Gerät: „1" = eine Einladungs-Runde als Gast steht an,
+       nach ihrem Ende wird einmal nach einem Konto gefragt. */
+    EINLADUNG_GAST_SCHLUESSEL: "blunderluck.einladung-gast",
+
+    /* Still als Gast anmelden und die Einladung annehmen. Liefert wahr,
+       wenn der Gast steht. */
+    async einladungAlsGast() {
+        ANMELDUNG.anmeldenLaeuft = true;
+        for (;;) {
+            let ergebnis = null;
+            try {
+                ergebnis = await KONTO.gastAnlegen(ANMELDUNG.abgleich.speicher, ANMELDUNG.abgleich.daten);
+            } catch (fehler) {
+                ergebnis = { ok: false, text: fehler && fehler.message };
+            }
+            if (ergebnis && ergebnis.ok) {
+                await ANMELDUNG._kontoNachladen();
+                ANMELDUNG._uebernehmen(ergebnis.eintrag);
+                /* Schliesst nur den (unsichtbaren) Vorgang und meldet
+                   „angemeldet" → app.js nimmt den Code aus der Adresse. */
+                ANMELDUNG._vollbildSchliessen();
+                DIALOG.kurzmeldung("Gast · " + ergebnis.eintrag.name);
+                return true;
+            }
+            const nochmal = await DIALOG.fehler("Beitreten geht nicht", {
+                folge: "Code bleibt", technik: ergebnis && ergebnis.text, nochmal: true });
+            if (!nochmal) {
+                /* Kein zweiter Versuch: das gewohnte Anmelde-Bild — der Code
+                   steht weiter in der Adresse und gilt nach jeder Anmeldung. */
+                ANMELDUNG.anmeldenLaeuft = false;
+                ANMELDUNG._vollbildZeigen();
+                return false;
+            }
+        }
+    },
+
+    /* Wurde gerade als Gast über einen Link beigetreten? Dann nach dem Ende
+       dieser Runde einmal fragen (gerufen aus `einladungAusAdresseAnnehmen`). */
+    einladungsGastMerken() {
+        if (!ANMELDUNG.istGast()) {
+            return;
+        }
+        try {
+            window.localStorage.setItem(ANMELDUNG.EINLADUNG_GAST_SCHLUESSEL, "1");
+        } catch (fehler) {
+            /* ohne Gerätespeicher: dann wird eben nicht gefragt */
+        }
+    },
+
+    /* Die Regel, rein: gefragt wird nur ein Gast, und nur, wenn eine
+       Einladungs-Runde ansteht (Merker „1"). */
+    sollNachEinladungFragen(istGast, merker) {
+        return istGast === true && merker === "1";
+    },
+
+    /*
+     * NACH DEM ENDE DER RUNDE (Abschluss weggelegt, js\team-schach-
+     * auswertung.js `abschlussSchliessen`): einmal kurz fragen. Der Merker
+     * wird VOR der Frage gelöscht — so fragt es höchstens einmal je Runde,
+     * und nach „Später" erst wieder nach der nächsten Einladungs-Runde.
+     * „Konto erstellen" = der bestehende Weg „Spielstand sichern"
+     * (`gastSichernOeffnen`): Der Gast wird zum Konto, alles bleibt.
+     */
+    async nachEinladungFragen() {
+        let merker = null;
+        try {
+            merker = window.localStorage.getItem(ANMELDUNG.EINLADUNG_GAST_SCHLUESSEL);
+        } catch (fehler) {
+            return false;
+        }
+        if (!KONTO.aktiv() || !ANMELDUNG.sollNachEinladungFragen(ANMELDUNG.istGast(), merker)) {
+            return false;
+        }
+        try {
+            window.localStorage.removeItem(ANMELDUNG.EINLADUNG_GAST_SCHLUESSEL);
+        } catch (fehler) {
+            return false;
+        }
+        const ja = await DIALOG._zeigen({
+            titel: "Konto erstellen?",
+            text: "Partie, Fortschritt, Freunde bleiben",
+            zusatz: null,
+            knoepfe: [
+                { beschriftung: "Später", wert: false, stil: "knopf-still" },
+                { beschriftung: "Konto erstellen", wert: true, stil: "knopf-haupt" }
+            ]
+        });
+        if (ja) {
+            ANMELDUNG.gastSichernOeffnen();
+        }
+        return true;
     },
 
     /* ---------------------------------------------------------------- *
@@ -331,7 +443,7 @@ Object.assign(ANMELDUNG, {
 
         const kasten = ANMELDUNG._kastenBauen("Spielstand sichern",
             "Name und Passwort · alles als "
-                + KONTO.anzeigeName(eintrag) + " bleibt");
+                + eintrag.name + " bleibt");
         const name = ANMELDUNG._kontoFeld(kasten, "Name · Buchstaben, Ziffern", "username");
         ANMELDUNG._nameFeldSaeubern(name.feld);
         const passwort = ANMELDUNG._kontoFeld(kasten,
@@ -384,7 +496,44 @@ Object.assign(ANMELDUNG, {
         await ANMELDUNG._kontoNachladen();
         ICH.personSetzen(ich.id, name);
         ANMELDUNG._anzeigenAuffrischen();
-        DIALOG.kurzmeldung("Umbenannt · " + KONTO.anzeigeName(ergebnis.eintrag));
+        DIALOG.kurzmeldung("Umbenannt · " + ergebnis.eintrag.name);
+    },
+
+    /* Die eigene Nummer ändern (seit v0.151.8): würfeln oder selbst
+       wählen. Anmelden geht weiter nur mit Name und Passwort. */
+    async nummerAendern(ich) {
+        if (!ich || ich.gast === true || !KONTO.aktiv()) {
+            return;
+        }
+        const wahl = await DIALOG.liste("Nummer ändern",
+            "Zurzeit #" + ich.tag + " · unterscheidet gleiche Namen",
+            [
+                { beschriftung: "Würfeln", hinweis: "Zufällige freie Nummer", wert: "wuerfeln" },
+                { beschriftung: "Selbst wählen", hinweis: "4 Ziffern", wert: "waehlen" }
+            ],
+            "Abbrechen");
+        if (!wahl) {
+            return;
+        }
+        let wunsch = "";
+        if (wahl === "waehlen") {
+            const eingabe = await DIALOG.eingabe("Nummer wählen", "4 Ziffern, nicht 0000",
+                ich.tag, "Übernehmen", true);
+            if (!eingabe) {
+                return;
+            }
+            wunsch = String(eingabe).replace(/\D/g, "");
+        }
+        const ergebnis = await KONTO.tagAendern(ANMELDUNG.abgleich.speicher,
+            ANMELDUNG.abgleich.daten, ich, wunsch);
+        if (!ergebnis.ok) {
+            await DIALOG.hinweis("Geht nicht", ergebnis.text);
+            return;
+        }
+        await ANMELDUNG._kontoNachladen();
+        ANMELDUNG._anzeigenAuffrischen();
+        FUEHLEN.erfolg();
+        DIALOG.kurzmeldung("Neue Nummer · #" + ergebnis.eintrag.tag);
     },
 
     async _kontoPasswortAendern(ich) {
@@ -596,7 +745,9 @@ Object.assign(ANMELDUNG, {
         /* Erfolg spürt man (UPCrew-Standard, seit v0.140.0); die Meldung
            ist ein Stichwort und der Name, kein Ausruf. */
         FUEHLEN.erfolg();
-        DIALOG.kurzmeldung(gruss + KONTO.anzeigeName(ergebnis.eintrag));
+        /* Nur der Name (seit v0.151.8): Die Nummer ist zufällig und muss
+           niemand kennen — zu sehen und zu ändern in den Einstellungen. */
+        DIALOG.kurzmeldung(gruss + ergebnis.eintrag.name);
     },
 
     /* Die Spielerliste frisch vom Server — nach jedem Konto-Ablauf, damit

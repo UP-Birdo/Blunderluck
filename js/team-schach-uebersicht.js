@@ -223,7 +223,10 @@ Object.assign(TEAM_SCHACH, {
     _figurBildBauen(art, farbe) {
         const bild = document.createElement("img");
         bild.className = "bild-figur";
-        bild.src = TEAM_SCHACH.FIGUREN_ORDNER + "figur-" + art + "-" + farbe + ".png";
+        /* Im 2D-Brett die flache Figur (seit v0.151.3, js\figuren-flach.js). */
+        bild.src = (typeof FIGUREN_FLACH !== "undefined" && FIGUREN_FLACH.flach())
+            ? FIGUREN_FLACH.datenUrl(art, farbe)
+            : TEAM_SCHACH.FIGUREN_ORDNER + "figur-" + art + "-" + farbe + ".png";
         bild.alt = "";
         return bild;
     },

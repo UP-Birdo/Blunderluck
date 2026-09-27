@@ -3,15 +3,102 @@
 <head>
     <meta charset="utf-8">
     <!-- DIE SPERRE IM BROWSER (seit v0.137.0, Sicherheits-Runde 25.09.2026):
-         Skripte nur aus diesem Projekt (dazu genau EIN eingebetteter Block,
-         die Import-Karte des 3D-Bretts, über seinen Fingerabdruck), keine
+         Skripte nur aus diesem Projekt (dazu genau ZWEI eingebettete Blöcke,
+         die Import-Karte des 3D-Bretts und seit v0.151.5 der Notfall-Weg,
+         jeder über seinen Fingerabdruck), keine
          Plugins, keine fremden Formulare, Verbindungen nur zur eigenen Seite
          und zur Datenbank. Wer die Import-Karte oder die Datenbank-Adresse
          ändert, zieht diese Zeile mit — tests\test-sicherheit.js prüft beides.
          Seit v0.138.0 (UPCrew-Umzug): die UPCrew-Datenbank, die Anmeldung bei
          Firebase (identitytoolkit, securetoken) und — nur bis sie gelöscht
          ist — die ALTE Blunderluck-Datenbank für den Konto-Umzug. -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-3IBak4uiv4l6wKD16ssX6AlPnBMuJNftin3Hcb/KpfM='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' data: blob: https://upcrew-7a29d-default-rtdb.europe-west1.firebasedatabase.app https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://blunderluck-8b7f0-default-rtdb.europe-west1.firebasedatabase.app; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-3IBak4uiv4l6wKD16ssX6AlPnBMuJNftin3Hcb/KpfM=' 'sha256-xyH63QqWMusWs5E91xOhHS0nV7RQQL/uhjMbCm78QC8='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' data: blob: https://upcrew-7a29d-default-rtdb.europe-west1.firebasedatabase.app https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://blunderluck-8b7f0-default-rtdb.europe-west1.firebasedatabase.app; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
+    <!-- DER NOTFALL-WEG (seit v0.151.5) — steht bewusst ganz oben und direkt
+         in der Seite, damit er auch läuft, wenn keine einzige andere Datei
+         ankommt (Typoluck hatte am 27.09.2026 am iPhone eine weisse Seite:
+         kein Stil, kein Skript; docs\entscheidungen\erkenntnisse.md). Nach
+         10 s prüft er: Hat js\app.js gestartet (window.BLUNDERLUCK_GESTARTET)
+         und gilt der Stil (--leiste-hoehe aus css\stil.css)? Wenn nicht:
+         EINMAL den Service Worker dieses Ordners abmelden, NUR die
+         blunderluck-Zwischenspeicher leeren und neu laden. Merker in
+         sessionStorage — höchstens einmal in fünf Minuten, danach nur ein
+         schlichter Link „Neu laden". Die CSP oben erlaubt diesen Block über
+         seinen Fingerabdruck (sha256) — WER EIN ZEICHEN DARIN ÄNDERT, ZIEHT
+         DEN FINGERABDRUCK MIT, sonst blockiert die CSP genau den Notfall-Weg
+         (tests\test-sicherheit.js und test-notfall.js prüfen es). -->
+    <script id="notfall">
+        (function () {
+            var MERKER = "blunderluck.notfall";
+            var WARTEN_MS = 10000;
+            var SPERRE_MS = 5 * 60 * 1000;
+
+            function stilDa() {
+                try {
+                    return getComputedStyle(document.documentElement).getPropertyValue("--leiste-hoehe").trim() !== "";
+                } catch (fehler) {
+                    return true;
+                }
+            }
+
+            function linkZeigen() {
+                if (!document.body || document.getElementById("notfall-link")) {
+                    return;
+                }
+                var link = document.createElement("a");
+                link.id = "notfall-link";
+                link.href = "./";
+                link.textContent = "Neu laden";
+                link.style.cssText = "display:block;margin:24px;font:600 18px sans-serif";
+                document.body.appendChild(link);
+            }
+
+            function retten() {
+                try {
+                    var zuletzt = Number(window.sessionStorage.getItem(MERKER));
+                    if (zuletzt && Date.now() - zuletzt < SPERRE_MS) {
+                        linkZeigen();
+                        return;
+                    }
+                    window.sessionStorage.setItem(MERKER, String(Date.now()));
+                } catch (fehler) {
+                    linkZeigen();
+                    return;
+                }
+                var ordner = new URL("./", window.location.href).href;
+                var arbeit = [];
+                if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+                    arbeit.push(navigator.serviceWorker.getRegistrations().then(function (liste) {
+                        return Promise.all(liste.filter(function (r) {
+                            return r.scope === ordner;
+                        }).map(function (r) {
+                            return r.unregister();
+                        }));
+                    }));
+                }
+                if (window.caches && window.caches.keys) {
+                    arbeit.push(window.caches.keys().then(function (namen) {
+                        return Promise.all(namen.filter(function (name) {
+                            return name.indexOf("blunderluck-") === 0;
+                        }).map(function (name) {
+                            return window.caches.delete(name);
+                        }));
+                    }));
+                }
+                Promise.all(arbeit).catch(function () {
+                    return null;
+                }).then(function () {
+                    window.location.reload();
+                });
+            }
+
+            window.BLUNDERLUCK_NOTFALL = { retten: retten, stilDa: stilDa };
+            setTimeout(function () {
+                if (window.BLUNDERLUCK_GESTARTET !== true || !stilDa()) {
+                    retten();
+                }
+            }, WARTEN_MS);
+        })();
+    </script>
     <!-- `viewport-fit=cover` lässt die Seite bis unter den iPhone-Balken
          reichen — das Dock hält sich den Streifen selbst frei
          (`env(safe-area-inset-bottom)` in der Stildatei, seit v0.113). -->
@@ -29,6 +116,25 @@
     <meta name="theme-color" content="#1f5fa8">
     <meta name="apple-mobile-web-app-title" content="Blunderluck">
 
+    <!-- VORSCHAU FÜR GETEILTE LINKS (seit v0.151.6, Nutzer 27.09.2026: „das
+         Vorschaubild soll angepasst werden, nicht leer sein"). WhatsApp,
+         iMessage & Co. lesen diese Angaben, wenn ein Einladungslink
+         (`?code=…`) geteilt wird. Sie führen KEIN Skript aus — deshalb
+         stehen die Adressen hier fest auf der Live-Seite (GitHub Pages).
+         Das Bild (1200 × 630) ist img\vorschau-teilen.png, erzeugt aus dem
+         App-Zeichen icons\icon-512.png. -->
+    <meta name="description" content="Schach mit Lootboxen — spiel mit mir.">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="UPCrew">
+    <meta property="og:title" content="Blunderluck">
+    <meta property="og:description" content="Schach mit Lootboxen — spiel mit mir.">
+    <meta property="og:url" content="https://up-birdo.github.io/Blunderluck/">
+    <meta property="og:image" content="https://up-birdo.github.io/Blunderluck/img/vorschau-teilen.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Blunderluck — weisser König, Schach mit Lootboxen">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="https://up-birdo.github.io/Blunderluck/img/vorschau-teilen.png">
     <!-- Das Aussehen, seit 27.08.2026 in fünf Teilen (reiner Umzug aus der
          einen stil.css). DIE REIHENFOLGE IST DIE KASKADE — nicht umstellen. -->
     <link rel="stylesheet" href="css/stil.css">
@@ -123,6 +229,8 @@
     <!-- Was schon freigeschaltet ist, darunter 2D/3D (seit v0.144.0) —
          vor dem Partie-Bildschirm und dem 3D-Brett, die beide fragen. -->
     <script src="js/freischaltung.js"></script>
+    <!-- Echtes 2D: flache Figuren, solange das Brett 2D ist (seit v0.151.3). -->
+    <script src="js/figuren-flach.js"></script>
     <script src="js/verwaltung.js"></script>
     <script src="js/speicher.js"></script>
     <script src="js/abgleich.js"></script>

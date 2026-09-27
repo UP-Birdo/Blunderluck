@@ -984,6 +984,41 @@ pruefe("Der Einladungstext traegt einen Link mit Code, und der Code laesst sich 
     }
 });
 
+pruefe("Teilen gibt Text und Link getrennt (url) — sonst zeigt iOS kein Vorschaubild (v0.151.6)", () => {
+    const partie = SCHACH_RUNDE.leereRunde(1000, "standard", "p-link-2", "");
+    const code = SCHACH_RUNDE.beitrittsCode(partie.id);
+    const teile = TEAM_SCHACH._einladungsTeile(partie);
+    if (teile.text.indexOf(code) === -1 || teile.text.indexOf("http") !== -1) {
+        throw new Error("der Text nennt den Code, aber keinen Link: " + teile.text);
+    }
+    if (teile.url && TEAM_SCHACH.einladungsCodeAusAdresse(teile.url) !== code) {
+        throw new Error("der Link trägt den Code nicht: " + teile.url);
+    }
+    if (TEAM_SCHACH._einladungsText(partie) !== teile.text + (teile.url ? ": " + teile.url : "")) {
+        throw new Error("Kopieren muss Text + Link bleiben");
+    }
+
+    /* Der Aufruf selbst reicht `url` weiter (der Bildschirm läuft hier in
+       einer eigenen Umgebung — geprüft wird der Quelltext). */
+    const quelle = TEAM_SCHACH._codeTeilen.toString();
+    if (!/url: teile\.url/.test(quelle) || !/navigator\.share\(daten\)/.test(quelle)) {
+        throw new Error("_codeTeilen gibt keine url an navigator.share");
+    }
+});
+
+pruefe("index.html trägt Vorschau-Angaben für Links (og:image 1200 × 630, twitter:card) (v0.151.6)", () => {
+    const seite = require("fs").readFileSync(require("path").join(__dirname, "..", "index.html"), "utf8");
+    for (const muster of [/property="og:title"/, /property="og:description"/, /property="og:url"/,
+        /property="og:image" content="https:\/\/[^"]+\/img\/vorschau-teilen\.png"/, /name="twitter:card" content="summary_large_image"/]) {
+        if (!muster.test(seite)) {
+            throw new Error("fehlt in index.html: " + muster);
+        }
+    }
+    if (!require("fs").existsSync(require("path").join(__dirname, "..", "img", "vorschau-teilen.png"))) {
+        throw new Error("img/vorschau-teilen.png fehlt");
+    }
+});
+
 pruefe("Enttarnen / Verstecken sind im Popup EIN Eintrag, der beide schaltet (v0.115.2)", () => {
     /*
      * NUTZER-ANSAGE 18.09.2026: „Seltenheit anzeigen ja/nein sollen keine

@@ -395,6 +395,34 @@ body.design-3d .figur-schwarz.figur-art-dame { background-image: url("../img/fig
 body.design-3d .figur-schwarz.figur-art-koenig { background-image: url("../img/figuren/figur-koenig-schwarz.png"); }
 
 /*
+ * ECHTES 2D (seit v0.151.3, js\figuren-flach.js): Ist das Brett 2D, trägt
+ * der body `brett-flach`. Die Figur ist dann eine flache Silhouette (die
+ * Bilder setzt figuren-flach.js) und steht MITTIG IN der Kachel statt
+ * schräg darauf — deshalb kein Überstand nach oben und kein Platz dafür.
+ * 0,88 Feldbreiten gross (1.3em bei einer Feldschrift von 0,68 Breiten).
+ */
+body.design-3d.brett-flach .feld > .figur-bild,
+body.design-3d.brett-flach .vorschau-feld > .figur-bild {
+    --figur-3d-groesse: 1.3em;
+    top: 50%;
+    bottom: auto;
+    margin-top: calc(var(--figur-3d-groesse) / -2);
+    background-position: center;
+}
+
+body.design-3d.brett-flach .vorschau-feld > .figur-bild {
+    width: 88%;
+    height: 88%;
+    margin-left: -44%;
+    margin-top: -44%;
+}
+
+body.design-3d.brett-flach .brett,
+body.design-3d.brett-flach .vorschau {
+    padding-top: 0;
+}
+
+/*
  * Die kleinen Figuren ausserhalb des Bretts (Beute-Bilanz im Abschluss,
  * die Figuren in „Schach lernen") stehen in Textzeilen, nicht auf Kacheln.
  * Sie bleiben deshalb im Fluss und bekommen nur einen passenden Kasten.

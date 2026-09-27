@@ -29,7 +29,7 @@
  */
 
 /* Der Name des Zwischenspeichers. HIER STEHT DIE NUMMER GENAU EINMAL. */
-const SPEICHER_NAME = "blunderluck-v0.151.2";
+const SPEICHER_NAME = "blunderluck-v0.151.8";
 
 /*
  * BEIM BAUEN: NETZ ZUERST. IM BETRIEB: ZWISCHENSPEICHER ZUERST.
@@ -135,6 +135,7 @@ const DATEIEN = [
     "./js/wertung.js",
     "./js/wertung-rechner.js",
     "./js/aktualisieren.js",
+    "./js/figuren-flach.js",
     "./js/tagesbrett.js",
     "./js/schach-vorschau.js",
     "./js/schach-grundlagen.js",
@@ -231,7 +232,11 @@ self.addEventListener("install", (ereignis) => {
          * wäre schlimmer als keiner: Die App käme offline hoch und fiele
          * dann an einer fehlenden Datei auseinander.
          */
-        await speicher.addAll(DATEIEN);
+        /* cache: "reload" (seit v0.151.5, wie Typoluck): an der HTTP-Ablage
+           des Browsers vorbei — sonst legt ein neuer Worker eine Datei in
+           der ALTEN Fassung ab, solange der Browser sie noch für frisch hält
+           (GitHub Pages: 10 Minuten), und alte und neue Dateien mischen sich. */
+        await speicher.addAll(DATEIEN.map((datei) => new Request(datei, { cache: "reload" })));
 
         /*
          * SOFORT ÜBERNEHMEN, NICHT WARTEN.
@@ -315,29 +320,77 @@ self.addEventListener("fetch", (ereignis) => {
  * (`index.html?stand=neu`) — sonst ginge so ein Aufruf offline ins Leere,
  * obwohl die Datei längst da liegt.
  */
+/*
+ * SEIT v0.151.5 GEHÄRTET (wie Typoluck 0.15.4 nach der weissen Seite am
+ * iPhone, 27.09.2026 — docs\entscheidungen\erkenntnisse.md):
+ *   1. NUR im eigenen Speicher dieser Fassung suchen. Bis v0.151.4 suchte
+ *      `caches.match` in ALLEN Speichern des Ursprungs — auch in alten
+ *      Blunderluck-Fassungen und in TYPOLUCK. Beim Wechsel konnten so
+ *      Dateien zweier Fassungen (oder zweier Apps) gemischt werden.
+ *   2. Sonst das Netz. Eine Antwort, die kein „ok" ist (404-Seite als HTML
+ *      für eine CSS-/JS-Anfrage), zählt nicht als Treffer.
+ *   3. Ohne Netz: irgendein blunderluck-Speicher (nie ein fremder), bei
+ *      einem Seitenaufruf die Startseite.
+ * Wirft nur, wenn es wirklich nichts gibt.
+ */
 async function speicherZuerst(anfrage) {
-    const treffer = await caches.match(anfrage, { ignoreSearch: true });
-    if (treffer) {
-        return treffer;
-    }
-
+    let eigener = null;
     try {
-        return await fetch(anfrage);
+        eigener = await (await caches.open(SPEICHER_NAME)).match(anfrage, { ignoreSearch: true });
     } catch (fehler) {
-        /*
-         * Ohne Netz und ohne Treffer: Bei einem Seitenaufruf wenigstens die
-         * Einstiegsdatei zeigen (etwa, wenn jemand eine Unteradresse als
-         * Lesezeichen hat). Für alles andere bleibt es beim Fehler — er
-         * gehört dem aufrufenden Code, nicht dem Worker.
-         */
-        if (anfrage.mode === "navigate") {
-            const start = await caches.match("./", { ignoreSearch: true });
-            if (start) {
-                return start;
-            }
+        eigener = null;
+    }
+    if (eigener) {
+        return ohneUmleitung(eigener, anfrage);
+    }
+    try {
+        const antwort = await fetch(anfrage);
+        if (antwort.ok || anfrage.mode === "navigate") {
+            return antwort;
+        }
+        const ersatz = await irgendeinTreffer(anfrage);
+        return ersatz ? ohneUmleitung(ersatz, anfrage) : antwort;
+    } catch (fehler) {
+        const ersatz = await irgendeinTreffer(anfrage);
+        if (ersatz) {
+            return ohneUmleitung(ersatz, anfrage);
         }
         throw fehler;
     }
+}
+
+/* Safari lehnt es ab, eine Seite (Navigation) mit einer Antwort zu öffnen,
+   die unterwegs umgeleitet wurde („Response served by service worker has
+   redirections"). Eine so gespeicherte Startseite wird als frische Antwort
+   mit demselben Inhalt nachgebaut. */
+async function ohneUmleitung(antwort, anfrage) {
+    if (!antwort.redirected || anfrage.mode !== "navigate") {
+        return antwort;
+    }
+    return new Response(await antwort.blob(), {
+        status: antwort.status, statusText: antwort.statusText, headers: antwort.headers
+    });
+}
+
+/* Ein Treffer in irgendeinem blunderluck-Speicher (auch einer älteren
+   Fassung) — nur als Notnagel, nie aus dem Speicher einer anderen App. */
+async function irgendeinTreffer(anfrage) {
+    try {
+        for (const name of await caches.keys()) {
+            if (!name.startsWith("blunderluck-")) {
+                continue;
+            }
+            const speicher = await caches.open(name);
+            const treffer = await speicher.match(anfrage, { ignoreSearch: true })
+                || (anfrage.mode === "navigate" ? await speicher.match("./", { ignoreSearch: true }) : null);
+            if (treffer) {
+                return treffer;
+            }
+        }
+    } catch (fehler) {
+        return null;
+    }
+    return null;
 }
 
 /*
@@ -348,9 +401,10 @@ async function netzZuerst(anfrage) {
     try {
         return await fetch(anfrage);
     } catch (fehler) {
-        const treffer = await caches.match(anfrage, { ignoreSearch: true });
+        /* Auch hier nur aus blunderluck-Speichern (seit v0.151.5). */
+        const treffer = await irgendeinTreffer(anfrage);
         if (treffer) {
-            return treffer;
+            return ohneUmleitung(treffer, anfrage);
         }
         throw fehler;
     }

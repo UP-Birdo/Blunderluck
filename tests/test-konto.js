@@ -519,17 +519,88 @@ function oberAnlegen(w) {
         gleich(altePin.fehler, "falsch", "alte PIN");
     });
 
-    await pruefe("Zwei Jonase: verschiedene Nummern, ohne Nummer mehrdeutig", async () => {
+    await pruefe("Zwei gleiche Namen: nur Name + Passwort findet reihum das richtige Konto", async () => {
         const w = await welt();
-        await jonasUmziehen(w);
+        const erster = await jonasUmziehen(w);
         w.KONTO.abmelden();
         const zweiter = await w.KONTO.kontoAnlegen(w.speicher, w.abgleich.daten, "Jonas", "Zwei#Pass2");
         wahr(zweiter.ok, "zweiter Jonas: " + JSON.stringify(zweiter));
         wahr(zweiter.eintrag.tag !== "0001" && /^[0-9]{4}$/.test(zweiter.eintrag.tag), "Nummer");
         await nachladen(w);
+        /* Passwort des ersten und des zweiten — jeweils das eigene Konto. */
         w.KONTO.abmelden();
-        const ohne = await w.ANMELDUNG._kontoAnmeldenVersuchen("Jonas", NEU);
-        gleich(ohne.fehler, "mehrdeutig", "ohne Nummer");
+        const eins = await w.ANMELDUNG._kontoAnmeldenVersuchen("Jonas", NEU);
+        wahr(eins.ok, "erster: " + JSON.stringify(eins));
+        gleich(w.KONTO.uid(), erster.uid, "erstes Konto");
+        w.KONTO.abmelden();
+        const zwei = await w.ANMELDUNG._kontoAnmeldenVersuchen("jonas", "Zwei#Pass2");
+        wahr(zwei.ok, "zweiter: " + JSON.stringify(zwei));
+        gleich(w.KONTO.uid(), zweiter.eintrag.uid, "zweites Konto");
+        /* Falsch bei allen: eine Meldung, die offen lässt, was falsch ist. */
+        w.KONTO.abmelden();
+        const falsch = await w.ANMELDUNG._kontoAnmeldenVersuchen("Jonas", "Gar#Nix99");
+        gleich(falsch.ok, false, "falsch");
+        gleich(falsch.fehler, "falsch", "Fehlerart");
+        gleich(falsch.reihum, true, "reihum");
+        gleich(falsch.text, "Name oder Passwort falsch.", "Text");
+        /* Mit Nummer weiter direkt — genau ein Versuch. */
+        const vorher = w.fb.aufrufe.length;
+        const direkt = await w.ANMELDUNG._kontoAnmeldenVersuchen("Jonas#" + zweiter.eintrag.tag, "Zwei#Pass2");
+        wahr(direkt.ok, "mit Nummer");
+        gleich(w.fb.aufrufe.slice(vorher).filter((a) =>
+            a.adresse.indexOf("signInWithPassword") !== -1).length, 1, "ein Versuch");
+    });
+
+    await pruefe("Reihum: höchstens 20 Konten je Name, Abbruch bei zu vielen Versuchen", async () => {
+        const w = await welt();
+        const kandidaten = [];
+        for (let i = 1; i <= 25; i++) {
+            kandidaten.push({ id: "id-" + i, uid: "u-" + i, name: "Max", tag: String(1000 + i),
+                kennung: "k-" + i });
+        }
+        kandidaten.splice(3, 0, { id: "id-gast", name: "Max", tag: "0999", gast: true });
+        const versucht = [];
+        const echt = w.KONTO.anmelden;
+        w.KONTO.anmelden = async (kennung) => { versucht.push(kennung); return { ok: false, fehler: "falsch" }; };
+        const ergebnis = await w.KONTO._anmeldenReihum(kandidaten, "x");
+        gleich(versucht.length, 20, "höchstens 20");
+        gleich(ergebnis.text, "Name oder Passwort falsch.", "Text");
+        versucht.length = 0;
+        w.KONTO.anmelden = async (kennung) => { versucht.push(kennung);
+            return { ok: false, fehler: versucht.length === 2 ? "zuViele" : "falsch" }; };
+        const bremse = await w.KONTO._anmeldenReihum(kandidaten, "x");
+        gleich(versucht.length, 2, "Abbruch");
+        gleich(bremse.fehler, "zuViele", "Fehlerart");
+        w.KONTO.anmelden = echt;
+    });
+
+    await pruefe("Freunde: Name ohne Nummer, die Nummer nur leise bei gleichen Namen", async () => {
+        const w = await welt();
+        const FREUNDE = vm.runInContext(dateisystem.readFileSync(
+            pfad.join(__dirname, "..", "js", "freunde.js"), "utf8") + ";\nFREUNDE", w.umgebung);
+        const liste = [{ name: "Jonas", tag: "0001" }, { name: "jonas", tag: "4821" },
+            { name: "Mia", tag: "1234" }];
+        gleich(FREUNDE._name(liste[0]), "Jonas", "ohne Nummer");
+        gleich(FREUNDE._nummerZusatz(liste, liste[1]), "#4821", "gleicher Name");
+        gleich(FREUNDE._nummerZusatz(liste, liste[2]), "", "eindeutig");
+        wahr(FREUNDE._passt(liste[1], "jon"), "Name");
+        wahr(FREUNDE._passt(liste[1], "jonas#48"), "Name#Nummer");
+        wahr(!FREUNDE._passt(liste[0], "jonas#48"), "andere Nummer");
+        wahr(!FREUNDE._passt(liste[2], "12"), "Nummer allein zählt nicht");
+    });
+
+    await pruefe("Neues Konto: danach nur der Name, keine Nummer und kein Dialog", async () => {
+        const w = await welt();
+        const neu = await w.KONTO.kontoAnlegen(w.speicher, w.abgleich.daten, "Mia", "Mia#Pass1");
+        wahr(neu.ok, "angelegt");
+        w.dialog.kurz.length = 0;
+        w.dialog.hinweise.length = 0;
+        const feld = { fehler: { textContent: "" } };
+        await w.ANMELDUNG._kontoFertig(neu, feld, () => {}, "Angemeldet · ");
+        gleich(w.dialog.hinweise.length, 0, "kein Dialog");
+        gleich(w.dialog.kurz.join("|"), "Angemeldet · Mia", "nur der Name");
+        const quelle = dateisystem.readFileSync(pfad.join(__dirname, "..", "js", "anmeldung-konto.js"), "utf8");
+        wahr(quelle.indexOf("Du bist ") === -1, "kein Du bist");
     });
 
     await pruefe("Die Datenbank lässt einen besetzten Namens-Platz nicht übernehmen", async () => {
@@ -727,6 +798,161 @@ function oberAnlegen(w) {
         gleich(w.dialog.fragen.length, 0, "zu früh gefragt");
         await w.ANMELDUNG.gastErinnern();
         gleich(w.dialog.fragen.length, 1, "beim dritten Mal");
+    });
+
+    /* ---- Nummer: zufällig beim Anlegen, ändern in den Einstellungen (seit v0.151.8) ---- */
+
+    await pruefe("Neues Konto: Nummer zufällig (4 Ziffern, nicht 0000), nie eine besetzte", async () => {
+        const w = await welt();
+        const daten = { namen: { mia: {} } };
+        for (let i = 1; i <= 9999; i++) {
+            const tag = String(i).padStart(4, "0");
+            if (tag !== "4821") {
+                daten.namen.mia[tag] = "uid-x";
+            }
+        }
+        const gewaehlt = w.KONTO.tagWaehlen(daten, "Mia", null);
+        wahr(gewaehlt === "4821" || gewaehlt === null, "nur die eine freie (oder nach begrenzten Versuchen keine): " + gewaehlt);
+        gleich(w.KONTO.tagWaehlen(daten, "Mia", "4821"), "4821", "freie Wunsch-Nummer");
+        const ergebnis = await w.KONTO.kontoAnlegen(w.speicher, w.abgleich.daten, "Mia", "Mia#Pass1");
+        wahr(ergebnis.ok, "angelegt");
+        wahr(/^\d{4}$/.test(ergebnis.eintrag.tag) && ergebnis.eintrag.tag !== "0000", "Nummer " + ergebnis.eintrag.tag);
+        gleich(namen(w.fb).mia[ergebnis.eintrag.tag], w.KONTO.uid(), "Namens-Platz belegt");
+    });
+
+    await pruefe("Nummer ändern: würfeln oder wählen, neuer Platz belegt, alter frei, Freunde bleiben", async () => {
+        const w = await welt();
+        const alt = await jonasUmziehen(w);
+        const uid = w.KONTO.uid();
+        await nachladen(w);
+        const ich = w.SPIELER.spielerFinden(w.abgleich.daten, "id-jonas");
+
+        wahr(w.KONTO.tagPruefen("12a4") !== "", "keine 4 Ziffern");
+        wahr(w.KONTO.tagPruefen("0000") !== "", "0000");
+        gleich(w.KONTO.tagPruefen("4821"), "", "gültig");
+
+        const gewaehlt = await w.KONTO.tagAendern(w.speicher, w.abgleich.daten, ich, "4821");
+        wahr(gewaehlt.ok, "gewählt: " + JSON.stringify(gewaehlt));
+        gleich(namen(w.fb).jonas["4821"], uid, "neuer Platz belegt");
+        wahr(!namen(w.fb).jonas[alt.tag], "alter Platz frei");
+        gleich(konten(w.fb)[uid].tag, "4821", "Konto-Eintrag nachgezogen");
+        wahr(konten(w.fb)[uid].freunde.indexOf("id-freddy") !== -1, "Freunde bleiben");
+
+        await nachladen(w);
+        const nachher = w.SPIELER.spielerFinden(w.abgleich.daten, "id-jonas");
+        const gewuerfelt = await w.KONTO.tagAendern(w.speicher, w.abgleich.daten, nachher, "");
+        wahr(gewuerfelt.ok && gewuerfelt.eintrag.tag !== "4821", "gewürfelt: " + JSON.stringify(gewuerfelt));
+        wahr(!namen(w.fb).jonas["4821"], "vorheriger Platz frei");
+    });
+
+    await pruefe("Nummer ändern: besetzte Nummer abgelehnt, Gast hat keine eigene Nummer", async () => {
+        const w = await welt();
+        await w.KONTO.kontoAnlegen(w.speicher, w.abgleich.daten, "Jonas", "Mia#Pass1");
+        const fremdTag = konten(w.fb)[w.KONTO.uid()].tag;
+        w.KONTO.abmelden();
+        await jonasUmziehen(w);
+        await nachladen(w);
+        const ich = w.SPIELER.spielerFinden(w.abgleich.daten, "id-jonas");
+        const besetzt = await w.KONTO.tagAendern(w.speicher, w.abgleich.daten, ich, fremdTag);
+        gleich(besetzt.ok, false, "besetzt abgelehnt");
+        const gast = await w.KONTO.tagAendern(w.speicher, w.abgleich.daten, { gast: true, tag: "1111" }, "");
+        gleich(gast.ok, false, "Gast");
+    });
+
+    await pruefe("Kein fremder Name als Beispiel in sichtbaren Texten (Anmelden, Konto, Einstellungen)", () => {
+        const ohneKommentare = (text) => text.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+        for (const name of ["konto.js", "anmeldung.js", "anmeldung-konto.js", "einstellungen.js"]) {
+            const quelle = ohneKommentare(dateisystem.readFileSync(pfad.join(__dirname, "..", "js", name), "utf8"));
+            wahr(!/Jonas/.test(quelle), name + " nennt Jonas in einem Text");
+        }
+        const seite = dateisystem.readFileSync(pfad.join(__dirname, "..", "index.html"), "utf8")
+            .replace(/<!--[\s\S]*?-->/g, "");
+        wahr(!/Jonas/.test(seite), "index.html nennt Jonas");
+    });
+
+    /* ---- Einladungslink ohne Anmeldung (seit v0.151.7) ---- */
+
+    function einladungVorbereiten(w) {
+        w.umgebung.window.location = { href: "https://x.test/Blunderluck/?code=ABCDEF" };
+        w.umgebung.TEAM_SCHACH = { einladungsCodeAusAdresse: (a) => (/code=/.test(String(a)) ? "ABCDEF" : "") };
+        const zaehler = { angemeldet: 0, fehler: 0, fragen: 0 };
+        w.ANMELDUNG.beiAngemeldet = () => { zaehler.angemeldet++; };
+        w.umgebung.DIALOG.fehler = async () => { zaehler.fehler++; return true; };
+        w.umgebung.DIALOG._zeigen = async () => { zaehler.fragen++; return false; };
+        return zaehler;
+    }
+
+    async function bis(bedingung) {
+        for (let i = 0; i < 200 && !bedingung(); i++) {
+            await new Promise((fertig) => setTimeout(fertig, 5));
+        }
+    }
+
+    await pruefe("Link mit Code ohne Anmeldung: still ein Gast, kein Anmelde-Bild, dann beitreten", async () => {
+        const w = await welt();
+        const z = einladungVorbereiten(w);
+        w.umgebung.vollbild = undefined;
+        w.ANMELDUNG.anmelden();
+        await bis(() => z.angemeldet > 0);
+        gleich(w.umgebung.vollbild, undefined, "kein Anmelde-Bild");
+        gleich(z.angemeldet, 1, "als angemeldet gemeldet (app.js nimmt dann den Code)");
+        wahr(w.ANMELDUNG.istGast(), "ist ein Gast");
+        const eintrag = konten(w.fb)[w.KONTO.uid()];
+        wahr(eintrag && eintrag.gast === true && eintrag.name === "Gast", "Gast-Eintrag: " + JSON.stringify(eintrag));
+    });
+
+    await pruefe("Link mit Code, schon angemeldet: kein neuer Gast, direkt weiter", async () => {
+        const w = await welt();
+        await jonasUmziehen(w);
+        const z = einladungVorbereiten(w);
+        const vorher = Object.keys(konten(w.fb)).length;
+        w.ANMELDUNG._ichIdSetzen(null);
+        w.ANMELDUNG.anmelden();
+        gleich(z.angemeldet, 1, "gleich angemeldet");
+        gleich(w.ANMELDUNG.ichId, "id-jonas", "Jonas");
+        gleich(Object.keys(konten(w.fb)).length, vorher, "kein Gast angelegt");
+    });
+
+    await pruefe("Gast-Anlage scheitert: Nochmal versucht es erneut, der Code bleibt", async () => {
+        const w = await welt();
+        const z = einladungVorbereiten(w);
+        const echt = w.KONTO.gastAnlegen;
+        let versuche = 0;
+        w.KONTO.gastAnlegen = async (...a) => (++versuche === 1 ? { ok: false, text: "Netz" } : echt.apply(w.KONTO, a));
+        w.ANMELDUNG.anmelden();
+        await bis(() => z.angemeldet > 0);
+        gleich(z.fehler, 1, "eine Fehlermeldung mit Nochmal");
+        gleich(versuche, 2, "zweiter Versuch");
+        wahr(w.ANMELDUNG.istGast(), "danach Gast");
+        wahr(/code=/.test(w.umgebung.window.location.href), "Code blieb in der Adresse");
+    });
+
+    await pruefe("Nach der Einladungs-Runde: nur ein Gast wird gefragt, und nur einmal", async () => {
+        const w = await welt();
+        const z = einladungVorbereiten(w);
+        gleich(w.ANMELDUNG.sollNachEinladungFragen(true, "1"), true, "Regel: Gast + Merker");
+        gleich(w.ANMELDUNG.sollNachEinladungFragen(false, "1"), false, "Regel: Konto nie");
+        gleich(w.ANMELDUNG.sollNachEinladungFragen(true, null), false, "Regel: ohne Einladung nie");
+
+        const gast = await w.KONTO.gastAnlegen(w.speicher, w.abgleich.daten);
+        await nachladen(w);
+        w.ANMELDUNG._uebernehmen(gast.eintrag);
+        gleich(await w.ANMELDUNG.nachEinladungFragen(), false, "ohne Einladung: nicht gefragt");
+        w.ANMELDUNG.einladungsGastMerken();
+        gleich(await w.ANMELDUNG.nachEinladungFragen(), true, "nach der Einladungs-Runde gefragt");
+        gleich(await w.ANMELDUNG.nachEinladungFragen(), false, "nach Später nicht gleich wieder");
+        gleich(z.fragen, 1, "genau einmal");
+        w.ANMELDUNG.einladungsGastMerken();
+        gleich(await w.ANMELDUNG.nachEinladungFragen(), true, "nach der nächsten Einladungs-Runde wieder");
+    });
+
+    await pruefe("Ein Konto (kein Gast) wird nach einer Einladungs-Runde nicht gefragt", async () => {
+        const w = await welt();
+        const z = einladungVorbereiten(w);
+        await jonasUmziehen(w);
+        w.ANMELDUNG.einladungsGastMerken();
+        gleich(await w.ANMELDUNG.nachEinladungFragen(), false, "nicht gefragt");
+        gleich(z.fragen, 0, "keine Frage");
     });
 
     await pruefe("Es wird nur der EIGENE Eintrag geschrieben", async () => {

@@ -428,10 +428,10 @@ body.dialog-offen {
  * gleich"). Vorlage ist Typoluck (Apps\Typoluck\css\stil.css, Abschnitte
  * „Das UPCrew-Intro" und „Anmeldung"): Intro mit dem Studio-Zeichen (seit
  * v0.140.3 der gemeinsame Baustein css\upcrew-intro.css), dann eine
- * schlichte Karte mit der Marke UPCREW und violetten Tasten-Knöpfen.
+ * schlichte Karte mit der Marke UPCREW und Tasten-Knöpfen (Farben seit
+ * v0.151.4 aus der Farbwelt, nicht mehr fest violett).
  *
- * Die Farben gelten NUR im Anmelde-Vollbild — das Spiel selbst behält seine
- * Farben. Wer hier etwas ändert, zieht Typoluck mit.
+ * Wer hier etwas ändert, zieht Typoluck mit.
  * ------------------------------------------------------------------ */
 
 :root {
@@ -440,62 +440,22 @@ body.dialog-offen {
     --ebene-intro: 95;
 }
 
+/*
+ * DIE FARBEN KOMMEN AUS DER FARBWELT (seit v0.151.4, Nutzer 27.09.2026:
+ * „die Farben stimmen nicht, das ist überall untergegangen"). Bis v0.151.3
+ * setzte dieses Vollbild eigene UPCrew-Violett-Werte (--haupt #5b3cc4 hell,
+ * #9a82f2 dunkel, dazu Fläche, Karte, Rahmen). Entschieden seit 26.09.2026:
+ * Werkstatt-Orange ist Standard, Violett gibt es nur als freischaltbare
+ * Farbwelt „Studio" — also erbt das Vollbild jetzt einfach die Variablen
+ * der gewählten Farbwelt und Darstellung (`UPCREW_AUSSEHEN`). In Typoluck
+ * gleich. `test-aussehen.js` wacht, dass hier kein fester Farbwert
+ * zurückkommt.
+ */
 .anmeldung-vollbild {
-    --flaeche: #f4f2fa;
-    --karte: #fdfcff;
-    --karte-leise: #efecf7;
-    --rahmen: #dcd7ea;
-    --schrift: #1d1a26;
-    --schrift-leise: #5f5a6e;
-    --haupt: #5b3cc4;
-    --haupt-schrift: #ffffff;
-    --haupt-kante: #3f2892;
-    --gefahr: #b3261e;
-    --gefahr-kante: #7f1b15;
-    --gefahr-schrift: #ffffff;
-    --still-kante: #c5bfd6;
     color: var(--schrift);
     /* Die Schrift erbt das Vollbild seit v0.144.0 von der App
        (--schrift-familie) — bis dahin stand hier „Segoe UI" fest. */
 }
-
-/* Zweimal, wie in stil.css (seit v0.141.0): Gerät dunkel ohne „Hell"-Wahl,
-   und „Dunkel" gewählt. Das violette Vollbild gehört dem Studio und bleibt
-   von der Farbwelt unberührt (seine Werte stehen am Element selbst). */
-@media (prefers-color-scheme: dark) {
-    :root:not([data-darstellung="hell"]) .anmeldung-vollbild {
-        --flaeche: #15131b;
-        --karte: #201d29;
-        --karte-leise: #2a2635;
-        --rahmen: #3a3547;
-        --schrift: #ece9f4;
-        --schrift-leise: #aaa4ba;
-        --haupt: #9a82f2;
-        --haupt-schrift: #120e1c;
-        --haupt-kante: #6a52c4;
-        --gefahr: #e05a52;
-        --gefahr-kante: #a33a33;
-        --gefahr-schrift: #1c0d0c;
-        --still-kante: #4a4459;
-    }
-}
-
-:root[data-darstellung="dunkel"] .anmeldung-vollbild {
-    --flaeche: #15131b;
-    --karte: #201d29;
-    --karte-leise: #2a2635;
-    --rahmen: #3a3547;
-    --schrift: #ece9f4;
-    --schrift-leise: #aaa4ba;
-    --haupt: #9a82f2;
-    --haupt-schrift: #120e1c;
-    --haupt-kante: #6a52c4;
-    --gefahr: #e05a52;
-    --gefahr-kante: #a33a33;
-    --gefahr-schrift: #1c0d0c;
-    --still-kante: #4a4459;
-}
-
 .anmeldung-vollbild .anmeldung-kasten {
     max-width: 400px;
     padding: 24px 20px;
@@ -522,7 +482,7 @@ body.dialog-offen {
 
 /* Die Knöpfe sind seit v0.144.0 UPCrew-Knöpfe (Familie K1–K6,
    js\knoepfe.js) — ihre Form kommt aus der Familie, ihre Farben aus den
-   violetten Variablen oben. Hier bleibt nur die Mindesthöhe. */
+   Variablen der Farbwelt. Hier bleibt nur die Mindesthöhe. */
 .anmeldung-vollbild .knopf {
     min-height: 44px;
 }
@@ -1630,6 +1590,20 @@ body.dialog-offen {
     justify-content: space-between;
     gap: 8px;
     padding: 6px 0;
+}
+
+/* Name + leise Nummer (seit v0.151.8; die Nummer nur bei gleichen Namen). */
+.freunde-wer {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    min-width: 0;
+}
+
+.freunde-nummer {
+    flex: 0 0 auto;
+    font-size: 0.8em;
+    color: var(--schrift-leise);
 }
 
 .freunde-name {

@@ -2,6 +2,23 @@
 
 ## Teuer erkaufte Erkenntnisse
 
+### Weisse Seite nach einem Update: Worker-Wechsel ohne Rückweg (27.09.2026, v0.151.5)
+
+**In Typoluck am iPhone gesehen** (0.15.1 → 0.15.2: nur `h1.nur-vorlesen`,
+kein Stil, kein Skript); Blunderluck hat denselben Aufbau. Ursache nicht
+sicher bewiesen, wahrscheinlich zusammen: (1) der neue Worker übernimmt
+sofort (`skipWaiting` + `clients.claim`) und löscht im `activate` die
+alten Speicher, während die Seite noch lädt; (2) `caches.match` OHNE
+Speichernamen sucht über ALLE Speicher des Ursprungs — alte Fassungen und
+die Nachbar-App (unter `up-birdo.github.io` liegen Blunderluck UND
+Typoluck); (3) scheitern Speicher und Netz beide, gab es keinen Rückweg.
+**Regeln:** Im Worker nur im EIGENEN Speicher suchen, Ersatz nur aus
+eigenen (`blunderluck-`) Speichern, umgeleitete Startseite nachbauen,
+`install` mit `cache: "reload"`. Und: ein Notfall-Weg, der OHNE jede andere
+Datei läuft — inline im `<head>`, mit CSP-Fingerabdruck, den ein Test
+gegen den echten Text prüft (sonst blockiert die CSP genau ihn). Umsetzung
+`sw.js`, `index.html` (`<script id="notfall">`), `tests\test-notfall.js`.
+
 ### Ein neuer Service Worker übernimmt — die offene Seite bleibt trotzdem alt (27.09.2026, v0.151.2)
 
 **Vom Nutzer gemeldet** („ich bekomme die neuste Version nicht mehr

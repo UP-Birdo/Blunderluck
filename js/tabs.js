@@ -154,13 +154,31 @@ const TABS = {
      * werden, und genau das vergisst man; die Klasse bliebe stehen, und der
      * nächste Bildschirm wäre abgeschnitten.
      */
-    rundeSetzen(tabId, offen, fest) {
+    /*
+     * DER VIERTE WERT `spielt` (seit v0.151.3, Nutzer 27.09.2026: „während
+     * spielen bei beiden games soll das band unten verschwinden"): Eine
+     * PARTIE ist offen und noch nicht zu Ende — ab dem Vorraum (Seite,
+     * Aufstellung, „Bereit") bis zum Matt. Dann ist die Tab-Leiste weg
+     * (Klasse `partie-spielt`, css\stil.css). Bis v0.151.2 verschwand sie erst
+     * mit dem Anpfiff (`partie-fest`); im Vorraum stand sie noch. Wer den
+     * Wert nicht angibt (Abschluss, Übersicht, jeder andere Tab), holt die
+     * Leiste zurück — dasselbe Muster wie `fest`.
+     */
+    _spielt: false,
+
+    rundeSetzen(tabId, offen, fest, spielt) {
         if (TABS.aktiveId !== tabId) {
             return;
         }
         if (typeof document === "undefined" || !document.body
                 || !document.body.classList) {
             return;
+        }
+
+        const sollSpielt = (spielt === true);
+        if (TABS._spielt !== sollSpielt) {
+            TABS._spielt = sollSpielt;
+            document.body.classList.toggle("partie-spielt", sollSpielt);
         }
 
         /* Vor dem Ausstieg unten: Auch wenn sich am „offen" nichts ändert,
@@ -194,6 +212,14 @@ const TABS = {
         }
 
         TABS.aktiveId = id;
+
+        /* Beim Wechsel ist erst einmal keine Partie im Bild (seit v0.151.3):
+           die Leiste kommt zurück; eine offene Partie setzt es beim
+           Zeichnen gleich wieder. */
+        if (TABS._spielt && typeof document !== "undefined" && document.body) {
+            TABS._spielt = false;
+            document.body.classList.remove("partie-spielt");
+        }
 
         /* Ein Bildschirm ohne eigenen Leisten-Knopf (Partie, Einstellungen,
            Verwaltung) markiert den Eintrag, zu dem er gehört — ohne Angabe

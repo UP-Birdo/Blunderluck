@@ -613,6 +613,12 @@ Object.assign(TEAM_SCHACH, {
            Code-Feld für fremde Runden (seit v0.36.0) — Begründung bei
            `TEAM_SCHACH._zumStart`. */
         TEAM_SCHACH._zumStart();
+
+        /* Wer als Gast über einen Link kam, wird jetzt einmal nach einem
+           Konto gefragt (seit v0.151.7, anmeldung-konto.js). */
+        if (typeof ANMELDUNG !== "undefined" && typeof ANMELDUNG.nachEinladungFragen === "function") {
+            ANMELDUNG.nachEinladungFragen();
+        }
     },
 
 
