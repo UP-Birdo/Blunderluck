@@ -379,12 +379,68 @@ class SpeicherKonten extends SpeicherGemeinsam {
         return stand;
     }
 
-    /* Ein Eintrag, wie er auf den Server darf: ohne Passwort-Prüfsummen. */
+    /*
+     * Ein Eintrag, wie er auf den Server darf: ohne Passwort-Prüfsummen, und
+     * (seit v0.151.1, Regel §11a + §11b eingespielt am 27.09.2026) die Felder
+     * `aussehen` und `fortschritt` nur so, wie die Regel sie erlaubt.
+     * WARUM HIER: Blunderluck schreibt immer den GANZEN Konto-Eintrag. Ein
+     * einziges Feld ausserhalb der Regel, und die Datenbank lehnt alles ab —
+     * auch Freunde und Abzeichen. Das ist die eine Stelle, durch die jeder
+     * Schreibvorgang eines Konto-Eintrags geht (`speichern`, `eintragSetzen`).
+     */
     static eintragFuerServer(spieler) {
         const eintrag = JSON.parse(JSON.stringify(spieler));
         delete eintrag.pinPruefwert;
         delete eintrag.pinSalz;
+        if (eintrag.aussehen !== undefined) {
+            const aussehen = SpeicherKonten.aussehenFuerRegel(eintrag.aussehen);
+            if (aussehen) {
+                eintrag.aussehen = aussehen;
+            } else {
+                delete eintrag.aussehen;
+            }
+        }
+        if (eintrag.fortschritt && typeof eintrag.fortschritt === "object"
+                && typeof FORTSCHRITT !== "undefined" && typeof FORTSCHRITT.fuerKonto === "function") {
+            eintrag.fortschritt = FORTSCHRITT.fuerKonto(eintrag.fortschritt);
+        }
         return eintrag;
+    }
+
+    /*
+     * DIE WERTE DER REGEL §11a (SICHERHEIT.md) — dieselben wie `WAHL` in
+     * js\upcrew-aussehen.js; `test-konto-regel.js` prüft, dass Regel,
+     * Baustein und diese Liste übereinstimmen.
+     */
+    static get REGEL_AUSSEHEN() {
+        return {
+            darstellung: ["geraet", "hell", "dunkel"],
+            farbwelt: ["werkstatt", "studio", "feld", "tiefsee", "gold"],
+            schrift: ["S1", "S2", "S3", "S4", "S5", "S6"],
+            knoepfe: ["K1", "K2", "K3", "K4", "K5", "K6"]
+        };
+    }
+
+    /* Nur die sechs Felder mit erlaubten Werten — oder null, wenn nichts
+       Gültiges übrig bleibt. */
+    static aussehenFuerRegel(roh) {
+        if (!roh || typeof roh !== "object" || Array.isArray(roh)) {
+            return null;
+        }
+        const erlaubt = SpeicherKonten.REGEL_AUSSEHEN;
+        const aus = {};
+        for (const feld of Object.keys(erlaubt)) {
+            if (erlaubt[feld].indexOf(roh[feld]) !== -1) {
+                aus[feld] = roh[feld];
+            }
+        }
+        if (typeof roh.leseschrift === "boolean") {
+            aus.leseschrift = roh.leseschrift;
+        }
+        if (typeof roh.stand === "number" && isFinite(roh.stand) && roh.stand >= 0) {
+            aus.stand = roh.stand;
+        }
+        return Object.keys(aus).length > 0 ? aus : null;
     }
 
     async laden() {

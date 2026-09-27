@@ -239,8 +239,9 @@ pruefe("Gast: eine beendete eigene Partie zählt einmal, nur im Gerätespeicher"
     gleich(Object.keys(alle).join(","), "gast", "nur der eigene Eintrag");
 });
 
-pruefe("Konto: ohne Regel §11b (AM_KONTO aus) schreibt nichts ans Konto, liest aber von dort", () => {
-    gleich(FORTSCHRITT_KONTO.AM_KONTO, false, "Vorgabe: aus, bis der Nutzer die Regel einspielt");
+pruefe("Konto: mit AM_KONTO aus schreibt nichts ans Konto, liest aber von dort", () => {
+    gleich(FORTSCHRITT_KONTO.AM_KONTO, true, "Vorgabe seit v0.151.1: an (Regel §11b eingespielt 27.09.2026)");
+    FORTSCHRITT_KONTO.AM_KONTO = false;
     const kontoDaten = { spieler: [{ id: "ich", name: "Anna", uid: "u1",
         fortschritt: { version: 1, spiele: { typoluck: { xp: 40, partien: 4, gezaehlt: [], stand: 7 } } } }] };
     globalThis.ANMELDUNG = {
@@ -255,6 +256,7 @@ pruefe("Konto: ohne Regel §11b (AM_KONTO aus) schreibt nichts ans Konto, liest 
     gleich(alle.ich.spiele.typoluck.xp, 40, "Typolucks Zweig vom Konto mitgenommen");
     gleich(FORTSCHRITT.gesamtXp(alle.gast), 10, "der Gast-Eintrag bleibt, wie er war");
     delete speicher["upcrew.fortschritt"];
+    FORTSCHRITT_KONTO.AM_KONTO = true;
 });
 
 pruefe("Konto: mit AM_KONTO geht der Fortschritt über den Spieler-Abgleich an den eigenen Eintrag", () => {
@@ -280,7 +282,7 @@ pruefe("Konto: mit AM_KONTO geht der Fortschritt über den Spieler-Abgleich an d
         gleich(f.spiele.blunderluck.xp, 10, "eigener Zweig dazu");
         gleich(Object.keys(f).sort().join(","), "spiele,version", "nur die Felder des Vertrags ans Konto");
     } finally {
-        FORTSCHRITT_KONTO.AM_KONTO = false;
+        FORTSCHRITT_KONTO.AM_KONTO = true;
         delete speicher["upcrew.fortschritt"];
     }
 });
@@ -330,8 +332,13 @@ pruefe("Gemeinsamer Speicher: andere Personen und Typolucks flacher 0.10.0-Stand
         heute: { datum: "2026-09-27", brett: 0, wort: 3, xp: 20 }, turm: {}, taten: [], zaehler: { partien: 7 } };
     const fremd = { version: 1, spiele: { typoluck: { xp: 5, stand: 1 } } };
     speicher["upcrew.fortschritt"] = JSON.stringify({ ich: flach, "id-andere": fremd });
-    FORTSCHRITT_KONTO.partieBeendet({ id: "p-f", ergebnis: "weiss",
-        teams: { weiss: ["ich"], schwarz: ["bot"] } }, "ich");
+    FORTSCHRITT_KONTO.AM_KONTO = false;
+    try {
+        FORTSCHRITT_KONTO.partieBeendet({ id: "p-f", ergebnis: "weiss",
+            teams: { weiss: ["ich"], schwarz: ["bot"] } }, "ich");
+    } finally {
+        FORTSCHRITT_KONTO.AM_KONTO = true;
+    }
     const alle = JSON.parse(speicher["upcrew.fortschritt"]);
     gleich(JSON.stringify(alle["id-andere"]), JSON.stringify(fremd), "fremde Person unverändert");
     for (const feld of Object.keys(flach)) {

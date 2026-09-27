@@ -58,8 +58,9 @@ const FORTSCHRITT_KONTO = {
        dahin Gerät-only"). Ohne Regel ginge das Schreiben heute zwar durch —
        aber sobald die Regel kommt, lehnte die Datenbank bei jedem
        Formfehler den GANZEN Eintrag ab (Freunde, Abzeichen). Regel und
-       Schalter gehen deshalb in EINEM Zug. */
-    AM_KONTO: false,
+       Schalter gehen deshalb in EINEM Zug. AN seit v0.151.1: Der Nutzer hat
+       die gesamte Regel (§11 + §11a + §11b) am 27.09.2026 eingespielt. */
+    AM_KONTO: true,
 
     _horcher: [],
 

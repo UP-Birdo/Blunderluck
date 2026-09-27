@@ -3,7 +3,25 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.151.1 — 27.09.2026
+
+**Level, Serie und Turm-Figuren folgen dir jetzt auf jedes Gerät.**
+
+- Mit Konto wird dein Fortschritt jetzt auch am Konto gespeichert (die
+  Datenbank-Regel dafür ist eingespielt). Meldest du dich auf einem anderen
+  Handy an, sind Level, Serie und Figuren schon da. Gäste: weiter nur auf
+  diesem Gerät.
+- Sicherer beim Speichern: Was ans Konto geht, wird vorher auf genau die
+  erlaubten Felder beschränkt — ein falscher Wert kann nicht mehr den ganzen
+  Konto-Eintrag (mit Freunden) blockieren.
+
 ## v0.151.0 — 27.09.2026
+
+> **Live seit 27.09.2026** — zusammen mit v0.146.0 bis v0.150.0 als ein
+> Paket und gleichzeitig mit Typoluck ausgeliefert (vom Nutzer selbst).
+> **Achtung: Das 3D-Brett ist jetzt eine Belohnung** (siehe v0.147.0) —
+> wer bisher 3D gespielt hat, spielt 2D, bis er im Turm die Holzhalle
+> erreicht.
 
 **Die Wertung im Turm ist repariert, die Tagesaufgabe zählt nach
 Schwierigkeit** (Runde 6, Nachtrag).
