@@ -706,6 +706,25 @@ body.design-3d .heute-bild .vorschau {
     margin-top: 4px;
 }
 
+/* Die Leiste „Neue Version" (seit v0.151.2, js\aktualisieren.js): oben,
+   über allem, antippen = laden. Kein Knopf der Knopf-Familie — ein
+   schlichter Streifen. */
+.neu-leiste {
+    position: fixed;
+    top: calc(env(safe-area-inset-top) + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10000;
+    padding: 8px 16px;
+    border-radius: var(--rund-voll);
+    background: var(--haupt);
+    color: var(--haupt-schrift);
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
 /* Die Schwierigkeit der Tagesaufgabe als 1–3 Punkte (seit v0.151.0). */
 .heute-stufe {
     display: inline-flex;

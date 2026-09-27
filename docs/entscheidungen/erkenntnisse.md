@@ -2,6 +2,24 @@
 
 ## Teuer erkaufte Erkenntnisse
 
+### Ein neuer Service Worker übernimmt — die offene Seite bleibt trotzdem alt (27.09.2026, v0.151.2)
+
+**Vom Nutzer gemeldet** („ich bekomme die neuste Version nicht mehr
+aufgerufen"), live nachgemessen: Server lieferte 0.151.1, alle Dateien 200.
+Die Seite startete aus dem Zwischenspeicher mit 0.151.0; der neue Worker
+installierte sich im Hintergrund (über 10 s, lädt auch glb und three) und
+übernahm per `skipWaiting`/`clients.claim`. **`claim` tauscht nur den
+Worker, nicht die schon geladenen Skripte** — die Seite lief mit den alten
+weiter, erst ein weiterer Neustart zeigte die neue. Als
+Home-Bildschirm-App bleibt die Seite im Speicher, also praktisch nie.
+Dazu: `app.js` meldete den Worker nur an, fragte nie nach
+(`registration.update()`) und hörte nicht auf `controllerchange`.
+**Regel:** Wer `skipWaiting`/`claim` benutzt, muss auf `controllerchange`
+EINMAL neu laden (nur wenn es vorher schon einen Controller gab, mit
+Merker gegen Schleifen, an sicherer Stelle) und beim Zurückkehren
+nachfragen. Umsetzung: `js\aktualisieren.js`, Test
+`tests\test-aktualisieren.js`; in Typoluck gleich (0.15.2).
+
 ### `-NurFazit` meldet „0 Fehler", wenn eine Testdatei gar nicht startet — nur der Exit-Code verrät es (26.09.2026, v0.144.0)
 
 **Beim Bauen gefunden.** Ein typografisches „ in einem JS-Text von

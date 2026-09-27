@@ -320,8 +320,20 @@ const SERVICE_WORKER = {
             return;
         }
 
+        /* Seit v0.151.2 (js\aktualisieren.js): Wechsel des Workers
+           beobachten, beim Zurückkehren nachfragen — sonst bleibt eine
+           geöffnete Seite auf der alten Version stehen. */
+        const aktualisieren = (typeof AKTUALISIEREN !== "undefined") ? AKTUALISIEREN : null;
+        if (aktualisieren) {
+            aktualisieren.beobachten();
+        }
+
         window.addEventListener("load", () => {
-            navigator.serviceWorker.register("sw.js").catch((fehler) => {
+            navigator.serviceWorker.register("sw.js").then((registrierung) => {
+                if (aktualisieren) {
+                    aktualisieren.starten(registrierung);
+                }
+            }).catch((fehler) => {
                 /*
                  * Ein Fehlschlag ist kein App-Fehler: Ohne Worker läuft
                  * alles weiter, nur eben ohne Offline-Betrieb. Deshalb geht

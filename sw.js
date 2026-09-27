@@ -29,7 +29,7 @@
  */
 
 /* Der Name des Zwischenspeichers. HIER STEHT DIE NUMMER GENAU EINMAL. */
-const SPEICHER_NAME = "blunderluck-v0.151.1";
+const SPEICHER_NAME = "blunderluck-v0.151.2";
 
 /*
  * BEIM BAUEN: NETZ ZUERST. IM BETRIEB: ZWISCHENSPEICHER ZUERST.
@@ -134,6 +134,7 @@ const DATEIEN = [
     "./js/schach-bot.js",
     "./js/wertung.js",
     "./js/wertung-rechner.js",
+    "./js/aktualisieren.js",
     "./js/tagesbrett.js",
     "./js/schach-vorschau.js",
     "./js/schach-grundlagen.js",

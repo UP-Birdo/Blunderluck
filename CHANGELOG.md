@@ -3,6 +3,18 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.151.2 — 27.09.2026
+
+**Neue Versionen kommen jetzt auch an.**
+
+- Bisher blieb eine geöffnete App (vor allem vom Home-Bildschirm) nach
+  einer Auslieferung auf der alten Version stehen — die neue kam erst nach
+  mehrmaligem Neustart. Jetzt fragt die App beim Öffnen und beim
+  Zurückholen nach und lädt die neue Version einmal von selbst.
+- Nie mitten im Spiel: In einer laufenden Partie, einem offenen Dialog oder
+  beim Tippen erscheint oben nur „Neue Version · antippen"; geladen wird,
+  sobald es passt, oder sofort beim Antippen.
+
 ## v0.151.1 — 27.09.2026
 
 **Level, Serie und Turm-Figuren folgen dir jetzt auf jedes Gerät.**
