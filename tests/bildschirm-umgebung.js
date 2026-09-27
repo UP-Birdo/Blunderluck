@@ -516,7 +516,7 @@ const dateien = ["konfig.js", "fuehlen.js", "zustand.js",
     /* sammlung.js seit v0.145.0 statt faehigkeiten.js — geprüft wird dort
        die reine Sammlung (Fähigkeiten, Brettformen); der gemeinsame
        Baustein „Anpassen" läuft hier nicht mit. */
-    "rangliste.js", "start.js", "sammlung.js", "freunde.js",
+    "rangliste.js", "start.js", "upcrew-abzeichen.js", "upcrew-sammlung.js", "sammlung.js", "freunde.js",
     "einstellungen.js",
     /* Die Spieler-Verwaltung als eigener Bildschirm mit Tabelle. */
     "verwaltungs-bildschirm.js",

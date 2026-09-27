@@ -381,6 +381,9 @@ const TEAM_SCHACH = {
     friedhofOffen: { weiss: true, schwarz: true },
     eckMenueOffen: false,
 
+    /* Partien, deren Anpfiff schon an die Serie gemeldet ist (v0.152.0). */
+    _serieGemeldet: {},
+
     /*
      * DAS ECK-MENUE SCHLIESST BEI KLICK AUSSERHALB (Nutzer-Wunsch: „soll
      * auch wieder zugehen wenn man wo anders hinklickt ausser wenn man auf
@@ -848,6 +851,17 @@ const TEAM_SCHACH = {
             /* Vierter Wert (seit v0.151.3): Solange die Partie nicht zu Ende
                ist — auch schon im Vorraum —, ist die Tab-Leiste weg. */
             TABS.rundeSetzen("team-schach", true, offene.laeuft === true, !offene.ergebnis);
+
+            /* Der Anpfiff zählt für die Serie (seit v0.152.0, Nutzer:
+               „einmal eine Runde starten, egal welches Game") — einmal je
+               Partie gemeldet, wirksam einmal je Tag. */
+            if (offene.laeuft === true && !offene.ergebnis && person
+                    && SCHACH_RUNDE.teamVon(offene, person.id)
+                    && typeof FORTSCHRITT_KONTO !== "undefined" && FORTSCHRITT_KONTO.rundeGestartet
+                    && !TEAM_SCHACH._serieGemeldet[offene.id]) {
+                TEAM_SCHACH._serieGemeldet[offene.id] = true;
+                FORTSCHRITT_KONTO.rundeGestartet();
+            }
 
             /* Die stille Zeitmessung läuft nur, solange eine Partie offen ist
                (v0.93) — siehe `_zeitMessungStarten`. */
@@ -2526,6 +2540,23 @@ const TEAM_SCHACH = {
         verlauf.title = "Zugverlauf · " + partie.verlauf.length + " Züge";
         ziel.appendChild(verlauf);
 
+        /*
+         * DER TIPP (seit v0.152.0, Ware aus dem Shop): nur mit Vorrat und nur,
+         * wenn die eigene Seite am Zug ist. Er zeigt ein Matt in einem Zug, sonst den
+         * Zug, den Bob auf der Stufe „Meister" spielen würde, und kostet ein Stück. Beim Tagesbrett
+         * gibt es danach höchstens einen Bauern.
+         */
+        if (typeof FORTSCHRITT_KONTO !== "undefined" && FORTSCHRITT_KONTO.vorrat
+                && FORTSCHRITT_KONTO.vorrat("tipp") > 0 && partie.stand && partie.stand.amZug === farbe) {
+            const tipp = TEAM_SCHACH._knopf("", "knopf-still knopf-klein eck-knopf eck-tipp",
+                mitStopp(() => TEAM_SCHACH.tippZeigen(partie, farbe)));
+            tipp.appendChild(ZUSTAND.zeichen("tipp", "eck-tipp-zeichen"));
+            const anzahl = FORTSCHRITT_KONTO.vorrat("tipp");
+            tipp.setAttribute("aria-label", "Tipp · noch " + anzahl);
+            tipp.title = "Tipp · noch " + anzahl;
+            ziel.appendChild(tipp);
+        }
+
         if (namen.length > 1) {
             const team = TEAM_SCHACH._knopf("+" + (namen.length - 1),
                 "knopf-still knopf-klein eck-knopf",
@@ -2973,6 +3004,36 @@ const TEAM_SCHACH = {
      * sollen in dem Kasten erscheinen"); gebaut werden sie in
      * `_spielerZeileBauen`.
      */
+
+    /* Einen Tipp einsetzen: fragen, ein Stück nehmen, den Zug zeigen. */
+    async tippZeigen(partie, farbe) {
+        const tagesbrett = !!(partie.regeln && partie.regeln.tagesbrett);
+        let zug = (typeof SCHACH_BOT !== "undefined") ? SCHACH_BOT.tipp(partie, farbe, "meister") : null;
+        /* Beim Tagesbrett kennt die Aufgabe ihren ersten Zug (geprüft). */
+        if (tagesbrett && typeof TAGESBRETT !== "undefined" && TAGESBRETT.eigeneZuege(partie, farbe) === 0) {
+            const heute = TAGESBRETT.fuer(partie.regeln.tagesbrett.datum);
+            const [von, nach] = heute ? heute.aufgabe.loesung.split("-").map(Number) : [];
+            const passend = SCHACH.alleZuege(partie.stand).find((z) => z.von === von && z.nach === nach);
+            if (passend) {
+                zug = { von: von, nach: nach, text: SCHACH.zugText(partie.stand, passend) };
+            }
+        }
+        if (!zug) {
+            DIALOG.kurzmeldung("Gerade kein Tipp möglich");
+            return;
+        }
+        const ja = await DIALOG.frage("Tipp einsetzen?",
+            "Noch " + FORTSCHRITT_KONTO.vorrat("tipp") + (tagesbrett ? " · danach höchstens 1 Bauer" : ""),
+            "Tipp zeigen");
+        if (!ja || !FORTSCHRITT_KONTO.benutzen("tipp")) {
+            return;
+        }
+        FORTSCHRITT_KONTO.hilfeMerken(partie.id);
+        TEAM_SCHACH.eckMenueOffen = false;
+        TEAM_SCHACH._eckMenueHorcherAbmelden();
+        TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
+        await DIALOG.hinweis("Tipp", zug.text || "Ein guter Zug");
+    },
 
     eckMenueUmschalten() {
         TEAM_SCHACH.eckMenueOffen = !TEAM_SCHACH.eckMenueOffen;

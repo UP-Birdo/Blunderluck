@@ -79,6 +79,10 @@ const ZUSTAND = {
            in Typoluck gleich. Seit v0.145.0. */
         sammlung: "M4 4 H10 V10 H4 Z M14 4 H20 V10 H14 Z M4 14 H10 V20 H4 Z M14 14 H20 V20 H14 Z",
         bald: "M12 7 V12 L15 14 M12 3 A9 9 0 1 0 12.01 3",
+        /* Shop (seit v0.152.0, Platz 5 statt „Bald"): eine Einkaufstüte. */
+        shop: "M5 8 H19 L18 21 H6 Z M9 8 V6.5 A3 3 0 0 1 15 6.5 V8 M9 12 A3 3 0 0 0 15 12",
+        /* Tipp in der Partie (seit v0.152.0): eine Glühbirne. */
+        tipp: "M9 18 H15 M10 21 H14 M12 3 A6 6 0 0 1 16 13.5 C15.2 14.3 15 15 15 16 H9 C9 15 8.8 14.3 8 13.5 A6 6 0 0 1 12 3 Z",
         /* Schrift: ein A (Einstellungen, Zeile „Standard-Schrift"). */
         schrift: "M5 20 L12 4 L19 20 M8 14 H16",
         /* Der Pfeil zurück in der Kopfzeile (seit v0.142.0, wie Typoluck). */

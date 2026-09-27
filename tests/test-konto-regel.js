@@ -77,6 +77,8 @@ function blockNach(ueberschrift) {
 const REGEL_11 = blockNach("## 11. Endgültige Regeln UPCrew");
 const REGEL_11A = blockNach("### 11a.");
 const REGEL_11B = blockNach("### 11b.");
+/* §11c (seit v0.151.17, Vorschlag): das Aussehen je Spiel. */
+const REGEL_11C = blockNach("### 11c.");
 
 /* Ein .validate-Ausdruck gegen einen Wert und seinen Schlüssel. */
 function ausdruckGilt(ausdruck, wert, schluessel) {
@@ -169,6 +171,7 @@ function kontoVerstoesse(eintrag) {
     }
     fehler.push(...verstoesse(REGEL_11A.aussehen, eintrag.aussehen, "aussehen", "aussehen"));
     fehler.push(...verstoesse(REGEL_11B.fortschritt, eintrag.fortschritt, "fortschritt", "fortschritt"));
+    fehler.push(...verstoesse(REGEL_11C.aussehenJe, eintrag.aussehenJe, "aussehenJe", "aussehenJe"));
     return fehler;
 }
 
@@ -273,6 +276,42 @@ pruefe("Regel §11a, Schreib-Schleuse und Baustein nennen dieselben Aussehen-Wer
             wahr(ausdruckGilt(REGEL_11A.aussehen[feld][".validate"], wert, feld), feld + " " + wert + " erlaubt die Regel");
         }
     }
+});
+
+pruefe("§11c: aussehenJe — nur zwei Spiele, je Spiel die sechs Felder; die Schleuse hält es ein (v0.151.17)", () => {
+    wahr(!!REGEL_11C.aussehenJe && !!REGEL_11C.aussehenJe.$app, "Block §11c lesbar");
+    const roh = { id: "a", name: "A", tag: "0001", uid: "u",
+        aussehenJe: {
+            blunderluck: { darstellung: "hell", farbwelt: "feld", schrift: "S2", knoepfe: "K3", leseschrift: false, stand: 5, extra: 1 },
+            typoluck: { farbwelt: "neonpink", schrift: "S9", stand: 7 },
+            trainer: { darstellung: "hell", stand: 1 }
+        } };
+    const fehlerRoh = kontoVerstoesse(roh);
+    wahr(fehlerRoh.some((f) => f.indexOf("aussehenJe/trainer") !== -1), "fremdes Spiel erkannt");
+    wahr(fehlerRoh.some((f) => f.indexOf("aussehenJe/typoluck/farbwelt") !== -1), "falscher Wert erkannt");
+    const eintrag = SpeicherKonten.eintragFuerServer(roh);
+    gleich(kontoVerstoesse(eintrag).join(" | "), "", "was Blunderluck schreibt, besteht §11c");
+    gleich(Object.keys(eintrag.aussehenJe).sort().join(","), "blunderluck,typoluck", "nur die zwei Spiele");
+    gleich(Object.keys(eintrag.aussehenJe.blunderluck).sort().join(","),
+        "darstellung,farbwelt,knoepfe,leseschrift,schrift,stand", "nur die sechs Felder");
+    gleich(Object.keys(eintrag.aussehenJe.typoluck).sort().join(","), "stand", "ungültige Werte fallen weg");
+    for (const feld of ["darstellung", "farbwelt", "schrift", "knoepfe", "leseschrift", "stand"]) {
+        gleich(JSON.stringify(REGEL_11C.aussehenJe.$app[feld]), JSON.stringify(REGEL_11A.aussehen[feld]),
+            feld + ": §11c = §11a");
+    }
+});
+
+pruefe("Die GESAMTE Regel in §11c ist gültiges JSON und enthält §11 + §11a + §11b + §11c", () => {
+    const start = sicherheit.indexOf("**Die GESAMTE Regel (§11 + §11a + §11b + §11c)");
+    wahr(start !== -1, "Abschnitt fehlt");
+    const a = sicherheit.indexOf("```text", start) + "```text".length;
+    const gesamt = JSON.parse(sicherheit.slice(a, sicherheit.indexOf("```", a)).trim());
+    const uid = gesamt.rules.spieler.konten.$uid;
+    gleich(uid[".validate"], REGEL_11.rules.spieler.konten.$uid[".validate"], "§11 unverändert");
+    gleich(JSON.stringify(uid.aussehen), JSON.stringify(REGEL_11A.aussehen), "§11a");
+    gleich(JSON.stringify(uid.fortschritt), JSON.stringify(REGEL_11B.fortschritt), "§11b");
+    gleich(JSON.stringify(uid.aussehenJe), JSON.stringify(REGEL_11C.aussehenJe), "§11c");
+    gleich(JSON.stringify(gesamt.rules.blunderluck), JSON.stringify(REGEL_11.rules.blunderluck), "Rest von §11");
 });
 
 console.log(anzahlOk + " ok, " + anzahlFehler + " Fehler");

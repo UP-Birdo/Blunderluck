@@ -3,6 +3,149 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.152.0 — 27.09.2026
+
+**Münzen, Shop und eine Serie, die ab dem ersten Zug zählt.**
+
+- **Serie:** Ein Tag zählt, sobald du in Blunderluck oder Typoluck eine
+  Runde startest — gewinnen musst du dafür nicht. Die Serie geht jetzt auch
+  über 60 Tage hinaus (bis „1k+" an der Flamme).
+- **Münzen** — gemeinsam für beide Spiele: Tagesaufgabe +10, gewonnene
+  Runde +3, neue Figur im Turm +5, Boss besiegt +25, 7 Tage Serie +20,
+  Level-Aufstieg +10. Eine kurze Einblendung zeigt, was du bekommen hast.
+- **Shop** auf dem fünften Platz der Leiste (statt „Bald"): Flammen-Schild
+  50 (höchstens 2), Extra-Leben 30, Tipp 15. Kaufen mit kurzer Rückfrage.
+- **Einsetzen:** Der Tipp steht in der Partie im Menü am eigenen Namen
+  (zeigt einen guten Zug; beim Tagesbrett danach höchstens ein Bauer). Das
+  Extra-Leben startet nach einer verlorenen Turm-Partie dieselbe Stufe
+  gleich wieder. Gekaufte Schilde retten die Flamme über einen verpassten
+  Tag.
+
+## v0.151.18 — 27.09.2026
+
+**Die Flamme oben neben deinem Profil.**
+
+- Ein Kreis mit einer Flamme, darin deine Serie (bis 999 als Zahl, darüber
+  „1k+"). Grau, solange keine Serie läuft; gedämpft und leise pulsierend,
+  wenn heute noch nichts geschafft ist; leuchtend, wenn heute geschafft.
+  Ein kleines Schild zeigt einen Serien-Schutz.
+- Die Serie zählt über beide Spiele und hängt an deinem Konto — sie stimmt
+  auch auf einem neuen Gerät, sobald du angemeldet bist.
+- Antippen führt zu „Aufgaben" (Woche, Schutz, Tagesaufgaben).
+
+## v0.151.17 — 27.09.2026
+
+**Jedes Spiel hat sein eigenes Aussehen.**
+
+- „Übernehmen" in der Sammlung ändert nur noch Blunderluck — Typoluck
+  behält seine Farbwelt, Schrift, Knöpfe und Darstellung. Deine bisherige
+  Wahl bleibt als Start erhalten.
+- In der Vorschau der Sammlung entfällt dafür der Umschalter
+  „Typoluck / Blunderluck".
+- Für später gibt es einen Schalter, mit dem beide Spiele wieder ein
+  gemeinsames Aussehen bekommen.
+
+## v0.151.16 — 27.09.2026
+
+**Die Leiste unten gleitet.**
+
+- Beim Tab-Wechsel fährt die orange Kapsel gefedert zum neuen Tab, und das
+  Symbol hüpft kurz — beim Tippen wie beim Wischen. Mit „Bewegung
+  reduzieren" ohne Bewegung.
+
+## v0.151.15 — 27.09.2026
+
+**Rechts und links ist Stopp.**
+
+- Am ersten und am letzten Tab bewegt sich beim Wischen nichts mehr — es
+  geht nicht im Kreis (vom letzten Tab nicht zurück zum ersten).
+- Die ganze Seite lässt sich nicht mehr seitlich verschieben: Am Start
+  ragte das Quadrat neben „Spielen" 7 px über den Rand; es hat jetzt eine
+  feste Größe. Seitliches Überrollen ist abgeschaltet.
+- Behoben: Nach einem Besuch der Sammlung stand ihr Kopf („Sammlung 66 %")
+  auf den anderen Tabs unten im Bild.
+
+## v0.151.14 — 27.09.2026
+
+**Wischen wechselt die Tabs.**
+
+- Waagrecht über den Inhalt wischen wechselt zum Nachbar-Tab der Leiste:
+  nach links zum nächsten, nach rechts zum vorherigen („Bald" wird
+  übersprungen). Der Inhalt folgt dem Finger leicht und gleitet hinüber.
+- Senkrechtes Rollen bleibt, wie es ist. Nicht gewischt wird während einer
+  Runde, in offenen Fenstern und Dialogen, auf Regal-Reihen, Umschaltern,
+  Brettern und Eingabefeldern und vom Bildschirmrand aus (iPhone-Zurück).
+- Am iPhone beginnt der Inhalt oben jetzt immer unter der Statusleiste —
+  auch auf schmalen Bildschirmen (dort rutschte der Anfang der Sammlung
+  unter ihren klebenden Kopf).
+
+## v0.151.13 — 27.09.2026
+
+**Kleinigkeiten nach dem Baustein-Umzug.**
+
+- „Wie viele?" beim Anlegen einer Runde: „normal" und „Regen" brechen am
+  Handy nicht mehr mitten im Wort um (die Kacheln hatten zu viel Innenrand).
+- Der Anpassen-Baustein kommt in der berichtigten Fassung aus der
+  gemeinsamen Quelle: Die Vorschau wächst mit, wenn ein Spiel mehr Platz
+  braucht (Typoluck-Tastatur). Die Blunderluck-Vorschau bleibt gleich hoch.
+
+## v0.151.12 — 27.09.2026
+
+**Die fünf Abzeichen aus Typoluck — jetzt auch in Blunderluck.**
+
+- Viel gespielt, Serie, Beide Spiele, Figuren, Tagesaufgaben: im Profil
+  (Karte „Abzeichen · beide Spiele" unter dem Level) und in der Sammlung
+  als erste Gruppe. Je Stufe ein Punkt, erreichte golden, nach oben offen;
+  antippen zeigt Wert und Stufen.
+- Gezählt wird über beide Spiele zusammen — Blunderluck und Typoluck zeigen
+  dieselben Zahlen.
+
+## v0.151.11 — 27.09.2026
+
+**Die Sammlung ist ein gemeinsamer Baustein — in Blunderluck und Typoluck gleich.**
+
+- Das Gerüst der Sammlung (Kopf mit „NN %", Umschalter der Spiele,
+  klebende Vorschau mit Abschluss, Regale, reine Sammlung, Balken
+  „Zurück · Übernehmen" über der Leiste) kommt jetzt aus einem gemeinsamen
+  Baustein. Typoluck übernimmt ihn 1:1, damit beide Sammlungen gleich
+  aussehen und gleich bleiben. In Blunderluck sieht alles aus wie vorher.
+- Auf sehr niedrigen Bildschirmen (bis 600 px hoch) rollt die Vorschau mit,
+  damit für die Regale Platz bleibt.
+
+## v0.151.10 — 27.09.2026
+
+**Items selbst wählen: echte Kacheln. Wunsch melden: nur Text.**
+
+- „Neue Runde" → „Welche Items?" → „selbst wählen …": Statt „[x] Platztausch"
+  als Text in orangen Blöcken gibt es jetzt An/Aus-Kacheln mit dem Zeichen
+  der Fähigkeit und einem runden Haken. Angehakt: kräftig mit Rahmen in der
+  Hauptfarbe; abgewählt: leise. Die letzte Reihe verschwindet nicht mehr
+  unter dem Fuß, und der Knopf heißt „Fertig" statt „Verstanden".
+  Dieselben Kacheln bei der Abzeichen-Wahl im Profil.
+- „Welche Items?" zeigt statt der Lootbox-Würfel je Seltenheit eine kleine
+  Item-Karte dieser Seltenheit (wenig: gewöhnlich; viele: bis episch; alle:
+  alle vier). Die Würfel bleiben bei „Wie viele?".
+- „Wunsch oder Fehler": Es geht nur noch Text durch — Buchstaben (mit
+  Umlauten und ß), Ziffern, Leerzeichen, Zeilen und . , ! ? - ( ) : ;.
+  Alles andere verschwindet schon beim Tippen. Höchstens 500 Zeichen,
+  doppelte Leerzeichen werden eins. Auch das Abhol-Werkzeug für die
+  Wünsche prüft das noch einmal.
+- iPhone-App vom Home-Bildschirm: Oben deckt eine Fläche in der
+  Grundfarbe die Statusleiste ab, damit beim Rollen nichts unter Uhr und
+  Akku durchläuft (wie in Typoluck gemeldet).
+
+## v0.151.9 — 27.09.2026
+
+**Gleicher Name, gleiches Passwort: du wählst dein Konto.**
+
+- Zwei Konten dürfen denselben Namen UND dasselbe Passwort haben — das
+  neue bekommt einfach eine andere Nummer.
+- Passt dein Passwort beim Anmelden zu mehreren Konten mit deinem Namen,
+  fragt die App kurz „Welches Konto?". Jede Zeile zeigt den Namen, klein
+  die Nummer und — wenn vorhanden — Level und den letzten Spieltag. Tippen
+  meldet dich in genau dieses Konto an.
+- Passt es nur zu einem, bist du wie bisher sofort angemeldet.
+
 ## v0.151.8 — 27.09.2026
 
 **Anmelden nur mit Name und Passwort — um die Nummer musst du dich nicht kümmern.**

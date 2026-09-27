@@ -414,6 +414,13 @@ const APP = {
 
                 RANGLISTE.zeichnen();
 
+                /* Die Serien-Flamme (seit v0.151.18): Der Fortschritt vom
+                   Konto kommt mit dem Spieler-Stand — auf einem neuen Gerät
+                   erst nach der Anmeldung. */
+                if (typeof START !== "undefined" && START.flammeAktualisieren) {
+                    START.flammeAktualisieren();
+                }
+
                 /* Auch der Schach-Bereich zeigt Spieler-Daten: die Namen
                    an den Teams und in der Rangliste. Eine fremde Anfrage
                    soll ankommen, ohne dass erst ein Zug passiert. */
@@ -487,7 +494,9 @@ const APP = {
         TABS.registrieren(SAMMLUNG);
         TABS.registrieren(START);
         TABS.registrieren(RANGLISTE);
-        TABS.registrieren(BALD);
+        /* Platz 5 seit v0.152.0: der Shop (vorher der stille Platzhalter
+           „Bald", js\herausforderungen.js). */
+        TABS.registrieren(SHOP);
         TABS.registrieren(TEAM_SCHACH);
         TABS.registrieren(EINSTELLUNGEN);
         /* Die Spieler-Verwaltung als eigener Bildschirm (Nutzer-Ansage
@@ -499,11 +508,52 @@ const APP = {
            blitzt kurz das falsche Design auf (seit v0.119). */
         EINSTELLUNGEN.laden();
 
+        /* Werkstatt `&kerbe` (seit v0.151.14, wie Typoluck 0.15.8): der
+           iPhone-Streifen oben zum Ansehen am Rechner — 47 px statt
+           env(safe-area-inset-top), das der Browser hier mit 0 liefert
+           (css\stil.css `--oben-frei`). Nur auf dem eigenen Rechner. */
+        if (typeof FREISCHALTUNG !== "undefined" && FREISCHALTUNG.werkstatt()
+                && /[?&]kerbe(=|&|$)/.test(location.search || "")) {
+            document.documentElement.style.setProperty("--oben-frei", "47px");
+        }
+
         TABS.starten(
             document.getElementById("tab-leiste"),
             document.getElementById("tab-inhalt"),
             "start"
         );
+
+        /* Die wandernde Kapsel der Leiste (seit v0.151.16, Baustein
+           js\upcrew-leiste.js, Fassung „C · Gleiten + Hüpfen"; Nutzer
+           27.09.2026: „die Animation beim Tab-Wechseln unten muss besser
+           werden"). Sie beobachtet `aria-current` selbst — am Tab-Wechsel
+           (`TABS.wechseln`) ändert sich nichts. */
+        if (typeof UPCREW_LEISTE !== "undefined") {
+            UPCREW_LEISTE.an(TABS.leisteEl);
+        }
+
+        /*
+         * WISCHEN WECHSELT DIE TABS (seit v0.151.14, Nutzer 27.09.2026: „mache,
+         * dass man in den Menüs swipen kann, um die Tabs zu wechseln").
+         * Gemeinsamer Baustein js\upcrew-wischen.js; gewechselt wird über
+         * denselben Weg wie ein Tipp auf die Leiste (`TABS.wechseln`), in
+         * Leisten-Reihenfolge, „Bald" (Platzhalter) wird übersprungen. Nicht
+         * während einer Runde (Leiste weg, `partie-spielt`), nicht in einem
+         * eigenen Fenster (`runde-offen`), nicht während der Anmeldung.
+         */
+        if (typeof UPCREW_WISCHEN !== "undefined") {
+            UPCREW_WISCHEN.an(TABS.inhaltEl, {
+                tabs: () => TABS.liste.filter((tab) => tab.inLeiste !== false)
+                    .map((tab) => (tab.platzhalter ? { id: tab.id, still: true } : tab.id)),
+                aktiv: () => TABS.aktiveId,
+                wechseln: (id) => TABS.wechseln(id),
+                erlaubt: () => !document.body.classList.contains("partie-spielt")
+                    && !document.body.classList.contains("runde-offen")
+                    && !(typeof ANMELDUNG !== "undefined" && ANMELDUNG.anmeldenLaeuft),
+                sperren: ".vorschau, .brett, .bild-leiste, .karten-leiste",
+                bewegen: () => TABS.inhaltEl.querySelector(".tab-bereich:not([hidden])")
+            });
+        }
 
         /* Den Wunsch-Knopf hängt seit v0.25.0 die Karte „Über die App" in
            den Einstellungen selbst ein (js\einstellungen.js) — der

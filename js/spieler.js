@@ -192,6 +192,11 @@ const SPIELER = {
             if ("aussehen" in spieler && !SPIELER._istObjekt(spieler.aussehen)) {
                 delete spieler.aussehen;
             }
+            /* Das Aussehen JE SPIEL (seit v0.151.17, `aussehenJe/<app>`):
+               ebenso nur als Objekt. */
+            if ("aussehenJe" in spieler && !SPIELER._istObjekt(spieler.aussehenJe)) {
+                delete spieler.aussehenJe;
+            }
 
             /* Der Fortschritt (seit v0.146.0): ebenso nur als Objekt. Die
                Werte darin prüft js\fortschritt.js — hier wandert er durch. */
@@ -417,7 +422,7 @@ const SPIELER = {
         for (const spieler of fremdStand.spieler) {
             if (meiner && spieler.id === eigeneId) {
                 ergebnis.spieler.push(SPIELER._fortschrittZusammen(
-                    SPIELER._neueresAussehen(meiner, spieler), spieler));
+                    SPIELER._neueresAussehenJe(SPIELER._neueresAussehen(meiner, spieler), spieler), spieler));
                 selbstGefunden = true;
             } else {
                 ergebnis.spieler.push(spieler);
@@ -449,6 +454,28 @@ const SPIELER = {
             return meiner;
         }
         return Object.assign({}, meiner, { aussehen: SPIELER._tiefKopie(vomServer.aussehen) });
+    },
+
+    /*
+     * DAS AUSSEHEN JE SPIEL (seit v0.151.17, `aussehenJe/<app>`): dieselbe
+     * Ausnahme je Zweig — Typoluck schreibt nur seinen Zweig, Blunderluck
+     * den ganzen Eintrag. Je Spiel gewinnt der neuere `stand`, sonst bliebe
+     * beim nächsten Speichern eine ältere Kopie eines fremden Zweigs stehen.
+     */
+    _neueresAussehenJe(meiner, vomServer) {
+        const mein = (meiner && SPIELER._istObjekt(meiner.aussehenJe)) ? meiner.aussehenJe : null;
+        const fremd = (vomServer && SPIELER._istObjekt(vomServer.aussehenJe)) ? vomServer.aussehenJe : null;
+        if (!fremd) {
+            return meiner;
+        }
+        const standVon = (a) => (SPIELER._istObjekt(a) && typeof a.stand === "number") ? a.stand : -1;
+        const zusammen = SPIELER._tiefKopie(mein || {});
+        for (const app of Object.keys(fremd)) {
+            if (standVon(fremd[app]) > standVon(zusammen[app])) {
+                zusammen[app] = SPIELER._tiefKopie(fremd[app]);
+            }
+        }
+        return Object.assign({}, meiner, { aussehenJe: zusammen });
     },
 
     /*
@@ -520,6 +547,9 @@ const SPIELER = {
             if (JSON.stringify(spielerA.aussehen || null) !== JSON.stringify(spielerB.aussehen || null)) {
                 return false;
             }
+            if (JSON.stringify(spielerA.aussehenJe || null) !== JSON.stringify(spielerB.aussehenJe || null)) {
+                return false;
+            }
 
             /* Der Fortschritt (seit v0.146.0) — sonst stünde das Level
                eines anderen Geräts erst nach einer anderen Änderung da. */
@@ -573,6 +603,27 @@ const SPIELER = {
      * innerhalb der Regel, die SICHERHEIT.md §11 dafür vorschlägt.
      */
     AUSSEHEN_TEXTE: ["darstellung", "farbwelt", "schrift", "knoepfe"],
+
+    /* Das Aussehen EINES Spiels am Eintrag (seit v0.151.17): `aussehenJe[app]`,
+       dieselben sechs Felder wie `aussehen`. */
+    aussehenJeSetzen(daten, id, app, aussehen, zeitpunkt) {
+        const mitFeld = SPIELER.aussehenSetzen(daten, id, aussehen, zeitpunkt);
+        for (const spieler of mitFeld.spieler) {
+            if (spieler.id === id) {
+                const sauber = spieler.aussehen;
+                const vorher = (daten.spieler || []).find((s) => s.id === id);
+                /* `aussehen` bleibt, wie es war — es wird nicht mehr geschrieben. */
+                if (vorher && "aussehen" in vorher) {
+                    spieler.aussehen = SPIELER._tiefKopie(vorher.aussehen);
+                } else {
+                    delete spieler.aussehen;
+                }
+                spieler.aussehenJe = Object.assign({},
+                    SPIELER._istObjekt(spieler.aussehenJe) ? spieler.aussehenJe : {}, { [app]: sauber });
+            }
+        }
+        return mitFeld;
+    },
 
     aussehenSetzen(daten, id, aussehen, zeitpunkt) {
         const neu = SPIELER.kopieren(daten);

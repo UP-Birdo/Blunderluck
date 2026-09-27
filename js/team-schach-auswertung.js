@@ -88,6 +88,20 @@ Object.assign(TEAM_SCHACH, {
     },
 
     /* Die Zeile „+10 XP", bei einem neuen Level dazu „Level N". */
+    /* Ein Extra-Leben einsetzen: ein Stück nehmen, Abschluss zu, dieselbe
+       Turm-Stufe neu anlegen (seit v0.152.0). */
+    async lebenEinsetzen(partie) {
+        const angabe = partie.regeln && partie.regeln.turm;
+        if (!angabe || !FORTSCHRITT_KONTO.benutzen("leben")) {
+            return;
+        }
+        TEAM_SCHACH.abschlussSchliessen(partie.id);
+        if (typeof TABS !== "undefined") {
+            TABS.wechseln("start");
+        }
+        await START._turmStarten(angabe.ort, angabe.stufe);
+    },
+
     _xpZeileBauen(partieId) {
         const gewinn = TEAM_SCHACH._xpGewinn[partieId];
         if (!gewinn) {
@@ -101,6 +115,13 @@ Object.assign(TEAM_SCHACH, {
             zeile.appendChild(START._figurenBauen(figuren, "abschluss-figuren"));
         }
         zeile.appendChild(TEAM_SCHACH._element("span", "abschluss-xp-wert", "+" + gewinn.xp + " XP"));
+        /* Die Münzen dieser Partie (seit v0.152.0). */
+        if (gewinn.muenzen > 0 && typeof UPCREW_MUENZEN !== "undefined") {
+            const m = TEAM_SCHACH._element("span", "abschluss-xp-wert abschluss-muenzen");
+            m.appendChild(UPCREW_MUENZEN.zeichen());
+            m.appendChild(TEAM_SCHACH._element("span", "", "+" + gewinn.muenzen));
+            zeile.appendChild(m);
+        }
         if (gewinn.levelNachher > gewinn.levelVorher) {
             zeile.appendChild(TEAM_SCHACH._element("span", "abschluss-xp-level",
                 "Level " + gewinn.levelNachher));
@@ -260,8 +281,20 @@ Object.assign(TEAM_SCHACH, {
                 "Gegen Computer · keine Punkte"));
 
             const nurZurueck = TEAM_SCHACH._element("div", "abschluss-leiste");
+            /* EXTRA-LEBEN (seit v0.152.0, Ware aus dem Shop): Nach einer
+               verlorenen Turm-Partie geht es mit einem Leben gleich wieder
+               an dieselbe Stufe. */
+            const turmAngabe = partie.regeln && partie.regeln.turm;
+            if (turmAngabe && !gewonnen && !remis && typeof FORTSCHRITT_KONTO !== "undefined"
+                    && FORTSCHRITT_KONTO.vorrat && FORTSCHRITT_KONTO.vorrat("leben") > 0
+                    && typeof START !== "undefined" && START._turmStarten) {
+                nurZurueck.appendChild(TEAM_SCHACH._knopf(
+                    "Leben einsetzen · noch " + FORTSCHRITT_KONTO.vorrat("leben"), "knopf-haupt abschluss-leben",
+                    () => TEAM_SCHACH.lebenEinsetzen(partie)));
+            }
             nurZurueck.appendChild(TEAM_SCHACH._knopf("Zurück zur Übersicht",
-                "knopf-haupt", () => TEAM_SCHACH.abschlussSchliessen(partie.id)));
+                turmAngabe && !gewonnen ? "knopf-still" : "knopf-haupt",
+                () => TEAM_SCHACH.abschlussSchliessen(partie.id)));
             flaeche.appendChild(nurZurueck);
 
             wurzel.appendChild(flaeche);

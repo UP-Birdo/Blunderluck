@@ -1739,15 +1739,134 @@ body.partie-spielt:not(.partie-fest) .vorraum-fuss {
     margin-top: 4px;
 }
 
-.item-haken {
+/*
+ * AN/AUS-KACHELN (seit v0.151.10, statt „[x] Name" als Text): Zeichen,
+ * Name, rechts ein runder Haken. An = Karte mit Rahmen in der Hauptfarbe
+ * und gefülltem Haken; aus = leise (blasse Schrift, leerer Ring). Die
+ * Knopf-Grundform (Schatten, Grossbuchstaben …) greift hier nicht —
+ * `item-haken` steht in `KNOEPFE.AUSNAHME_KLASSEN`.
+ */
+.knopf.item-haken {
     flex: 0 0 auto;
-    font-variant-numeric: tabular-nums;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 40px;
+    padding: 6px 10px 6px 10px;
+    border-radius: var(--rund-mittel);
+    border: 1.5px solid var(--rahmen);
+    background: var(--karte-leise, var(--karte));
+    color: var(--schrift-leise);
+    box-shadow: none;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-transform: none;
+    letter-spacing: normal;
+    transform: none;
 }
 
-.item-haken-an {
-    background: var(--haupt);
-    color: #fff;
+.knopf.item-haken-an {
+    background: var(--karte);
+    color: var(--schrift);
     border-color: var(--haupt);
+}
+
+.item-haken-bild {
+    display: inline-flex;
+    width: 20px;
+    height: 20px;
+    flex: 0 0 auto;
+}
+
+.item-haken-bild svg {
+    width: 20px;
+    height: 20px;
+}
+
+.item-haken-aus .item-haken-bild {
+    opacity: 0.5;
+}
+
+.item-haken-marke {
+    flex: 0 0 auto;
+    width: 18px;
+    height: 18px;
+    border-radius: var(--rund-voll);
+    border: 1.5px solid var(--rahmen);
+    box-sizing: border-box;
+    position: relative;
+}
+
+.item-haken-an .item-haken-marke {
+    background: var(--haupt);
+    border-color: var(--haupt);
+}
+
+/* Der Haken selbst: zwei Striche als gedrehter Winkel. */
+.item-haken-an .item-haken-marke::after {
+    content: "";
+    position: absolute;
+    left: 5px;
+    top: 2px;
+    width: 4px;
+    height: 8px;
+    border: solid #fff;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+/*
+ * KARTEN IN „WELCHE ITEMS?" (seit v0.151.10, statt Würfeln): je
+ * Seltenheit eine kleine Karte im Look der Bibliothek
+ * (`.faehigkeit-kachel`), leicht überlappend.
+ */
+.item-karten {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 40px;
+}
+
+.item-mini {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    height: 36px;
+    aspect-ratio: 44 / 62;
+    background: var(--karte-leise);
+    color: var(--schrift);
+    border: 2px solid var(--stufe-farbe, var(--rahmen));
+    border-radius: var(--rund-klein);
+}
+
+.item-mini + .item-mini {
+    margin-left: -7px;
+}
+
+.item-mini > .faehigkeit-bild {
+    width: 16px;
+    height: 16px;
+}
+
+/* Mit 3D-Plättchen ist das Bild die Karte (wie in der Bibliothek). */
+.item-mini:has(> .faehigkeit-bild-3d) {
+    border-color: transparent;
+    background: transparent;
+}
+
+.item-mini > .faehigkeit-bild.faehigkeit-bild-3d {
+    position: absolute;
+    inset: -2px;
+    width: calc(100% + 4px);
+    height: calc(100% + 4px);
+    filter: drop-shadow(-1px 2px 2px rgba(0, 0, 0, 0.4));
+}
+
+/* Die letzte Reihe verschwindet nicht unter der klebenden Knopfleiste. */
+.item-auswahl {
+    padding-bottom: 12px;
 }
 
 
@@ -2040,11 +2159,27 @@ body.partie-spielt:not(.partie-fest) .vorraum-fuss {
     height: 40px;
 }
 
+/* Seit v0.151.13: Die Segmente behalten ihren schmalen Innenrand — bis
+   dahin gewann `.knopf:not(.up-kn)` (18 px je Seite, css\stil.css), und bei
+   390 px brachen „normal" und „Regen" in „Wie viele?" mitten im Wort um. */
+.bild-leiste .bild-knopf {
+    padding: 8px 4px 6px;
+}
+
+/* Umbrechen nur zwischen Wörtern, nie im Wort (seit v0.151.13). */
 .bild-knopf-wort {
     font-size: 0.78rem;
     line-height: 1.15;
     text-align: center;
-    overflow-wrap: anywhere;
+    overflow-wrap: normal;
+    word-break: normal;
+    hyphens: manual;
+}
+
+@media (max-width: 360px) {
+    .bild-knopf-wort {
+        font-size: 0.72rem;
+    }
 }
 
 /* Linienzeichen: in der Schriftfarbe, also blau-weiss auf der Pille. */

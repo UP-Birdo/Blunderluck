@@ -283,7 +283,7 @@ body.dialog-offen {
 .kurzmeldung {
     position: fixed;
     left: 50%;
-    top: calc(12px + env(safe-area-inset-top, 0px));
+    top: calc(12px + var(--oben-frei, 0px));
     transform: translateX(-50%);
     background: var(--schrift);
     color: var(--karte);
@@ -835,6 +835,8 @@ body.dialog-offen {
 
 .start-spielen {
     flex: 2 1 0;
+    /* Gleich hoch wie das Quadrat daneben (seit v0.151.15). */
+    min-height: 74px;
     padding: 18px;
     font-size: 1.15rem;
     font-weight: 600;
@@ -870,15 +872,24 @@ body.dialog-offen {
  * OBEN auf, damit sie den Spielen-Knopf nicht verdeckt.
  * ------------------------------------------------------------------ */
 
+/*
+ * DAS QUADRAT HAT EINE FESTE SEITE (seit v0.151.15). Bis dahin kam seine
+ * Breite aus `aspect-ratio` und der gestreckten Zeilenhöhe — der Halter maß
+ * aber vorher nur den Inhalt (54 px), der Knopf wurde 73 px breit und ragte
+ * 7 px über den rechten Rand: Die ganze Seite liess sich am Handy seitlich
+ * verschieben (Nutzer 27.09.2026: „rechts und links ist Stopp").
+ */
 .start-art-halter {
     position: relative;
-    flex: 0 0 auto;
+    flex: 0 0 74px;
     display: flex;
 }
 
 .start-art-knopf {
     position: relative;
+    width: 100%;
     height: 100%;
+    aspect-ratio: auto;
     flex-direction: column;
     gap: 0;
 }
@@ -1272,7 +1283,7 @@ body.dialog-offen {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    padding: max(24px, env(safe-area-inset-top, 0px)) 20px max(24px, env(safe-area-inset-bottom, 0px));
+    padding: max(24px, var(--oben-frei, 0px)) 20px max(24px, env(safe-area-inset-bottom, 0px));
     background: linear-gradient(180deg,
         color-mix(in srgb, var(--turm-farbe) 55%, #111) 0%, #15171c 55%, var(--flaeche) 100%);
     color: #fff;
@@ -1407,7 +1418,7 @@ body.dialog-offen {
 .turm-banner {
     position: fixed;
     left: 50%;
-    top: max(16px, env(safe-area-inset-top, 0px));
+    top: max(16px, var(--oben-frei, 0px));
     z-index: var(--ebene-vollbild);
     transform: translateX(-50%);
     display: flex;
@@ -1959,6 +1970,10 @@ body.dialog-offen {
        Rand unten) sind mit v0.142.0 entfallen — die Leiste bleibt. */
     .tab-inhalt {
         padding: var(--inhalt-rand);
+        /* Oben immer mit dem iPhone-Streifen (seit v0.151.14 auch hier —
+           bis dahin setzte diese Regel es am Handy auf 12 px zurück, und
+           der klebende Kopf lag oben über dem Anfang des Inhalts). */
+        padding-top: max(var(--inhalt-rand), calc(var(--oben-frei, 0px) + 8px));
         padding-bottom: calc(var(--leiste-hoehe) + 12px + env(safe-area-inset-bottom, 0px));
     }
 

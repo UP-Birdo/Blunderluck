@@ -18,6 +18,56 @@ const WUNSCH = {
     KONTO: "up-birdo",
     REPO: "Blunderluck",
 
+    /*
+     * NUR TEXT (seit v0.151.10, Nutzer 27.09.2026: „bei Fehler melden eine
+     * Sperre für Sonderzeichen und sonstigen Unfug einbauen, nur Text, sonst
+     * kann was schiefgehen").
+     *
+     * Erlaubt: lateinische Buchstaben (mit Umlauten, ß, Akzenten), Ziffern,
+     * Leerzeichen, Zeilenumbruch und . , ! ? - ( ) : ; — alles andere
+     * (spitze, eckige, geschweifte Klammern, Schrägstriche, $ % & * = ~ ^,
+     * Backtick, Emojis, Steuer- und unsichtbare Zeichen) fliegt beim Tippen
+     * raus (`zeichenFiltern`) und wird vor dem Senden noch einmal entfernt
+     * (`saeubern`). Der Text geht nur als Adress-Teil (encodeURIComponent)
+     * in ein GitHub-Formular — eine Datenbank ist nicht beteiligt.
+     */
+    MAX_LAENGE: 500,
+    NICHT_ERLAUBT: /[^\p{Script=Latin}0-9 \n.,!?\-():;]/gu,
+
+    /* Beim Tippen: nur verbotene Zeichen weg (Tab → Leerzeichen), sonst
+       nichts — ein Leerzeichen am Ende braucht man beim Weiterschreiben. */
+    zeichenFiltern(text) {
+        return String(text || "")
+            .replace(/\r\n?/g, "\n")
+            .replace(/\t/g, " ")
+            .replace(WUNSCH.NICHT_ERLAUBT, "")
+            .slice(0, WUNSCH.MAX_LAENGE);
+    },
+
+    /* Vor dem Senden: filtern, Mehrfach-Leerzeichen zu einem, höchstens eine
+       Leerzeile am Stück, Ränder weg, Länge begrenzen. */
+    saeubern(text) {
+        return WUNSCH.zeichenFiltern(text)
+            .replace(/ {2,}/g, " ")
+            .replace(/ *\n */g, "\n")
+            .replace(/\n{3,}/g, "\n\n")
+            .trim()
+            .slice(0, WUNSCH.MAX_LAENGE);
+    },
+
+    /*
+     * Die AUTOMATISCHE Fehlermeldung (`FEHLERFANG.meldeText`) ist kein
+     * getippter Text, sondern Technik mit Pfaden und Zeilennummern — `/` und
+     * `:` müssen bleiben. Hier nur weg, was nie hineingehört: spitze und
+     * geschweifte Klammern, Backtick, Steuer- und unsichtbare Zeichen.
+     */
+    technikSaeubern(text) {
+        return String(text || "")
+            .replace(/\r\n?/g, "\n")
+            .replace(/[<>{}`\u0000-\u0009\u000B-\u001F\u007F-\u009F\u200B-\u200F\u2028-\u202E\u2060-\u206F\uFEFF]/g, "")
+            .slice(0, 1500);
+    },
+
     /* Hängt den Knopf in den Kopf der Seite. */
     aufbauen(behaelter) {
         if (!behaelter) {
@@ -38,24 +88,29 @@ const WUNSCH = {
         /* Mehrzeilig (seit v0.59): Hier schreibt man Sätze. Bis dahin lief ein
            längerer Wunsch in eine einzige Zeile, von der man immer nur das Ende
            sah. */
-        const text = await DIALOG.eingabe(
+        const roh = await DIALOG.eingabe(
             "Wunsch oder Fehler",
-            "Was fehlt · was stört · landet auf GitHub",
+            "Was fehlt · was stört · nur Text, höchstens " + WUNSCH.MAX_LAENGE + " Zeichen",
             "",
             "Weiter",
             true,
-            true
+            true,
+            { filter: WUNSCH.zeichenFiltern, maxLaenge: WUNSCH.MAX_LAENGE }
         );
 
-        if (text === null || text.trim() === "") {
+        if (typeof roh !== "string") {
+            return;
+        }
+        const text = WUNSCH.saeubern(roh);
+        if (text === "") {
             return;
         }
 
-        if (!WUNSCH.formularOeffnen(text.trim())) {
+        if (!WUNSCH.formularOeffnen(text)) {
             /* Blockiert der Browser das Fenster, bleibt der Text nicht liegen. */
             await DIALOG.hinweis("Fenster blockiert",
                 "GitHub-Formular nicht geöffnet · dein Text:\n\n"
-                + text.trim());
+                + text);
         }
     },
 
@@ -71,7 +126,7 @@ const WUNSCH = {
     formularOeffnen(text) {
         const adresse = "https://github.com/" + WUNSCH.KONTO + "/" + WUNSCH.REPO
             + "/issues/new?template=wunsch.yml"
-            + "&idee=" + encodeURIComponent(text)
+            + "&idee=" + encodeURIComponent(WUNSCH.technikSaeubern(text))
             + "&stelle=" + encodeURIComponent(WUNSCH._stelle())
             + "&fassung=" + encodeURIComponent(WUNSCH._fassung());
 

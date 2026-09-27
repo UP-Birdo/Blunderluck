@@ -542,7 +542,13 @@ Object.assign(TEAM_SCHACH, {
             (id) => TEAM_SCHACH._regelSetzen("lootboxMenge", id)));
         seite.appendChild(menge);
 
-        /* Welche Items — die Mengen als Kacheln, die eigene Wahl darunter. */
+        /* Welche Items — die Mengen als Kacheln, die eigene Wahl darunter.
+           Seit v0.151.10 steht je enthaltener Seltenheit statt ihres
+           Würfels eine kleine KARTE eines echten Items dieser Seltenheit
+           (Nutzer 27.09.2026: „nur bei Wie viele [die Würfel] → halt für
+           jede Seltenheit-Würfel eine entsprechende Karte"). Welche
+           Seltenheiten, rechnet dieselbe Zeile wie bisher bei den Würfeln:
+           wenig = gewöhnlich, viele = bis episch, alle = alle vier. */
         const vorrat = TEAM_SCHACH._abschnittBauen("Welche Items?",
             SCHACH_VARIANTEN.ITEM_VORRAETE
                 .filter((eintrag) => !!eintrag.hinweis)
@@ -551,10 +557,8 @@ Object.assign(TEAM_SCHACH, {
         vorrat.appendChild(TEAM_SCHACH._bildReiheBauen("vorrat",
             mengen.map((eintrag, stelle) => ({
                 id: eintrag.id, titel: eintrag.titel, hinweis: eintrag.hinweis,
-                bild: TEAM_SCHACH._bildGruppe(stufen
-                    .slice(0, Math.max(1, Math.round((stelle + 1) * stufen.length / mengen.length)))
-                    .map((stufe) => TEAM_SCHACH._lootboxKachelBild(stufe.id, false))
-                    .filter((teil) => !!teil))
+                bild: TEAM_SCHACH._itemKartenBild(stufen
+                    .slice(0, Math.max(1, Math.round((stelle + 1) * stufen.length / mengen.length))))
             })),
             regeln.itemVorrat,
             (id) => TEAM_SCHACH._regelSetzen("itemVorrat", id)));
@@ -943,10 +947,12 @@ Object.assign(TEAM_SCHACH, {
 
         TEAM_SCHACH._itemAuswahlFuellen(halter);
 
+        /* „Fertig" statt „Verstanden" (seit v0.151.10): Es ist eine
+           Auswahl, keine Mitteilung. */
         DIALOG.hinweis("Welche Items?",
             "Angehakt = kommt vor · "
             + "mindestens eins",
-            halter).then(() => TEAM_SCHACH.weichZeichnen());
+            halter, "Fertig").then(() => TEAM_SCHACH.weichZeichnen());
     },
 
     _itemAuswahlFuellen(halter) {
@@ -975,9 +981,16 @@ Object.assign(TEAM_SCHACH, {
         const gewaehlt = TEAM_SCHACH.neueRegeln.itemAuswahl;
         const drin = TEAM_SCHACH._itemEintragDrin(eintrag);
 
-        const knopf = TEAM_SCHACH._knopf(
-            (drin ? "[x] " : "[ ] ") + eintrag.titel,
-            "knopf-klein item-haken" + (drin ? " item-haken-an" : " knopf-still"),
+        /*
+         * EINE AN/AUS-KACHEL (seit v0.151.10). Bis dahin stand „[x] " bzw.
+         * „[ ] " als Text vor dem Namen — ein Überbleibsel aus der Zeit, als
+         * die Liste noch Kästchen darstellte; auf dem Handy kam es als roher
+         * Text in orangen Blöcken an (Nutzer-Bild 27.09.2026). Jetzt:
+         * Zeichen der Fähigkeit, Name und ein Haken, der nur „an" zeigt;
+         * „aus" ist leise. Der Zustand steht in `aria-pressed`.
+         */
+        const knopf = TEAM_SCHACH._knopf("",
+            "knopf-klein item-haken" + (drin ? " item-haken-an" : " item-haken-aus"),
             () => {
                 if (!drin) {
                     for (const art of eintrag.arten) {
@@ -1012,6 +1025,9 @@ Object.assign(TEAM_SCHACH, {
             });
 
         knopf.setAttribute("aria-pressed", drin ? "true" : "false");
+        TEAM_SCHACH._itemKachelFuellen(knopf, eintrag.titel,
+            (typeof FAEHIGKEIT_ZEICHEN !== "undefined")
+                ? FAEHIGKEIT_ZEICHEN.flachBauen(eintrag.arten[0]) : null);
 
         /* Der Mauszeiger-Text: der erste Satz jeder Fähigkeit; beim Paar
            dazu, wer von beiden entscheidet. */
@@ -1020,6 +1036,52 @@ Object.assign(TEAM_SCHACH, {
                 ? " Welches von beiden es gibt, entscheidet der Haken \"Seltenheit anzeigen\"."
                 : "");
 
+        return knopf;
+    },
+
+    /*
+     * JE SELTENHEIT EINE KARTE (seit v0.151.10, statt je eines Würfels):
+     * eine kleine Karte im Look der Bibliothek — Rahmen in der Stufenfarbe,
+     * Zeichen bzw. 3D-Plättchen — mit dem ersten Item dieser Stufe als
+     * Beispiel; nebeneinander, leicht überlappend.
+     */
+    _itemKartenBild(stufen) {
+        const gruppe = TEAM_SCHACH._element("span", "item-karten");
+        for (const stufe of stufen) {
+            const art = SCHACH_VARIANTEN.faehigkeitenDerStufe(stufe.id)[0];
+            if (!art) {
+                continue;
+            }
+            const karte = TEAM_SCHACH._element("span", "item-mini");
+            karte.style.setProperty("--stufe-farbe", stufe.farbe);
+            karte.dataset.stufe = stufe.id;
+            const bild = (typeof FAEHIGKEIT_ZEICHEN !== "undefined") ? FAEHIGKEIT_ZEICHEN.bauen(art) : null;
+            if (bild) {
+                karte.appendChild(bild);
+            }
+            gruppe.appendChild(karte);
+        }
+        return gruppe;
+    },
+
+    /* Inhalt einer An/Aus-Kachel: Zeichen (wenn es eins gibt), Name,
+       Haken. Auch die Abzeichen-Wahl im Profil (rangliste.js) nutzt sie. */
+    _itemKachelFuellen(knopf, titel, zeichen) {
+        knopf.textContent = "";
+        if (zeichen) {
+            const bild = document.createElement("span");
+            bild.className = "item-haken-bild";
+            bild.appendChild(zeichen);
+            knopf.appendChild(bild);
+        }
+        const name = document.createElement("span");
+        name.className = "item-haken-name";
+        name.textContent = titel;
+        knopf.appendChild(name);
+        const marke = document.createElement("span");
+        marke.className = "item-haken-marke";
+        marke.setAttribute("aria-hidden", "true");
+        knopf.appendChild(marke);
         return knopf;
     },
 

@@ -75,25 +75,17 @@ const SAMMLUNG = {
     restEl: null,
     tab: null,
 
+    /* Das Gerüst (seit v0.151.11) baut der gemeinsame Baustein
+       js\upcrew-sammlung.js — in Typoluck dasselbe. */
+    geruest: null,
+
     aufbauen(behaelter) {
         SAMMLUNG.wurzelEl = behaelter;
         behaelter.classList.add("sammlung");
-
-        const kopf = document.createElement("div");
-        kopf.className = "partie-kopf partie-kopf-klebt sammlung-kopf";
-        const titel = document.createElement("h2");
-        titel.className = "partie-titel";
-        titel.textContent = SAMMLUNG.titel;
-        kopf.appendChild(titel);
-        SAMMLUNG.anteilEl = document.createElement("span");
-        SAMMLUNG.anteilEl.className = "sammlung-anteil";
-        kopf.appendChild(SAMMLUNG.anteilEl);
-        behaelter.appendChild(kopf);
-        SAMMLUNG.kopfEl = kopf;
-
-        SAMMLUNG.ortEl = document.createElement("div");
-        SAMMLUNG.ortEl.className = "sammlung-ort";
-        behaelter.appendChild(SAMMLUNG.ortEl);
+        SAMMLUNG.geruest = UPCREW_SAMMLUNG.bauen(behaelter, { titel: SAMMLUNG.titel });
+        SAMMLUNG.kopfEl = SAMMLUNG.geruest.kopf;
+        SAMMLUNG.anteilEl = SAMMLUNG.geruest.anteil;
+        SAMMLUNG.ortEl = SAMMLUNG.geruest.ort;
     },
 
     beimOeffnen() {
@@ -133,32 +125,15 @@ const SAMMLUNG = {
             });
         }
 
-        /* Die reine Sammlung VOR den Übernehmen-Balken — fehlt er (ohne
-           Baustein), einfach ans Ende. */
-        const balken = SAMMLUNG.ortEl.querySelector(".upa-aktion");
-        if (balken) {
-            SAMMLUNG.ortEl.insertBefore(SAMMLUNG.restEl, balken);
-        } else {
-            SAMMLUNG.ortEl.appendChild(SAMMLUNG.restEl);
-        }
-
+        /* Die reine Sammlung VOR den Übernehmen-Balken (das Gerüst weiß,
+           wohin), „NN %" in den Kopf, die Vorschau bündig darunter. */
+        /* Die Abzeichen (seit v0.151.12) zeigen den Stand von JETZT — sie
+           werden bei jedem Öffnen neu gebaut, als erste Gruppe. */
+        SAMMLUNG._abzeichenEinsetzen();
+        SAMMLUNG.geruest.restEinsetzen(SAMMLUNG.restEl);
         const anteil = SAMMLUNG.anteil();
-        SAMMLUNG.anteilEl.textContent = anteil.prozent + " %";
-        SAMMLUNG.anteilEl.setAttribute("aria-label", anteil.prozent + " Prozent gesammelt");
-        SAMMLUNG.anteilEl.title = anteil.hat + " von " + anteil.alle;
-
-        SAMMLUNG._obenSetzen();
-    },
-
-    /* Die Kopfzeile klebt — die Vorschau des Bausteins klebt BÜNDIG darunter
-       (`--upa-oben` = Höhe der Kopfzeile; ihr unterer Abstand ist in
-       css\stil.css auf null gesetzt, sonst rollte Inhalt durch die Lücke). */
-    _obenSetzen() {
-        if (!SAMMLUNG.kopfEl || !SAMMLUNG.wurzelEl) {
-            return;
-        }
-        const hoehe = SAMMLUNG.kopfEl.offsetHeight || 0;
-        SAMMLUNG.wurzelEl.style.setProperty("--upa-oben", hoehe + "px");
+        SAMMLUNG.geruest.anteilSetzen(anteil.hat, anteil.alle);
+        SAMMLUNG.geruest.obenSetzen();
     },
 
     /* ---------------------------------------------------------------- *
@@ -322,9 +297,26 @@ const SAMMLUNG = {
         return SCHACH_VARIANTEN.zurAuswahl();
     },
 
+    abzeichenEl: null,
+
+    _abzeichenEinsetzen() {
+        if (typeof UPCREW_ABZEICHEN === "undefined" || typeof RANGLISTE === "undefined"
+                || !RANGLISTE.abzeichenListe) {
+            return;
+        }
+        if (SAMMLUNG.abzeichenEl && SAMMLUNG.abzeichenEl.parentNode) {
+            SAMMLUNG.abzeichenEl.parentNode.removeChild(SAMMLUNG.abzeichenEl);
+        }
+        SAMMLUNG.abzeichenEl = UPCREW_SAMMLUNG.abzeichenTeil(RANGLISTE.abzeichenListe(null, true),
+            (eintrag) => RANGLISTE.abzeichenZeigen(eintrag));
+        SAMMLUNG.restEl.insertBefore(SAMMLUNG.abzeichenEl, SAMMLUNG.restEl.firstChild);
+    },
+
+    /* Die Teile der reinen Sammlung kommen aus dem Gerüst-Baustein
+       (`UPCREW_SAMMLUNG.rest/teil/gitter/stueck/innen`); hier nur, WAS
+       darin steht. */
     restBauen() {
-        const rest = document.createElement("div");
-        rest.className = "sammel-rest";
+        const rest = UPCREW_SAMMLUNG.rest();
         rest.appendChild(SAMMLUNG._faehigkeitenBauen());
         rest.appendChild(SAMMLUNG._brettformenBauen());
         return rest;
@@ -332,16 +324,7 @@ const SAMMLUNG = {
 
     /* Eine Überschrift im Stil der Regale: „Name n/m". */
     _teilBauen(titel, hat, alle) {
-        const teil = document.createElement("section");
-        teil.className = "upa-regal sammel-teil";
-        const kopf = document.createElement("h2");
-        kopf.textContent = titel + " ";
-        const zahl = document.createElement("span");
-        zahl.className = "sammel-zahl";
-        zahl.textContent = hat + "/" + alle;
-        kopf.appendChild(zahl);
-        teil.appendChild(kopf);
-        return teil;
+        return UPCREW_SAMMLUNG.teil(titel, hat, alle);
     },
 
     /*
@@ -356,8 +339,7 @@ const SAMMLUNG = {
         const anzahl = SAMMLUNG.kartenAnzahl();
         const teil = SAMMLUNG._teilBauen("Fähigkeiten", anzahl, anzahl);
         teil.classList.add("sammel-faehigkeiten");
-        const innen = document.createElement("div");
-        innen.className = "sammel-innen";
+        const innen = UPCREW_SAMMLUNG.innen();
         TEAM_SCHACH._infoInhaltBauen(innen);
         teil.appendChild(innen);
         return teil;
@@ -368,23 +350,15 @@ const SAMMLUNG = {
     _brettformenBauen() {
         const formen = SAMMLUNG.brettformen();
         const teil = SAMMLUNG._teilBauen("Brettformen", formen.length, formen.length);
-        const gitter = document.createElement("div");
-        gitter.className = "album-gitter";
+        const gitter = UPCREW_SAMMLUNG.gitter();
 
         for (const variante of formen) {
-            const kachel = document.createElement("button");
-            kachel.type = "button";
-            kachel.className = "stueck da";
-            kachel.setAttribute("aria-label", variante.titel);
-            kachel.appendChild(SAMMLUNG._formBauen(variante));
-            const name = document.createElement("span");
-            name.className = "stueck-name";
-            name.textContent = variante.titel;
-            kachel.appendChild(name);
-            kachel.addEventListener("click", () => {
-                DIALOG.hinweis(variante.titel, variante.beschreibung || "");
-            });
-            gitter.appendChild(kachel);
+            gitter.appendChild(UPCREW_SAMMLUNG.stueck({
+                name: variante.titel,
+                bild: SAMMLUNG._formBauen(variante),
+                da: true,
+                beiKlick: () => DIALOG.hinweis(variante.titel, variante.beschreibung || "")
+            }));
         }
 
         teil.appendChild(gitter);

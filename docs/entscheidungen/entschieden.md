@@ -1,5 +1,48 @@
 # Blunderluck - Entscheidungen / Entschieden - und warum
 
+## Münzen, Shop, Serie ab Rundenstart (27.09.2026, v0.152.0)
+
+Nutzer: „wir brauchen eine In-Game-Währung, die über beide Spiele geht …
+Extra-Leben, Tipps und Schild für Flammen … in einem Shop" · „Shop auf dem
+Platz von Bald" · „Name → Münzen" · „Serie soll einfach: einmal eine Runde
+starten, egal welches Game" · „ja über 60".
+
+- **Alles in `zaehler`, keine neue Regel:** Münzen, Käufe, Verbrauch und
+  die Serie sind Zahlen mit Buchstaben-Namen am eigenen Zweig — genau, was
+  §11b in `zaehler` schon erlaubt (0 … 1 Mrd.). Das Datum der Serie steht
+  als Zahl JJJJMMTT (`serieBis`). Eine eigene Regel wäre mehr Risiko (ein
+  Formfehler → der GANZE Konto-Eintrag abgelehnt) ohne Gewinn.
+- **Summe statt gemeinsamer Stand:** Jedes Spiel zählt nur in SEINEM Zweig
+  verdient/ausgegeben und gekauft/benutzt; Kontostand und Vorrat werden
+  über alle Zweige summiert. So kann kein Spiel das Geld des anderen
+  überschreiben. Zwei Geräte desselben Spiels: je Zähler gilt der größere
+  Wert (`_zaehlerZusammen`), die Zähler wachsen nur.
+- **Nie unter 0 — ehrlich gerechnet:** Kaufen nur mit genug Guthaben.
+  Kaufen zwei Geräte gleichzeitig vom selben Geld, bleiben beide Käufe
+  (nichts wird überschrieben), die Summe kann kurz negativ sein; angezeigt
+  wird 0, kaufen geht erst wieder, wenn neu Verdientes das Minus deckt.
+  Eine Sperre über das Netz (Transaktion) wäre ohne Server nicht zu haben.
+- **Serie über 60:** Die Tagesliste bleibt kurz (60), die Länge trägt der
+  Zähler. Gerechnet wird ab dem Zähler mit dem neuesten `serieBis` aller
+  Zweige, danach die Tage vorwärts; ohne Zähler ergibt das genau die alte
+  Rechnung. Ein fehlender Tag wird überbrückt (erst Level-Schutz je Serie,
+  dann gekaufte Schilde, die dabei verbraucht werden), zwei fehlende
+  beginnen neu.
+- **Was zählt:** der Anpfiff jeder eigenen Partie (Turm, Frei, Freunde,
+  Tagesbrett) — beim ersten Zeichnen einer laufenden Partie, einmal je Tag
+  wirksam. Die Tagesaufgabe zählt ihre eigenen Abzeichen jetzt in
+  `zaehler.tagesaufgaben` (Umzug aus den alten Tagen beim ersten Anlegen).
+- **Tipp:** Bob hat keine eigene Matt-Bewertung (seine Suche bewertet ein
+  Matt wie die Stellung). Der Tipp nimmt deshalb zuerst ein Matt in einem
+  Zug, beim Tagesbrett den ersten Zug der geprüften Lösung, sonst Bobs Zug
+  auf „Meister".
+- **Leben:** In Blunderluck kostet eine verlorene Turm-Partie heute nichts
+  (Stufe beliebig oft, Bot-Partien zählen nicht für die Rangliste). Das
+  Leben ist deshalb vorerst „gleich nochmal dieselbe Stufe" aus dem
+  Abschluss — offen beim Nutzer, ob es einen echten Einsatz braucht
+  (z. B. Weiterspielen vor dem letzten Zug). Beim Tagesbrett gibt es kein
+  Leben: Nochmal geht dort ohnehin beliebig oft.
+
 ## Wertung repariert, Tages-XP nach Schwierigkeit, Rahmen ab 10 (27.09.2026, v0.151.0)
 
 Auftrag: `Design\3D-Schrift\docs\AUFTRAEGE-RUNDE-6.md`, D0 Nachtrag

@@ -1,0 +1,8 @@
+docs\bausteine — Vorschläge an Design\3D-Schrift\final
+
+upcrew-anpassen.css: ERLEDIGT 27.09.2026 — der Fix .upa-vorschau { height: auto; min-height: 280px; }
+steht jetzt in final und ist mit v0.151.13 byte-gleich in css\upcrew-anpassen.css übernommen.
+Die Datei hier ist damit überflüssig und kann gelöscht werden (wartet auf das OK des Nutzers).
+
+upcrew-sammlung.css: ERLEDIGT 27.09.2026 — der Fix .up-sm[hidden] { display: none; } steht in final
+und ist mit v0.151.16 byte-gleich übernommen. Kann ebenfalls gelöscht werden (wartet auf OK).

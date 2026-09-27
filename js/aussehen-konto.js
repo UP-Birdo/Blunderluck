@@ -23,6 +23,16 @@
  * Änderungen aus der anderen App oder vom Konto selbst werden NICHT
  * zurückgeschrieben — das tut die App, in der umgestellt wurde.
  *
+ * SEIT v0.151.17 JE SPIEL (Nutzer 27.09.2026: „wenn man auf Übernehmen
+ * drückt, soll sich nur das Spiel ändern"): Ist `UPCREW_AUSSEHEN.GETEILT`
+ * false (Standard), gehört das Aussehen je Spiel ans Konto —
+ * `konten/<uid>/aussehenJe/blunderluck` (Regel SICHERHEIT.md §11c). Bis der
+ * Nutzer §11c eingespielt hat, schreibt Blunderluck dorthin NICHTS
+ * (`AUSSEHEN_JE_AM_KONTO = false`) — das Aussehen bleibt dann auf dem Gerät.
+ * Das alte Feld `aussehen` wird nicht mehr geschrieben, aber gelesen: Fehlt
+ * `aussehenJe/blunderluck`, dient es als Umzug (gilt, wenn es neuer ist).
+ * Ist GETEILT true, läuft alles wie vor v0.151.17 über `aussehen`.
+ *
  * Schlägt das Schreiben fehl (etwa weil die vorgeschlagene Regel in
  * SICHERHEIT.md §11 noch nicht eingespielt ist und eine strengere es
  * ablehnt), läuft es wie jeder andere Fehler des Spieler-Abgleichs: Die
@@ -30,6 +40,16 @@
  */
 
 const AUSSEHEN_KONTO = {
+
+    /* Schreibt Blunderluck sein Aussehen je Spiel ans Konto? Erst anschalten,
+       wenn der Nutzer Regel §11c (SICHERHEIT.md) eingespielt hat. */
+    AUSSEHEN_JE_AM_KONTO: false,
+
+    APP: "blunderluck",
+
+    _geteilt() {
+        return typeof UPCREW_AUSSEHEN !== "undefined" && UPCREW_AUSSEHEN.GETEILT !== false;
+    },
 
     /* Der eigene Eintrag — nur mit echtem Konto, nie als Gast. */
     _eigener() {
@@ -52,10 +72,22 @@ const AUSSEHEN_KONTO = {
         if (!eintrag) {
             return;
         }
-        const neu = SPIELER.aussehenSetzen(ANMELDUNG.abgleich.daten, eintrag.id,
-            UPCREW_AUSSEHEN.fuerKonto());
-        const vorher = JSON.stringify(eintrag.aussehen || null);
-        const nachher = JSON.stringify(SPIELER.spielerFinden(neu, eintrag.id).aussehen);
+        let neu;
+        let feld;
+        if (AUSSEHEN_KONTO._geteilt()) {
+            neu = SPIELER.aussehenSetzen(ANMELDUNG.abgleich.daten, eintrag.id,
+                UPCREW_AUSSEHEN.fuerKonto());
+            feld = (e) => e.aussehen;
+        } else {
+            if (!AUSSEHEN_KONTO.AUSSEHEN_JE_AM_KONTO) {
+                return;
+            }
+            neu = SPIELER.aussehenJeSetzen(ANMELDUNG.abgleich.daten, eintrag.id,
+                AUSSEHEN_KONTO.APP, UPCREW_AUSSEHEN.fuerKonto());
+            feld = (e) => (e.aussehenJe || {})[AUSSEHEN_KONTO.APP];
+        }
+        const vorher = JSON.stringify(feld(eintrag) || null);
+        const nachher = JSON.stringify(feld(SPIELER.spielerFinden(neu, eintrag.id)) || null);
         if (vorher === nachher) {
             return;
         }
@@ -67,8 +99,43 @@ const AUSSEHEN_KONTO = {
             return;
         }
         const eintrag = AUSSEHEN_KONTO._eigener();
-        if (eintrag && eintrag.aussehen) {
+        if (!eintrag) {
+            return;
+        }
+        if (AUSSEHEN_KONTO._geteilt()) {
+            if (eintrag.aussehen) {
+                UPCREW_AUSSEHEN.uebernehmen(eintrag.aussehen);
+            }
+            return;
+        }
+        /* Je Spiel: der eigene Zweig; fehlt er, das alte gemeinsame Feld als
+           EINMALIGER Umzug (der Baustein nimmt es nur, wenn es neuer ist).
+           Danach nie wieder — sonst zöge eine Änderung in einem Typoluck,
+           das noch gemeinsam schreibt, über das Konto doch wieder mit. */
+        const eigenes = eintrag.aussehenJe && eintrag.aussehenJe[AUSSEHEN_KONTO.APP];
+        if (eigenes) {
+            UPCREW_AUSSEHEN.uebernehmen(eigenes);
+        } else if (eintrag.aussehen && !AUSSEHEN_KONTO._umzugGemacht()) {
             UPCREW_AUSSEHEN.uebernehmen(eintrag.aussehen);
+            AUSSEHEN_KONTO._umzugMerken();
+        }
+    },
+
+    UMZUG_SCHLUESSEL: "blunderluck.aussehen-umzug",
+
+    _umzugGemacht() {
+        try {
+            return window.localStorage.getItem(AUSSEHEN_KONTO.UMZUG_SCHLUESSEL) === "1";
+        } catch (fehler) {
+            return false;
+        }
+    },
+
+    _umzugMerken() {
+        try {
+            window.localStorage.setItem(AUSSEHEN_KONTO.UMZUG_SCHLUESSEL, "1");
+        } catch (fehler) {
+            /* Gesperrter Speicher: dann eben beim nächsten Start noch einmal. */
         }
     },
 

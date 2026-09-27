@@ -211,14 +211,22 @@ const FORTSCHRITT_KONTO = {
             const schutz = FORTSCHRITT.schutzVerdient(FORTSCHRITT.level(nachher).level);
             const versuch = FORTSCHRITT.tagesaufgabe(nachher, angabe.datum,
                 TAGESBRETT.geschafft(partie, team), Date.now(), undefined, schutz,
-                TAGESBRETT.schwierigkeit(angabe.zuege));
+                TAGESBRETT.schwierigkeit(angabe.zuege),
+                FORTSCHRITT_KONTO.hilfeGenutzt(partie.id));
             nachher = versuch.stand;
             heute = Object.assign({ xp: versuch.xp },
                 FORTSCHRITT.heuteVon(nachher, undefined, angabe.datum));
         }
 
+        /* Münzen für diese Partie (seit v0.152.0, UPCREW_MUENZEN.VERDIENST). */
+        const muenzen = FORTSCHRITT_KONTO._muenzenFuerPartie(partie, team, vorher, nachher, turm, heute);
+        if (muenzen > 0 && typeof UPCREW_MUENZEN !== "undefined") {
+            nachher = UPCREW_MUENZEN.verdienen(nachher, FORTSCHRITT.APP, muenzen, Date.now());
+        }
+
         const xpNachher = FORTSCHRITT.gesamtXp(nachher);
         FORTSCHRITT_KONTO._ablegen(nachher);
+        FORTSCHRITT_KONTO._muenzenMelden(muenzen);
         const ergebnis = {
             xp: xpNachher - xpVorher,
             levelVorher: FORTSCHRITT.levelAus(xpVorher).level,
@@ -226,6 +234,9 @@ const FORTSCHRITT_KONTO = {
         };
         if (heute) {
             ergebnis.heute = heute;
+        }
+        if (muenzen > 0) {
+            ergebnis.muenzen = muenzen;
         }
         if (turm) {
             ergebnis.turm = Object.assign({}, turm, {
@@ -281,8 +292,139 @@ const FORTSCHRITT_KONTO = {
             typoluck: FORTSCHRITT.heuteVon(stand, "typoluck", datum),
             serie: serie,
             tage: FORTSCHRITT.alleTage(stand),
-            schutzFrei: Math.max(0, schutz - serie.schutzGenutzt)
+            /* Seit v0.152.0 mit den gekauften Flammen-Schilden. */
+            schutzFrei: Math.max(0, schutz - serie.schutzGenutzt) + FORTSCHRITT.schildVorrat(stand),
+            schilde: FORTSCHRITT.schildVorrat(stand)
         };
+    },
+
+    /* ---------------------------------------------------------------- *
+     * Serie ab Rundenstart, Münzen und Waren (seit v0.152.0)
+     * ---------------------------------------------------------------- */
+
+    /*
+     * EINE RUNDE HAT ANGEFANGEN (Nutzer 27.09.2026: „Serie soll einfach:
+     * einmal eine Runde starten, egal welches Game"). Gerufen beim Anpfiff
+     * jeder eigenen Partie (js\team-schach.js) — einmal je Tag wirksam. Wer
+     * damit 7, 14, 21 … Tage am Stück erreicht, bekommt Münzen.
+     */
+    rundeGestartet() {
+        const vorher = FORTSCHRITT_KONTO.lesen();
+        const datum = FORTSCHRITT.datumVon(Date.now());
+        const schutz = FORTSCHRITT.schutzVerdient(FORTSCHRITT.level(vorher).level);
+        const r = FORTSCHRITT.rundeGestartet(vorher, datum, Date.now(), undefined, schutz);
+        if (!r.neu) {
+            return null;
+        }
+        let nachher = r.stand;
+        let muenzen = 0;
+        const bisher = FORTSCHRITT.serie(vorher, datum, schutz);
+        if (typeof UPCREW_MUENZEN !== "undefined" && r.serie > 0 && r.serie % 7 === 0
+                && !(bisher.heute && bisher.tage === r.serie)) {
+            muenzen = UPCREW_MUENZEN.VERDIENST.serieWoche;
+            nachher = UPCREW_MUENZEN.verdienen(nachher, FORTSCHRITT.APP, muenzen, Date.now());
+        }
+        FORTSCHRITT_KONTO._ablegen(nachher);
+        FORTSCHRITT_KONTO._muenzenMelden(muenzen);
+        return { serie: r.serie, muenzen: muenzen };
+    },
+
+    /* Was eine beendete Partie an Münzen bringt (einmal je Partie — das
+       sichert `partieBeendet` über die gezählten Partien). */
+    _muenzenFuerPartie(partie, team, vorher, nachher, turm, heute) {
+        if (typeof UPCREW_MUENZEN === "undefined") {
+            return 0;
+        }
+        const v = UPCREW_MUENZEN.VERDIENST;
+        let summe = 0;
+        const tagesbrett = !!(partie.regeln && partie.regeln.tagesbrett);
+        if (!tagesbrett && partie.ergebnis === team) {
+            summe += v.sieg;
+        }
+        if (heute && heute.figuren > 0) {
+            const alt = FORTSCHRITT.heuteVon(vorher, undefined, partie.regeln.tagesbrett.datum);
+            if (!alt.figuren) {
+                summe += v.tagesaufgabe;
+            }
+        }
+        if (turm) {
+            const alt = FORTSCHRITT.turmFiguren(vorher)[turm.schluessel] || 0;
+            const neu = FORTSCHRITT.turmFiguren(nachher)[turm.schluessel] || 0;
+            if (neu > alt) {
+                summe += (neu - alt) * v.figur;
+                if (alt === 0 && typeof TURM !== "undefined" && TURM.istBoss(turm.ort, turm.stufe)) {
+                    summe += v.boss;
+                }
+            }
+        }
+        const levelVorher = FORTSCHRITT.level(vorher).level;
+        const levelNachher = FORTSCHRITT.level(nachher).level;
+        if (levelNachher > levelVorher) {
+            summe += (levelNachher - levelVorher) * v.level;
+        }
+        return summe;
+    },
+
+    /* Kurz einblenden: „+3 Münzen". */
+    _muenzenMelden(betrag) {
+        if (betrag > 0 && typeof DIALOG !== "undefined" && typeof UPCREW_MUENZEN !== "undefined"
+                && typeof DIALOG.kurzmeldung === "function") {
+            DIALOG.kurzmeldung("+" + betrag + " " + UPCREW_MUENZEN.WAEHRUNG.name);
+        }
+    },
+
+    muenzen() {
+        return (typeof UPCREW_MUENZEN === "undefined") ? 0 : UPCREW_MUENZEN.anzeige(FORTSCHRITT_KONTO.lesen());
+    },
+
+    vorrat(ware) {
+        return (typeof UPCREW_MUENZEN === "undefined") ? 0 : UPCREW_MUENZEN.vorrat(FORTSCHRITT_KONTO.lesen(), ware);
+    },
+
+    /* Kaufen im Shop: nur, wenn der Stand reicht. Liefert { ok, grund }. */
+    kaufen(ware) {
+        const r = UPCREW_MUENZEN.kaufen(FORTSCHRITT_KONTO.lesen(), FORTSCHRITT.APP, ware, Date.now());
+        if (r.ok) {
+            FORTSCHRITT_KONTO._ablegen(r.stand);
+        }
+        return { ok: r.ok, grund: r.grund };
+    },
+
+    /* Ein Stück aus dem Vorrat nehmen (Leben, Tipp). Liefert true/false. */
+    benutzen(ware) {
+        const r = UPCREW_MUENZEN.benutzen(FORTSCHRITT_KONTO.lesen(), FORTSCHRITT.APP, ware, Date.now());
+        if (r.ok) {
+            FORTSCHRITT_KONTO._ablegen(r.stand);
+        }
+        return r.ok;
+    },
+
+    /*
+     * HILFE IN EINER PARTIE (Tipp, Leben): gemerkt auf dem Gerät je Partie —
+     * beim Tagesbrett gibt es dann höchstens einen Bauern
+     * (`FORTSCHRITT.tagesaufgabe`, Wert `hilfe`).
+     */
+    HILFE_SCHLUESSEL: "blunderluck.hilfe-partien",
+
+    hilfeMerken(partieId) {
+        try {
+            const liste = JSON.parse(window.localStorage.getItem(FORTSCHRITT_KONTO.HILFE_SCHLUESSEL) || "[]");
+            if (liste.indexOf(partieId) === -1) {
+                liste.push(partieId);
+            }
+            window.localStorage.setItem(FORTSCHRITT_KONTO.HILFE_SCHLUESSEL, JSON.stringify(liste.slice(-50)));
+        } catch (fehler) {
+            /* Ohne Speicher gilt die Hilfe nicht als gemerkt. */
+        }
+    },
+
+    hilfeGenutzt(partieId) {
+        try {
+            const liste = JSON.parse(window.localStorage.getItem(FORTSCHRITT_KONTO.HILFE_SCHLUESSEL) || "[]");
+            return Array.isArray(liste) && liste.indexOf(partieId) !== -1;
+        } catch (fehler) {
+            return false;
+        }
     },
 
     /* Wer wissen will, wann sich der Stand ändert (Start, Profil). */

@@ -1019,6 +1019,45 @@ pruefe("index.html trägt Vorschau-Angaben für Links (og:image 1200 × 630, twi
     }
 });
 
+pruefe("Bild-Reihen brechen nie im Wort um, schmaler Innenrand (v0.151.13)", () => {
+    /* Bei 390 px brachen in „Wie viele?" normal und Regen mitten im Wort um:
+       `.knopf:not(.up-kn)` (18 px je Seite) schlug den Innenrand der
+       Segmente, und `overflow-wrap: anywhere` erlaubte den Bruch. */
+    const stil = require("fs").readFileSync(require("path").join(__dirname, "..", "css", "stil-brett.css"), "utf8");
+    const wort = stil.slice(stil.indexOf(".bild-knopf-wort {"), stil.indexOf("}", stil.indexOf(".bild-knopf-wort {")));
+    if (/overflow-wrap:\s*anywhere/.test(wort) || !/overflow-wrap:\s*normal/.test(wort)) {
+        throw new Error(".bild-knopf-wort darf nicht im Wort umbrechen");
+    }
+    if (!/\.bild-leiste \.bild-knopf \{\s*padding: 8px 4px 6px;/.test(stil)) {
+        throw new Error("der schmale Innenrand der Segmente fehlt (.bild-leiste .bild-knopf)");
+    }
+});
+
+pruefe("Welche Items: je Seltenheit eine Item-Karte statt eines Wuerfels (v0.151.10)", () => {
+    /* Nutzer 27.09.2026: „nur bei Wie viele [die Wuerfel] → halt fuer jede
+       Seltenheit-Wuerfel eine entsprechende Karte". */
+    const stufen = SCHACH_VARIANTEN.STUFEN;
+    const bild = TEAM_SCHACH._itemKartenBild(stufen.slice(0, 3));
+    const karten = (bild.kinder || []).filter((kind) => kind.className === "item-mini");
+    if (karten.length !== 3) {
+        throw new Error("erwartet 3 Karten, sind " + karten.length);
+    }
+    const ids = karten.map((karte) => karte.dataset.stufe).join(",");
+    if (ids !== stufen.slice(0, 3).map((stufe) => stufe.id).join(",")) {
+        throw new Error("Seltenheiten der Karten: " + ids);
+    }
+    const quelle = require("fs").readFileSync(require("path").join(__dirname, "..", "js",
+        "team-schach-uebersicht.js"), "utf8");
+    const vorrat = quelle.slice(quelle.indexOf("_bildReiheBauen(\"vorrat\""), quelle.indexOf("_eigeneWahlKnopfBauen());"));
+    if (vorrat.indexOf("_lootboxKachelBild") !== -1 || vorrat.indexOf("_itemKartenBild") === -1) {
+        throw new Error("Welche Items zeigt noch Wuerfel statt Karten");
+    }
+    const menge = quelle.slice(quelle.indexOf("_bildReiheBauen(\"mengen\""), quelle.indexOf("regeln.lootboxMenge,"));
+    if (menge.indexOf("_lootboxKachelBild") === -1) {
+        throw new Error("Wie viele muss die Wuerfel behalten");
+    }
+});
+
 pruefe("Enttarnen / Verstecken sind im Popup EIN Eintrag, der beide schaltet (v0.115.2)", () => {
     /*
      * NUTZER-ANSAGE 18.09.2026: „Seltenheit anzeigen ja/nein sollen keine
@@ -1036,8 +1075,13 @@ pruefe("Enttarnen / Verstecken sind im Popup EIN Eintrag, der beide schaltet (v0
 
     const kaestchen = (halter) => (halter.kinder || []).filter((kind) =>
         String(kind.className || "").indexOf("item-haken") !== -1);
+    /* Seit v0.151.10 steht der Name in einem eigenen Teil der Kachel
+       (`item-haken-name`), der Zustand in `aria-pressed` statt „[x]". */
+    const kachelText = (kind) => [kind.textContent || ""].concat((kind.kinder || [])
+        .map((teil) => teil.textContent || "")).join(" ");
     const paarKnopf = (halter) => kaestchen(halter).find((kind) =>
-        String(kind.textContent || "").indexOf("Enttarnen / Verstecken") !== -1);
+        kachelText(kind).indexOf("Enttarnen / Verstecken") !== -1);
+    const angehakt = (kind) => kind.attribute && kind.attribute["aria-pressed"] === "true";
 
     try {
         umgebung.DIALOG.hinweis = async () => true;
@@ -1057,7 +1101,13 @@ pruefe("Enttarnen / Verstecken sind im Popup EIN Eintrag, der beide schaltet (v0
         if (!paar) {
             throw new Error("der Eintrag \"Enttarnen / Verstecken\" fehlt");
         }
-        if (String(paar.textContent).indexOf("[x]") === -1) {
+        if (kaestchen(halter).some((kind) => /\[[x ]\]/.test(kachelText(kind)))) {
+            throw new Error("\"[x]\" steht wieder als Text in einer Kachel");
+        }
+        if (!(paar.kinder || []).some((teil) => teil.className === "item-haken-marke")) {
+            throw new Error("die Kachel hat keinen Haken");
+        }
+        if (!angehakt(paar)) {
             throw new Error("bei voller Auswahl ist das Paar angehakt");
         }
 
@@ -1092,7 +1142,7 @@ pruefe("Enttarnen / Verstecken sind im Popup EIN Eintrag, der beide schaltet (v0
            und der naechste Tipp nimmt sie sauber heraus. */
         TEAM_SCHACH.neueRegeln.itemAuswahl = ["mauer", "enttarnen"];
         const alt = TEAM_SCHACH._itemAuswahlFuellen(neuesElement("div"));
-        if (String(paarKnopf(alt).textContent).indexOf("[x]") === -1) {
+        if (!angehakt(paarKnopf(alt))) {
             throw new Error("eine halbe alte Auswahl muss als angehakt gelten");
         }
         paarKnopf(alt).ausloesen("click");

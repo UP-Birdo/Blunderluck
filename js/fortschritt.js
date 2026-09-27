@@ -64,6 +64,39 @@
  * aus 0.10.0 tragen (`xp`, `heute.wort`, `serie` …) — sie wandern hier
  * unverändert durch, bis Typoluck sie selbst umzieht.
  *
+ * DIE SERIE SEIT v0.152.0 (Nutzer 27.09.2026: „Serie soll einfach: einmal
+ * eine Runde starten, egal welches Game" · „ja über 60"). In BEIDEN
+ * `fortschritt.js` gleich:
+ *   - Ein Tag zählt, sobald in IRGENDEINEM UPCrew-Spiel eine Runde
+ *     GESTARTET wird (`rundeGestartet`, Blunderluck: beim Anpfiff jeder
+ *     Partie — Turm, Frei, Freunde, Tagesbrett). Der Tag kommt in `tage`
+ *     (höchstens 60 gemerkt). Die Tagesaufgabe trägt ihren Tag weiter ein;
+ *     ihre XP und die Karten „Heute" bleiben, wie sie sind.
+ *   - ÜBER 60 TAGE trägt ein ZÄHLER am Zweig, nur Zahlen in `zaehler` (die
+ *     Regel §11b erlaubt dort beliebige Buchstaben-Namen mit Zahlen — keine
+ *     Regeländerung): `serie` = Länge der Serie, `serieBis` = ihr letzter Tag
+ *     als Zahl JJJJMMTT, `serieSchutz` = in dieser Serie schon überbrückte
+ *     Tage. Jedes Spiel schreibt nur SEINEN Zähler, und zwar den über BEIDE
+ *     Spiele gerechneten Stand (`serieStand`).
+ *   - GERECHNET wird so (`serieStand`): Man nimmt den Zähler mit dem
+ *     NEUESTEN `serieBis` aus allen Zweigen und geht von dort die Tage aus
+ *     `tage` (aller Zweige) vorwärts: der nächste Tag +1; EIN fehlender Tag
+ *     wird von einem Schutz überbrückt (+1, der fehlende Tag zählt nicht mit);
+ *     zwei oder mehr fehlende Tage beginnen neu bei 1. Ohne Zähler (alte
+ *     Stände) beginnt es beim ältesten Tag — das ergibt genau die bisherige
+ *     Rechnung. Warum ein Zähler statt einer langen Tagesliste: Die Liste
+ *     wüchse endlos und wäre gegen die Regel (§11b: `tage` höchstens 1000
+ *     Einträge) irgendwann zu lang; zwei Zahlen reichen für jede Länge.
+ *   - SCHUTZ: je Serie so viele Tage wie verdient (`schutzVerdient`, über das
+ *     Level), danach gekaufte Flammen-Schilde (`zaehler.schildGekauft` −
+ *     `schildGenutzt`, js\upcrew-muenzen.js). Ein gekaufter Schild wird beim
+ *     Überbrücken verbraucht (`schildGenutzt` +1 im Spiel, das die Serie
+ *     fortschreibt).
+ *   - ZUSAMMENFÜHREN (gleiches Spiel, zwei Geräte): Zähler, die nur wachsen
+ *     (Münzen, Käufe, Tagesaufgaben …), nehmen je Name den GRÖSSEREN Wert;
+ *     die drei Serien-Zähler kommen gemeinsam aus der Fassung mit dem
+ *     neueren `serieBis` (`zusammenfuehren`).
+ *
  * WARUM JE SPIEL EIN ZWEIG: Das Level zählt die XP ALLER Spiele. Schriebe
  * jedes Spiel eine gemeinsame Summe, überschriebe das eine die XP des
  * anderen, sobald beide abwechselnd speichern. Mit Zweigen ist jedes Spiel
@@ -237,10 +270,49 @@ const FORTSCHRITT = {
             if (!x || !y) {
                 ergebnis.spiele[app] = x || y;
             } else {
-                ergebnis.spiele[app] = (y.stand > x.stand) ? y : x;
+                const neuer = (y.stand > x.stand) ? y : x;
+                const aelter = (neuer === y) ? x : y;
+                ergebnis.spiele[app] = FORTSCHRITT._zaehlerZusammen(neuer, aelter);
             }
         }
         return ergebnis;
+    },
+
+    /* Die drei Zähler der Serie — sie gehören zusammen (seit v0.152.0). */
+    SERIE_ZAEHLER: ["serie", "serieBis", "serieSchutz"],
+
+    /*
+     * Zwei Fassungen DESSELBEN Zweigs (zwei Geräte): die neuere gewinnt wie
+     * bisher, aber ihre `zaehler` nehmen je Name den grösseren Wert (sie
+     * wachsen nur — sonst ginge z. B. eine auf dem anderen Gerät verdiente
+     * Münze verloren); die Serien-Zähler kommen gemeinsam aus der Fassung
+     * mit dem neueren `serieBis` (seit v0.152.0).
+     */
+    _zaehlerZusammen(neuer, aelter) {
+        const a = FORTSCHRITT._istObjekt(neuer.zaehler) ? neuer.zaehler : null;
+        const b = FORTSCHRITT._istObjekt(aelter.zaehler) ? aelter.zaehler : null;
+        if (!b) {
+            return neuer;
+        }
+        const zaehler = Object.assign({}, a || {});
+        for (const k of Object.keys(b)) {
+            if (FORTSCHRITT.SERIE_ZAEHLER.indexOf(k) !== -1) {
+                continue;
+            }
+            if (typeof b[k] === "number" && !(typeof zaehler[k] === "number" && zaehler[k] >= b[k])) {
+                zaehler[k] = b[k];
+            }
+        }
+        const bisA = (a && typeof a.serieBis === "number") ? a.serieBis : -1;
+        const bisB = typeof b.serieBis === "number" ? b.serieBis : -1;
+        if (bisB > bisA) {
+            for (const k of FORTSCHRITT.SERIE_ZAEHLER) {
+                if (typeof b[k] === "number") {
+                    zaehler[k] = b[k];
+                }
+            }
+        }
+        return Object.assign({}, neuer, { zaehler: zaehler });
     },
 
     /* ---------------------------------------------------------------- *
@@ -376,24 +448,171 @@ const FORTSCHRITT = {
      * gerettet hätte, wird nicht rückwirkend abgezogen.
      */
     serie(stand, datum, schutz) {
-        const tage = FORTSCHRITT.alleTage(stand);
-        const heute = tage.has(datum);
-        let tag = heute ? datum : FORTSCHRITT._vortag(datum);
-        let laenge = 0;
-        let genutzt = 0;
-        let vorrat = Math.max(0, Math.floor(schutz || 0));
-        for (let schritt = 0; schritt < 400; schritt++) {
-            if (tage.has(tag)) {
-                laenge++;
-            } else if (laenge > 0 && vorrat > 0 && tage.has(FORTSCHRITT._vortag(tag))) {
-                vorrat--;
-                genutzt++;
-            } else {
-                break;
-            }
-            tag = FORTSCHRITT._vortag(tag);
+        const level = Math.max(0, Math.floor(schutz || 0));
+        const st = FORTSCHRITT.serieStand(stand, level, datum);
+        const leer = { tage: 0, heute: false, schutzGenutzt: 0 };
+        if (!st.bis) {
+            return leer;
         }
-        return { tage: laenge, heute: heute, schutzGenutzt: genutzt };
+        if (st.bis === datum) {
+            return { tage: st.tage, heute: true, schutzGenutzt: st.schutzImLauf };
+        }
+        const luecke = FORTSCHRITT._tageZwischen(st.bis, datum) - 1;
+        if (luecke === 0) {
+            return { tage: st.tage, heute: false, schutzGenutzt: st.schutzImLauf };
+        }
+        /* Gestern fehlt: Die Serie lebt noch, wenn heute ein Schutz den
+           Tag überbrücken kann (verbraucht wird er erst beim nächsten Start). */
+        if (luecke === 1 && (level - st.schutzImLauf > 0 || st.schildeFrei > 0)) {
+            return { tage: st.tage, heute: false, schutzGenutzt: st.schutzImLauf };
+        }
+        return leer;
+    },
+
+    /* „JJJJ-MM-TT" ↔ Zahl JJJJMMTT (für `zaehler.serieBis`). */
+    _datumZahl(datum) {
+        return FORTSCHRITT._istDatum(datum) ? Number(datum.replace(/-/g, "")) : 0;
+    },
+
+    _zahlDatum(zahl) {
+        const t = String(Math.floor(Number(zahl) || 0));
+        return /^\d{8}$/.test(t) ? t.slice(0, 4) + "-" + t.slice(4, 6) + "-" + t.slice(6, 8) : "";
+    },
+
+    /* Wie viele Kalendertage von `a` bis `b` („JJJJ-MM-TT"), b nach a > 0. */
+    _tageZwischen(a, b) {
+        return Math.round((Date.parse(b + "T12:00:00Z") - Date.parse(a + "T12:00:00Z")) / 86400000);
+    },
+
+    /* Summe eines Zählers über alle Zweige. */
+    _zaehlerSumme(stand, name) {
+        const sauber = FORTSCHRITT.normalisieren(stand);
+        let summe = 0;
+        for (const app of Object.keys(sauber.spiele)) {
+            const z = sauber.spiele[app].zaehler;
+            if (FORTSCHRITT._istObjekt(z) && typeof z[name] === "number" && isFinite(z[name]) && z[name] > 0) {
+                summe += Math.floor(z[name]);
+            }
+        }
+        return summe;
+    },
+
+    /* Gekaufte, noch nicht verbrauchte Flammen-Schilde über alle Spiele. */
+    schildVorrat(stand) {
+        return Math.max(0, FORTSCHRITT._zaehlerSumme(stand, "schildGekauft")
+            - FORTSCHRITT._zaehlerSumme(stand, "schildGenutzt"));
+    },
+
+    /*
+     * DER STAND DER SERIE über alle Spiele (seit v0.152.0, Kopf „DIE SERIE"):
+     * { tage, bis ("JJJJ-MM-TT" oder ""), schutzImLauf, schildeFrei,
+     *   schildeVerbraucht }. `schildeVerbraucht` = gekaufte Schilde, die seit
+     * dem neuesten Zähler zum Überbrücken nötig waren (das schreibende Spiel
+     * bucht sie als `schildGenutzt`). Tage nach `bisDatum` zählen nicht.
+     */
+    serieStand(stand, levelSchutz, bisDatum) {
+        const sauber = FORTSCHRITT.normalisieren(stand);
+        const level = Math.max(0, Math.floor(levelSchutz || 0));
+        const grenze = FORTSCHRITT._istDatum(bisDatum) ? bisDatum : "9999-12-31";
+
+        let tage = 0;
+        let bis = "";
+        let schutzImLauf = 0;
+        for (const app of Object.keys(sauber.spiele)) {
+            const z = sauber.spiele[app].zaehler;
+            if (!FORTSCHRITT._istObjekt(z)) {
+                continue;
+            }
+            const datum = FORTSCHRITT._zahlDatum(z.serieBis);
+            const laenge = Math.floor(Number(z.serie) || 0);
+            if (!datum || datum > grenze || laenge < 1) {
+                continue;
+            }
+            if (datum > bis || (datum === bis && laenge > tage)) {
+                bis = datum;
+                tage = laenge;
+                schutzImLauf = Math.max(0, Math.floor(Number(z.serieSchutz) || 0));
+            }
+        }
+
+        let schildeFrei = FORTSCHRITT.schildVorrat(sauber);
+        let verbraucht = 0;
+        const danach = Array.from(FORTSCHRITT.alleTage(sauber))
+            .filter((tag) => tag > bis && tag <= grenze).sort();
+        for (const tag of danach) {
+            if (!bis) {
+                tage = 1;
+                schutzImLauf = 0;
+            } else {
+                const luecke = FORTSCHRITT._tageZwischen(bis, tag) - 1;
+                if (luecke === 0) {
+                    tage++;
+                } else if (luecke === 1 && schutzImLauf < level) {
+                    tage++;
+                    schutzImLauf++;
+                } else if (luecke === 1 && schildeFrei > 0) {
+                    tage++;
+                    schutzImLauf++;
+                    schildeFrei--;
+                    verbraucht++;
+                } else {
+                    tage = 1;
+                    schutzImLauf = 0;
+                }
+            }
+            bis = tag;
+        }
+        return { tage: bis ? tage : 0, bis: bis, schutzImLauf: schutzImLauf,
+            schildeFrei: schildeFrei, schildeVerbraucht: verbraucht };
+    },
+
+    /*
+     * EINE RUNDE WURDE GESTARTET (seit v0.152.0): Der Tag zählt für die Serie.
+     * Einmal je Tag und Spiel; sonst unverändert. Schreibt den Tag in `tage`
+     * und den über beide Spiele gerechneten Serien-Stand in den eigenen
+     * `zaehler` (serie, serieBis, serieSchutz; verbrauchte gekaufte Schilde
+     * in `schildGenutzt`). Liefert { stand, neu, serie }.
+     */
+    rundeGestartet(stand, datum, zeitpunkt, app, schutz) {
+        const sauber = FORTSCHRITT.normalisieren(stand);
+        const name = app || FORTSCHRITT.APP;
+        const zweig = sauber.spiele[name] || FORTSCHRITT.spielLeer();
+        const zaehler = FORTSCHRITT._zaehlerAnlegen(zweig);
+        const tageListe = Array.isArray(zweig.tage) ? zweig.tage : [];
+        if (!FORTSCHRITT._istDatum(datum)
+                || (tageListe.indexOf(datum) !== -1 && zaehler.serieBis === FORTSCHRITT._datumZahl(datum))) {
+            return { stand: sauber, neu: false, serie: FORTSCHRITT.serie(sauber, datum, schutz).tage };
+        }
+        zweig.tage = tageListe.indexOf(datum) === -1 ? tageListe.concat([datum]) : tageListe;
+        sauber.spiele[name] = zweig;
+        const st = FORTSCHRITT.serieStand(sauber, schutz, datum);
+        zaehler.serie = st.tage;
+        zaehler.serieBis = FORTSCHRITT._datumZahl(st.bis);
+        zaehler.serieSchutz = st.schutzImLauf;
+        if (st.schildeVerbraucht > 0) {
+            zaehler.schildGenutzt = (zaehler.schildGenutzt || 0) + st.schildeVerbraucht;
+        }
+        zweig.zaehler = zaehler;
+        zweig.stand = Math.max(zweig.stand + 1, zeitpunkt || 0);
+        sauber.spiele[name] = zweig;
+        const neu = FORTSCHRITT.normalisieren(sauber);
+        return { stand: neu, neu: true, serie: st.tage };
+    },
+
+    /*
+     * Die Zähler eines Zweigs (seit v0.152.0), mit einmaligem Umzug: Bis
+     * v0.151 standen in `tage` NUR Tage mit geschaffter Tagesaufgabe — das
+     * Abzeichen „Tagesaufgaben" zählte sie dort. Seit `tage` auch gestartete
+     * Runden trägt, zählt `zaehler.tagesaufgaben`; beim ersten Anlegen
+     * übernimmt es die bisherige Zahl der Tage.
+     */
+    _zaehlerAnlegen(zweig) {
+        const zaehler = Object.assign({}, FORTSCHRITT._istObjekt(zweig.zaehler) ? zweig.zaehler : {});
+        if (typeof zaehler.tagesaufgaben !== "number") {
+            zaehler.tagesaufgaben = (Array.isArray(zweig.tage) ? zweig.tage : [])
+                .filter(FORTSCHRITT._istDatum).length;
+        }
+        return zaehler;
     },
 
     /*
@@ -407,22 +626,33 @@ const FORTSCHRITT = {
      * Schafft das andere Spiel seine Aufgabe erst SPÄTER am Tag, gibt DAS
      * Spiel das ×1,5 — jedes rechnet den Zuschlag auf seine eigene Aufgabe.
      */
-    tagesaufgabe(stand, datum, geschafft, zeitpunkt, app, schutz, schwierigkeit) {
+    tagesaufgabe(stand, datum, geschafft, zeitpunkt, app, schutz, schwierigkeit, hilfe) {
         const sauber = FORTSCHRITT.normalisieren(stand);
         const name = app || FORTSCHRITT.APP;
         const zweig = sauber.spiele[name] || FORTSCHRITT.spielLeer();
+        /* Seit v0.152.0 zählen die Tagesaufgaben im Zähler (der Umzug aus
+           den alten Tagen VOR dem Eintragen dieses Tages). */
+        zweig.zaehler = FORTSCHRITT._zaehlerAnlegen(zweig);
         const alt = (zweig.heute && zweig.heute.datum === datum) ? zweig.heute : { datum: datum, versuche: 0, figuren: 0 };
         const heute = Object.assign({}, alt, { datum: datum, versuche: alt.versuche + 1 });
         let xp = 0;
 
         if (geschafft && !alt.figuren) {
             heute.figuren = heute.versuche === 1 ? 3 : (heute.versuche === 2 ? 2 : 1);
+            /* Mit Hilfe (Tipp oder Leben aus dem Shop, seit v0.152.0)
+               höchstens ein Bauer. */
+            if (hilfe) {
+                heute.figuren = 1;
+            }
+            zweig.zaehler.tagesaufgaben += 1;
             const andereHeute = Object.keys(sauber.spiele).some((anderes) => anderes !== name
                 && sauber.spiele[anderes].heute && sauber.spiele[anderes].heute.datum === datum
                 && sauber.spiele[anderes].heute.figuren > 0);
             xp += Math.round(FORTSCHRITT.tagesGrund(schwierigkeit) * (andereHeute ? FORTSCHRITT.BEIDE_FAKTOR : 1));
             xp += heute.figuren * FORTSCHRITT.XP.figur;
-            zweig.tage = (zweig.tage || []).concat([datum]);
+            if ((zweig.tage || []).indexOf(datum) === -1) {
+                zweig.tage = (zweig.tage || []).concat([datum]);
+            }
             sauber.spiele[name] = zweig;
             const serie = FORTSCHRITT.serie(sauber, datum, schutz).tage;
             xp += Math.min(FORTSCHRITT.SERIE_XP * serie, FORTSCHRITT.SERIE_XP_MAX);

@@ -319,7 +319,8 @@ pruefe("Aussehen lädt früh: Farbwelten → Aussehen → darstellung.js direkt 
 pruefe("Leiste: Aufgaben · Sammlung · Start · Rangliste · Bald (v0.145.0)", () => {
     const app = dateisystem.readFileSync(pfad.join(projekt, "js", "app.js"), "utf8");
     const reihe = [...app.matchAll(/TABS\.registrieren\(([A-Z_]+)\)/g)].map((t) => t[1]);
-    gleich(reihe.slice(0, 5).join(","), "HERAUSFORDERUNGEN,SAMMLUNG,START,RANGLISTE,BALD", "Reihenfolge");
+    /* Platz 5 seit v0.152.0: der Shop statt „Bald". */
+    gleich(reihe.slice(0, 5).join(","), "HERAUSFORDERUNGEN,SAMMLUNG,START,RANGLISTE,SHOP", "Reihenfolge");
     wahr(reihe.indexOf("FAEHIGKEITEN") === -1 && reihe.indexOf("ANPASSEN") === -1,
         "Fähigkeiten und Anpassen sind keine eigenen Tabs mehr");
     const { BALD } = require(pfad.join(projekt, "js", "herausforderungen.js"));

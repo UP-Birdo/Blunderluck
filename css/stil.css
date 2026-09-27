@@ -171,11 +171,17 @@
    der Rollbalken verschwindet (`body.dialog-offen`). */
 html {
     scrollbar-gutter: stable;
+    /* Seitlich ist Stopp (seit v0.151.15, Nutzer 27.09.2026: „man soll nicht
+       infinite scrollen können, sprich rechts und links ist Stopp"): kein
+       seitliches Überrollen/Zurückfedern der ganzen Seite. Regal-Reihen
+       rollen als eigene Bereiche weiter waagrecht. */
+    overscroll-behavior-x: none;
 }
 
 body {
     margin: 0;
     padding: 0;
+    overscroll-behavior-x: none;
     background: var(--flaeche);
     color: var(--schrift);
     /* Die Schrift wählt der Spieler (seit v0.144.0): js\upcrew-aussehen.js
@@ -183,6 +189,27 @@ body {
     font-family: var(--schrift-familie, "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif);
     font-size: 16px;
     line-height: 1.45;
+}
+
+/*
+ * DIE DECKE ÜBER DER iPHONE-STATUSLEISTE (seit v0.151.10). Mit
+ * `viewport-fit=cover` reicht die Seite in der Home-Bildschirm-App bis unter
+ * Uhr und Akku; beim Rollen lief der Inhalt dort sichtbar durch (in Typoluck
+ * gemeldet, 27.09.2026 — derselbe Aufbau). Eine feste Fläche in der
+ * Grundfarbe, so hoch wie der Balken. Im Browser und auf Geräten ohne
+ * Balken ist `env(safe-area-inset-top)` (über `--oben-frei`) 0 — dann gibt es sie nicht.
+ * Dialoge und Vollbilder liegen darüber (höhere Ebene).
+ */
+body::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: var(--oben-frei, 0px);
+    background: var(--flaeche);
+    z-index: var(--ebene-schwebend);
+    pointer-events: none;
 }
 
 /* Knöpfe, Felder und Auswahllisten erben die Schrift sonst NICHT — der
@@ -396,7 +423,7 @@ select {
 
     /* Oben zusätzlich der Systembalken des iPhones (`viewport-fit=cover`). */
     padding: 10px var(--abstand);
-    padding-top: calc(10px + env(safe-area-inset-top));
+    padding-top: calc(10px + var(--oben-frei, 0px));
 
     background: var(--fehler-flaeche);
     color: var(--schrift);
@@ -490,6 +517,9 @@ select {
 /* Der Inhalt läuft nicht unter der Leiste hindurch. */
 .tab-inhalt {
     padding: var(--inhalt-rand);
+    /* Oben mindestens so viel wie der iPhone-Balken (seit v0.151.10, siehe
+       `body::before`) — sonst begänne der Inhalt unter der Decke. */
+    padding-top: max(var(--inhalt-rand), calc(var(--oben-frei, 0px) + 8px));
     padding-bottom: calc(var(--leiste-hoehe) + 16px + env(safe-area-inset-bottom, 0px));
     max-width: 820px;
     margin: 0 auto;
@@ -727,7 +757,7 @@ body.design-3d .heute-bild .vorschau {
    schlichter Streifen. */
 .neu-leiste {
     position: fixed;
-    top: calc(env(safe-area-inset-top) + 8px);
+    top: calc(var(--oben-frei, 0px) + 8px);
     left: 50%;
     transform: translateX(-50%);
     z-index: 10000;
@@ -892,62 +922,38 @@ body.design-3d .heute-bild .vorschau {
 
 /*
  * DER TAB „SAMMLUNG" (seit v0.145.0, js\sammlung.js; bis v0.144 Tab
- * „Anpassen"): Das Aussehen des Anpassen-Teils steht im gemeinsamen
- * Baustein css\upcrew-anpassen.css. Hier nur, wie er in Blunderluck sitzt:
- *   - über die volle Breite (der Baustein rückt selbst 14 px ein);
- *   - OBEN BÜNDIG: Die Kopfzeile klebt, die Vorschau klebt direkt darunter
- *     (`--upa-oben` = Höhe der Kopfzeile, setzt sammlung.js). Der übliche
- *     Abstand unter der Kopfzeile fällt weg — sonst rollte der Inhalt
- *     sichtbar durch die Lücke zwischen beiden;
- *   - UNTEN BÜNDIG: Der Balken „Zurück / Übernehmen" klebt auf der festen
- *     Leiste (der Baustein kennt sie nicht und klebte sonst dahinter), und
- *     der Tab hat unten keinen eigenen Innenabstand, sonst stünde unter dem
- *     Balken ein Streifen, durch den Inhalt rollt. Seit v0.151.3 ragt die
- *     Kapsel der Leiste nicht mehr in den Balken (`--leiste-kachel` 4 px).
+ * „Anpassen"). Seit v0.151.11 steht das GERÜST (Kopf voll breit mit „NN %",
+ * klebende Vorschau mit Abschluss, Regale, reine Sammlung, Balken über der
+ * Leiste, Luft unten) im gemeinsamen Baustein css\upcrew-sammlung.css +
+ * js\upcrew-sammlung.js — gleich in Typoluck (Nutzer 27.09.2026: „bei beiden
+ * Apps soll Sammlung gleich sein und immer gleich bleiben"). Hier nur noch
+ * die Stellschrauben des Bausteins und die Blunderluck-Inhalte (Regal-Bilder,
+ * echte Start-Vorschau, Brettformen).
  */
-.sammlung-ort {
-    margin: 0 calc(-1 * var(--inhalt-rand));
+/* Ein verborgener Tab bleibt verborgen (seit v0.151.15): Bausteine, die dem
+   Tab selbst ein `display` geben (bis jetzt `.up-sm { display: block }` in
+   css\upcrew-sammlung.css), schlugen sonst das [hidden] — der Kopf der
+   Sammlung stand dann auf jedem anderen Tab unten im Bild. Die Quelle ist
+   gemeldet (docs\bausteine\upcrew-sammlung.css); diese Regel hält auch so. */
+.tab-bereich[hidden] {
+    display: none;
 }
 
-/* Die Kopfzeile klebt über die VOLLE Breite (seit v0.151.4). Bis v0.151.3
-   ließ sie links und rechts den Innenrand der Seite (12 px) frei — dort
-   schaute beim Rollen der Inhalt vorbei, am Handy als orangefarbener
-   Bogen neben „Sammlung" (die Kante einer gewählten Kachel; Nutzer-Bild
-   27.09.2026). */
-.sammlung > .sammlung-kopf {
-    margin: 0 calc(-1 * var(--inhalt-rand));
-    padding-left: var(--inhalt-rand);
-    padding-right: var(--inhalt-rand);
+/* Wischen (seit v0.151.14, css\upcrew-wischen.css): während einer Runde
+   gibt es kein Wischen — dort behält der Inhalt alle Gesten. */
+body.partie-spielt .tab-inhalt.up-wischen,
+body.runde-offen .tab-inhalt.up-wischen {
+    touch-action: auto;
 }
 
-/* Klarer Abschluss unter der klebenden Vorschau (seit v0.151.4): eine
-   kräftigere Kante statt der Haarlinie, damit die Regale sichtbar DARUNTER
-   verschwinden statt halb hervorzuschauen. Harte Kante, kein weicher
-   Schatten (UPCrew-Standard). */
-.sammlung .upa-vorschau-rahmen {
-    border-bottom: 2px solid var(--rahmen);
-    box-shadow: 0 4px 0 color-mix(in srgb, var(--flaeche) 70%, transparent);
-    margin-bottom: 8px;
-}
-
-.sammlung-anteil {
-    margin-left: auto;
-    font-weight: 700;
-    font-variant-numeric: tabular-nums;
-    color: var(--haupt);
-}
-
-.sammlung .upa-aktion {
-    bottom: calc(var(--leiste-hoehe) + env(safe-area-inset-bottom, 0px));
-    /* Seit v0.151.4 etwas flacher (8 statt 10/12 px): Mit der Kapsel-Leiste
-       ragt nichts mehr herein, und Balken plus Leiste kosteten am Handy
-       viel Höhe (Nutzer-Bild 27.09.2026). */
-    padding-top: 8px;
-    padding-bottom: 8px;
-}
-
-.tab-inhalt:has(> .sammlung:not([hidden])) {
-    padding-bottom: calc(var(--leiste-hoehe) + env(safe-area-inset-bottom, 0px));
+:root {
+    /* Das Gold der Abzeichen-Punkte (seit v0.151.12, css\upcrew-abzeichen.css)
+       — wie Typoluck, hell und dunkel gleich. */
+    --figur: #f2c14e;
+    --figur-schrift: #1a1406;
+    --up-sm-rand: var(--inhalt-rand);
+    --up-sm-leiste: calc(var(--leiste-hoehe) + env(safe-area-inset-bottom, 0px));
+    --oben-frei: env(safe-area-inset-top, 0px);
 }
 
 /* Die kleinen Bilder in den Regalen Brett, Brett-Thema und Figuren. */
@@ -978,62 +984,8 @@ body.design-3d .sammlung-buehne .vorschau {
     gap: 2px;
 }
 
-/*
- * DIE REINE SAMMLUNG (Fähigkeiten, Brettformen): steht in der Fläche des
- * Bausteins, darum dieselben Überschriften (`.upa-regal h2`) und derselbe
- * Einzug von 14 px. Die Bibliothek darin ist dieselbe wie im Spiel.
- */
-.sammel-rest {
-    padding-bottom: 12px;
-}
-
-.sammel-zahl {
-    font-weight: 600;
-    letter-spacing: 0;
-}
-
-.sammel-innen {
-    padding: 0 14px;
-}
-
-.album-gitter {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 8px;
-    padding: 2px 14px 8px;
-}
-
-.stueck {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 5px;
-    min-width: 0;
-    padding: 10px 2px 8px;
-    font: inherit;
-    font-size: 0.66rem;
-    font-weight: 700;
-    color: var(--schrift-leise);
-    background: var(--karte);
-    border: 1px solid var(--rahmen);
-    border-radius: var(--rund-mittel);
-    cursor: pointer;
-}
-
-.stueck.da {
-    color: var(--schrift);
-}
-
-/* Zwei Zeilen statt „…": abgeschnitten sahen „Großes Brett" und „Großes
-   Kreuz" fast gleich aus (angesehen am 27.09.2026). */
-.stueck-name {
-    max-width: 100%;
-    padding: 0 3px;
-    text-align: center;
-    line-height: 1.2;
-    overflow-wrap: break-word;
-}
-
+/* Die Brettformen der reinen Sammlung: Kachel und Raster aus dem Baustein
+   (`.up-sm-stueck`), das Bild darin ist Blunderluck. */
 /* Die Form einer Spielart: winziges Feldraster, 36 px an der längeren
    Seite, das Seitenverhältnis kommt aus Spalten und Reihen. */
 .stueck-form {
@@ -1243,7 +1195,8 @@ body.partie-fest .phasen-leiste {
  */
 .stand-leiste {
     position: sticky;
-    top: 0;
+    /* Unter der Decke über dem iPhone-Balken (seit v0.151.10). */
+    top: var(--oben-frei, 0px);
     z-index: var(--ebene-leiste);
     margin-left: calc(-1 * var(--inhalt-rand));
     margin-right: calc(-1 * var(--inhalt-rand));

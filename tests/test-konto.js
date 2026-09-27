@@ -276,7 +276,7 @@ function firebaseNachbauen() {
 
 function appLaden(fb) {
     const gespeichert = {};
-    const dialog = { antworten: [], fragen: [], hinweise: [], kurz: [] };
+    const dialog = { antworten: [], fragen: [], hinweise: [], kurz: [], listen: [] };
 
     const umgebung = {
         console, URL, URLSearchParams, AbortController, TextEncoder, Uint8Array, Uint32Array,
@@ -310,6 +310,10 @@ function appLaden(fb) {
             async eingabe() { return dialog.antworten.shift(); },
             async hinweis(titel, text) { dialog.hinweise.push(titel + ": " + text); },
             async frage(titel) { dialog.fragen.push(titel); return dialog.antworten.shift(); },
+            async liste(titel, text, eintraege) {
+                dialog.listen.push({ titel: titel, eintraege: eintraege });
+                return dialog.antworten.shift();
+            },
             kurzmeldung(text) { dialog.kurz.push(text); }
         },
         TABS: { wechseln() {} }
@@ -560,18 +564,64 @@ function oberAnlegen(w) {
         }
         kandidaten.splice(3, 0, { id: "id-gast", name: "Max", tag: "0999", gast: true });
         const versucht = [];
-        const echt = w.KONTO.anmelden;
-        w.KONTO.anmelden = async (kennung) => { versucht.push(kennung); return { ok: false, fehler: "falsch" }; };
+        const echt = w.KONTO._pruefen;
+        w.KONTO._pruefen = async (kennung) => { versucht.push(kennung); return { ok: false, fehler: "falsch" }; };
         const ergebnis = await w.KONTO._anmeldenReihum(kandidaten, "x");
         gleich(versucht.length, 20, "höchstens 20");
         gleich(ergebnis.text, "Name oder Passwort falsch.", "Text");
         versucht.length = 0;
-        w.KONTO.anmelden = async (kennung) => { versucht.push(kennung);
+        w.KONTO._pruefen = async (kennung) => { versucht.push(kennung);
             return { ok: false, fehler: versucht.length === 2 ? "zuViele" : "falsch" }; };
         const bremse = await w.KONTO._anmeldenReihum(kandidaten, "x");
         gleich(versucht.length, 2, "Abbruch");
         gleich(bremse.fehler, "zuViele", "Fehlerart");
-        w.KONTO.anmelden = echt;
+        w.KONTO._pruefen = echt;
+    });
+
+    await pruefe("Gleicher Name, gleiches Passwort: Auswahl Welches Konto mit Nummer", async () => {
+        const w = await welt();
+        const erster = await w.KONTO.kontoAnlegen(w.speicher, w.abgleich.daten, "Max", "Same#Pw11");
+        wahr(erster.ok, "erster");
+        w.KONTO.abmelden();
+        await nachladen(w);
+        const zweiter = await w.KONTO.kontoAnlegen(w.speicher, w.abgleich.daten, "Max", "Same#Pw11");
+        wahr(zweiter.ok, "zweiter bekommt eine andere Nummer");
+        wahr(zweiter.eintrag.tag !== erster.eintrag.tag, "andere Nummer");
+        await nachladen(w);
+        w.KONTO.abmelden();
+        /* Abbrechen: niemand angemeldet. */
+        w.dialog.antworten = [null];
+        const ab = await w.ANMELDUNG._kontoAnmeldenVersuchen("Max", "Same#Pw11");
+        gleich(ab.abgebrochen, true, "abgebrochen");
+        gleich(w.KONTO.angemeldet(), false, "nicht angemeldet");
+        const liste = w.dialog.listen[0];
+        gleich(liste.titel, "Welches Konto?", "Titel");
+        gleich(liste.eintraege.length, 2, "zwei Konten");
+        wahr(liste.eintraege.every((e) => e.beschriftung === "Max" && /^#[0-9]{4}/.test(e.hinweis)),
+            "Name + Nummer: " + JSON.stringify(liste.eintraege));
+        /* Das zweite wählen: dort angemeldet, ohne weiteren Firebase-Versuch. */
+        const index = liste.eintraege.findIndex((e) => e.hinweis.indexOf(zweiter.eintrag.tag) !== -1);
+        w.dialog.antworten = [String(index)];
+        const vorher = w.fb.aufrufe.length;
+        const gewaehlt = await w.ANMELDUNG._kontoAnmeldenVersuchen("Max", "Same#Pw11");
+        wahr(gewaehlt.ok, "gewählt: " + JSON.stringify(gewaehlt));
+        gleich(w.KONTO.uid(), zweiter.eintrag.uid, "richtiges Konto");
+        gleich(w.fb.aufrufe.slice(vorher).filter((a) =>
+            a.adresse.indexOf("signInWithPassword") !== -1).length, 2, "je Konto eine Prüfung, keine dritte");
+    });
+
+    await pruefe("Gleicher Name, verschiedene Passwörter: direkt ins richtige, keine Auswahl", async () => {
+        const w = await welt();
+        await w.KONTO.kontoAnlegen(w.speicher, w.abgleich.daten, "Max", "Eins#Pw11");
+        w.KONTO.abmelden();
+        await nachladen(w);
+        const zweiter = await w.KONTO.kontoAnlegen(w.speicher, w.abgleich.daten, "Max", "Zwei#Pw22");
+        await nachladen(w);
+        w.KONTO.abmelden();
+        const ergebnis = await w.ANMELDUNG._kontoAnmeldenVersuchen("Max", "Zwei#Pw22");
+        wahr(ergebnis.ok, "angemeldet");
+        gleich(w.KONTO.uid(), zweiter.eintrag.uid, "richtiges Konto");
+        gleich(w.dialog.listen.length, 0, "keine Auswahl");
     });
 
     await pruefe("Freunde: Name ohne Nummer, die Nummer nur leise bei gleichen Namen", async () => {

@@ -520,14 +520,45 @@ const SCHACH_BOT = {
         if (!SCHACH_BOT.istAmZug(stand)) {
             return null;
         }
+        return SCHACH_BOT._zugFuer(stand, SCHACH_BOT.stufeVon(stand));
+    },
 
+    /*
+     * EIN TIPP FÜR MENSCHEN (seit v0.152.0, Ware „Tipp" aus dem Shop): der
+     * Zug, den Bob auf Stufe `stufeId` (Standard „meister“; ein Matt in einem Zug hat Vorrang) an dieser Stelle
+     * für die Seite `farbe` spielen würde — dieselbe Suche wie für den Bot.
+     * Nur, wenn die Partie läuft und `farbe` am Zug ist; sonst null.
+     * Liefert { von, nach, umwandlung, text }.
+     */
+    tipp(runde, farbe, stufeId) {
+        const stand = SCHACH_RUNDE.normalisieren(runde);
+        if (!stand.laeuft || stand.ergebnis || !farbe || stand.stand.amZug !== farbe) {
+            return null;
+        }
+        /* Ein Matt in einem Zug zuerst: Die Suche bewertet ein Matt nur wie
+           die Stellung (siehe `_suchen`) — für einen Tipp wäre das zu wenig. */
+        const alle = SCHACH.alleZuege(stand.stand);
+        const matt = alle.find((z) => {
+            const lage = SCHACH.lage(SCHACH._ausfuehren(stand.stand, z));
+            return lage.art === "matt" && lage.sieger === farbe;
+        });
+        const zug = matt
+            ? { von: matt.von, nach: matt.nach, umwandlung: matt.umwandlung || "D" }
+            : SCHACH_BOT._zugFuer(stand, SCHACH_BOT.stufe(stufeId || "meister"));
+        if (!zug) {
+            return null;
+        }
+        const passend = alle.find((z) => z.von === zug.von && z.nach === zug.nach);
+        return Object.assign({}, zug, { text: passend ? SCHACH.zugText(stand.stand, passend) : "" });
+    },
+
+    /* Die eigentliche Wahl für die Seite am Zug (Bot und Tipp). */
+    _zugFuer(stand, stufe) {
         const brett = stand.stand;
         const zuege = SCHACH.alleZuege(brett);
         if (zuege.length === 0) {
             return null;
         }
-
-        const stufe = SCHACH_BOT.stufeVon(stand);
 
         /*
          * Die Lootbox-Felder EINMAL vorab einsammeln, nicht je Zug erneut:

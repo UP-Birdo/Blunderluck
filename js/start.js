@@ -110,6 +110,8 @@ const START = {
         const kurzprofil = START._kurzprofilBauen();
         if (kurzprofil) {
             oben.appendChild(kurzprofil);
+            /* Die Serien-Flamme gleich daneben (seit v0.151.18). */
+            START._flammeBauen(oben);
         }
         oben.appendChild(kopf);
         seite.appendChild(oben);
@@ -463,6 +465,45 @@ const START = {
         }
         knopf.appendChild(text);
         return knopf;
+    },
+
+    /*
+     * DIE SERIEN-FLAMME (seit v0.151.18, gemeinsamer Baustein
+     * js\upcrew-flamme.js; Nutzer 27.09.2026: „die Flamme soll oben in deinem
+     * Profil bei beiden Spielen sein … sync mit deinem Profil"). Die Zahlen
+     * kommen aus dem gemeinsamen Fortschritt (`FORTSCHRITT_KONTO.heute()`:
+     * Serie über ALLE Zweige, Gerät und Konto zusammengeführt). Ein Tipp
+     * führt zum Tab „Aufgaben" — dort stehen die 7 Flammen der Woche, der
+     * Schutz und die beiden Tagesaufgaben.
+     */
+    _flamme: null,
+
+    _flammeBauen(halter) {
+        if (typeof UPCREW_FLAMME === "undefined" || typeof FORTSCHRITT_KONTO === "undefined") {
+            return;
+        }
+        START._flamme = UPCREW_FLAMME.bauen(halter, {
+            beiKlick: () => TABS.wechseln("herausforderungen")
+        });
+        if (!START._flammeHorcht && typeof FORTSCHRITT_KONTO.beiAenderung === "function") {
+            START._flammeHorcht = true;
+            FORTSCHRITT_KONTO.beiAenderung(() => START.flammeAktualisieren());
+        }
+        START.flammeAktualisieren();
+    },
+
+    /* Auch ohne Neuzeichnen: wenn der Stand vom Konto später eintrifft
+       (app.js `beiDaten`) oder eine Tagesaufgabe geschafft ist. */
+    flammeAktualisieren() {
+        if (!START._flamme || typeof FORTSCHRITT_KONTO === "undefined") {
+            return;
+        }
+        const heute = FORTSCHRITT_KONTO.heute();
+        START._flamme.setzen({
+            serie: heute.serie.tage,
+            heuteGeschafft: heute.serie.heute,
+            schutz: heute.schutzFrei
+        });
     },
 
     /* Der Halter mit dem Balken-Knopf und — solange offen — der Liste. Er

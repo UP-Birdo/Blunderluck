@@ -199,7 +199,17 @@ for (const name of stilNamen) {
  */
 const UPCREW_BAUSTEINE_CSS = ["upcrew-intro.css", "upcrew-knoepfe.css", "upcrew-anpassen.css",
     /* seit v0.145.0 (Runde 4): die Leiste unten */
-    "upcrew-leiste.css"];
+    "upcrew-leiste.css",
+    /* seit v0.151.11: das Gerüst der Sammlung */
+    "upcrew-sammlung.css",
+    /* seit v0.151.12: die fünf Abzeichen */
+    "upcrew-abzeichen.css",
+    /* seit v0.151.14: Tabs wechseln durch Wischen */
+    "upcrew-wischen.css",
+    /* seit v0.151.18: die Serien-Flamme */
+    "upcrew-flamme.css",
+    /* seit v0.152.0: Münzen und Shop */
+    "upcrew-shop.css"];
 
 pruefe("Ordner css und index.html nennen dieselben Stildateien", () => {
     const vorhanden = dateisystem.readdirSync(pfad.join(projekt, "css"))

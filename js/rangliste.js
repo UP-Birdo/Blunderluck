@@ -769,6 +769,13 @@ const RANGLISTE = {
         if (levelKarte) {
             wurzel.appendChild(levelKarte);
         }
+        /* Die fünf Abzeichen über beide Spiele (seit v0.151.12, 1:1 aus
+           Typoluck, gemeinsamer Baustein js\upcrew-abzeichen.js). */
+        const abzeichenKarte = RANGLISTE._fortschrittsAbzeichenBauen(
+            SPIELER.spielerFinden(staende.spieler, person.id) || person, istIch);
+        if (abzeichenKarte) {
+            wurzel.appendChild(abzeichenKarte);
+        }
         wurzel.appendChild(RANGLISTE._profilReiterBauen(person, staende, verlauf));
 
         const inhalt = RANGLISTE._element("section", "karte profil-reiter-inhalt");
@@ -981,6 +988,47 @@ const RANGLISTE = {
             naechste.appendChild(zeile);
         }
         karte.appendChild(naechste);
+        return karte;
+    },
+
+    /*
+     * DIE FÜNF ABZEICHEN (seit v0.151.12, Nutzer 27.09.2026: „es fehlen die
+     * Abzeichen, die sollen kopiert werden"): Viel gespielt, Serie, Beide
+     * Spiele, Figuren, Tagesaufgaben — Rechnung und Aussehen aus dem
+     * gemeinsamen Baustein (`UPCREW_ABZEICHEN`), gerechnet aus dem
+     * gemeinsamen Fortschritt über ALLE Zweige, also dieselben Zahlen wie in
+     * Typoluck. Nicht zu verwechseln mit den Blunderluck-Abzeichen auf der
+     * Visitenkarte (Reiter „Abzeichen", seit v0.119.0).
+     *
+     * `person` null = ich. Die laufende Serie rechnet die App (Level und
+     * Serien-Schutz): wie Typoluck `serieHeute`.
+     */
+    abzeichenListe(person, istIch) {
+        if (typeof UPCREW_ABZEICHEN === "undefined" || typeof FORTSCHRITT === "undefined") {
+            return [];
+        }
+        const stand = (istIch && typeof FORTSCHRITT_KONTO !== "undefined")
+            ? FORTSCHRITT_KONTO.lesen()
+            : ((person && person.fortschritt) || null);
+        const sauber = FORTSCHRITT.normalisieren(stand);
+        const heute = FORTSCHRITT.datumVon(Date.now());
+        const schutz = FORTSCHRITT.schutzVerdient(FORTSCHRITT.level(sauber).level);
+        const laufend = FORTSCHRITT.serie(sauber, heute, schutz).tage;
+        return UPCREW_ABZEICHEN.liste(sauber, laufend);
+    },
+
+    abzeichenZeigen(eintrag) {
+        DIALOG.hinweis(eintrag.titel, "", UPCREW_ABZEICHEN.blatt(eintrag));
+    },
+
+    _fortschrittsAbzeichenBauen(person, istIch) {
+        if (typeof UPCREW_ABZEICHEN === "undefined" || typeof FORTSCHRITT === "undefined") {
+            return null;
+        }
+        const karte = RANGLISTE._element("section", "karte profil-fortschritt-abzeichen");
+        karte.appendChild(RANGLISTE._element("h3", "", "Abzeichen · beide Spiele"));
+        karte.appendChild(UPCREW_ABZEICHEN.raster(RANGLISTE.abzeichenListe(person, istIch),
+            (eintrag) => RANGLISTE.abzeichenZeigen(eintrag)));
         return karte;
     },
 
@@ -1342,8 +1390,8 @@ const RANGLISTE = {
             halter.innerHTML = "";
             for (const eintrag of verdient) {
                 const drin = wahl.indexOf(eintrag.id) !== -1;
-                const knopf = RANGLISTE._knopf((drin ? "[x] " : "[ ] ") + eintrag.titel,
-                    "knopf-klein item-haken" + (drin ? " item-haken-an" : " knopf-still"),
+                const knopf = RANGLISTE._knopf("",
+                    "knopf-klein item-haken" + (drin ? " item-haken-an" : " item-haken-aus"),
                     () => {
                         if (drin) {
                             wahl.splice(wahl.indexOf(eintrag.id), 1);
@@ -1357,6 +1405,11 @@ const RANGLISTE = {
                         fuellen();
                     });
                 knopf.setAttribute("aria-pressed", drin ? "true" : "false");
+                if (typeof TEAM_SCHACH !== "undefined" && TEAM_SCHACH._itemKachelFuellen) {
+                    TEAM_SCHACH._itemKachelFuellen(knopf, eintrag.titel, null);
+                } else {
+                    knopf.textContent = eintrag.titel;
+                }
                 knopf.title = eintrag.text;
                 halter.appendChild(knopf);
             }

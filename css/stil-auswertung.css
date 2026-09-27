@@ -1110,9 +1110,24 @@
  * Rollen erreichbar bleibt — er ersetzt den schwebenden Zweitknopf von
  * v0.59 bis v0.109. Die Fläche dahinter deckt den rollenden Text ab.
  */
+/* Der Tipp im Eck-Menü (seit v0.152.0). */
+.eck-tipp-zeichen {
+    display: block;
+    width: 1.2em;
+    height: 1.2em;
+}
+
+/* Die Münzen im Abschluss (seit v0.152.0). */
+.abschluss-muenzen {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+}
+
 .partie-kopf-klebt {
     position: sticky;
-    top: 0;
+    /* Unter dem iPhone-Streifen (seit v0.151.14, --oben-frei). */
+    top: var(--oben-frei, 0px);
     z-index: var(--ebene-schwebend);
     background: var(--flaeche);
     padding-top: 8px;

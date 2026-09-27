@@ -798,5 +798,38 @@ pruefe("Vierzig Zuege gegen den Computer laufen ohne Bruch durch", () => {
     gleich(runde.zugZaehler, zuege, "jeder Zug hat den Zaehler bewegt");
 });
 
+/* ------------------------------------------------------------------ *
+ * Der Tipp für Menschen (seit v0.152.0, Ware aus dem Shop)
+ * ------------------------------------------------------------------ */
+
+pruefe("Tipp: nur für die Seite am Zug, mit Zug in Worten", () => {
+    const runde = botPartie();
+    const tipp = SCHACH_BOT.tipp(runde, "weiss");
+    wahr(tipp !== null && typeof tipp.von === "number" && typeof tipp.nach === "number", "Weiss bekommt einen Tipp");
+    wahr(typeof tipp.text === "string" && tipp.text.length > 3, "mit Text: " + (tipp && tipp.text));
+    gleich(SCHACH_BOT.tipp(runde, "schwarz"), null, "Schwarz ist nicht am Zug");
+    const vorbei = SCHACH_RUNDE.kopieren(runde);
+    vorbei.ergebnis = "weiss";
+    vorbei.laeuft = false;
+    gleich(SCHACH_BOT.tipp(vorbei, "weiss"), null, "nach dem Ende kein Tipp");
+});
+
+pruefe("Tipp: findet ein Matt in einem Zug", () => {
+    const runde = mitStellung(botPartie(), [
+        "t...k...",
+        "........",
+        "........",
+        "........",
+        "........",
+        "........",
+        "......BB",
+        ".......K"
+    ]);
+    const tipp = SCHACH_BOT.tipp(runde, "schwarz");
+    wahr(tipp !== null, "ein Tipp");
+    gleich(tipp.von, SCHACH.feldNummer("a8"), "Turm von a8");
+    gleich(tipp.nach, SCHACH.feldNummer("a1"), "nach a1 — matt");
+});
+
 console.log(anzahlOk + " ok, " + anzahlFehler + " Fehler");
 process.exit(anzahlFehler === 0 ? 0 : 1);

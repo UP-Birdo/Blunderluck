@@ -400,6 +400,23 @@ class SpeicherKonten extends SpeicherGemeinsam {
                 delete eintrag.aussehen;
             }
         }
+        /* Das Aussehen je Spiel (seit v0.151.17, Regel §11c): nur die zwei
+           Spiele, je Spiel nur die sechs Felder. */
+        if (eintrag.aussehenJe !== undefined) {
+            const je = {};
+            const roh = (eintrag.aussehenJe && typeof eintrag.aussehenJe === "object") ? eintrag.aussehenJe : {};
+            for (const app of ["blunderluck", "typoluck"]) {
+                const sauber = SpeicherKonten.aussehenFuerRegel(roh[app]);
+                if (sauber) {
+                    je[app] = sauber;
+                }
+            }
+            if (Object.keys(je).length > 0) {
+                eintrag.aussehenJe = je;
+            } else {
+                delete eintrag.aussehenJe;
+            }
+        }
         if (eintrag.fortschritt && typeof eintrag.fortschritt === "object"
                 && typeof FORTSCHRITT !== "undefined" && typeof FORTSCHRITT.fuerKonto === "function") {
             eintrag.fortschritt = FORTSCHRITT.fuerKonto(eintrag.fortschritt);

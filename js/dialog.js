@@ -50,12 +50,14 @@ const DIALOG = {
      * `frage`: ein fertiges Element unter dem Text — gebraucht wird es für die
      * Bildanleitung einer Fähigkeit, die man nur ansieht (seit v0.48).
      */
-    hinweis(titel, text, zusatz) {
+    hinweis(titel, text, zusatz, knopfText) {
+        /* `knopfText` (seit v0.151.10, wahlfrei): z. B. „Fertig", wenn der
+           Zusatz eine Auswahl ist und keine Mitteilung. */
         return DIALOG._zeigen({
             titel: titel,
             text: text,
             zusatz: zusatz || null,
-            knoepfe: [{ beschriftung: "Verstanden", wert: true, stil: "knopf-haupt" }]
+            knoepfe: [{ beschriftung: knopfText || "Verstanden", wert: true, stil: "knopf-haupt" }]
         });
     },
 
@@ -182,14 +184,20 @@ const DIALOG = {
      * ist dann ein Zeilenumbruch — bestätigt wird über den Knopf, nicht über die
      * Eingabetaste (siehe `_zeigen`).
      */
-    eingabe(titel, text, vorgabe, bestaetigenText, abbrechbar, mehrzeilig) {
+    eingabe(titel, text, vorgabe, bestaetigenText, abbrechbar, mehrzeilig, optionen) {
+        /* `optionen` (seit v0.151.10, wahlfrei): { filter, maxLaenge } —
+           `filter(text)` läuft bei jedem Tippen (der Wunsch lässt nur Text
+           durch), `maxLaenge` begrenzt das Feld. */
+        const zusatz = optionen || {};
         return DIALOG._zeigen({
             titel: titel,
             text: text,
             eingabe: {
                 wert: vorgabe || "",
                 platzhalter: mehrzeilig ? "" : "Name",
-                mehrzeilig: !!mehrzeilig
+                mehrzeilig: !!mehrzeilig,
+                filter: (typeof zusatz.filter === "function") ? zusatz.filter : null,
+                maxLaenge: zusatz.maxLaenge || 0
             },
             knoepfe: (abbrechbar === false)
                 ? [{ beschriftung: bestaetigenText || "Weiter", wert: true, stil: "knopf-haupt" }]
@@ -375,6 +383,23 @@ const DIALOG = {
                 feld.value = vorgabe.eingabe.wert;
                 feld.placeholder = vorgabe.eingabe.platzhalter || "";
                 feld.setAttribute("aria-label", vorgabe.titel);
+
+                /* Zeichen-Sperre und Länge (seit v0.151.10, `eingabe`
+                   mit `optionen`): Verbotenes verschwindet schon beim
+                   Tippen und beim Einfügen. */
+                if (vorgabe.eingabe.maxLaenge) {
+                    feld.maxLength = vorgabe.eingabe.maxLaenge;
+                }
+                if (vorgabe.eingabe.filter) {
+                    const filter = vorgabe.eingabe.filter;
+                    feld.value = filter(feld.value);
+                    feld.addEventListener("input", () => {
+                        const sauber = filter(feld.value);
+                        if (sauber !== feld.value) {
+                            feld.value = sauber;
+                        }
+                    });
+                }
 
                 if (langerText) {
                     /*

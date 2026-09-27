@@ -46,6 +46,10 @@ const INTRO = {
         }
         return UPCREW_INTRO.zeigen(behaelter, {
             modus: INTRO.modus(),
+            /* Die eigene Farbwelt (seit v0.151.17): Jedes Spiel hat sein
+               eigenes Aussehen, der gemeinsame Merker upcrew.farbwelt wird
+               nicht mehr geschrieben. */
+            welt: (typeof UPCREW_AUSSEHEN !== "undefined") ? UPCREW_AUSSEHEN.lesen().farbwelt : undefined,
             app: { nr: INTRO.APP_NR, name: INTRO.APP_NAME, version: KONFIG.APP_VERSION }
         });
     }

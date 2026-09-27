@@ -130,6 +130,10 @@ Object.assign(ANMELDUNG, {
                 ergebnis.weiter();
                 return;
             }
+            if (ergebnis.abgebrochen) {
+                pruefen();
+                return;
+            }
             FUEHLEN.fehler();
             if (ergebnis.fehler === "falsch") {
                 fehlversuche += 1;
@@ -177,6 +181,9 @@ Object.assign(ANMELDUNG, {
             return { weiter: () => ANMELDUNG._kontoNeuesPasswortZeigen("neuVerbinden",
                 ergebnis.spieler) };
         }
+        if (ergebnis.fehler === "auswahl") {
+            return ANMELDUNG._kontoAuswaehlen(ergebnis.auswahl, passwort);
+        }
         if (ergebnis.fehler !== "unbekannt") {
             return ergebnis;
         }
@@ -199,6 +206,50 @@ Object.assign(ANMELDUNG, {
             return { fehler: "falsch" };
         }
         return { weiter: () => ANMELDUNG._kontoNeuesPasswortZeigen("umzug", altSpieler, passwort) };
+    },
+
+    /*
+     * „Welches Konto?" (seit v0.151.9): Name und Passwort passen zu mehreren
+     * gleichnamigen Konten. Hier — und nur hier im Ablauf — steht die Nummer,
+     * weil die Konten sonst nicht zu unterscheiden sind; dazu Level und der
+     * letzte Spieltag, soweit im Eintrag lesbar.
+     */
+    async _kontoAuswaehlen(auswahl, passwort) {
+        const eintraege = auswahl.map((spieler, nummer) => ({
+            beschriftung: spieler.name,
+            hinweis: ANMELDUNG._kontoErkennung(spieler),
+            wert: String(nummer)
+        }));
+        const wahl = await DIALOG.liste("Welches Konto?",
+            "Dein Passwort passt zu mehreren Konten", eintraege, "Abbrechen");
+        if (wahl === null || wahl === undefined || !auswahl[Number(wahl)]) {
+            KONTO.auswahlVerwerfen();
+            return { abgebrochen: true };
+        }
+        const ergebnis = await KONTO.anmeldenAuswahl(auswahl[Number(wahl)], passwort);
+        if (!ergebnis.ok) {
+            return ergebnis;
+        }
+        ANMELDUNG._uebernehmen(ergebnis.spieler);
+        return { ok: true };
+    },
+
+    /* „#1234 · Level 5 · zuletzt 26.09." — was ohne Anmeldung lesbar ist. */
+    _kontoErkennung(spieler) {
+        const teile = ["#" + spieler.tag];
+        if (typeof FORTSCHRITT !== "undefined" && spieler.fortschritt) {
+            try {
+                teile.push("Level " + FORTSCHRITT.level(spieler.fortschritt).level);
+                const tage = Array.from(FORTSCHRITT.alleTage(spieler.fortschritt)).sort();
+                const letzter = tage[tage.length - 1];
+                if (letzter) {
+                    teile.push("zuletzt " + letzter.slice(8, 10) + "." + letzter.slice(5, 7) + ".");
+                }
+            } catch (fehler) {
+                /* Unlesbarer Fortschritt: dann nur die Nummer. */
+            }
+        }
+        return teile.join(" · ");
     },
 
     /*

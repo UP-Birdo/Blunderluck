@@ -201,6 +201,16 @@ foreach ($anfrage in $anfragen) {
     $idee = Idee-Auslesen -Rumpf $anfrage.body
     if (-not $idee) { $idee = $anfrage.title }
 
+    # NUR TEXT (seit v0.151.10, wie js\wunsch.js `saeubern`): Ein Eintrag
+    # kann auch direkt auf GitHub entstehen, an der App vorbei — deshalb
+    # hier dieselbe Sperre, bevor etwas in TODO.md landet. Erlaubt:
+    # Buchstaben (mit Umlauten, ß, Akzenten), Ziffern, Leerzeichen und
+    # . , ! ? - ( ) : ; — höchstens 500 Zeichen.
+    $idee = [string]$idee -replace "[^A-Za-z0-9À-ÖØ-öø-ÿ \.,!\?\-\(\):;]", ""
+    $idee = ($idee -replace " {2,}", " ").Trim()
+    if ($idee.Length -gt 500) { $idee = $idee.Substring(0, 500) }
+    if (-not $idee) { $idee = "(Text nur auf GitHub lesbar)" }
+
     $neue += [PSCustomObject]@{
         Nummer = $anfrage.number
         Text   = $idee
