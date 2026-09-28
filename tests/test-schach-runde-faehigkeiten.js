@@ -1921,6 +1921,57 @@ pruefe("Schutzschild: die geschuetzte Figur laesst sich nicht schlagen", () => {
         "auf den Koenig wirkt es nicht");
 });
 
+pruefe("Schutzschild sperrt das Ziehen der Figur (v0.153.0)", () => {
+    /* Nutzer 28.09.2026: „ja soll sperren". */
+    let runde = faehigkeitenPartie();
+    runde.stand = SCHACH.standNormalisieren({
+        variante: "faehigkeiten",
+        brett: "...dk..."
+            + "........"
+            + "........"
+            + "...T...."
+            + "........"
+            + "........"
+            + "........"
+            + "....K...",
+        amZug: "weiss",
+        rochade: ""
+    });
+    const geschuetzt = einsetzen(runde, "schutzschild", SCHACH.feldNummer("d5"));
+    wahr(geschuetzt !== null, "eingesetzt");
+    gleich(SCHACH.zuege(geschuetzt.stand, SCHACH.feldNummer("d5")).length, 0,
+        "der geschuetzte Turm zieht nicht");
+    gleich(SCHACH_RUNDE.ziehen(geschuetzt, "id-anna", SCHACH.feldNummer("d5"),
+        SCHACH.feldNummer("d6"), "D", "Anna", 3100), null, "Zug mit ihm abgewiesen");
+
+    /* Waere die geschuetzte Figur der einzige Zug, wird das Einsetzen
+       abgewiesen — sonst stuende die Seite ohne Zug da (Matt/Patt). Weiss:
+       Koenig a1 eingeklemmt (a2 eigener Bauer, b1 eigener Turm, b2 vom
+       Springer d3 bedroht), Bauer a2 blockiert. Nur der Turm b1 kann ziehen. */
+    let eng = faehigkeitenPartie();
+    eng.stand = SCHACH.standNormalisieren({
+        variante: "faehigkeiten",
+        brett: "....k..."
+            + "........"
+            + "........"
+            + "........"
+            + "........"
+            + "b..s...."
+            + "B......."
+            + "KT......",
+        amZug: "weiss",
+        rochade: ""
+    });
+    gleich(einsetzen(eng, "schutzschild", SCHACH.feldNummer("b1")), null,
+        "Schild auf den einzigen Zieher abgewiesen");
+    wahr(einsetzen(eng, "schutzschild", SCHACH.feldNummer("a2")) !== null,
+        "auf den blockierten Bauern geht es");
+    const vorbereitet = SCHACH_RUNDE.kopieren(eng);
+    vorbereitet.faehigkeiten.weiss.push("schutzschild");
+    gleich(SCHACH_RUNDE.faehigkeitAbsage(vorbereitet, "id-anna", "schutzschild"), "",
+        "insgesamt einsetzbar (ein Ziel geht)");
+});
+
 pruefe("Fessel: die gefesselte Figur haelt mehrere Zuege still (v0.56)", () => {
     /*
      * BIS v0.55 GALT SIE FUER GENAU EINEN ZUG der gefesselten Seite. Seit

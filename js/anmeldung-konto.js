@@ -174,6 +174,7 @@ Object.assign(ANMELDUNG, {
         const ergebnis = await KONTO.anmeldenMitEingabe(daten, eingabe, passwort);
 
         if (ergebnis.ok) {
+            await ANMELDUNG._nachAnmeldungLaden();
             ANMELDUNG._uebernehmen(ergebnis.spieler);
             return { ok: true };
         }
@@ -230,8 +231,18 @@ Object.assign(ANMELDUNG, {
         if (!ergebnis.ok) {
             return ergebnis;
         }
+        await ANMELDUNG._nachAnmeldungLaden();
         ANMELDUNG._uebernehmen(ergebnis.spieler);
         return { ok: true };
+    },
+
+    /* Regel §12 (seit v0.154.0): Vor der Anmeldung war nur die Marke
+       lesbar — der eigene Eintrag und die Liste kommen erst jetzt. Unter der
+       alten Regel lag beides schon da; dann wird nichts extra geladen. */
+    async _nachAnmeldungLaden() {
+        if (typeof KONTO.istP12 === "function" && KONTO.istP12()) {
+            await ANMELDUNG._kontoNachladen();
+        }
     },
 
     /* „#1234 · Level 5 · zuletzt 26.09." — was ohne Anmeldung lesbar ist. */
@@ -563,7 +574,7 @@ Object.assign(ANMELDUNG, {
             return;
         }
         const wahl = await DIALOG.liste("Nummer ändern",
-            "Zurzeit #" + ich.tag + " · unterscheidet gleiche Namen",
+            "Zurzeit #" + ich.tag + " · dein Freundescode · nur du siehst sie",
             [
                 { beschriftung: "Würfeln", hinweis: "Zufällige freie Nummer", wert: "wuerfeln" },
                 { beschriftung: "Selbst wählen", hinweis: "4 Ziffern", wert: "waehlen" }
@@ -590,7 +601,9 @@ Object.assign(ANMELDUNG, {
         await ANMELDUNG._kontoNachladen();
         ANMELDUNG._anzeigenAuffrischen();
         FUEHLEN.erfolg();
-        DIALOG.kurzmeldung("Neue Nummer · #" + ergebnis.eintrag.tag);
+        /* Die Nummer ist der Freundescode (seit v0.154.0, Konzept Abschnitt
+           5 Punkt 5): Die alte findet niemanden mehr. */
+        DIALOG.kurzmeldung("Neue Nummer · #" + ergebnis.eintrag.tag + " · Freunde brauchen ab jetzt diese");
     },
 
     async _kontoPasswortAendern(ich) {

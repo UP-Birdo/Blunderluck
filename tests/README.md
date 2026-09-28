@@ -31,6 +31,9 @@ das es so nicht mehr gibt.
 | `test-item-max.js` | Rundenregel „Wie viele auf der Hand?“ (v0.152.4, `regeln.itemMax`): Überschuss verpufft, Dieb kappt, gilt für Bob, Schildchen |
 | `test-bilder-v0-152-3.js` | Fehler aus den Nutzer-Bildern (v0.152.3): Anleitung immer abgespielt, Bühne auch in 2D, Brett mittig (Rollbalken beidseitig), kein Markieren, Leiste in Partie-Einstellungen weg, Achtung-Zeichen |
 | `test-zustand-fuehlen.js` | Die Bausteine des UPCrew-Standards (v0.140.0): Laden/Leer/Fehler (`ZUSTAND`, samt 10-Sekunden-Grenze), Vibration (`FUEHLEN`: Muster, Aus-Schalter, iPhone ohne Vibration, gesperrte Knöpfe und das 3D-Brett vibrieren nicht) |
+| `test-hand-max-vorgabe.js` | Hand max (v0.153.0): Vorgabe ohne Grenze, eine ungefragt gemerkte 4 aus v0.152.4 fällt zurück, eine selbst gewählte Grenze bleibt, laufende Partien behalten ihren Wert (lädt `bildschirm-umgebung.js`) |
+| `test-regel-12.js` | Regel §12 Phase A (v0.154.0): die echten Konto-Dateien gegen eine Firebase, die die ECHTE Regel auswertet (`regel-nachbau.js`) — Regeltext (JSON, byte-gleich Konzept, §11c-Zeilen), Nummern-Codes, Lese-Kaskade, Umstieg alt → §12 samt „§12 nachziehen" (zweimal = dasselbe), Aussenmessung, Lesewege ohne `spieler` ganz, Anmelden (Name, Name#Nummer, Auswahl, Gast, unbekannt, freigegeben), Freund suchen nur Name#Nummer, Nummer ändern (ein Schritt, Wettlauf), Anlegen mit neuem Würfeln, Gast/Gast sichern, Neu verbinden, Entfernen, Marke nur bei öffentlichen Änderungen, `stufe` durchgereicht, Auszug = voller Fortschritt, Gegenproben, 401 mitten im Lauf |
+| `test-keine-nummer.js` | Keine fremde Nummer im Bild (v0.154.0): Freunde-Karte im nachgebauten DOM |
 
 Dazu kommt **`bildschirm-umgebung.js`** — die gemeinsame Testumgebung der drei
 Bildschirm-Testdateien (nachgebautes DOM, echte `js\`-Dateien im vm-Kontext,
@@ -38,6 +41,12 @@ Ausgangslage). Sie ist bewusst **keine** Testdatei: Sie beginnt nicht mit
 `test-`, wird vom Läufer also nicht gestartet, und erzeugt selbst keine
 Prüfungen. Jede der drei Testdateien lädt sie per `require()` und bekommt so
 ihre eigene, frische Umgebung.
+
+Ebenso keine Testdatei: **`regel-nachbau.js`** (seit v0.154.0) — wertet die
+Firebase-Regel-Ausdrücke wirklich aus (`.read`-Kaskade, `.write` je Pfad,
+`.validate` samt `$anderes`, `newData.parent()`, `auth.provider`) und stellt
+eine ganze Firebase (Anmeldung + Datenbank über REST) nach. Nachbau ist nicht
+Firebase: Die Gegenprobe gegen den Emulator steht aus (SICHERHEIT.md §14).
 
 ## Aufruf
 

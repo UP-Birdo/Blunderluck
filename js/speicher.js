@@ -460,17 +460,155 @@ class SpeicherKonten extends SpeicherGemeinsam {
         return Object.keys(aus).length > 0 ? aus : null;
     }
 
+    /*
+     * LADEN — UNTER BEIDEN REGELN (seit v0.154.0, Regel §12 Phase A,
+     * Apps\UPCrew\docs\DATENBANK-KONZEPT-12.md Abschnitt 4).
+     *
+     * Beim ersten Laden fragt `KONTO.regelErkennen`, welche Regel gilt.
+     *   alt  — wie bisher: der ganze Knoten `spieler`.
+     *   §12  — `geaendertAm` und `rollen`; dann
+     *          Admins/UP#Plus: `konten` ganz und `namen` (Verwaltung);
+     *          alle anderen: `oeffentlich` (fremde Auszüge) und nur
+     *          `konten/<ich>` (der eigene, volle Eintrag);
+     *          nicht angemeldet: keine Spieler.
+     * Antwortet die Datenbank mit 401, wird die Regel neu erkannt und
+     * einmal auf dem anderen Weg geladen. Das Ergebnis hat in beiden Fällen
+     * dieselbe Form (`alsListe`); fremde Einträge tragen unter §12 statt
+     * `fortschritt`, `tag`, `kennung` nur `auszug`.
+     */
     async laden() {
+        const regeln = (typeof KONTO !== "undefined" && typeof KONTO.regelErkennen === "function");
+        if (regeln && !KONTO.regelBekannt) {
+            await KONTO.regelErkennen();
+        }
+        let roh;
+        try {
+            roh = await this._rohLaden();
+        } catch (fehler) {
+            if (!regeln || !fehler || fehler.status !== 401) {
+                throw fehler;
+            }
+            const vorher = KONTO.regel;
+            await KONTO.regelErkennen();
+            if (KONTO.regel === vorher) {
+                throw fehler;
+            }
+            roh = await this._rohLaden();
+        }
+        const daten = this.aufbereiten(SpeicherKonten.alsListe(roh));
+        this._merken(daten);
+        if (regeln && KONTO.istP12()) {
+            this._selbstEintragen(daten);
+        }
+        return daten;
+    }
+
+    async _rohLaden() {
+        if (typeof KONTO !== "undefined" && typeof KONTO.istP12 === "function" && KONTO.istP12()) {
+            return this._ladenP12();
+        }
         const antwort = await this._rufen({ cache: "no-store" },
             SpeicherGemeinsam.ZEITLIMIT_LADEN_MS, "Das Laden");
-
         if (!antwort.ok) {
-            throw new Error("Laden fehlgeschlagen (HTTP " + antwort.status + ")");
+            throw SpeicherKonten._fehler("Laden fehlgeschlagen", antwort.status);
         }
+        return antwort.json();
+    }
 
-        const daten = this.aufbereiten(SpeicherKonten.alsListe(await antwort.json()));
-        this._merken(daten);
-        return daten;
+    static _fehler(text, status) {
+        const fehler = new Error(text + " (HTTP " + status + ")");
+        fehler.status = status;
+        return fehler;
+    }
+
+    /* Einen Unterknoten holen — null, wenn es ihn nicht gibt; wirft mit
+       `status` bei einer Absage (401 = Regel lässt es nicht zu). */
+    async _teilHolen(unterpfad) {
+        const ziel = this.basis + "/" + this.pfad + "/" + unterpfad + ".json";
+        const antwort = await this._rufen({ cache: "no-store" },
+            SpeicherGemeinsam.ZEITLIMIT_LADEN_MS, "Das Laden", ziel);
+        if (!antwort.ok) {
+            throw SpeicherKonten._fehler("Laden fehlgeschlagen", antwort.status);
+        }
+        return antwort.json();
+    }
+
+    async _ladenP12() {
+        const uid = this.eigeneUid ? this.eigeneUid() : null;
+        const [marke, rollen] = await Promise.all([this._teilHolen(SpeicherGemeinsam.MARKEN_FELD),
+            this._teilHolen("rollen")]);
+        const roh = { rollen: (rollen && typeof rollen === "object") ? rollen : {} };
+        if (typeof marke === "number") {
+            roh[SpeicherGemeinsam.MARKEN_FELD] = marke;
+        }
+        if (!uid) {
+            roh.konten = {};
+            return roh;
+        }
+        if (KONTO.istAdmin(roh, uid)) {
+            const [konten, namen, meinAuszug] = await Promise.all([this._teilHolen("konten"),
+                this._teilHolen("namen"), this._teilHolen("oeffentlich/" + uid)]);
+            roh.konten = (konten && typeof konten === "object") ? konten : {};
+            roh.namen = (namen && typeof namen === "object") ? namen : {};
+            this._oeffentlichVomServer = meinAuszug || null;
+            return roh;
+        }
+        const [oeffentlich, eigen] = await Promise.all([this._teilHolen("oeffentlich"),
+            this._teilHolen("konten/" + uid)]);
+        roh.konten = {};
+        const fremde = (oeffentlich && typeof oeffentlich === "object") ? oeffentlich : {};
+        this._oeffentlichVomServer = fremde[uid] || null;
+        for (const andere of Object.keys(fremde)) {
+            if (fremde[andere] && typeof fremde[andere] === "object") {
+                roh.konten[andere] = fremde[andere];
+            }
+        }
+        if (eigen && typeof eigen === "object") {
+            roh.konten[uid] = eigen;
+        }
+        return roh;
+    }
+
+    /*
+     * Unter §12 trägt sich jedes Konto beim ersten Laden je Sitzung selbst
+     * in `oeffentlich` und das Anmeldeverzeichnis ein, wenn dort etwas
+     * fehlt oder abweicht (Konzept Phase A: „UP#Plus trägt sich beim ersten
+     * Start im Modus §12 selbst ein" — und jeder andere auch). Still, im
+     * Hintergrund; ein Fehler wird beim nächsten Start wiederholt.
+     */
+    async _selbstEintragen(daten) {
+        if (this._eingetragen) {
+            return;
+        }
+        const eigener = this._eigener(daten);
+        if (!eigener || !KONTO.angemeldet()) {
+            return;
+        }
+        this._eingetragen = true;
+        try {
+            const eintrag = Object.assign(SpeicherKonten.eintragFuerServer(eigener), { uid: eigener.uid });
+            const pfade = KONTO.oeffentlichePfade(eintrag, null);
+            const soll = KONTO.anmeldungVon(eintrag);
+            const verzeichnis = soll ? await KONTO.verzeichnisLesen(eintrag.name) : [];
+            if (verzeichnis === null) {
+                this._eingetragen = false;
+                return;
+            }
+            const ist = verzeichnis.find((zeile) => zeile.uid === eintrag.uid) || null;
+            const verzeichnisPasst = !soll
+                || (!!ist && ist.k === soll.k && ist.f === (soll.f === true));
+            const text = JSON.stringify(pfade);
+            if (verzeichnisPasst && KONTO._gleich(this._oeffentlichVomServer,
+                    pfade["oeffentlich/" + eintrag.uid])) {
+                this.zuletztOeffentlich = text;
+                return;
+            }
+            pfade[SpeicherGemeinsam.MARKEN_FELD] = Date.now();
+            await this.teilSchreiben(pfade);
+            this.zuletztOeffentlich = text;
+        } catch (fehler) {
+            this._eingetragen = false;
+        }
     }
 
     _eigener(daten) {
@@ -503,9 +641,36 @@ class SpeicherKonten extends SpeicherGemeinsam {
 
         const aenderungen = {};
         aenderungen["konten/" + eigener.uid] = eintrag;
-        aenderungen[SpeicherGemeinsam.MARKEN_FELD] = Date.now();
-        await this.teilSchreiben(aenderungen);
+
+        /* Regel §12 (seit v0.154.0): Auszug und Verzeichnis-Eintrag im
+           SELBEN Schritt — aber nur, wenn sie sich geändert haben, und nur
+           dann zieht auch die Marke hoch (Konzept §4: „Marke nur, wenn sich
+           der Auszug ändert"). Unter der alten Regel wie bisher. */
+        let oeffentlichText = null;
+        if (typeof KONTO !== "undefined" && typeof KONTO.istP12 === "function" && KONTO.istP12()) {
+            const pfade = KONTO.oeffentlichePfade(Object.assign({}, eintrag, { uid: eigener.uid }), null);
+            oeffentlichText = JSON.stringify(pfade);
+            if (oeffentlichText !== this.zuletztOeffentlich) {
+                Object.assign(aenderungen, pfade);
+                aenderungen[SpeicherGemeinsam.MARKEN_FELD] = Date.now();
+            }
+        } else {
+            aenderungen[SpeicherGemeinsam.MARKEN_FELD] = Date.now();
+        }
+        try {
+            await this.teilSchreiben(aenderungen);
+        } catch (fehler) {
+            /* Eine Absage (401) kann heissen: Die Regel hat gewechselt. Beim
+               nächsten Laden wird neu erkannt. */
+            if (typeof KONTO !== "undefined" && /HTTP 401/.test(String(fehler && fehler.message))) {
+                KONTO.regelBekannt = false;
+            }
+            throw fehler;
+        }
         this.zuletzt = text;
+        if (oeffentlichText !== null) {
+            this.zuletztOeffentlich = oeffentlichText;
+        }
     }
 
     /*
@@ -519,6 +684,15 @@ class SpeicherKonten extends SpeicherGemeinsam {
         const aenderungen = Object.assign({}, weitere || {});
         aenderungen["konten/" + uid] = (eintrag === null)
             ? null : SpeicherKonten.eintragFuerServer(eintrag);
+        /* Regel §12 (seit v0.154.0): Auszug und Verzeichnis ziehen mit. */
+        if (typeof KONTO !== "undefined" && typeof KONTO.istP12 === "function" && KONTO.istP12()) {
+            if (eintrag === null) {
+                aenderungen["oeffentlich/" + uid] = null;
+            } else {
+                Object.assign(aenderungen, KONTO.oeffentlichePfade(
+                    Object.assign({}, aenderungen["konten/" + uid], { uid: uid }), null));
+            }
+        }
         aenderungen[SpeicherGemeinsam.MARKEN_FELD] = Date.now();
         await this.teilSchreiben(aenderungen);
 

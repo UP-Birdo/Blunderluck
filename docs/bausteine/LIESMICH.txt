@@ -6,3 +6,7 @@ Die Datei hier ist damit überflüssig und kann gelöscht werden (wartet auf das
 
 upcrew-sammlung.css: ERLEDIGT 27.09.2026 — der Fix .up-sm[hidden] { display: none; } steht in final
 und ist mit v0.151.16 byte-gleich übernommen. Kann ebenfalls gelöscht werden (wartet auf OK).
+
+upcrew-shop.js: ERLEDIGT 28.09.2026 — die Optionen `texte` und `bilder` (Zeit zurück als Uhr) stehen in
+final; die Datei hier ist byte-gleich mit final und mit v0.153.0 byte-gleich in js\upcrew-shop.js
+übernommen. Kann gelöscht werden (wartet auf OK).

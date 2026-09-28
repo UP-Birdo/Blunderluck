@@ -255,7 +255,16 @@ const SPIELER = {
      * Namens-Platz.
      */
     istVerteiler(spieler) {
-        return !!spieler && spieler.tag === "Plus"
+        if (!spieler) {
+            return false;
+        }
+        /* Unter Regel §12 (seit v0.154.0) tragen fremde Einträge keine
+           Nummer mehr (`spieler/oeffentlich`) — dann erkennt ihn seine feste
+           Konto-Nummer (`KONTO.OBER_UID`, steht ohnehin in der Regel). */
+        if (typeof KONTO !== "undefined" && KONTO.OBER_UID && spieler.uid === KONTO.OBER_UID) {
+            return true;
+        }
+        return spieler.tag === "Plus"
             && String(spieler.name || "").trim().toLowerCase() === "up";
     },
 
@@ -554,6 +563,12 @@ const SPIELER = {
             /* Der Fortschritt (seit v0.146.0) — sonst stünde das Level
                eines anderen Geräts erst nach einer anderen Änderung da. */
             if (JSON.stringify(spielerA.fortschritt || null) !== JSON.stringify(spielerB.fortschritt || null)) {
+                return false;
+            }
+
+            /* Der öffentliche Auszug (seit v0.154.0, Regel §12) — unter §12
+               kommt ein fremdes Level nur darüber. */
+            if (JSON.stringify(spielerA.auszug || null) !== JSON.stringify(spielerB.auszug || null)) {
                 return false;
             }
 

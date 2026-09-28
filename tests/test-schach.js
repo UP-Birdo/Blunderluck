@@ -1637,25 +1637,34 @@ pruefe("Wo keine Figur mehr steht, faellt die Marke weg (v0.102)", () => {
     gleich(ohne.schildFarbe, "", "und seine Seite auch");
 });
 
-pruefe("Ein eigener ZUG verbraucht das Schild weiterhin (v3.3, geprueft v0.102)", () => {
+pruefe("Das Schild sperrt das Ziehen der geschuetzten Figur (v0.153.0)", () => {
     /*
-     * DIE GRENZE, auf die es ankommt: Geschoben zu werden ist kein Zug. Zieht
-     * die geschuetzte Figur selbst, verfaellt ihr Schild wie seit jeher —
-     * sonst waere aus der neuen Regel versehentlich ein dauerhafter Schutz
-     * geworden.
+     * BIS v0.152.x verbrauchte ein eigener Zug das Schild (Regel seit v3.3).
+     * Seit v0.153.0 (Nutzer 28.09.2026: „ja soll sperren") kann die
+     * geschuetzte Figur gar nicht ziehen, solange das Schild haelt. Die
+     * anderen Figuren derselben Seite ziehen wie immer.
      */
     const stand = standAus({ "e1": "K", "e8": "k", "d4": "L" }, "weiss", {
         schildFeld: SCHACH.feldNummer("d4"),
         schildFarbe: "weiss"
     });
 
-    /* Ein Laeufer zieht schraeg — d4 nach e5. */
-    const gezogen = SCHACH.ziehen(stand, SCHACH.feldNummer("d4"),
-        SCHACH.feldNummer("e5"));
+    gleich(SCHACH.zuege(stand, SCHACH.feldNummer("d4")).length, 0,
+        "der geschuetzte Laeufer hat keinen Zug");
+    wahr(SCHACH.zuege(stand, SCHACH.feldNummer("e1")).length > 0,
+        "der Koenig zieht weiter");
+    wahr(SCHACH.alleZuege(stand).every((zug) => zug.von !== SCHACH.feldNummer("d4")),
+        "auch alleZuege bietet ihn nicht an");
+    gleich(SCHACH.ziehen(stand, SCHACH.feldNummer("d4"), SCHACH.feldNummer("e5")), null,
+        "d4 nach e5 wird abgewiesen");
 
-    wahr(gezogen !== null, "der Zug geht");
-    gleich(gezogen.stand.schildFeld, -1,
-        "wer selbst zieht, nimmt sein Schild nicht mit");
+    /* Ohne Schild zieht derselbe Laeufer. */
+    const frei = Object.assign({}, stand, { schildFeld: -1, schildFarbe: "" });
+    wahr(SCHACH.zuege(frei, SCHACH.feldNummer("d4")).length > 0, "ohne Schild zieht er");
+
+    /* Das Schild des GEGNERS sperrt die eigene Figur nicht. */
+    const fremd = Object.assign({}, stand, { amZug: "weiss", schildFarbe: "schwarz" });
+    wahr(SCHACH.zuege(fremd, SCHACH.feldNummer("d4")).length > 0, "fremdes Schild sperrt nicht");
 });
 
 /* ------------------------------------------------------------------ *

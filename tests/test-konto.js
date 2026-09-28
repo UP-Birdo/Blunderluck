@@ -640,19 +640,31 @@ function oberAnlegen(w) {
         gleich(w.dialog.listen.length, 0, "keine Auswahl");
     });
 
-    await pruefe("Freunde: Name ohne Nummer, die Nummer nur leise bei gleichen Namen", async () => {
+    await pruefe("Freunde: Name ohne Nummer, bei gleichen Namen Level N statt Nummer (v0.154.0)", async () => {
         const w = await welt();
+        vm.runInContext(dateisystem.readFileSync(
+            pfad.join(__dirname, "..", "js", "fortschritt.js"), "utf8"), w.umgebung);
         const FREUNDE = vm.runInContext(dateisystem.readFileSync(
             pfad.join(__dirname, "..", "js", "freunde.js"), "utf8") + ";\nFREUNDE", w.umgebung);
-        const liste = [{ name: "Jonas", tag: "0001" }, { name: "jonas", tag: "4821" },
+        const liste = [{ name: "Jonas", tag: "0001" },
+            { name: "jonas", tag: "4821", fortschritt: { version: 1, spiele: { blunderluck: { xp: 250 } } } },
             { name: "Mia", tag: "1234" }];
         gleich(FREUNDE._name(liste[0]), "Jonas", "ohne Nummer");
-        gleich(FREUNDE._nummerZusatz(liste, liste[1]), "#4821", "gleicher Name");
-        gleich(FREUNDE._nummerZusatz(liste, liste[2]), "", "eindeutig");
-        wahr(FREUNDE._passt(liste[1], "jon"), "Name");
-        wahr(FREUNDE._passt(liste[1], "jonas#48"), "Name#Nummer");
-        wahr(!FREUNDE._passt(liste[0], "jonas#48"), "andere Nummer");
-        wahr(!FREUNDE._passt(liste[2], "12"), "Nummer allein zählt nicht");
+        gleich(FREUNDE._gleichNameZusatz(liste, liste[1]), "Level 3", "gleicher Name: Level");
+        gleich(FREUNDE._gleichNameZusatz(liste, liste[0]), "Level 1", "gleicher Name: Level 1");
+        gleich(FREUNDE._gleichNameZusatz(liste, liste[2]), "", "eindeutig");
+        wahr(typeof FREUNDE._nummerZusatz === "undefined", "keine Nummer-Anzeige mehr");
+    });
+
+    await pruefe("Freund suchen nur mit Name#Nummer (alte Regel: aus der Liste, v0.154.0)", async () => {
+        const w = await welt();
+        await jonasUmziehen(w);
+        const nurName = await w.KONTO.freundFinden(w.abgleich.daten, "Jonas");
+        gleich(nurName.fehler, "nummer", "nur Name: Nummer nötig");
+        const treffer = await w.KONTO.freundFinden(w.abgleich.daten, "jonas#0001");
+        gleich(treffer.spieler && treffer.spieler.name, "Jonas", "Name#Nummer findet");
+        const falsch = await w.KONTO.freundFinden(w.abgleich.daten, "Jonas#0002");
+        wahr(!falsch.spieler && !falsch.fehler, "falsche Nummer: niemand");
     });
 
     await pruefe("Neues Konto: danach nur der Name, keine Nummer und kein Dialog", async () => {

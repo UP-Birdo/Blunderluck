@@ -964,6 +964,15 @@ const START = {
             }
         }
 
+        /* HAND MAX: VORGABE „OHNE GRENZE" (seit v0.153.0, Nutzer 28.09.2026:
+           „nein derzeit noch unendlich"). Unter v0.152.4 merkte sich das Gerät
+           die damalige Vorgabe 4 auch ungefragt; eine gemerkte Zahl gilt
+           deshalb nur, wenn der Spieler sie selbst gewählt hat. Laufende
+           Partien tragen ihre Grenze in `regeln.itemMax` und bleiben unberührt. */
+        if (vorgabe.itemMaxGewaehlt !== true) {
+            vorgabe.itemMax = SCHACH_VARIANTEN.ITEM_MAX_VORGABE;
+        }
+
         /* Die Item-Liste ist die einzige Sammlung — sie muss eine bleiben. */
         if (!Array.isArray(vorgabe.itemAuswahl)) {
             vorgabe.itemAuswahl = [];

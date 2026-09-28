@@ -1625,6 +1625,18 @@ const SCHACH = {
             return [];
         }
 
+        /*
+         * DAS SCHILD SPERRT DAS ZIEHEN (seit v0.153.0, Nutzer 28.09.2026:
+         * „ja soll sperren"). Bis v0.152.x durfte die geschützte Figur ziehen
+         * und verlor dabei ihr Schild. Jetzt steht sie still, solange das
+         * Schild hält — also für den Rest des eigenen Zugs; nach dem Zug des
+         * Gegners ist es ohnehin weg. Bleibt dadurch gar kein Zug übrig, weist
+         * `SCHACH_RUNDE._wirkungVerboten` das Einsetzen ab („keinZug").
+         */
+        if (stand.schildFeld === von && stand.schildFarbe === farbe) {
+            return [];
+        }
+
         let roh = SCHACH._rohzuege(stand, von);
 
         /*

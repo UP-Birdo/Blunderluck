@@ -15,9 +15,9 @@
  * Modell — geschrieben wird über den Spieler-Abgleich MIT Zusammenführung,
  * denn geändert wird ausschliesslich der eigene Eintrag.
  *
- * Die Freundeslisten sind — wie alles in dieser Datenbank — öffentlich
- * lesbar (docs\entscheidungen\offen-und-abgelehnt.md, „Die offene
- * Datenbank").
+ * Die Freundeslisten sind öffentlich lesbar (docs\entscheidungen\offen-und-
+ * abgelehnt.md, „Die offene Datenbank") — unter Regel §12 (seit v0.154.0)
+ * nur noch für Angemeldete, im öffentlichen Auszug `spieler/oeffentlich`.
  */
 
 const FREUNDE = {
@@ -29,30 +29,34 @@ const FREUNDE = {
         return spieler.name;
     },
 
-    /* Die Nummer leise hinter dem Namen — nur, wenn es den Namen unter den
-       Mitspielern mehrmals gibt; sonst "". */
-    _nummerZusatz(liste, spieler) {
-        if (!spieler || !spieler.tag || typeof KONTO === "undefined") {
+    /*
+     * GLEICHE NAMEN: „Level N" leise hinter dem Namen — nur, wenn es den
+     * Namen unter den Mitspielern mehrmals gibt; sonst "". Bis v0.153.0
+     * stand hier die Nummer (#1234). Seit v0.154.0 (Regel §12, Konzept K6,
+     * Nutzer F1) sieht die Nummer eines anderen niemand mehr — sie ist sein
+     * Freundescode; nur der Besitzer sieht sie im eigenen Profil.
+     */
+    _gleichNameZusatz(liste, spieler) {
+        if (!spieler || typeof KONTO === "undefined") {
             return "";
         }
         const schluessel = KONTO.nameSchluessel(spieler.name);
         const gleich = liste.filter((anderer) =>
             KONTO.nameSchluessel(anderer.name) === schluessel).length;
-        return gleich > 1 ? "#" + spieler.tag : "";
-    },
-
-    /* Passt der Spieler zum Suchtext? Name, oder Name#Nummer, wenn die
-       Nummer mitgetippt wurde. */
-    _passt(spieler, gesucht) {
-        if (spieler.name.toLowerCase().indexOf(gesucht) !== -1) {
-            return true;
+        if (gleich <= 1 || typeof FORTSCHRITT === "undefined") {
+            return "";
         }
-        return gesucht.indexOf("#") !== -1 && !!spieler.tag
-            && (spieler.name + "#" + spieler.tag).toLowerCase().indexOf(gesucht) !== -1;
+        return "Level " + FORTSCHRITT.auszugLevel(FORTSCHRITT.auszugVon(spieler)).level;
     },
 
     /* Der Suchtext überlebt das Neuzeichnen der Karte. */
     suchtext: "",
+
+    /* Das Ergebnis der letzten Suche nach „Name#Nummer" (seit v0.154.0):
+       { eingabe, spieler | null, fehler }. Die Suche fragt die Datenbank
+       (Regel §12: gezielt ein Namens-Platz) — erst, wenn Name und vier
+       Zeichen Nummer dastehen. */
+    _suchErgebnis: null,
 
     /* Baut die Karte „Freunde" für den Zwischenbildschirm. */
     karteBauen(person) {
@@ -78,7 +82,7 @@ const FREUNDE = {
 
         const sicht = SPIELER.freundeVon(daten, person.id);
         const alle = SPIELER.mitspieler(daten);
-        const zusatz = (spieler) => FREUNDE._nummerZusatz(alle, spieler);
+        const zusatz = (spieler) => FREUNDE._gleichNameZusatz(alle, spieler);
 
         /* Offene Anfragen zuerst — sie warten auf eine Antwort. */
         if (sicht.offen.length > 0) {
@@ -129,15 +133,21 @@ const FREUNDE = {
             }
         }
 
-        /* Die Suche: ein Filter über die Spielerliste — sie liegt ohnehin
-           vollständig im Speicher. */
+        /*
+         * DIE SUCHE NUR MIT „NAME#NUMMER" (seit v0.154.0, Regel §12, Nutzer
+         * F1: „bei der Freundes-Suche muss man den # eingeben"). Bis v0.153.0
+         * filterte sie die ganze Spielerliste nach dem Namen — das verwechselt
+         * gleiche Namen und verrät Nummern. Jetzt: erst mit Name und vier
+         * Zeichen Nummer fragt `KONTO.freundFinden` (unter §12 gezielt ein
+         * Namens-Platz), sonst steht nur der Hinweis da.
+         */
         const feld = document.createElement("input");
         feld.className = "freunde-suche";
         feld.type = "text";
         feld.value = FREUNDE.suchtext;
-        feld.placeholder = "Name …";
+        feld.placeholder = "Name#1234";
         feld.autocomplete = "off";
-        feld.setAttribute("aria-label", "Freunde suchen");
+        feld.setAttribute("aria-label", "Freunde suchen · Name#Nummer");
         karte.appendChild(feld);
 
         const treffer = document.createElement("div");
@@ -146,28 +156,43 @@ const FREUNDE = {
 
         const trefferZeigen = () => {
             treffer.innerHTML = "";
-            const gesucht = FREUNDE.suchtext.trim().toLowerCase();
+            const gesucht = FREUNDE.suchtext.trim();
             if (gesucht === "") {
                 return;
             }
-
+            /* Ohne UPCrew-Konto (lokaler Modus, Tests) gibt es keine
+               Nummern — dort bleibt der Namens-Filter wie bis v0.153.0. */
+            if (typeof KONTO === "undefined" || !KONTO.aktiv()) {
+                FREUNDE._namenFilterZeigen(treffer, person, gesucht.toLowerCase());
+                return;
+            }
+            const teile = KONTO.eingabeZerlegen(gesucht);
+            if (!teile.tag || teile.tag.length !== 4) {
+                treffer.appendChild(ZUSTAND.leer({ zeichen: "lupe", text: "Name#Nummer nötig" }));
+                return;
+            }
+            const ergebnis = FREUNDE._suchErgebnis;
+            if (!ergebnis || ergebnis.eingabe !== gesucht) {
+                treffer.appendChild(ZUSTAND.laden({ zeilen: 1 }));
+                FREUNDE._suchen(gesucht, trefferZeigen);
+                return;
+            }
+            if (ergebnis.fehler) {
+                treffer.appendChild(ZUSTAND.leer({ zeichen: "lupe", text: "Keine Verbindung" }));
+                return;
+            }
             const stand = SPIELER.normalisieren(ANMELDUNG.abgleich.daten);
-            const gefunden = SPIELER.mitspieler(stand).filter((anderer) =>
-                anderer.id !== person.id
-                && FREUNDE._passt(anderer, gesucht)
-                && SPIELER.freundschaft(stand, person.id, anderer.id) === "keine");
-
-            if (gefunden.length === 0) {
+            const anderer = ergebnis.spieler;
+            if (!anderer || anderer.id === person.id || SPIELER.istVerteiler(anderer)
+                    || SPIELER.istGast(anderer)
+                    || SPIELER.freundschaft(stand, person.id, anderer.id) !== "keine") {
                 treffer.appendChild(ZUSTAND.leer({ zeichen: "lupe", text: "Niemand gefunden" }));
                 return;
             }
-
-            for (const anderer of gefunden) {
-                treffer.appendChild(FREUNDE._zeileBauen(FREUNDE._name(anderer), [
-                    FREUNDE._knopf("Anfrage senden", "knopf-still knopf-klein",
-                        () => FREUNDE.anfragen(anderer.id))
-                ], anderer.id, FREUNDE._nummerZusatz(SPIELER.mitspieler(stand), anderer)));
-            }
+            treffer.appendChild(FREUNDE._zeileBauen(FREUNDE._name(anderer), [
+                FREUNDE._knopf("Anfrage senden", "knopf-still knopf-klein",
+                    () => FREUNDE.anfragen(anderer.id))
+            ], null, ""));
         };
 
         feld.addEventListener("input", () => {
@@ -178,6 +203,48 @@ const FREUNDE = {
 
         return karte;
     },
+
+    /* Der Namens-Filter über die geladene Liste — nur ohne UPCrew-Konto. */
+    _namenFilterZeigen(treffer, person, gesucht) {
+        const stand = SPIELER.normalisieren(ANMELDUNG.abgleich.daten);
+        const gefunden = SPIELER.mitspieler(stand).filter((anderer) =>
+            anderer.id !== person.id
+            && anderer.name.toLowerCase().indexOf(gesucht) !== -1
+            && SPIELER.freundschaft(stand, person.id, anderer.id) === "keine");
+        if (gefunden.length === 0) {
+            treffer.appendChild(ZUSTAND.leer({ zeichen: "lupe", text: "Niemand gefunden" }));
+            return;
+        }
+        for (const anderer of gefunden) {
+            treffer.appendChild(FREUNDE._zeileBauen(FREUNDE._name(anderer), [
+                FREUNDE._knopf("Anfrage senden", "knopf-still knopf-klein",
+                    () => FREUNDE.anfragen(anderer.id))
+            ], anderer.id, ""));
+        }
+    },
+
+    /* Einmal nachschlagen und danach neu zeigen — nur, wenn der Suchtext
+       inzwischen derselbe ist. */
+    async _suchen(eingabe, danach) {
+        if (FREUNDE._sucheLaeuft === eingabe) {
+            return;
+        }
+        FREUNDE._sucheLaeuft = eingabe;
+        let ergebnis;
+        try {
+            ergebnis = await KONTO.freundFinden(ANMELDUNG.abgleich.daten, eingabe);
+        } catch (fehler) {
+            ergebnis = { fehler: "netz" };
+        }
+        FREUNDE._sucheLaeuft = null;
+        FREUNDE._suchErgebnis = { eingabe: eingabe, spieler: ergebnis.spieler || null,
+            fehler: ergebnis.fehler === "netz" };
+        if (FREUNDE.suchtext.trim() === eingabe && typeof danach === "function") {
+            danach();
+        }
+    },
+
+    _sucheLaeuft: null,
 
     /* ---------------------------------------------------------------- *
      * Bedienung — jede Aktion ändert NUR den eigenen Eintrag

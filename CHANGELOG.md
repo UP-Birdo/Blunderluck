@@ -3,6 +3,37 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.154.0 — 28.09.2026
+
+**Bereit für den Datenschutz (Regel §12) — heute ändert sich fast nichts.**
+
+- Die App erkennt selbst, welche Datenbank-Regel gilt. Unter der heutigen
+  läuft alles wie bisher; sobald du die neue Regel §12 einspielst, liest
+  niemand mehr die Konten anderer: Andere sehen nur Name, Freunde, Abzeichen
+  und Level (ein öffentlicher Auszug), angemeldet wird über ein Verzeichnis
+  je Name.
+- **Die Nummer anderer siehst du nirgends mehr** — sie ist ihr Freundescode.
+  Bei gleichen Namen steht „Level N" dahinter. Deine eigene Nummer siehst und
+  änderst du im Profil.
+- **Freunde suchen nur noch mit Name#Nummer** (z. B. „Anna#4242").
+- Fremdes Level und fremde Abzeichen im Profil kommen aus dem Auszug —
+  dieselben Zahlen wie bisher.
+- Für UP#Plus: in der Verwaltung „§12 nachziehen" (erscheint erst, wenn die
+  neue Regel gilt).
+
+## v0.153.0 — 28.09.2026
+
+**Deine Antworten zu Schild, Hand und Shop.**
+
+- **Das Schild sperrt:** Eine Figur mit Schutzschild kann nicht ziehen,
+  solange das Schild hält (bisher durfte sie ziehen und verlor es dabei).
+  Wäre sie deine einzige Figur mit einem Zug, lässt sich das Schild auf ihr
+  gar nicht erst einsetzen. Die Warnung an der Karte sagt es.
+- **Hand max: Vorgabe ohne Grenze.** Neue Runden starten ohne Grenze; der
+  Schalter 2/3/4/5/Alle bleibt. Wer selbst eine Zahl wählt, behält sie;
+  laufende Runden behalten ihre Einstellung.
+- **Shop:** „Zeit zurück" zeigt eine Uhr statt des Herzens.
+
 ## v0.152.5 — 28.09.2026
 
 **Weniger Datenverbrauch, und dein Aussehen folgt dir auf jedes Gerät.**

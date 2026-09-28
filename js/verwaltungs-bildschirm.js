@@ -109,6 +109,12 @@ const VERWALTUNGS_BILDSCHIRM = {
             wurzel.appendChild(liste);
         }
 
+        /* „§12 nachziehen" (seit v0.154.0): nur UP#Plus, nur unter Regel §12. */
+        const nachziehen = mitKonto ? VERWALTUNGS_BILDSCHIRM._nachziehenBauen() : null;
+        if (nachziehen) {
+            wurzel.appendChild(nachziehen);
+        }
+
         /*
          * BRETT-ANPASSUNG (seit v0.129.0, Nutzer-Ansage 24.09.2026): Farben,
          * Figuren und Blick des 3D-Bretts stellt nur der Admin um. Der
@@ -215,6 +221,45 @@ const VERWALTUNGS_BILDSCHIRM = {
             beiAuswahl: (zeile) => DIALOG.hinweis(zeile.name + (zeile.tag ? "#" + zeile.tag : ""), "",
                 UPCREW_SPIELERLISTE.details(zeile))
         });
+        return karte;
+    },
+
+    /*
+     * „§12 NACHZIEHEN" (seit v0.154.0, Apps\UPCrew\docs\DATENBANK-KONZEPT-12.md
+     * Phase A Punkt 4 und Phase B Schritt 2): Direkt nach dem Einspielen der
+     * Regel §12 fehlen die öffentlichen Auszüge und das Anmeldeverzeichnis —
+     * bis dahin stehen keine Namen in den Listen, und auf neuen Geräten geht
+     * die Anmeldung mit Namen nicht. Der Knopf schreibt beides für alle
+     * Konten (`KONTO.nachziehen`), wiederholbar. Sichtbar nur für UP#Plus
+     * und nur, wenn die App die Regel §12 erkannt hat.
+     */
+    _nachziehenBauen() {
+        if (typeof KONTO === "undefined" || typeof KONTO.istP12 !== "function"
+                || !KONTO.istP12() || KONTO.uid() !== KONTO.OBER_UID) {
+            return null;
+        }
+        const karte = document.createElement("section");
+        karte.className = "karte";
+        const kopf = document.createElement("h2");
+        kopf.textContent = "Regel §12";
+        karte.appendChild(kopf);
+        const text = document.createElement("p");
+        text.className = "erklaerung";
+        text.textContent = "Auszüge und Anmeldeverzeichnis für alle Konten · wiederholbar";
+        karte.appendChild(text);
+        const knopf = VERWALTUNGS_BILDSCHIRM._knopf("§12 nachziehen", "knopf-still", async () => {
+            knopf.disabled = true;
+            const ergebnis = await KONTO.nachziehen(ANMELDUNG.abgleich.speicher);
+            knopf.disabled = false;
+            if (!ergebnis.ok) {
+                await DIALOG.hinweis("Nicht nachgezogen", ergebnis.text);
+                return;
+            }
+            await ANMELDUNG._kontoNachladen();
+            await DIALOG.hinweis("Nachgezogen", ergebnis.geschrieben + " geschrieben · "
+                + ergebnis.uebersprungen + " übersprungen");
+        });
+        karte.appendChild(knopf);
         return karte;
     },
 

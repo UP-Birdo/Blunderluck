@@ -578,7 +578,12 @@ Object.assign(TEAM_SCHACH, {
                 bild: TEAM_SCHACH._handKartenBild(eintrag.wert || 5, stufen)
             })),
             String(Number.isInteger(regeln.itemMax) ? regeln.itemMax : SCHACH_VARIANTEN.ITEM_MAX_VORGABE),
-            (id) => TEAM_SCHACH._regelSetzen("itemMax", Number(id))));
+            (id) => {
+                /* Selbst gewählt (seit v0.153.0): nur dann merkt sich das
+                   Gerät die Grenze — siehe `START.regeln`. */
+                TEAM_SCHACH.neueRegeln.itemMaxGewaehlt = true;
+                TEAM_SCHACH._regelSetzen("itemMax", Number(id));
+            }));
         seite.appendChild(hand);
 
         /* Sieht man, was drin ist? Ein Bild für jede Antwort. */

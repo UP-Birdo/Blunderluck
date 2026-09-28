@@ -84,8 +84,9 @@ pruefe("D: Schutzschild warnt, die aktive Karte zeigt die Warnung", () => {
     const schild = SCHACH_VARIANTEN.FAEHIGKEITEN
         ? [].concat(SCHACH_VARIANTEN.FAEHIGKEITEN).find((f) => f && f.id === "schutzschild") : null;
     const quelle = lesen("js/schach-varianten.js");
-    wahr((schild && /Schild ist weg|Schild weg/.test(schild.warnung || ""))
-        || /warnung: "Achtung · Figur stehen lassen, sonst ist das Schild weg"/.test(quelle), "Warnung am Schild");
+    /* Seit v0.153.0 sperrt das Schild das Ziehen — die Warnung sagt das. */
+    wahr((schild && /kann nicht ziehen/.test(schild.warnung || ""))
+        || /warnung: "Achtung · Figur kann nicht ziehen, solange das Schild hält"/.test(quelle), "Warnung am Schild");
     wahr(/hand-aktiv-warnung", beschreibung\.warnung/.test(lesen("js/team-schach.js")), "Anzeige an der Karte");
     wahr(/\.hand-aktiv-warnung \{/.test(lesen("css/stil-auswertung.css")), "Stil");
 });

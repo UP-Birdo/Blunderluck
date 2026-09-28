@@ -915,13 +915,13 @@ const SCHACH_VARIANTEN = {
                Spielverlauf — man hat es gemerkt, nachdem es passiert war. */
             beschreibung: "Eine eigene Figur überlebt den nächsten Angriff: Der Schlag "
                 + "verpufft, der Angreifer bleibt stehen. Das Schild hängt an der "
-                + "FIGUR — ziehst du mit ihr, ist es weg. Auf den König wirkt es "
-                + "nicht.",
+                + "FIGUR, und solange es hält, kann sie nicht ziehen. Auf den "
+                + "König wirkt es nicht.",
             /* Die Warnung am Einsetzen (seit v0.152.4, Nutzer 28.09.2026:
                „Der Schild sollte eine Warnung haben: Achtung, die Figur kann
-               sich nicht bewegen, solange aktiv"). Nach der Regel KANN sie
-               ziehen — dann ist das Schild weg; die Warnung sagt beides. */
-            warnung: "Achtung · Figur stehen lassen, sonst ist das Schild weg"
+               sich nicht bewegen, solange aktiv"). Seit v0.153.0 sperrt das
+               Schild das Ziehen wirklich (`SCHACH.zuege`, „ja soll sperren"). */
+            warnung: "Achtung · Figur kann nicht ziehen, solange das Schild hält"
         },
         /*
          * DAS ERDBEBEN IST SEIT v0.54 KEINE FÄHIGKEIT MEHR.
@@ -2661,9 +2661,9 @@ const SCHACH_VARIANTEN = {
      * „ein Max an Items einstellen, alles, was man über das Max aufnimmt,
      * verpufft"). `wert` 0 = ohne Grenze. Eine Partie ohne Angabe hat keine
      * Grenze (additiver Vertrag); was der Anlege-Bildschirm vorschlägt, steht
-     * in `ITEM_MAX_VORGABE`: 4 — genau so viele Karten zeigt die Hand
-     * nebeneinander, ohne zu rollen, und bei „Regen" stapeln sich sonst
-     * Karten, die man nie ausspielt.
+     * in `ITEM_MAX_VORGABE`. Bis v0.152.x war das 4 (so viele Karten zeigt
+     * die Hand ohne Rollen); seit v0.153.0 ist es 0 = ohne Grenze (Nutzer
+     * 28.09.2026: „nein derzeit noch unendlich"). Der Schalter bleibt.
      */
     ITEM_MAX: [
         { id: "2", wert: 2, titel: "2" },
@@ -2673,7 +2673,7 @@ const SCHACH_VARIANTEN = {
         { id: "frei", wert: 0, titel: "Alle", hinweis: "ohne Grenze" }
     ],
 
-    ITEM_MAX_VORGABE: 4,
+    ITEM_MAX_VORGABE: 0,
 
     /* Der Eintrag zu einem Wert — Unbekanntes gilt als „ohne Grenze". */
     itemMaxVon(wert) {

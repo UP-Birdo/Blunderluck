@@ -160,8 +160,10 @@ const TEAM_SCHACH = {
         itemVorrat: "alle",
 
         /* Höchstens so viele Items auf der Hand (seit v0.152.4); 0 = ohne
-           Grenze. Vorschlag 4 — Begründung bei `SCHACH_VARIANTEN.ITEM_MAX`. */
+           Grenze. Vorgabe seit v0.153.0 „ohne Grenze" — Begründung bei
+           `SCHACH_VARIANTEN.ITEM_MAX`. */
         itemMax: SCHACH_VARIANTEN.ITEM_MAX_VORGABE,
+        itemMaxGewaehlt: false,
 
 
         /* Die selbst angehakte Liste (seit v0.100) - nur bei
@@ -4842,6 +4844,10 @@ const TEAM_SCHACH = {
             armeeStaerke: "normal",
             itemVorrat: "alle",
             itemMax: SCHACH_VARIANTEN.ITEM_MAX_VORGABE,
+            /* Hat der Spieler die Grenze selbst gewählt? (seit v0.153.0)
+               Nur dann gilt eine gemerkte Zahl — die 4 aus v0.152.4 war
+               bloss die damalige Vorgabe. */
+            itemMaxGewaehlt: false,
 
             /* Die selbst angehakte Liste (seit v0.100) - nur bei
                `itemVorrat: "auswahl"` von Bedeutung. */

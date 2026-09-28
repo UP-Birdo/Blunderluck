@@ -247,9 +247,12 @@ Startseiten, Zufallsarmee und Figurenzahl, Risse und Mauern, Zugwege.
   (`schildFeld`) und die Fessel (`fesselFeld`). **Wer eine fünfte
   figurgebundene Angabe erfindet, trägt sie dort ein** — es gibt keinen zweiten
   Ort dafür, und der alte Name war schon seit v0.98 falsch.
-  **Der gemeinsame Nenner: Geschoben zu werden ist KEIN Zug.** Deshalb
-  verbraucht ein eigener Zug das Schild weiterhin (Regel seit v3.3), ein Schub
-  aber nicht — genau wie beim Doppelschritt-Recht der Bauern. Wo nach dem Schub
+  **Der gemeinsame Nenner: Geschoben zu werden ist KEIN Zug.** Ein Schub
+  nimmt das Schild mit — genau wie beim Doppelschritt-Recht der Bauern.
+  **Seit v0.153.0 sperrt das Schild das Ziehen** (Nutzer 28.09.2026 „ja soll
+  sperren", `SCHACH.zuege`): Die geschützte Figur zieht nicht, solange es hält;
+  bis v0.152.x verbrauchte ein eigener Zug das Schild (Regel seit v3.3). Bliebe
+  der Seite dadurch kein Zug, wird das Einsetzen abgewiesen. Wo nach dem Schub
   keine Figur mehr steht, fällt die Marke weg; sonst erbt sie die nächste
   Figur, die dort hinzieht.
   **DER FROST GEHÖRT NICHT DAZU:** Er sperrt eine FLÄCHE (2×2) und ist eine

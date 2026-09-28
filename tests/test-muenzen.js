@@ -207,6 +207,27 @@ pruefe("Shop: drei Karten, Preis, Du hast, gesperrt ohne Geld, Kaufen ruft die A
     }
 });
 
+pruefe("Shop: Zeit zurück zeigt die Uhr (Option bilder, seit v0.153.0 aus final)", () => {
+    global.document = dom();
+    global.UPCREW_MUENZEN = M;
+    try {
+        const S = require(pfad.join(projekt, "js", "upcrew-shop.js"));
+        const uhr = "M4.5 12 A7.5 7.5 0 1 0 6.7 6.7 L4 9.4 M4 5.4 V9.4 H8 M12 8 V12 L14.5 13.5";
+        const behaelter = global.document.createElement("section");
+        const griff = S.bauen(behaelter, { titel: "Shop", lesen: () => ({}), kaufen: async () => true,
+            bilder: { leben: uhr } });
+        const pfadVon = (karte) => karte.kinder[0].kinder[0].kinder[0].attribute.d;
+        const karten = griff.liste.kinder;
+        gleich(pfadVon(karten[1]), uhr, "Zeit zurück: Uhr");
+        wahr(pfadVon(karten[0]) && pfadVon(karten[0]) !== uhr, "Schild: gemeinsames Bild");
+        const shop = lesen("js/shop.js");
+        wahr(shop.indexOf(uhr) !== -1 && /bilder: SHOP\.BILDER/.test(shop), "Blunderluck gibt die Uhr mit");
+    } finally {
+        delete global.document;
+        delete global.UPCREW_MUENZEN;
+    }
+});
+
 /* ---------------- Konto und Einbindung ---------------- */
 
 pruefe("Die Schleuse zum Konto lässt die neuen Zähler durch (Regel §11b: Buchstaben-Namen mit Zahlen)", () => {

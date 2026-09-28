@@ -924,7 +924,9 @@ const RANGLISTE = {
      * Level mit dem, was sie bringen, und woher XP kommen.
      *
      * Das eigene Level kommt aus js\fortschritt-konto.js (Gerät + Konto),
-     * ein fremdes aus dem Feld `fortschritt` seines Eintrags. Ohne den
+     * ein fremdes seit v0.154.0 aus dem öffentlichen Auszug
+     * (`FORTSCHRITT.auszugVon`: unter der alten Regel aus `fortschritt`
+     * gerechnet, unter Regel §12 aus `spieler/oeffentlich`). Ohne den
      * Baustein (Tests) gibt es keine Karte.
      */
     _levelKarteBauen(person, istIch) {
@@ -933,7 +935,7 @@ const RANGLISTE = {
         }
         const lv = (istIch && typeof FORTSCHRITT_KONTO !== "undefined")
             ? FORTSCHRITT_KONTO.level()
-            : FORTSCHRITT.level(person.fortschritt || null);
+            : FORTSCHRITT.auszugLevel(FORTSCHRITT.auszugVon(person));
 
         const karte = RANGLISTE._element("section", "karte level-karte");
 
@@ -1007,11 +1009,16 @@ const RANGLISTE = {
         if (typeof UPCREW_ABZEICHEN === "undefined" || typeof FORTSCHRITT === "undefined") {
             return [];
         }
-        const stand = (istIch && typeof FORTSCHRITT_KONTO !== "undefined")
-            ? FORTSCHRITT_KONTO.lesen()
-            : ((person && person.fortschritt) || null);
-        const sauber = FORTSCHRITT.normalisieren(stand);
         const heute = FORTSCHRITT.datumVon(Date.now());
+        /* Fremde seit v0.154.0 über den öffentlichen Auszug (Regel §12;
+           unter der alten Regel aus ihrem `fortschritt` gerechnet —
+           dieselben Zahlen, test-regel-12.js). */
+        if (!istIch || typeof FORTSCHRITT_KONTO === "undefined") {
+            const auszug = FORTSCHRITT.auszugVon(person, heute);
+            return UPCREW_ABZEICHEN.liste(FORTSCHRITT.auszugAlsStand(auszug),
+                FORTSCHRITT.auszugSerie(auszug, heute));
+        }
+        const sauber = FORTSCHRITT.normalisieren(FORTSCHRITT_KONTO.lesen());
         const schutz = FORTSCHRITT.schutzVerdient(FORTSCHRITT.level(sauber).level);
         const laufend = FORTSCHRITT.serie(sauber, heute, schutz).tage;
         return UPCREW_ABZEICHEN.liste(sauber, laufend);

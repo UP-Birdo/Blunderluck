@@ -4,7 +4,7 @@
  *
  * Geprüft: Regel im Datenvertrag (Vorgabe ohne Grenze für alte Partien, nur kleine ganze Zahlen), volle Hand →
  * die eingesammelte Lootbox verpufft (weg vom Brett, nicht in der Hand, Verlauf „verpufft"), für Menschen und Bob,
- * ohne Grenze wie bisher; der Dieb füllt nur bis zur Grenze; der Anlege-Bildschirm schlägt 4 vor, die Schildchen
+ * ohne Grenze wie bisher; der Dieb füllt nur bis zur Grenze; der Anlege-Bildschirm schlägt seit v0.153.0 „ohne Grenze" vor (bis v0.152.x 4), die Schildchen
  * nennen „Hand max N".
  *
  * Aufruf: siehe tests\README.md
@@ -68,7 +68,7 @@ pruefe("Datenvertrag: alte Partie ohne Grenze, nur 1–20 zählt", () => {
     gleich(R.normalisieren({ regeln: { itemMax: 99 } }).regeln.itemMax, 0, "Unsinn");
     gleich(R.normalisieren({ regeln: { itemMax: "4" } }).regeln.itemMax, 0, "kein Text");
     gleich(V.ITEM_MAX.map((e) => e.wert), [2, 3, 4, 5, 0], "Stufen");
-    gleich(V.ITEM_MAX_VORGABE, 4, "Vorschlag 4");
+    gleich(V.ITEM_MAX_VORGABE, 0, "Vorgabe ohne Grenze (seit v0.153.0)");
 });
 
 pruefe("Volle Hand: die Lootbox verpufft (weg vom Brett, nicht in der Hand)", () => {
@@ -113,7 +113,7 @@ pruefe("Der Dieb füllt nur bis zur Grenze", () => {
     }
 });
 
-pruefe("Anlegen schlägt 4 vor, Schildchen nennen die Grenze, Rückschau ohne Verpuffen", () => {
+pruefe("Anlegen schlägt ohne Grenze vor, Schildchen nennen die Grenze, Rückschau ohne Verpuffen", () => {
     const ts = fs.readFileSync(pfad.join(__dirname, "..", "js", "team-schach.js"), "utf8");
     wahr(/itemMax: SCHACH_VARIANTEN\.ITEM_MAX_VORGABE/.test(ts), "Vorgabe im Bildschirm");
     wahr(/itemMax: wunsch\.itemMax/.test(ts), "Anlegen gibt sie mit");

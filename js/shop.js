@@ -39,9 +39,9 @@ const SHOP = {
     },
 
     /* Eigene Bilder je Ware: Zeit zurück als Uhr statt Herz (wie
-       ZUSTAND.ZEICHEN["zeit-zurueck"]). VORSCHLAG an final
-       (`docs\bausteine\upcrew-shop.js`, Option `bilder`) — der heutige
-       Baustein kennt die Option noch nicht und zeigt bis dahin das Herz. */
+       ZUSTAND.ZEICHEN["zeit-zurueck"]; Nutzer 28.09.2026 „ja eine uhr").
+       Option `bilder` des Bausteins, seit v0.153.0 in final und
+       byte-gleich in `js\upcrew-shop.js`. */
     BILDER: {
         leben: "M4.5 12 A7.5 7.5 0 1 0 6.7 6.7 L4 9.4 M4 5.4 V9.4 H8 M12 8 V12 L14.5 13.5"
     },
