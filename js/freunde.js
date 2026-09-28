@@ -30,23 +30,14 @@ const FREUNDE = {
     },
 
     /*
-     * GLEICHE NAMEN: „Level N" leise hinter dem Namen — nur, wenn es den
-     * Namen unter den Mitspielern mehrmals gibt; sonst "". Bis v0.153.0
-     * stand hier die Nummer (#1234). Seit v0.154.0 (Regel §12, Konzept K6,
-     * Nutzer F1) sieht die Nummer eines anderen niemand mehr — sie ist sein
-     * Freundescode; nur der Besitzer sieht sie im eigenen Profil.
+     * DIE NUMMER KLEIN HINTER DEM NAMEN — bei ALLEN (seit v0.155.0, Nutzer
+     * 28.09.2026: „name und dann in klein # mit dem tag"; gleich in
+     * Rangliste und Profil, `KONTO.tagZusatz`). v0.154.0 zeigte statt der
+     * Nummer „Level N" nur bei gleichen Namen — überholt.
      */
-    _gleichNameZusatz(liste, spieler) {
-        if (!spieler || typeof KONTO === "undefined") {
-            return "";
-        }
-        const schluessel = KONTO.nameSchluessel(spieler.name);
-        const gleich = liste.filter((anderer) =>
-            KONTO.nameSchluessel(anderer.name) === schluessel).length;
-        if (gleich <= 1 || typeof FORTSCHRITT === "undefined") {
-            return "";
-        }
-        return "Level " + FORTSCHRITT.auszugLevel(FORTSCHRITT.auszugVon(spieler)).level;
+    _tagZusatz(spieler) {
+        return (typeof KONTO !== "undefined" && typeof KONTO.tagZusatz === "function")
+            ? KONTO.tagZusatz(spieler) : "";
     },
 
     /* Der Suchtext überlebt das Neuzeichnen der Karte. */
@@ -81,8 +72,7 @@ const FREUNDE = {
         }
 
         const sicht = SPIELER.freundeVon(daten, person.id);
-        const alle = SPIELER.mitspieler(daten);
-        const zusatz = (spieler) => FREUNDE._gleichNameZusatz(alle, spieler);
+        const zusatz = (spieler) => FREUNDE._tagZusatz(spieler);
 
         /* Offene Anfragen zuerst — sie warten auf eine Antwort. */
         if (sicht.offen.length > 0) {
@@ -192,7 +182,7 @@ const FREUNDE = {
             treffer.appendChild(FREUNDE._zeileBauen(FREUNDE._name(anderer), [
                 FREUNDE._knopf("Anfrage senden", "knopf-still knopf-klein",
                     () => FREUNDE.anfragen(anderer.id))
-            ], null, ""));
+            ], null, FREUNDE._tagZusatz(anderer)));
         };
 
         feld.addEventListener("input", () => {
@@ -219,7 +209,7 @@ const FREUNDE = {
             treffer.appendChild(FREUNDE._zeileBauen(FREUNDE._name(anderer), [
                 FREUNDE._knopf("Anfrage senden", "knopf-still knopf-klein",
                     () => FREUNDE.anfragen(anderer.id))
-            ], anderer.id, ""));
+            ], anderer.id, FREUNDE._tagZusatz(anderer)));
         }
     },
 

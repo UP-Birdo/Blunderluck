@@ -568,7 +568,8 @@ const SPIELER = {
 
             /* Der öffentliche Auszug (seit v0.154.0, Regel §12) — unter §12
                kommt ein fremdes Level nur darüber. */
-            if (JSON.stringify(spielerA.auszug || null) !== JSON.stringify(spielerB.auszug || null)) {
+            if (JSON.stringify(spielerA.auszug || null) !== JSON.stringify(spielerB.auszug || null)
+                || spielerA.spielzeitOeffentlich !== spielerB.spielzeitOeffentlich) {
                 return false;
             }
 
@@ -595,6 +596,18 @@ const SPIELER = {
      * verdient hat, weiss die Rangliste; der Bildschirm bietet nur
      * Verdientes an. Mehr als drei nimmt die Normalisierung ohnehin nicht.
      */
+    /* Der Haken „Spielzeit öffentlich" am eigenen Eintrag (seit v0.155.2). */
+    spielzeitOeffentlichSetzen(daten, id, an, zeitpunkt) {
+        const neu = SPIELER.kopieren(daten);
+        for (const spieler of neu.spieler) {
+            if (spieler.id === id) {
+                spieler.spielzeitOeffentlich = (an === true);
+            }
+        }
+        neu.geaendertAm = (zeitpunkt === undefined) ? Date.now() : zeitpunkt;
+        return neu;
+    },
+
     abzeichenSetzen(daten, id, liste, zeitpunkt) {
         const neu = SPIELER.kopieren(daten);
         const sauber = (Array.isArray(liste) ? liste : [])

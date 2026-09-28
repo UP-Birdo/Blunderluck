@@ -1916,12 +1916,31 @@ const SCHACH_RUNDE = {
             return neu;
         }
 
+        /* HÖCHSTENS TEAM_MAX JE TEAM (seit v0.155.2, Nutzer 28.09.2026:
+           „dann begrenze die Anzahl je Team bei Blunderluck auf 3
+           Spieler"). Ein volles Team nimmt niemanden mehr auf — auch
+           keinen Nachzügler und keinen Bot. Wer schon drin sitzt, bleibt;
+           ältere Partien mit mehr Spielern laufen unverändert weiter. */
+        if (!bisher && SCHACH_RUNDE.teamVoll(neu, farbe)) {
+            return neu;
+        }
+
         neu.teams.weiss = neu.teams.weiss.filter((id) => id !== spielerId);
         neu.teams.schwarz = neu.teams.schwarz.filter((id) => id !== spielerId);
         neu.teams[farbe].push(spielerId);
 
         neu.geaendertAm = (zeitpunkt === undefined) ? Date.now() : zeitpunkt;
         return neu;
+    },
+
+    /* Wie viele höchstens in einem Team sitzen (seit v0.155.2). Die Regel
+       §14 prüft die Plätze 0 bis TEAM_MAX − 1 (SICHERHEIT.md). */
+    TEAM_MAX: 3,
+
+    /* Ist dieses Team voll? */
+    teamVoll(runde, farbe) {
+        const teams = (runde && runde.teams) || {};
+        return Array.isArray(teams[farbe]) && teams[farbe].length >= SCHACH_RUNDE.TEAM_MAX;
     },
 
     teamVerlassen(runde, spielerId, zeitpunkt) {

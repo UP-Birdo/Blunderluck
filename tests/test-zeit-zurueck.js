@@ -334,9 +334,11 @@ async function alles() {
         matt.geaendertAm = ++uhr + 100000;
         return matt;
     };
-    const abschlussZeichnen = () => {
+    /* Seit v0.155.1 zeigt nur die OFFENE Partie ihren Abschluss — die
+       Partie ist hier also offen, als sie endet. */
+    const abschlussZeichnen = (id) => {
         TEAM_SCHACH.abschluss = null;
-        TEAM_SCHACH.offeneId = "";
+        TEAM_SCHACH.offeneId = id;
         TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
     };
 
@@ -344,7 +346,7 @@ async function alles() {
         FK.lager.leben = 2;
         const matt = verlorenGegenBob("p-zz-ende");
         einsetzen(matt);
-        abschlussZeichnen();
+        abschlussZeichnen(matt.id);
         wahr(TEAM_SCHACH.abschluss && TEAM_SCHACH.abschluss.id === matt.id, "Abschluss erscheint");
         gleich(FK.istGezaehlt(matt.id), false, "noch nicht gebucht");
         TEAM_SCHACH.abschluss.schritt = 1;
@@ -366,12 +368,12 @@ async function alles() {
         nochmal.ergebnis = "schwarz";
         nochmal.laeuft = false;
         einsetzen(nochmal);
-        abschlussZeichnen();
+        abschlussZeichnen(matt.id);
         gleich(FK.istGezaehlt(matt.id), false, "wartet wieder (noch 1 Vorrat)");
         TEAM_SCHACH.abschlussSchliessen(matt.id);
         gleich(FK.gebucht.filter((id) => id === matt.id).length, 1, "beim Schliessen gebucht");
         TEAM_SCHACH.abschlussSchliessen(matt.id);
-        abschlussZeichnen();
+        abschlussZeichnen(matt.id);
         gleich(FK.gebucht.filter((id) => id === matt.id).length, 1, "nie doppelt");
         gleich(TEAM_SCHACH.zeitZurueckMoeglich(nochmal, { id: "id-anna" }), false, "gebucht: kein Zeit zurück mehr");
     });
@@ -380,7 +382,7 @@ async function alles() {
         FK.lager.leben = 0;
         const matt = verlorenGegenBob("p-zz-leer");
         einsetzen(matt);
-        abschlussZeichnen();
+        abschlussZeichnen(matt.id);
         wahr(FK.istGezaehlt(matt.id), "sofort gebucht wie bisher");
         TEAM_SCHACH.abschluss.schritt = 1;
         TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
@@ -391,7 +393,7 @@ async function alles() {
         const { p } = zweiZuege("p-zz-auf");
         const aufgegeben = SCHACH_RUNDE.aufgeben(p, "weiss", ++uhr + 200000);
         einsetzen(aufgegeben);
-        abschlussZeichnen();
+        abschlussZeichnen(aufgegeben.id);
         wahr(FK.istGezaehlt(aufgegeben.id), "Aufgabe bucht sofort");
         TEAM_SCHACH.abschluss.schritt = 1;
         TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);

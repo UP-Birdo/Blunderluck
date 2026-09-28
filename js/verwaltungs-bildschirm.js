@@ -263,6 +263,15 @@ const VERWALTUNGS_BILDSCHIRM = {
         return karte;
     },
 
+    /* „N min" / „Nh+" aus dem Konto-Fortschritt, „–" ohne (Gast, alt). */
+    spielzeitText(spieler) {
+        if (typeof FORTSCHRITT === "undefined" || typeof FORTSCHRITT.spielzeitText !== "function"
+                || !spieler || !spieler.fortschritt) {
+            return "–";
+        }
+        return FORTSCHRITT.spielzeitText(FORTSCHRITT.spielzeitSumme(spieler.fortschritt));
+    },
+
     _kontoTabelleBauen() {
         const rollbereich = document.createElement("div");
         rollbereich.className = "tabelle-rollbereich";
@@ -271,7 +280,7 @@ const VERWALTUNGS_BILDSCHIRM = {
 
         const tabellenkopf = document.createElement("thead");
         const kopfzeile = document.createElement("tr");
-        for (const beschriftung of ["Name", "Konto", "Rolle", "Freunde", ""]) {
+        for (const beschriftung of ["Name", "Konto", "Rolle", "Freunde", "Spielzeit", ""]) {
             const zelle = document.createElement("th");
             zelle.textContent = beschriftung;
             kopfzeile.appendChild(zelle);
@@ -304,6 +313,9 @@ const VERWALTUNGS_BILDSCHIRM = {
                 : (spieler.neuVerbinden === true ? "freigegeben" : "verbunden"));
             zelle(rolle || "-");
             zelle(String(spieler.freunde.length));
+            /* Spielzeit über beide Spiele (seit v0.155.0; Admins lesen die
+               vollen Konten). Gäste zählen nur auf ihrem Gerät. */
+            zelle(VERWALTUNGS_BILDSCHIRM.spielzeitText(spieler));
 
             const aktion = document.createElement("td");
             aktion.className = "verwaltung-aktion";

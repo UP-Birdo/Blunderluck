@@ -3,6 +3,51 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.155.2 — 28.09.2026
+
+**Spielzeit-Haken am Konto, höchstens drei je Team.**
+
+- **„Spielzeit öffentlich"** gilt jetzt für dein Konto — auf jedem Gerät und
+  in jedem UPCrew-Spiel gleich (bisher je Gerät). Zu finden in den
+  Einstellungen, Karte „UPCrew-Konto". Standard bleibt privat.
+- **Höchstens 3 Spieler je Team:** Ein volles Team ist im Vorraum als
+  „voll · 3/3" markiert und lässt sich nicht wählen; auch der Zufall, ein
+  Code oder ein Nachzügler kommen nicht mehr hinein. Laufende ältere Runden
+  mit mehr Spielern laufen weiter.
+
+## v0.155.1 — 28.09.2026
+
+**Kein altes Ergebnis mehr beim Rundenstart, und gegen Bob geht es sofort los.**
+
+- **Fehler behoben:** Wer eine neue Runde startete, bekam das Ergebnis der
+  letzten Runde über die neue gelegt (wenn man es vorher weggewischt statt
+  geschlossen hatte). Jetzt zeigt nur die Runde, in der du gerade warst, ihr
+  Ergebnis — und zwar, wenn sie endet. Ältere Ergebnisse werden still
+  gebucht (XP, Münzen, Turm zählen genau einmal) und stehen weiter in der
+  Übersicht unter „Ergebnis ansehen".
+- **Gegen Bob direkt ins Spiel:** kein Vorraum, kein „Bereit". Deine Farbe
+  wird beim Anlegen zufällig bestimmt und bleibt auch nach dem Neuladen.
+  Wer die Seite selbst wählen will (Zufall aus), wählt wie bisher; Runden
+  mit Menschen bleiben, wie sie sind.
+
+## v0.155.0 — 28.09.2026
+
+**Nummer sichtbar, Spielzeit, keine Streifen mehr beim Intro.**
+
+- **Name und klein #Nummer** bei allen Spielern — in der Rangliste, im
+  Profil und bei den Freunden. Das „Level N" bei gleichen Namen fällt weg.
+- **Spielzeit:** Die App zählt, wie lange sie offen und sichtbar ist — je
+  Spiel. Du siehst sie in deinem Profil (je Spiel, gesamt und „dabei
+  seit"), auch als Gast; beim Sichern des Gast-Spielstands zieht sie mit.
+  Unter einer Stunde steht „N min", danach „1h+", „2h+" … Sie ist
+  **privat**; in den Einstellungen kannst du sie öffentlich schalten.
+  Admins sehen sie in der Verwaltung.
+- **Intro am PC:** Die dünnen Streifen links und rechts sind weg; das
+  Brett bleibt mittig.
+- Vorbereitet für die Datenbank-Regel §12: Partien löschen nur noch
+  Mitspieler oder Admins, die Nummer und (wenn öffentlich) die Spielzeit im
+  öffentlichen Profil.
+
 ## v0.154.0 — 28.09.2026
 
 **Bereit für den Datenschutz (Regel §12) — heute ändert sich fast nichts.**

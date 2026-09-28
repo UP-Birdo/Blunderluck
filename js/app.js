@@ -377,6 +377,12 @@ const APP = {
            weiter, deshalb wird NICHT darauf gewartet (wie in Typoluck). */
         INTRO.zeigen(document.getElementById("intro"));
 
+        /* Die Spielzeit (seit v0.155.0): gezählt, solange die Seite sichtbar
+           ist (FORTSCHRITT_KONTO.spielzeitStarten). */
+        if (typeof FORTSCHRITT_KONTO !== "undefined") {
+            FORTSCHRITT_KONTO.spielzeitStarten();
+        }
+
         /* ---- Das UPCrew-Konto (seit v0.138.0, js\konto.js) ----
            Jede Anfrage an die Datenbank trägt den Anmelde-Schlüssel; die
            Regeln lassen nur angemeldete Konten schreiben. Erkennt Firebase

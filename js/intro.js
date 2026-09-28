@@ -158,13 +158,62 @@ const INTRO = {
         if (!behaelter || typeof UPCREW_INTRO === "undefined" || !INTRO.faellig()) {
             return Promise.resolve(null);
         }
-        return UPCREW_INTRO.zeigen(behaelter, {
+        const fertig = UPCREW_INTRO.zeigen(behaelter, {
             modus: INTRO.modus(),
             /* Die eigene Farbwelt (seit v0.151.17; seit v0.152.4 über
                `welt`, wie Typoluck). */
             welt: INTRO.welt(),
             app: { nr: INTRO.APP_NR, name: INTRO.APP_NAME, version: KONFIG.APP_VERSION }
         });
+        INTRO._raenderDecken(behaelter, fertig);
+        return fertig;
+    },
+
+    /*
+     * DIE DÜNNEN STREIFEN AM PC (seit v0.155.0, Nutzer 28.09.2026: „dünne
+     * Streifen beim Intro am PC beheben").
+     *
+     * Ursache, im Browser mit klassischen Rollbalken gemessen (15 px): `html`
+     * hält seit v0.152.3 den Platz des Rollbalkens auf BEIDEN Seiten frei
+     * (`scrollbar-gutter: stable both-edges`, damit das Brett mittig sitzt).
+     * Ein festes Element mit `inset: 0` — das Intro — endet an diesem Rand:
+     * links blieb ein 15-px-Streifen in der Seitenfarbe, rechts der
+     * Rollbalken. Der Baustein `upcrew-intro.*` bleibt unverändert (final).
+     *
+     * Behebung hier: Solange das Intro steht, trägt `html` die Klasse
+     * `intro-offen` (css\stil.css): kein Rollbalken (`overflow: hidden` —
+     * der reservierte Platz bleibt, also verschiebt sich nichts) und als
+     * Hintergrund die Farbe des Intros (`--intro-rand`). Beim Ausblenden
+     * (`upi-weg`) geht der Rand mit derselben Dauer in die Seitenfarbe über.
+     */
+    _raenderDecken(behaelter, fertig) {
+        const wurzel = document.documentElement;
+        if (!wurzel || !wurzel.classList || behaelter.hidden) {
+            return;
+        }
+        const farbe = behaelter.style ? behaelter.style.background : "";
+        if (farbe && wurzel.style && wurzel.style.setProperty) {
+            wurzel.style.setProperty("--intro-rand", farbe);
+        }
+        wurzel.classList.add("intro-offen");
+        let beobachter = null;
+        const aufraeumen = () => {
+            wurzel.classList.remove("intro-offen", "intro-weg");
+            if (beobachter) {
+                beobachter.disconnect();
+            }
+        };
+        if (typeof MutationObserver !== "undefined") {
+            beobachter = new MutationObserver(() => {
+                if (behaelter.hidden) {
+                    aufraeumen();
+                } else if (behaelter.classList.contains("upi-weg")) {
+                    wurzel.classList.add("intro-weg");
+                }
+            });
+            beobachter.observe(behaelter, { attributes: true, attributeFilter: ["class", "hidden"] });
+        }
+        Promise.resolve(fertig).then(aufraeumen, aufraeumen);
     }
 };
 

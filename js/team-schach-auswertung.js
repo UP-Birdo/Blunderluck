@@ -625,7 +625,16 @@ Object.assign(TEAM_SCHACH, {
 
     /* Abschluss weglegen: Die Partie gilt auf diesem Gerät als erledigt —
        dauerhaft, also auch nach dem Neuladen der Seite. */
-    abschlussSchliessen(id) {
+    /*
+     * EINEN ABSCHLUSS ERLEDIGEN, ohne irgendwohin zu gehen (seit v0.155.1):
+     * buchen (einmal — der Fortschritt merkt sich die Kennung) und auf
+     * diesem Gerät als gesehen merken. Gerufen beim Schliessen und, wenn
+     * eine ANDERE Partie geöffnet wird, während noch ein Abschluss offen
+     * war (`partieOeffnen`) — sonst hing das alte Ergebnis über der neuen
+     * Runde (Nutzer 28.09.2026: „wenn man eine Runde startet, kommt immer
+     * das Ergebnis von der letzten Runde").
+     */
+    _abschlussErledigen(id) {
         /* Eine Niederlage, deren Buchung auf Zeit zurück wartete
            (`_buchungWartet`, seit v0.152.2), zählt jetzt — einmal: Der
            Fortschritt merkt sich die Kennung, ein zweiter Aufruf bucht
@@ -646,6 +655,13 @@ Object.assign(TEAM_SCHACH, {
             }
         }
         ICH.abschlussMerken(id);
+        if (TEAM_SCHACH.abschluss && TEAM_SCHACH.abschluss.id === id) {
+            TEAM_SCHACH.abschluss = null;
+        }
+    },
+
+    abschlussSchliessen(id) {
+        TEAM_SCHACH._abschlussErledigen(id);
         TEAM_SCHACH.abschluss = null;
         TEAM_SCHACH.offeneId = "";
         TEAM_SCHACH._auswahlAufheben();

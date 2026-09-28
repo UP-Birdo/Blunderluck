@@ -171,6 +171,7 @@ const EINSTELLUNGEN = {
                     EINSTELLUNGEN._zeichnen();
                 }, "Vibration")
                 : EINSTELLUNGEN._element("span", "schild", "nicht möglich")));
+
         return karte;
     },
 
@@ -210,6 +211,28 @@ const EINSTELLUNGEN = {
                 + (eintrag.gast === true ? " · nur dieses Gerät" : "");
         }
         karte.appendChild(stand);
+
+        /* Spielzeit öffentlich zeigen? (seit v0.155.0, Nutzer 28.09.2026:
+           „okay privat"). Standard `FORTSCHRITT.SPIELZEIT_OEFFENTLICH_STANDARD`
+           (aus). Seit v0.155.2 AM KONTO (`spielzeitOeffentlich`, geschrieben
+           über den Spieler-Abgleich wie Freunde und Abzeichen) — also auf
+           jedem Gerät und in jedem UPCrew-Spiel gleich. Öffentlich heisst: im
+           Profil für andere, sobald die Regel §12 gilt. Ohne Anmeldung keine
+           Zeile. */
+        const ichSelbst = (typeof ANMELDUNG !== "undefined" && typeof ANMELDUNG.ich === "function")
+            ? ANMELDUNG.ich() : null;
+        if (ichSelbst && typeof FORTSCHRITT !== "undefined"
+                && typeof FORTSCHRITT.spielzeitOeffentlichVon === "function") {
+            karte.appendChild(EINSTELLUNGEN._zeileBauen("uhr", "Spielzeit",
+                EINSTELLUNGEN._segmentBauen([
+                    { wert: false, text: "Privat" },
+                    { wert: true, text: "Öffentlich" }
+                ], FORTSCHRITT.spielzeitOeffentlichVon(ichSelbst), (wert) => {
+                    ANMELDUNG.abgleich.aendern(SPIELER.spielzeitOeffentlichSetzen(
+                        ANMELDUNG.abgleich.daten, ichSelbst.id, wert), false);
+                    EINSTELLUNGEN._zeichnen();
+                }, "Spielzeit")));
+        }
 
         const spalte = EINSTELLUNGEN._element("div", "knopf-spalte");
 

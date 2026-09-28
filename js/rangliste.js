@@ -288,6 +288,13 @@ const RANGLISTE = {
         behaelter.appendChild(RANGLISTE.wurzelEl);
     },
 
+    /* „#1234" eines Spielers oder "" (seit v0.155.0, `KONTO.tagZusatz`). */
+    tagVon(spielerDaten, id) {
+        const spieler = SPIELER.spielerFinden(spielerDaten, id);
+        return (typeof KONTO !== "undefined" && typeof KONTO.tagZusatz === "function")
+            ? KONTO.tagZusatz(spieler) : "";
+    },
+
     /* Wird bei jedem Tab-Wechsel und nach jeder Datenänderung gerufen. */
     beimOeffnen() {
         RANGLISTE.zeichnen();
@@ -402,7 +409,15 @@ const RANGLISTE = {
              * Punktestand, um den es geht, ging darin unter. Dieselben Zahlen
              * stehen jetzt im Profil, einen Fingertipp entfernt.
              */
-            nameKnopf.appendChild(RANGLISTE._element("span", "name-text", eintrag.name));
+            const nameText = RANGLISTE._element("span", "name-text", eintrag.name);
+
+            /* Die Nummer klein dahinter, bei allen (seit v0.155.0, Nutzer
+               28.09.2026: „name und dann in klein # mit dem tag"). */
+            const tag = RANGLISTE.tagVon(staende.spieler, eintrag.id);
+            if (tag) {
+                nameText.appendChild(RANGLISTE._element("span", "name-tag", tag));
+            }
+            nameKnopf.appendChild(nameText);
 
             nameZelle.appendChild(nameKnopf);
             zeile.appendChild(nameZelle);
@@ -776,6 +791,11 @@ const RANGLISTE = {
         if (abzeichenKarte) {
             wurzel.appendChild(abzeichenKarte);
         }
+        const spielzeitKarte = RANGLISTE._spielzeitKarteBauen(
+            SPIELER.spielerFinden(staende.spieler, person.id) || person, istIch);
+        if (spielzeitKarte) {
+            wurzel.appendChild(spielzeitKarte);
+        }
         wurzel.appendChild(RANGLISTE._profilReiterBauen(person, staende, verlauf));
 
         const inhalt = RANGLISTE._element("section", "karte profil-reiter-inhalt");
@@ -842,7 +862,12 @@ const RANGLISTE = {
             name ? name.charAt(0).toUpperCase() : "?"));
 
         const mitte = RANGLISTE._element("div", "visitenkarte-mitte");
-        mitte.appendChild(RANGLISTE._element("span", "visitenkarte-name", person.name));
+        const nameZeile = RANGLISTE._element("span", "visitenkarte-name", person.name);
+        const tag = RANGLISTE.tagVon(staende.spieler, person.id);
+        if (tag) {
+            nameZeile.appendChild(RANGLISTE._element("span", "name-tag", tag));
+        }
+        mitte.appendChild(nameZeile);
 
         const angaben = [];
         const platz = RANGLISTE._platzVon(person.id, staende);
@@ -1022,6 +1047,60 @@ const RANGLISTE = {
         const schutz = FORTSCHRITT.schutzVerdient(FORTSCHRITT.level(sauber).level);
         const laufend = FORTSCHRITT.serie(sauber, heute, schutz).tage;
         return UPCREW_ABZEICHEN.liste(sauber, laufend);
+    },
+
+    /*
+     * DIE SPIELZEIT (seit v0.155.0, Nutzer 28.09.2026): im EIGENEN Profil je
+     * Spiel, die Summe und „dabei seit" (auch als Gast — alles vom Gerät und
+     * Konto, `FORTSCHRITT_KONTO.spielzeit`). Im fremden Profil nur, wenn der
+     * andere sie öffentlich zeigt (dann steht sie in seinem Auszug), als
+     * Summe. Anzeige `FORTSCHRITT.spielzeitText` („N min", „Nh+").
+     */
+    SPIEL_NAMEN: { blunderluck: "Blunderluck", typoluck: "Typoluck" },
+
+    spielzeitZeilen(person, istIch) {
+        if (typeof FORTSCHRITT === "undefined" || typeof FORTSCHRITT.spielzeitText !== "function") {
+            return [];
+        }
+        if (istIch && typeof FORTSCHRITT_KONTO !== "undefined") {
+            const zeit = FORTSCHRITT_KONTO.spielzeit();
+            const zeilen = Object.keys(zeit.spiele).sort()
+                .filter((app) => zeit.spiele[app] > 0)
+                .map((app) => (RANGLISTE.SPIEL_NAMEN[app] || app) + " · " + FORTSCHRITT.spielzeitText(zeit.spiele[app]));
+            zeilen.push("Gesamt · " + FORTSCHRITT.spielzeitText(zeit.summe));
+            if (zeit.seit) {
+                zeilen.push("Dabei seit · " + RANGLISTE._tagText(zeit.seit));
+            }
+            return zeilen;
+        }
+        const auszug = FORTSCHRITT.auszugPruefen(person && person.auszug);
+        if (auszug && typeof auszug.werte.spielzeit === "number") {
+            return ["Gesamt · " + FORTSCHRITT.spielzeitText(auszug.werte.spielzeit)];
+        }
+        return [];
+    },
+
+    /* „2026-09-28" → „28.09.2026". */
+    _tagText(datum) {
+        const t = String(datum || "");
+        return /^\d{4}-\d{2}-\d{2}$/.test(t) ? t.slice(8, 10) + "." + t.slice(5, 7) + "." + t.slice(0, 4) : t;
+    },
+
+    _spielzeitKarteBauen(person, istIch) {
+        const zeilen = RANGLISTE.spielzeitZeilen(person, istIch);
+        if (zeilen.length === 0) {
+            return null;
+        }
+        const karte = RANGLISTE._element("section", "karte profil-spielzeit");
+        karte.appendChild(RANGLISTE._element("h3", "", istIch ? "Spielzeit · nur du" : "Spielzeit"));
+        for (const zeile of zeilen) {
+            karte.appendChild(RANGLISTE._element("p", "profil-spielzeit-zeile", zeile));
+        }
+        if (istIch) {
+            karte.appendChild(RANGLISTE._element("p", "erklaerung",
+                FORTSCHRITT.spielzeitOeffentlichVon(person) ? "Öffentlich · Einstellungen" : "Privat · Einstellungen"));
+        }
+        return karte;
     },
 
     abzeichenZeigen(eintrag) {

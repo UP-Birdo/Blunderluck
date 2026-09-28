@@ -121,6 +121,7 @@ function appLaden(fb) {
         },
         TABS: { wechseln() {} }
     };
+    umgebung.localStorage = umgebung.window.localStorage;
     umgebung.globalThis = umgebung;
     vm.createContext(umgebung);
 
@@ -229,15 +230,24 @@ const spieler = (fb) => fb.db.spieler;
             const konzept = dateisystem.readFileSync(konzeptPfad, "utf8");
             const i = konzept.indexOf("## 11. Regeltext §12");
             const a = konzept.indexOf("```json", i) + "```json".length + 1;
-            gleich(konzept.slice(a, konzept.indexOf("```", a)) === TEXT_12, true, "byte-gleich mit Konzept Abschnitt 11");
+            const konzeptText = konzept.slice(a, konzept.indexOf("```", a));
+            /* Seit v0.155.0 geht der Text von hier ins Konzept (die
+               Koordination überträgt ihn); verglichen wird, sobald das
+               Konzept die Ergänzungen von v0.155.2 trägt. */
+            if (konzeptText.indexOf("\"spielzeitOeffentlich\"") !== -1) {
+                gleich(konzeptText === TEXT_12, true, "byte-gleich mit Konzept Abschnitt 11");
+            }
         }
         const zeilen12 = new Set(TEXT_12.split("\n").map((z) => z.trim()));
         const fehlen = TEXT_11C.split("\n").map((z) => z.trim())
             .filter((z) => /"\.(read|write|validate)"/.test(z) && !zeilen12.has(z));
         /* Geändert laut Konzept: `spieler/.read` (gestrichen; als Zeile
            gleichlautend woanders vorhanden), `geaendertAm` (+ .read) und
-           `namen/$name/$tag` (Code mit Buchstaben, + .read). */
-        gleich(fehlen.map((z) => z.slice(0, 15)), ["\"geaendertAm\": ", "\"$tag\": { \".wri"], "nur die geänderten Zeilen fehlen");
+           `namen/$name/$tag` (Code mit Buchstaben, + .read). Seit v0.155.0
+           dazu `blunderluck` (.write wandert nach unten, Löschregel) und
+           `team-schach` (jetzt mehrzeilig). */
+        gleich(fehlen.map((z) => z.slice(0, 15)), ["\"geaendertAm\": ", "\"$tag\": { \".wri",
+            "\".write\": \"auth", "\"team-schach\": "], "nur die geänderten Zeilen fehlen");
         wahr(REGEL_11C.rules.spieler[".read"] === true && REGEL_12.rules.spieler[".read"] === undefined,
             "spieler/.read gestrichen");
     });
@@ -316,8 +326,9 @@ const spieler = (fb) => fb.db.spieler;
         gleich([nochmal.geschrieben, nochmal.uebersprungen], [0, anzahl], "zweiter Lauf: nichts zu tun");
         gleich(JSON.stringify(spieler(fb).oeffentlich), vorher, "gleiches Ergebnis");
         const auszug = spieler(fb).oeffentlich["uid-jonas2"];
-        gleich(Object.keys(auszug).sort(), ["auszug", "id", "name"], "nur erlaubte Felder");
-        wahr(!("tag" in auszug) && !("kennung" in auszug) && !("fortschritt" in auszug), "keine Nummer, Kennung, Fortschritt");
+        gleich(Object.keys(auszug).sort(), ["auszug", "id", "name", "tag"], "nur erlaubte Felder");
+        gleich(auszug.tag, "7777", "Nummer im Auszug (seit v0.155.0)");
+        wahr(!("kennung" in auszug) && !("fortschritt" in auszug), "keine Kennung, kein Fortschritt");
         gleich(auszug.auszug.xp, 900, "XP im Auszug");
     });
 
@@ -351,7 +362,7 @@ const spieler = (fb) => fb.db.spieler;
         const ich = daten.spieler.find((s) => s.name === "Anna");
         wahr(ich && ich.tag && ich.kennung, "eigener Eintrag mit Nummer");
         const bert = daten.spieler.find((s) => s.name === "Bert");
-        wahr(bert && !bert.tag && !bert.kennung && !bert.fortschritt && bert.auszug, "Bert nur als Auszug");
+        wahr(bert && bert.tag && !bert.kennung && !bert.fortschritt && bert.auszug, "Bert nur als Auszug (mit Nummer)");
         wahr(w.SPIELER.istVerteiler(daten.spieler.find((s) => s.uid === OBER)), "UP#Plus ohne Nummer erkannt");
         wahr(!w.SPIELER.mitspieler(daten).some((s) => s.uid === OBER), "UP#Plus in keiner Liste");
     });
@@ -416,6 +427,7 @@ const spieler = (fb) => fb.db.spieler;
         gleich(spieler(fb).namen.anna["4242"], ich.uid, "neuer Platz");
         wahr(!(alt in spieler(fb).namen.anna), "alter Platz frei");
         gleich(spieler(fb).konten[ich.uid].tag, "4242", "Konto");
+        gleich(spieler(fb).oeffentlich[ich.uid].tag, "4242", "Auszug zieht mit (seit v0.155.0)");
         const b = await angemeldetAls(fb, "Bert", PW.bert);
         wahr((await b.KONTO.freundFinden(b.abgleich.daten, "Anna#4242")).spieler, "neue Nummer gefunden");
         wahr(!(await b.KONTO.freundFinden(b.abgleich.daten, "Anna#" + alt)).spieler, "alte nicht mehr");
@@ -566,7 +578,10 @@ const spieler = (fb) => fb.db.spieler;
         gleich(F.auszugVon({ auszug: F.auszug(staende[1], heute) }, heute), F.auszug(staende[1], heute), "Auszug vom Eintrag");
         const oeff = w.KONTO.oeffentlichVon({ id: "i", name: "N", tag: "0001", kennung: "k", uid: "u",
             aussehen: {}, fortschritt: staende[1], stufe: {}, freunde: ["a"], abzeichen: [] });
-        gleich(Object.keys(oeff).sort(), ["auszug", "freunde", "id", "name"], "öffentlich nur erlaubte Felder");
+        gleich(Object.keys(oeff).sort(), ["auszug", "freunde", "id", "name", "tag"], "öffentlich nur erlaubte Felder");
+        wahr(!("spielzeit" in oeff.auszug.werte), "Spielzeit nur mit Haken");
+        gleich(w.KONTO.oeffentlichVon({ id: "i", name: "N", tag: "0001", fortschritt: staende[1] }, heute, true)
+            .auszug.werte.spielzeit, 0, "mit Haken: Spielzeit im Auszug");
     });
 
     await pruefe("Gegenproben: der Nachbau lehnt ab, was die Regel §12 verbietet", async () => {
@@ -584,6 +599,111 @@ const spieler = (fb) => fb.db.spieler;
         gleich(await schreiben({ ["anmeldung/bert/" + uid]: { k: spieler(fb).konten[uid].kennung } }), 401, "falscher Name im Verzeichnis");
         gleich(await schreiben({ ["konten/" + uid + "/stufe/typoluck"]: { wert: 5 } }), 401, "Stufe ohne runden/stand");
         gleich(await schreiben({ ["oeffentlich/" + uid]: mein }), 200, "eigener Auszug unverändert geht");
+    });
+
+    await pruefe("v0.155.0: tag im Auszug nur gleich dem Konto, Spielzeit in werte mit Grenze", async () => {
+        const w = await angemeldetAls(fb, "Anna", PW.anna);
+        const uid = w.KONTO.uid();
+        const token = await w.KONTO.token();
+        const schreiben = async (aenderungen) => (await fb.fetch(BASIS + "/spieler.json?auth=" + token,
+            { method: "PATCH", body: JSON.stringify(aenderungen) })).status;
+        const mein = JSON.parse(JSON.stringify(spieler(fb).oeffentlich[uid]));
+        gleich(mein.tag, spieler(fb).konten[uid].tag, "Auszug trägt den Konto-tag");
+        gleich(await schreiben({ ["oeffentlich/" + uid]: Object.assign({}, mein, { tag: "9998" }) }), 401, "fremder tag");
+        const ohne = Object.assign({}, mein);
+        delete ohne.tag;
+        gleich(await schreiben({ ["oeffentlich/" + uid]: ohne }), 401, "tag fehlt");
+        const mitZeit = JSON.parse(JSON.stringify(mein));
+        mitZeit.auszug.werte.spielzeit = 3600;
+        gleich(await schreiben({ ["oeffentlich/" + uid]: mitZeit }), 200, "Spielzeit angenommen");
+        mitZeit.auszug.werte.spielzeit = 315360001;
+        gleich(await schreiben({ ["oeffentlich/" + uid]: mitZeit }), 401, "Spielzeit über der Grenze");
+        mitZeit.auszug.werte.spielzeit = 60;
+        mitZeit.auszug.werte.sonstwas = 1;
+        gleich(await schreiben({ ["oeffentlich/" + uid]: mitZeit }), 401, "anderer Wert-Schlüssel");
+        /* Die App: der Haken am KONTO (seit v0.155.2) — mit Haken steht die
+           Spielzeit im EIGENEN Auszug, im selben Schritt wie das Konto. */
+        await laden(w);
+        const ichId = w.abgleich.daten.spieler.find((s) => s.uid === uid).id;
+        await w.speicher.speichern(w.SPIELER.spielzeitOeffentlichSetzen(w.abgleich.daten, ichId, true));
+        gleich(spieler(fb).konten[uid].spielzeitOeffentlich, true, "Haken am Konto");
+        wahr(typeof spieler(fb).oeffentlich[uid].auszug.werte.spielzeit === "number", "mit Haken veröffentlicht");
+        const nachUp = appLaden(fb);
+        await nachUp.KONTO.anmelden("up-plus", PW.ober);
+        await laden(nachUp);
+        await nachUp.KONTO.nachziehen(nachUp.speicher);
+        wahr(typeof spieler(fb).oeffentlich[uid].auszug.werte.spielzeit === "number", "§12 nachziehen lässt sie stehen");
+        await laden(w);
+        await w.speicher.speichern(w.SPIELER.spielzeitOeffentlichSetzen(w.abgleich.daten, ichId, false));
+        wahr(!("spielzeit" in spieler(fb).oeffentlich[uid].auszug.werte), "Haken aus: wieder privat");
+        /* Regel: nur Ja/Nein, nur der Besitzer ändert. */
+        gleich(await schreiben({ ["konten/" + uid + "/spielzeitOeffentlich"]: "ja" }), 401, "kein Ja/Nein");
+        gleich(await schreiben({ ["konten/" + uid + "/spielzeitOeffentlich"]: true }), 200, "Besitzer ändert");
+        const nachbau = new RegelNachbau(REGEL_12);
+        const baum = JSON.parse(JSON.stringify(fb.db));
+        baum.spieler.rollen = Object.assign({}, baum.spieler.rollen, { "u-adm": "admin" });
+        wahr(!nachbau.schreibenPruefen(baum, [{ weg: ["spieler", "konten", uid, "spielzeitOeffentlich"], wert: false }],
+            { uid: "u-adm", provider: "password" }).ok, "Admin ändert den Haken nicht");
+        /* Unter der heutigen Regel (§11c) geht das Feld schon durch. */
+        const alt = new RegelNachbau(REGEL_11C);
+        const eintrag = Object.assign({}, fb.db.spieler.konten[uid], { spielzeitOeffentlich: true });
+        wahr(alt.schreibenPruefen(fb.db, [{ weg: ["spieler", "konten", uid], wert: eintrag }],
+            { uid: uid, provider: "password" }).ok, "§11c nimmt das Feld an");
+    });
+
+    await pruefe("v0.155.0 Löschregel: Partie + Übersicht löschen nur Teilnehmer, Admin oder verwaiste Bot-Runde", async () => {
+        const nachbau = new RegelNachbau(REGEL_12);
+        const partie = (weiss, schwarz, ergebnis) => ({ teams: { weiss: weiss, schwarz: schwarz },
+            ergebnis: ergebnis, geaendertAm: 5 });
+        const baum = { spieler: {
+            konten: { "u-anna": { id: "p-anna" }, "u-bert": { id: "p-bert" }, "u-zora": { id: "p-zora" },
+                "u-adm": { id: "p-adm" } },
+            rollen: { "u-adm": "admin" } },
+        blunderluck: { "team-schach": { geaendertAm: 1,
+            partien: { p1: partie(["p-anna"], ["p-bert"], "weiss"), p2: partie(["bot"], [], ""),
+                p3: partie(["p-x", "p-y", "p-z", "p-q", "p-anna"], ["bot"], "remis") },
+            uebersicht: { p1: partie(["p-anna"], ["p-bert"], "weiss"), p2: partie(["bot"], [], ""),
+                p3: partie(["p-x", "p-y", "p-z", "p-q", "p-anna"], ["bot"], "remis") },
+            chronik: { 0: { id: "p1" } } } } };
+        const loeschen = (id, uid) => nachbau.schreibenPruefen(baum, [
+            { weg: ["blunderluck", "team-schach", "partien", id], wert: null },
+            { weg: ["blunderluck", "team-schach", "uebersicht", id], wert: null },
+            { weg: ["blunderluck", "team-schach", "geaendertAm"], wert: 9 }], { uid: uid, provider: "password" }).ok;
+        wahr(loeschen("p1", "u-anna") && loeschen("p1", "u-bert"), "Teilnehmer löschen");
+        wahr(!loeschen("p1", "u-zora"), "Fremder löscht NICHT");
+        wahr(loeschen("p1", "u-adm") && loeschen("p1", OBER), "Admin und UP#Plus löschen");
+        wahr(loeschen("p2", "u-zora"), "verwaiste Bot-Runde darf jeder wegräumen");
+        /* Seit v0.155.2 höchstens 3 je Team: geprüft werden die Plätze 0–2. */
+        wahr(!loeschen("p3", "u-anna") && loeschen("p3", "u-adm"), "5. Platz (alte Partie): nur Admin");
+        const auf2 = JSON.parse(JSON.stringify(baum));
+        auf2.blunderluck["team-schach"].partien.p5 = partie(["p-x", "p-y", "p-anna"], ["bot"], "remis");
+        auf2.blunderluck["team-schach"].uebersicht.p5 = partie(["p-x", "p-y", "p-anna"], ["bot"], "remis");
+        wahr(nachbau.schreibenPruefen(auf2, [
+            { weg: ["blunderluck", "team-schach", "partien", "p5"], wert: null },
+            { weg: ["blunderluck", "team-schach", "uebersicht", "p5"], wert: null }],
+            { uid: "u-anna", provider: "password" }).ok, "3. Platz erkannt");
+        /* Kein 4. Platz neu; ein schon vorhandener bleibt schreibbar. */
+        const mitVier = (wer) => nachbau.schreibenPruefen(baum, [
+            { weg: ["blunderluck", "team-schach", "partien", wer], wert: partie(["a", "b", "c", "d"], ["bot"], "") }],
+            { uid: "u-zora", provider: "password" }).ok;
+        wahr(!mitVier("p9"), "neue Partie mit 4 in einem Team abgelehnt");
+        wahr(mitVier("p3"), "alte Partie mit mehr Plätzen läuft weiter");
+        wahr(!nachbau.schreibenPruefen(baum, [{ weg: ["blunderluck", "team-schach", "partien", "p1"], wert: null }],
+            null).ok, "ohne Anmeldung nie");
+        /* Was heute erlaubt ist, bleibt erlaubt. */
+        const auth = { uid: "u-zora", provider: "password" };
+        wahr(nachbau.schreibenPruefen(baum, [
+            { weg: ["blunderluck", "team-schach", "partien", "p4"], wert: partie(["p-zora"], [], "") },
+            { weg: ["blunderluck", "team-schach", "uebersicht", "p4"], wert: partie(["p-zora"], [], "") },
+            { weg: ["blunderluck", "team-schach", "chronik", "1"], wert: { id: "p4" } },
+            { weg: ["blunderluck", "team-schach", "uebersicht", "p1", "gebucht", "p-zora"], wert: 7 },
+            { weg: ["blunderluck", "team-schach", "geaendertAm"], wert: 10 }], auth).ok, "Anlegen, Chronik, gebucht");
+        wahr(nachbau.schreibenPruefen(baum, [{ weg: ["blunderluck", "team-schach", "partien", "p1", "zuege"], wert: 3 }],
+            auth).ok, "Züge schreiben wie bisher (Züge prüft die App)");
+        wahr(!nachbau.schreibenPruefen(baum, [{ weg: ["blunderluck", "team-schach", "chronik"], wert: null }],
+            auth).ok, "die ganze Chronik löschen nie");
+        wahr(!nachbau.schreibenPruefen(baum, [{ weg: ["blunderluck", "anderes"], wert: 1 }], auth).ok,
+            "neben team-schach nichts");
     });
 
     await pruefe("401 mitten im Lauf: alte Regel zurück → App fällt von selbst in den Modus alt", async () => {

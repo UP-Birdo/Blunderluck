@@ -530,6 +530,11 @@ Object.assign(ANMELDUNG, {
                 ANMELDUNG.abgleich.daten, eintrag, name.feld.value, passwort.feld.value);
             await ANMELDUNG._kontoFertig(ergebnis, name, pruefen, "Gesichert · ",
                 { name: name, passwort: passwort, wiederholung: wiederholung, allgemein: allgemein });
+            /* Spielzeit, „dabei seit" und der übrige Gast-Stand vom Gerät
+               ziehen mit (seit v0.155.0). */
+            if (ergebnis.ok && typeof FORTSCHRITT_KONTO !== "undefined") {
+                FORTSCHRITT_KONTO.gastUebernehmen();
+            }
         });
 
         kasten.appendChild(los);
@@ -574,7 +579,7 @@ Object.assign(ANMELDUNG, {
             return;
         }
         const wahl = await DIALOG.liste("Nummer ändern",
-            "Zurzeit #" + ich.tag + " · dein Freundescode · nur du siehst sie",
+            "Zurzeit #" + ich.tag + " · dein Freundescode",
             [
                 { beschriftung: "Würfeln", hinweis: "Zufällige freie Nummer", wert: "wuerfeln" },
                 { beschriftung: "Selbst wählen", hinweis: "4 Ziffern", wert: "waehlen" }

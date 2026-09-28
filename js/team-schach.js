@@ -611,9 +611,15 @@ const TEAM_SCHACH = {
                    mehr nach Abschlüssen — dann hier zählen. */
                 const partie = tafel ? SCHACH_TAFEL.partie(tafel, partieId) : null;
                 const person = ICH.person();
+                /* Seit v0.155.1 auch, wenn ihr Abschluss schon erledigt ist
+                   (geschlossen, oder still beim Öffnen einer neuen Runde) —
+                   sonst ginge ein Sieg, dessen Wertung noch rechnete, leer
+                   aus. Doppelt zählt nichts (`partieZaehlen`). */
+                const zeigtIhn = !!TEAM_SCHACH.abschluss && TEAM_SCHACH.abschluss.id === partieId;
                 if (partie && partie.ergebnis && person && typeof FORTSCHRITT_KONTO !== "undefined"
-                        && TEAM_SCHACH.abschluss && TEAM_SCHACH.abschluss.id === partieId
-                        && !TEAM_SCHACH._buchungWartet(partie, person)) {
+                        && SCHACH_RUNDE.teamVon(partie, person.id)
+                        && ((zeigtIhn && !TEAM_SCHACH._buchungWartet(partie, person))
+                            || (!zeigtIhn && ICH.abschlussGesehen(partieId)))) {
                     const gewinn = TEAM_SCHACH._buchen(partie, person.id);
                     if (gewinn) {
                         TEAM_SCHACH._xpGewinn[partieId] = gewinn;
@@ -823,10 +829,20 @@ const TEAM_SCHACH = {
             const wertungRechnet = (partie) => typeof WERTUNG !== "undefined"
                 && typeof WERTUNG.rechnetNoch === "function" && WERTUNG.rechnetNoch(partie.id);
 
-            const fertig = offeneAbschluesse
-                .slice()
-                .sort((einer, anderer) =>
-                    (anderer.geaendertAm || 0) - (einer.geaendertAm || 0))[0];
+            /*
+             * NUR DIE PARTIE, DIE HIER OFFEN WAR, ZEIGT IHREN ABSCHLUSS
+             * (seit v0.155.1, Nutzer 28.09.2026: „wenn man eine Runde
+             * startet, kommt immer das Ergebnis von der letzten Runde — mach
+             * das raus, macht alles kaputt"). Bis v0.155.0 kam die JÜNGSTE
+             * ungesehene, auch wenn man gar nicht in ihr war — z. B. wenn man
+             * den Abschluss weggewischt hatte und dann eine neue Runde
+             * startete. Alle anderen werden jetzt still gebucht und
+             * abgehakt; ansehen lassen sie sich in der Übersicht
+             * („Ergebnis ansehen").
+             */
+            const fertig = (offeneJetzt && offeneJetzt.ergebnis)
+                ? (offeneAbschluesse.find((partie) => partie.id === offeneJetzt.id) || null)
+                : null;
 
             /* Die GEZEIGTE Niederlage gegen Bob, die Zeit zurück noch drehen
                kann, bucht erst beim Schliessen (seit v0.152.2,
@@ -1588,9 +1604,11 @@ const TEAM_SCHACH = {
             return keine;
         }
 
+        /* Ein volles Team (TEAM_MAX, seit v0.155.2) ist nicht wählbar. */
+        const frei = ["weiss", "schwarz"].filter((farbe) => !SCHACH_RUNDE.teamVoll(partie, farbe));
         return {
-            farben: meinTeam ? [meinTeam] : ["weiss", "schwarz"],
-            zufall: !meinTeam
+            farben: meinTeam ? [meinTeam] : frei,
+            zufall: !meinTeam && frei.length === 2
         };
     },
 
@@ -1667,6 +1685,11 @@ const TEAM_SCHACH = {
         if (!partie.laeuft && !partie.ergebnis && mitglieder.length > 0
                 && partie.aufstellungBereit[farbe]) {
             lage.appendChild(TEAM_SCHACH._element("span", "chip chip-fertig", "bereit"));
+        }
+        /* Ein volles Team ist erkennbar gesperrt (seit v0.155.2). */
+        if (meinTeam !== farbe && SCHACH_RUNDE.teamVoll(partie, farbe)) {
+            lage.appendChild(TEAM_SCHACH._element("span", "chip chip-voll",
+                "voll · " + SCHACH_RUNDE.TEAM_MAX + "/" + SCHACH_RUNDE.TEAM_MAX));
         }
         platz.appendChild(lage);
 
@@ -3492,9 +3515,16 @@ const TEAM_SCHACH = {
     zufaelligBeitreten(partie) {
         const leer = ["weiss", "schwarz"].filter(
             (farbe) => partie.teams[farbe].length === 0);
+        /* Nie in ein volles Team (seit v0.155.2). */
+        const offen = ["weiss", "schwarz"].filter((f) => !SCHACH_RUNDE.teamVoll(partie, f));
+        if (offen.length === 0) {
+            return;
+        }
 
         let farbe;
-        if (leer.length === 1) {
+        if (offen.length === 1) {
+            farbe = offen[0];
+        } else if (leer.length === 1) {
             farbe = leer[0];
         } else if (partie.teams.weiss.length !== partie.teams.schwarz.length) {
             /* Sonst in das kleinere Team — das hält die Seiten im Gleichgewicht. */
@@ -3676,6 +3706,13 @@ const TEAM_SCHACH = {
      * ---------------------------------------------------------------- */
 
     partieOeffnen(id) {
+        /* Steht noch der Abschluss einer ANDEREN Partie (weggewischt, nie
+           geschlossen), wird er jetzt erledigt — gebucht und abgehakt —,
+           statt über der neuen Runde zu erscheinen (seit v0.155.1). */
+        if (TEAM_SCHACH.abschluss && TEAM_SCHACH.abschluss.id !== id) {
+            TEAM_SCHACH._abschlussErledigen(TEAM_SCHACH.abschluss.id);
+            TEAM_SCHACH.abschluss = null;
+        }
         TEAM_SCHACH.offeneId = id;
 
         /*
@@ -5254,6 +5291,37 @@ const TEAM_SCHACH = {
             partie = SCHACH_RUNDE.bereitSetzen(
                 SCHACH_RUNDE.teamBeitreten(partie, person.id, seite), seite, true);
             partie = SCHACH_BOT.inRundeSetzen(partie, SCHACH.gegner(seite));
+        } else if (regeln.seiteZufaellig !== false) {
+            /*
+             * GEGEN BOB MIT ZUGELOSTER SEITE (seit v0.155.1): Die Seite wird
+             * schon HIER bestimmt — gerechnet aus der Kennung der neuen
+             * Partie und der Person (`SCHACH_RUNDE.seiteZulosen`, kein
+             * `Math.random`), also zufällig, aber fest: Sie steht in der
+             * ersten Fassung auf dem Server und ändert sich durch Neuladen
+             * nicht. Bis v0.155.0 wurde erst beim Öffnen zugelost.
+             */
+            partie = SCHACH_RUNDE.seiteZulosen(partie, person.id);
+            const seite = SCHACH_RUNDE.teamVon(partie, person.id);
+            if (seite) {
+                partie = SCHACH_BOT.inRundeSetzen(partie, SCHACH.gegner(seite));
+            }
+        }
+
+        /*
+         * GEGEN BOB GEHT ES DIREKT LOS (seit v0.155.1, Nutzer 28.09.2026:
+         * „wenn ich eine Runde starte mit einem bot soll es direkt los
+         * gehen"). Sitzen Mensch und Bob schon auf ihren Seiten (zugelost,
+         * Turm, Tagesbrett), sagt der Mensch hier auch zur Aufstellung ja —
+         * `kannAnpfeifen` ist dann erfüllt, die Partie läuft ab der ersten
+         * Fassung: kein Vorraum, kein „Bereit". Wer seine Seite selbst
+         * wählen will (`seiteZufaellig` aus), wählt wie bisher.
+         * Menschen-Partien bleiben, wie sie sind.
+         */
+        if (gegenComputer) {
+            const meine = SCHACH_RUNDE.teamVon(partie, person.id);
+            if (meine && SCHACH_BOT.istBotPartie(partie) && !partie.laeuft) {
+                partie = SCHACH_RUNDE.aufstellungBereitSetzen(partie, meine, true);
+            }
         }
 
         ergebnis.tafel = SCHACH_TAFEL.partieEinsetzen(ergebnis.tafel, partie);
@@ -5419,6 +5487,13 @@ const TEAM_SCHACH = {
          */
         await TEAM_SCHACH._aufFrischemSenden(partie, (frisch) => {
             let neu = SCHACH_RUNDE.teamBeitreten(frisch, person.id, farbe);
+
+            /* Inzwischen voll (seit v0.155.2, höchstens TEAM_MAX)? Dann
+               nichts senden, nur sagen. */
+            if (!SCHACH_RUNDE.teamVon(neu, person.id) && SCHACH_RUNDE.teamVoll(frisch, farbe)) {
+                DIALOG.kurzmeldung("Team voll · " + SCHACH_RUNDE.TEAM_MAX + "/" + SCHACH_RUNDE.TEAM_MAX);
+                return null;
+            }
 
             if (!neu.laeuft && !neu.ergebnis
                     && SCHACH_RUNDE.teamVon(neu, person.id) === farbe) {

@@ -182,6 +182,22 @@ html {
     overscroll-behavior-x: none;
 }
 
+/* Solange das UPCrew-Intro steht (seit v0.155.0, js\intro.js
+   `_raenderDecken`): Der frei gehaltene Rollbalken-Rand links und rechts
+   trägt die Farbe des Intros statt eines Streifens in der Seitenfarbe, und
+   es gibt keinen Rollbalken. Der Platz bleibt reserviert — nichts rutscht. */
+html.intro-offen {
+    overflow: hidden;
+    background-color: var(--intro-rand, var(--flaeche));
+}
+
+/* Nur beim Ausblenden ein Übergang (so lange wie das Intro), beim Einblenden
+   keiner — sonst stünden die Streifen gerade dann 400 ms lang da. */
+html.intro-offen.intro-weg {
+    background-color: var(--flaeche);
+    transition: background-color 400ms ease;
+}
+
 body {
     margin: 0;
     padding: 0;
@@ -1761,6 +1777,14 @@ body.partie-fest .phasen-leiste {
 .name-text {
     display: block;
     font-weight: 600;
+}
+
+/* Die Nummer klein hinter dem Namen (seit v0.155.0): Rangliste, Profil. */
+.name-tag {
+    margin-left: 4px;
+    font-size: 0.75em;
+    font-weight: normal;
+    color: var(--schrift-leise);
 }
 
 /*

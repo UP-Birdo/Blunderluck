@@ -445,6 +445,109 @@ const FORTSCHRITT_KONTO = {
     /* Wer wissen will, wann sich der Stand ändert (Start, Profil). */
     beiAenderung(horcher) {
         FORTSCHRITT_KONTO._horcher.push(horcher);
+    },
+
+    /* ---------------------------------------------------------------- *
+     * SPIELZEIT (seit v0.155.0; Rechnung `FORTSCHRITT.spielzeitZaehlen`)
+     *
+     * Gezählt wird nur, solange die Seite SICHTBAR ist
+     * (`document.visibilityState`): alle SPIELZEIT_TAKT_MS die Zeit seit dem
+     * letzten Schritt — auf das Gerät (auch als Gast). Ans Konto geht sie
+     * nicht bei jedem Schritt (der ganze Eintrag würde geschrieben), sondern
+     * beim Verbergen der Seite und höchstens alle SPIELZEIT_KONTO_MS.
+     * ---------------------------------------------------------------- */
+
+    SPIELZEIT_TAKT_MS: 30000,
+    SPIELZEIT_KONTO_MS: 15 * 60 * 1000,
+    _sichtbarSeit: null,
+    _spielzeitKontoZuletzt: 0,
+    _spielzeitUhr: null,
+
+    spielzeitStarten() {
+        if (FORTSCHRITT_KONTO._spielzeitUhr || typeof document === "undefined") {
+            return;
+        }
+        const sichtbar = () => document.visibilityState !== "hidden";
+        FORTSCHRITT_KONTO._sichtbarSeit = sichtbar() ? Date.now() : null;
+        FORTSCHRITT_KONTO._spielzeitKontoZuletzt = Date.now();
+        FORTSCHRITT_KONTO._spielzeitUhr = setInterval(() => FORTSCHRITT_KONTO.spielzeitSchritt(sichtbar()),
+            FORTSCHRITT_KONTO.SPIELZEIT_TAKT_MS);
+        document.addEventListener("visibilitychange", () => {
+            FORTSCHRITT_KONTO.spielzeitSchritt(sichtbar());
+        });
+    },
+
+    /*
+     * Ein Schritt: die sichtbare Zeit seit dem letzten Schritt buchen.
+     * `sichtbar` = ist die Seite JETZT sichtbar. Wird sie gerade verborgen,
+     * geht der Stand ans Konto. Liefert die gebuchten Sekunden.
+     */
+    spielzeitSchritt(sichtbar, jetzt) {
+        const zeit = (typeof jetzt === "number") ? jetzt : Date.now();
+        let gebucht = 0;
+        if (FORTSCHRITT_KONTO._sichtbarSeit !== null) {
+            gebucht = Math.min(Math.floor(Math.max(0, zeit - FORTSCHRITT_KONTO._sichtbarSeit) / 1000),
+                FORTSCHRITT.SPIELZEIT_SCHRITT_MAX);
+            if (gebucht > 0) {
+                const stand = FORTSCHRITT.spielzeitZaehlen(FORTSCHRITT_KONTO.lesen(), gebucht, zeit);
+                FORTSCHRITT_KONTO._lokalSchreiben(stand);
+            }
+        }
+        FORTSCHRITT_KONTO._sichtbarSeit = sichtbar ? zeit : null;
+        if (!sichtbar || zeit - FORTSCHRITT_KONTO._spielzeitKontoZuletzt >= FORTSCHRITT_KONTO.SPIELZEIT_KONTO_MS) {
+            FORTSCHRITT_KONTO.spielzeitSichern(zeit);
+        }
+        return gebucht;
+    },
+
+    /* Den Gerätestand (mit Spielzeit) ans Konto geben — nur mit echtem
+       Konto, und `_ablegen` schreibt nur, wenn sich etwas ändert. */
+    spielzeitSichern(jetzt) {
+        FORTSCHRITT_KONTO._spielzeitKontoZuletzt = (typeof jetzt === "number") ? jetzt : Date.now();
+        if (FORTSCHRITT_KONTO._eigener()) {
+            FORTSCHRITT_KONTO._ablegen(FORTSCHRITT_KONTO.lesen());
+        }
+    },
+
+    /* Für das eigene Profil: { spiele: { app: Sekunden }, summe, seit
+       ("JJJJ-MM-TT" oder "") }. */
+    spielzeit() {
+        const stand = FORTSCHRITT_KONTO.lesen();
+        const spiele = {};
+        for (const app of Object.keys(FORTSCHRITT.normalisieren(stand).spiele)) {
+            spiele[app] = FORTSCHRITT.spielzeitVon(stand, app);
+        }
+        return { spiele: spiele, summe: FORTSCHRITT.spielzeitSumme(stand), seit: FORTSCHRITT.seitVon(stand) };
+    },
+
+    /*
+     * GAST → KONTO (seit v0.155.0, Nutzer 28.09.2026: Spielzeit und
+     * Startdatum „auch bei gästen", beim Umzug mitnehmen): Nach „Spielstand
+     * sichern" liegt der Gast-Stand auf dem Gerät noch unter „gast". Er wird
+     * mit dem Eintrag der neuen Person zusammengeführt (Spielzeit, „dabei
+     * seit", XP, Serie — alles, was der Gast hatte), der Gast-Eintrag
+     * verschwindet, und der Stand geht ans Konto. Liefert, ob etwas
+     * umgezogen ist.
+     */
+    gastUebernehmen() {
+        const person = FORTSCHRITT_KONTO._person();
+        if (person === FORTSCHRITT_KONTO.GAST) {
+            return false;
+        }
+        try {
+            const alle = FORTSCHRITT_KONTO._alleLesen();
+            const gast = alle[FORTSCHRITT_KONTO.GAST];
+            if (!FORTSCHRITT._istObjekt(gast)) {
+                return false;
+            }
+            alle[person] = FORTSCHRITT.zusammenfuehren(alle[person] || null, gast);
+            delete alle[FORTSCHRITT_KONTO.GAST];
+            localStorage.setItem(FORTSCHRITT_KONTO.SCHLUESSEL, JSON.stringify(alle));
+        } catch (fehler) {
+            return false;
+        }
+        FORTSCHRITT_KONTO._ablegen(FORTSCHRITT_KONTO.lesen());
+        return true;
     }
 };
 

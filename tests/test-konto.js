@@ -640,20 +640,17 @@ function oberAnlegen(w) {
         gleich(w.dialog.listen.length, 0, "keine Auswahl");
     });
 
-    await pruefe("Freunde: Name ohne Nummer, bei gleichen Namen Level N statt Nummer (v0.154.0)", async () => {
+    await pruefe("Freunde: Name und klein #Nummer bei allen (v0.155.0)", async () => {
         const w = await welt();
-        vm.runInContext(dateisystem.readFileSync(
-            pfad.join(__dirname, "..", "js", "fortschritt.js"), "utf8"), w.umgebung);
         const FREUNDE = vm.runInContext(dateisystem.readFileSync(
             pfad.join(__dirname, "..", "js", "freunde.js"), "utf8") + ";\nFREUNDE", w.umgebung);
-        const liste = [{ name: "Jonas", tag: "0001" },
-            { name: "jonas", tag: "4821", fortschritt: { version: 1, spiele: { blunderluck: { xp: 250 } } } },
-            { name: "Mia", tag: "1234" }];
-        gleich(FREUNDE._name(liste[0]), "Jonas", "ohne Nummer");
-        gleich(FREUNDE._gleichNameZusatz(liste, liste[1]), "Level 3", "gleicher Name: Level");
-        gleich(FREUNDE._gleichNameZusatz(liste, liste[0]), "Level 1", "gleicher Name: Level 1");
-        gleich(FREUNDE._gleichNameZusatz(liste, liste[2]), "", "eindeutig");
-        wahr(typeof FREUNDE._nummerZusatz === "undefined", "keine Nummer-Anzeige mehr");
+        const liste = [{ name: "Jonas", tag: "0001" }, { name: "jonas", tag: "4821" }, { name: "Mia" }];
+        gleich(FREUNDE._name(liste[0]), "Jonas", "Name allein");
+        gleich(FREUNDE._tagZusatz(liste[0]), "#0001", "Nummer");
+        gleich(FREUNDE._tagZusatz(liste[1]), "#4821", "gleicher Name: eigene Nummer");
+        gleich(FREUNDE._tagZusatz(liste[2]), "", "ohne Nummer nichts");
+        gleich(w.KONTO.tagZusatz({ tag: "7777" }), "#7777", "KONTO.tagZusatz");
+        wahr(typeof FREUNDE._gleichNameZusatz === "undefined", "Level N ist überholt");
     });
 
     await pruefe("Freund suchen nur mit Name#Nummer (alte Regel: aus der Liste, v0.154.0)", async () => {

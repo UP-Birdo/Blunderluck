@@ -1376,15 +1376,19 @@ pruefe("Ein Abschluss verdraengt keine laufende Partie", () => {
         throw new Error("kein Brett gezeichnet");
     }
 
-    /* Verlaesst man die laufende Partie, darf er kommen — sonst saehe man ihn
-       nie wieder. */
+    /* Verlaesst man die laufende Partie, kommt er SEIT v0.155.1 NICHT mehr
+       (Nutzer 28.09.2026: „wenn man eine Runde startet, kommt immer das
+       Ergebnis von der letzten Runde — mach das raus"). Bis dahin kam er
+       hier. Er wird still abgehakt; ansehen laesst er sich in der
+       Uebersicht („Ergebnis ansehen"). */
     TEAM_SCHACH.uebersichtOeffnen();
 
-    if (!TEAM_SCHACH.abschluss || TEAM_SCHACH.abschluss.id !== alt.id) {
-        throw new Error("in der Uebersicht muesste der Abschluss erscheinen");
+    if (TEAM_SCHACH.abschluss) {
+        throw new Error("in der Uebersicht erschien der alte Abschluss");
     }
-
-    TEAM_SCHACH.abschlussSchliessen(alt.id);
+    if (!umgebung.ICH.abschlussGesehen(alt.id)) {
+        throw new Error("der alte Abschluss ist nicht abgehakt");
+    }
 });
 
 pruefe("Die Marke 'Wird gesendet' ist weg — auch waehrend ein Zug laeuft (v0.81.0)", () => {
