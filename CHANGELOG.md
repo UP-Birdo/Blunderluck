@@ -3,6 +3,116 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.152.5 — 28.09.2026
+
+**Weniger Datenverbrauch, und dein Aussehen folgt dir auf jedes Gerät.**
+
+- **Dein Aussehen je Spiel am Konto:** Farbwelt, Hell/Dunkel, Schrift und
+  Knöpfe, die du für Blunderluck wählst, kommen jetzt auch auf deinen
+  anderen Geräten an (die Datenbank-Regel dafür ist eingespielt).
+- **Deutlich weniger Download:** Auf dem Start holt das Spiel keine fremden
+  laufenden Partien mehr (niemand zeigt sie an) und fragt nur noch alle 15
+  Sekunden nach — gemessen rund 80 Prozent weniger je Stunde. Gegen Bob
+  ebenfalls alle 15 Sekunden (rund die Hälfte weniger). In einer Partie mit
+  Menschen und im Vorraum bleibt es bei 3 Sekunden. Kommst du zurück in die
+  App, wird sofort nachgesehen.
+- **Die Chronik kommt stückweise:** Nur neue Einträge werden geholt, der
+  Rest liegt auf dem Gerät.
+- **Alte Partien werden aufgeräumt:** Eine beendete Partie verschwindet eine
+  Woche nach ihrem Ende vom Server. Wer die App in dieser Woche nicht
+  öffnet, bekommt XP und Münzen dieser Partie nicht mehr. Deine Rangliste
+  bleibt, und im Verlauf deines Geräts bleiben deine Partien stehen.
+- Einladungen und der Beitritt über den Code in eine laufende Runde gehen
+  weiter wie bisher.
+
+## v0.152.4 — 28.09.2026
+
+**Deine Wünsche für Brett und Karten.**
+
+- **Denk-Blase:** Wer am Zug ist — auch Bob —, hat neben dem Profil eine
+  kleine Comic-Blase mit laufendem Kreis.
+- **2D-Mauer:** Im 2D-Modus ist die Mauer ein flaches Ziegelband mit
+  dunkler Kontur wie die Figuren; die Restzeit steht nur noch einmal, hell,
+  am Ende der Mauer statt als dunkler Kreis auf jedem Stück.
+- **2D-Würfel:** Im 2D-Modus liegen flache Würfel in der Stufenfarbe mit
+  Fragezeichen auf dem Brett statt der 3D-Würfel.
+- **2D-Karten:** Die Fähigkeiten-Karten sind im 2D-Modus flach.
+- **Schild-Warnung:** Die gewählte Schild-Karte sagt „Achtung · Figur
+  stehen lassen, sonst ist das Schild weg".
+- **Wie viele auf der Hand?** Neue Rundenregel: höchstens 2, 3, 4 (Standard)
+  oder 5 Items auf der Hand, oder „Alle". Was darüber eingesammelt wird,
+  verpufft — mit Rauch auf dem Feld und „Hand voll · verpufft". Gilt auch
+  für Bob; am Schildchen der Runde steht „Hand max N".
+- **Intro in deiner Farbwelt:** Das UPCrew-Intro erscheint in der Farbwelt
+  und hell/dunkel, die du für Blunderluck gewählt hast.
+
+## v0.152.3 — 28.09.2026
+
+**Fehler aus deinen Bildern behoben.**
+
+- **Karten einsetzen:** Die runden Knöpfe unter einer gewählten Karte
+  (✓ Einsetzen, ✕ Abbrechen, ? Anleitung) zeigten seit v0.144.0 nur einen
+  leeren Kreis — jetzt stehen Haken, Kreuz und Fragezeichen wieder da, und
+  die gewählte Karte und dein runder Menü-Knopf haben ihre richtige Größe.
+- **Warum eine Karte nicht geht**, sagt das Spiel jetzt genau: „König im
+  Schach · erst schützen", „Gäbe Schach · Items dürfen das nicht", „Eigener
+  König käme ins Schach" … — schon beim Antippen der Karte, nicht erst nach
+  dem ✓. Das Zeichen ist ein Achtung-Dreieck statt des durchgestrichenen
+  Netzes, der Text gut lesbar.
+- **Zeit zurück** gibt es nur noch im Turm und spricht von einem Zug:
+  „Einen Zug zurück · nur im Turm".
+- **Nichts mehr markieren:** Ein Wisch mit der Maus färbte Figuren blau ein
+  (so sah ein König auf deinem Bild „angewählt" aus). Markieren und Ziehen
+  geht nur noch in Eingabefeldern und bei den Beitritts-Codes.
+- **Brett mittig am PC:** Der Platz des Rollbalkens schob das Brett um ein
+  paar Pixel nach links — jetzt steht es genau in der Mitte (2D und 3D).
+- **Partie-Einstellungen** während der Partie ohne die Leiste unten.
+- **Anleitungen spielen immer ab** — auch wenn am Gerät „weniger Bewegung"
+  eingestellt ist und auch im 2D-Modus. Die Bilder mit Text nebeneinander
+  gibt es nicht mehr.
+- **Gast → Konto:** Wer als Gast eine Weile gespielt hat, konnte kein
+  Konto daraus machen („Anmeldung abgelaufen"). Jetzt klappt es; alles vom
+  Gast bleibt.
+- **Konto erstellen:** Jedes Feld sagt, was nicht stimmt — Name zu kurz,
+  falsche Zeichen, was dem Passwort fehlt, Passwörter ungleich, Name mit
+  diesem Passwort schon vergeben, keine Verbindung. Der Knopf ist immer
+  drückbar und zeigt dann alle Meldungen.
+- **Das UPCrew-Intro** kommt bei jedem Laden der Seite, auch nach F5 —
+  nur nicht direkt nach dem automatischen Neuladen einer neuen Version.
+
+## v0.152.2 — 28.09.2026
+
+**„Zeit zurück" statt Extra-Leben.**
+
+- Die Ware aus dem Shop heißt jetzt **Zeit zurück**: Ein Einsatz nimmt
+  deinen letzten Zug und Bobs Antwort zurück — du bist wieder am Zug.
+  Stellung, Karten, Lootboxen, geschlagene Figuren und der Zugverlauf
+  springen mit. Nur gegen Bob (Turm, Frei, Heute), nie gegen Menschen.
+- **In der Partie:** im Spiel-Menü (runder Knopf unten links) neben dem
+  Tipp, hinter einem feinen Strich, mit deinem Vorrat als Zahl. Erscheint
+  erst, wenn du einen Zug zurücknehmen kannst. Ohne Rückfrage; eine
+  kurze Einblendung sagt „Zeit zurück · noch N".
+- **Nach einer Niederlage** gegen Bob (Matt, ins Schach gestolpert,
+  Tagesbrett verfehlt — nicht nach „Aufgeben"): Hauptknopf „Zeit zurück ·
+  noch N" — dieselbe Partie geht vor deinem letzten Zug weiter (bisher:
+  die Turm-Stufe neu). Die Niederlage wird erst gebucht, wenn du den
+  Abschluss schließt — nichts wird doppelt gezählt.
+- **Wertung:** Mit Tipp oder Zeit zurück gibt es im Turm und beim
+  Tagesbrett höchstens einen Bauern.
+- Kauf-Zähler am Konto bleiben gültig (die Ware heißt intern weiter
+  `leben`).
+
+## v0.152.1 — 27.09.2026
+
+**Spielerliste für Admins.**
+
+- In der Verwaltung steht neben der Konten-Tabelle eine Spielerliste mit
+  Level, Serie, Münzen, Partien, zuletzt aktiv und Abzeichen — suchen,
+  sortieren, Gäste ein/aus; antippen zeigt die Zahlen je Spiel. Nur lesen,
+  nur für Admins, gleich wie in Typoluck.
+- Im Shop stehen die Texte der Waren jetzt in Blunderluck selbst (das
+  Extra-Leben heißt hier „Eine verlorene Turm-Stufe gleich nochmal").
+
 ## v0.152.0 — 27.09.2026
 
 **Münzen, Shop und eine Serie, die ab dem ersten Zug zählt.**

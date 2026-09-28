@@ -16,7 +16,7 @@ const KONFIG = {
     /* Version der App (SemVer: 0.MINOR.PATCH — die 0 vorne heisst "noch in
        Entwicklung", 1.0.0 erst bei erfuellten Fertig-Kriterien der ROADMAP).
        Wird im Kopf angezeigt und muss zu CHANGELOG.md passen. */
-    APP_VERSION: "0.152.0",
+    APP_VERSION: "0.152.5",
 
     speicher: {
 
@@ -54,6 +54,18 @@ const KONFIG = {
            verbraucht. Wer die Runde träger, aber noch sparsamer will, setzt
            hier einen größeren Wert (z. B. 10000 für zehn Sekunden). */
         abfrageIntervallMs: 3000,
+
+        /* Der Takt JE BILDSCHIRM (seit v0.152.5, `Abgleich.taktSchlag`):
+           Wo ein Mensch auf einen Zug wartet, alle 3 Sekunden; wo nur Bob
+           zieht oder niemand auf etwas wartet, alle 15. Der Grundtakt oben
+           ist das kürzeste, was hier wirken kann. */
+        abfrageTaktMs: {
+            partie: 3000,       // offene Partie mit Menschen (auch der Abschluss)
+            vorraum: 3000,      // eigene Runde, die noch nicht läuft
+            bob: 15000,         // Partie gegen Bob, ohne weitere Menschen
+            start: 15000,       // keine Partie offen (Start, Sammlung, Rangliste …)
+            spieler: 15000      // die Spielerliste
+        },
 
         /* Wie lange (in Millisekunden) nach der letzten Eingabe gewartet wird,
            bevor gespeichert wird. Verhindert einen Schreibvorgang je Tastendruck. */

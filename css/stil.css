@@ -168,9 +168,13 @@
 
 /* Der Platz des Rollbalkens bleibt reserviert (seit v0.108). Ohne das ruckte
    am Rechner die ganze Seite zur Seite, sobald ein Dialog sie festhält und
-   der Rollbalken verschwindet (`body.dialog-offen`). */
+   der Rollbalken verschwindet (`body.dialog-offen`). SEIT v0.152.3 AUF
+   BEIDEN SEITEN (`both-edges`, Nutzer 28.09.2026: „Das Spielfeld war am PC
+   nicht in der Mitte ausgerichtet"): Nur rechts reserviert, schob der Platz
+   die ganze Spalte um eine halbe Rollbalken-Breite nach links — am
+   Windows-Rechner mit 17 px Balken gut sichtbar. */
 html {
-    scrollbar-gutter: stable;
+    scrollbar-gutter: stable both-edges;
     /* Seitlich ist Stopp (seit v0.151.15, Nutzer 27.09.2026: „man soll nicht
        infinite scrollen können, sprich rechts und links ist Stopp"): kein
        seitliches Überrollen/Zurückfedern der ganzen Seite. Regal-Reihen
@@ -189,6 +193,42 @@ body {
     font-family: var(--schrift-familie, "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif);
     font-size: 16px;
     line-height: 1.45;
+}
+
+/*
+ * NICHTS MARKIEREN, NICHTS ZIEHEN (seit v0.152.3, Nutzer 28.09.2026: „das
+ * soll gar nicht erst gehen, dass man Sachen markiert"). Am PC färbte ein
+ * Wisch mit der Maus Figuren und Felder blau ein — auf dem Bildschirmfoto
+ * sah ein markierter König aus wie ein Spielzustand. Eine App ist kein
+ * Textdokument: In der GANZEN App wird nicht markiert und kein Bild
+ * gezogen (am iPhone auch kein Lupen-/Teilen-Menü beim langen Druck).
+ * Markierbar bleibt, was man eintippt oder weitergibt: Eingabefelder und
+ * die drei Beitritts-Codes (`.partie-code`, `.seitenwahl-code`,
+ * `.einladung-code`); wer mehr freigeben will, gibt die Klasse `.markierbar`.
+ */
+body {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+}
+
+img,
+svg,
+canvas {
+    -webkit-user-drag: none;
+}
+
+input,
+textarea,
+select,
+[contenteditable="true"],
+.markierbar,
+.partie-code,
+.seitenwahl-code,
+.einladung-code {
+    -webkit-user-select: text;
+    user-select: text;
+    -webkit-touch-callout: default;
 }
 
 /*
@@ -1081,9 +1121,11 @@ body.partie-fest .schach {
      * freihalten schlägt wegnehmen. Und dieselbe Falle wie in v0.79.2, nur
      * an einem anderen Element — der Rollbalken IST ein Bauteil mit Grösse.
      * Die Seite selbst hat den Schutz seit v0.108 (`html`); dieser Bereich
-     * rollt aber für sich und braucht ihn deshalb noch einmal.
+     * rollt aber für sich und braucht ihn deshalb noch einmal. Seit
+     * v0.152.3 auf beiden Seiten — sonst sass das Brett um eine halbe
+     * Balkenbreite links der Mitte (siehe `html`).
      */
-    scrollbar-gutter: stable;
+    scrollbar-gutter: stable both-edges;
 
     /*
      * DER BEREICH REICHT BIS AN DIE KANTE DES INHALTS (seit v0.72.0) — und
@@ -2531,6 +2573,13 @@ body.partie-fest .phasen-leiste {
 /* Im Fehler-Dialog steht der Zustand ohne eigenen Absatz darüber. */
 .dialog-kasten .zustand {
     padding: 4px 0 12px;
+}
+
+/* Im Dialog ist der Text die Botschaft, keine Randnotiz (seit v0.152.3,
+   Nutzer-Bild „König im Schach · Fähigkeit bleibt" war kaum lesbar):
+   volle Schriftfarbe statt der leisen. */
+.dialog-kasten .zustand-text {
+    color: var(--schrift);
 }
 
 @media (prefers-reduced-motion: no-preference) {

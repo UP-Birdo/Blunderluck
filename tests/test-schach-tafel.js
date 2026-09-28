@@ -302,7 +302,9 @@ pruefe("JEDE Einstellung aus der Auswahl kommt in der Partie an (v0.91)", () => 
         armeeStaerke: "wenig",
         itemVorrat: "viele",
         einigkeit: false,
-        botStufe: "meister"
+        botStufe: "meister",
+        /* Seit v0.152.4: höchstens N Items auf der Hand. */
+        itemMax: 3
     };
 
     /*
@@ -678,8 +680,14 @@ pruefe("uebersichtEintrag: Ergebnis, laeuft, Teams und der Zeitpunkt des Schreib
     gleich(wartend.geaendertAm, 5000, "der uebergebene Zeitpunkt zaehlt");
     gleich(wartend.teams.weiss.join(","), "id-anna", "Weiss im Eintrag");
     gleich(wartend.teams.schwarz.join(","), "id-bert", "Schwarz im Eintrag");
-    gleich(Object.keys(wartend).sort().join(","), "ergebnis,geaendertAm,laeuft,teams",
-        "genau vier Felder — mehr braucht der Lader nicht");
+    /* Seit v0.152.5 dazu `mitEinladungen` — und die Liste `eingeladen`,
+       sobald jemand eingeladen ist (test-weniger-download.js). */
+    gleich(Object.keys(wartend).sort().join(","), "ergebnis,geaendertAm,laeuft,mitEinladungen,teams",
+        "genau fünf Felder — mehr braucht der Lader nicht");
+    const mitGast = SCHACH_RUNDE.einladen(partie, "id-gast", 1050);
+    gleich(Object.keys(SCHACH_TAFEL.uebersichtEintrag(mitGast, 5000)).sort().join(","),
+        "eingeladen,ergebnis,geaendertAm,laeuft,mitEinladungen,teams",
+        "mit Einladung sechs");
 
     const laufend = bereitUndAufgestellt(bereitUndAufgestellt(partie, "weiss", 1100), "schwarz", 1100);
     gleich(SCHACH_TAFEL.uebersichtEintrag(laufend, 5100).laeuft, true, "laufend: laeuft");

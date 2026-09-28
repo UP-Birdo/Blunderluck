@@ -152,7 +152,8 @@ Object.assign(SCHACH_RUNDE, {
         }
 
         const wendepunkte = stand.verlauf
-            .filter((eintrag) => eintrag.wirkung && eintrag.wirkung !== "eingesammelt")
+            .filter((eintrag) => eintrag.wirkung && eintrag.wirkung !== "eingesammelt"
+                && eintrag.wirkung !== "verpufft")
             .slice(-SCHACH_RUNDE.RUECKSCHAU_HOECHSTENS)
             .map((eintrag) => ({
                 farbe: eintrag.farbe,
@@ -1551,6 +1552,24 @@ Object.assign(SCHACH_RUNDE, {
             if (!art) {
                 continue;
             }
+
+            /* HAND VOLL (seit v0.152.4, `regeln.itemMax`): Das neue Item
+               verpufft — die Lootbox ist trotzdem weg (eingesammelt ist
+               eingesammelt). Der Verlauf sagt es; der Bildschirm zeigt am
+               Feld ein kurzes Verpuffen und „Hand voll · verpufft". */
+            if (SCHACH_RUNDE.handVoll(runde, farbe)) {
+                runde.verlauf.push({
+                    text: SCHACH_VARIANTEN.faehigkeitTitel(art) + " verpufft · Hand voll",
+                    wer: wer || "",
+                    farbe: farbe,
+                    von: von,
+                    nach: nach,
+                    wirkung: "verpufft",
+                    felder: [bonus.feld]
+                });
+                SCHACH_RUNDE._verlaufKuerzen(runde);
+                continue;
+            }
             runde.faehigkeiten[farbe].push(art);
 
             /* Derselbe Weg wie beim Zug davor: Dieser Eintrag beschreibt
@@ -1938,6 +1957,103 @@ Object.assign(SCHACH_RUNDE, {
         }
 
         return liste;
+    },
+
+    /*
+     * WARUM GEHT DIESE FÄHIGKEIT GERADE NICHT? (seit v0.152.3)
+     *
+     * Nutzer 28.09.2026: „Verstärken kann man nicht einsetzen" · „ging einfach
+     * für ein paar Runden nicht" — dazu ein Dialog „König im Schach", obwohl
+     * die eigene Seite drei Könige hatte (mit mehreren Königen gibt es kein
+     * Schach, `SCHACH.koenigSchlagbarFuer`). Der Bildschirm RIET den Grund:
+     * „König im Schach", wenn gerade ein König bedroht war, sonst „Brett
+     * geändert". Der eigentliche Grund — meist die Regel „kein Item führt
+     * direkt zu Schach" (`_wirkungVerboten`, Fall 2) — stand nirgends.
+     *
+     * Jetzt sagt es das Modell, mit derselben Rechnung wie das Einsetzen:
+     *   ""             es geht (mindestens ein Feld bzw. der Einsatz selbst)
+     *   "darfNicht"    nicht am Zug / Partie läuft nicht / nicht im Vorrat
+     *   "keinZiel"     die Wirkung kommt nirgends zustande (kein passendes Feld)
+     *   "imSchach"     der eigene König steht im Schach, und die Fähigkeit
+     *                  löst es nicht (sie gibt den Zug ab)
+     *   "selbstSchach" danach stünde der eigene König im Schach
+     *   "gaebeSchach"  danach stünde der GEGNER im Schach — das darf ein Item
+     *                  nicht (Nutzer-Entscheidung 20.08.2026)
+     *   "keinZug"      danach hätte die Seite am Zug keinen einzigen Zug
+     *                  (Matt oder Patt durch ein Item)
+     * Bei mehreren Feldern zählt der häufigste Grund.
+     */
+    faehigkeitAbsage(runde, spielerId, art, wahl) {
+        const alt = SCHACH_RUNDE.normalisieren(runde);
+        const beschreibung = SCHACH_VARIANTEN.FAEHIGKEITEN[art];
+        const farbe = SCHACH_RUNDE.teamVon(alt, spielerId);
+        if (!beschreibung || !farbe || !SCHACH_RUNDE.darfEinsetzen(alt, spielerId, art)
+                || alt.faehigkeiten[farbe].indexOf(art) === -1) {
+            return "darfNicht";
+        }
+
+        const grundFuer = (neuStand) => {
+            const danach = beschreibung.beendetZug
+                ? SCHACH_RUNDE._zugAbgebenNachFaehigkeit(neuStand, farbe)
+                : neuStand;
+            if (!SCHACH_RUNDE._wirkungVerboten(alt.stand, danach, farbe, !!beschreibung.beendetZug)) {
+                return "";
+            }
+            if (SCHACH_RUNDE._koenigVerbietet(alt.stand, danach, farbe, !!beschreibung.beendetZug)) {
+                return SCHACH.imSchach(alt.stand, farbe) ? "imSchach" : "selbstSchach";
+            }
+            if (SCHACH.alleZuege(danach).length === 0) {
+                return "keinZug";
+            }
+            return "gaebeSchach";
+        };
+
+        if (beschreibung.art === "ziel") {
+            const zaehler = {};
+            let gefunden = false;
+            for (let feld = 0; feld < SCHACH.felderVon(alt.stand); feld++) {
+                const wirkung = SCHACH_RUNDE._zielWirkung(SCHACH_RUNDE.kopieren(alt), art, farbe, feld, wahl);
+                if (!wirkung) {
+                    continue;
+                }
+                gefunden = true;
+                const grund = grundFuer(wirkung.stand);
+                if (!grund) {
+                    return "";
+                }
+                zaehler[grund] = (zaehler[grund] || 0) + 1;
+            }
+            if (!gefunden) {
+                return "keinZiel";
+            }
+            return Object.keys(zaehler).sort((a, b) => zaehler[b] - zaehler[a])[0];
+        }
+
+        /* Ohne Zielfeld: der Einsatz selbst zur Probe (reine Rechnung). */
+        if (SCHACH_RUNDE.faehigkeitEinsetzen(alt, spielerId, art, -1, "", 0, undefined, wahl)) {
+            return "";
+        }
+        return SCHACH.imSchach(alt.stand, farbe) ? "imSchach" : "keinZiel";
+    },
+
+    /* Ist die Hand dieser Seite voll? (seit v0.152.4, `regeln.itemMax`;
+       0 = ohne Grenze.) */
+    handVoll(runde, farbe) {
+        const grenze = (runde && runde.regeln && Number.isInteger(runde.regeln.itemMax))
+            ? runde.regeln.itemMax : 0;
+        const hand = (runde && runde.faehigkeiten && runde.faehigkeiten[farbe]) || [];
+        return grenze > 0 && hand.length >= grenze;
+    },
+
+    /* Die Absage als Stichwort für die Kurzmeldung am Brett (UPCrew-Standard:
+       keine Sätze). Leer, wenn es geht. */
+    ABSAGE_TEXTE: {
+        darfNicht: "Gerade nicht dran",
+        keinZiel: "Kein Feld frei",
+        imSchach: "König im Schach · erst schützen",
+        selbstSchach: "Eigener König käme ins Schach",
+        gaebeSchach: "Gäbe Schach · Items dürfen das nicht",
+        keinZug: "Gegner stünde ohne Zug · geht nicht"
     },
 
     /*
@@ -2614,7 +2730,14 @@ Object.assign(SCHACH_RUNDE, {
             runde.faehigkeiten[beute.opfer].splice(stelle, 1);
         }
 
+        /* Höchstens `regeln.itemMax` (seit v0.152.4): Der Dieb selbst liegt
+           noch in der Hand und geht gleich — er zählt deshalb nicht mit.
+           Was darüber ist, verpufft. */
+        const grenze = SCHACH_RUNDE.normalisieren(runde).regeln.itemMax;
         for (const art of beute.arten) {
+            if (grenze > 0 && runde.faehigkeiten[farbe].length - 1 >= grenze) {
+                break;
+            }
             runde.faehigkeiten[farbe].push(art);
         }
 

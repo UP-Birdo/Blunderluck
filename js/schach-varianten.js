@@ -916,7 +916,12 @@ const SCHACH_VARIANTEN = {
             beschreibung: "Eine eigene Figur überlebt den nächsten Angriff: Der Schlag "
                 + "verpufft, der Angreifer bleibt stehen. Das Schild hängt an der "
                 + "FIGUR — ziehst du mit ihr, ist es weg. Auf den König wirkt es "
-                + "nicht."
+                + "nicht.",
+            /* Die Warnung am Einsetzen (seit v0.152.4, Nutzer 28.09.2026:
+               „Der Schild sollte eine Warnung haben: Achtung, die Figur kann
+               sich nicht bewegen, solange aktiv"). Nach der Regel KANN sie
+               ziehen — dann ist das Schild weg; die Warnung sagt beides. */
+            warnung: "Achtung · Figur stehen lassen, sonst ist das Schild weg"
         },
         /*
          * DAS ERDBEBEN IST SEIT v0.54 KEINE FÄHIGKEIT MEHR.
@@ -2651,6 +2656,31 @@ const SCHACH_VARIANTEN = {
     ],
 
     /* Ohne Angabe „alle" — der Zustand vor v0.87. */
+    /*
+     * HÖCHSTENS SO VIELE ITEMS AUF DER HAND (seit v0.152.4, Nutzer 28.09.2026:
+     * „ein Max an Items einstellen, alles, was man über das Max aufnimmt,
+     * verpufft"). `wert` 0 = ohne Grenze. Eine Partie ohne Angabe hat keine
+     * Grenze (additiver Vertrag); was der Anlege-Bildschirm vorschlägt, steht
+     * in `ITEM_MAX_VORGABE`: 4 — genau so viele Karten zeigt die Hand
+     * nebeneinander, ohne zu rollen, und bei „Regen" stapeln sich sonst
+     * Karten, die man nie ausspielt.
+     */
+    ITEM_MAX: [
+        { id: "2", wert: 2, titel: "2" },
+        { id: "3", wert: 3, titel: "3" },
+        { id: "4", wert: 4, titel: "4" },
+        { id: "5", wert: 5, titel: "5" },
+        { id: "frei", wert: 0, titel: "Alle", hinweis: "ohne Grenze" }
+    ],
+
+    ITEM_MAX_VORGABE: 4,
+
+    /* Der Eintrag zu einem Wert — Unbekanntes gilt als „ohne Grenze". */
+    itemMaxVon(wert) {
+        return SCHACH_VARIANTEN.ITEM_MAX.find((eintrag) => eintrag.wert === wert)
+            || SCHACH_VARIANTEN.ITEM_MAX[SCHACH_VARIANTEN.ITEM_MAX.length - 1];
+    },
+
     itemVorratVon(id) {
         return SCHACH_VARIANTEN.ITEM_VORRAETE.find((eintrag) => eintrag.id === id)
             || SCHACH_VARIANTEN.ITEM_VORRAETE.find((eintrag) => eintrag.id === "alle");

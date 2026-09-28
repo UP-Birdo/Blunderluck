@@ -79,7 +79,17 @@ const DIALOG = {
      */
     fehler(titel, angaben) {
         const einstellung = angaben || {};
-        const bild = ZUSTAND.fehler({ text: einstellung.folge || "", technik: einstellung.technik });
+        /* DAS ZEICHEN PASST ZUM GRUND (seit v0.152.3): Nur ein Netz- oder
+           Datenbankfehler (es gibt eine technische Meldung) zeigt das
+           durchgestrichene Netz; eine abgelehnte Regel („König im Schach",
+           „Zu spät", „Kein Treffer") das Achtung-Dreieck. Bis v0.152.2 stand
+           überall das Netz — „König im Schach" sah aus wie Funkloch.
+           `zeichen` setzt es ausdrücklich. */
+        const bild = ZUSTAND.fehler({
+            text: einstellung.folge || "",
+            technik: einstellung.technik,
+            zeichen: einstellung.zeichen || (einstellung.technik ? "kein-netz" : "achtung")
+        });
         const knoepfe = einstellung.nochmal
             ? [
                 { beschriftung: "Schließen", wert: false, stil: "knopf-still" },

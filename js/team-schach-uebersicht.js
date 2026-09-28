@@ -565,6 +565,22 @@ Object.assign(TEAM_SCHACH, {
         vorrat.appendChild(TEAM_SCHACH._eigeneWahlKnopfBauen());
         seite.appendChild(vorrat);
 
+        /* Höchstens wie viele auf der Hand (seit v0.152.4, Nutzer 28.09.2026:
+           „ein Max an Items einstellen, alles, was man über das Max
+           aufnimmt, verpufft"). Das Bild: so viele kleine Karten, wie in die
+           Hand passen. */
+        const hand = TEAM_SCHACH._abschnittBauen("Wie viele auf der Hand?",
+            "Wer mehr Items einsammelt, als in die Hand passen, verliert das neue — "
+            + "es verpufft. Gilt für beide Seiten, auch für Bob.");
+        hand.appendChild(TEAM_SCHACH._bildReiheBauen("handmax",
+            SCHACH_VARIANTEN.ITEM_MAX.map((eintrag) => ({
+                id: String(eintrag.wert), titel: eintrag.titel, hinweis: eintrag.hinweis,
+                bild: TEAM_SCHACH._handKartenBild(eintrag.wert || 5, stufen)
+            })),
+            String(Number.isInteger(regeln.itemMax) ? regeln.itemMax : SCHACH_VARIANTEN.ITEM_MAX_VORGABE),
+            (id) => TEAM_SCHACH._regelSetzen("itemMax", Number(id))));
+        seite.appendChild(hand);
+
         /* Sieht man, was drin ist? Ein Bild für jede Antwort. */
         const seltenheit = TEAM_SCHACH._abschnittBauen("Inhalt sichtbar?",
             "Farbig: Jede Lootbox trägt schon auf dem Brett die Farbe ihrer Stufe, "
@@ -1045,6 +1061,15 @@ Object.assign(TEAM_SCHACH, {
      * Zeichen bzw. 3D-Plättchen — mit dem ersten Item dieser Stufe als
      * Beispiel; nebeneinander, leicht überlappend.
      */
+    /* Das Bild für „Wie viele auf der Hand?": N kleine Karten, eng
+       gefächert (`.item-karten-hand`), damit auch fünf in eine Zelle passen. */
+    _handKartenBild(anzahl, stufen) {
+        const bild = TEAM_SCHACH._itemKartenBild(Array.from({ length: anzahl },
+            (_, nummer) => stufen[nummer % stufen.length]));
+        bild.classList.add("item-karten-hand");
+        return bild;
+    },
+
     _itemKartenBild(stufen) {
         const gruppe = TEAM_SCHACH._element("span", "item-karten");
         for (const stufe of stufen) {

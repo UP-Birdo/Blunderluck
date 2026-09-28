@@ -83,6 +83,13 @@ const ZUSTAND = {
         shop: "M5 8 H19 L18 21 H6 Z M9 8 V6.5 A3 3 0 0 1 15 6.5 V8 M9 12 A3 3 0 0 0 15 12",
         /* Tipp in der Partie (seit v0.152.0): eine Glühbirne. */
         tipp: "M9 18 H15 M10 21 H14 M12 3 A6 6 0 0 1 16 13.5 C15.2 14.3 15 15 15 16 H9 C9 15 8.8 14.3 8 13.5 A6 6 0 0 1 12 3 Z",
+        /* Achtung (seit v0.152.3): ein Dreieck mit Ausrufezeichen — für
+           „Geht nicht" nach einer Regel (König im Schach, zu spät …), nicht
+           für Netzfehler (dort bleibt „kein-netz"). */
+        achtung: "M12 4 L21 19.5 H3 Z M12 10 V14 M12 16.8 V17",
+        /* Zeit zurück in der Partie (seit v0.152.2, Ware „leben"): eine Uhr,
+           deren Rand gegen den Uhrzeigersinn zurückläuft. */
+        "zeit-zurueck": "M4.5 12 A7.5 7.5 0 1 0 6.7 6.7 L4 9.4 M4 5.4 V9.4 H8 M12 8 V12 L14.5 13.5",
         /* Schrift: ein A (Einstellungen, Zeile „Standard-Schrift"). */
         schrift: "M5 20 L12 4 L19 20 M8 14 H16",
         /* Der Pfeil zurück in der Kopfzeile (seit v0.142.0, wie Typoluck). */
@@ -136,10 +143,12 @@ const ZUSTAND = {
      *   nochmal  Funktion — wiederholt den fehlgeschlagenen Schritt
      *   technik  die technische Meldung; steht NICHT im Bild, nur als
      *            Hinweis beim Darüberfahren (für die Fehlersuche)
+     *   zeichen  wahlfrei (seit v0.152.3), Vorgabe "kein-netz" — für eine
+     *            abgelehnte Regel statt eines Netzfehlers "achtung"
      */
     fehler(angaben) {
         const einstellung = angaben || {};
-        const feld = ZUSTAND._feldBauen("zustand-fehler", "kein-netz",
+        const feld = ZUSTAND._feldBauen("zustand-fehler", einstellung.zeichen || "kein-netz",
             einstellung.text || "Nicht erreichbar");
         if (einstellung.technik) {
             feld.title = einstellung.technik;

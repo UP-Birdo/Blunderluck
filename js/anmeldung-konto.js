@@ -278,7 +278,7 @@ Object.assign(ANMELDUNG, {
         const pruefen = ANMELDUNG._kontoFormularPruefen(name, passwort, wiederholung, los);
 
         los.addEventListener("click", async () => {
-            if (los.disabled) {
+            if (los.disabled || !ANMELDUNG._kontoVorSenden(pruefen)) {
                 return;
             }
             los.disabled = true;
@@ -315,15 +315,18 @@ Object.assign(ANMELDUNG, {
             "knopf-haupt anmeldung-knopf anmeldung-weiter", null);
 
         const pruefen = ANMELDUNG._kontoFormularPruefen(name, passwort, wiederholung, los);
+        const allgemein = ANMELDUNG._kontoAllgemein(kasten);
 
         los.addEventListener("click", async () => {
-            if (los.disabled) {
+            if (los.disabled || !ANMELDUNG._kontoVorSenden(pruefen)) {
                 return;
             }
             los.disabled = true;
+            allgemein.fehler.textContent = "";
             const ergebnis = await KONTO.kontoAnlegen(ANMELDUNG.abgleich.speicher,
                 ANMELDUNG.abgleich.daten, name.feld.value, passwort.feld.value);
-            await ANMELDUNG._kontoFertig(ergebnis, name, pruefen, "Angemeldet · ");
+            await ANMELDUNG._kontoFertig(ergebnis, name, pruefen, "Angemeldet · ",
+                { name: name, passwort: passwort, wiederholung: wiederholung, allgemein: allgemein });
         });
 
         kasten.appendChild(los);
@@ -504,15 +507,18 @@ Object.assign(ANMELDUNG, {
             "knopf-haupt anmeldung-knopf anmeldung-weiter", null);
 
         const pruefen = ANMELDUNG._kontoFormularPruefen(name, passwort, wiederholung, los);
+        const allgemein = ANMELDUNG._kontoAllgemein(kasten);
 
         los.addEventListener("click", async () => {
-            if (los.disabled) {
+            if (los.disabled || !ANMELDUNG._kontoVorSenden(pruefen)) {
                 return;
             }
             los.disabled = true;
+            allgemein.fehler.textContent = "";
             const ergebnis = await KONTO.gastSichern(ANMELDUNG.abgleich.speicher,
                 ANMELDUNG.abgleich.daten, eintrag, name.feld.value, passwort.feld.value);
-            await ANMELDUNG._kontoFertig(ergebnis, name, pruefen, "Gesichert · ");
+            await ANMELDUNG._kontoFertig(ergebnis, name, pruefen, "Gesichert · ",
+                { name: name, passwort: passwort, wiederholung: wiederholung, allgemein: allgemein });
         });
 
         kasten.appendChild(los);
@@ -758,36 +764,75 @@ Object.assign(ANMELDUNG, {
 
     /* Live-Prüfung eines Formulars mit (optional) Name, Passwort und
        Wiederholung. Liefert die Prüf-Funktion. */
+    /*
+     * SEIT 28.09.2026 SAGT DAS FORMULAR IMMER, WAS NICHT STIMMT (Nutzer: „Bei
+     * falscher Eingabe beim Account-Erstellen soll eine Meldung kommen, was
+     * genau nicht stimmt"). Bis dahin war der Knopf still gesperrt, solange
+     * etwas fehlte — wer nicht sah, welches Feld, kam nicht weiter. Jetzt:
+     *   - beim Tippen die Meldung am Feld, sobald darin etwas steht,
+     *   - der Knopf ist immer drückbar; beim Drücken stehen ALLE Meldungen
+     *     da (auch „Name fehlt."), der Finger springt ins erste falsche Feld,
+     *   - die Absage vom Server steht am richtigen Feld (`ergebnis.feld`,
+     *     `_kontoFertig`).
+     * Die Prüfung selbst ist `KONTO.formularPruefen` (in jedem Spiel gleich).
+     * `pruefen(alles)` liefert, ob alles passt.
+     */
     _kontoFormularPruefen(name, passwort, wiederholung, knopf) {
-        const pruefen = () => {
-            let gueltig = true;
-            if (name) {
-                const regel = name.feld.value === "" ? "" : KONTO.namePruefen(name.feld.value);
-                name.fehler.textContent = regel;
-                gueltig = gueltig && name.feld.value !== "" && regel === "";
+        const pruefen = (alles) => {
+            const ergebnis = KONTO.formularPruefen(name ? name.feld.value : "Abc",
+                passwort.feld.value, wiederholung.feld.value);
+            const zeigen = (teil, schluessel) => {
+                if (!teil) {
+                    return;
+                }
+                teil.fehler.textContent = (alles === true || teil.feld.value !== "") ? ergebnis[schluessel] : "";
+            };
+            zeigen(name, "name");
+            zeigen(passwort, "passwort");
+            zeigen(wiederholung, "wiederholung");
+            knopf.disabled = false;
+            if (alles === true && ergebnis.feld) {
+                const erstes = { name: name, passwort: passwort, wiederholung: wiederholung }[ergebnis.feld];
+                if (erstes && erstes.feld.focus) {
+                    erstes.feld.focus();
+                }
             }
-            const regel = passwort.feld.value === "" ? "" : KONTO.passwortPruefen(passwort.feld.value);
-            passwort.fehler.textContent = regel;
-            gueltig = gueltig && passwort.feld.value !== "" && regel === "";
-
-            const gleich = wiederholung.feld.value === passwort.feld.value;
-            wiederholung.fehler.textContent = (wiederholung.feld.value !== "" && !gleich)
-                ? "Passwörter stimmen nicht" : "";
-            gueltig = gueltig && wiederholung.feld.value !== "" && gleich;
-            knopf.disabled = !gueltig;
+            return !ergebnis.feld;
         };
         [name, passwort, wiederholung].filter(Boolean)
-            .forEach((teil) => teil.feld.addEventListener("input", pruefen));
+            .forEach((teil) => teil.feld.addEventListener("input", () => pruefen(false)));
         return pruefen;
+    },
+
+    /* Die allgemeine Meldungszeile über dem Knopf (Verbindung, Server). */
+    _kontoAllgemein(kasten) {
+        const zeile = document.createElement("p");
+        zeile.className = "anmeldung-fehler anmeldung-fehler-allgemein";
+        zeile.setAttribute("role", "alert");
+        kasten.appendChild(zeile);
+        return { feld: { focus() { } }, fehler: zeile };
+    },
+
+    /* Vor dem Senden: alles prüfen und zeigen. Liefert wahr, wenn es passt. */
+    _kontoVorSenden(pruefen) {
+        if (pruefen(true)) {
+            return true;
+        }
+        if (typeof FUEHLEN !== "undefined") {
+            FUEHLEN.fehler();
+        }
+        return false;
     },
 
     /* Nach Umzug, neuem Konto, Neu-Verbinden, Gast-Sichern: Liste neu laden,
        übernehmen, Bild zu — oder die Meldung unter das Feld. */
-    async _kontoFertig(ergebnis, meldungFeld, pruefen, gruss) {
+    async _kontoFertig(ergebnis, meldungFeld, pruefen, gruss, felder) {
         if (!ergebnis.ok) {
             FUEHLEN.fehler();
-            meldungFeld.fehler.textContent = ergebnis.text;
-            pruefen();
+            pruefen(false);
+            /* Seit 28.09.2026 an das Feld, zu dem die Absage gehört. */
+            const ziel = (felder && ergebnis.feld && felder[ergebnis.feld]) || meldungFeld;
+            ziel.fehler.textContent = ergebnis.text;
             return;
         }
         await ANMELDUNG._kontoNachladen();

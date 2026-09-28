@@ -228,7 +228,8 @@ pruefe("Eingebunden: Shop statt Bald, Anpfiff zählt, Tipp und Leben, Münzen je
     const ts = lesen("js/team-schach.js");
     wahr(/FORTSCHRITT_KONTO\.rundeGestartet\(\)/.test(ts), "Anpfiff meldet die Serie");
     wahr(/tippZeigen/.test(ts) && /FORTSCHRITT_KONTO\.vorrat\("tipp"\) > 0/.test(ts), "Tipp nur mit Vorrat");
-    wahr(/lebenEinsetzen/.test(lesen("js/team-schach-auswertung.js")), "Leben im Abschluss");
+    /* Seit v0.152.2 heisst das Leben „Zeit zurück" (test-zeit-zurueck.js). */
+    wahr(/zeitZurueckEinsetzen/.test(lesen("js/team-schach-auswertung.js")), "Zeit zurück im Abschluss");
     const fk = lesen("js/fortschritt-konto.js");
     wahr(/_muenzenFuerPartie/.test(fk) && /hilfeGenutzt\(partie\.id\)/.test(fk), "Münzen je Partie, Hilfe beim Tagesbrett");
     const index = lesen("index.html");

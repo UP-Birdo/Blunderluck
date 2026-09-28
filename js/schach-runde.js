@@ -54,6 +54,20 @@ const SCHACH_RUNDE = {
     VERLAUF_LAENGE: 40,
 
     /*
+     * ZEIT ZURÜCK (seit v0.152.2): so viele Anfänge eigener Züge merkt sich
+     * eine Partie gegen Bob (`rueckblick`). Drei heisst: zweimal
+     * hintereinander zurück, ohne dazwischen zu ziehen — mehr kostet bei
+     * jedem Zug nur Datenmenge (jeder Eintrag trägt Brett und Verlauf).
+     */
+    RUECKBLICK_TIEFE: 3,
+
+    /* Was ein Rückblick-Eintrag festhält: alles, was sich während des
+       Spiels ändert — Teams, Regeln, Kennung und Spielzeit nicht. */
+    RUECKBLICK_FELDER: ["stand", "zugZaehler", "laeuft", "ergebnis", "faehigkeiten",
+        "bonusGesammelt", "bonus", "bonusFassung", "stufeZuletzt", "verloren", "gefallen",
+        "unglueckskarten", "vorschlag", "vorschlaege", "versaeumt", "verlauf"],
+
+    /*
      * Wie lange die Halluzination die Sicht trübt (in Halbzügen).
      *
      * SEIT v0.79 VIER STATT ACHT (Nutzer-Ansage 18.08.: „verschwommene Sicht
@@ -480,7 +494,16 @@ const SCHACH_RUNDE = {
                  * null bei jeder anderen Partie. Gedeutet in
                  * js\tagesbrett.js und im Fortschritt.
                  */
-                tagesbrett: null
+                tagesbrett: null,
+
+                /*
+                 * HÖCHSTENS SO VIELE ITEMS AUF DER HAND (seit v0.152.4,
+                 * `SCHACH_VARIANTEN.ITEM_MAX`): 0 = ohne Grenze — so rechnet
+                 * jede Partie von früher weiter. Wer darüber einsammelt,
+                 * verliert das neue Item („verpufft", `handVoll`).
+                 * Gilt für beide Seiten, also auch für Bob.
+                 */
+                itemMax: 0
             },
 
             /*
@@ -512,7 +535,19 @@ const SCHACH_RUNDE = {
              */
             versaeumt: {},
 
-            verlauf: []
+            verlauf: [],
+
+            /*
+             * ZEIT ZURÜCK (seit v0.152.2, Ware aus dem Shop, nur gegen Bob):
+             * die letzten Anfänge eigener Züge als Momentaufnahme
+             * ({ stand, zugZaehler, … } nach `RUECKBLICK_FELDER`), das
+             * Jüngste hinten, höchstens `RUECKBLICK_TIEFE`. Gefüllt von
+             * `SCHACH_BOT` (nach jedem Zug von Bob), eingelöst von
+             * `rueckblickAnwenden`. Beginnt die Partie mit dem eigenen Zug
+             * (oder stammt sie von früher), merkt die erste eigene Aktion den
+             * Anfang (`SCHACH_BOT.zeitMerkenVor`).
+             */
+            rueckblick: []
         };
 
         /*
@@ -1460,6 +1495,11 @@ const SCHACH_RUNDE = {
 
             /* Das Tagesbrett (seit v0.149.0). */
             runde.regeln.tagesbrett = SCHACH_RUNDE.tagesbrettAngabe(roh.regeln.tagesbrett);
+
+            /* Höchstens N Items (seit v0.152.4) — nur eine kleine ganze
+               Zahl, sonst ohne Grenze. */
+            runde.regeln.itemMax = (Number.isInteger(roh.regeln.itemMax)
+                && roh.regeln.itemMax >= 1 && roh.regeln.itemMax <= 20) ? roh.regeln.itemMax : 0;
         }
 
         if (roh.vorschlag && typeof roh.vorschlag === "object") {
@@ -1641,7 +1681,99 @@ const SCHACH_RUNDE = {
             }
         }
 
+        /*
+         * Der Rückblick für Zeit zurück (seit v0.152.2) — additiv: Eine
+         * Partie von früher hat keinen. Hier nur grob geprüft (Brett und
+         * Zugzähler da) und auf die bekannten Felder beschnitten; genau
+         * normalisiert wird ein Eintrag erst, wenn er eingelöst wird
+         * (`rueckblickAnwenden`) — sonst kostete jedes `kopieren` das
+         * Vierfache.
+         */
+        if (Array.isArray(roh.rueckblick)) {
+            runde.rueckblick = roh.rueckblick
+                .filter((eintrag) => eintrag && typeof eintrag === "object"
+                    && eintrag.stand && typeof eintrag.stand === "object"
+                    && Number.isInteger(eintrag.zugZaehler) && eintrag.zugZaehler >= 0)
+                .slice(-SCHACH_RUNDE.RUECKBLICK_TIEFE)
+                .map((eintrag) => {
+                    const sauber = {};
+                    for (const feld of SCHACH_RUNDE.RUECKBLICK_FELDER) {
+                        if (eintrag[feld] !== undefined) {
+                            sauber[feld] = eintrag[feld];
+                        }
+                    }
+                    return sauber;
+                });
+        }
+
         return runde;
+    },
+
+    /* ---------------------------------------------------------------- *
+     * Zeit zurück (seit v0.152.2, Ware „leben" aus dem Shop)
+     *
+     * Nutzer 27.09.2026: „soll nicht Extra-Leben heißen, sondern Zeit
+     * zurück — zwei Halbzüge zurückspringen". Die Partie merkt sich den
+     * Stand zu Beginn jedes eigenen Zugs (`rueckblick`); eingelöst wird
+     * der vorige — dann ist der eigene letzte Zug samt Bobs Antwort weg,
+     * und man ist wieder selbst am Zug. WER das darf (nur gegen Bob, nur
+     * mit Vorrat), entscheidet `SCHACH_BOT.zeitZurueckZiel`; hier steht nur
+     * das Merken und das Zurücksetzen.
+     * ---------------------------------------------------------------- */
+
+    /* Die Momentaufnahme einer Runde: tiefe Kopie der Spielfelder. */
+    _rueckblickEintrag(runde) {
+        const eintrag = {};
+        for (const feld of SCHACH_RUNDE.RUECKBLICK_FELDER) {
+            if (runde[feld] !== undefined) {
+                eintrag[feld] = JSON.parse(JSON.stringify(runde[feld]));
+            }
+        }
+        return eintrag;
+    },
+
+    /*
+     * Den jetzigen Stand als Anfang eines Zugs merken. Liefert eine neue
+     * Runde; steht derselbe Zugzähler schon hinten, bleibt es beim
+     * vorhandenen Eintrag (zweimal gerufen = einmal gemerkt).
+     */
+    rueckblickMerken(runde) {
+        const neu = SCHACH_RUNDE.kopieren(runde);
+        const letzter = neu.rueckblick[neu.rueckblick.length - 1];
+        if (letzter && letzter.zugZaehler === neu.zugZaehler) {
+            return neu;
+        }
+        neu.rueckblick = neu.rueckblick
+            .concat([SCHACH_RUNDE._rueckblickEintrag(neu)])
+            .slice(-SCHACH_RUNDE.RUECKBLICK_TIEFE);
+        return neu;
+    },
+
+    /*
+     * Den Rückblick-Eintrag an Stelle `stelle` einlösen: Stellung,
+     * Zugzähler, Karten, Lootboxen, Verluste und Verlauf wie damals; Teams,
+     * Regeln, Kennung und Spielzeit bleiben. Der Zugzähler geht mit zurück
+     * — an ihm hängen zeitlich begrenzte Wirkungen (Glas, Versteckt …) und
+     * das Würfeln; nur so läuft alles wie damals weiter. Die Einträge
+     * danach verfallen (sie gehören zu einer Zukunft, die es nicht mehr
+     * gibt). Liefert null bei einer ungültigen Stelle.
+     */
+    rueckblickAnwenden(runde, stelle, zeitpunkt) {
+        const alt = SCHACH_RUNDE.kopieren(runde);
+        const eintrag = alt.rueckblick[stelle];
+        if (!Number.isInteger(stelle) || !eintrag) {
+            return null;
+        }
+        const roh = Object.assign({}, alt);
+        for (const feld of SCHACH_RUNDE.RUECKBLICK_FELDER) {
+            /* Fehlt ein Feld im Eintrag (Firebase wirft leere Listen weg),
+               gilt die Vorgabe — nicht der Wert von jetzt. */
+            roh[feld] = (eintrag[feld] === undefined) ? undefined : JSON.parse(JSON.stringify(eintrag[feld]));
+        }
+        roh.rueckblick = alt.rueckblick.slice(0, stelle + 1);
+        const neu = SCHACH_RUNDE.normalisieren(roh);
+        neu.geaendertAm = (zeitpunkt === undefined) ? Date.now() : zeitpunkt;
+        return neu;
     },
 
     kopieren(runde) {
@@ -3051,6 +3183,8 @@ const SCHACH_RUNDE = {
         neu.stufeZuletzt = {};
         neu.verloren = { weiss: [], schwarz: [] };
         neu.verlauf = [];
+        /* Zeit zurück (v0.152.2) führt nie in die vorige Partie. */
+        neu.rueckblick = [];
 
         neu.geaendertAm = wann;
         return neu;

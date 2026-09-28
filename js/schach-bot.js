@@ -661,8 +661,115 @@ const SCHACH_BOT = {
             return null;
         }
 
-        return SCHACH_RUNDE.ziehen(runde, SCHACH_BOT.KENNUNG,
+        const neu = SCHACH_RUNDE.ziehen(runde, SCHACH_BOT.KENNUNG,
             wahl.von, wahl.nach, wahl.umwandlung, SCHACH_BOT.NAME, zeitpunkt);
+
+        /* ZEIT ZURÜCK (seit v0.152.2): Ist danach der Mensch am Zug, beginnt
+           sein Zug hier — diesen Stand merkt sich die Partie. Endet die
+           Partie mit Bobs Zug, bleibt der vorige Anfang der letzte. */
+        if (neu && neu.laeuft && !neu.ergebnis && !SCHACH_BOT.istAmZug(neu) && SCHACH_BOT.zeitGilt(neu)) {
+            return SCHACH_RUNDE.rueckblickMerken(neu);
+        }
+        return neu;
+    },
+
+    /* ---------------------------------------------------------------- *
+     * Zeit zurück (seit v0.152.2, Ware „leben" aus dem Shop)
+     *
+     * Nutzer 27.09.2026: „soll nicht Extra-Leben heißen, sondern Zeit
+     * zurück — zwei Halbzüge zurückspringen". Ein Einsatz nimmt den eigenen
+     * letzten Zug und Bobs Antwort zurück; danach ist man wieder selbst am
+     * Zug. Nach einer Niederlage (Matt, ins Schach gestolpert, Tagesbrett
+     * verfehlt — NICHT nach „Aufgeben" per Knopf) geht es an den Anfang des
+     * letzten eigenen Zugs zurück. Gemerkt wird im Feld `rueckblick` der Partie.
+     *
+     * NUR GEGEN DEN COMPUTER: In der Partie sitzt außer Bob genau diese
+     * Person — mit Menschen (Freunde, Team-Schach) nie.
+     *
+     * NUR IM TURM (seit v0.152.3, Nutzer 28.09.2026: „nur im Turm nutzbar,
+     * Bob da rauslassen") — nicht in Frei und nicht beim Tagesbrett. Auch
+     * gemerkt wird nur dort (`zeitGilt`), sonst trüge jede Partie gegen Bob
+     * den Rückblick umsonst mit.
+     * ---------------------------------------------------------------- */
+
+    /* Gilt Zeit zurück in dieser Partie überhaupt? Turm-Partie gegen Bob,
+       darin ausser Bob genau diese Person (ohne `spielerId`: nur Bob-Turm). */
+    zeitGilt(runde, spielerId) {
+        if (!runde || !runde.regeln || !runde.regeln.turm || !SCHACH_BOT.istBotPartie(runde)) {
+            return false;
+        }
+        return !spielerId || (!SCHACH_BOT.istBot(spielerId) && SCHACH_BOT.nurNochBotUnd(runde, spielerId));
+    },
+
+    /*
+     * Welcher Rückblick-Eintrag würde eingelöst? Die Stelle in
+     * `rueckblick` — oder -1, wenn Zeit zurück hier nicht geht.
+     */
+    zeitZurueckZiel(runde, spielerId) {
+        if (!spielerId || !SCHACH_BOT.zeitGilt(runde, spielerId)) {
+            return -1;
+        }
+        const partie = SCHACH_RUNDE.normalisieren(runde);
+        const team = SCHACH_RUNDE.teamVon(partie, spielerId);
+        const anzahl = partie.rueckblick.length;
+        if (!team || partie.regeln.einigkeit) {
+            return -1;
+        }
+        if (!partie.ergebnis) {
+            /* Mitten in der Partie: Der letzte Eintrag ist der Anfang des
+               jetzigen Zugs, zurück geht es an den davor. */
+            return (partie.laeuft && partie.stand.amZug === team && anzahl >= 2) ? anzahl - 2 : -1;
+        }
+        if (partie.ergebnis !== SCHACH.gegner(team) || SCHACH_BOT._perKnopfAufgegeben(partie, team)) {
+            return -1;
+        }
+        return anzahl >= 1 ? anzahl - 1 : -1;
+    },
+
+    /*
+     * Hat `team` per Knopf aufgegeben? Das Tagesbrett gibt nach dem letzten
+     * erlaubten Zug selbst auf (`TAGESBRETT.nachZug`) — das zählt nicht als
+     * Aufgabe, sondern als verfehlt.
+     */
+    _perKnopfAufgegeben(partie, team) {
+        const letzter = partie.verlauf[partie.verlauf.length - 1];
+        const aufgegeben = !!letzter && letzter.von === -1 && letzter.farbe === team
+            && !letzter.wirkung && / gibt auf$/.test(letzter.text);
+        if (!aufgegeben) {
+            return false;
+        }
+        const angabe = partie.regeln.tagesbrett;
+        if (angabe && typeof TAGESBRETT !== "undefined"
+                && TAGESBRETT.eigeneZuege(partie, team) >= angabe.zuege) {
+            return false;
+        }
+        return true;
+    },
+
+    /* Zeit zurück ausführen: die neue Runde — oder null, wenn es nicht geht. */
+    zeitZurueck(runde, spielerId, zeitpunkt) {
+        const stelle = SCHACH_BOT.zeitZurueckZiel(runde, spielerId);
+        return stelle < 0 ? null : SCHACH_RUNDE.rueckblickAnwenden(runde, stelle, zeitpunkt);
+    },
+
+    /*
+     * Eine Partie gegen Bob ohne Rückblick (angepfiffen mit dem eigenen Zug
+     * oder aus der Zeit vor v0.152.2): Vor der ersten eigenen Aktion wird
+     * der Stand `alt` als Anfang dieses Zugs in `neu` gemerkt. Sonst
+     * unverändert.
+     */
+    zeitMerkenVor(alt, neu) {
+        if (!alt || !neu || alt.id !== neu.id || !alt.laeuft || alt.ergebnis
+                || !SCHACH_BOT.zeitGilt(alt) || SCHACH_BOT.istAmZug(alt)) {
+            return neu;
+        }
+        const vorher = SCHACH_RUNDE.normalisieren(alt);
+        if (vorher.rueckblick.length > 0) {
+            return neu;
+        }
+        const ergebnis = SCHACH_RUNDE.kopieren(neu);
+        ergebnis.rueckblick = [SCHACH_RUNDE._rueckblickEintrag(vorher)];
+        return ergebnis;
     },
 
     /* ---------------------------------------------------------------- *

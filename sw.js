@@ -29,7 +29,7 @@
  */
 
 /* Der Name des Zwischenspeichers. HIER STEHT DIE NUMMER GENAU EINMAL. */
-const SPEICHER_NAME = "blunderluck-v0.152.0";
+const SPEICHER_NAME = "blunderluck-v0.152.5";
 
 /*
  * BEIM BAUEN: NETZ ZUERST. IM BETRIEB: ZWISCHENSPEICHER ZUERST.
@@ -85,6 +85,7 @@ const DATEIEN = [
     "./css/upcrew-wischen.css",
     "./css/upcrew-flamme.css",
     "./css/upcrew-shop.css",
+    "./css/upcrew-spielerliste.css",
     "./css/upcrew-leiste.css",
 
     /* Die zwölf Crew-Schriften und ihre Lizenz (seit v0.144.0) — sie
@@ -161,6 +162,7 @@ const DATEIEN = [
     "./js/upcrew-muenzen.js",
     "./js/upcrew-shop.js",
     "./js/shop.js",
+    "./js/upcrew-spielerliste.js",
     "./js/upcrew-sammlung.js",
     "./js/sammlung.js",
     "./js/freunde.js",

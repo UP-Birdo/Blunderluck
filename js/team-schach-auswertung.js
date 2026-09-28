@@ -87,21 +87,9 @@ Object.assign(TEAM_SCHACH, {
         return block;
     },
 
-    /* Die Zeile „+10 XP", bei einem neuen Level dazu „Level N". */
-    /* Ein Extra-Leben einsetzen: ein Stück nehmen, Abschluss zu, dieselbe
-       Turm-Stufe neu anlegen (seit v0.152.0). */
-    async lebenEinsetzen(partie) {
-        const angabe = partie.regeln && partie.regeln.turm;
-        if (!angabe || !FORTSCHRITT_KONTO.benutzen("leben")) {
-            return;
-        }
-        TEAM_SCHACH.abschlussSchliessen(partie.id);
-        if (typeof TABS !== "undefined") {
-            TABS.wechseln("start");
-        }
-        await START._turmStarten(angabe.ort, angabe.stufe);
-    },
-
+    /* Die Zeile „+10 XP", bei einem neuen Level dazu „Level N". (Bis
+       v0.152.1 stand davor `lebenEinsetzen` — ersetzt durch Zeit zurück,
+       `TEAM_SCHACH.zeitZurueckEinsetzen` in team-schach.js.) */
     _xpZeileBauen(partieId) {
         const gewinn = TEAM_SCHACH._xpGewinn[partieId];
         if (!gewinn) {
@@ -281,19 +269,21 @@ Object.assign(TEAM_SCHACH, {
                 "Gegen Computer · keine Punkte"));
 
             const nurZurueck = TEAM_SCHACH._element("div", "abschluss-leiste");
-            /* EXTRA-LEBEN (seit v0.152.0, Ware aus dem Shop): Nach einer
-               verlorenen Turm-Partie geht es mit einem Leben gleich wieder
-               an dieselbe Stufe. */
-            const turmAngabe = partie.regeln && partie.regeln.turm;
-            if (turmAngabe && !gewonnen && !remis && typeof FORTSCHRITT_KONTO !== "undefined"
-                    && FORTSCHRITT_KONTO.vorrat && FORTSCHRITT_KONTO.vorrat("leben") > 0
-                    && typeof START !== "undefined" && START._turmStarten) {
+            /* ZEIT ZURÜCK (seit v0.152.2, Ware „leben" aus dem Shop; bis
+               v0.152.1 „Leben einsetzen" = Turm-Stufe neu): Nach einer
+               Niederlage im Turm (seit v0.152.3 nur dort) geht dieselbe
+               Partie am Anfang des letzten eigenen Zugs weiter. Nicht nach
+               „Aufgeben" per Knopf. Gebucht ist die Niederlage bis zum
+               Schliessen noch nicht (`_buchungWartet`). */
+            const zeitZurueck = !gewonnen && !remis && TEAM_SCHACH.zeitZurueckMoeglich(partie, person);
+            if (zeitZurueck) {
                 nurZurueck.appendChild(TEAM_SCHACH._knopf(
-                    "Leben einsetzen · noch " + FORTSCHRITT_KONTO.vorrat("leben"), "knopf-haupt abschluss-leben",
-                    () => TEAM_SCHACH.lebenEinsetzen(partie)));
+                    TEAM_SCHACH._wareName("leben") + " · noch " + FORTSCHRITT_KONTO.vorrat("leben"),
+                    "knopf-haupt abschluss-zeit-zurueck",
+                    () => TEAM_SCHACH.zeitZurueckEinsetzen(partie)));
             }
             nurZurueck.appendChild(TEAM_SCHACH._knopf("Zurück zur Übersicht",
-                turmAngabe && !gewonnen ? "knopf-still" : "knopf-haupt",
+                zeitZurueck ? "knopf-still" : "knopf-haupt",
                 () => TEAM_SCHACH.abschlussSchliessen(partie.id)));
             flaeche.appendChild(nurZurueck);
 
@@ -636,6 +626,25 @@ Object.assign(TEAM_SCHACH, {
     /* Abschluss weglegen: Die Partie gilt auf diesem Gerät als erledigt —
        dauerhaft, also auch nach dem Neuladen der Seite. */
     abschlussSchliessen(id) {
+        /* Eine Niederlage, deren Buchung auf Zeit zurück wartete
+           (`_buchungWartet`, seit v0.152.2), zählt jetzt — einmal: Der
+           Fortschritt merkt sich die Kennung, ein zweiter Aufruf bucht
+           nichts. */
+        const person = TEAM_SCHACH._ich();
+        const beendet = (TEAM_SCHACH.abgleich && TEAM_SCHACH.abgleich.daten)
+            ? SCHACH_TAFEL.partie(TEAM_SCHACH.abgleich.daten, id) : null;
+        /* Rechnet die Wertung noch, zählt ein SIEG wie bisher erst mit ihr
+           (`WERTUNG.beiFertig`); eine Niederlage braucht sie nicht. */
+        const team = (beendet && person) ? SCHACH_RUNDE.teamVon(beendet, person.id) : "";
+        const rechnet = typeof WERTUNG !== "undefined" && typeof WERTUNG.rechnetNoch === "function"
+            && WERTUNG.rechnetNoch(id);
+        if (beendet && beendet.ergebnis && team && typeof FORTSCHRITT_KONTO !== "undefined"
+                && (!rechnet || beendet.ergebnis !== team)) {
+            const gewinn = TEAM_SCHACH._buchen(beendet, person.id);
+            if (gewinn) {
+                TEAM_SCHACH._xpGewinn[id] = gewinn;
+            }
+        }
         ICH.abschlussMerken(id);
         TEAM_SCHACH.abschluss = null;
         TEAM_SCHACH.offeneId = "";
@@ -1614,11 +1623,19 @@ Object.assign(TEAM_SCHACH, {
             return null;
         }
 
-        if (TEAM_SCHACH._wenigerBewegung()) {
-            return TEAM_SCHACH._anleitungRuhigBauen(schritte);
-        }
-
-        /* Mit 3D: die abgespielte Bühne, ohne Text (seit v0.135.0). */
+        /*
+         * NUR NOCH DIE ABGESPIELTE ANLEITUNG (seit v0.152.3, Nutzer
+         * 28.09.2026: „Ich habe die Anleitung noch als Bild mit Text
+         * bekommen, mein Gast hat schon das GIF bekommen … Es soll nur noch
+         * die GIF-Variante geben"). Die zweite Variante kam von der
+         * Einstellung „weniger Bewegung" im Betriebssystem (am Firmen-PC
+         * häufig): Dann standen seit v0.42 alle Schritte als Bilder mit Satz
+         * nebeneinander (`_anleitungRuhigBauen`, entfernt). Jetzt spielt es
+         * überall ab — die Bühne ist ein Lernfilm, kein Effekt, und stoppt
+         * beim Antippen.
+         */
+        /* Die abgespielte 3D-Bühne, ohne Text (seit v0.135.0; seit v0.152.3
+           auch im 2D-Modus, `BRETT_3D.buehneMoeglich`). */
         if (typeof window !== "undefined" && window.BRETT_3D && window.BRETT_3D.buehneMoeglich
                 && window.BRETT_3D.buehneMoeglich()) {
             const buehne = TEAM_SCHACH._anleitungBuehneBauen(schritte);
@@ -1744,37 +1761,9 @@ Object.assign(TEAM_SCHACH, {
         return gelungen ? halter : null;
     },
 
-    /* Alle Schritte nebeneinander — für alle, die keine Bewegung wollen. */
-    _anleitungRuhigBauen(schritte) {
-        const halter = TEAM_SCHACH._element("div", "anleitung");
-
-        /*
-         * UND EIN SATZ, DER ES ERKLÄRT (seit v0.73, Meldung I1).
-         *
-         * Gemeldet wurde: „ist die Animation evtl. nicht am PC zu sehen oder
-         * geht sie generell nicht mehr?" Sie geht — nur zeigt die App hier
-         * absichtlich alle Bilder nebeneinander, weil im Betriebssystem
-         * „weniger Bewegung" eingestellt ist (seit v0.42). Ohne einen Hinweis
-         * sieht genau das aus wie ein Fehler.
-         */
-        halter.appendChild(TEAM_SCHACH._element("p", "erklaerung",
-            "Weniger Bewegung eingestellt · "
-            + "Bilder nebeneinander"));
-
-        for (let nummer = 0; nummer < schritte.length; nummer++) {
-            const kasten = TEAM_SCHACH._element("div", "anleitung-bild");
-
-            kasten.appendChild(TEAM_SCHACH._element("span", "anleitung-marke",
-                "Bild " + (nummer + 1)));
-            kasten.appendChild(TEAM_SCHACH._beispielBrettBauen(schritte[nummer]));
-            kasten.appendChild(TEAM_SCHACH._element("p", "anleitung-text",
-                schritte[nummer].text));
-
-            halter.appendChild(kasten);
-        }
-
-        return halter;
-    },
+    /* (Bis v0.152.2 stand hier `_anleitungRuhigBauen` — alle Schritte als
+       Bilder mit Satz nebeneinander bei „weniger Bewegung". Entfernt, siehe
+       `_anleitungBauen`.) */
 
     /* Hat der Nutzer im Betriebssystem weniger Bewegung eingestellt? */
     _wenigerBewegung() {

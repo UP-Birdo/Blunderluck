@@ -1706,6 +1706,12 @@ Object.assign(TEAM_SCHACH, {
         svg.setAttribute("viewBox", "0 0 100 100");
         svg.setAttribute("aria-hidden", "true");
 
+        /* Im 2D-Modus ein FLACHER Würfel (seit v0.152.4, Nutzer 28.09.2026:
+           „2D-Würfel, nicht die 3D-Würfel hinsetzen"). */
+        if (TEAM_SCHACH._brettFlach()) {
+            return TEAM_SCHACH._wuerfelFlachFuellen(svg, stufe, pech);
+        }
+
         const bild = document.createElementNS(ns, "image");
         bild.setAttribute("x", "0");
         bild.setAttribute("y", "0");
@@ -1719,6 +1725,55 @@ Object.assign(TEAM_SCHACH, {
         bild.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", quelle);
         svg.appendChild(bild);
 
+        return svg;
+    },
+
+    /* Steht das Brett gerade in 2D? (Klasse `brett-flach`, js\figuren-flach.js) */
+    _brettFlach() {
+        return typeof document !== "undefined" && !!document.body && !!document.body.classList
+            && typeof document.body.classList.contains === "function"
+            && document.body.classList.contains("brett-flach");
+    },
+
+    /*
+     * DER FLACHE WÜRFEL (seit v0.152.4): eine abgerundete Fläche in der
+     * Stufenfarbe mit dunkler Kante wie die 2D-Figuren, darauf ein weisses
+     * Fragezeichen — beim Unglück (wenn es gezeigt wird) kopfüber, wie
+     * beim gerenderten Würfel. Die verborgene Stufe ist grau.
+     */
+    _wuerfelFlachFuellen(svg, stufe, pech) {
+        const ns = "http://www.w3.org/2000/svg";
+        const id = (stufe && stufe.id) ? String(stufe.id) : "";
+        const eintrag = SCHACH_VARIANTEN.STUFEN.find((s) => s.id === id);
+        const farbe = eintrag ? eintrag.farbe : "#8a8f98";
+        svg.setAttribute("class", "wuerfel wuerfel-flach");
+
+        const flaeche = document.createElementNS(ns, "rect");
+        flaeche.setAttribute("x", "16");
+        flaeche.setAttribute("y", "16");
+        flaeche.setAttribute("width", "68");
+        flaeche.setAttribute("height", "68");
+        flaeche.setAttribute("rx", "16");
+        flaeche.setAttribute("fill", farbe);
+        flaeche.setAttribute("stroke", "#26262b");
+        flaeche.setAttribute("stroke-width", "5");
+        svg.appendChild(flaeche);
+
+        const zeichen = document.createElementNS(ns, "text");
+        zeichen.setAttribute("x", "50");
+        zeichen.setAttribute("y", "66");
+        zeichen.setAttribute("text-anchor", "middle");
+        zeichen.setAttribute("font-size", "46");
+        zeichen.setAttribute("font-weight", "800");
+        zeichen.setAttribute("fill", "#ffffff");
+        zeichen.setAttribute("stroke", "#26262b");
+        zeichen.setAttribute("stroke-width", "2");
+        if (pech) {
+            zeichen.setAttribute("transform", "rotate(180 50 50)");
+            zeichen.setAttribute("y", "66");
+        }
+        zeichen.textContent = "?";
+        svg.appendChild(zeichen);
         return svg;
     },
 

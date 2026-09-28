@@ -697,6 +697,48 @@ body.design-3d .grundlagen-figur {
         inset 0 -1px 0 var(--mauer-licht);
 }
 
+/* ------------------------------------------------------------------ *
+ * DIE MAUER IM 2D-BRETT (seit v0.152.4, Nutzer-Wunsch B „2D-Wand besser
+ * aussehen")
+ *
+ * Wie die 2D-Figuren: flach, ohne Verlauf, mit dunkler Kontur. Die Mauer
+ * ist ein Band aus Ziegeln — oben eine Reihe um ein halbes Feld versetzt,
+ * unten Fugen an den Feldgrenzen. Die Kontur kommt über `--mauer-licht`,
+ * das die Enden-Regeln oben schon für ihre Kanten nutzen; dort wird es hier
+ * nur dunkel gesetzt. Die senkrechte Mauer bekommt dieselben Ziegel gedreht.
+ * ------------------------------------------------------------------ */
+body.brett-flach .feld-mauer::after {
+    --mauer-licht: #10345c;
+    --mauer-fuge: #10345c;
+
+    background:
+        linear-gradient(var(--mauer-fuge), var(--mauer-fuge)) 0 50% / 100% 2px no-repeat,
+        linear-gradient(90deg, transparent 47%, var(--mauer-fuge) 47% 53%, transparent 53%) 0 0 / 100% 50% no-repeat,
+        linear-gradient(90deg, var(--mauer-fuge) 0 3%, transparent 3% 97%, var(--mauer-fuge) 97%) 0 100% / 100% 50% no-repeat,
+        #3d8ad8;
+}
+
+body.brett-flach .feld-mauer.mauer-senkrecht::after {
+    background:
+        linear-gradient(90deg, var(--mauer-fuge), var(--mauer-fuge)) 50% 0 / 2px 100% no-repeat,
+        linear-gradient(180deg, transparent 47%, var(--mauer-fuge) 47% 53%, transparent 53%) 0 0 / 50% 100% no-repeat,
+        linear-gradient(180deg, var(--mauer-fuge) 0 3%, transparent 3% 97%, var(--mauer-fuge) 97%) 100% 0 / 50% 100% no-repeat,
+        #3d8ad8;
+}
+
+/* Die Restzeit steht bei einer Mauer im 2D nur EINMAL, am Ende der Mauer,
+   und hell auf dunkler Kontur — vorher trug jedes Stück denselben dunklen
+   Kreis, und drei „6" nebeneinander lasen sich wie drei Mauern. */
+body.brett-flach .feld-mauer:not(.mauer-ende) > .feld-restzeit {
+    display: none;
+}
+
+body.brett-flach .feld-mauer > .feld-restzeit {
+    color: #10345c;
+    background: #fff;
+    border: 1px solid #10345c;
+}
+
 /*
  * Geliehene Figur (Fähigkeit „Friedhof", seit v3.3): Sie gehört dir nur
  * auf Zeit. Der gestrichelte Rahmen sagt „nicht von Dauer" — anders als
@@ -1732,4 +1774,42 @@ body.brett-3d-aktiv .friedhof-streifen .klapp-pfeil {
 .faehigkeit-knopf:has(> .faehigkeit-bild-3d) .faehigkeit-anzahl,
 .faehigkeit-knopf:has(> .faehigkeit-bild-3d) .karte-restzeit {
     z-index: 1;
+}
+
+/*
+ * HAND VOLL · VERPUFFT (seit v0.152.4, Einstellung „Höchstens N Items"): Am
+ * Feld der Lootbox steigt ein kleiner grauer Rauch auf und verfliegt —
+ * das Item ist weg. Bei „weniger Bewegung" nur ein kurzer Kreis ohne
+ * Bewegung.
+ */
+.feld-verpufft {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 70%;
+    height: 70%;
+    margin: -35% 0 0 -35%;
+    border-radius: var(--rund-voll);
+    background: radial-gradient(circle, rgba(200, 200, 210, 0.85) 0%, rgba(200, 200, 210, 0.35) 55%, rgba(200, 200, 210, 0) 72%);
+    pointer-events: none;
+    z-index: 4;
+    opacity: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .feld-verpufft {
+        animation: feld-verpufft 1.1s ease-out forwards;
+    }
+
+    @keyframes feld-verpufft {
+        0% { opacity: 0.95; transform: scale(0.4) translateY(0); }
+        60% { opacity: 0.6; transform: scale(1.15) translateY(-12%); }
+        100% { opacity: 0; transform: scale(1.5) translateY(-30%); }
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .feld-verpufft {
+        opacity: 0.6;
+    }
 }

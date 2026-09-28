@@ -167,7 +167,7 @@ pruefe("Konto je Spiel: aussehenJe[app], altes Feld bleibt, je Spiel gewinnt der
 
 pruefe("Konto: Schreiben nach aussehenJe erst mit Schalter, altes Feld nicht mehr schreiben", () => {
     const k = lesen("js/aussehen-konto.js");
-    wahr(/AUSSEHEN_JE_AM_KONTO: false,/.test(k), "Schalter aus, bis §11c eingespielt ist");
+    wahr(/AUSSEHEN_JE_AM_KONTO: true,/.test(k), "Schalter an seit v0.152.5 (§11c eingespielt 28.09.2026)");
     wahr(/if \(!AUSSEHEN_KONTO\.AUSSEHEN_JE_AM_KONTO\) \{\s*return;/.test(k), "ohne Schalter nichts ans Konto");
     wahr(/aussehenJeSetzen\(/.test(k), "je Spiel");
     wahr(/_umzugGemacht\(\)/.test(k), "altes Feld nur einmal (Umzug)");

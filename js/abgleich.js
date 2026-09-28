@@ -55,6 +55,22 @@ class Abgleich {
         this.laden = rueckrufe.laden || null;
         this.brauchtAlles = rueckrufe.brauchtAlles || null;
 
+        /*
+         * DER TAKT JE BILDSCHIRM (seit v0.152.5, optional). `taktMs()`
+         * sagt, wie viele Millisekunden zwischen zwei Abfragen liegen
+         * sollen — beim Schach 3 s in einer Partie mit Menschen und im
+         * Vorraum, 15 s gegen Bob und auf dem Start; bei der Spielerliste
+         * immer 15 s (Werte: `KONFIG.speicher.abfrageTaktMs`). Der
+         * Zeitgeber schlägt weiter im Grundtakt `abfrageIntervallMs` und
+         * lässt Schläge aus, solange der Takt nicht um ist — so gilt ein
+         * kürzerer Takt nach einem Bildschirmwechsel spätestens nach
+         * einem Grundtakt. Fehlt der Rückruf, fragt jeder Schlag (wie
+         * bisher). Das Zurückkommen auf die Seite und `vollNachladen`
+         * fragen immer sofort.
+         */
+        this.taktMs = rueckrufe.taktMs || null;
+        this.letzteAbfrage = 0;
+
         this.daten = this.leereDaten();
 
         /* Ist schon einmal ein echter Stand angekommen (seit v0.140.0)? Bis
@@ -190,7 +206,7 @@ class Abgleich {
 
         if (this.speicher.art === "gemeinsam") {
             this.abfrageZeitgeber = window.setInterval(
-                () => this.fremdenStandHolen(),
+                () => this.taktSchlag(),
                 this.einstellung.abfrageIntervallMs
             );
 
@@ -327,6 +343,25 @@ class Abgleich {
         }
     }
 
+    /*
+     * Ein Schlag des Zeitgebers (seit v0.152.5): Ist seit der letzten
+     * Abfrage der Takt des Bildschirms noch nicht um, bleibt er aus. Eine
+     * Viertelsekunde Spiel, damit ein Takt, der genau ein Vielfaches des
+     * Grundtakts ist, nicht an der Ungenauigkeit des Zeitgebers um einen
+     * Schlag zu spät kommt.
+     */
+    taktSchlag(jetzt) {
+        const zeit = (jetzt === undefined) ? Date.now() : jetzt;
+        if (this.taktMs) {
+            const takt = this.taktMs();
+            if (typeof takt === "number" && isFinite(takt)
+                    && zeit - this.letzteAbfrage < takt - 250) {
+                return;
+            }
+        }
+        this.fremdenStandHolen();
+    }
+
     async fremdenStandHolen() {
         if (this.schreibtGerade || this.aenderungOffen || this.schreibZeitgeber !== null
             || this.eigeneVorgaenge > 0) {
@@ -373,6 +408,9 @@ class Abgleich {
          * Bildschirm.
          */
         const standVorher = this.vorgangsZaehler;
+
+        /* Ab hier wird gefragt — der Takt zählt ab jetzt (`taktSchlag`). */
+        this.letzteAbfrage = Date.now();
 
         /* ---------------------------------------------------------------- *
          * ERST NACHFRAGEN, DANN HOLEN (seit v0.111.0)

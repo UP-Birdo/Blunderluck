@@ -404,7 +404,7 @@ const SCHACH_TAFEL = {
      */
     uebersichtEintrag(partie, zeitpunkt) {
         const stand = SCHACH_RUNDE.normalisieren(partie);
-        return {
+        const eintrag = {
             ergebnis: stand.ergebnis || "",
             laeuft: stand.laeuft === true,
 
@@ -416,8 +416,22 @@ const SCHACH_TAFEL = {
             teams: {
                 weiss: stand.teams.weiss.slice(),
                 schwarz: stand.teams.schwarz.slice()
-            }
+            },
+
+            /* Wer eingeladen ist (seit v0.152.5): Der Lader holt eine
+               fremde LAUFENDE Partie nur noch, wenn man darin eingeladen
+               ist (`SCHACH_SPEICHER.tafelLaden`). `mitEinladungen` sagt,
+               dass dieser Eintrag die Liste trägt — die Datenbank speichert
+               keine leeren Listen, und ein Eintrag einer älteren Fassung
+               (ohne beides) muss von „niemand eingeladen" zu unterscheiden
+               sein; er wird wie bisher geholt. Die Liste selbst steht nur
+               da, wenn jemand eingeladen ist. */
+            mitEinladungen: true
         };
+        if (stand.eingeladen.length > 0) {
+            eintrag.eingeladen = stand.eingeladen.slice();
+        }
+        return eintrag;
     },
 
     /*
@@ -551,6 +565,11 @@ const SCHACH_TAFEL = {
 
             /* Das Tagesbrett (seit v0.149.0) — dieselbe Falle. */
             partie.regeln.tagesbrett = SCHACH_RUNDE.tagesbrettAngabe(regeln.tagesbrett);
+
+            /* Höchstens N Items auf der Hand (seit v0.152.4) — dieselbe
+               Falle; der Test unten hat sie beim Bauen gefunden. */
+            partie.regeln.itemMax = (Number.isInteger(regeln.itemMax)
+                && regeln.itemMax >= 1 && regeln.itemMax <= 20) ? regeln.itemMax : 0;
         }
 
         /*

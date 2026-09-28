@@ -101,6 +101,14 @@ const VERWALTUNGS_BILDSCHIRM = {
             ? VERWALTUNGS_BILDSCHIRM._kontoTabelleBauen()
             : VERWALTUNGS_BILDSCHIRM._tabelleBauen());
 
+        /* Die Spielerliste mit Statistiken (seit v0.152.1, gemeinsamer
+           Baustein js\upcrew-spielerliste.js, gleich in Typoluck): nur
+           lesen, nur mit Konto und Rolle Admin. */
+        const liste = mitKonto ? VERWALTUNGS_BILDSCHIRM._spielerlisteBauen() : null;
+        if (liste) {
+            wurzel.appendChild(liste);
+        }
+
         /*
          * BRETT-ANPASSUNG (seit v0.129.0, Nutzer-Ansage 24.09.2026): Farben,
          * Figuren und Blick des 3D-Bretts stellt nur der Admin um. Der
@@ -157,6 +165,59 @@ const VERWALTUNGS_BILDSCHIRM = {
      *   Admin geben    nur UP#Plus (AboveAdmin)
      *   Entfernen      jeder Admin; nie UP#Plus, nie das eigene Konto
      */
+    /*
+     * DIE SPIELERLISTE FÜR ADMINS (seit v0.152.1; Nutzer 27.09.2026: „in
+     * beiden generell eine Spielerliste mit Statistiken und co, aber nur der
+     * Admin-Account"). Der Baustein zeichnet und sortiert; die Rechner kommen
+     * von hier: Rolle (KONTO), Level und Serie (FORTSCHRITT, über alle
+     * Zweige), Abzeichen (UPCREW_ABZEICHEN), Münzen (UPCREW_MUENZEN, Saldo
+     * über alle Zweige — ehrlich, also auch ein kurzes Minus). UP#Plus steht
+     * nicht in der Liste (verteilt nur Rollen).
+     */
+    _spielerlisteDaten() {
+        const daten = ANMELDUNG.abgleich.daten;
+        const heute = FORTSCHRITT.datumVon(Date.now());
+        const serieVon = (stand) => FORTSCHRITT.serie(stand, heute,
+            FORTSCHRITT.schutzVerdient(FORTSCHRITT.level(stand).level)).tage;
+        const spieler = ((daten && daten.spieler) || [])
+            .filter((eintrag) => !SPIELER.istVerteiler(eintrag))
+            .map((eintrag) => Object.assign({}, eintrag, {
+                muenzen: (typeof UPCREW_MUENZEN !== "undefined")
+                    ? UPCREW_MUENZEN.saldo(eintrag.fortschritt || null) : undefined
+            }));
+        return UPCREW_SPIELERLISTE.zeilen(spieler, {
+            rolle: (uid) => KONTO.rolleVon(daten, uid),
+            level: (stand) => ({ level: FORTSCHRITT.level(stand).level, xp: FORTSCHRITT.gesamtXp(stand) }),
+            serie: serieVon,
+            abzeichen: (stand) => {
+                if (typeof UPCREW_ABZEICHEN === "undefined") {
+                    return null;
+                }
+                const liste = UPCREW_ABZEICHEN.liste(FORTSCHRITT.normalisieren(stand), serieVon(stand));
+                return { erreicht: liste.filter((e) => e.erreicht > 0).length, alle: liste.length };
+            }
+        });
+    },
+
+    _spielerlisteBauen() {
+        if (typeof UPCREW_SPIELERLISTE === "undefined" || typeof FORTSCHRITT === "undefined"
+                || typeof KONTO === "undefined" || !ANMELDUNG.abgleich
+                || !KONTO.istAdmin(ANMELDUNG.abgleich.daten, KONTO.uid())) {
+            return null;
+        }
+        const karte = document.createElement("section");
+        karte.className = "karte";
+        const kopf = document.createElement("h2");
+        kopf.textContent = "Spielerliste";
+        karte.appendChild(kopf);
+        UPCREW_SPIELERLISTE.bauen(karte, {
+            zeilen: VERWALTUNGS_BILDSCHIRM._spielerlisteDaten(),
+            beiAuswahl: (zeile) => DIALOG.hinweis(zeile.name + (zeile.tag ? "#" + zeile.tag : ""), "",
+                UPCREW_SPIELERLISTE.details(zeile))
+        });
+        return karte;
+    },
+
     _kontoTabelleBauen() {
         const rollbereich = document.createElement("div");
         rollbereich.className = "tabelle-rollbereich";

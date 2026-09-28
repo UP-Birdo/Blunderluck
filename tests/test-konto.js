@@ -31,7 +31,9 @@ async function pruefe(bezeichnung, funktion) {
 }
 
 function gleich(ist, soll, was) {
-    if (ist !== soll) {
+    /* Listen werden als Ganzes verglichen (seit 28.09.2026). */
+    const gleichIst = Array.isArray(ist) ? JSON.stringify(ist) === JSON.stringify(soll) : ist === soll;
+    if (!gleichIst) {
         throw new Error((was || "Wert") + ": erwartet <" + soll + ">, war <" + ist + ">");
     }
 }
@@ -199,6 +201,12 @@ function firebaseNachbauen() {
                 const uid = fb.tokens[d.idToken];
                 if (!uid || !fb.konten[uid]) {
                     return fehler("INVALID_ID_TOKEN");
+                }
+                /* Wie das echte Firebase nach ein paar Minuten (seit
+                   28.09.2026 nachgestellt): Verknüpfen verlangt eine frische
+                   Anmeldung. */
+                if (fb.anmeldungZuAlt && d.email) {
+                    return fehler("CREDENTIAL_TOO_OLD_LOGIN_AGAIN");
                 }
                 if (d.email) {
                     if (uidZuAdresse(d.email) && uidZuAdresse(d.email) !== uid) {
@@ -584,7 +592,15 @@ function oberAnlegen(w) {
         wahr(erster.ok, "erster");
         w.KONTO.abmelden();
         await nachladen(w);
+        /* Seit 28.09.2026 lehnt das Anlegen genau diese Kombination ab
+           („doppelt"); ältere Doppel gibt es aber, und für sie bleibt die
+           Auswahl. Das zweite entsteht hier deshalb an der Prüfung vorbei. */
+        const abgelehnt = await w.KONTO.kontoAnlegen(w.speicher, w.abgleich.daten, "Max", "Same#Pw11");
+        gleich([abgelehnt.ok, abgelehnt.fehler, abgelehnt.feld], [false, "doppelt", "passwort"], "neu: abgelehnt");
+        const pruefung = w.KONTO.kombinationVergeben;
+        w.KONTO.kombinationVergeben = async () => false;
         const zweiter = await w.KONTO.kontoAnlegen(w.speicher, w.abgleich.daten, "Max", "Same#Pw11");
+        w.KONTO.kombinationVergeben = pruefung;
         wahr(zweiter.ok, "zweiter bekommt eine andere Nummer");
         wahr(zweiter.eintrag.tag !== erster.eintrag.tag, "andere Nummer");
         await nachladen(w);
@@ -693,6 +709,64 @@ function oberAnlegen(w) {
         await nachladen(w);
         const wieder = await w.ANMELDUNG._kontoAnmeldenVersuchen("Lena#" + eintrag.tag, "Lena#Pass1");
         wahr(wieder.ok, "Anmelden nach dem Sichern");
+    });
+
+    await pruefe("Gast → Konto, wenn Firebase das Verknüpfen ablehnt (Anmeldung zu alt): Umzug, alles bleibt", async () => {
+        /* Nutzer 28.09.2026: „Wenn man von einem Gast-Account einen echten
+           erstellen will, nimmt es das nicht an." — vorher: „Anmeldung
+           abgelaufen", und ein Gast kann sich nicht neu anmelden. */
+        const w = await welt();
+        const gast = await w.KONTO.gastAnlegen(w.speicher, w.abgleich.daten);
+        const gastUid = w.KONTO.uid();
+        await nachladen(w);
+        w.ANMELDUNG._uebernehmen(gast.eintrag);
+        w.fb.anmeldungZuAlt = true;
+        const gesichert = await w.KONTO.gastSichern(w.speicher, w.abgleich.daten,
+            w.ANMELDUNG.ich(), "Lena", "Lena#Pass1");
+        wahr(gesichert.ok, "sichern trotz alter Anmeldung: " + JSON.stringify(gesichert));
+        const neueUid = w.KONTO.uid();
+        wahr(neueUid && neueUid !== gastUid, "neues Konto");
+        const eintrag = konten(w.fb)[neueUid];
+        gleich([eintrag.name, eintrag.id], ["Lena", gast.eintrag.id], "Name neu, Spieler-Kennung bleibt");
+        wahr(!("gast" in eintrag) && !("neuVerbinden" in eintrag), "sauber");
+        wahr(!konten(w.fb)[gastUid], "alter Gast-Eintrag weg");
+        wahr(!namen(w.fb).gast || !namen(w.fb).gast[gast.eintrag.tag], "Gast-Platz frei");
+        gleich(namen(w.fb).lena[eintrag.tag], neueUid, "Namens-Platz");
+        await new Promise((fertig) => setTimeout(fertig, 0));
+        wahr(!w.fb.konten[gastUid], "anonymes Firebase-Konto gelöscht");
+        w.KONTO.abmelden();
+        await nachladen(w);
+        const wieder = await w.ANMELDUNG._kontoAnmeldenVersuchen("Lena", "Lena#Pass1");
+        wahr(wieder.ok, "Anmelden mit Name + Passwort");
+    });
+
+    await pruefe("Konto-Formular: jede falsche Eingabe hat ihre Meldung und ihr Feld", async () => {
+        const w = await welt();
+        const K = w.KONTO;
+        const f = (n, p, r) => K.formularPruefen(n, p, r);
+        gleich(f("", "", "").feld, "name", "leer: erst der Name");
+        gleich(f("", "", "").name, "Name fehlt.", "Name fehlt");
+        wahr(/3 bis 16/.test(f("Jo", "Abc#1234", "Abc#1234").name), "zu kurz");
+        wahr(/3 bis 16/.test(f("Jonas12345678901X", "Abc#1234", "Abc#1234").name), "zu lang");
+        wahr(/Buchstaben und Ziffern/.test(f("Jo nas", "Abc#1234", "Abc#1234").name), "Zeichen");
+        wahr(/reserviert/.test(f("Admin", "Abc#1234", "Abc#1234").name), "reserviert");
+        wahr(/8 bis 12/.test(f("Jonas", "Ab#1", "Ab#1").passwort), "Passwort zu kurz");
+        wahr(/Grossbuchstabe/.test(f("Jonas", "abc#12345", "abc#12345").passwort), "was fehlt");
+        gleich(f("Jonas", "Abc#1234", "Abc#1235").feld, "wiederholung", "ungleich");
+        wahr(/nicht gleich/.test(f("Jonas", "Abc#1234", "Abc#1235").wiederholung), "Text ungleich");
+        gleich(f("Jonas", "Abc#1234", "Abc#1234").feld, "", "alles gut");
+        /* Server-Absagen: am richtigen Feld. */
+        gleich(K.fehlerFeld("vorhanden"), "name", "vorhanden");
+        gleich(K.fehlerFeld("schwach"), "passwort", "schwach");
+        gleich(K.fehlerFeld("netz"), "allgemein", "Verbindung");
+        wahr(/Keine Verbindung/.test(K.fehlerText("netz")), "Verbindung Text");
+        const leer = await K.kontoAnlegen(w.speicher, w.abgleich.daten, "Mia", "kurz");
+        gleich([leer.ok, leer.feld], [false, "passwort"], "Anlegen meldet das Feld");
+        w.KONTO.netz = async () => { throw new Error("offline"); };
+        const offline = await K.kontoAnlegen(w.speicher, w.abgleich.daten, "Mia", "Mia#Pass1");
+        w.KONTO.netz = null;
+        gleich([offline.ok, offline.feld], [false, "allgemein"], "ohne Netz: allgemein");
+        wahr(/Keine Verbindung/.test(offline.text), "Text: " + offline.text);
     });
 
     await pruefe("Rollen: nur UP#Plus vergibt Admin, ein Admin gibt frei, andere nicht", async () => {

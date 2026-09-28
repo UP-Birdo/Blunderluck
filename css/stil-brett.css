@@ -1850,6 +1850,12 @@ body.partie-spielt:not(.partie-fest) .vorraum-fuss {
     height: 16px;
 }
 
+/* „Wie viele auf der Hand?" (seit v0.152.4): bis zu fünf Karten in einer
+   Zelle — enger gefächert, sonst ragen sie in die Nachbarzellen. */
+.item-karten-hand .item-mini + .item-mini {
+    margin-left: -18px;
+}
+
 /* Mit 3D-Plättchen ist das Bild die Karte (wie in der Bibliothek). */
 .item-mini:has(> .faehigkeit-bild-3d) {
     border-color: transparent;

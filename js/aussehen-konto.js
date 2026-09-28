@@ -26,9 +26,10 @@
  * SEIT v0.151.17 JE SPIEL (Nutzer 27.09.2026: „wenn man auf Übernehmen
  * drückt, soll sich nur das Spiel ändern"): Ist `UPCREW_AUSSEHEN.GETEILT`
  * false (Standard), gehört das Aussehen je Spiel ans Konto —
- * `konten/<uid>/aussehenJe/blunderluck` (Regel SICHERHEIT.md §11c). Bis der
- * Nutzer §11c eingespielt hat, schreibt Blunderluck dorthin NICHTS
- * (`AUSSEHEN_JE_AM_KONTO = false`) — das Aussehen bleibt dann auf dem Gerät.
+ * `konten/<uid>/aussehenJe/blunderluck` (Regel SICHERHEIT.md §11c, vom
+ * Nutzer eingespielt am 28.09.2026; seit v0.152.5 `AUSSEHEN_JE_AM_KONTO =
+ * true`). Mit dem Schalter aus schreibt Blunderluck dorthin NICHTS — das
+ * Aussehen bleibt dann auf dem Gerät.
  * Das alte Feld `aussehen` wird nicht mehr geschrieben, aber gelesen: Fehlt
  * `aussehenJe/blunderluck`, dient es als Umzug (gilt, wenn es neuer ist).
  * Ist GETEILT true, läuft alles wie vor v0.151.17 über `aussehen`.
@@ -41,9 +42,10 @@
 
 const AUSSEHEN_KONTO = {
 
-    /* Schreibt Blunderluck sein Aussehen je Spiel ans Konto? Erst anschalten,
-       wenn der Nutzer Regel §11c (SICHERHEIT.md) eingespielt hat. */
-    AUSSEHEN_JE_AM_KONTO: false,
+    /* Schreibt Blunderluck sein Aussehen je Spiel ans Konto? An seit
+       v0.152.5: Der Nutzer hat Regel §11c (SICHERHEIT.md) am 28.09.2026
+       eingespielt. */
+    AUSSEHEN_JE_AM_KONTO: true,
 
     APP: "blunderluck",
 

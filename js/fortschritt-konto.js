@@ -260,13 +260,26 @@ const FORTSCHRITT_KONTO = {
         }
         const genauigkeit = (typeof WERTUNG !== "undefined")
             ? WERTUNG.genauigkeitVon(partie, team) : undefined;
+        let figuren = TURM.figurenFuer(partie.ergebnis === team, angabe.ort, genauigkeit);
+        /* Mit Hilfe aus dem Shop (Tipp, Zeit zurück) höchstens ein Bauer —
+           wie beim Tagesbrett (seit v0.152.2 auch im Turm). */
+        if (FORTSCHRITT_KONTO.hilfeGenutzt(partie.id)) {
+            figuren = Math.min(figuren, 1);
+        }
         return {
             schluessel: TURM.schluessel(angabe.ort, angabe.stufe),
             ort: angabe.ort,
             stufe: angabe.stufe,
-            figuren: TURM.figurenFuer(partie.ergebnis === team, angabe.ort, genauigkeit),
+            figuren: figuren,
             genauigkeit: genauigkeit
         };
+    },
+
+    /* Hat diese Partie schon gezählt (XP, Figuren)? Dann lässt sie sich
+       mit Zeit zurück nicht mehr wiederbeleben (seit v0.152.2). */
+    istGezaehlt(partieId) {
+        const zweig = (FORTSCHRITT_KONTO.lesen().spiele || {})[FORTSCHRITT.APP];
+        return !!zweig && Array.isArray(zweig.gezaehlt) && zweig.gezaehlt.indexOf(partieId) !== -1;
     },
 
     /* Die Figuren-Tabelle des Turms und der erreichte Ort (Start, Freischaltung). */
@@ -390,7 +403,8 @@ const FORTSCHRITT_KONTO = {
         return { ok: r.ok, grund: r.grund };
     },
 
-    /* Ein Stück aus dem Vorrat nehmen (Leben, Tipp). Liefert true/false. */
+    /* Ein Stück aus dem Vorrat nehmen (Zeit zurück = Ware „leben", Tipp).
+       Liefert true/false. */
     benutzen(ware) {
         const r = UPCREW_MUENZEN.benutzen(FORTSCHRITT_KONTO.lesen(), FORTSCHRITT.APP, ware, Date.now());
         if (r.ok) {
@@ -400,9 +414,10 @@ const FORTSCHRITT_KONTO = {
     },
 
     /*
-     * HILFE IN EINER PARTIE (Tipp, Leben): gemerkt auf dem Gerät je Partie —
-     * beim Tagesbrett gibt es dann höchstens einen Bauern
-     * (`FORTSCHRITT.tagesaufgabe`, Wert `hilfe`).
+     * HILFE IN EINER PARTIE (Tipp, Zeit zurück): gemerkt auf dem Gerät je
+     * Partie — beim Tagesbrett gibt es dann höchstens einen Bauern
+     * (`FORTSCHRITT.tagesaufgabe`, Wert `hilfe`), im Turm ebenso
+     * (`_turmWertung`, seit v0.152.2).
      */
     HILFE_SCHLUESSEL: "blunderluck.hilfe-partien",
 

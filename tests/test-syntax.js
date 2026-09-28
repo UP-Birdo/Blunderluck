@@ -209,7 +209,9 @@ const UPCREW_BAUSTEINE_CSS = ["upcrew-intro.css", "upcrew-knoepfe.css", "upcrew-
     /* seit v0.151.18: die Serien-Flamme */
     "upcrew-flamme.css",
     /* seit v0.152.0: Münzen und Shop */
-    "upcrew-shop.css"];
+    "upcrew-shop.css",
+    /* seit v0.152.1: die Spielerliste für Admins */
+    "upcrew-spielerliste.css"];
 
 pruefe("Ordner css und index.html nennen dieselben Stildateien", () => {
     const vorhanden = dateisystem.readdirSync(pfad.join(projekt, "css"))
@@ -656,7 +658,11 @@ pruefe("Die feste Seite haengt an genau einer Stelle (v0.52.0)", () => {
             continue;
         }
         const quelle = dateisystem.readFileSync(pfad.join(jsOrdner, name), "utf8");
-        const treffer = quelle.match(/rundeSetzen\([^)]*,[^,)]*,[^)]*\)/g) || [];
+        /* Ein ausdrückliches `false` als dritter Wert ist keine feste Seite
+           (seit v0.152.3: die Partie-Einstellungen geben so den vierten Wert
+           „spielt" mit, damit die Leiste auch dort weg ist). */
+        const treffer = (quelle.match(/rundeSetzen\([^)]*,[^,)]*,[^)]*\)/g) || [])
+            .filter((aufruf) => !/rundeSetzen\([^,]*,[^,]*,\s*false\s*,/.test(aufruf));
         stellen += treffer.length;
     }
 

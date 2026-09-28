@@ -437,7 +437,12 @@ const APP = {
             beiStatus: (status, text, technik) => APP.statusZeigen(status, text, technik),
             leereDaten: () => SPIELER.leereDaten(),
             inhaltGleich: (a, b) => SPIELER.inhaltGleich(a, b),
-            zusammenfuehren: (fremd, eigen, id) => SPIELER.zusammenfuehren(fremd, eigen, id)
+            zusammenfuehren: (fremd, eigen, id) => SPIELER.zusammenfuehren(fremd, eigen, id),
+
+            /* Die Spielerliste fragt seit v0.152.5 nur alle 15 Sekunden
+               (`KONFIG.speicher.abfrageTaktMs.spieler`). */
+            taktMs: () => KONFIG.speicher.abfrageTaktMs
+                ? KONFIG.speicher.abfrageTaktMs.spieler : undefined
         });
 
         ANMELDUNG.verbinden(spielerAbgleich);
@@ -470,7 +475,11 @@ const APP = {
                ganze Tafel, sondern über die Übersicht nur, was es braucht —
                und in einer offenen Partie nur diese (js\schach-speicher.js). */
             laden: (alles) => TEAM_SCHACH.standLaden(alles),
-            brauchtAlles: () => TEAM_SCHACH.brauchtAlles()
+            brauchtAlles: () => TEAM_SCHACH.brauchtAlles(),
+
+            /* Der Takt je Bildschirm (seit v0.152.5): 3 s mit Menschen
+               und im Vorraum, 15 s gegen Bob und ohne offene Partie. */
+            taktMs: () => TEAM_SCHACH.abfrageTaktMs()
         });
 
         TEAM_SCHACH.verbinden(schachAbgleich);

@@ -25,6 +25,10 @@ wird. Die Liste dessen, was noch kommt, steht in [../ROADMAP.md](../ROADMAP.md).
 
 ## entschieden.md - Blunderluck-Eintraege
 
+- **Weniger Download, Aufraeumen, §11c** (28.09.2026, v0.152.5 — fremde
+  laufende Partien nicht mehr holen, `mitEinladungen`, Code-Beitritt ueber
+  die Kennung, Takt 3/15 s ueber ausgelassene Schlaege, Chronik stueckweise,
+  Aufraeumen nach 7 Tagen hart, nur eigene Partien, Messtabelle vorher/nachher)
 - **Runde 3: ein Aussehen, Knoepfe ueber einen Waechter, Knopf-Familie in
   einer eigenen Ebene, 3D als Freischaltung** (26.09.2026, v0.144.0 —
   `js\knoepfe.js` statt 130 Einzelstellen, `@layer upcrew` damit eigene

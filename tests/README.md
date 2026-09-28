@@ -13,6 +13,7 @@ das es so nicht mehr gibt.
 | `test-schach-runde-faehigkeiten.js` | Fähigkeiten, Lootboxen, Unglückswürfel und Händler einer Partie |
 | `test-schach-tafel.js` | Sammlung der Partien und der **Umstieg** von früher |
 | `test-schach-speicher.js` | Teil-Laden und Teil-Schreiben gegen einen Datenbank-Nachbau: WAS geholt wird (fremde beendete nie, eigene beendete einmal, offene nur bei neuer Marke), Vorrat, Übersicht, Chronik-Anhang |
+| `test-weniger-download.js` | v0.152.5: fremde laufende Partien nicht geholt (Einladung, Verwaltung, Code-Beitritt schon), Chronik stückweise, Vorrat behält gelöschte eigene, Aufräumen (7 Tage hart, gebucht-Regel für längere Grenzen, nur eigene, 10 je Lauf, 1× je Stunde), Takt je Bildschirm, **Messung** Bytes je Spieler-Stunde gegen v0.152.4 (Mess-Werkzeug `messung-download.js`, kein eigener Test) |
 | `test-schach-bot.js` | Computer-Gegner: wann er zieht, was er wählt, dass er nicht spickt |
 | `test-schach-vorschau.js` | Bildanleitung: jede Fähigkeit hat ein Beispiel, und es geht auf |
 | `test-schach-grundlagen.js` | Schachregel-Anleitung: jedes Kapitel ist mit den echten Regeln gerechnet |
@@ -22,6 +23,13 @@ das es so nicht mehr gibt.
 | `test-bildschirm-ablaeufe.js` | Abläufe am Bildschirm: Start, Abgleich, Fenster, Tabs, globaler Fehlerfang — samt der asynchronen Prüfungen |
 | `test-syntax.js` | Übersetzbarkeit, Einbindung, Aufrufe, Version, Service Worker; seit v0.140.0 auch die Wächter des UPCrew-Standards (keine Floskeln in Zeichenketten, Ladereihenfolge, Vibration nur über `FUEHLEN`) |
 | `test-aussehen.js` | UPCrew-Angleichung Runde 3 (v0.144.0): Knopf-Zuordnung und Ausnahmen (`KNOEPFE`), 2D/3D-Freischaltung mit und ohne `SPERRE_3D` (`FREISCHALTUNG`), keine eigene Form-Regel für Haus-Knöpfe, keine feste Schrift ausser Festbreite, Ladereihenfolge des Aussehens, fünf Plätze der Leiste, zwölf Schriften offline. Seit Runde 4 (v0.145.0): Leisten-Baustein `upcrew-leiste.css` eingebunden und offline, Symbole Aufgaben/Sammlung/Bald, Tab „Sammlung“ (`SAMMLUNG`: Themen/Figuren = die des 3D-Bretts, Schlösser mit Ort, Reihenfolge der Regale, Anteil „NN %“), Sammlung-Schnittstelle von `brett-3d.js` |
+| `test-zeit-zurueck.js` | Zeit zurück (v0.152.2): Merken/Einlösen des Rückblicks im Modell (zwei Halbzüge, Karten, Verluste, Verlauf, auch ohne leere Listen), nicht gegen Menschen, nicht nach Aufgeben, Tagesbrett verfehlt; Bildschirm (lädt `bildschirm-umgebung.js`): Knopf im Spiel-Menü hinter dem Trennstrich, Abschluss-Weg ohne Doppelbuchung; Turm-Wertung mit Hilfe höchstens 1 Figur; Name nur aus `SHOP.TEXTE` |
+| `test-knopf-innenrand.js` | Knöpfe mit eigenem Innenrand 0 (Karten-Leiste: ✓ ✕ ?, Karte, Menü) haben eine `.knopf.<klasse>`-Regel, die `.knopf:not(.up-kn)` schlägt (v0.152.3, „Verstärken kann man nicht einsetzen") |
+| `test-faehigkeit-absage.js` | Warum eine Fähigkeit nicht geht (v0.152.3, `SCHACH_RUNDE.faehigkeitAbsage`): mehrere Könige = kein Schach, König im Schach sperrt nur solange, „gäbe Schach", ohne Zielfeld; Absage passt immer zum Einsetzen |
+| `test-intro.js` | Wann das UPCrew-Intro kommt (v0.152.3, `INTRO.entscheiden`, gleich Typoluck 0.18.2; seit v0.152.4 in der eigenen Farbwelt, `INTRO.welt`, wie 0.18.3) |
+| `test-wuensche-v0-152-4.js` | Wünsche A–E (v0.152.4): Denk-Blase nur am Zug, 2D-Mauer flach mit einer hellen Restzeit, flacher Würfel und flache Karten im 2D, Schild-Warnung |
+| `test-item-max.js` | Rundenregel „Wie viele auf der Hand?“ (v0.152.4, `regeln.itemMax`): Überschuss verpufft, Dieb kappt, gilt für Bob, Schildchen |
+| `test-bilder-v0-152-3.js` | Fehler aus den Nutzer-Bildern (v0.152.3): Anleitung immer abgespielt, Bühne auch in 2D, Brett mittig (Rollbalken beidseitig), kein Markieren, Leiste in Partie-Einstellungen weg, Achtung-Zeichen |
 | `test-zustand-fuehlen.js` | Die Bausteine des UPCrew-Standards (v0.140.0): Laden/Leer/Fehler (`ZUSTAND`, samt 10-Sekunden-Grenze), Vibration (`FUEHLEN`: Muster, Aus-Schalter, iPhone ohne Vibration, gesperrte Knöpfe und das 3D-Brett vibrieren nicht) |
 
 Dazu kommt **`bildschirm-umgebung.js`** — die gemeinsame Testumgebung der drei

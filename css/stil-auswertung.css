@@ -1117,6 +1117,27 @@
     height: 1.2em;
 }
 
+/* Die Hilfen aus dem Shop (Tipp, Zeit zurück; seit v0.152.2) stehen hinter
+   einem feinen Strich — senkrecht im Menü (Spalte), waagrecht in einer
+   Zeile; `flex-basis` 1px gilt jeweils für die Hauptachse. */
+.eck-trenner {
+    flex: 0 0 1px;
+    align-self: stretch;
+    background: var(--rahmen);
+}
+
+/* Der Vorrat als kleine Zahl neben dem Zeichen. */
+.eck-hilfe {
+    gap: 2px;
+}
+
+.eck-hilfe-zahl {
+    font-size: 0.7rem;
+    font-weight: 700;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+
 /* Die Münzen im Abschluss (seit v0.152.0). */
 .abschluss-muenzen {
     display: inline-flex;
@@ -1841,6 +1862,92 @@
     box-shadow: 0 0 0 1px var(--rahmen);
 }
 
+/* Die Warnung einer Karte (Schutzschild, seit v0.152.4): rot, klein. */
+.hand-aktiv-warnung {
+    display: block;
+    margin-top: 2px;
+    color: var(--gefahr);
+    font-size: 0.72rem;
+    font-weight: 700;
+    line-height: 1.25;
+}
+
+/*
+ * DIE DENK-BLASE (seit v0.152.4): neben dem Profil dessen, der am Zug ist —
+ * zwei kleine Punkte und eine Blase mit laufendem Kreis, in der Hauptfarbe.
+ * Am eigenen runden Menü-Knopf sitzt sie oben rechts daran.
+ */
+.denk-blase {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    flex: 0 0 auto;
+    width: 30px;
+    height: 24px;
+    margin-left: 6px;
+    pointer-events: none;
+}
+
+.denk-punkt {
+    position: absolute;
+    border-radius: var(--rund-voll);
+    background: var(--karte);
+    border: 1.5px solid var(--haupt);
+}
+
+.denk-punkt-1 {
+    left: 0;
+    bottom: 1px;
+    width: 5px;
+    height: 5px;
+}
+
+.denk-punkt-2 {
+    left: 5px;
+    bottom: 6px;
+    width: 7px;
+    height: 7px;
+}
+
+.denk-kreis {
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--rund-voll);
+    background: var(--karte);
+    border: 1.5px solid var(--haupt);
+}
+
+.denk-ring {
+    width: 11px;
+    height: 11px;
+    border-radius: var(--rund-voll);
+    border: 2px solid var(--rahmen);
+    border-top-color: var(--haupt);
+    animation: denk-drehen 0.9s linear infinite;
+}
+
+@keyframes denk-drehen {
+    to { transform: rotate(360deg); }
+}
+
+.hand-links {
+    position: relative;
+}
+
+.denk-blase-unten {
+    position: absolute;
+    left: 40px;
+    top: -16px;
+    margin: 0;
+    z-index: 1;
+}
+
 /* Das offene Menü steht ÜBER dem Knopf, nicht daneben — die Karten
    bleiben sichtbar. */
 .hand-menue-liste {
@@ -2102,6 +2209,26 @@ body.partie-fest .schach > .hand-leiste {
 .hand-rund svg {
     width: 22px;
     height: 22px;
+}
+
+/*
+ * SEIT v0.152.3: Die Knöpfe der Karten-Leiste behalten ihre Maße.
+ * `.knopf:not(.up-kn)` (css\stil.css, seit v0.144.0) setzt 18 px Innenrand
+ * je Seite und `font: inherit` — und gewinnt über eine einzelne Klasse. Im
+ * 44-px-Kreis blieben so 4 px für das Zeichen: ✓ „Einsetzen", ✕ und ? waren
+ * leere Kreise, die gewählte Karte gestaucht, die Initiale klein und dünn.
+ * Gemeldet als „Verstärken kann man nicht einsetzen" (27./28.09.2026).
+ * Nur Innenrand und Schrift, alles andere bleibt bei den Regeln oben.
+ */
+.knopf.hand-menue,
+.knopf.hand-aktiv-karte,
+.knopf.hand-rund {
+    padding: 0;
+}
+
+.knopf.hand-menue {
+    font-size: 1.3rem;
+    font-weight: 800;
 }
 
 .hand-rund-weg {

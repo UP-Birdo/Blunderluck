@@ -158,7 +158,11 @@ const TEAM_SCHACH = {
 
         /* Wie viele verschiedene Items es geben soll (seit v0.87). */
         itemVorrat: "alle",
-        
+
+        /* Höchstens so viele Items auf der Hand (seit v0.152.4); 0 = ohne
+           Grenze. Vorschlag 4 — Begründung bei `SCHACH_VARIANTEN.ITEM_MAX`. */
+        itemMax: SCHACH_VARIANTEN.ITEM_MAX_VORGABE,
+
 
         /* Die selbst angehakte Liste (seit v0.100) - nur bei
 
@@ -528,15 +532,65 @@ const TEAM_SCHACH = {
                 speicher, abgleich.daten, TEAM_SCHACH.offeneId);
         }
 
+        /* Die Verwaltung sieht auch fremde laufende Partien (sie zeigt sie
+           zum Löschen) — alle anderen bekommen sie seit v0.152.5 nicht
+           mehr geholt (`SCHACH_SPEICHER.tafelLaden`). */
         const person = TEAM_SCHACH._ich();
         return SCHACH_SPEICHER.tafelLaden(
-            speicher, person ? person.id : "", abgleich.daten);
+            speicher, person ? person.id : "", abgleich.daten, {
+                verwaltung: typeof ICH !== "undefined" && typeof ICH.verwaltungAktiv === "function"
+                    && ICH.verwaltungAktiv() === true
+            });
     },
 
     /* Braucht der Abgleich gerade den ganzen Stand? Nur ohne offene Partie
        — dort reicht die eine. */
     brauchtAlles() {
         return !TEAM_SCHACH.offeneId;
+    },
+
+    /* Der Abfrage-Takt des Schach-Abgleichs (seit v0.152.5, verdrahtet in
+       app.js): nach der offenen Partie, Regel in
+       `SCHACH_SPEICHER.abfrageTakt`, Werte in `KONFIG.speicher.abfrageTaktMs`. */
+    abfrageTaktMs() {
+        const tafel = TEAM_SCHACH.abgleich ? TEAM_SCHACH.abgleich.daten : null;
+        const partie = (TEAM_SCHACH.offeneId && tafel)
+            ? SCHACH_TAFEL.partie(tafel, TEAM_SCHACH.offeneId) : null;
+        return SCHACH_SPEICHER.abfrageTakt(partie,
+            (typeof KONFIG !== "undefined" && KONFIG.speicher) ? KONFIG.speicher.abfrageTaktMs : null);
+    },
+
+    /*
+     * EINE BEENDETE PARTIE BUCHEN (seit v0.152.5 der eine Weg dafür):
+     * XP, Münzen, Turm über `FORTSCHRITT_KONTO.partieBeendet` — und danach
+     * dem Server melden, dass diese Person gebucht hat
+     * (`SCHACH_SPEICHER.gebuchtMelden`). Erst wenn alle Menschen einer
+     * Partie gebucht haben, darf das Aufräumen sie nach einer Woche löschen.
+     * Gemeldet wird auch, wenn die Buchung nichts mehr brachte (schon
+     * gezählt, etwa auf einem anderen Gerät): gebucht ist gebucht.
+     */
+    _buchen(partie, personId) {
+        const gewinn = FORTSCHRITT_KONTO.partieBeendet(partie, personId);
+        TEAM_SCHACH._gebuchtMelden(partie, personId);
+        return gewinn;
+    },
+
+    /* Je Partie und Person höchstens einmal je offener Seite melden. */
+    _gebuchtGemeldet: {},
+
+    _gebuchtMelden(partie, personId) {
+        if (!partie || !partie.id || !partie.ergebnis || !personId
+                || !SCHACH_RUNDE.teamVon(partie, personId)) {
+            return;
+        }
+        const schluessel = partie.id + "|" + personId;
+        const abgleich = TEAM_SCHACH.abgleich;
+        if (TEAM_SCHACH._gebuchtGemeldet[schluessel] || !abgleich || !abgleich.speicher
+                || typeof SCHACH_SPEICHER === "undefined") {
+            return;
+        }
+        TEAM_SCHACH._gebuchtGemeldet[schluessel] = true;
+        SCHACH_SPEICHER.gebuchtMelden(abgleich.speicher, partie.id, personId);
     },
 
     aufbauen(behaelter) {
@@ -556,8 +610,9 @@ const TEAM_SCHACH = {
                 const partie = tafel ? SCHACH_TAFEL.partie(tafel, partieId) : null;
                 const person = ICH.person();
                 if (partie && partie.ergebnis && person && typeof FORTSCHRITT_KONTO !== "undefined"
-                        && TEAM_SCHACH.abschluss && TEAM_SCHACH.abschluss.id === partieId) {
-                    const gewinn = FORTSCHRITT_KONTO.partieBeendet(partie, person.id);
+                        && TEAM_SCHACH.abschluss && TEAM_SCHACH.abschluss.id === partieId
+                        && !TEAM_SCHACH._buchungWartet(partie, person)) {
+                    const gewinn = TEAM_SCHACH._buchen(partie, person.id);
                     if (gewinn) {
                         TEAM_SCHACH._xpGewinn[partieId] = gewinn;
                     }
@@ -668,8 +723,12 @@ const TEAM_SCHACH = {
         if (TEAM_SCHACH.spielEinstellungenOffen && TEAM_SCHACH.offeneId) {
             const laufende = SCHACH_TAFEL.partie(tafel, TEAM_SCHACH.offeneId);
             if (laufende) {
+                /* Seit v0.152.3 auch hier ohne Leiste, solange die Partie
+                   nicht zu Ende ist (vierter Wert, wie bei der offenen
+                   Partie) — die Einstellungen liegen ÜBER der Partie, sie
+                   sind kein Ausgang aus ihr. */
                 if (typeof TABS !== "undefined" && TABS.rundeSetzen) {
-                    TABS.rundeSetzen("team-schach", true);
+                    TABS.rundeSetzen("team-schach", true, false, !laufende.ergebnis);
                 }
                 TEAM_SCHACH._spielEinstellungenZeichnen(wurzel, laufende, person);
                 return;
@@ -761,22 +820,28 @@ const TEAM_SCHACH = {
                neu, und sie wird hier gezählt. */
             const wertungRechnet = (partie) => typeof WERTUNG !== "undefined"
                 && typeof WERTUNG.rechnetNoch === "function" && WERTUNG.rechnetNoch(partie.id);
-            if (typeof FORTSCHRITT_KONTO !== "undefined") {
-                for (const beendet of offeneAbschluesse) {
-                    if (wertungRechnet(beendet)) {
-                        continue;
-                    }
-                    const gewinn = FORTSCHRITT_KONTO.partieBeendet(beendet, person.id);
-                    if (gewinn) {
-                        TEAM_SCHACH._xpGewinn[beendet.id] = gewinn;
-                    }
-                }
-            }
 
             const fertig = offeneAbschluesse
                 .slice()
                 .sort((einer, anderer) =>
                     (anderer.geaendertAm || 0) - (einer.geaendertAm || 0))[0];
+
+            /* Die GEZEIGTE Niederlage gegen Bob, die Zeit zurück noch drehen
+               kann, bucht erst beim Schliessen (seit v0.152.2,
+               `_buchungWartet`); ältere, die gleich als gesehen gelten,
+               buchen sofort. */
+            if (typeof FORTSCHRITT_KONTO !== "undefined") {
+                for (const beendet of offeneAbschluesse) {
+                    if (wertungRechnet(beendet)
+                            || (fertig && beendet.id === fertig.id && TEAM_SCHACH._buchungWartet(beendet, person))) {
+                        continue;
+                    }
+                    const gewinn = TEAM_SCHACH._buchen(beendet, person.id);
+                    if (gewinn) {
+                        TEAM_SCHACH._xpGewinn[beendet.id] = gewinn;
+                    }
+                }
+            }
 
             /* Die älteren gleich mit abhaken, sonst kämen sie beim nächsten
                Öffnen doch wieder — eine nach der anderen. */
@@ -1036,6 +1101,7 @@ const TEAM_SCHACH = {
         TEAM_SCHACH._groessenWaechterStarten();
         TEAM_SCHACH._zugAnimieren(halter, partie, person);
         TEAM_SCHACH._wirkungAnimieren(halter, partie);
+        TEAM_SCHACH._verpufftZeigen(halter, partie, person);
 
         /* Das 3D-Brett (seit v0.122.0, js\brett-3d.js) liest die fertigen
            Feld-Knöpfe und zeichnet sie nach. Es lädt als Modul und kann
@@ -1435,6 +1501,10 @@ const TEAM_SCHACH = {
             if (regeln.itemVorrat === "auswahl") {
                 const vorrat = SCHACH_RUNDE.itemVorrat(partie);
                 texte.push("Items: Auswahl" + (vorrat ? " (" + vorrat.length + ")" : ""));
+            }
+            /* Höchstens N Items auf der Hand (seit v0.152.4). */
+            if (regeln.itemMax > 0) {
+                texte.push("Hand max " + regeln.itemMax);
             }
         } else {
             texte.push("Ohne Lootboxen");
@@ -1941,6 +2011,60 @@ const TEAM_SCHACH = {
     },
 
     /*
+     * HAND VOLL · VERPUFFT (seit v0.152.4, Einstellung „Höchstens N Items"):
+     * Hat der letzte Zug ein Item eingesammelt, das nicht mehr in die Hand
+     * passte (Verlauf `wirkung: "verpufft"`), verpufft es am Feld — ein
+     * kurzer Rauch — und der EIGENEN Seite sagt der Hinweis über der Leiste
+     * „Hand voll · verpufft". Einmal je Zugzähler.
+     */
+    verpufftBis: {},
+
+    _verpufftZeigen(halter, partie, person) {
+        if (TEAM_SCHACH.verpufftBis[partie.id] === partie.zugZaehler) {
+            return;
+        }
+        const erstesMal = !(partie.id in TEAM_SCHACH.verpufftBis);
+        TEAM_SCHACH.verpufftBis[partie.id] = partie.zugZaehler;
+        if (erstesMal) {
+            /* Beim Öffnen einer Partie nichts nachspielen. */
+            return;
+        }
+        const verlauf = partie.verlauf || [];
+        let letzteBewegung = -1;
+        for (let n = verlauf.length - 1; n >= 0; n--) {
+            if (verlauf[n].wirkung !== "verpufft" && verlauf[n].wirkung !== "eingesammelt"
+                    && verlauf[n].wirkung !== "erscheint") {
+                letzteBewegung = n;
+                break;
+            }
+        }
+        const verpufft = verlauf.slice(letzteBewegung + 1).filter((e) => e.wirkung === "verpufft");
+        if (verpufft.length === 0) {
+            return;
+        }
+        const meine = person ? SCHACH_RUNDE.teamVon(partie, person.id) : "";
+        if (verpufft.some((e) => e.farbe === meine)) {
+            TEAM_SCHACH._handHinweisZeigen("Hand voll · verpufft");
+        }
+        for (const eintrag of verpufft) {
+            for (const feld of eintrag.felder || []) {
+                const zelle = halter.querySelector("[data-feld=\"" + feld + "\"]");
+                if (!zelle) {
+                    continue;
+                }
+                const rauch = TEAM_SCHACH._element("span", "feld-verpufft");
+                rauch.setAttribute("aria-hidden", "true");
+                zelle.appendChild(rauch);
+                window.setTimeout(() => {
+                    if (rauch.parentNode) {
+                        rauch.parentNode.removeChild(rauch);
+                    }
+                }, 1200);
+            }
+        }
+    },
+
+    /*
      * HIER STAND VON v0.59 BIS v0.81.0 `_unglueckMeldungBauen` — der rote
      * Streifen nach einem Unglückswürfel (Wunsch #13). Er erschien zwischen
      * Standleiste und Brett und drückte das Brett um ~50 px zusammen (Fund
@@ -2319,6 +2443,11 @@ const TEAM_SCHACH = {
 
         zeile.appendChild(stapel);
 
+        /* Wer am Zug ist, denkt (seit v0.152.4) — auch Bob. */
+        if (amZug) {
+            zeile.appendChild(TEAM_SCHACH._denkBlaseBauen());
+        }
+
         /*
          * DER EIGENE KASTEN IST EIN KNOPF (seit v0.80.0, dritte
          * Nutzer-Skizze): Ein Tipp klappt das Menue mit Einstellungen und
@@ -2546,15 +2675,36 @@ const TEAM_SCHACH = {
          * Zug, den Bob auf der Stufe „Meister" spielen würde, und kostet ein Stück. Beim Tagesbrett
          * gibt es danach höchstens einen Bauern.
          */
+        const hilfen = [];
         if (typeof FORTSCHRITT_KONTO !== "undefined" && FORTSCHRITT_KONTO.vorrat
                 && FORTSCHRITT_KONTO.vorrat("tipp") > 0 && partie.stand && partie.stand.amZug === farbe) {
-            const tipp = TEAM_SCHACH._knopf("", "knopf-still knopf-klein eck-knopf eck-tipp",
-                mitStopp(() => TEAM_SCHACH.tippZeigen(partie, farbe)));
-            tipp.appendChild(ZUSTAND.zeichen("tipp", "eck-tipp-zeichen"));
-            const anzahl = FORTSCHRITT_KONTO.vorrat("tipp");
-            tipp.setAttribute("aria-label", "Tipp · noch " + anzahl);
-            tipp.title = "Tipp · noch " + anzahl;
-            ziel.appendChild(tipp);
+            hilfen.push(TEAM_SCHACH._hilfeKnopf("tipp", "Tipp", FORTSCHRITT_KONTO.vorrat("tipp"),
+                "eck-tipp", mitStopp(() => TEAM_SCHACH.tippZeigen(partie, farbe))));
+        }
+
+        /*
+         * ZEIT ZURÜCK (seit v0.152.2, Ware „leben" aus dem Shop): direkt
+         * neben dem Tipp — nur mit Vorrat, nur gegen Bob, nur am eigenen Zug
+         * und erst, wenn es zwei Halbzüge zum Zurücknehmen gibt
+         * (`zeitZurueckMoeglich`). Ohne Rückfrage; eine Kurzmeldung sagt,
+         * was übrig ist.
+         */
+        const person = TEAM_SCHACH._ich();
+        if (person && TEAM_SCHACH.zeitZurueckMoeglich(partie, person)) {
+            hilfen.push(TEAM_SCHACH._hilfeKnopf("zeit-zurueck", TEAM_SCHACH._wareName("leben"),
+                FORTSCHRITT_KONTO.vorrat("leben"), "eck-zeit",
+                mitStopp(() => TEAM_SCHACH.zeitZurueckEinsetzen(partie))));
+        }
+
+        /* Die Hilfen aus dem Shop stehen hinter einem feinen Strich —
+           getrennt von Einstellungen und Zugverlauf. */
+        if (hilfen.length > 0) {
+            const trenner = TEAM_SCHACH._element("span", "eck-trenner");
+            trenner.setAttribute("aria-hidden", "true");
+            ziel.appendChild(trenner);
+            for (const knopf of hilfen) {
+                ziel.appendChild(knopf);
+            }
         }
 
         if (namen.length > 1) {
@@ -2618,6 +2768,12 @@ const TEAM_SCHACH = {
         menue.setAttribute("aria-expanded", TEAM_SCHACH.eckMenueOffen ? "true" : "false");
         menue.title = "Einstellungen · Zugverlauf";
         links.appendChild(menue);
+
+        /* Die Denk-Blase am eigenen Profil, solange man selbst dran ist
+           (seit v0.152.4). */
+        if (amZug && !partie.ergebnis) {
+            links.appendChild(TEAM_SCHACH._denkBlaseBauen("denk-blase-unten"));
+        }
 
         /* Die letzte Falle als rotes Zeichen (seit v0.136.0). */
         const falle = TEAM_SCHACH._falleZeichenBauen(partie);
@@ -2839,6 +2995,12 @@ const TEAM_SCHACH = {
                 "hand-aktiv-kosten" + ((kosten === "Zug bleibt") ? " hand-aktiv-kosten-gut" : ""),
                 kosten));
         }
+        /* Die Warnung einer Karte (seit v0.152.4, Nutzer 28.09.2026: „Der
+           Schild sollte eine Warnung haben"). Steht in der Tabelle der
+           Fähigkeiten (`warnung`), damit jede Karte eine bekommen kann. */
+        if (beschreibung.warnung) {
+            text.appendChild(TEAM_SCHACH._element("span", "hand-aktiv-warnung", beschreibung.warnung));
+        }
         box.appendChild(text);
 
         /* Die Angebote des Händlers: Figurenbilder, antippen = wählen. */
@@ -3033,6 +3195,146 @@ const TEAM_SCHACH = {
         TEAM_SCHACH._eckMenueHorcherAbmelden();
         TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
         await DIALOG.hinweis("Tipp", zug.text || "Ein guter Zug");
+    },
+
+    /*
+     * Ein Knopf für eine Hilfe aus dem Shop im Spiel-Menü (seit v0.152.2):
+     * Zeichen und Vorrat als kleine Zahl daneben.
+     */
+    _hilfeKnopf(zeichen, name, anzahl, klasse, aktion) {
+        const knopf = TEAM_SCHACH._knopf("", "knopf-still knopf-klein eck-knopf eck-hilfe " + klasse, aktion);
+        knopf.appendChild(ZUSTAND.zeichen(zeichen, "eck-tipp-zeichen"));
+        knopf.appendChild(TEAM_SCHACH._element("span", "eck-hilfe-zahl", String(anzahl)));
+        knopf.setAttribute("aria-label", name + " · noch " + anzahl);
+        knopf.title = name + " · noch " + anzahl;
+        return knopf;
+    },
+
+    /*
+     * DIE DENK-BLASE (seit v0.152.4, Nutzer 28.09.2026: „Eine Denk-Bubble bei
+     * der Person, die dran ist, neben dem Profil, wie ein Ladekreis"). Eine
+     * kleine Blase mit zwei Punkten davor (wie in einem Comic) und darin ein
+     * laufender Kreis — bei der Seite, die gerade am Zug ist, auch bei Bob.
+     * Reine Anzeige: sagt dasselbe wie die blaue Färbung des Profils, nur
+     * lebendiger.
+     */
+    _denkBlaseBauen(zusatz) {
+        const blase = TEAM_SCHACH._element("span", "denk-blase" + (zusatz ? " " + zusatz : ""));
+        blase.setAttribute("aria-label", "denkt nach");
+        blase.setAttribute("role", "img");
+        blase.appendChild(TEAM_SCHACH._element("span", "denk-punkt denk-punkt-1"));
+        blase.appendChild(TEAM_SCHACH._element("span", "denk-punkt denk-punkt-2"));
+        const kreis = TEAM_SCHACH._element("span", "denk-kreis");
+        kreis.appendChild(TEAM_SCHACH._element("span", "denk-ring"));
+        blase.appendChild(kreis);
+        return blase;
+    },
+
+    /* Warum eine Karte gerade nicht geht — als Stichwort (seit v0.152.3). */
+    _absageText(partie, person, art) {
+        const absage = SCHACH_RUNDE.faehigkeitAbsage(partie, person.id, art, TEAM_SCHACH._zusatzWahl(art));
+        return SCHACH_RUNDE.ABSAGE_TEXTE[absage] || SCHACH_RUNDE.ABSAGE_TEXTE.keinZiel;
+    },
+
+    /* Der Name einer Ware, wie der Shop dieses Spiels ihn nennt
+       (`SHOP.TEXTE`, seit v0.152.1) — nie ein zweites Mal im Code. */
+    _wareName(ware) {
+        if (typeof SHOP !== "undefined" && SHOP.TEXTE && SHOP.TEXTE[ware] && SHOP.TEXTE[ware].name) {
+            return SHOP.TEXTE[ware].name;
+        }
+        return (typeof UPCREW_MUENZEN !== "undefined" && UPCREW_MUENZEN.WAREN[ware])
+            ? UPCREW_MUENZEN.WAREN[ware].name : ware;
+    },
+
+    /* ---------------------------------------------------------------- *
+     * Zeit zurück (seit v0.152.2, Ware „leben" aus dem Shop)
+     *
+     * Nutzer 27.09.2026: „soll nicht Extra-Leben heißen, sondern Zeit
+     * zurück — zwei Halbzüge zurückspringen". Was zurückgesetzt wird und
+     * wann es geht, weiss das Modell (`SCHACH_BOT.zeitZurueckZiel`,
+     * `SCHACH_RUNDE.rueckblickAnwenden`); hier: Vorrat, Senden, Buchung.
+     * ---------------------------------------------------------------- */
+
+    /*
+     * Geht Zeit zurück hier? Vorrat da, Modell einverstanden — und bei einer
+     * beendeten Partie nur, solange ihr Ergebnis noch nicht gebucht ist
+     * (Abschluss noch offen): Eine gezählte Partie wiederzubeleben hiesse,
+     * dass ihr neues Ende nie mehr zählt.
+     */
+    zeitZurueckMoeglich(partie, person) {
+        if (!partie || !person || typeof FORTSCHRITT_KONTO === "undefined" || !FORTSCHRITT_KONTO.vorrat
+                || FORTSCHRITT_KONTO.vorrat("leben") < 1 || typeof SCHACH_BOT === "undefined"
+                || !SCHACH_BOT.zeitZurueckZiel) {
+            return false;
+        }
+        if (SCHACH_BOT.zeitZurueckZiel(partie, person.id) < 0) {
+            return false;
+        }
+        if (partie.ergebnis) {
+            return !ICH.abschlussGesehen(partie.id)
+                && !(FORTSCHRITT_KONTO.istGezaehlt && FORTSCHRITT_KONTO.istGezaehlt(partie.id));
+        }
+        return true;
+    },
+
+    /*
+     * DIE BUCHUNG WARTET (seit v0.152.2): Endet eine Partie gegen Bob mit
+     * einer Niederlage, die sich mit Zeit zurück noch drehen lässt, wird sie
+     * NICHT schon beim Erscheinen des Abschlusses gezählt (XP, Serie,
+     * Turm-Figuren, Tagesaufgabe, Münzen), sondern erst beim Schliessen
+     * (`abschlussSchliessen`). Wer Zeit zurück einsetzt, hat damit nichts
+     * Gebuchtes zurückzunehmen.
+     */
+    _buchungWartet(partie, person) {
+        return TEAM_SCHACH.zeitZurueckMoeglich(partie, person);
+    },
+
+    /* Zeit zurück einsetzen — im Spiel-Menü und im Abschluss. */
+    async zeitZurueckEinsetzen(partie) {
+        const person = TEAM_SCHACH._ich();
+        if (!person || !TEAM_SCHACH.zeitZurueckMoeglich(partie, person)) {
+            return false;
+        }
+        const neu = SCHACH_BOT.zeitZurueck(partie, person.id);
+        if (!neu) {
+            return false;
+        }
+
+        TEAM_SCHACH.eckMenueOffen = false;
+        TEAM_SCHACH._eckMenueHorcherAbmelden();
+        TEAM_SCHACH._auswahlAufheben();
+
+        /* Aus dem Abschluss zurück ans Brett: Das Fenster zu, die Partie
+           offen; Konfetti, Vibration und XP-Zeile gelten beim nächsten Ende
+           neu. Der Sprung wird nicht als Zug animiert. */
+        const ausAbschluss = !!partie.ergebnis;
+        if (ausAbschluss) {
+            TEAM_SCHACH.abschluss = null;
+            TEAM_SCHACH.offeneId = partie.id;
+            delete TEAM_SCHACH._abschlussGespuert[partie.id];
+            delete TEAM_SCHACH._konfettiGespielt[partie.id];
+            delete TEAM_SCHACH._xpGewinn[partie.id];
+        }
+        TEAM_SCHACH.animiertBis[partie.id] = neu.zugZaehler;
+        TEAM_SCHACH.wirkungBis[partie.id] = neu.zugZaehler;
+
+        const gesendet = await TEAM_SCHACH._sendenMitPruefung(neu, partie.zugZaehler);
+        if (!gesendet) {
+            return false;
+        }
+        /* Erst nach dem Senden aus dem Vorrat — ging es schief, kostet es
+           nichts. Die Hilfe gilt für die Wertung (höchstens ein Bauer). */
+        FORTSCHRITT_KONTO.benutzen("leben");
+        FORTSCHRITT_KONTO.hilfeMerken(partie.id);
+        if (typeof WERTUNG !== "undefined" && WERTUNG.abZugVerwerfen) {
+            WERTUNG.abZugVerwerfen(partie.id, neu.zugZaehler);
+        }
+        if (typeof FUEHLEN !== "undefined") {
+            FUEHLEN.tippen();
+        }
+        DIALOG.kurzmeldung(TEAM_SCHACH._wareName("leben") + " · noch " + FORTSCHRITT_KONTO.vorrat("leben"));
+        TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
+        return true;
     },
 
     eckMenueUmschalten() {
@@ -3552,8 +3854,34 @@ const TEAM_SCHACH = {
             return;
         }
 
-        const partie = SCHACH_TAFEL.partieZuCode(
+        let partie = SCHACH_TAFEL.partieZuCode(
             TEAM_SCHACH.abgleich.daten, code);
+
+        /*
+         * FREMDE LAUFENDE PARTIEN SIND NICHT GELADEN (seit v0.152.5,
+         * `SCHACH_SPEICHER.tafelLaden`) — Nachzügler dürfen trotzdem
+         * hinein (F19). Die Kennung kennt der Lader; die Partie wird hier
+         * einmal geholt und in die Tafel gesetzt, damit sie beim Öffnen
+         * sofort dasteht.
+         */
+        if (!partie && typeof SCHACH_SPEICHER !== "undefined"
+                && TEAM_SCHACH.abgleich.speicher.art === "gemeinsam") {
+            const id = SCHACH_SPEICHER.idZuCode(code);
+            if (id) {
+                try {
+                    const geholt = await SCHACH_SPEICHER.partieLaden(
+                        TEAM_SCHACH.abgleich.speicher, id);
+                    if (geholt && !geholt.ergebnis) {
+                        const tafel = TEAM_SCHACH.abgleich.daten;
+                        TEAM_SCHACH.abgleich.daten = SCHACH_TAFEL.partieEinsetzen(
+                            tafel, geholt, SCHACH_TAFEL.normalisieren(tafel).geaendertAm);
+                        partie = geholt;
+                    }
+                } catch (fehler) {
+                    console.warn("Partie zum Code nicht geholt:", fehler);
+                }
+            }
+        }
 
         if (!partie) {
             await DIALOG.fehler("Kein Treffer", {
@@ -4284,6 +4612,14 @@ const TEAM_SCHACH = {
     async _sendenMitPruefung(neuePartie, erwarteterZaehler) {
         const abgleich = TEAM_SCHACH.abgleich;
 
+        /* Zeit zurück (seit v0.152.2): Hat eine Partie gegen Bob noch keinen
+           Rückblick, ist der Stand VOR dieser ersten eigenen Aktion der
+           Anfang des Zugs (`SCHACH_BOT.zeitMerkenVor`). */
+        if (typeof SCHACH_BOT !== "undefined" && SCHACH_BOT.zeitMerkenVor && abgleich && abgleich.daten) {
+            neuePartie = SCHACH_BOT.zeitMerkenVor(
+                SCHACH_TAFEL.partie(abgleich.daten, neuePartie.id), neuePartie);
+        }
+
         /*
          * Die stillen Sekunden fahren im Zug mit (v0.93) — nur, wenn sie zu
          * DIESER Partie gehören. Danach ist der Zähler leer; was zwischen
@@ -4505,6 +4841,7 @@ const TEAM_SCHACH = {
             sichtbarkeit: "oeffentlich",
             armeeStaerke: "normal",
             itemVorrat: "alle",
+            itemMax: SCHACH_VARIANTEN.ITEM_MAX_VORGABE,
 
             /* Die selbst angehakte Liste (seit v0.100) - nur bei
                `itemVorrat: "auswahl"` von Bedeutung. */
@@ -4786,6 +5123,9 @@ const TEAM_SCHACH = {
             armeeStaerke: wunsch.armeeStaerke,
             itemVorrat: wunsch.itemVorrat,
             itemAuswahl: wunsch.itemAuswahl,
+            /* Höchstens N Items (seit v0.152.4); Unbekanntes → ohne Grenze
+               (Modell). */
+            itemMax: wunsch.itemMax,
             einigkeit: gegenComputer ? false : wunsch.einigkeit,
 
             /*
@@ -5662,7 +6002,9 @@ const TEAM_SCHACH = {
                 TEAM_SCHACH._zusatzWahl(art));
 
             if (felder.length === 0) {
-                TEAM_SCHACH._handHinweisZeigen("Kein Feld frei");
+                /* Den echten Grund nennen (seit v0.152.3), nicht immer „Kein
+                   Feld frei" — das Modell weiss, ob es am Schach liegt. */
+                TEAM_SCHACH._handHinweisZeigen(TEAM_SCHACH._absageText(partie, person, art));
                 return;
             }
         }
@@ -5682,9 +6024,15 @@ const TEAM_SCHACH = {
             return;
         }
 
-        /* Ohne Zielfeld: erst wählen, dann (zweiter Tipp oder ✓) einsetzen. */
+        /* Ohne Zielfeld: erst wählen, dann (zweiter Tipp oder ✓) einsetzen.
+           Seit v0.152.3 wird vorher gefragt, ob der Einsatz überhaupt geht —
+           sonst kam das erst nach dem ✓ als Dialog („Geht nicht"). */
         if (TEAM_SCHACH.handWahl !== art
                 || TEAM_SCHACH.handWahlZaehler !== partie.zugZaehler) {
+            if (SCHACH_RUNDE.faehigkeitAbsage(partie, person.id, art)) {
+                TEAM_SCHACH._handHinweisZeigen(TEAM_SCHACH._absageText(partie, person, art));
+                return;
+            }
             TEAM_SCHACH._auswahlAufheben();
             TEAM_SCHACH.handWahl = art;
             TEAM_SCHACH.handWahlZaehler = partie.zugZaehler;
@@ -5941,15 +6289,17 @@ const TEAM_SCHACH = {
              * hierher kommt man deshalb nur noch, wenn sich der Stand
              * zwischendurch geändert hat. Genau das soll dann auch dastehen.
              */
-            const imSchach = meineFarbeJetzt
-                && SCHACH.imSchach(partie.stand, meineFarbeJetzt);
-
+            /* Seit v0.152.3 nennt das MODELL den Grund
+               (`SCHACH_RUNDE.faehigkeitAbsage`) — vorher riet der Bildschirm
+               „König im Schach", sobald irgendein König bedroht war. Geht es
+               insgesamt noch (nur dieses Feld nicht), war das Brett in der
+               Zwischenzeit ein anderes. */
+            const absage = SCHACH_RUNDE.faehigkeitAbsage(partie, person.id, art, wahl);
             await DIALOG.fehler("Geht nicht", {
-                folge: imSchach
-                    ? "König im Schach · Fähigkeit bleibt"
-                    : (beschreibung.imGegenzug
-                        ? "Nur im Team, Partie läuft · Fähigkeit bleibt"
-                        : "Brett geändert · Fähigkeit bleibt") });
+                zeichen: "achtung",
+                folge: beschreibung.imGegenzug && absage === "darfNicht"
+                    ? "Nur im Team, Partie läuft · Fähigkeit bleibt"
+                    : ((absage ? SCHACH_RUNDE.ABSAGE_TEXTE[absage] : "Brett geändert") + " · Fähigkeit bleibt") });
             TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
             return;
         }

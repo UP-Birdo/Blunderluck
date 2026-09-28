@@ -3606,8 +3606,14 @@ const BUEHNE = { alle: new Set(), laeuft: false, zuletzt: 0 };
 const BUEHNE_VORN = 1.7;       // Platz vor dem Brett für Karte und ✓, in Feldern
 const BUEHNE_MS = { hin: 520, tipp: 300, zug: 560, halt: 900, ende: 1300 };
 
+/* Seit v0.152.3 auch im 2D-Modus (Nutzer 28.09.2026: „Ich habe die Anleitung
+   noch als Bild mit Text bekommen, mein Gast hat schon das GIF bekommen …
+   Es soll nur noch die GIF-Variante geben"). Bis v0.152.2 spielte die Bühne
+   nur, wenn das grosse Brett in 3D stand; wer 2D gewählt hatte (oder 3D noch
+   nicht frei), bekam die flachen Bilder. Die Bühne braucht nur das geladene
+   Modul und WebGL — beides ist im 2D-Modus genauso da. */
 function buehneMoeglich() {
-    return !!(Z.bereit && !Z.fehler && Z.einst && Z.einst.an);
+    return !!(Z.bereit && !Z.fehler);
 }
 
 function buehneMitte(b, i) {

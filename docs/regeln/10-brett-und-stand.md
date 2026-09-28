@@ -7,6 +7,13 @@ Hier drin: Brettmasse und Spielarten, Kreuz-Bretter, Bauern und ihre
 Startseiten, Zufallsarmee und Figurenzahl, Risse und Mauern, Zugwege.
 ## Brett, Stand und Spielarten
 
+- **Zeit zurück (seit v0.152.2) setzt ALLES zurück, was sich im Spiel
+  ändert** — die Liste steht EINMAL in `SCHACH_RUNDE.RUECKBLICK_FELDER`. Wer
+  der Partie ein neues Spiel-Feld gibt (etwas, das sich mit einem Zug
+  ändert), trägt es dort ein, sonst überlebt es den Rücksprung. Der
+  Zugzähler geht mit zurück (Wirkungsdauern, Würfeln); Teams, Regeln,
+  Kennung und Spielzeit nicht.
+
 - **Laufende Partien müssen laufen bleiben.** `SCHACH_TAFEL.normalisieren()`
   erkennt einen Stand aus der Zeit der einzelnen Partie und macht daraus die
   Partie `start`. Wer daran etwas ändert, bricht angefangene Partien;

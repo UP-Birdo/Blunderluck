@@ -1,5 +1,154 @@
 # Blunderluck - Entscheidungen / Entschieden - und warum
 
+## Weniger Download, Aufräumen, §11c (28.09.2026, v0.152.5)
+
+Auftrag des Nutzers: `Apps\UPCrew\AUFTRAG-Blunderluck-v0.152.5.md` („Fremde
+laufende Partien auf dem Startbildschirm nicht mehr auffrischen … Chronik
+stückweise … Abfrage-Takt 3 s / 15 s … Kein Streaming jetzt … Alles
+additiv"; Aufräumen „Löschen statt Archiv"; §11c „habe ich selbst gemacht").
+
+- **Warum fremde laufende Partien wegfallen dürfen:** Kein Bildschirm zeigt
+  sie. Die Übersicht listet wartende Runden und Einladungen, der Start nur
+  die eigene. Die Verwaltung zeigt sie zum Löschen und holt sie deshalb
+  weiter. Gekostet hatten sie bei JEDEM ihrer Züge 8 KB auf JEDEM Gerät, das
+  auf dem Start stand.
+- **Warum `mitEinladungen` und nicht nur `eingeladen`:** Die Datenbank
+  speichert keine leeren Listen. Ohne Merker wäre „niemand eingeladen" nicht
+  von „Eintrag einer älteren Fassung" zu unterscheiden. Ältere Einträge
+  werden deshalb wie bisher geholt. Das kostet 22 Byte je Eintrag, sicher
+  ist sicher.
+- **Warum der Code-Beitritt über die Kennung geht:** Der Beitritts-Code wird
+  aus der Kennung gerechnet (`SCHACH_RUNDE.beitrittsCode`). Die Kennungen
+  aller offenen Partien kennt der Lader aus der Übersicht, die Partie
+  selbst wird erst beim Beitritt geholt. Nachzügler (F19) gehen also weiter.
+- **Warum der Takt über ausgelassene Schläge läuft** und nicht über einen
+  neu gestellten Zeitgeber: Ein Bildschirmwechsel (Start → Partie) wirkt so
+  spätestens nach einem Grundtakt (3 s), ohne dass jemand den Zeitgeber
+  umstellen muss. Ohne Rückruf bleibt alles wie vor v0.152.5.
+- **Warum `partieAuffrischen` nur `geaendertAm` fragt:** Mehr braucht der
+  Vergleich nicht. Mit dem grösseren Eintrag (Einladungen) wäre die Partie
+  mit Menschen sonst TEURER geworden als vorher (gemessen: 473 → 495 KB je
+  Stunde, jetzt 1 541 statt 1 640 KB bei 8-KB-Partien).
+- **Aufräumen — 7 Tage, hart:** Die erste Fassung des Auftrags liess die
+  Tage offen (Vorschlag 7 und 30). Der Nutzer hat danach im Auftrag
+  entschieden: „Die harte Grenze ist ebenfalls 7 Tage. Nach 7 Tagen wird
+  also gelöscht, auch wenn noch nicht alle gebucht haben. Wer die App 7
+  Tage nicht öffnet, bekommt XP und Münzen dieser Partie nicht mehr. Das
+  ist so gewollt. Das Merkmal `gebucht` trotzdem schreiben (für später und
+  für die Anzeige)." Beide Werte stehen an EINER Stelle
+  (`SCHACH_SPEICHER.AUFRAEUMEN`, MINDEST_TAGE = HOECHST_TAGE = 7). Die
+  Buchungs-Regel bleibt im Code und hat einen eigenen Test mit längerer
+  Grenze.
+- **Aufräumen nur eigener Partien** (Verwaltung: alle): Die kommende Regel
+  §12 soll das Löschen auf Teilnehmer und Admins beschränken
+  (SICHERHEIT.md Abschnitt 13). Wer heute schon so löscht, muss danach
+  nichts umbauen. Eine Partie ohne Menschen (nur Bob) räumt deshalb nur die
+  Verwaltung.
+- **Kein Löschen ohne Chronik-Eintrag:** Die Rangliste zählt aus der
+  Chronik. Steht der Eintrag nicht auf dem Server, wären die Punkte weg.
+- **Gemessen, nicht geschätzt:** `tests\messung-download.js` spielt eine
+  Stunde gegen einen Server-Nachbau durch (4 fremde laufende Partien, 40
+  beendete, alle Partien 8 KB). Vorher-Zahl aus derselben Messung gegen die
+  Dateien von v0.152.4. Nicht enthalten sind Kopfzeilen der Anfragen, eigenes
+  Schreiben und die Spielerliste (dort nur die Marke je Takt, 3 s → 15 s).
+
+| Lage (je Stunde) | v0.152.4 | v0.152.5 |
+|---|---|---|
+| Start | 10 746 KB, 4 103 Anfragen | 1 991 KB, 979 Anfragen |
+| Start, Server aufgeräumt | – | 684 KB |
+| gegen Bob | 229 KB, 1 940 Anfragen | 117 KB, 496 Anfragen |
+| mit Menschen | 1 640 KB, 2 120 Anfragen | 1 541 KB, 2 116 Anfragen |
+
+## Wünsche für Brett und Karten (28.09.2026, v0.152.4)
+
+Nutzer wörtlich (über den Koordinator):
+
+- A: „Eine Denk-Bubble bei der Person, die dran ist, neben dem Profil, wie ein
+  Ladekreis.“ → Denk-Blase mit laufendem Kreis, auch bei Bob.
+- B: „2D-Wand besser aussehen.“ → flaches Ziegelband mit dunkler Kontur, eine
+  helle Restzeit am Mauerende.
+- C: „2D-Würfel, nicht die 3D-Würfel hinsetzen.“ → flacher Würfel in der
+  Stufenfarbe mit Fragezeichen.
+- D: „Der Schild sollte eine Warnung haben: Achtung, die Figur kann sich nicht
+  bewegen, solange aktiv.“ → „Achtung · Figur stehen lassen, sonst ist das
+  Schild weg“ (so ist die Regel heute: Zieht die Figur, ist das Schild weg).
+  OFFEN: Soll die Figur mit Schild gar nicht ziehen dürfen?
+- E: „Kannst du für das 2D-Schach auch 2D-Fähigkeiten-Karten bauen?“ → flache
+  Karten im 2D-Modus.
+- F: „ein Max an Items einstellen, alles, was man über das Max aufnimmt,
+  verpufft“ → Rundenregel 2/3/4/5/Alle, Standard 4 (Begründung: vier Karten
+  passen in einer Reihe in die Hand-Leiste am Handy), Rauch + „Hand voll ·
+  verpufft“, Schildchen „Hand max N“, Bob hält sich daran.
+
+## Fehler aus den Nutzer-Bildern (28.09.2026, v0.152.3)
+
+Nutzer wörtlich: „nur im Turm nutzbar, Bob da rauslassen" (Zeit zurück) ·
+„das soll gar nicht erst gehen, dass man Sachen markiert" · „Das Spielfeld
+war am PC nicht in der Mitte ausgerichtet." · „Ich habe die Anleitung noch
+als Bild mit Text bekommen, mein Gast hat schon das GIF bekommen, was
+abspielt. Es soll nur noch die GIF-Variante geben." · „Wenn man von einem
+Gast-Account einen echten erstellen will, nimmt es das nicht an." · „Bei
+falscher Eingabe beim Account-Erstellen soll eine Meldung kommen, was genau
+nicht stimmt." · „Wenn ich die Seite neu lade, soll die UPCrew-Animation
+erneut kommen." · „Verstärkung ging einfach für ein paar Runden nicht."
+
+- **Zeit zurück nur im Turm** — auch gemerkt wird nur dort (weniger Daten
+  je Zug in Frei/Heute).
+- **Markieren aus in der ganzen App**, nicht nur im Spiel: Eine App ist
+  kein Textdokument; frei bleiben Eingaben, die Beitritts-Codes und was
+  `.markierbar` trägt.
+- **Anleitung immer abgespielt**, auch bei „weniger Bewegung" im
+  Betriebssystem: Der Nutzer will nur die GIF-Variante; die Bühne ist ein
+  Lernfilm und hält beim Antippen an. Damit ist die Entscheidung von v0.42
+  („bei weniger Bewegung alle Bilder nebeneinander") aufgehoben.
+- **Gast → Konto** zieht um, wenn Firebase das Verknüpfen wegen alter
+  Anmeldung ablehnt — unter den bestehenden Regeln, ohne Regeländerung.
+- **Name + Passwort doppelt** wird beim Anlegen abgelehnt (neu);
+  bestehende Doppel bleiben über „Welches Konto?" erreichbar.
+- **Intro** wie Typoluck 0.18.2: immer, ausser 15 s nach dem automatischen
+  Neuladen einer neuen Version und in der Werkstatt ohne `&intro`.
+- **Absage einer Karte** nennt den Grund aus dem Modell
+  (`faehigkeitAbsage`), nicht mehr geraten.
+
+## Zeit zurück ist EIN Zug (28.09.2026, v0.152.3)
+
+Nutzer wörtlich: „Keine Halbzug-Beschreibung, sondern ein ganzer Zug."
+Alle sichtbaren Texte zu Zeit zurück sprechen von einem Zug („Einen Zug
+zurück · nur gegen Bob"); die Wirkung bleibt (eigener Zug + Bobs Antwort,
+nach einem eigenen Fehlzug, der die Partie beendet, nur dieser). Im Code
+und in Kommentaren darf „Halbzug" bleiben.
+
+## Zeit zurück statt Extra-Leben (27.09.2026 spät, v0.152.2)
+
+Nutzer wörtlich: „soll nicht Extra-Leben heißen, sondern Zeit zurück — zwei
+Halbzüge zurückspringen". Zur Umsetzung: „mach es nach Best Practice"
+(Einzelheiten von der Koordination festgelegt).
+
+- **Name** überall „Zeit zurück", nur über `SHOP.TEXTE`; die Ware heißt
+  intern weiter `leben` (Zähler `lebenGekauft/lebenGenutzt` bleiben
+  gültig). Gemeinsame Bausteine bleiben byte-gleich mit `final`; das Uhr-Bild
+  im Shop ist ein Vorschlag (Option `bilder`, `docs\bausteine\upcrew-shop.js`).
+- **Wirkung:** zwei Halbzüge zurück (eigener letzter Zug + Bobs Antwort),
+  danach wieder selbst am Zug. Die Partie merkt sich dazu den Stand zu
+  Beginn jedes eigenen Zugs (`rueckblick`, höchstens 3 — mehr kostet bei
+  jedem Zug nur Datenmenge). Der Zugzähler geht mit zurück: An ihm hängen
+  zeitlich begrenzte Wirkungen und das Würfeln.
+- **Nur gegen Bob** (außer Bob sitzt genau diese Person in der Partie) —
+  Turm, Frei, Heute; nie mit Menschen.
+- **Bedienung:** Spiel-Menü neben dem Tipp, hinter einem Trennstrich, mit
+  Vorrats-Zahl; ohne Rückfrage, Kurzmeldung „Zeit zurück · noch N".
+- **Nach einer Niederlage** (Matt, gestolpert, Tagesbrett verfehlt — nicht
+  „Aufgeben" per Knopf): Hauptknopf im Abschluss, die Partie geht am Anfang
+  des letzten eigenen Zugs weiter (statt die Turm-Stufe neu zu starten).
+- **Buchung:** Eine solche Niederlage wird erst beim Schließen des
+  Abschlusses gebucht (XP, Serie/Tagesaufgabe, Turm-Figuren, Münzen) — wer
+  Zeit zurück nimmt, hat nichts zurückzunehmen. Grund: Die Zähler wachsen
+  nur (Datenvertrag, Zusammenführen nimmt das Größere), eine Rücknahme wäre
+  nicht sauber möglich. Ohne Vorrat bucht es sofort wie bisher.
+- **Wertung:** mit Tipp oder Zeit zurück im Turm und beim Tagesbrett
+  höchstens 1 Figur (`hilfeMerken`/`hilfeGenutzt`); keine Grenze je Partie
+  außer dem Vorrat.
+
 ## Münzen, Shop, Serie ab Rundenstart (27.09.2026, v0.152.0)
 
 Nutzer: „wir brauchen eine In-Game-Währung, die über beide Spiele geht …

@@ -314,7 +314,15 @@ const FAEHIGKEIT_ZEICHEN = {
      */
     bauen(art) {
         const plaettchen = FAEHIGKEIT_ZEICHEN.plaettchen[art];
-        if (plaettchen && typeof document !== "undefined"
+        /* Im 2D-Modus (Klasse `brett-flach` am body, js\figuren-flach.js)
+           bleibt die Karte flach (seit v0.152.4, Nutzer 28.09.2026: „Kannst
+           du für das 2D-Schach auch 2D-Fähigkeiten-Karten bauen?") — das
+           Zeichen in der Stufenfarbe auf flacher Karte, im Stil der
+           2D-Figuren (Stil: `body.brett-flach .faehigkeit-bild`). */
+        const flach = typeof document !== "undefined" && document.body && document.body.classList
+            && typeof document.body.classList.contains === "function"
+            && document.body.classList.contains("brett-flach");
+        if (plaettchen && !flach && typeof document !== "undefined"
                 && document.createElementNS) {
             return FAEHIGKEIT_ZEICHEN._plaettchenBauen(art, plaettchen);
         }

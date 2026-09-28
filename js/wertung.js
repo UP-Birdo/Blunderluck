@@ -471,6 +471,26 @@ const WERTUNG = {
      * Gerätespeicher
      * ---------------------------------------------------------------- */
 
+    /*
+     * ZEIT ZURÜCK (seit v0.152.2): Die Partie springt auf Zugzähler
+     * `abZaehler` zurück — die Züge ab dort gibt es nicht mehr und zählen
+     * nicht zur Genauigkeit. Die neuen Züge schreiben ihre Einträge danach
+     * wieder unter denselben Zählern.
+     */
+    abZugVerwerfen(partieId, abZaehler) {
+        const alle = WERTUNG._lesen();
+        const eigene = alle[partieId];
+        if (!eigene || !eigene.zuege || !Number.isInteger(abZaehler)) {
+            return;
+        }
+        for (const schluessel of Object.keys(eigene.zuege)) {
+            if (Number(schluessel) >= abZaehler) {
+                delete eigene.zuege[schluessel];
+            }
+        }
+        WERTUNG._schreiben(alle);
+    },
+
     _lesen() {
         try {
             const roh = JSON.parse(localStorage.getItem(WERTUNG.SCHLUESSEL) || "{}");

@@ -34,6 +34,12 @@ globalThis.window = {
 
 const SCHACH_SPEICHER = require(pfad.join(__dirname, "..", "js", "schach-speicher.js"));
 
+/* Das Aufräumen (seit v0.152.5) hat seinen eigenen Test
+   (test-weniger-download.js). Hier bleibt es aus: Die Testpartien tragen
+   Zeitstempel um 1970 und gälten sonst als uralt — das Laden prüfte dann
+   das Löschen mit statt das Laden. */
+SCHACH_SPEICHER.aufraeumen = async () => [];
+
 const SCHACH_RUNDE = globalThis.SCHACH_RUNDE;
 const SCHACH_TAFEL = globalThis.SCHACH_TAFEL;
 const SCHACH_VARIANTEN = globalThis.SCHACH_VARIANTEN;

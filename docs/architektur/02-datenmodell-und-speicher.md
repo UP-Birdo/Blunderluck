@@ -214,6 +214,32 @@ nach, was er in der Partie verpasst hat (nur die geänderten Partien, dank
 der Übersicht). Nach der Anmeldung stösst `vollNachladen()` einen vollen
 Blick an — erst dann steht fest, wessen beendete Partien dazugehören.
 
+**Seit v0.152.5 (weniger Download, Aufräumen)** — Begründung und Messung:
+`docs\entscheidungen\entschieden.md`, Eintrag „Weniger Download":
+
+- `tafelLaden` holt **fremde laufende Partien nicht mehr**. Ausnahmen sind
+  eigene, wartende, solche mit Einladung an mich und Einträge ohne
+  `mitEinladungen` (ältere Fassung). Mit `optionen.verwaltung` holt er alle.
+  Der Übersichts-Eintrag trägt dafür `mitEinladungen: true` und
+  `eingeladen` (nur wenn nicht leer). Der Code-Beitritt findet die Kennung
+  über `idZuCode`.
+- **Chronik stückweise** (`_chronikAbgleichen`, Gerätevorrat
+  `blunderluck.chronik-vorrat`): nur fehlende Nummern, bei leerem Vorrat
+  oder über 20 fehlenden einmal ganz — beim Laden und beim Schreiben.
+- `partieAuffrischen` fragt nur `uebersicht/<id>/geaendertAm`.
+- **Takt je Bildschirm:** `KONFIG.speicher.abfrageTaktMs` über den Rückruf
+  `taktMs` und `Abgleich.taktSchlag`: 3 s mit Menschen und im Vorraum,
+  15 s gegen Bob, ohne offene Partie und für die Spielerliste.
+- **Aufräumen** (`aufraeumen`, angestossen aus `tafelLaden`): Gelöscht wird
+  eine beendete Partie, wenn sie mindestens 7 Tage alt ist, ihr
+  Chronik-Eintrag auf dem Server steht und alle Menschen gebucht haben
+  (`uebersicht/<id>/gebucht/<personId>`, gemeldet von `TEAM_SCHACH._buchen`)
+  — oder nach der harten Grenze, die der Nutzer ebenfalls auf 7 Tage
+  gesetzt hat (heute zählt also nur das Alter; `gebucht` wird trotzdem
+  geschrieben). Es räumt nur Partien der eigenen Person (die
+  Verwaltung alle), höchstens 10 je Lauf und einmal je Stunde. Der Vorrat
+  behält eigene Partien, die der Server nicht mehr hat.
+
 **Warum nicht nur die letzte Bewegung laden?** Ein Zug ist rund 100 Byte,
 die Partie 8 Kilobyte. Dann müsste aber jedes Gerät das Brett aus den
 Zügen SELBST nachrechnen — und zwei Geräte, die einen Zug verschieden
