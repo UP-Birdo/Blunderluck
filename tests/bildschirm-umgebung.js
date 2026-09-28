@@ -517,6 +517,9 @@ const dateien = ["konfig.js", "fuehlen.js", "zustand.js",
        die reine Sammlung (Fähigkeiten, Brettformen); der gemeinsame
        Baustein „Anpassen" läuft hier nicht mit. */
     "rangliste.js", "start.js", "upcrew-abzeichen.js", "upcrew-sammlung.js", "sammlung.js", "freunde.js",
+    /* Seit v0.156.0 bauen Einstellungen und Verwaltung über den gemeinsamen
+       Aufbau (js\upcrew-einstellungen.js). */
+    "upcrew-einstellungen.js",
     "einstellungen.js",
     /* Die Spieler-Verwaltung als eigener Bildschirm mit Tabelle. */
     "verwaltungs-bildschirm.js",

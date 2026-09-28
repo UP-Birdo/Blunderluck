@@ -300,6 +300,18 @@ const RANGLISTE = {
         RANGLISTE.zeichnen();
     },
 
+    /* Seit v0.156.0: Kam man aus dem Profil-Blatt („Statistik und Partien",
+       js\profil.js), ist das ausführliche Profil beim Verlassen erledigt —
+       die Rangliste beginnt beim nächsten Mal wieder mit der Wertung. */
+    _blattZurueck: false,
+
+    beimVerlassen() {
+        if (RANGLISTE._blattZurueck) {
+            RANGLISTE._blattZurueck = false;
+            RANGLISTE.offenesProfil = "";
+        }
+    },
+
     /* Die Stände an einem Ort — beide Ansichten brauchen sie. */
     _staende() {
         return {
@@ -497,6 +509,14 @@ const RANGLISTE = {
         const rueckweg = RANGLISTE.profilRueckweg;
         RANGLISTE.offenesProfil = "";
         RANGLISTE.profilRueckweg = "";
+
+        /* Aus dem Profil-Blatt gekommen (seit v0.156.0): „Zurück" legt das
+           Rangliste-Blatt weg, darunter liegt wieder das Profil. */
+        if (RANGLISTE._blattZurueck && typeof UPCREW_BLATT !== "undefined") {
+            RANGLISTE._blattZurueck = false;
+            UPCREW_BLATT.schliessen("knopf");
+            return;
+        }
 
         if (rueckweg && typeof TABS !== "undefined") {
             TABS.wechseln(rueckweg);
@@ -713,8 +733,39 @@ const RANGLISTE = {
             .filter((eintrag) => eintrag.erreicht);
         const gewaehlt = spieler ? spieler.abzeichen : [];
 
+        /* Seit v0.156.0 stehen im Konto-Feld Kennungen ALLER Spiele
+           (upcrew-abzeichen.js `alle`): „bl-…" (bis v0.155 ohne Vorsilbe) aus
+           der Chronik, „up-…" aus dem gemeinsamen Fortschritt (bei Fremden aus
+           ihrem öffentlichen Auszug). Kennungen anderer Spiele lassen sich hier
+           nicht nachrechnen (ihr Zähler steht nicht im Auszug) — sie bleiben
+           weg, damit nichts Erlogenes dasteht. */
+        let gemeinsam = null;
+        const gemeinsamVon = () => {
+            if (gemeinsam === null) {
+                const ich = (typeof ICH !== "undefined") ? ICH.person() : null;
+                gemeinsam = (spieler && typeof RANGLISTE.abzeichenListe === "function")
+                    ? RANGLISTE.abzeichenListe(spieler, !!ich && ich.id === spielerId) : [];
+            }
+            return gemeinsam;
+        };
+
         return gewaehlt
-            .map((id) => verdient.find((eintrag) => eintrag.id === id))
+            .map((roh) => {
+                const kennung = String(roh);
+                const id = kennung.indexOf("bl-") === 0 ? kennung.slice(3) : kennung;
+                const bl = verdient.find((eintrag) => eintrag.id === id);
+                if (bl) {
+                    return bl;
+                }
+                if (kennung.indexOf("up-") === 0) {
+                    const up = gemeinsamVon().find((eintrag) => "up-" + eintrag.id === kennung && eintrag.erreicht > 0);
+                    if (up) {
+                        return { id: kennung, titel: up.titel, zeichen: up.kurz,
+                            text: up.wert + " " + up.einheit, erreicht: true };
+                    }
+                }
+                return null;
+            })
             .filter((eintrag) => !!eintrag);
     },
 
@@ -1453,6 +1504,13 @@ const RANGLISTE = {
      * Geschrieben wird der eigene Eintrag mit Zusammenführung.
      */
     abzeichenWaehlen() {
+        /* Seit v0.156.0 die gemeinsame Auswahl über alle Spiele (Profil-Blatt,
+           js\profil.js) — sonst fielen die Abzeichen anderer Spiele beim
+           Speichern aus der Wahl. */
+        if (typeof PROFIL !== "undefined" && PROFIL._alsBlatt()) {
+            PROFIL.abzeichenWahlOeffnen();
+            return;
+        }
         const ich = ICH.person();
         if (!ich || !ANMELDUNG.abgleich) {
             return;

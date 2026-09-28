@@ -70,15 +70,22 @@ const START = {
         /* Die Freundesliste ist seit v0.19.0 (Wunsch 6) eine eigene Seite
            INNERHALB des Starts — kein eigener Tab, sondern ein Fenster mit
            Zurück-Knopf, wie die Einstellungen. */
-        if (START.freundeOffen) {
+        /* Seit v0.156.0 liegen beide als BLATT über dem Start (keine
+           Vollbild-Menüs, Entwurf Oberfläche Runde 7); ohne den Baustein
+           (Bildschirm-Tests) wie bisher als Seite. */
+        const alsBlatt = START._unterAlsBlatt();
+        if (START.freundeOffen && !alsBlatt) {
             START._freundeZeichnen(wurzel);
             return;
         }
 
         /* Die vergangenen Matches, nach demselben Muster (seit v0.37.0). */
-        if (START.verlaufOffen) {
+        if (START.verlaufOffen && !alsBlatt) {
             START._verlaufZeichnen(wurzel);
             return;
+        }
+        if (alsBlatt) {
+            START._unterBlattPflegen();
         }
 
         /* Der Start ist nie ein Fenster — die Tab-Leiste gehört dazu. Wer
@@ -344,7 +351,7 @@ const START = {
                    (Nutzer-Ansage 18.09.2026); Name und Passwort ändert man
                    dort über „Bearbeiten" (seit v0.119.1). Zurück führt
                    hierher. */
-                tun: () => RANGLISTE.eigenesProfilOeffnen("start")
+                tun: () => START.profilOeffnen()
             },
             {
                 name: "Freunde",
@@ -403,7 +410,7 @@ const START = {
         knopf.className = "start-profil";
         knopf.setAttribute("aria-label", "Dein Profil");
         knopf.title = "Dein Profil";
-        knopf.addEventListener("click", () => RANGLISTE.eigenesProfilOeffnen("start"));
+        knopf.addEventListener("click", () => START.profilOeffnen());
 
         const bild = document.createElement("span");
         bild.className = "visitenkarte-bild start-profil-bild";
@@ -477,14 +484,43 @@ const START = {
      * Schutz und die beiden Tagesaufgaben.
      */
     _flamme: null,
+    _kapsel: null,
 
+    /*
+     * DAS PROFIL (seit v0.156.0 ein Blatt über dem Start, js\profil.js).
+     * Ohne das Blatt (Bildschirm-Tests) wie bisher die Profilseite in der
+     * Rangliste; „Zurück" führt hierher.
+     */
+    profilOeffnen() {
+        if (typeof PROFIL !== "undefined") {
+            PROFIL.oeffnen();
+            return;
+        }
+        RANGLISTE.eigenesProfilOeffnen("start");
+    },
+
+    /*
+     * SEIT v0.156.0 DIE SERIEN-KAPSEL (gemeinsamer Baustein
+     * js\upcrew-serie.js, Entwurf Oberfläche Runde 7): hinter dem
+     * Flammen-Kreis die sieben Tage und die beiden Schilde (Flammen-Schild
+     * aus dem Shop, Serien-Schutz vom Level). Ein Tipp öffnet die Karte mit
+     * Erklärung und „Schild kaufen" — die Serie steht nicht mehr in den
+     * Herausforderungen. Ohne den Baustein wie bis v0.155 nur der Kreis,
+     * ein Tipp führt dann in die Herausforderungen.
+     */
     _flammeBauen(halter) {
         if (typeof UPCREW_FLAMME === "undefined" || typeof FORTSCHRITT_KONTO === "undefined") {
             return;
         }
-        START._flamme = UPCREW_FLAMME.bauen(halter, {
-            beiKlick: () => TABS.wechseln("herausforderungen")
-        });
+        if (typeof UPCREW_SERIE !== "undefined") {
+            START._kapsel = UPCREW_SERIE.kapsel(halter, { beiKlick: () => START.serieOeffnen() });
+            START._flamme = null;
+        } else {
+            START._kapsel = null;
+            START._flamme = UPCREW_FLAMME.bauen(halter, {
+                beiKlick: () => TABS.wechseln("herausforderungen")
+            });
+        }
         if (!START._flammeHorcht && typeof FORTSCHRITT_KONTO.beiAenderung === "function") {
             START._flammeHorcht = true;
             FORTSCHRITT_KONTO.beiAenderung(() => START.flammeAktualisieren());
@@ -492,10 +528,66 @@ const START = {
         START.flammeAktualisieren();
     },
 
+    /* Die Werte der Kapsel und der Karte aus dem gemeinsamen Fortschritt:
+       die letzten sieben Tage (heute zuletzt), gekaufte Schilde mit ihrer
+       Höchstmenge und der Serien-Schutz des Levels (frei / verdient). */
+    TAGE_KURZ: ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"],
+
+    serieWerte() {
+        const heute = FORTSCHRITT_KONTO.heute();
+        const tage = [];
+        let tag = heute.datum;
+        for (let i = 0; i < 7; i++) {
+            tage.unshift(tag);
+            tag = FORTSCHRITT._vortag(tag);
+        }
+        const schutzAlle = FORTSCHRITT.schutzVerdient(FORTSCHRITT_KONTO.level().level);
+        const ware = (typeof UPCREW_MUENZEN !== "undefined" && UPCREW_MUENZEN.WAREN)
+            ? UPCREW_MUENZEN.WAREN.schild : null;
+        return {
+            serie: heute.serie.tage,
+            heute: heute.serie.heute === true,
+            woche: tage.map((datum) => heute.tage.has(datum)),
+            tage: tage.map((datum) => START.TAGE_KURZ[new Date(datum + "T12:00:00").getDay()] || ""),
+            schild: heute.schilde,
+            schildMax: ware ? ware.hoechstens : 0,
+            schutz: Math.max(0, heute.schutzFrei - heute.schilde),
+            schutzAlle: schutzAlle
+        };
+    },
+
+    /* Die Karte zur Serie (über allem, auch über Blättern). */
+    serieOeffnen() {
+        if (typeof UPCREW_BLATT === "undefined" || typeof UPCREW_SERIE === "undefined") {
+            TABS.wechseln("herausforderungen");
+            return null;
+        }
+        const werte = START.serieWerte();
+        return UPCREW_BLATT.oeffnen({
+            art: "karte",
+            titel: "Serie",
+            klasse: "karte-serie",
+            inhalt: (ort) => UPCREW_SERIE.karteFuellen(ort, werte, {
+                beiZu: () => UPCREW_BLATT.schliessen("knopf"),
+                beiKauf: () => {
+                    UPCREW_BLATT.schliessen("knopf");
+                    TABS.wechseln("shop");
+                }
+            })
+        });
+    },
+
     /* Auch ohne Neuzeichnen: wenn der Stand vom Konto später eintrifft
        (app.js `beiDaten`) oder eine Tagesaufgabe geschafft ist. */
     flammeAktualisieren() {
-        if (!START._flamme || typeof FORTSCHRITT_KONTO === "undefined") {
+        if (typeof FORTSCHRITT_KONTO === "undefined") {
+            return;
+        }
+        if (START._kapsel) {
+            START._kapsel.setzen(START.serieWerte());
+            return;
+        }
+        if (!START._flamme) {
             return;
         }
         const heute = FORTSCHRITT_KONTO.heute();
@@ -697,7 +789,11 @@ const START = {
     _verlaufZeichnen(wurzel) {
         TABS.rundeSetzen("start", true);
         wurzel.innerHTML = "";
+        START._verlaufKopfBauen(wurzel);
+        START._verlaufInhaltBauen(wurzel);
+    },
 
+    _verlaufKopfBauen(wurzel) {
         const kopfzeile = document.createElement("div");
         kopfzeile.className = "partie-kopf";
 
@@ -713,7 +809,11 @@ const START = {
         titel.textContent = "Vergangene Matches";
         kopfzeile.appendChild(titel);
         wurzel.appendChild(kopfzeile);
+    },
 
+    /* Die Liste der vergangenen Matches (oder Laden / Leer) — als Seite
+       und im Blatt dieselbe. */
+    _verlaufInhaltBauen(wurzel) {
         const person = ICH.person();
         const abgleich = (typeof TEAM_SCHACH !== "undefined")
             ? TEAM_SCHACH.abgleich : null;
@@ -748,17 +848,88 @@ const START = {
         }));
     },
 
+    /* ---------------------------------------------------------------- *
+     * Freunde und Verlauf als BLATT (seit v0.156.0)
+     *
+     * `freundeOffen`/`verlaufOffen` bleiben der eine Schalter; `_zeichnen`
+     * hält das Blatt dazu offen und zeichnet seinen Inhalt neu (Freunde
+     * zeichnen bei jeder Änderung über START._zeichnen). Geht das Blatt zu
+     * (✕, Grund, Esc, ein anderer Tab), fällt der Schalter zurück.
+     * ---------------------------------------------------------------- */
+
+    _unterBlatt: null,
+
+    _unterAlsBlatt() {
+        return typeof UPCREW_BLATT !== "undefined" && typeof TABS !== "undefined"
+            && typeof TABS._blaetterStillSchliessen === "function";
+    },
+
+    _unterBlattPflegen() {
+        const art = START.freundeOffen ? "freunde" : (START.verlaufOffen ? "verlauf" : "");
+        const offen = START._unterBlatt;
+        if (offen && offen.art !== art) {
+            START._unterBlatt = null;
+            offen.eintrag.schliessen();
+        }
+        if (!art) {
+            return;
+        }
+        if (!START._unterBlatt) {
+            const eintrag = UPCREW_BLATT.oeffnen({
+                titel: art === "freunde" ? "Freunde" : "Vergangene Matches",
+                klasse: "blatt-" + art,
+                beimSchliessen: (wie) => {
+                    if (!START._unterBlatt || START._unterBlatt.eintrag !== eintrag) {
+                        return;
+                    }
+                    START._unterBlatt = null;
+                    START.freundeOffen = false;
+                    START.verlaufOffen = false;
+                    FREUNDE.suchtext = "";
+                    if (wie !== "alle") {
+                        START._zeichnen();
+                    }
+                }
+            });
+            START._unterBlatt = { art: art, eintrag: eintrag };
+        }
+        const ort = START._unterBlatt.eintrag.inhalt;
+        ort.innerHTML = "";
+        if (art === "freunde") {
+            ort.appendChild(FREUNDE.karteBauen(ICH.person()));
+        } else {
+            START._verlaufInhaltBauen(ort);
+        }
+    },
+
+    _unterZu() {
+        const offen = START._unterBlatt;
+        START._unterBlatt = null;
+        if (offen) {
+            offen.eintrag.schliessen();
+        }
+    },
+
     verlaufOeffnen() {
+        if (START._unterAlsBlatt() && TABS.aktiveId !== "start") {
+            TABS.wechseln("start");
+        }
+        START.freundeOffen = false;
         START.verlaufOffen = true;
         START._zeichnen();
     },
 
     verlaufSchliessen() {
         START.verlaufOffen = false;
+        START._unterZu();
         START._zeichnen();
     },
 
     freundeOeffnen() {
+        if (START._unterAlsBlatt() && TABS.aktiveId !== "start") {
+            TABS.wechseln("start");
+        }
+        START.verlaufOffen = false;
         START.freundeOffen = true;
         START._zeichnen();
     },
@@ -766,6 +937,7 @@ const START = {
     freundeSchliessen() {
         START.freundeOffen = false;
         FREUNDE.suchtext = "";
+        START._unterZu();
         START._zeichnen();
     },
 

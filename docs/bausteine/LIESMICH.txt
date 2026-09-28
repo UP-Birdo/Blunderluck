@@ -10,3 +10,16 @@ und ist mit v0.151.16 byte-gleich übernommen. Kann ebenfalls gelöscht werden (
 upcrew-shop.js: ERLEDIGT 28.09.2026 — die Optionen `texte` und `bilder` (Zeit zurück als Uhr) stehen in
 final; die Datei hier ist byte-gleich mit final und mit v0.153.0 byte-gleich in js\upcrew-shop.js
 übernommen. Kann gelöscht werden (wartet auf OK).
+
+upcrew-abzeichen.js / .css: VORSCHLAG 29.09.2026 (Blunderluck v0.156.0, Runde 7) — eine Abzeichen-Liste
+für alle Spiele: registrieren(spiel, eintraege, { marke, name }), spielListe, alle (gemeinsame als „up-<id>"
++ angemeldete Spiele), ausgeruestet(alle, gewaehlt, 3, umdeuten); Kachel mit `pfad` und Marke (UP/BL/TL);
+`weiter: 0` = einmalige Abzeichen. Die alten Aufrufe (liste, kachel, blatt, raster) bleiben gleich.
+Dazu die Datendatei js\upcrew-abzeichen-spiele.js (neu, noch nicht in final).
+
+upcrew-sammlung.js / .css: VORSCHLAG 29.09.2026 (Blunderluck v0.156.0) — g.wuerfelUnten(): der Würfel
+„Zufall" sitzt vorn im Balken Zurück · Übernehmen (restEinsetzen ruft es mit); CSS
+.up-sm .upa-aktion .upa-zufall.
+
+NEU, noch nicht in final (liegen nur in js\ und css\): upcrew-blatt, upcrew-serie, upcrew-profil,
+upcrew-einstellungen, upcrew-abzeichen-spiele.

@@ -316,11 +316,13 @@ pruefe("Aussehen lädt früh: Farbwelten → Aussehen → darstellung.js direkt 
  * Platz 5 still. Die Tabs „Fähigkeiten" und „Anpassen" sind in der
  * Sammlung aufgegangen.
  */
-pruefe("Leiste: Aufgaben · Sammlung · Start · Rangliste · Bald (v0.145.0)", () => {
+pruefe("Leiste: Shop · Sammlung · Start · Aufgaben · Rangliste (v0.156.0)", () => {
     const app = dateisystem.readFileSync(pfad.join(projekt, "js", "app.js"), "utf8");
     const reihe = [...app.matchAll(/TABS\.registrieren\(([A-Z_]+)\)/g)].map((t) => t[1]);
-    /* Platz 5 seit v0.152.0: der Shop statt „Bald". */
-    gleich(reihe.slice(0, 5).join(","), "HERAUSFORDERUNGEN,SAMMLUNG,START,RANGLISTE,SHOP", "Reihenfolge");
+    /* Platz 5 seit v0.152.0: der Shop statt „Bald". Seit v0.156.0 (Nutzer
+       28.09.2026: „shop nach ganz links dann sammlung start herausforderung
+       und dann ganz rechts rangliste") in dieser Reihenfolge. */
+    gleich(reihe.slice(0, 5).join(","), "SHOP,SAMMLUNG,START,HERAUSFORDERUNGEN,RANGLISTE", "Reihenfolge");
     wahr(reihe.indexOf("FAEHIGKEITEN") === -1 && reihe.indexOf("ANPASSEN") === -1,
         "Fähigkeiten und Anpassen sind keine eigenen Tabs mehr");
     const { BALD } = require(pfad.join(projekt, "js", "herausforderungen.js"));
@@ -339,7 +341,12 @@ pruefe("Leiste: Baustein upcrew-leiste.css eingebunden, nach dem eigenen Stil, o
     const links = [...seite.matchAll(/<link rel="stylesheet" href="css\/([^"]+)">/g)].map((t) => t[1]);
     const stelle = links.indexOf("upcrew-leiste.css");
     wahr(stelle !== -1, "upcrew-leiste.css ist nicht eingebunden");
-    wahr(links.filter((n) => /^stil/.test(n)).every((n) => links.indexOf(n) < stelle), "lädt vor einem eigenen Stil");
+    /* Ausgenommen stil-blatt.css (seit v0.156.0): Sie bettet nur die Blätter
+       ein (nichts an der Leiste) und muss NACH deren Bausteinen laden. */
+    wahr(links.filter((n) => /^stil/.test(n) && n !== "stil-blatt.css").every((n) => links.indexOf(n) < stelle),
+        "lädt vor einem eigenen Stil");
+    wahr(!/tab-leiste|up-leiste|up-tab/.test(dateisystem.readFileSync(pfad.join(projekt, "css", "stil-blatt.css"), "utf8")),
+        "stil-blatt.css fasst die Leiste nicht an");
     const sw = dateisystem.readFileSync(pfad.join(projekt, "sw.js"), "utf8");
     wahr(sw.indexOf("\"./css/upcrew-leiste.css\"") !== -1, "fehlt in sw.js");
     wahr(/<nav class="tab-leiste up-leiste" id="tab-leiste"/.test(seite), "die Leiste trägt up-leiste");

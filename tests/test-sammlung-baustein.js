@@ -129,7 +129,8 @@ pruefe("Stil: nur Farbwelt-Variablen, nur up-sm-Klassen, Vertrag im Kopf", () =>
     wahr(!/#[0-9a-fA-F]{3,8}\b/.test(ohneKommentare), "feste Farbe (#…)");
     wahr(!/\brgba?\(/.test(ohneKommentare), "feste Farbe (rgb)");
     const klassen = [...new Set((ohneKommentare.match(/\.[a-z][a-z0-9-]*/g) || []))];
-    const fremd = klassen.filter((k) => !k.startsWith(".up-sm") && [".upa-vorschau-rahmen", ".upa-aktion"].indexOf(k) === -1);
+    const fremd = klassen.filter((k) => !k.startsWith(".up-sm") && [".upa-vorschau-rahmen", ".upa-aktion",
+        /* seit v0.156.0: der Würfel im Balken (Vorschlag an final) */ ".upa-zufall"].indexOf(k) === -1);
     gleich(fremd, [], "fremde Klassen");
     wahr(/MARKUP-VERTRAG/.test(css) && /--up-sm-rand/.test(css) && /--up-sm-leiste/.test(css) && /--oben-frei/.test(css),
         "Vertrag und Stellschrauben im Kopf");

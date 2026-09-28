@@ -3,6 +3,34 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.156.0 — 29.09.2026
+
+**Keine Vollbild-Menüs mehr: alles öffnet über dem Start.**
+
+- **Shop, Sammlung, Aufgaben, Rangliste, Profil, Einstellungen und
+  Verwaltung** öffnen als Blatt über dem Start — der Start bleibt dahinter
+  sichtbar, etwas zurückgesetzt. Schliessen mit ✕, mit einem Tipp daneben
+  oder mit Esc; mehrere Blätter liegen übereinander (Profil →
+  Einstellungen → Verwaltung) und gehen mit dem Pfeil einzeln zurück. Die
+  Partie bleibt ein eigener Bildschirm.
+- **Neue Reihenfolge unten:** Shop · Sammlung · Start · Aufgaben ·
+  Rangliste. Wischen folgt derselben Reihenfolge, auch auf den Blättern.
+- **Serie oben hinter der Flamme:** die letzten sieben Tage und deine
+  beiden Schilde (Flammen-Schild aus dem Shop, Serien-Schutz vom Level). Ein
+  Tipp erklärt beides und führt mit „Schild kaufen" in den Shop. In den
+  Aufgaben steht die Serie nicht mehr.
+- **Neues Profil:** Name mit klein #Nummer, Level-Ring und XP, drei
+  ausgerüstete Abzeichen aus allen UPCrew-Spielen, Spielzeit, „dabei seit"
+  und wo du im Turm stehst. Das Zahnrad oben führt in die Einstellungen,
+  „Statistik und Partien" zum ausführlichen Profil. Verdiente Abzeichen
+  bleiben fest im Profil.
+- **Einstellungen und Verwaltung neu geordnet**, gleich wie in Typoluck:
+  Konto · Aussehen · Privatsphäre · Nur in Blunderluck · Hilfe · Admin ·
+  Über · Konto löschen.
+- **Sammlung:** Der Würfel für Zufall sitzt jetzt unten neben Zurück und
+  Übernehmen.
+- Auf schmalen Handys (unter 380 px) zeigt der Kopf nur noch den Ring.
+
 ## v0.155.2 — 28.09.2026
 
 **Spielzeit-Haken am Konto, höchstens drei je Team.**

@@ -521,6 +521,35 @@ const FORTSCHRITT_KONTO = {
     },
 
     /*
+     * ZÄHLER IM EIGENEN ZWEIG HEBEN (seit v0.156.0, für die verdienten
+     * Abzeichen `az…`, js\profil.js): je Name nur höher, nie tiefer — so
+     * bleibt ein einmal verdientes Abzeichen liegen. Namen nur aus
+     * Buchstaben (Regel §11b). Liefert, wie viele Zähler sich änderten.
+     */
+    zaehlerHeben(felder) {
+        const stand = FORTSCHRITT.normalisieren(FORTSCHRITT_KONTO.lesen());
+        const zweig = stand.spiele[FORTSCHRITT.APP] || FORTSCHRITT.spielLeer();
+        const zaehler = FORTSCHRITT._zaehlerAnlegen(zweig);
+        let geaendert = 0;
+        for (const name of Object.keys(felder || {})) {
+            const wert = felder[name];
+            if (/^[a-zA-Z]{1,32}$/.test(name) && typeof wert === "number" && isFinite(wert) && wert >= 0
+                    && wert <= 1000000000 && !(typeof zaehler[name] === "number" && zaehler[name] >= wert)) {
+                zaehler[name] = Math.floor(wert);
+                geaendert++;
+            }
+        }
+        if (geaendert === 0) {
+            return 0;
+        }
+        zweig.zaehler = zaehler;
+        zweig.stand = Math.max(zweig.stand + 1, Date.now());
+        stand.spiele[FORTSCHRITT.APP] = zweig;
+        FORTSCHRITT_KONTO._ablegen(FORTSCHRITT.normalisieren(stand));
+        return geaendert;
+    },
+
+    /*
      * GAST → KONTO (seit v0.155.0, Nutzer 28.09.2026: Spielzeit und
      * Startdatum „auch bei gästen", beim Umzug mitnehmen): Nach „Spielstand
      * sichern" liegt der Gast-Stand auf dem Gerät noch unter „gast". Er wird

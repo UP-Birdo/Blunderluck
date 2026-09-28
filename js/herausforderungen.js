@@ -13,8 +13,9 @@
  *   - Tageswort: die Karte von Typoluck. Ob es heute geschafft ist, steht im
  *     gemeinsamen Fortschritt am Konto (Zweig „typoluck"); gespielt wird es
  *     in Typoluck („Zu Typoluck").
- *   - Serie: die letzten sieben Tage als Flammen, die Zahl der Tage am
- *     Stück und die Serien-Schutze, die das Level bringt.
+ *   - Die Serie stand bis v0.155 hier (sieben Flammen, Schutz). Seit
+ *     v0.156.0 sitzt sie oben im Kopf hinter dem Flammen-Kreis
+ *     (js\upcrew-serie.js, Entwurf Oberfläche Runde 7).
  *
  * Unten in derselben Datei: der stille Platzhalter „Bald" für Platz 5 der
  * Leiste (seit v0.145.0).
@@ -22,8 +23,6 @@
 
 /* Die Zeichen dieses Tabs (24er-Raster, Entwurf `P`). */
 const HEUTE_ZEICHEN = {
-    serie: "M12 3 C15 7 18 9 18 14 A6 6 0 0 1 6 14 C6 11 8 9 9 7 C10 10 11 11 12 11 C12 8 11 6 12 3 Z",
-    schutz: "M12 3 L19 6 V11 C19 16 16 19 12 21 C8 19 5 16 5 11 V6 Z",
     beide: "M4 9 H14 V20 H4 Z M10 4 H20 V15 H16"
 };
 
@@ -35,6 +34,8 @@ const HERAUSFORDERUNGEN = {
     id: "herausforderungen",
     titel: "Heute",
     leisteText: "Aufgaben",
+    /* Als Blatt (seit v0.156.0) wie im Entwurf Oberfläche Runde 7. */
+    blattTitel: "Aufgaben · Heute",
     zeichen: "aufgaben",
 
     wurzelEl: null,
@@ -102,8 +103,6 @@ const HERAUSFORDERUNGEN = {
         hinweis.appendChild(HERAUSFORDERUNGEN._el("b", "", "×1,5"));
         hinweis.appendChild(HERAUSFORDERUNGEN._el("span", "", beide ? "Beide geschafft" : "Beide schaffen"));
         wurzel.appendChild(hinweis);
-
-        wurzel.appendChild(HERAUSFORDERUNGEN._serieBauen(heute));
     },
 
     /* Die Karte „Tagesbrett": Bild der Stellung, Aufgabe, Lösen/Figuren. */
@@ -194,37 +193,6 @@ const HERAUSFORDERUNGEN = {
             return START._figurenBauen(anzahl, "heute-figuren");
         }
         return HERAUSFORDERUNGEN._el("span", "heute-figuren", anzahl + "/3");
-    },
-
-    /* Die Serie: sieben Flammen (heute rechts), die Zahl, die Schutze. */
-    _serieBauen(heute) {
-        const reihe = HERAUSFORDERUNGEN._el("section", "karte heute-serie");
-        const flammen = HERAUSFORDERUNGEN._el("div", "heute-flammen");
-        let tag = heute.datum;
-        const liste = [];
-        for (let i = 0; i < 7; i++) {
-            liste.unshift(tag);
-            tag = FORTSCHRITT._vortag(tag);
-        }
-        for (const eintrag of liste) {
-            const flamme = HERAUSFORDERUNGEN._el("i", "heute-flamme"
-                + (heute.tage.has(eintrag) ? " an" : "") + (eintrag === heute.datum ? " heute" : ""));
-            flamme.appendChild(HERAUSFORDERUNGEN._zeichen(HEUTE_ZEICHEN.serie));
-            flammen.appendChild(flamme);
-        }
-        reihe.appendChild(flammen);
-
-        const zahlen = HERAUSFORDERUNGEN._el("div", "heute-serie-zahlen");
-        zahlen.appendChild(HERAUSFORDERUNGEN._el("b", "", String(heute.serie.tage)));
-        zahlen.appendChild(HERAUSFORDERUNGEN._el("span", "", heute.serie.tage === 1 ? "Tag Serie" : "Tage Serie"));
-        const schutz = HERAUSFORDERUNGEN._el("span", "heute-schutz");
-        schutz.title = "Serien-Schutz";
-        schutz.setAttribute("aria-label", heute.schutzFrei + " Serien-Schutz");
-        schutz.appendChild(HERAUSFORDERUNGEN._zeichen(HEUTE_ZEICHEN.schutz));
-        schutz.appendChild(document.createTextNode(String(heute.schutzFrei)));
-        zahlen.appendChild(schutz);
-        reihe.appendChild(zahlen);
-        return reihe;
     },
 
     /* „Lösen": das Tagesbrett als Partie gegen Bob anlegen und betreten. */

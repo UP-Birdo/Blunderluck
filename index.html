@@ -168,6 +168,15 @@
          nur kopiert, NACH dem eigenen Stil. Wie sie in Blunderluck fest am
          unteren Rand sitzt, steht in css/stil.css („Tabs"). -->
     <link rel="stylesheet" href="css/upcrew-leiste.css">
+    <!-- Keine Vollbild-Menüs (seit v0.156.0, Entwurf Oberfläche Runde 7):
+         Blätter und Karten über dem sichtbaren Start, die Serien-Kapsel im
+         Kopf, Profil, Einstellungen/Verwaltung — gemeinsame Bausteine; wie
+         Blunderluck sie einbettet, steht in css/stil-blatt.css (danach). -->
+    <link rel="stylesheet" href="css/upcrew-blatt.css">
+    <link rel="stylesheet" href="css/upcrew-serie.css">
+    <link rel="stylesheet" href="css/upcrew-profil.css">
+    <link rel="stylesheet" href="css/upcrew-einstellungen.css">
+    <link rel="stylesheet" href="css/stil-blatt.css">
 </head>
 <body>
 
@@ -191,6 +200,10 @@
     <nav class="tab-leiste up-leiste" id="tab-leiste" aria-label="Bereiche"></nav>
 
     <main class="tab-inhalt" id="tab-inhalt"></main>
+
+    <!-- Die Blätter und Karten (js/upcrew-blatt.js, seit v0.156.0): über dem
+         Start, unter der Leiste; die Karten über allem ausser Dialogen. -->
+    <div class="up-bl-halter" id="ebenen"></div>
 
     <!-- Das Anmelde-Vollbild (js/anmeldung.js, seit v0.8.0): sichtbar nur,
          solange auf diesem Gerät niemand angemeldet ist. Es liegt über der
@@ -248,6 +261,8 @@
     <script src="js/speicher.js"></script>
     <script src="js/abgleich.js"></script>
     <script src="js/dialog.js"></script>
+    <!-- Blätter über dem Start (seit v0.156.0) — TABS öffnet Tabs darin. -->
+    <script src="js/upcrew-blatt.js"></script>
     <script src="js/tabs.js"></script>
     <script src="js/anmeldung.js"></script>
     <!-- Die Bildschirme des UPCrew-Kontos (seit v0.138.0) ergänzen
@@ -308,10 +323,15 @@
          Tabs „Fähigkeiten" (v0.9.0) und „Anpassen" (v0.144.0). -->
     <script src="js/upcrew-anpassen.js"></script>
     <script src="js/upcrew-abzeichen.js"></script>
+    <!-- Die Abzeichen der einzelnen Spiele als Daten (seit v0.156.0) — eine
+         Liste für alle Spiele, NACH upcrew-abzeichen.js. -->
+    <script src="js/upcrew-abzeichen-spiele.js"></script>
     <script src="js/upcrew-wischen.js"></script>
     <!-- Die wandernde Kapsel der Leiste (seit v0.151.16), zu css/upcrew-leiste.css. -->
     <script src="js/upcrew-leiste.js"></script>
     <script src="js/upcrew-flamme.js"></script>
+    <!-- Die Serien-Kapsel im Kopf (seit v0.156.0), braucht die Flamme. -->
+    <script src="js/upcrew-serie.js"></script>
     <script src="js/upcrew-muenzen.js"></script>
     <script src="js/upcrew-shop.js"></script>
     <script src="js/shop.js"></script>
@@ -319,11 +339,16 @@
     <script src="js/upcrew-sammlung.js"></script>
     <script src="js/sammlung.js"></script>
     <script src="js/freunde.js"></script>
+    <!-- Einstellungen und Verwaltung im selben Aufbau (seit v0.156.0). -->
+    <script src="js/upcrew-einstellungen.js"></script>
     <script src="js/einstellungen.js"></script>
     <!-- Die Spieler-Verwaltung als eigener Bildschirm mit Tabelle —
          erreichbar über den Knopf „Verwaltung" in den Einstellungen. -->
     <script src="js/verwaltungs-bildschirm.js"></script>
     <script src="js/wunsch.js"></script>
+    <!-- Das eigene Profil als Blatt (seit v0.156.0). -->
+    <script src="js/upcrew-profil.js"></script>
+    <script src="js/profil.js"></script>
     <script src="js/intro.js"></script>
     <!-- Neue Versionen ankommen lassen (seit v0.151.2) — app.js ruft es
          beim Anmelden des Service Workers. -->

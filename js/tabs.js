@@ -197,11 +197,211 @@ const TABS = {
         document.body.classList.toggle("runde-offen", soll);
     },
 
-    wechseln(gewuenscht) {
+    /* ---------------------------------------------------------------- *
+     * TABS ALS BLATT (seit v0.156.0, Nutzer 28.09.2026: „keine Menüs, die den
+     * ganzen Screen bedecken … alles, was nicht im Spiel ist, als Popup, das
+     * im Hintergrund noch das Hauptmenü zeigt"; gemeinsamer Baustein
+     * js\upcrew-blatt.js).
+     *
+     * Ein Tab mit `alsBlatt: true` (Shop, Sammlung, Aufgaben, Rangliste,
+     * Einstellungen, Verwaltung) öffnet als BLATT über dem Start: Der Start
+     * bleibt sichtbar dahinter (leicht zurückgesetzt), der Bereich des Tabs
+     * wandert in das Blatt. Ein Tipp in der Leiste ersetzt das Blatt, „Start"
+     * schliesst alles; `blattOeffnen(id)` legt eines DARÜBER (Profil →
+     * Einstellungen → Verwaltung). Die Partie (`team-schach`) bleibt ein
+     * eigener Bildschirm. Ohne den Baustein (Tests) wie bisher als Seite.
+     * `blattTitel`/`blattRechts()` am Tab sind wahlfrei.
+     * ---------------------------------------------------------------- */
+
+    /* Die Tab-Kennungen der offenen Blätter, unten zuerst. */
+    _blattTabs: [],
+    _bereiche: {},
+    _stumm: false,
+
+    _alsBlatt(tab) {
+        return !!tab && tab.alsBlatt === true && typeof UPCREW_BLATT !== "undefined";
+    },
+
+    blattOeffnen(id) {
+        TABS.wechseln(id, { stapeln: true });
+    },
+
+    /* Alle Blätter zu, ohne dass sie zurück zum Start zeichnen. */
+    _blaetterStillSchliessen() {
+        if (typeof UPCREW_BLATT === "undefined") {
+            return;
+        }
+        TABS._stumm = true;
+        try {
+            UPCREW_BLATT.alleSchliessen();
+        } finally {
+            TABS._stumm = false;
+        }
+        for (const id of TABS._blattTabs.splice(0)) {
+            const tab = TABS.liste.find((eintrag) => eintrag.id === id);
+            if (tab && typeof tab.beimVerlassen === "function") {
+                tab.beimVerlassen();
+            }
+        }
+    },
+
+    _leisteMarkieren(leisteId) {
+        if (!TABS.leisteEl) {
+            return;
+        }
+        for (const knopf of TABS.leisteEl.querySelectorAll(".up-tab")) {
+            if (knopf.dataset.tabId === leisteId) {
+                knopf.setAttribute("aria-current", "page");
+            } else {
+                knopf.removeAttribute("aria-current");
+            }
+        }
+    },
+
+    _bereichVon(tab) {
+        if (!TABS._bereiche[tab.id]) {
+            const bereich = document.createElement("section");
+            bereich.className = "tab-bereich tab-bereich-blatt";
+            bereich.dataset.tabId = tab.id;
+            TABS._bereiche[tab.id] = bereich;
+            tab.aufbauen(bereich);
+            TABS.aufgebaut[tab.id] = true;
+        }
+        return TABS._bereiche[tab.id];
+    },
+
+    _blattWechseln(tab, optionen) {
+        /* Liegt das Blatt schon im Stapel (Verwaltung beenden → zurück in
+           die Einstellungen), gehen nur die Blätter darüber zu. */
+        if (TABS._blattTabs.indexOf(tab.id) !== -1) {
+            while (TABS._blattTabs.length > 0 && TABS._blattTabs[TABS._blattTabs.length - 1] !== tab.id
+                    && UPCREW_BLATT.anzahl() > 0) {
+                UPCREW_BLATT.schliessen("code");
+            }
+            if (TABS.aktiveId === tab.id && typeof tab.beimOeffnen === "function") {
+                tab.beimOeffnen();
+            }
+            return;
+        }
+        /* Ohne eigenen Leisten-Knopf (Einstellungen, Verwaltung) legt sich
+           ein Blatt DARÜBER (Profil → Einstellungen → Verwaltung); ein
+           Eintrag der Leiste ersetzt die offenen Blätter. */
+        const stapeln = !!(optionen && optionen.stapeln)
+            || (tab.inLeiste === false && UPCREW_BLATT.blaetter() > 0);
+        if (!stapeln) {
+            TABS._blaetterStillSchliessen();
+        }
+
+        /* Dahinter steht der Start — sichtbar, nicht die Partie. */
+        const start = TABS.liste.find((eintrag) => eintrag.id === "start");
+        if (TABS.aktiveId !== "start" && TABS._blattTabs.length === 0 && start
+                && (!stapeln || UPCREW_BLATT.blaetter() === 0)) {
+            TABS._seiteZeigen(start);
+        }
+
+        const bereich = TABS._bereichVon(tab);
+        bereich.hidden = false;
+        TABS._blattTabs.push(tab.id);
+        TABS.aktiveId = tab.id;
+        TABS._leisteMarkieren(tab.inLeiste === false ? (tab.leisteBei || "start") : tab.id);
+        UPCREW_BLATT.oeffnen({
+            titel: tab.blattTitel || tab.titel,
+            inhalt: bereich,
+            klasse: "blatt-" + tab.id,
+            rechts: (typeof tab.blattRechts === "function") ? tab.blattRechts() : [],
+            beimSchliessen: () => TABS._blattZu(tab)
+        });
+        if (typeof tab.beimOeffnen === "function") {
+            tab.beimOeffnen();
+        }
+    },
+
+    /* Ein Blatt ist zu (✕, Zurück, Grund, Esc): der Tab räumt auf; darunter
+       ist wieder das nächste Blatt oder der Start aktiv. */
+    _blattZu(tab) {
+        if (TABS._stumm) {
+            return;
+        }
+        const stelle = TABS._blattTabs.lastIndexOf(tab.id);
+        if (stelle !== -1) {
+            TABS._blattTabs.splice(stelle, 1);
+        }
+        if (typeof tab.beimVerlassen === "function") {
+            tab.beimVerlassen();
+        }
+        const darunter = TABS._blattTabs[TABS._blattTabs.length - 1];
+        if (darunter) {
+            const unten = TABS.liste.find((eintrag) => eintrag.id === darunter);
+            TABS.aktiveId = darunter;
+            TABS._leisteMarkieren(unten && unten.inLeiste === false ? (unten.leisteBei || "start") : darunter);
+            if (unten && typeof unten.beimOeffnen === "function") {
+                unten.beimOeffnen();
+            }
+            return;
+        }
+        TABS.aktiveId = "start";
+        TABS._leisteMarkieren("start");
+        const start = TABS.liste.find((eintrag) => eintrag.id === "start");
+        if (start && typeof start.beimOeffnen === "function") {
+            start.beimOeffnen();
+        }
+    },
+
+    /* Zeigt den Bereich eines Seiten-Tabs (ohne Blatt) — der Kern des
+       bisherigen `wechseln`. */
+    _seiteZeigen(tab) {
+        const id = tab.id;
+        TABS.aktiveId = id;
+        for (const bereich of TABS.inhaltEl.querySelectorAll(".tab-bereich")) {
+            const zeigen = bereich.dataset.tabId === id;
+            if (zeigen && bereich.hidden && bereich.classList) {
+                bereich.classList.remove("tab-bereich-zeigt");
+                void bereich.offsetWidth;
+                bereich.classList.add("tab-bereich-zeigt");
+            }
+            bereich.hidden = !zeigen;
+        }
+        if (!TABS.aufgebaut[id]) {
+            const bereich = document.createElement("section");
+            bereich.className = "tab-bereich tab-bereich-zeigt";
+            bereich.dataset.tabId = id;
+            TABS.inhaltEl.appendChild(bereich);
+            tab.aufbauen(bereich);
+            TABS.aufgebaut[id] = true;
+            bereich.hidden = false;
+        }
+        if (typeof tab.beimOeffnen === "function") {
+            tab.beimOeffnen();
+        }
+    },
+
+    wechseln(gewuenscht, optionen) {
         const id = TABS.UMLEITUNGEN[gewuenscht] || gewuenscht;
         const tab = TABS.liste.find((eintrag) => eintrag.id === id);
         if (!tab) {
             return;
+        }
+
+        if (TABS._alsBlatt(tab)) {
+            const vorherBlatt = TABS.liste.find((eintrag) => eintrag.id === TABS.aktiveId);
+            if (vorherBlatt && TABS._blattTabs.length === 0 && vorherBlatt.id !== id
+                    && typeof vorherBlatt.beimVerlassen === "function" && vorherBlatt.id !== "start") {
+                vorherBlatt.beimVerlassen();
+            }
+            if (TABS._spielt && typeof document !== "undefined" && document.body) {
+                TABS._spielt = false;
+                document.body.classList.remove("partie-spielt");
+            }
+            TABS._blattWechseln(tab, optionen);
+            return;
+        }
+
+        /* Ein Seiten-Tab (Start, Partie): offene Blätter gehen zu. */
+        if (TABS._blattTabs.length > 0 || (typeof UPCREW_BLATT !== "undefined" && UPCREW_BLATT.anzahl() > 0)) {
+            TABS._blaetterStillSchliessen();
+            if (TABS.aktiveId !== "start" && TABS.liste.some((eintrag) => eintrag.id === TABS.aktiveId && eintrag.alsBlatt)) {
+                TABS.aktiveId = "start";
+            }
         }
 
         /* Der bisherige Tab räumt auf, wenn er es will (seit v0.144.0; der

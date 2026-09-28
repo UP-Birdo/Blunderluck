@@ -1,29 +1,28 @@
 /*
  * einstellungen.js — der Bildschirm Einstellungen.
  *
- * SEIT v0.143.0 IM TYPOLUCK-STIL (UPCrew-Angleichung Runde 2, Vorlage
- * `Apps\Typoluck\js\bildschirm-einstellungen.js`): drei Karten, Stichworte
- * statt Erklärsätzen hinter i-Knöpfen.
+ * SEIT v0.156.0 IM GEMEINSAMEN AUFBAU js\upcrew-einstellungen.js (Nutzer
+ * 28.09.2026: „verwalten und die einstellungen sollen in beiden spielen
+ * gleich aussehen"; Entwurf Oberfläche Runde 7) und als BLATT über dem
+ * Start (js\upcrew-blatt.js). Die Reihenfolge der Abschnitte legt der
+ * Baustein fest:
  *
- *   1. DIESES GERÄT — je Zeile Symbol + Name links, Umschalter rechts:
- *      Darstellung (Auto / Hell / Dunkel, js\darstellung.js), seit v0.144.0
- *      Standard-Schrift (An / Aus) und der Weg in den Tab „Anpassen" —
- *      diese drei gelten über das gemeinsame UPCrew-Aussehen auch in
- *      Typoluck —, dazu Vibration (An / Aus, js\fuehlen.js; kann das Gerät
- *      nicht vibrieren, steht „nicht möglich" da statt eines Schalters ohne
- *      Wirkung).
- *   2. UPCREW-KONTO · ALLE SPIELE — wer angemeldet ist (Name#Nummer, Rolle)
- *      und alle Konto-Knöpfe untereinander: Spielstand sichern (nur Gast),
- *      Profil, Verwaltung (nur Admins), Abmelden, UPCrew-Konto löschen
- *      (Zwei-Schritt, weil nicht rückgängig zu machen). Bis v0.142 waren das
- *      zwei Karten „Account" und „Spieler" mit je einem i.
- *   3. ÜBER BLUNDERLUCK — Angaben wie in Typoluck (Ein Spiel von, Version,
- *      Verbindung) und der Wunsch-Knopf. Die Verbindung war bis v0.142 eine
- *      eigene Karte; gehalten wird ihr Stand weiter in app.js (`APP.status`).
+ *   1. UPCREW-KONTO · ALLE SPIELE — wer angemeldet ist (Name, klein #Tag,
+ *      Rolle), Spielstand sichern (nur Gast), Name, Nummer, Passwort
+ *      ändern, Abmelden.
+ *   2. AUSSEHEN — Darstellung (Auto / Hell / Dunkel, js\darstellung.js),
+ *      Standard-Schrift und der Weg in die Sammlung; gilt über das
+ *      gemeinsame UPCrew-Aussehen auch in Typoluck.
+ *   3. PRIVATSPHÄRE — Spielzeit privat oder öffentlich (am Konto).
+ *   4. NUR IN BLUNDERLUCK — Vibration (dieses Gerät), Schach lernen,
+ *      vergangene Matches.
+ *   5. HILFE — Wunsch oder Fehler melden (js\wunsch.js).
+ *   6. ADMIN — Verwaltung (nur Rolle Admin), öffnet als Blatt darüber.
+ *   7. ÜBER — Version und Verbindung (Stand in app.js, `APP.status`).
+ *   8. ganz unten, rot, mit Rückfrage: UPCrew-Konto löschen.
  *
- * Bis v0.16.0 gab es eine Karte „Darstellung" mit dem Schalter
- * klassisch/3D; seit v0.17.0 ist der 3D-Look dauerhaft an (siehe `laden`).
- * Die neue Darstellung (hell/dunkel) seit v0.141.0 ist etwas anderes.
+ * Bis v0.155 drei Karten „Dieses Gerät", „UPCrew-Konto", „Über
+ * Blunderluck" (seit v0.143.0 im Typoluck-Stil).
  */
 
 const EINSTELLUNGEN = {
@@ -84,99 +83,61 @@ const EINSTELLUNGEN = {
             return;
         }
         wurzel.innerHTML = "";
+        EINSTELLUNGEN.statusEl = null;
+        EINSTELLUNGEN.statusTextEl = null;
 
-        /* Ein Fenster wie die offene Partie: oben links der Pfeil zurück
-           (Haus-Muster seit v0.110, Pfeil seit v0.142.0). */
-        if (typeof TABS !== "undefined" && TABS.rundeSetzen) {
-            TABS.rundeSetzen("einstellungen", true);
+        /* Als Blatt (seit v0.156.0) trägt das Blatt Titel und Zurück; als
+           Seite (ohne den Baustein) wie bisher ein Fenster mit Pfeil. */
+        const alsBlatt = typeof TABS !== "undefined" && Array.isArray(TABS._blattTabs)
+            && TABS._blattTabs.indexOf(EINSTELLUNGEN.id) !== -1;
+        if (!alsBlatt) {
+            if (typeof TABS !== "undefined" && TABS.rundeSetzen) {
+                TABS.rundeSetzen("einstellungen", true);
+            }
+            const kopfzeile = document.createElement("div");
+            kopfzeile.className = "partie-kopf";
+            kopfzeile.appendChild(ZUSTAND.alsZurueck(EINSTELLUNGEN._knopf("Zurück",
+                "knopf-still knopf-klein", () => TABS.wechseln("start"))));
+            const kopfTitel = document.createElement("h2");
+            kopfTitel.className = "partie-titel";
+            kopfTitel.textContent = "Einstellungen";
+            kopfzeile.appendChild(kopfTitel);
+            wurzel.appendChild(kopfzeile);
         }
 
-        const kopfzeile = document.createElement("div");
-        kopfzeile.className = "partie-kopf";
-        kopfzeile.appendChild(ZUSTAND.alsZurueck(EINSTELLUNGEN._knopf("Zurück",
-            "knopf-still knopf-klein", () => TABS.wechseln("start"))));
+        const inhalt = EINSTELLUNGEN._element("div", "einstellungen-inhalt");
+        wurzel.appendChild(inhalt);
+        UPCREW_EINSTELLUNGEN.bauen(inhalt, "einstellungen", EINSTELLUNGEN.abschnitte(),
+            { spiel: "Blunderluck" });
+        EINSTELLUNGEN.statusAktualisieren();
+    },
 
-        const kopfTitel = document.createElement("h2");
-        kopfTitel.className = "partie-titel";
-        kopfTitel.textContent = "Einstellungen";
-        kopfzeile.appendChild(kopfTitel);
-        wurzel.appendChild(kopfzeile);
-
-        wurzel.appendChild(EINSTELLUNGEN._geraetKarteBauen());
-        wurzel.appendChild(EINSTELLUNGEN._kontoKarteBauen());
-        wurzel.appendChild(EINSTELLUNGEN._ueberKarteBauen());
+    /*
+     * DIE ABSCHNITTE (seit v0.156.0 im gemeinsamen Aufbau
+     * js\upcrew-einstellungen.js, Nutzer 28.09.2026: „verwalten und die
+     * einstellungen sollen in beiden spielen gleich aussehen"). Die
+     * Reihenfolge legt der Baustein fest; hier steht nur, was Blunderluck
+     * hat. Spiel-Eigenes (Vibration, Schach lernen, Verlauf) steht im
+     * Abschnitt „Nur in Blunderluck".
+     */
+    abschnitte() {
+        return [
+            EINSTELLUNGEN._kontoAbschnitt(),
+            EINSTELLUNGEN._aussehenAbschnitt(),
+            EINSTELLUNGEN._privatAbschnitt(),
+            EINSTELLUNGEN._spielAbschnitt(),
+            { art: "hilfe", zeilen: [
+                { zeichen: "hilfe", titel: "Wunsch oder Fehler melden", rechts: "pfeil",
+                    beiKlick: () => WUNSCH.oeffnen() }
+            ] },
+            EINSTELLUNGEN._adminAbschnitt(),
+            EINSTELLUNGEN._ueberAbschnitt(),
+            EINSTELLUNGEN._gefahrAbschnitt()
+        ];
     },
 
     /* ---------------------------------------------------------------- *
-     * 1. Dieses Gerät
-     * ---------------------------------------------------------------- */
-
-    _geraetKarteBauen() {
-        const karte = EINSTELLUNGEN._karteBauen("Dieses Gerät");
-
-        /* Hell / dunkel / wie das Gerät (seit v0.141.0). Seit v0.144.0
-           schreibt die Wahl ins gemeinsame UPCrew-Aussehen
-           (js\darstellung.js → js\upcrew-aussehen.js) und gilt damit auch
-           in Typoluck. Fehlt der Baustein (Bildschirm-Tests), bleibt die
-           Zeile weg. */
-        if (typeof DARSTELLUNG !== "undefined") {
-            karte.appendChild(EINSTELLUNGEN._zeileBauen("auto", "Darstellung",
-                EINSTELLUNGEN._segmentBauen([
-                    { wert: "geraet", text: "Auto" },
-                    { wert: "hell", text: "Hell" },
-                    { wert: "dunkel", text: "Dunkel" }
-                ], DARSTELLUNG.thema(), (wert) => {
-                    DARSTELLUNG.themaSetzen(wert);
-                    EINSTELLUNGEN._zeichnen();
-                }, "Darstellung")));
-        }
-
-        /* Standard-Schrift (seit v0.144.0): An = immer die gut lesbare
-           Grundschrift, egal welche Crew-Schrift im Tab „Anpassen" gewählt
-           ist. Gilt in allen UPCrew-Spielen. */
-        if (typeof UPCREW_AUSSEHEN !== "undefined") {
-            karte.appendChild(EINSTELLUNGEN._zeileBauen("schrift", "Standard-Schrift",
-                EINSTELLUNGEN._segmentBauen([
-                    { wert: true, text: "An" },
-                    { wert: false, text: "Aus" }
-                ], UPCREW_AUSSEHEN.lesen().leseschrift === true, (wert) => {
-                    UPCREW_AUSSEHEN.setzen({ leseschrift: wert });
-                    EINSTELLUNGEN._zeichnen();
-                }, "Standard-Schrift")));
-        }
-
-        /* Der Weg zum Anpassen (seit v0.144.0) — Farbwelt, Schrift, Knöpfe
-           und Brett stehen dort, nicht hier. Seit v0.145.0 im Tab
-           „Sammlung" (Runde 4). */
-        if (typeof SAMMLUNG !== "undefined") {
-            karte.appendChild(EINSTELLUNGEN._zeileBauen("anpassen", "Anpassen",
-                EINSTELLUNGEN._knopf("Öffnen", "knopf-still knopf-klein",
-                    () => TABS.wechseln(SAMMLUNG.id))));
-        }
-
-        /* Vibration (seit v0.140.0, UPCrew-Standard Abschnitt 5): ab Werk
-           an, nur dieses Gerät. Das iPhone lässt Web-Apps nicht vibrieren —
-           dann steht das als Stichwort da. */
-        const kannVibrieren = (typeof FUEHLEN !== "undefined") && FUEHLEN.verfuegbar();
-        const an = (typeof FUEHLEN === "undefined") || FUEHLEN.an();
-        karte.appendChild(EINSTELLUNGEN._zeileBauen("vibration", "Vibration",
-            kannVibrieren
-                ? EINSTELLUNGEN._segmentBauen([
-                    { wert: true, text: "An" },
-                    { wert: false, text: "Aus" }
-                ], an, (wert) => {
-                    FUEHLEN.anSetzen(wert);
-                    /* Man spürt sofort, was man eingeschaltet hat. */
-                    FUEHLEN.tippen();
-                    EINSTELLUNGEN._zeichnen();
-                }, "Vibration")
-                : EINSTELLUNGEN._element("span", "schild", "nicht möglich")));
-
-        return karte;
-    },
-
-    /* ---------------------------------------------------------------- *
-     * 2. Das UPCrew-Konto
+     * 1. Das UPCrew-Konto
      *
      * Gezeichnet wird nur mit ICH (Gerätespeicher) und dem, was ANMELDUNG
      * schon weiss; ANMELDUNG wird sonst erst in den Klick-Behandlern
@@ -186,151 +147,211 @@ const EINSTELLUNGEN = {
      * Abmelden und Löschen bleiben ZWEI Knöpfe mit sehr verschiedener
      * Tragweite (Bündel A, Schritt 1): Abmelden vergisst nur die Anmeldung
      * auf diesem Gerät, Löschen nimmt das Konto aus ALLEN UPCrew-Spielen.
-     * Deshalb ist nur Löschen rot und nur Löschen fragt nach.
+     * Deshalb ist nur Löschen rot, steht ganz unten und fragt nach.
      * ---------------------------------------------------------------- */
 
-    _kontoKarteBauen() {
-        const karte = EINSTELLUNGEN._karteBauen("UPCrew-Konto · alle Spiele");
-        const person = ICH.person();
+    _kontoEintrag() {
+        const mitKonto = (typeof KONTO !== "undefined" && KONTO.aktiv()
+            && typeof ANMELDUNG !== "undefined" && ANMELDUNG.abgleich);
+        return mitKonto ? ANMELDUNG.ich() : null;
+    },
 
+    _kontoAbschnitt() {
+        const person = ICH.person();
         if (!person) {
-            karte.appendChild(EINSTELLUNGEN._element("p", "erklaerung", "Nicht angemeldet"));
-            return karte;
+            return { art: "konto", zeilen: [{ zeichen: "person", titel: "Nicht angemeldet" }] };
         }
 
         /* Mit UPCrew-Konto (seit v0.138.0): Name MIT Nummer und die Rolle;
            ein Gast sieht, dass sein Stand nur hier liegt. */
-        const stand = EINSTELLUNGEN._element("p", "erklaerung", "Angemeldet · " + person.name);
-        const mitKonto = (typeof KONTO !== "undefined" && KONTO.aktiv()
-            && typeof ANMELDUNG !== "undefined" && ANMELDUNG.abgleich);
-        const eintrag = mitKonto ? ANMELDUNG.ich() : null;
-        if (eintrag) {
-            const rolle = KONTO.rolleVon(ANMELDUNG.abgleich.daten, eintrag.uid);
-            stand.textContent = "Angemeldet · " + KONTO.anzeigeName(eintrag)
-                + (rolle ? " · " + rolle : "")
-                + (eintrag.gast === true ? " · nur dieses Gerät" : "");
-        }
-        karte.appendChild(stand);
+        const eintrag = EINSTELLUNGEN._kontoEintrag();
+        const rolle = eintrag ? KONTO.rolleVon(ANMELDUNG.abgleich.daten, eintrag.uid) : "";
+        const zeilen = [{
+            zeichen: "person",
+            titel: eintrag ? eintrag.name : person.name,
+            tag: eintrag ? KONTO.tagZusatz(eintrag) : "",
+            unter: "Angemeldet" + (rolle ? " · " + rolle : "")
+                + (eintrag && eintrag.gast === true ? " · nur dieses Gerät" : " · gilt in allen Spielen"),
+            klasse: "einstellungen-ich"
+        }];
 
-        /* Spielzeit öffentlich zeigen? (seit v0.155.0, Nutzer 28.09.2026:
-           „okay privat"). Standard `FORTSCHRITT.SPIELZEIT_OEFFENTLICH_STANDARD`
-           (aus). Seit v0.155.2 AM KONTO (`spielzeitOeffentlich`, geschrieben
-           über den Spieler-Abgleich wie Freunde und Abzeichen) — also auf
-           jedem Gerät und in jedem UPCrew-Spiel gleich. Öffentlich heisst: im
-           Profil für andere, sobald die Regel §12 gilt. Ohne Anmeldung keine
-           Zeile. */
+        if (eintrag && eintrag.gast === true) {
+            zeilen.push({ zeichen: "hoch", titel: "Spielstand sichern", unter: "Konto anlegen · alle Geräte",
+                rechts: "pfeil", beiKlick: () => ANMELDUNG.gastSichernOeffnen() });
+        }
+        if (eintrag && eintrag.gast !== true) {
+            zeilen.push({ zeichen: "person", titel: "Name ändern", rechts: "pfeil",
+                beiKlick: () => ANMELDUNG.namenAendern(ANMELDUNG.ich()) });
+            if (typeof ANMELDUNG.nummerAendern === "function") {
+                zeilen.push({ zeichen: "liste", titel: "Nummer ändern", rechts: "pfeil",
+                    beiKlick: () => ANMELDUNG.nummerAendern(ANMELDUNG.ich()).then(() => EINSTELLUNGEN._zeichnen()) });
+            }
+            zeilen.push({ zeichen: "schloss", titel: "Passwort ändern", rechts: "pfeil",
+                beiKlick: () => ANMELDUNG.passwortAendern(ANMELDUNG.ich()) });
+        }
+        zeilen.push({ zeichen: "verlassen", titel: "Abmelden", beiKlick: () => ANMELDUNG.abmelden() });
+        return { art: "konto", zeilen: zeilen };
+    },
+
+    /* ---------------------------------------------------------------- *
+     * 2. Aussehen — gilt über das gemeinsame UPCrew-Aussehen auch in
+     *    Typoluck (seit v0.144.0). Fehlt ein Baustein (Bildschirm-Tests),
+     *    bleibt seine Zeile weg.
+     * ---------------------------------------------------------------- */
+
+    _aussehenAbschnitt() {
+        const zeilen = [];
+        if (typeof DARSTELLUNG !== "undefined") {
+            zeilen.push({ zeichen: "farbe", titel: "Darstellung",
+                rechts: UPCREW_EINSTELLUNGEN.segment([
+                    { wert: "geraet", text: "Auto" },
+                    { wert: "hell", text: "Hell" },
+                    { wert: "dunkel", text: "Dunkel" }
+                ], DARSTELLUNG.thema(), (wert) => {
+                    DARSTELLUNG.themaSetzen(wert);
+                    EINSTELLUNGEN._zeichnen();
+                }, "Darstellung") });
+        }
+        /* Standard-Schrift: an = immer die gut lesbare Grundschrift, egal
+           welche Crew-Schrift in der Sammlung gewählt ist. */
+        if (typeof UPCREW_AUSSEHEN !== "undefined") {
+            zeilen.push({ zeichen: "schrift", titel: "Standard-Schrift", unter: "immer die Leseschrift",
+                rechts: UPCREW_EINSTELLUNGEN.schalter(UPCREW_AUSSEHEN.lesen().leseschrift === true, (an) => {
+                    UPCREW_AUSSEHEN.setzen({ leseschrift: an });
+                    EINSTELLUNGEN._zeichnen();
+                }, "Standard-Schrift") });
+        }
+        if (typeof SAMMLUNG !== "undefined") {
+            zeilen.push({ zeichen: "sammlung", titel: "Anpassen", unter: "Farbwelt, Schrift, Knöpfe · Sammlung",
+                rechts: "pfeil", beiKlick: () => TABS.wechseln(SAMMLUNG.id) });
+        }
+        return { art: "aussehen", zeilen: zeilen };
+    },
+
+    /* ---------------------------------------------------------------- *
+     * 3. Privatsphäre — Spielzeit öffentlich zeigen? (seit v0.155.0,
+     *    Nutzer 28.09.2026: „okay privat"). Standard
+     *    `FORTSCHRITT.SPIELZEIT_OEFFENTLICH_STANDARD` (aus). Seit v0.155.2
+     *    AM KONTO (`spielzeitOeffentlich`, geschrieben über den
+     *    Spieler-Abgleich wie Freunde und Abzeichen). Ohne Anmeldung keine
+     *    Zeile.
+     * ---------------------------------------------------------------- */
+
+    _privatAbschnitt() {
         const ichSelbst = (typeof ANMELDUNG !== "undefined" && typeof ANMELDUNG.ich === "function")
             ? ANMELDUNG.ich() : null;
-        if (ichSelbst && typeof FORTSCHRITT !== "undefined"
-                && typeof FORTSCHRITT.spielzeitOeffentlichVon === "function") {
-            karte.appendChild(EINSTELLUNGEN._zeileBauen("uhr", "Spielzeit",
-                EINSTELLUNGEN._segmentBauen([
+        if (!ichSelbst || typeof FORTSCHRITT === "undefined"
+                || typeof FORTSCHRITT.spielzeitOeffentlichVon !== "function") {
+            return { art: "privatsphaere", zeilen: [] };
+        }
+        return { art: "privatsphaere", zeilen: [
+            { zeichen: "uhr", titel: "Spielzeit", unter: "Standard privat · sonst nur du und Admins",
+                rechts: UPCREW_EINSTELLUNGEN.segment([
                     { wert: false, text: "Privat" },
                     { wert: true, text: "Öffentlich" }
                 ], FORTSCHRITT.spielzeitOeffentlichVon(ichSelbst), (wert) => {
                     ANMELDUNG.abgleich.aendern(SPIELER.spielzeitOeffentlichSetzen(
                         ANMELDUNG.abgleich.daten, ichSelbst.id, wert), false);
                     EINSTELLUNGEN._zeichnen();
-                }, "Spielzeit")));
-        }
-
-        const spalte = EINSTELLUNGEN._element("div", "knopf-spalte");
-
-        if (eintrag && eintrag.gast === true) {
-            spalte.appendChild(EINSTELLUNGEN._knopf("Spielstand sichern", "knopf-haupt",
-                () => ANMELDUNG.gastSichernOeffnen()));
-        }
-
-        /* Seit v0.119.0 die Profilseite (Rangliste) statt eines Popups;
-           der Pfeil dort führt in die Einstellungen zurück. */
-        spalte.appendChild(EINSTELLUNGEN._knopf("Profil", "knopf-still",
-            () => RANGLISTE.eigenesProfilOeffnen("einstellungen")));
-
-        /* Die eigene Nummer ändern (seit v0.151.8) — nur mit Konto. */
-        if (eintrag && eintrag.gast !== true && typeof ANMELDUNG.nummerAendern === "function") {
-            spalte.appendChild(EINSTELLUNGEN._knopf("Nummer ändern", "knopf-still",
-                () => ANMELDUNG.nummerAendern(ANMELDUNG.ich()).then(() => EINSTELLUNGEN._zeichnen())));
-        }
-
-        /* EIN Knopf statt einer eingebetteten Mitspieler-Liste (seit
-           v0.100.0): Er öffnet den eigenen Bildschirm mit der Tabelle
-           (js\verwaltungs-bildschirm.js). Mit UPCrew-Konto nur für Admins
-           (seit v0.138.0; ICH fragt dann die Rolle). */
-        const nurAdmins = (typeof KONTO !== "undefined" && KONTO.aktiv());
-        if (!nurAdmins || ICH.verwaltungAktiv()) {
-            spalte.appendChild(EINSTELLUNGEN._knopf("Verwaltung", "knopf-still",
-                () => ANMELDUNG.verwaltungOeffnen()));
-        }
-
-        spalte.appendChild(EINSTELLUNGEN._knopf("Abmelden", "knopf-still",
-            () => ANMELDUNG.abmelden()));
-
-        spalte.appendChild(DIALOG.zweiSchritt(
-            EINSTELLUNGEN._knopf("UPCrew-Konto löschen", "knopf-gefahr", null),
-            () => ANMELDUNG.austreten()));
-
-        karte.appendChild(spalte);
-        return karte;
+                }, "Spielzeit") }
+        ], hinweis: "Unter 1 h „N min“, danach „1h+“ · gezählt nur, solange die App sichtbar ist" };
     },
 
     /* ---------------------------------------------------------------- *
-     * 3. Über Blunderluck — Angaben wie Typoluck, dazu die Verbindung
+     * 4. Nur in Blunderluck — Vibration (dieses Gerät, seit v0.140.0; das
+     *    iPhone lässt Web-Apps nicht vibrieren), Schach lernen und die
+     *    vergangenen Matches.
+     * ---------------------------------------------------------------- */
+
+    _spielAbschnitt() {
+        const zeilen = [];
+        const kannVibrieren = (typeof FUEHLEN !== "undefined") && FUEHLEN.verfuegbar();
+        const an = (typeof FUEHLEN === "undefined") || FUEHLEN.an();
+        zeilen.push({ zeichen: "vibration", titel: "Vibration", unter: "dieses Gerät",
+            rechts: kannVibrieren
+                ? UPCREW_EINSTELLUNGEN.segment([
+                    { wert: true, text: "An" },
+                    { wert: false, text: "Aus" }
+                ], an, (wert) => {
+                    FUEHLEN.anSetzen(wert);
+                    /* Man spürt sofort, was man eingeschaltet hat. */
+                    FUEHLEN.tippen();
+                    EINSTELLUNGEN._zeichnen();
+                }, "Vibration")
+                : "nicht möglich" });
+        if (typeof TEAM_SCHACH !== "undefined" && typeof TEAM_SCHACH.grundlagenOeffnen === "function") {
+            zeilen.push({ zeichen: "figur", titel: "Schach lernen", unter: "Figuren · Schach · Matt · Patt",
+                rechts: "pfeil", beiKlick: () => {
+                    TABS.wechseln("team-schach");
+                    TEAM_SCHACH.grundlagenOeffnen();
+                } });
+        }
+        if (typeof START !== "undefined" && typeof START.verlaufOeffnen === "function") {
+            zeilen.push({ zeichen: "liste", titel: "Vergangene Matches", rechts: "pfeil",
+                beiKlick: () => START.verlaufOeffnen() });
+        }
+        return { art: "spiel", zeilen: zeilen };
+    },
+
+    /* ---------------------------------------------------------------- *
+     * 5. Admin — EIN Eintrag statt einer eingebetteten Mitspieler-Liste
+     *    (seit v0.100.0). Mit UPCrew-Konto nur für Admins (seit v0.138.0;
+     *    ICH fragt dann die Rolle). Die Verwaltung öffnet als Blatt darüber.
+     * ---------------------------------------------------------------- */
+
+    _adminAbschnitt() {
+        const nurAdmins = (typeof KONTO !== "undefined" && KONTO.aktiv());
+        if (nurAdmins && !ICH.verwaltungAktiv()) {
+            return { art: "admin", zeilen: [] };
+        }
+        return { art: "admin", zeilen: [
+            { zeichen: "werkzeug", titel: "Verwaltung", unter: "nur Rolle Admin", rechts: "pfeil",
+                beiKlick: () => ANMELDUNG.verwaltungOeffnen() }
+        ] };
+    },
+
+    /* ---------------------------------------------------------------- *
+     * 6. Über Blunderluck — Version und Verbindung
      *
-     * Die Versionsanzeige (seit v0.25.0 hier, Nutzer-Ansage 24.08.: „die
-     * version und der wunsch knopf oben raus und in die einstellungen")
-     * steht seit v0.143.0 wie in Typoluck als Angabe „Version" ohne
-     * vorangestelltes v.
+     * Die Versionsanzeige (seit v0.25.0 hier) steht wie in Typoluck ohne
+     * vorangestelltes v. Die Verbindung (seit v0.15.0, Wunsch 2): Punkt und
+     * ein, zwei Wörter; die technische Meldung nur beim Darüberfahren.
      * ---------------------------------------------------------------- */
 
     statusEl: null,
     statusTextEl: null,
 
-    _ueberKarteBauen() {
-        const karte = EINSTELLUNGEN._karteBauen("Über Blunderluck");
+    _ueberAbschnitt() {
+        const version = EINSTELLUNGEN._element("span", "up-es-wert version",
+            typeof KONFIG !== "undefined" ? KONFIG.APP_VERSION : "");
 
-        const liste = EINSTELLUNGEN._element("dl", "angaben");
-        const angabe = (begriff, wert, klasse) => {
-            liste.appendChild(EINSTELLUNGEN._element("dt", null, begriff));
-            const feld = EINSTELLUNGEN._element("dd", klasse || null, null);
-            if (typeof wert === "string") {
-                feld.textContent = wert;
-            } else if (wert) {
-                feld.appendChild(wert);
-            }
-            liste.appendChild(feld);
-            return feld;
-        };
-
-        angabe("Ein Spiel von", "UPCrew");
-        angabe("Version", typeof KONFIG !== "undefined" ? KONFIG.APP_VERSION : "", "version");
-
-        /* Die Verbindung (seit v0.15.0, Wunsch 2): Punkt und ein, zwei
-           Wörter. Grün = Stand aktuell, Gelb = lädt oder sendet, Rot =
-           Datenbank nicht erreichbar; die technische Meldung steht nur beim
-           Darüberfahren (seit v0.140.0). */
         const zeile = EINSTELLUNGEN._element("span", "status status-karte");
         const punkt = EINSTELLUNGEN._element("span", "status-punkt");
         punkt.setAttribute("aria-hidden", "true");
         zeile.appendChild(punkt);
         const text = EINSTELLUNGEN._element("span", null, null);
         zeile.appendChild(text);
-        angabe("Verbindung", zeile);
-
-        karte.appendChild(liste);
-
         EINSTELLUNGEN.statusEl = zeile;
         EINSTELLUNGEN.statusTextEl = text;
-        EINSTELLUNGEN.statusAktualisieren();
 
-        /* Den Knopf baut wunsch.js selbst; im Bildschirm-Test läuft
-           wunsch.js nicht mit. */
-        const fuss = EINSTELLUNGEN._element("div", "karte-fuss");
-        if (typeof WUNSCH !== "undefined") {
-            WUNSCH.aufbauen(fuss);
+        return { art: "ueber", zeilen: [
+            { zeichen: "info", titel: "Über Blunderluck", unter: "Ein Spiel von UPCrew", rechts: version },
+            { zeichen: "datenbank", titel: "Verbindung", rechts: zeile }
+        ] };
+    },
+
+    /* 7. Ganz unten, rot und mit Rückfrage: das Konto löschen. */
+    _gefahrAbschnitt() {
+        if (!ICH.person()) {
+            return { art: "gefahr", zeilen: [] };
         }
-        karte.appendChild(fuss);
-
-        return karte;
+        const knopf = EINSTELLUNGEN._element("button", "up-es-zeile up-es-gefahr", "UPCrew-Konto löschen");
+        knopf.type = "button";
+        return { art: "gefahr", zeilen: [], inhalt: (() => {
+            const gruppe = EINSTELLUNGEN._element("div", "up-es-gruppe");
+            gruppe.appendChild(DIALOG.zweiSchritt(knopf, () => ANMELDUNG.austreten()));
+            return gruppe;
+        })() };
     },
 
     /* Gerufen beim Zeichnen und aus APP.statusZeigen, solange die Karte
@@ -352,52 +373,6 @@ const EINSTELLUNGEN = {
     /* ---------------------------------------------------------------- *
      * Bausteine dieses Bildschirms (Muster: Typoluck BAUSTEINE)
      * ---------------------------------------------------------------- */
-
-    /* Eine Karte mit Überschrift — seit v0.143.0 ohne i-Knopf. */
-    _karteBauen(titel) {
-        const karte = EINSTELLUNGEN._element("section", "karte");
-        const kopf = EINSTELLUNGEN._element("div", "karte-kopf");
-        kopf.appendChild(EINSTELLUNGEN._element("h2", null, titel));
-        karte.appendChild(kopf);
-        return karte;
-    },
-
-    /* Eine Zeile „Symbol + Name links, Schalter rechts" (wie Typoluck). */
-    _zeileBauen(zeichen, text, schalter) {
-        const zeile = EINSTELLUNGEN._element("div", "einstellung-zeile");
-        const name = EINSTELLUNGEN._element("span", "einstellung-name");
-        name.appendChild(ZUSTAND.zeichen(zeichen));
-        name.appendChild(EINSTELLUNGEN._element("span", null, text));
-        zeile.appendChild(name);
-        zeile.appendChild(schalter);
-        return zeile;
-    },
-
-    /*
-     * Ein Segment-Schalter (wie Typoluck `BAUSTEINE.segment`): mehrere
-     * Wahlen in einer Pille, die gewählte hebt sich ab. `optionen` sind
-     * { wert, text }; `beiWahl(wert)` läuft nur bei einer ANDEREN Wahl.
-     */
-    _segmentBauen(optionen, aktuell, beiWahl, name) {
-        const gruppe = EINSTELLUNGEN._element("div", "segment");
-        gruppe.setAttribute("role", "radiogroup");
-        gruppe.setAttribute("aria-label", name);
-        for (const option of optionen) {
-            const gewaehlt = option.wert === aktuell;
-            const knopf = EINSTELLUNGEN._element("button",
-                "segment-wahl" + (gewaehlt ? " segment-aktiv" : ""), option.text);
-            knopf.type = "button";
-            knopf.setAttribute("role", "radio");
-            knopf.setAttribute("aria-checked", gewaehlt ? "true" : "false");
-            knopf.addEventListener("click", () => {
-                if (option.wert !== aktuell) {
-                    beiWahl(option.wert);
-                }
-            });
-            gruppe.appendChild(knopf);
-        }
-        return gruppe;
-    },
 
     _element(tag, klasse, text) {
         const el = document.createElement(tag);

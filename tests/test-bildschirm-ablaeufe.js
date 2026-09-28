@@ -2453,11 +2453,14 @@ pruefe("Version und Wunsch-Knopf stehen in den Einstellungen (v0.25.0)", () => {
             + zeile.textContent);
     }
 
-    /* Seit v0.143.0 heisst die Karte wie in Typoluck „Über <App>". */
+    /* Seit v0.143.0 heisst die Karte wie in Typoluck „Über <App>"; seit
+       v0.156.0 ist es die Zeile im Abschnitt „Über" (gemeinsamer Aufbau
+       js\upcrew-einstellungen.js), gleich daneben die Version. */
     const ueberschriften = einsammeln(EINSTELLUNGEN.wurzelEl, (kind) =>
-        kind.tagName === "h2", []).map((kind) => String(kind.textContent));
+        kind.tagName === "h2" || kind.tagName === "h3" || kind.tagName === "b", [])
+        .map((kind) => String(kind.textContent));
     if (ueberschriften.indexOf("Über Blunderluck") === -1) {
-        throw new Error("keine Karte Über Blunderluck, nur: "
+        throw new Error("keine Zeile Über Blunderluck, nur: "
             + ueberschriften.join(", "));
     }
 });
@@ -2483,7 +2486,9 @@ pruefe("Die Account-Karte trennt Abmelden und Konto loeschen (v0.6.0)", () => {
     };
     sammeln(EINSTELLUNGEN.wurzelEl);
 
-    const texte = knoepfe.map((knopf) => String(knopf.textContent || ""));
+    /* Seit v0.156.0 sind die Einträge Zeilen-Knöpfe (Symbol, Name, Pfeil):
+       ihr Name steht im aria-label; der rote Knopf trägt nur Text. */
+    const texte = knoepfe.map((knopf) => String(knopf.textContent || knopf.attribute["aria-label"] || ""));
 
     if (texte.indexOf("Abmelden") === -1) {
         throw new Error("kein Abmelden-Knopf in den Einstellungen");
@@ -2497,11 +2502,11 @@ pruefe("Die Account-Karte trennt Abmelden und Konto loeschen (v0.6.0)", () => {
 
     /* Konto loeschen ist zerstoerend und muss rot sein — Abmelden nicht. */
     const loeschen = knoepfe[texte.indexOf("UPCrew-Konto löschen")];
-    if (String(loeschen.className).indexOf("knopf-gefahr") === -1) {
+    if (String(loeschen.className).indexOf("up-es-gefahr") === -1) {
         throw new Error("Konto loeschen ist nicht als Gefahr gekennzeichnet");
     }
     const abmelden = knoepfe[texte.indexOf("Abmelden")];
-    if (String(abmelden.className).indexOf("knopf-gefahr") !== -1) {
+    if (String(abmelden.className).indexOf("gefahr") !== -1) {
         throw new Error("Abmelden darf nicht rot sein — es loescht nichts");
     }
 });
@@ -2649,7 +2654,7 @@ pruefe("Ohne Freischaltung: kein Zugang, keine eingebettete Liste mehr", () => {
 
         const knopfTexte = einsammelnIn(EINSTELLUNGEN.wurzelEl, (kind) =>
             kind.tagName === "button", []).map((knopf) =>
-            String(knopf.textContent));
+            String(knopf.textContent || knopf.attribute["aria-label"] || ""));
         if (knopfTexte.indexOf("Verwaltung") === -1) {
             throw new Error("kein Verwaltung-Knopf in den Einstellungen");
         }

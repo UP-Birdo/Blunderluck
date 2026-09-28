@@ -1,0 +1,84 @@
+/*
+ * stil-blatt.css — wie Blunderluck die gemeinsamen Blätter einbettet (seit v0.156.0, Entwurf Oberfläche Runde 7).
+ * Die Bausteine (css\upcrew-blatt.css, upcrew-serie.css, upcrew-profil.css, upcrew-einstellungen.css) bleiben
+ * unangetastet; hier stehen nur die Werte und Anpassungen dieser App. Lädt NACH allen upcrew-*.css.
+ */
+
+:root {
+    /* Das Blatt beginnt unter der Kopfzeile des Starts (Kurzprofil 56 px + Abstände) und endet über der Leiste.
+       Die Leiste (z-index --ebene-schwebend = 50) liegt über den Blättern (40) und bleibt bedienbar. */
+    --up-bl-oben: calc(var(--oben-frei, 0px) + 76px);
+    --up-bl-unten: calc(var(--leiste-hoehe) + env(safe-area-inset-bottom, 0px));
+    --up-bl-ebene: 40;
+}
+
+/* In einem Blatt gibt es keinen iPhone-Balken über dem Inhalt: Klebendes (Kopfzeilen, die Vorschau der Sammlung)
+   klebt bündig an der Oberkante des Blatts, der Übernehmen-Balken der Sammlung unten am Blatt. */
+.up-bl-inhalt {
+    --oben-frei: 0px;
+    --up-sm-leiste: 0px;
+    --up-sm-rand: 12px;
+}
+
+/* Titel und Schliessen trägt das Blatt — die alten Kopfzeilen der Tabs verschwinden darin. Die Kopfzeile eines
+   geöffneten fremden Profils (Zurück zur Wertung) bleibt. */
+.tab-bereich-blatt > .partie-kopf:not(.profil-kopf),
+.up-bl-inhalt .up-shop-titel,
+.up-bl-inhalt .up-sm-titel {
+    display: none;
+}
+
+.up-bl-inhalt .up-sm-kopf {
+    min-height: 0;
+}
+
+/* Der Start dahinter: der Rahmen um den Rand bleibt, damit das Zurückrücken als Karte lesbar ist. */
+.tab-inhalt.up-bl-dahinter {
+    border-radius: var(--rund-mittel);
+    overflow: hidden;
+}
+
+/* ---- Kopf des Starts ---- */
+
+.start-oben .up-se-kapsel {
+    flex: none;
+}
+
+/* Unter 380 px nur der Ring (Entwurf: „Name im Kopf unter 380 px aus"). */
+@media (max-width: 379px) {
+    .start-profil-text {
+        display: none;
+    }
+
+    .start-profil {
+        padding-right: 4px;
+    }
+}
+
+/* ---- Profil ---- */
+
+/* Der Ring trägt ab Level 5 den Rahmen des Levels (Kupfer, Silber …) wie am Start. */
+.up-pf-ring[class*="level-rahmen-"] {
+    background: conic-gradient(var(--haupt) calc(var(--up-pf-anteil, 0) * 360deg), var(--lv-rest) 0);
+}
+
+.profil-statistik-knopf {
+    width: 100%;
+}
+
+/* ---- Einstellungen / Verwaltung im Blatt ---- */
+
+.einstellungen-inhalt,
+.verwaltung-inhalt {
+    padding-top: 2px;
+}
+
+.up-es .status-karte {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.verwaltung-spieler > .karte {
+    margin: 0 0 10px;
+}

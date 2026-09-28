@@ -7,7 +7,12 @@
  * (Nutzer-Ansage 27.08.2026: „gebe mir in der verwaltung nicht alle spieler
  * unter einander sonderern alls seperater screen und als Tabelle").
  *
- * Jetzt ist die Verwaltung dasselbe Fenster-Muster wie die Einstellungen
+ * SEIT v0.156.0 im gemeinsamen Aufbau js\upcrew-einstellungen.js (gleich
+ * wie die Einstellungen und wie in Typoluck, Nutzer 28.09.2026) und als
+ * BLATT über den Einstellungen: Spieler · Datenbank · Nur in Blunderluck
+ * (Brett-Anpassung) · Verwaltung beenden.
+ *
+ * Die Verwaltung ist dasselbe Muster wie die Einstellungen
  * selbst: ein Tab ohne Leisten-Knopf (`inLeiste: false`), erreichbar nur über
  * TABS.wechseln — den Wechsel macht ANMELDUNG.verwaltungOeffnen, und NUR
  * nachdem VERWALTUNG.verlangen das Passwort geprüft hat. Dieser Bildschirm
@@ -49,44 +54,60 @@ const VERWALTUNGS_BILDSCHIRM = {
         }
         wurzel.innerHTML = "";
 
-        /* Ein Fenster wie die Einstellungen: Tab-Leiste weg, oben links der
-           eine Zurück-Knopf (Haus-Muster seit v0.113). */
-        if (typeof TABS !== "undefined" && TABS.rundeSetzen) {
-            TABS.rundeSetzen("verwaltung", true);
+        /* Als Blatt (seit v0.156.0) über den Einstellungen: Titel und
+           Zurück trägt das Blatt. Ohne den Baustein wie bisher ein Fenster
+           mit dem einen Zurück-Knopf (Haus-Muster seit v0.113). */
+        const alsBlatt = typeof TABS !== "undefined" && Array.isArray(TABS._blattTabs)
+            && TABS._blattTabs.indexOf(VERWALTUNGS_BILDSCHIRM.id) !== -1;
+        if (!alsBlatt) {
+            if (typeof TABS !== "undefined" && TABS.rundeSetzen) {
+                TABS.rundeSetzen("verwaltung", true);
+            }
+            const kopfzeile = document.createElement("div");
+            kopfzeile.className = "partie-kopf";
+            kopfzeile.appendChild(ZUSTAND.alsZurueck(VERWALTUNGS_BILDSCHIRM._knopf("Zurück",
+                "knopf-still knopf-klein", () => TABS.wechseln("einstellungen"))));
+            const kopfTitel = document.createElement("h2");
+            kopfTitel.className = "partie-titel";
+            kopfTitel.textContent = "Verwaltung";
+            kopfzeile.appendChild(kopfTitel);
+            wurzel.appendChild(kopfzeile);
         }
 
-        const kopfzeile = document.createElement("div");
-        kopfzeile.className = "partie-kopf";
-        kopfzeile.appendChild(ZUSTAND.alsZurueck(VERWALTUNGS_BILDSCHIRM._knopf("Zurück",
-            "knopf-still knopf-klein", () => TABS.wechseln("einstellungen"))));
-
-        const kopfTitel = document.createElement("h2");
-        kopfTitel.className = "partie-titel";
-        kopfTitel.textContent = "Verwaltung";
-        kopfzeile.appendChild(kopfTitel);
-        wurzel.appendChild(kopfzeile);
-
-        const karte = document.createElement("section");
-        karte.className = "karte";
-        wurzel.appendChild(karte);
-
-        const kopf = document.createElement("h2");
-        kopf.textContent = "Spieler";
-        karte.appendChild(kopf);
+        const inhalt = document.createElement("div");
+        inhalt.className = "verwaltung-inhalt";
+        wurzel.appendChild(inhalt);
 
         /* Ohne Freischaltung gibt es hier nichts zu sehen — der Weg herein
            führt über ANMELDUNG.verwaltungOeffnen samt Passwort. */
         if (!ICH.verwaltungAktiv()) {
-            const hinweis = document.createElement("p");
-            hinweis.className = "erklaerung";
-            hinweis.textContent = (typeof KONTO !== "undefined" && KONTO.aktiv())
-                ? "Nur Rolle Admin"
-                : "Nicht freigeschaltet · über Einstellungen "
-                    + "mit Verwaltungs-Passwort";
-            karte.appendChild(hinweis);
+            UPCREW_EINSTELLUNGEN.bauen(inhalt, "verwaltung", [{ art: "spieler", zeilen: [{
+                zeichen: "schloss",
+                titel: (typeof KONTO !== "undefined" && KONTO.aktiv())
+                    ? "Nur Rolle Admin"
+                    : "Nicht freigeschaltet · über Einstellungen mit Verwaltungs-Passwort"
+            }] }], { spiel: "Blunderluck" });
             return;
         }
 
+        /* Mit UPCrew-Konto (seit v0.138.0): Name#Nummer, Rollen, Neu-Verbinden. */
+        const mitKonto = (typeof KONTO !== "undefined" && KONTO.aktiv());
+        UPCREW_EINSTELLUNGEN.bauen(inhalt, "verwaltung", [
+            VERWALTUNGS_BILDSCHIRM._spielerAbschnitt(mitKonto),
+            VERWALTUNGS_BILDSCHIRM._datenbankAbschnitt(mitKonto),
+            VERWALTUNGS_BILDSCHIRM._spielAbschnitt(),
+            VERWALTUNGS_BILDSCHIRM._endeAbschnitt(mitKonto)
+        ], { spiel: "Blunderluck" });
+    },
+
+    /* 1. Spieler · alle Spiele — die Tabelle und (nur Admins mit Konto)
+          die Spielerliste mit Statistiken. */
+    _spielerAbschnitt(mitKonto) {
+        const halter = document.createElement("div");
+        halter.className = "verwaltung-spieler";
+
+        const karte = document.createElement("section");
+        karte.className = "karte";
         const erklaerung = document.createElement("p");
         erklaerung.className = "erklaerung";
         /* Seit dem UPCrew-Umzug sind es die Konten ALLER Spiele — Entfernen
@@ -94,73 +115,56 @@ const VERWALTUNGS_BILDSCHIRM = {
         erklaerung.textContent = "Alle UPCrew-Konten · Entfernen gilt in "
             + "ALLEN Spielen · samt Spielerliste und Rangliste";
         karte.appendChild(erklaerung);
-
-        /* Mit UPCrew-Konto (seit v0.138.0): Name#Nummer, Rollen, Neu-Verbinden. */
-        const mitKonto = (typeof KONTO !== "undefined" && KONTO.aktiv());
         karte.appendChild(mitKonto
             ? VERWALTUNGS_BILDSCHIRM._kontoTabelleBauen()
             : VERWALTUNGS_BILDSCHIRM._tabelleBauen());
+        halter.appendChild(karte);
 
         /* Die Spielerliste mit Statistiken (seit v0.152.1, gemeinsamer
            Baustein js\upcrew-spielerliste.js, gleich in Typoluck): nur
            lesen, nur mit Konto und Rolle Admin. */
         const liste = mitKonto ? VERWALTUNGS_BILDSCHIRM._spielerlisteBauen() : null;
         if (liste) {
-            wurzel.appendChild(liste);
+            halter.appendChild(liste);
         }
+        return { art: "spieler", inhalt: halter,
+            hinweis: mitKonto ? "Admins sehen die Spielzeit immer, auch wenn sie privat ist." : "" };
+    },
 
-        /* „§12 nachziehen" (seit v0.154.0): nur UP#Plus, nur unter Regel §12. */
-        const nachziehen = mitKonto ? VERWALTUNGS_BILDSCHIRM._nachziehenBauen() : null;
-        if (nachziehen) {
-            wurzel.appendChild(nachziehen);
-        }
+    /* 2. Datenbank — „§12 nachziehen" (nur UP#Plus, nur unter Regel §12). */
+    _datenbankAbschnitt(mitKonto) {
+        const zeile = mitKonto ? VERWALTUNGS_BILDSCHIRM._nachziehenZeile() : null;
+        return { art: "datenbank", zeilen: zeile ? [zeile] : [] };
+    },
 
-        /*
-         * BRETT-ANPASSUNG (seit v0.129.0, Nutzer-Ansage 24.09.2026): Farben,
-         * Figuren und Blick des 3D-Bretts stellt nur der Admin um. Der
-         * Schalter blendet am Brett den Paletten-Knopf ein oder aus — auf
-         * diesem Gerät, solange die Verwaltung offen ist.
-         */
-        const anpassung = document.createElement("section");
-        anpassung.className = "karte";
-        const anpassungKopf = document.createElement("h2");
-        anpassungKopf.textContent = "Brett-Anpassung";
-        anpassung.appendChild(anpassungKopf);
+    /*
+     * 3. Nur in Blunderluck — BRETT-ANPASSUNG (seit v0.129.0, Nutzer-Ansage
+     * 24.09.2026): Farben, Figuren und Blick des 3D-Bretts stellt nur der
+     * Admin um. Der Schalter blendet am Brett den Paletten-Knopf ein oder
+     * aus — auf diesem Gerät, solange die Verwaltung offen ist.
+     */
+    _spielAbschnitt() {
         const an = (typeof ICH.anpassungAn === "function") && ICH.anpassungAn();
-        const anpassungText = document.createElement("p");
-        anpassungText.className = "erklaerung";
-        anpassungText.textContent = an
-            ? "An · Paletten-Knopf am Brett · Farben, Figuren, Blick"
-            : "Aus · kein Paletten-Knopf am Brett";
-        anpassung.appendChild(anpassungText);
-        const schalter = VERWALTUNGS_BILDSCHIRM._knopf(
-            an ? "Ausschalten" : "Einschalten",
-            an ? "knopf-still knopf-klein" : "knopf-haupt knopf-klein",
-            () => {
+        return { art: "spiel", zeilen: [{
+            zeichen: "brett",
+            titel: "Brett-Anpassung",
+            unter: an ? "An · Paletten-Knopf am Brett · Farben, Figuren, Blick"
+                : "Aus · kein Paletten-Knopf am Brett",
+            rechts: UPCREW_EINSTELLUNGEN.schalter(an, (neu) => {
                 if (typeof ICH.anpassungSetzen === "function") {
-                    ICH.anpassungSetzen(!an);
+                    ICH.anpassungSetzen(neu);
                 }
                 VERWALTUNGS_BILDSCHIRM._zeichnen();
-            });
-        schalter.setAttribute("aria-pressed", an ? "true" : "false");
-        const anpassungFuss = document.createElement("div");
-        anpassungFuss.className = "karte-fuss";
-        anpassungFuss.appendChild(schalter);
-        anpassung.appendChild(anpassungFuss);
-        wurzel.appendChild(anpassung);
+            }, "Brett-Anpassung")
+        }] };
+    },
 
-        /* Die Freischaltung sichtbar wieder schliessen — vorher tat das der
-           Umschalt-Knopf in den Einstellungen. */
-        /* Mit UPCrew-Konto gibt es nichts zu beenden — die Rolle hängt am
-           Konto, nicht an einer Freischaltung auf dem Gerät. */
-        if (!mitKonto) {
-            const fuss = document.createElement("div");
-            fuss.className = "karte-fuss";
-            fuss.appendChild(VERWALTUNGS_BILDSCHIRM._knopf(
-                "Verwaltung beenden", "knopf-still knopf-klein",
-                () => ANMELDUNG.verwaltungBeenden()));
-            karte.appendChild(fuss);
-        }
+    /* 4. Die Freischaltung sichtbar wieder schliessen — nur ohne UPCrew-Konto
+          (mit Konto hängt die Rolle am Konto, nicht an einer Freischaltung). */
+    _endeAbschnitt(mitKonto) {
+        return { art: "ende", zeilen: mitKonto ? [] : [{
+            titel: "Verwaltung beenden", gefahr: true, beiKlick: () => ANMELDUNG.verwaltungBeenden()
+        }] };
     },
 
     /*
@@ -233,34 +237,38 @@ const VERWALTUNGS_BILDSCHIRM = {
      * Konten (`KONTO.nachziehen`), wiederholbar. Sichtbar nur für UP#Plus
      * und nur, wenn die App die Regel §12 erkannt hat.
      */
-    _nachziehenBauen() {
+    _nachziehenLaeuft: false,
+
+    _nachziehenZeile() {
         if (typeof KONTO === "undefined" || typeof KONTO.istP12 !== "function"
                 || !KONTO.istP12() || KONTO.uid() !== KONTO.OBER_UID) {
             return null;
         }
-        const karte = document.createElement("section");
-        karte.className = "karte";
-        const kopf = document.createElement("h2");
-        kopf.textContent = "Regel §12";
-        karte.appendChild(kopf);
-        const text = document.createElement("p");
-        text.className = "erklaerung";
-        text.textContent = "Auszüge und Anmeldeverzeichnis für alle Konten · wiederholbar";
-        karte.appendChild(text);
-        const knopf = VERWALTUNGS_BILDSCHIRM._knopf("§12 nachziehen", "knopf-still", async () => {
-            knopf.disabled = true;
-            const ergebnis = await KONTO.nachziehen(ANMELDUNG.abgleich.speicher);
-            knopf.disabled = false;
-            if (!ergebnis.ok) {
-                await DIALOG.hinweis("Nicht nachgezogen", ergebnis.text);
-                return;
+        return {
+            zeichen: "schild",
+            titel: "§12 nachziehen",
+            unter: "Auszüge und Anmeldeverzeichnis für alle Konten · wiederholbar",
+            rechts: "pfeil",
+            beiKlick: async () => {
+                if (VERWALTUNGS_BILDSCHIRM._nachziehenLaeuft) {
+                    return;
+                }
+                VERWALTUNGS_BILDSCHIRM._nachziehenLaeuft = true;
+                let ergebnis;
+                try {
+                    ergebnis = await KONTO.nachziehen(ANMELDUNG.abgleich.speicher);
+                } finally {
+                    VERWALTUNGS_BILDSCHIRM._nachziehenLaeuft = false;
+                }
+                if (!ergebnis.ok) {
+                    await DIALOG.hinweis("Nicht nachgezogen", ergebnis.text);
+                    return;
+                }
+                await ANMELDUNG._kontoNachladen();
+                await DIALOG.hinweis("Nachgezogen", ergebnis.geschrieben + " geschrieben · "
+                    + ergebnis.uebersprungen + " übersprungen");
             }
-            await ANMELDUNG._kontoNachladen();
-            await DIALOG.hinweis("Nachgezogen", ergebnis.geschrieben + " geschrieben · "
-                + ergebnis.uebersprungen + " übersprungen");
-        });
-        karte.appendChild(knopf);
-        return karte;
+        };
     },
 
     /* „N min" / „Nh+" aus dem Konto-Fortschritt, „–" ohne (Gast, alt). */
