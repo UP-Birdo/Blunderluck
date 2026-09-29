@@ -57,14 +57,6 @@
 
 /* ---- Profil ---- */
 
-/* Die Vorschau-Karte eines Namens (seit v0.157.0) liegt in einer Karte des Blatt-Bausteins — ohne zweiten Rahmen. */
-.karte-profil .up-pf-karte {
-    padding: 4px 0 0;
-    border: 0;
-    box-shadow: none;
-    background: transparent;
-}
-
 /* Der Ring trägt ab Level 5 den Rahmen des Levels (Kupfer, Silber …) wie am Start. */
 .up-pf-ring[class*="level-rahmen-"] {
     background: conic-gradient(var(--haupt) calc(var(--up-pf-anteil, 0) * 360deg), var(--lv-rest) 0);

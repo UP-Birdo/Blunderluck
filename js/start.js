@@ -297,11 +297,9 @@ const START = {
      * RANGLISTE (`kurzprofil`) — dieselbe Zählung wie in der Tabelle.
      * Ohne Anmeldung steht hier nichts.
      *
-     * SEIT v0.157.0 DIE VORSCHAU-KARTE (Nutzer 29.09.2026: „nur ein vorschau
-     * profil … karte die oben ist"; final\EINBAU-2026-09-29b.md): Ring,
-     * Name #Tag, Titel, Level-Knopf (→ Level-Pfad), Serie und die drei
-     * ausgerüsteten Abzeichen — `UPCREW_PROFIL.vorschau`. Ein Tipp auf die
-     * Karte (auch auf den Ring oben links) öffnet das ausführliche Profil.
+     * SEIT v0.157.0 DIE KOPFZEILE (`UPCREW_PROFIL.kopfzeile`): Ring, Name
+     * #Tag, drei Abzeichen-Zeichen, Flamme. Seit v0.157.1 öffnet ein Tipp
+     * auf Kreis/Namen DIREKT das ausführliche Profil (keine Vorschau-Karte).
      * Der alte Knopf darunter bleibt nur für die Bildschirm-Tests ohne
      * Baustein.
      */
@@ -313,9 +311,17 @@ const START = {
         if (typeof PROFIL !== "undefined" && PROFIL._alsBlatt() && typeof UPCREW_PROFIL.kopfzeile === "function") {
             const halter = document.createElement("div");
             halter.className = "start-kopfzeile";
+            /* Seit v0.157.1: Flamme oben links / Level unten rechts am Kreis, rechts das ☰-Menü
+               (Freunde · Verlauf · Einstellungen) aus dem Baustein. */
             const kopf = UPCREW_PROFIL.kopfzeile(halter, PROFIL.daten(), {
-                beiOeffnen: () => PROFIL.vorschauZeigen(),
-                beiSerie: () => START.serieOeffnen()
+                beiOeffnen: () => PROFIL.oeffnen(),
+                beiSerie: () => START.serieOeffnen(),
+                beiLevel: () => PROFIL.levelPfadOeffnen(),
+                menue: [
+                    { text: "Freunde", zeichen: "freunde", beiKlick: () => START.freundeOeffnen() },
+                    { text: "Verlauf", zeichen: "uhr", beiKlick: () => START.verlaufOeffnen() },
+                    { text: "Einstellungen", zeichen: "zahnrad", beiKlick: () => TABS.blattOeffnen("einstellungen") }
+                ]
             });
             START._kopfFlamme = kopf.flamme;
             return halter;

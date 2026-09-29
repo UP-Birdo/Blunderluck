@@ -3,6 +3,21 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.157.1 — 29.09.2026
+
+**Profil direkt, ohne Zwischen-Karte · Flamme und Level am Bild · Menü zurück.**
+
+- Dein Bild oben auf dem Start und jeder Name (Rangliste, Freunde, Partie)
+  öffnen jetzt sofort das ganze Profil — die kleine Profil-Karte davor
+  entfällt. Die Zurück-Taste schliesst das Profil wieder.
+- **Dein Bild oben hat jetzt zwei kleine Knöpfe:** oben links die Flamme mit
+  deiner Serie (antippen zeigt die Serien-Karte), unten rechts dein Level
+  (antippen zeigt den Level-Weg). Das Bild selbst öffnet dein Profil. Der
+  eigene Flammen-Kreis rechts oben ist weg.
+- **Rechts oben sind die drei Striche zurück:** Freunde, Verlauf und
+  Einstellungen — ein Tipp springt direkt dorthin. Tipp daneben oder die
+  Zurück-Taste schliesst das Menü wieder.
+
 ## v0.157.0 — 29.09.2026
 
 **Ein Profil in zwei Stufen, Level-Weg zum Antippen, Serie ohne Schild.**

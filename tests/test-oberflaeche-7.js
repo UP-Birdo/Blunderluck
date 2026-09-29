@@ -481,17 +481,34 @@ pruefe("Profil zweistufig (v0.157.0): EINE Vorschau-Karte, ausführlich mit Stat
     ort.querySelector(".up-pf-karte-auf").ausloesen("click");
     gleich(offen, 1, "Karte öffnet das ausführliche Profil");
 
-    /* Der Start-Kopf: EINE Zeile — Kreis mit Level-Ring, Name, drei Zeichen, Flamme → Serie. */
+    /* Der Start-Kopf (seit v0.157.1): Kreis mit Level-Ring, Flamme+Serie oben links, Level unten rechts, drei
+       getrennte Knöpfe; rechts das ☰-Menü (Freunde · Verlauf · Einstellungen), kein Flammen-Kreis mehr. */
     laden(w, ["js/upcrew-flamme.js"]);
     const kopfOrt = neuesElement("div");
     let serieAuf = 0;
-    const kopf = P.kopfzeile(kopfOrt, daten, { beiOeffnen: () => offen++, beiSerie: () => serieAuf++ });
-    wahr(!!kopfOrt.querySelector(".up-pf-ring-kopf") && !!kopfOrt.querySelector(".up-pf-level"), "Kreis mit Level");
+    let lvAuf = 0;
+    const gewaehlt = [];
+    const kopf = P.kopfzeile(kopfOrt, daten, { beiOeffnen: () => offen++, beiSerie: () => serieAuf++, beiLevel: () => lvAuf++,
+        menue: ["Freunde", "Verlauf", "Einstellungen"].map((text) => ({ text: text, beiKlick: () => gewaehlt.push(text) })) });
+    wahr(!!kopfOrt.querySelector(".up-pf-ring-kopf") && !kopfOrt.querySelector(".up-pf-ring-kopf .up-pf-level"), "Kreis ohne Zahl darin");
+    wahr(!!kopfOrt.querySelector(".up-pf-kz-serie") && !!kopfOrt.querySelector(".up-pf-kz-lv"), "zwei Ecken am Kreis");
+    gleich(kopfOrt.querySelector(".up-pf-kz-lv").textContent, String(daten.level), "Level-Zahl unten rechts");
     gleich(kopfOrt.querySelectorAll(".up-az-symbol").length, 3, "drei Abzeichen-Zeichen im Kopf");
-    wahr(!!kopf.flamme && !!kopfOrt.querySelector(".up-fl"), "eine Flamme im Kreis");
+    wahr(!!kopf.flamme && !kopfOrt.querySelector(".up-fl"), "Flamme in der Ecke, kein eigener Flammen-Kreis");
+    const labels = [".up-pf-kz-auf", ".up-pf-kz-serie", ".up-pf-kz-lv", ".up-pf-menue-knopf"]
+        .map((s) => kopfOrt.querySelector(s).getAttribute("aria-label"));
+    wahr(labels.every((l) => !!l) && new Set(labels).size === 4, "vier Knöpfe mit eigenen aria-labels");
     kopfOrt.querySelector(".up-pf-kz-auf").ausloesen("click");
     kopf.flamme.el.ausloesen("click");
-    gleich([offen, serieAuf], [2, 1], "Kreis → Vorschau, Flamme → Serie");
+    kopfOrt.querySelector(".up-pf-kz-lv").ausloesen("click");
+    gleich([offen, serieAuf, lvAuf], [2, 1, 1], "Mitte → Profil, Flamme → Serie, Level → Pfad");
+    wahr(!!kopf.menue, "☰-Menü rechts");
+    kopf.menue.oeffnen();
+    wahr(kopf.menue.offen(), "☰ klappt auf");
+    kopf.menue.schliessen();
+    wahr(!kopf.menue.offen(), "☰ schliesst");
+    const kz = lesen("css/upcrew-profil.css");
+    wahr(/\.up-pf-kz-ecke \{[^}]*min-width: 32px;[^}]*height: 32px;/.test(kz), "Ecken mit 32 px Trefferfläche");
 
     /* Fremde: gewählte Spiel-Abzeichen gelten als verdient, ausser die Prüfung sagt nein (bl-… an der Chronik). */
     const A = w.UPCREW_ABZEICHEN;
@@ -524,14 +541,17 @@ pruefe("Profil zweistufig: Blunderluck verdrahtet (jeder Name → Karte, §12-Au
     const profil = lesen("js/profil.js");
     const rangliste = lesen("js/rangliste.js");
     const start = lesen("js/start.js");
-    wahr(/PROFIL\.vorschauZeigen\(spielerId\)/.test(rangliste), "RANGLISTE.profilOeffnen zeigt die Vorschau-Karte");
-    wahr(/art: "karte"/.test(profil) && /UPCREW_PROFIL\.vorschau\(eintrag\.inhalt, daten/.test(profil), "Karte über allem");
+    wahr(/PROFIL\._alsBlatt\(\)\) \{\s*PROFIL\.oeffnen\(spielerId\)/.test(rangliste),
+        "RANGLISTE.profilOeffnen öffnet direkt das ausführliche Profil (v0.157.1)");
+    wahr(!/UPCREW_PROFIL\.vorschau\(/.test(profil + rangliste + start) && profil.indexOf("vorschauZeigen") === -1
+        && rangliste.indexOf("vorschauZeigen") === -1 && start.indexOf("vorschauZeigen") === -1,
+        "keine Vorschau-Karte als Zwischenschritt mehr (v0.157.1)");
     wahr(/FORTSCHRITT\.auszugVon\(person, heute\)/.test(profil), "fremde Profile aus dem öffentlichen Auszug");
     wahr(/statistik: \(ort\) => PROFIL\._statistikBauen/.test(profil) && /verlauf: \(ort\) => PROFIL\._verlaufBauen/.test(profil),
         "Statistik und Partien im ausführlichen Profil");
     wahr(profil.indexOf("statistikOeffnen") === -1 && profil.indexOf("Statistik und Partien") === -1,
         "kein Seitenwechsel „Statistik und Partien“ mehr");
-    wahr(/PROFIL\._alsBlatt\(\)[\s\S]{0,300}UPCREW_PROFIL\.kopfzeile\(halter/.test(start), "Start: die kompakte Kopfzeile statt Kurzprofil");
+    wahr(/PROFIL\._alsBlatt\(\)[\s\S]{0,500}UPCREW_PROFIL\.kopfzeile\(halter/.test(start), "Start: die kompakte Kopfzeile statt Kurzprofil");
     wahr(/UPCREW_ABZEICHEN\.fremdAusgeruestet\(/.test(profil), "fremde Abzeichen wie Typoluck (Baustein)");
     wahr(/verlauf: true/.test(lesen("js/app.js")), "Zurück-Taste: Blätter und Karten mit Verlaufseintrag");
     wahr(/UPCREW_LEVELPFAD\.knopf\(level/.test(lesen("js/team-schach-auswertung.js")), "Level nach der Partie antippbar");
@@ -681,9 +701,12 @@ pruefe("Kopf: Serie in der Kapsel, nicht mehr in den Herausforderungen; Profil a
     wahr(/beiSerie: \(\) => START\.serieOeffnen\(\)/.test(start), "Flamme im Kopf öffnet die Serien-Karte");
     wahr(/data-up-bl-kopf/.test(start), "Kopf markiert (Blätter beginnen darunter, gemessen)");
     wahr(!/TABS\.wechseln\("shop"\)/.test(start), "kein Weg Schild kaufen → Shop mehr (v0.157.0)");
-    wahr(/UPCREW_PROFIL\.kopfzeile\(halter, PROFIL\.daten\(\), \{\s*beiOeffnen: \(\) => PROFIL\.vorschauZeigen\(\)/.test(start),
-        "oben die Kopfzeile, ein Tipp öffnet die Vorschau-Karte");
-    wahr(start.indexOf("_menuebandBauen") === -1 && start.indexOf("start-menue") === -1, "kein Menüband mehr (v0.156.1)");
+    wahr(/UPCREW_PROFIL\.kopfzeile\(halter, PROFIL\.daten\(\), \{\s*beiOeffnen: \(\) => PROFIL\.oeffnen\(\)/.test(start),
+        "oben die Kopfzeile, ein Tipp öffnet direkt das ausführliche Profil");
+    wahr(start.indexOf("_menuebandBauen") === -1 && start.indexOf("start-menue") === -1, "kein altes Menüband (v0.156.1)");
+    wahr(/menue: \[\s*\{ text: "Freunde"[^\n]*START\.freundeOeffnen\(\)[\s\S]{0,120}text: "Verlauf"[^\n]*START\.verlaufOeffnen\(\)[\s\S]{0,120}text: "Einstellungen"[^\n]*TABS\.blattOeffnen\("einstellungen"\)/.test(start),
+        "☰ zurück: Freunde · Verlauf · Einstellungen (v0.157.1)");
+    wahr(/beiLevel: \(\) => PROFIL\.levelPfadOeffnen\(\)/.test(start), "Level-Ecke → Level-Pfad");
     wahr(!/blattOeffnen\("(shop|sammlung|herausforderungen|rangliste)"\)/.test(start + lesen("js/profil.js") + lesen("js/rangliste.js")),
         "keine Leisten-Bereiche als Blatt");
     wahr(/@media \(max-width: 379px\)[\s\S]{0,80}\.start-profil-text[\s\S]{0,40}display: none/.test(lesen("css/stil-blatt.css")),

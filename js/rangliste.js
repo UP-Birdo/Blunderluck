@@ -536,11 +536,11 @@ const RANGLISTE = {
     profilRueckweg: "",
 
     profilOeffnen(spielerId, rueckweg) {
-        /* Seit v0.157.0 zweistufig (js\profil.js): jeder Name zeigt erst die
-           Vorschau-Karte, ein Tipp darauf das ausführliche Profil. Die
-           Profilseite hier nur noch ohne Blatt-Baustein (Tests). */
+        /* Seit v0.157.1 öffnet jeder Name direkt das ausführliche Profil
+           (js\profil.js, keine Vorschau-Karte mehr). Die Profilseite hier
+           nur noch ohne Blatt-Baustein (Tests). */
         if (typeof PROFIL !== "undefined" && PROFIL._alsBlatt()) {
-            PROFIL.vorschauZeigen(spielerId);
+            PROFIL.oeffnen(spielerId);
             return;
         }
         RANGLISTE.offenesProfil = spielerId;

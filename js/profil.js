@@ -7,10 +7,9 @@
  * abzeichen titel und level und flammen mit natürlich dem namen -> und halt das ausführliche wenn man draufklickt
  * mit mehr inhalten statistiken und so“ · „unten soll das level kachel aus dem profil“.
  *
- *   STUFE 1 — die VORSCHAU-KARTE (`UPCREW_PROFIL.vorschau`): oben auf dem Start (START._kurzprofilBauen) und für
- *     JEDEN Namen in der App (Rangliste, Vorraum, Freunde → RANGLISTE.profilOeffnen → `vorschauZeigen`, eine
- *     Karte über allem). Name #Tag, Titel, Level-Knopf (→ Level-Pfad), Serie, 3 ausgerüstete Abzeichen — egal
- *     aus welchem Spiel.
+ *   SEIT v0.157.1 OHNE VORSCHAU-KARTE (Nutzer 29.09.2026 nachts: „nicht erst eine vorschau vom profil … das was
+ *     hinter dem pfeil steht soll direkt kommen“): Kopfzeile auf dem Start (START._kurzprofilBauen) und JEDER
+ *     Name in der App (Rangliste, Vorraum, Freunde → RANGLISTE.profilOeffnen) öffnen direkt `oeffnen`.
  *   STUFE 2 — das AUSFÜHRLICHE Profil (`oeffnen`, ein Blatt): Kopf, Ausgerüstet, Statistik (Platz, Punkte,
  *     Bilanz, Werte aus der Chronik), Stand (Turm, Bibliothek), Partien (Verlauf), alle Abzeichen, Über
  *     (Spielzeit, dabei seit), bei Fremden die Freundschaft, ganz unten die Level-Kachel (→ Level-Pfad). Das
@@ -31,7 +30,6 @@ const PROFIL = {
 
     _eintrag: null,
     _wahl: null,
-    _karte: null,
     _allePartien: false,
 
     /* So viele Partien zeigt „Partien", bevor „Alle" nötig wird. */
@@ -215,52 +213,18 @@ const PROFIL = {
 
     _alsBlatt() {
         return typeof UPCREW_BLATT !== "undefined" && typeof UPCREW_PROFIL !== "undefined"
-            && typeof UPCREW_PROFIL.vorschau === "function"
+            && typeof UPCREW_PROFIL.oeffnen === "function"
             && typeof UPCREW_ABZEICHEN !== "undefined" && typeof UPCREW_ABZEICHEN.alle === "function"
             && typeof FORTSCHRITT_KONTO !== "undefined";
     },
 
-    /* Der Level-Pfad (UPCREW_LEVELPFAD) für diese Zahlen — eine offene Profil-Karte geht vorher zu, sonst läge
-       sie über dem Blatt. */
+    /* Der Level-Pfad (UPCREW_LEVELPFAD) für diese Zahlen. */
     levelPfadOeffnen(daten) {
         if (typeof UPCREW_LEVELPFAD === "undefined") {
             return null;
         }
-        if (PROFIL._karte) {
-            PROFIL._karte.schliessen();
-        }
         const d = daten || PROFIL.daten();
         return UPCREW_LEVELPFAD.oeffnen({ level: d.level, imLevel: d.imLevel, kosten: d.kosten });
-    },
-
-    /* STUFE 1 für jeden Namen: die Vorschau-Karte (über allem). Ein Tipp öffnet das ausführliche Profil. */
-    vorschauZeigen(spielerId) {
-        if (!PROFIL._alsBlatt()) {
-            return null;
-        }
-        const daten = PROFIL.daten(spielerId);
-        if (PROFIL._karte) {
-            PROFIL._karte.schliessen();
-        }
-        const eintrag = UPCREW_BLATT.oeffnen({
-            art: "karte",
-            titel: "Profil",
-            klasse: "karte-profil",
-            beimSchliessen: () => {
-                if (PROFIL._karte === eintrag) {
-                    PROFIL._karte = null;
-                }
-            }
-        });
-        UPCREW_PROFIL.vorschau(eintrag.inhalt, daten, {
-            beiOeffnen: () => {
-                eintrag.schliessen();
-                PROFIL.oeffnen(spielerId);
-            },
-            beiLevel: () => PROFIL.levelPfadOeffnen(daten)
-        });
-        PROFIL._karte = eintrag;
-        return eintrag;
     },
 
     /* STUFE 2: das ausführliche Profil als Blatt — ohne Kennung das eigene. */
