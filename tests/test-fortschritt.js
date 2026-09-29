@@ -413,5 +413,26 @@ pruefe("Ans Konto nur die Felder der Regel §11b: ohne umzug, ohne flache Felder
     gleich(k.schutz.frei, 2, "Schutz");
 });
 
+/* Seit v0.159.0 (EINBAU-2026-09-29c.md): Grau ist Stufe 0, die Farbwelten folgen dem Level-Pfad —
+   geprüft mit den ECHTEN Stufen aus js\upcrew-anpassen.js und den Welten aus js\upcrew-intro.js. */
+pruefe("Farbwelten nach Level (v0.159.0): Grau 0, Werkstatt 2, Studio 3, Feld 11, Tiefsee 21, Gold 40", () => {
+    const vm = require("vm");
+    const fs = require("fs");
+    const fenster = {};
+    const umgebung = { window: fenster, console };
+    vm.createContext(umgebung);
+    vm.runInContext(fs.readFileSync(pfad.join(projekt, "js", "upcrew-anpassen.js"), "utf8"), umgebung);
+    vm.runInContext(fs.readFileSync(pfad.join(projekt, "js", "upcrew-intro.js"), "utf8"), umgebung);
+    const STUFEN = fenster.UPCREW_ANPASSEN.STUFEN;
+    gleich(JSON.stringify(STUFEN.farbwelt), JSON.stringify({ grau: 0, werkstatt: 2, studio: 3, feld: 11, tiefsee: 21, gold: 40 }), "Stufen");
+    for (const [lv, welt] of [[2, "werkstatt"], [3, "studio"], [11, "feld"], [21, "tiefsee"], [40, "gold"]]) {
+        wahr(FORTSCHRITT.belohnungen(lv, STUFEN).some((b) => b.art === "farbwelt" && b.wert === welt), welt + " bei Level " + lv);
+    }
+    wahr(!FORTSCHRITT.belohnungen(0, STUFEN).some((b) => b.art === "farbwelt" && b.wert !== "grau"), "Level 0 nur Grau");
+    gleich(fenster.UPCREW_ANPASSEN.frei("farbwelt", "werkstatt", 1), false, "Werkstatt bei Level 1 zu");
+    gleich(fenster.UPCREW_ANPASSEN.frei("farbwelt", "grau", 0), true, "Grau immer frei");
+    gleich(Object.keys(fenster.UPCREW_INTRO.WELTEN)[0], "grau", "Grau steht in den Welten vorn");
+    gleich(Object.keys(fenster.UPCREW_INTRO.WELTEN).length, 6, "sechs Welten");
+});
 console.log(anzahlOk + " ok, " + anzahlFehler + " Fehler");
 process.exit(anzahlFehler === 0 ? 0 : 1);

@@ -3,6 +3,52 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.160.0 — 30.09.2026
+
+**Neu: der Turm als echter Turm · mehrere Wege · viel weniger Partien bis zum Boss · Elite, Rast, Truhe, Händler und Fund.**
+
+- **Ein echter Turm:** Steine, Stockwerke, Fenster (hell, wo du schon warst), flackernde Fackeln, oben Zinnen,
+  Fahne und die Tür zum nächsten Ort. Dein weißer Bauer hüpft von Station zu Station.
+- **Vorschau am Start, groß per Tipp:** Antippen öffnet den Turm im Vollbild. Die Kamera fährt vom Tor bis zu dir,
+  ziehen oder Mausrad zum Umsehen. Unten „Verlassen“ und „Spielen“.
+- **Mehrere Wege:** An Kreuzungen wählst du „links“, „Mitte“ oder „rechts“. Nach einer Partie an einer Kreuzung
+  geht der Turm von selbst auf und fragt „Wo lang?“. Gegangene Wege bleiben gegangen, es geht nur vorwärts.
+- **Viel weniger Partien bis zum Boss:** je Ort nur 2 bis 5 Partien (vorher 4 bis 6), dazwischen ruhige Stationen.
+- **Neue Stationen:** Elite (stärker, mit einer Verschärfung; Sieg füllt die Herzen), Rast (Heilen oder Zeit zurück),
+  Truhe (Münzen und ein Tipp oder Zeit zurück), Händler (billiger als im Shop), Fund (ein Tausch).
+- **Herzen ab der Holzhalle:** 5 Herzen, nur eine Niederlage kostet (Gegner 1, Elite 2, Boss 3). Bei 0 geht es zurück
+  zur letzten Rast oder besiegten Elite, Figuren und Münzen bleiben.
+- **Jede Partie geht nach der kurzen Vorstellung sofort los**, deine Farbe steht vorher fest.
+- **Jeder hat seinen eigenen Turm:** Wege und Stationen kommen aus einem Seed (Spieler + Ort + Durchgang). Wie stark es
+  wird, bestimmt der Ort, gleich für alle.
+- **Dein Fortschritt bleibt:** Geschaffte Orte bleiben geschafft, alle Figuren zählen weiter. Wer im alten Turm vor dem
+  Boss stand, steht im neuen wieder davor. 3D-Brett ab Holzhalle, 3D-Figuren ab Marmorsaal wie bisher.
+- **Grau wird jetzt auch am Konto gemerkt** (die neue Datenbank-Regel ist live), nicht nur auf dem Gerät.
+## v0.159.0 — 29.09.2026
+
+**Neu: Alles beginnt in Grau und 2D · erst das 3D-Brett, dann die 3D-Figuren · 2D-Figuren als Scheiben auf dem 3D-Brett · Brett-Designs in der Sammlung.**
+
+- **Grau zum Start:** Neue Spieler beginnen in der Farbwelt „Grau“ (Schwarz · Weiss · Grau).
+  Alle bisherigen Spieler werden einmal auf Grau umgestellt; die anderen Farbwelten
+  schaltest du über das Level frei (Werkstatt Lv 2, Studio 3, Feld 11, Tiefsee 21, Gold 40).
+- **Würfel in der Sammlung:** wählt nur noch, was du schon freigeschaltet hast. Ohne Wahl ist er aus.
+- **Blunderluck beginnt ganz in 2D:** 2D-Brett, 2D-Figuren, flache Fläche.
+- **Neue Reihenfolge:** das 3D-Brett gibt es ab der Holzhalle, die 3D-Figuren ab dem Marmorsaal.
+- **Neu — 3D-Brett mit 2D-Figuren:** Die Figuren liegen als flache Scheiben auf den Feldern,
+  leicht schräg von oben gesehen, damit sie gut lesbar sind.
+- **2D-Brett wirklich flach:** schlichte Felder ohne Schatten und ohne Kante.
+- **Neu — Brett-Designs:** Regal „Brett-Design · 2D“ (Grau, Farbwelt ab Lv 2, Holz, Marmor,
+  Nacht, Turnier ab ihrem Turm-Ort) und „Brett-Design · 3D“ (die bekannten 3D-Themen).
+- **Nachgebessert vor der Auslieferung:** Das Bild „Farbwelt“ im Regal Brett-Design · 3D zeigt jetzt Grau
+  statt Braun. Beim 3D-Brett mit Scheiben schwebt unter dem Brett kein dunkler Balken mehr (die Ablage
+  der geschlagenen Figuren hat dort keine Schale). Tasten „falsch“ (Farbwelten-Baustein) besser lesbar.
+  Die 2D-Figuren auf dem flachen 2D-Brett sind wieder so gross wie in v0.158.0 (sie waren mit den breiteren Feldern mitgewachsen).
+- **Zweite Nachbesserung:** In Grau ist die Turm-Karte neutral grau (keine Orts-Farbe mehr für Tönung,
+  Orts-Zahl und Symbole; der Boss bleibt rot). Beim vollen 3D-Brett schliesst die Ablage der geschlagenen
+  Figuren jetzt direkt vorn ans Brett an, statt abgesetzt darunter zu schweben. Die Regal-Bilder
+  „Matt“, „Porzellan“ und „Metall“ zeigen das graue Brett. In der Sammlungs-Vorschau stehen 2D-Figuren
+  genau mittig im Feld. Vorbereitet (noch nicht aktiv): die neue Datenbank-Regel §13.
+
 ## v0.158.0 — 29.09.2026
 
 **Neu: 3D-Figuren auf dem flachen Brett · Brett und Figuren getrennt in der Sammlung · Profil schlanker · Start mit grösserer Vorschau.**

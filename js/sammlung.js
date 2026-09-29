@@ -140,8 +140,11 @@ const SAMMLUNG = {
      * Die eigenen Regale (Auftrag Blunderluck, Punkt 2)
      * ---------------------------------------------------------------- */
 
+    /* Reihenfolge seit v0.159.0 wie im Entwurf Sammlung-Neu: Brett ·
+       Brett-Design 2D · Brett-Design 3D · Figuren · Figuren-Stil 3D. */
     regale() {
-        return [SAMMLUNG.brettRegal(), SAMMLUNG.figurArtRegal(), SAMMLUNG.themaRegal(), SAMMLUNG.figurenRegal()];
+        return [SAMMLUNG.brettRegal(), SAMMLUNG.designRegal(), SAMMLUNG.themaRegal(),
+            SAMMLUNG.figurArtRegal(), SAMMLUNG.figurenRegal()];
     },
 
     _bild(name) {
@@ -173,8 +176,13 @@ const SAMMLUNG = {
      * drin und an und 3d brett erst später"). Bis v0.157.3 ein Regal „Brett"
      * mit 2D / 3D flach / 3D.
      *
-     *   Regal „Brett"   (schluessel "brett"):   2D (Vorgabe) · 3D ab Marmorsaal
-     *   Regal „Figuren" (schluessel "figurart"): 2D (Vorgabe) · 3D ab Holzhalle
+     *   Regal „Brett"   (schluessel "brett"):   2D (Vorgabe) · 3D ab Holzhalle
+     *   Regal „Figuren" (schluessel "figurart"): 2D (Vorgabe) · 3D ab Marmorsaal
+     *
+     * SEIT v0.159.0 (Nutzer 29.09.2026: „erst 3d brett dann figuren") in
+     * dieser Reihenfolge, bis v0.158.0 umgekehrt; alle vier Kombinationen
+     * sind möglich ("scheiben" = 3D-Brett mit 2D-Figuren), nichts zieht mehr
+     * etwas mit. Der folgende Absatz beschreibt den Stand bis v0.158.0:
      *
      * Gespeichert bleibt EINE Art (jsreischaltung.js: "2d" | "oben" | "3d",
      * "oben" = 3D-Figuren auf dem 2D-Brett). 3D-Brett setzt 3D-Figuren
@@ -190,7 +198,7 @@ const SAMMLUNG = {
             stuecke: [
                 { wert: "2d", name: "2D", bild: (typeof FIGUREN_FLACH !== "undefined")
                     ? FIGUREN_FLACH.miniBrett() : SAMMLUNG._bild("brett-2d") },
-                { wert: "3d", name: "3D", frei: FREISCHALTUNG.brettDreiDFrei(), ab: "Marmorsaal",
+                { wert: "3d", name: "3D", frei: FREISCHALTUNG.brettDreiDFrei(), ab: "Holzhalle",
                     bild: SAMMLUNG._bild("brett-3d") }
             ],
             uebernehmen(wert) {
@@ -208,7 +216,7 @@ const SAMMLUNG = {
             stuecke: [
                 { wert: "2d", name: "2D", bild: (typeof FIGUREN_FLACH !== "undefined")
                     ? FIGUREN_FLACH.miniBrett() : SAMMLUNG._bild("brett-2d") },
-                { wert: "3d", name: "3D", frei: FREISCHALTUNG.dreiDFrei(), ab: "Holzhalle",
+                { wert: "3d", name: "3D", frei: FREISCHALTUNG.dreiDFrei(), ab: "Marmorsaal",
                     bild: oben ? FIGUREN_FLACH.miniBrett(true) : SAMMLUNG._bild("brett-3d") }
             ],
             uebernehmen(wert) {
@@ -217,14 +225,34 @@ const SAMMLUNG = {
         };
     },
 
-    /* Die Art aus einem Entwurf (Brett- und Figuren-Wahl) — was sich
-       gegenüber jetzt geändert hat, gewinnt; beide geändert: das Brett. */
+    /*
+     * BRETT-DESIGN · 2D (seit v0.159.0, js\brett-design.js): flache
+     * Paletten für das 2D-Brett — Grau (Vorgabe), Farbwelt (ab Level 2),
+     * Holz, Marmor, Nacht, Turnier (ab ihrem Ort im Turm).
+     */
+    designRegal() {
+        return {
+            schluessel: "design2d",
+            titel: "Brett-Design · 2D",
+            wert: BRETT_DESIGN.wahl(),
+            stuecke: BRETT_DESIGN.DESIGNS.map((d) => ({
+                wert: d.wert,
+                name: d.name,
+                frei: BRETT_DESIGN.frei(d.wert),
+                ab: d.ort || (d.stufe ? "Lv " + d.stufe : ""),
+                bild: BRETT_DESIGN.miniBild(d.wert)
+            })),
+            uebernehmen(wert) {
+                BRETT_DESIGN.waehlen(wert);
+            }
+        };
+    },
+
+    /* Die Art aus einem Entwurf (Brett- und Figuren-Wahl); was fehlt, gilt
+       wie jetzt. */
     _artVon(brett, figuren) {
         const jetzt = FREISCHALTUNG.teile();
-        const b = brett || jetzt.brett;
-        const f = figuren || jetzt.figuren;
-        const zuletzt = (b !== jetzt.brett) ? "brett" : (f !== jetzt.figuren ? "figuren" : "brett");
-        return FREISCHALTUNG.artAus(b, f, zuletzt);
+        return FREISCHALTUNG.artAus(brett || jetzt.brett, figuren || jetzt.figuren);
     },
 
     /* Der Baustein ruft `uebernehmen` je geändertem Regal nacheinander —
@@ -281,8 +309,9 @@ const SAMMLUNG = {
         };
     },
 
+    /* Die Designs des 3D-Bretts (bis v0.158.0 „Brett-Thema · 3D"). */
     themaRegal() {
-        return SAMMLUNG._stilRegal("thema", "Brett-Thema · 3D", SAMMLUNG.THEMEN);
+        return SAMMLUNG._stilRegal("thema", "Brett-Design · 3D", SAMMLUNG.THEMEN);
     },
 
     figurenRegal() {
@@ -315,11 +344,15 @@ const SAMMLUNG = {
 
         if (typeof UPCREW_ANPASSEN !== "undefined" && UPCREW_ANPASSEN.STUFEN) {
             const stufe = FREISCHALTUNG.stufe();
+            /* Seit v0.159.0 (EINBAU-2026-09-29c.md Schritt 4) rechnet der
+               Baustein selbst, was frei ist (Level oder Besitz). */
+            const frei = (art, wert, stufen) => (typeof UPCREW_ANPASSEN.frei === "function")
+                ? UPCREW_ANPASSEN.frei(art, wert, stufe) : stufen[wert] <= stufe;
             for (const art of ["farbwelt", "schrift", "knoepfe"]) {
                 const stufen = UPCREW_ANPASSEN.STUFEN[art] || {};
                 for (const wert of Object.keys(stufen)) {
                     alle++;
-                    if (alleFrei || stufen[wert] <= stufe) {
+                    if (alleFrei || frei(art, wert, stufen)) {
                         hat++;
                     }
                 }
@@ -493,27 +526,43 @@ const SAMMLUNG = {
         /* Seit v0.157.4 zwei Stücke — die Vorschau zeigt, was „Übernehmen"
            daraus machen würde. */
         const art = SAMMLUNG._artVon(extra.brett, extra.figurart);
-        const drei = art === "3d";
+        /* Seit v0.159.0 vier Arten: 3D-Brett mit 3D-Figuren ("3d") oder mit
+           2D-Scheiben ("scheiben"), 2D-Brett mit 3D-Figuren ("oben") oder
+           2D-Figuren ("2d"). */
+        const drei = art === "3d" || art === "scheiben";
         const start = SAMMLUNG._startBrett();
         const gitter = TEAM_SCHACH._vorschauBauen(start.variante, start.brett, true);
         const halter = document.createElement("div");
         /* Seit v0.157.3 zeigt die flache Vorschau die Figuren des ENTWURFS
-           (2D flach oder 3D von oben), unabhängig von der geltenden Art. */
+           (2D flach oder 3D von oben), unabhängig von der geltenden Art;
+           seit v0.159.0 auch das Brett-Design 2D des Entwurfs, flach. */
         halter.className = "sammlung-buehne"
-            + (art === "oben" ? " figuren-oben" : (drei ? "" : " nur-flach"));
+            + (art === "oben" ? " figuren-oben" : (drei ? "" : " nur-flach"))
+            + (drei ? "" : " brett-2d-vorschau");
+        if (!drei && typeof BRETT_DESIGN !== "undefined") {
+            BRETT_DESIGN.stilSetzen(gitter, extra.design2d || BRETT_DESIGN.wahl());
+        }
         halter.appendChild(gitter);
         buehne.replaceWith(halter);
 
         if (drei && typeof window !== "undefined" && window.BRETT_3D && window.BRETT_3D.standbildMit) {
-            window.BRETT_3D.standbildMit(gitter, { thema: extra.thema, figuren: extra.figuren });
+            window.BRETT_3D.standbildMit(gitter, { thema: extra.thema, figuren: extra.figuren,
+                scheiben: art === "scheiben" });
         }
 
         const kopf = el.querySelector(".upa-v-kopf span");
         if (kopf) {
-            kopf.textContent = drei
-                ? "3D · " + SAMMLUNG._name(SAMMLUNG.THEMEN, extra.thema)
-                    + " · " + SAMMLUNG._name(SAMMLUNG.FIGUREN, extra.figuren)
-                : (art === "oben" ? "2D-Brett · 3D-Figuren" : "2D");
+            const design = (typeof BRETT_DESIGN !== "undefined")
+                ? (BRETT_DESIGN.eintrag(extra.design2d || BRETT_DESIGN.wahl()) || {}).name : "";
+            if (art === "3d") {
+                kopf.textContent = "3D · " + SAMMLUNG._name(SAMMLUNG.THEMEN, extra.thema)
+                    + " · " + SAMMLUNG._name(SAMMLUNG.FIGUREN, extra.figuren);
+            } else if (art === "scheiben") {
+                kopf.textContent = "3D · " + SAMMLUNG._name(SAMMLUNG.THEMEN, extra.thema) + " · 2D-Figuren";
+            } else {
+                kopf.textContent = "2D" + (design ? " · " + design : "")
+                    + (art === "oben" ? " · 3D-Figuren" : "");
+            }
         }
     }
 };

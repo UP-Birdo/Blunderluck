@@ -183,13 +183,17 @@ const PROFIL = {
             const nr = TURM.erreicht(figuren);
             const alle = TURM.anzahlOrte();
             const ort = TURM.ort(Math.min(nr, alle));
-            const summe = TURM.summe(figuren, Math.min(nr, alle));
+            /* Seit v0.160.0 (neuer Turm): das Stockwerk im erreichten Ort. */
+            const lauf = (nr <= alle && typeof FORTSCHRITT_KONTO.turmLauf === "function")
+                ? FORTSCHRITT_KONTO.turmLauf(nr) : null;
+            const stock = lauf ? lauf.plan.stock : 1;
+            const hier = lauf ? Math.max(0, lauf.plan.knotenVon(lauf.pos).f) : 0;
             orte.push({
                 spiel: "Blunderluck",
                 titel: nr > alle ? "Turm · geschafft" : "Turm · " + (ort ? ort.name : ""),
                 unter: nr > alle ? alle + "/" + alle + " Orte"
-                    : "Ort " + nr + "/" + alle + " · " + summe.hat + "/" + summe.alle + " Figuren",
-                anteil: Math.min(1, (Math.min(nr, alle + 1) - 1 + (nr > alle ? 0 : summe.hat / Math.max(1, summe.alle))) / alle),
+                    : "Ort " + nr + "/" + alle + " · Stockwerk " + Math.max(1, hier) + "/" + stock,
+                anteil: Math.min(1, (Math.min(nr, alle + 1) - 1 + (nr > alle ? 0 : hier / stock)) / alle),
                 pfad: "M6 21 V9 L4 7 V3 H8 V5 H10 V3 H14 V5 H16 V3 H20 V7 L18 9 V21 Z M10 21 V16 H14 V21"
             });
         }

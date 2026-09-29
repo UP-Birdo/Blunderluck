@@ -430,6 +430,11 @@ const APP = {
                 if (typeof START !== "undefined" && START.flammeAktualisieren) {
                     START.flammeAktualisieren();
                 }
+                /* Brett-Klassen und Brett-Design 2D (seit v0.159.0) hängen an
+                   Ort und Level — die kommen erst mit dem Stand vom Konto. */
+                if (typeof FIGUREN_FLACH !== "undefined") {
+                    FIGUREN_FLACH.anwenden();
+                }
 
                 /* Auch der Schach-Bereich zeigt Spieler-Daten: die Namen
                    an den Teams und in der Rangliste. Eine fremde Anfrage

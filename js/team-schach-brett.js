@@ -2082,7 +2082,7 @@ Object.assign(TEAM_SCHACH, {
         /* Seit v0.144.0 ist 2D die Vorgabe und 3D eine Freischaltung —
            gewartet wird nur, wenn 3D gewählt UND frei ist
            (js\freischaltung.js). */
-        if (typeof FREISCHALTUNG === "undefined" || FREISCHALTUNG.brett() !== "3d") {
+        if (typeof FREISCHALTUNG === "undefined" || FREISCHALTUNG.teile().brett !== "3d") {
             return false;
         }
         return !window.BRETT_3D || window.BRETT_3D.laedt();

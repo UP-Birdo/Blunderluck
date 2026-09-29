@@ -129,6 +129,11 @@ const START = {
         if (imTurm && typeof START._neuerOrtPruefen === "function") {
             START._neuerOrtPruefen();
         }
+        /* Nach einer Turm-Partie (seit v0.160.0): an einer Kreuzung geht der
+           Turm von selbst auf und fragt „Wo lang?"; ein Rückfall wird erklärt. */
+        if (imTurm && typeof START._turmNachPartiePruefen === "function") {
+            START._turmNachPartiePruefen();
+        }
     },
 
     /* Das Pfeil-Quadrat der Grundeinstellungen (bis v0.146 immer neben

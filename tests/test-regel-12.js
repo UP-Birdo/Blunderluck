@@ -67,8 +67,11 @@ function textBlockNach(marke) {
 
 const TEXT_11C = textBlockNach("**Die GESAMTE Regel (§11 + §11a + §11b + §11c)");
 const TEXT_12 = textBlockNach("## 14. Regel §12");
+/* Seit v0.159.0: die vorbereitete Regel mit Grau (Abschnitt 15, NICHT eingespielt). */
+const TEXT_12_GRAU = textBlockNach("## 15. Regel §13");
 const REGEL_11C = JSON.parse(TEXT_11C);
 const REGEL_12 = JSON.parse(TEXT_12);
+const REGEL_12_GRAU = JSON.parse(TEXT_12_GRAU);
 
 const BASIS = "https://upcrew-7a29d-default-rtdb.europe-west1.firebasedatabase.app";
 const OBER = "yJaWLaK5Kah6fxmnXfDycJhO5cF3";
@@ -227,15 +230,19 @@ const spieler = (fb) => fb.db.spieler;
         wahr(REGEL_12.rules && REGEL_12.rules.spieler, "Regel §12 gelesen");
         const konzeptPfad = pfad.join(projekt, "..", "UPCrew", "docs", "DATENBANK-KONZEPT-12.md");
         if (dateisystem.existsSync(konzeptPfad)) {
-            const konzept = dateisystem.readFileSync(konzeptPfad, "utf8");
+            /* Zeilenenden zählen nicht (das Konzept liegt seit 29.09.2026 mit CRLF). */
+            const konzept = dateisystem.readFileSync(konzeptPfad, "utf8").replace(/\r/g, "");
             const i = konzept.indexOf("## 11. Regeltext §12");
             const a = konzept.indexOf("```json", i) + "```json".length + 1;
             const konzeptText = konzept.slice(a, konzept.indexOf("```", a));
             /* Seit v0.155.0 geht der Text von hier ins Konzept (die
                Koordination überträgt ihn); verglichen wird, sobald das
                Konzept die Ergänzungen von v0.155.2 trägt. */
+            /* Seit v0.159.0 trägt das Konzept die Regel MIT Grau — sie steht hier
+               als Abschnitt 15 (vorbereitet), Abschnitt 14 bleibt die eingespielte. */
             if (konzeptText.indexOf("\"spielzeitOeffentlich\"") !== -1) {
-                gleich(konzeptText === TEXT_12, true, "byte-gleich mit Konzept Abschnitt 11");
+                gleich(konzeptText === (konzeptText.indexOf("\"umstellung\"") !== -1 ? TEXT_12_GRAU : TEXT_12), true,
+                    "byte-gleich mit Konzept Abschnitt 11");
             }
         }
         const zeilen12 = new Set(TEXT_12.split("\n").map((z) => z.trim()));
@@ -250,6 +257,40 @@ const spieler = (fb) => fb.db.spieler;
             "\".write\": \"auth", "\"team-schach\": "], "nur die geänderten Zeilen fehlen");
         wahr(REGEL_11C.rules.spieler[".read"] === true && REGEL_12.rules.spieler[".read"] === undefined,
             "spieler/.read gestrichen");
+    });
+
+    /* Seit der zweiten Nachbesserung v0.159.0: Abschnitt 15 = Regel §13 (offene Muster für
+       farbwelt/schrift/knoepfe, umstellung, neu konten/$uid/besitz/$art). */
+    await pruefe("Regel §13 (Abschnitt 15): nur farbwelt/schrift/knoepfe/umstellung + lieblingswoerter + besitz anders als Abschnitt 14", () => {
+        const a = TEXT_12.split("\n");
+        const b = TEXT_12_GRAU.split("\n");
+        const name = (z) => z.trim().split(":")[0];
+        const nurA = a.filter((z) => b.indexOf(z) === -1).map(name);
+        const nurB = b.filter((z) => a.indexOf(z) === -1).map(name);
+        const drei = ["\"farbwelt\"", "\"schrift\"", "\"knoepfe\""];
+        gleich(nurA, drei.concat(drei), "weg: die alten farbwelt/schrift/knoepfe-Zeilen");
+        const vier = drei.concat(["\"umstellung\""]);
+        /* Seit 30.09.2026 (eingespielt, Entscheid „REGEL §13 LIVE"): dazu
+           `konten/$uid/lieblingswoerter/$app/$i` (nur typoluck, 3 Wörter). */
+        gleich(nurB, vier.concat(vier, ["\"lieblingswoerter\"", "\".validate\"", "\"$i\"", "\"besitz\"", "\"$art\""]),
+            "dazu: offene Muster + umstellung + lieblingswoerter + besitz");
+        const konto = REGEL_12_GRAU.rules.spieler.konten.$uid;
+        const muster = (ausdruck) => new RegExp(/matches\(\/(.*?)\/\)/.exec(ausdruck)[1]);
+        for (const zweig of [konto.aussehen, konto.aussehenJe.$app]) {
+            const fw = muster(zweig.farbwelt[".validate"]);
+            wahr(["grau", "werkstatt", "studio", "feld", "tiefsee", "gold", "neon2"].every((w) => fw.test(w)), "Farbwelten offen");
+            wahr(!fw.test("Grau") && !fw.test("g") && !fw.test("2grau") && !fw.test("a".repeat(17)), "farbwelt-Muster eng genug");
+            wahr(muster(zweig.schrift[".validate"]).test("S12") && !muster(zweig.schrift[".validate"]).test("S123"), "schrift S0–S99");
+            wahr(muster(zweig.knoepfe[".validate"]).test("K7") && !muster(zweig.knoepfe[".validate"]).test("X1"), "knoepfe K0–K99");
+            wahr(/newData\.val\(\) <= 9/.test(zweig.umstellung[".validate"]), "umstellung 0–9");
+        }
+        const lw = konto.lieblingswoerter.$app;
+        wahr(lw[".validate"] === "$app.matches(/^(typoluck)$/)", "lieblingswoerter nur typoluck");
+        const lwi = lw.$i[".validate"];
+        wahr(/\$i\.matches\(\/\^\[0-2\]\$\/\)/.test(lwi) && /\[a-zäöü\]\{4,8\}/.test(lwi) && /auth\.uid === \$uid/.test(lwi),
+            "lieblingswoerter/$app/$i: 3 Wörter, 4–8 Kleinbuchstaben");
+        const besitz = konto.besitz.$art[".validate"];
+        wahr(/\$art\.matches/.test(besitz) && /length <= 2000/.test(besitz) && /auth\.uid === \$uid/.test(besitz), "besitz/$art");
     });
 
     await pruefe("Regel-Nachbau: Nummern-Codes nach Abschnitt 16 (0001, 9999, A7K2 ja; AB1C, OABC, a7k2, ABC nein; Plus nur UP#Plus)", () => {

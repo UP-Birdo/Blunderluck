@@ -13,7 +13,9 @@
  * klassischen Look mit flachen Figuren. „2D" war damit nur ein flaches BRETT
  * mit 3D-Figuren darauf.
  *
- * WAS JETZT GILT: Ist das Brett 2D (`FREISCHALTUNG.brett() === "2d"`),
+ * WAS JETZT GILT: Ist das Brett 2D (`FREISCHALTUNG.brett() !== "3d"`; seit
+ * v0.159.0 auch bei "scheiben", dann liegen dieselben Silhouetten auf den
+ * Scheiben des 3D-Bretts),
  * trägt der body die Klasse `brett-flach`, und jede Figur (Brett,
  * Vorschau, Hand, Beute, Schach lernen) ist eine flache Silhouette im Stil
  * der Wertungs-Figuren des Turms (dieselben Pfade für Bauer, Springer und
@@ -118,6 +120,24 @@ const FIGUREN_FLACH = {
         FIGUREN_FLACH.stilSetzen();
         document.body.classList.toggle(FIGUREN_FLACH.KLASSE, FIGUREN_FLACH.flach());
         document.body.classList.toggle(FIGUREN_FLACH.KLASSE_OBEN, FIGUREN_FLACH.oben());
+        /* Seit v0.159.0: `brett-2d` = das BRETT ist flach (2d oder oben) —
+           daran hängen die schlichten Felder ohne Kante und das Brett-Design
+           (js\brett-design.js, css\stil-effekte.css). `brett-flach` heisst
+           weiter „flache Figuren oder flaches Brett" (auch bei Scheiben). */
+        document.body.classList.toggle(FIGUREN_FLACH.KLASSE_BRETT_2D, FIGUREN_FLACH.brettZweiD());
+        if (typeof BRETT_DESIGN !== "undefined") {
+            BRETT_DESIGN.anwenden();
+        }
+    },
+
+    KLASSE_BRETT_2D: "brett-2d",
+
+    brettZweiD() {
+        if (typeof FREISCHALTUNG === "undefined") {
+            return true;
+        }
+        const art = FREISCHALTUNG.brett();
+        return art === "2d" || art === "oben";
     },
 
     /* Zwölf Regeln, eine je Farbe und Art — mit einer Klasse mehr als die
@@ -152,8 +172,12 @@ const FIGUREN_FLACH = {
        die von oben gerenderten 3D-Figuren, sobald es sie gibt. */
     miniBrett(oben) {
         const bilder = oben ? FIGUREN_FLACH.obenBilder : null;
-        const hell = "#e9e2d0";
-        const dunkel = "#8a6a4a";
+        /* Seit v0.159.0 in den Farben des gewählten 2D-Designs (Vorgabe
+           Grau); „Farbwelt" hat keine festen Farben, dann ebenfalls Grau. */
+        const design = (typeof BRETT_DESIGN !== "undefined" && BRETT_DESIGN.farben(BRETT_DESIGN.wahl()))
+            || { hell: "#dedede", dunkel: "#8e8e8e" };
+        const hell = design.hell;
+        const dunkel = design.dunkel;
         const aufstellung = [
             ["turm", "schwarz"], [null], ["koenig", "schwarz"], [null],
             [null], ["bauer", "schwarz"], [null], ["springer", "schwarz"],

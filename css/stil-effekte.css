@@ -423,6 +423,90 @@ body.design-3d.brett-flach .vorschau {
 }
 
 /*
+ * DAS 2D-BRETT IST WIRKLICH FLACH (seit v0.159.0, Nutzer 29.09.2026: „das
+ * 2d brett soll nicht 3d schatten haben wie bei 3d brett sondern einfach 2d
+ * felder eine 2d palette"). Ist das BRETT 2D (`body.brett-2d`, gesetzt von
+ * js\figuren-flach.js bei "2d" und "oben"), stehen die Felder ohne Fuge,
+ * ohne Rundung und ohne Unterkante nebeneinander. Die Kante bleibt als
+ * Variable da (durchsichtig), damit Ziel-, Schlag- und Vorschlags-Ringe
+ * weiter `var(--kachel-schatten), inset …` schreiben können. Dieselben
+ * Regeln für die Vorschau der Sammlung, wenn der ENTWURF ein 2D-Brett hat.
+ */
+body.design-3d.brett-2d .brett,
+body.design-3d.brett-2d .vorschau,
+body.design-3d .sammlung-buehne.brett-2d-vorschau .vorschau {
+    gap: 0;
+    padding-bottom: 0;
+}
+
+body.design-3d.brett-2d .brett {
+    padding-left: 0;
+    padding-right: 0;
+}
+
+body.design-3d.brett-2d .feld,
+body.design-3d.brett-2d .vorschau-feld,
+body.design-3d .sammlung-buehne.brett-2d-vorschau .vorschau-feld {
+    --kachel-schatten: 0 0 0 transparent;
+    border-radius: 0; /* UPCrew-Ausnahme: Spielgrafik */
+}
+
+/*
+ * DIE 2D-FIGUREN BLEIBEN WIE IN v0.158.0 (Nachbesserung v0.159.0, Nutzer
+ * 29.09.2026: „die Figuren sehen anders aus, wieder zurück wie es war").
+ * Ohne Fuge und Rand wird jedes Feld ein paar Pixel breiter — und die
+ * Figur, die an der Feldbreite hängt (1.3em, Feldschrift = 68 % der
+ * gemessenen Breite), wuchs um gut 10 % mit. Hier bekommt sie wieder die
+ * Grösse, die sie im Kachel-Brett hatte: das Kachel-Feld war um Fuge (5 px)
+ * und Rand (2 × 2 px, auf 8 Felder verteilt) schmaler, zusammen 4,875 px;
+ * in der Vorschau um die Fuge von 4 px (auf 8 Felder 3,5 px). Zeichen,
+ * Farben und Kante kommen unverändert aus js\figuren-flach.js. Nicht bei
+ * 3D-Figuren auf dem 2D-Brett (`figuren-oben`, eigene Masse aus brett-3d.js).
+ */
+body.design-3d.brett-flach.brett-2d:not(.figuren-oben) .brett .feld > .figur-bild {
+    --figur-3d-groesse: calc(1.3 * 0.68 * (100% - 4.875px));
+    margin-top: calc(var(--figur-3d-groesse) / -2);
+}
+
+body.design-3d.brett-flach.brett-2d:not(.figuren-oben) .vorschau-feld > .figur-bild,
+body.design-3d .sammlung-buehne.brett-2d-vorschau.nur-flach .vorschau-feld > .figur-bild {
+    width: calc(0.88 * (100% - 3.5px));
+    height: calc(0.88 * (100% - 3.5px));
+    margin-left: calc(0.88 * (100% - 3.5px) / -2);
+    margin-top: calc(0.88 * (100% - 3.5px) / -2);
+}
+
+/* Zweite Nachbesserung v0.159.0 (gemessen): Gilt am echten Brett 3D, fehlt
+   dem body `brett-flach` — die Sammlungs-Vorschau eines 2D-Entwurfs stand
+   dann noch auf `bottom: 12%` (0,4 px unter der Mitte bei 18,5-px-Feldern).
+   Hier ausdrücklich mittig. */
+body.design-3d .sammlung-buehne.brett-2d-vorschau.nur-flach .vorschau-feld > .figur-bild {
+    top: 50%;
+    bottom: auto;
+    background-position: center;
+}
+
+/* Das Brett-Design (js\brett-design.js): Grau, Holz, Marmor … statt der
+   Feldfarben der Farbwelt. Beim Design „Farbwelt" fehlt die Klasse. */
+body.brett-2d.brett-design-eigen .brett,
+body.brett-2d.brett-design-eigen .vorschau {
+    --feld-hell: var(--brett2d-hell, #dedede);
+    --feld-dunkel: var(--brett2d-dunkel, #8e8e8e);
+}
+
+/* Das kleine Bild im Regal „Brett-Design · 2D": 3 × 3 flache Felder. */
+.brett-design-bild {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    width: 100%;
+    aspect-ratio: 1;
+}
+
+.brett-design-bild > i {
+    display: block;
+}
+
+/*
  * Die kleinen Figuren ausserhalb des Bretts (Beute-Bilanz im Abschluss,
  * die Figuren in „Schach lernen") stehen in Textzeilen, nicht auf Kacheln.
  * Sie bleiben deshalb im Fluss und bekommen nur einen passenden Kasten.

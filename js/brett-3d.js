@@ -267,6 +267,8 @@ function einstellungenLaden() {
     /* Seit v0.157.3: 3D-Figuren auf dem 2D-Brett — nur gemerkt, damit
        `einstellungenSpeichern` die Wahl nicht verliert. */
     einst.oben = typeof FREISCHALTUNG !== "undefined" && FREISCHALTUNG.brett() === "oben";
+    /* Seit v0.159.0: 2D-Figuren als Scheiben auf dem 3D-Brett. */
+    einst.scheiben = typeof FREISCHALTUNG !== "undefined" && FREISCHALTUNG.brett() === "scheiben";
     if (!THEMEN[einst.thema]) einst.thema = VORGABE.thema;
     if (!FIGUR_STILE[einst.figuren]) einst.figuren = VORGABE.figuren;
     if (!BLICKE[einst.blick]) einst.blick = VORGABE.blick;
@@ -275,9 +277,12 @@ function einstellungenLaden() {
     return einst;
 }
 
-/* Gilt gerade 3D? Ohne js\freischaltung.js (darf nicht sein) bleibt es 2D. */
+/* Gilt gerade das 3D-BRETT (mit 3D-Figuren oder, seit v0.159.0, mit
+   2D-Scheiben)? Ohne js\freischaltung.js (darf nicht sein) bleibt es 2D. */
 function dreiDGilt() {
-    return typeof FREISCHALTUNG !== "undefined" && FREISCHALTUNG.brett() === "3d";
+    if (typeof FREISCHALTUNG === "undefined") return false;
+    const art = FREISCHALTUNG.brett();
+    return art === "3d" || art === "scheiben";
 }
 
 function dreiDFrei() {
@@ -818,21 +823,159 @@ function zelleLesen(knopf) {
  * Figuren
  * ------------------------------------------------------------------ */
 
-function figurBauen(eintrag, geist) {
-    const mat = geist
-        ? Z.mat[eintrag.farbe].clone()
-        : Z.mat[eintrag.farbe];
-    if (geist) {
-        mat.transparent = true;
-        mat.opacity = 0.32;
-        mat.depthWrite = false;
+/*
+ * 2D-FIGUREN AUF DEM 3D-BRETT (seit v0.159.0, Nutzer 29.09.2026: „3D-Brett
+ * mit 2D-Figuren → flach liegend, 2D-Figuren als Scheiben auf den Feldern").
+ * Bei `FREISCHALTUNG.brett() === "scheiben"` ist jede Figur eine flache
+ * Scheibe, die auf dem Stein liegt; oben trägt sie die Silhouette der
+ * 2D-Figuren (js\figuren-flach.js, dieselben Pfade und Farben). Die Kamera
+ * ist dafür nur leicht geneigt (`SCHEIBEN_NEIGUNG`), damit die Scheiben
+ * lesbar bleiben. Alles andere (Züge, Boxen, Friedhof, Tippen) bleibt, wie
+ * es ist — nur Form und Material der Figur sind andere.
+ */
+const SCHEIBE_RADIUS = 0.41;
+const SCHEIBE_DICKE = 0.085;
+const SCHEIBE_PX = 256;
+const SCHEIBEN_NEIGUNG = THREE.MathUtils.degToRad(16);
+const SCHEIBE = { geo: null, mat: new Map(), warten: null };
+
+function scheibenAn() {
+    return !!(Z.einst && Z.einst.scheiben);
+}
+
+function scheibeForm() {
+    if (!SCHEIBE.geo) {
+        const g = new THREE.CylinderGeometry(SCHEIBE_RADIUS * 0.96, SCHEIBE_RADIUS, SCHEIBE_DICKE, 48);
+        g.translate(0, SCHEIBE_DICKE / 2, 0);
+        g.computeBoundingBox();
+        SCHEIBE.geo = g;
     }
-    const netz = new THREE.Mesh(Z.formen[eintrag.art], mat);
+    return SCHEIBE.geo;
+}
+
+/* Die Farben der 2D-Figuren; ohne js\figuren-flach.js ein Rückfall. */
+function scheibeFarben(farbeName) {
+    const f = (typeof FIGUREN_FLACH !== "undefined" && FIGUREN_FLACH.FARBEN[farbeName])
+        || (farbeName === "schwarz" ? { fuellung: "#26262b", kante: "#e8e4da" } : { fuellung: "#fbf8f1", kante: "#26262b" });
+    return f;
+}
+
+/* Die Oberseite: Grundfarbe, ein Ring nahe der Kante, die Silhouette. Das
+   Bild der Silhouette lädt aus einer Daten-Adresse (sofort, ohne Netz);
+   bis es da ist, bleibt die Scheibe leer. */
+function scheibeTextur(art, farbeName) {
+    const f = scheibeFarben(farbeName);
+    const leinwand = document.createElement("canvas");
+    leinwand.width = leinwand.height = SCHEIBE_PX;
+    const c = leinwand.getContext("2d");
+    const halb = SCHEIBE_PX / 2;
+    c.fillStyle = f.fuellung;
+    c.fillRect(0, 0, SCHEIBE_PX, SCHEIBE_PX);
+    c.strokeStyle = f.kante;
+    c.lineWidth = SCHEIBE_PX * 0.035;
+    c.beginPath();
+    c.arc(halb, halb, halb * 0.86, 0, Math.PI * 2);
+    c.stroke();
+    const tex = new THREE.CanvasTexture(leinwand);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.anisotropy = 4;
+    const fertig = new Promise((los) => {
+        if (typeof FIGUREN_FLACH === "undefined") { los(); return; }
+        const bild = new Image();
+        bild.onload = () => {
+            const seite = SCHEIBE_PX * 0.66;
+            c.drawImage(bild, halb - seite / 2, halb - seite / 2, seite, seite);
+            tex.needsUpdate = true;
+            MINI.cache.clear();
+            anstossen();
+            los();
+        };
+        bild.onerror = () => los();
+        bild.src = FIGUREN_FLACH.datenUrl(art, farbeName);
+    });
+    return { tex, fertig };
+}
+
+/* Material einer Scheibe: [Rand, Oberseite, Unterseite] (Gruppen des
+   Zylinders), je Art und Farbe EINMAL gebaut. */
+function scheibeMaterial(art, farbeName) {
+    const schluessel = art + "-" + farbeName;
+    if (!SCHEIBE.mat.has(schluessel)) {
+        const f = scheibeFarben(farbeName);
+        const rand = new THREE.MeshStandardMaterial({ color: farbe(f.fuellung).multiplyScalar(0.86), roughness: 0.55 });
+        const { tex, fertig } = scheibeTextur(art, farbeName);
+        const oben = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.5 });
+        SCHEIBE.mat.set(schluessel, { liste: [rand, oben, rand], fertig });
+    }
+    return SCHEIBE.mat.get(schluessel).liste;
+}
+
+/* Alle zwölf Scheiben vorab (beim Start): Standbilder der Vorschau sollen
+   nicht mit leeren Scheiben im Zwischenspeicher landen. */
+function scheibenVorbereiten() {
+    if (!SCHEIBE.warten) {
+        const alle = [];
+        for (const art of ARTEN) {
+            for (const f of ["weiss", "schwarz"]) {
+                scheibeMaterial(art, f);
+                alle.push(SCHEIBE.mat.get(art + "-" + f).fertig);
+            }
+        }
+        SCHEIBE.warten = Promise.all(alle);
+    }
+    return SCHEIBE.warten;
+}
+
+/* Form und Material einer Figur — Scheibe oder 3D-Form. */
+function figurForm(art, scheibe) {
+    return scheibe ? scheibeForm() : Z.formen[art];
+}
+
+function figurMaterial(art, farbeName, scheibe) {
+    return scheibe ? scheibeMaterial(art, farbeName) : Z.mat[farbeName];
+}
+
+/* Kopie eines Materials (auch einer Liste) — für Durchsichtiges. */
+function materialKlonen(mat) {
+    return Array.isArray(mat) ? mat.map((m) => m.clone()) : mat.clone();
+}
+
+function materialListe(mat) {
+    return Array.isArray(mat) ? mat : [mat];
+}
+
+/* Neue Art (Umwandlung) oder Farbe (Meuterei) — bei der Scheibe wechselt
+   das Bild, bei der 3D-Figur die Form. */
+function figurUmformen(g, art, farbeName) {
+    g.userData.art = art;
+    if (farbeName) g.userData.farbe = farbeName;
+    if (g.userData.scheibe) {
+        g.userData.netz.material = scheibeMaterial(art, g.userData.farbe);
+    } else {
+        g.userData.netz.geometry = Z.formen[art];
+        if (farbeName) g.userData.netz.material = Z.mat[farbeName];
+    }
+}
+
+function figurBauen(eintrag, geist) {
+    const scheibe = scheibenAn();
+    const grund = figurMaterial(eintrag.art, eintrag.farbe, scheibe);
+    const mat = geist ? materialKlonen(grund) : grund;
+    if (geist) {
+        for (const m of materialListe(mat)) {
+            m.transparent = true;
+            m.opacity = 0.32;
+            m.depthWrite = false;
+        }
+    }
+    const netz = new THREE.Mesh(figurForm(eintrag.art, scheibe), mat);
     netz.castShadow = !geist;
     netz.receiveShadow = !geist;
+    /* Die Oberseite der Scheibe: Bild oben = hinten (-z), Bild rechts = +x. */
+    if (scheibe) netz.rotation.y = Math.PI / 2;
     const gruppe = new THREE.Group();
     gruppe.add(netz);
-    gruppe.userData = { art: eintrag.art, farbe: eintrag.farbe, netz, geist: !!geist, eigenesMaterial: !!geist };
+    gruppe.userData = { art: eintrag.art, farbe: eintrag.farbe, netz, geist: !!geist, eigenesMaterial: !!geist, scheibe };
     if (geist) netz.userData.eigenesMaterial = true;
     ausrichten(gruppe);
     return gruppe;
@@ -840,7 +983,7 @@ function figurBauen(eintrag, geist) {
 
 /* Der Springer schaut zum Gegner; eigene Figuren stehen unten. */
 function ausrichten(gruppe) {
-    if (gruppe.userData.art !== "springer") return;
+    if (gruppe.userData.art !== "springer" || gruppe.userData.scheibe) return;
     const unten = Z.untenFarbe || "weiss";
     const meine = gruppe.userData.farbe === unten;
     gruppe.userData.netz.rotation.y = meine ? Math.PI / 2 + 0.35 : -Math.PI / 2 + 0.35;
@@ -854,7 +997,9 @@ function figurSetzen(gruppe, index) {
 function figurEntfernen(gruppe) {
     Z.figurenGruppe.remove(gruppe);
     gruppe.traverse((o) => {
-        if (o.userData && o.userData.eigenesMaterial && o.material) o.material.dispose();
+        if (o.userData && o.userData.eigenesMaterial && o.material) {
+            for (const m of materialListe(o.material)) m.dispose();
+        }
     });
 }
 
@@ -1038,10 +1183,7 @@ function verwandeln(g, ziel, meuterei, warten) {
         g.position.y = GEO.oberkante + hub;
         if (!getauscht && t >= 0.5) {
             getauscht = true;
-            g.userData.art = ziel.art;
-            g.userData.farbe = ziel.farbe;
-            g.userData.netz.geometry = Z.formen[ziel.art];
-            g.userData.netz.material = Z.mat[ziel.farbe];
+            figurUmformen(g, ziel.art, ziel.farbe);
             ausrichten(g);
         }
     }, () => {
@@ -1114,8 +1256,7 @@ function ziehen(g, von, nach, neu, schlaegt, extra) {
         g.rotation.set(0, 0, 0);
         /* Umwandlung: die neue Form erst bei der Landung. */
         if (neu && neu.art !== g.userData.art) {
-            g.userData.art = neu.art;
-            g.userData.netz.geometry = Z.formen[neu.art];
+            figurUmformen(g, neu.art);
             ausrichten(g);
             funkenWolke(new THREE.Vector3(b.x, y0 + 0.6, b.z), "#ffd76a", 14, 0.9);
         }
@@ -1142,8 +1283,8 @@ function ziehen(g, von, nach, neu, schlaegt, extra) {
  */
 function wegschleudern(g, wartet) {
     const start = g.position.clone();
-    const mat = g.userData.netz.material.clone();
-    mat.transparent = true;
+    const mat = materialKlonen(g.userData.netz.material);
+    for (const m of materialListe(mat)) m.transparent = true;
     g.userData.netz.material = mat;
     g.userData.netz.userData.eigenesMaterial = true;
     g.userData.eigenesMaterial = true;
@@ -1154,7 +1295,7 @@ function wegschleudern(g, wartet) {
         g.rotation.set(0, t * 5, 0);
         const s = Math.max(0.001, 1 - k);
         g.scale.set(s, s, s);
-        mat.opacity = 1 - t;
+        for (const m of materialListe(mat)) m.opacity = 1 - t;
     }, () => {
         figurEntfernen(g);
         funkenWolke(start.clone().setY(start.y + 0.5), "#ffe27a", 16, 1.4);
@@ -1376,14 +1517,14 @@ function ueberdeckungen() {
 }
 
 function verschwinden(g) {
-    const mat = g.userData.netz.material.clone();
-    mat.transparent = true;
+    const mat = materialKlonen(g.userData.netz.material);
+    for (const m of materialListe(mat)) m.transparent = true;
     g.userData.netz.material = mat;
     g.userData.netz.userData.eigenesMaterial = true;
     tween(dauer(320), (t) => {
         const s = 1 - raus(t) * 0.9;
         g.scale.set(s, s, s);
-        mat.opacity = 1 - t;
+        for (const m of materialListe(mat)) m.opacity = 1 - t;
     }, () => figurEntfernen(g));
     funkenWolke(g.position.clone().setY(g.position.y + 0.4), "#d9d4ff", 10, 0.7);
 }
@@ -1842,6 +1983,7 @@ function falleZeigen() {
 const ABLAGE_TIEFE = 0.72;       // Tiefe der Ablage (in Feldern)
 const ABLAGE_LUECKE = 0.16;      // Luft zwischen Schrift und Ablage
 const ABLAGE_DICKE = 0.05;
+const ABLAGE_FUGE = 0.04;        // Luft zwischen Brettkante und Schale (v0.159.0, 2. Nachbesserung)
 const BUCHSTABE_ART = { B: "bauer", S: "springer", L: "laeufer", T: "turm", D: "dame", K: "koenig" };
 const ART_WERT = { bauer: 1, springer: 3, laeufer: 3, turm: 5, dame: 9, koenig: 10 };
 
@@ -2005,7 +2147,7 @@ function friedhofAbgleichen(partie, animieren) {
             } catch (fehler) { /* ohne Bilanz keine Ablage */ }
         }
     }
-    const schluessel = JSON.stringify(jetzt) + Z.untenFarbe + Z.masse.schluessel;
+    const schluessel = JSON.stringify(jetzt) + Z.untenFarbe + Z.masse.schluessel + (Z.einst && Z.einst.scheiben ? "s" : "");
     if (schluessel === Z.friedhofSchluessel) return;
     Z.friedhofSchluessel = schluessel;
     Z.friedhofStand = jetzt;
@@ -2015,17 +2157,33 @@ function friedhofAbgleichen(partie, animieren) {
 
     const z0 = ablageMitte();
     const breite = Z.masse.spalten - 0.3;
+    /* Zweite Nachbesserung v0.159.0: Die Schale lag abgesetzt ein Feld vor
+       dem Brett und wirkte im Schrägblick wie ein schwebender Balken unter
+       dem Brett. Jetzt schliesst sie mit einer Fuge (wie zwischen den
+       Feldern) direkt an die vordere Brettkante an, so breit wie das Brett,
+       und reicht bis hinter die Grabsteine. Die Linien-Buchstaben schweben
+       weiter darüber (Unterkante ≈ 0.1 über dem Boden, Schale 0.05 dick —
+       keine Durchdringung). */
+    const schaleVorn = Z.masse.reihen / 2 + ABLAGE_FUGE;
+    const schaleTiefe = z0 + ABLAGE_TIEFE / 2 - schaleVorn;
+    const schaleBreite = Z.masse.spalten - ABLAGE_FUGE;
+    const geoSchluessel = schaleBreite + "x" + schaleTiefe.toFixed(3);
     GEO.ablage = GEO.ablage || {};
-    if (!GEO.ablage[breite]) {
-        GEO.ablage[breite] = new RoundedBoxGeometry(breite, ABLAGE_DICKE, ABLAGE_TIEFE, 3, 0.02);
+    if (!GEO.ablage[geoSchluessel]) {
+        GEO.ablage[geoSchluessel] = new RoundedBoxGeometry(schaleBreite, ABLAGE_DICKE, schaleTiefe, 3, 0.02);
     }
     if (!Z.mat.ablage) {
         Z.mat.ablage = new THREE.MeshPhysicalMaterial({ color: 0x4a5160, roughness: 0.55, clearcoat: 0.3 });
     }
-    const schale = new THREE.Mesh(GEO.ablage[breite], Z.mat.ablage);
-    schale.position.set(0, ABLAGE_DICKE / 2, z0);
-    schale.receiveShadow = true;
-    gruppe.add(schale);
+    /* Scheiben (v0.159.0, Nachbesserung): Im flachen Blick (16°) sah die
+       dunkle Schale wie ein vom Brett abgesetzter Balken aus — dort KEINE
+       Schale; die Grabsteine stehen wie sonst an ihrem Platz. */
+    if (!(Z.einst && Z.einst.scheiben)) {
+        const schale = new THREE.Mesh(GEO.ablage[geoSchluessel], Z.mat.ablage);
+        schale.position.set(0, ABLAGE_DICKE / 2, schaleVorn + schaleTiefe / 2);
+        schale.receiveShadow = true;
+        gruppe.add(schale);
+    }
 
     const obenFarbe = Z.untenFarbe === "weiss" ? "schwarz" : "weiss";
     const links = jetzt[obenFarbe].slice().sort((a, b) => ART_WERT[b] - ART_WERT[a]);
@@ -2754,7 +2912,7 @@ function groesseAnpassen() {
    Leinwand passt — für den gewählten Blickwinkel. */
 function blickSetzen(weich) {
     if (!Z.masse) return;
-    const winkel = BLICKE[Z.einst.blick].winkel;
+    const winkel = blickWinkel();
     const { spalten, reihen } = Z.masse;
     /* Die Schrift steht nur links (Reihen) und unten (Linien). Unten bekommt
        sie ihren Platz; links und rechts ist der Rand seit v0.143.1 GLEICH
@@ -3058,7 +3216,7 @@ function aussehenAnwenden(schluessel) {
     if (schluessel === "figuren") {
         materialienBauen();
         for (const g of Z.figuren.values()) {
-            g.userData.netz.material = Z.mat[g.userData.farbe];
+            if (!g.userData.scheibe) g.userData.netz.material = Z.mat[g.userData.farbe];
         }
         figurenBilder();
         if (typeof FIGUREN_FLACH !== "undefined" && FIGUREN_FLACH.obenBilder) figurenBilderOben();
@@ -3108,10 +3266,18 @@ function zweiDKnopf(halter) {
 
 /* Die Wahl 2D/3D hat sich geändert (js\freischaltung.js `brettSetzen`,
    Tab „Anpassen" oder die Knöpfe oben): übernehmen und neu zeichnen. */
-function wahlUebernehmen(an, oben) {
+function wahlUebernehmen(an, oben, scheiben) {
     if (!Z.einst) return;
     Z.einst.an = an === true;
     Z.einst.oben = oben === true;
+    /* Scheiben ⇄ 3D-Figuren (seit v0.159.0): alle Figuren neu bauen — das
+       Brett gilt als neu (`Z.masse`), die Standbilder als veraltet. */
+    const scheibenNeu = Z.einst.an && scheiben === true;
+    if (scheibenNeu !== !!Z.einst.scheiben) {
+        Z.einst.scheiben = scheibenNeu;
+        Z.masse = null;
+        MINI.cache.clear();
+    }
     if (Z.einst.oben && typeof FIGUREN_FLACH !== "undefined" && !FIGUREN_FLACH.obenBilder) {
         try { figurenBilderOben(); } catch (fehler) { console.error("3D-Bild nicht möglich:", fehler); }
     }
@@ -3289,6 +3455,14 @@ const MINI_FIGUR = 1.0;       // Figuren im kleinen Bild etwas kleiner
 /* Derselbe Blickwinkel wie das grosse Brett (Nutzer 24.09.2026: „der
    Blickwinkel ist anders"). Bis v0.130.0 fest 30 Grad. */
 function miniNeigung() {
+    return blickWinkel();
+}
+
+/* Der Blickwinkel des Bretts: mit Scheiben (seit v0.159.0) nur leicht
+   geneigt, damit die flachen Figuren lesbar bleiben; mit 3D-Figuren der
+   gewählte Blick. */
+function blickWinkel() {
+    if (scheibenAn()) return SCHEIBEN_NEIGUNG;
     return (BLICKE[Z.einst.blick] || BLICKE[VORGABE.blick]).winkel;
 }
 
@@ -3343,7 +3517,8 @@ function miniKamera(richtung, punkte, rand) {
 }
 
 function miniSignatur(b, draufsicht) {
-    const teile = [b.spalten, draufsicht ? "o" : "s", Z.einst.blick, Z.einst.thema, Z.einst.figuren, Z.einst.kacheln];
+    const teile = [b.spalten, draufsicht ? "o" : "s", Z.einst.blick, Z.einst.thema, Z.einst.figuren, Z.einst.kacheln,
+        scheibenAn() ? "scheiben" : ""];
     for (const z of b.zellen) {
         const klassen = Array.from(z.k).filter((n) => n.startsWith("feld-") || n.startsWith("mauer-") || n.startsWith("kante-")).sort().join(".");
         const f = z.figur ? z.figur.farbe[0] + z.figur.art : "";
@@ -3429,16 +3604,22 @@ function miniRendern(b, draufsicht) {
 
         for (const [eintrag, geist] of [[z.figur, false], [z.geist, true]]) {
             if (!eintrag) continue;
-            let fm = Z.mat[eintrag.farbe];
+            const scheibe = scheibenAn();
+            let fm = figurMaterial(eintrag.art, eintrag.farbe, scheibe);
             if (geist) {
-                fm = fm.clone(); fm.transparent = true; fm.opacity = 0.32; fm.depthWrite = false;
-                wegwerfen.push(fm);
+                fm = materialKlonen(fm);
+                for (const x of materialListe(fm)) {
+                    x.transparent = true; x.opacity = 0.32; x.depthWrite = false;
+                    wegwerfen.push(x);
+                }
             }
-            const netz = new THREE.Mesh(Z.formen[eintrag.art], fm);
+            const netz = new THREE.Mesh(figurForm(eintrag.art, scheibe), fm);
             netz.castShadow = !geist;
             netz.scale.setScalar(MINI_FIGUR);
             netz.position.set(m.x, oben + hub, m.z);
-            if (eintrag.art === "springer") {
+            if (scheibe) {
+                netz.rotation.y = Math.PI / 2;
+            } else if (eintrag.art === "springer") {
                 netz.rotation.y = eintrag.farbe === "weiss" ? Math.PI / 2 + 0.35 : -Math.PI / 2 + 0.35;
             }
             szene.add(netz);
@@ -3554,9 +3735,11 @@ function standbild(el) {
  */
 function standbildMit(el, wahl) {
     if (!el || !Z.bereit || Z.fehler) return false;
-    const alt = { an: Z.einst.an, thema: Z.einst.thema, figuren: Z.einst.figuren };
+    const alt = { an: Z.einst.an, thema: Z.einst.thema, figuren: Z.einst.figuren, scheiben: Z.einst.scheiben };
     const w = wahl || {};
     Z.einst.an = true;
+    /* Seit v0.159.0: 2D-Figuren als Scheiben auf dem 3D-Brett. */
+    Z.einst.scheiben = w.scheiben === true;
     if (THEMEN[w.thema]) Z.einst.thema = w.thema;
     if (FIGUR_STILE[w.figuren]) Z.einst.figuren = w.figuren;
     const figurenAnders = Z.einst.figuren !== alt.figuren;
@@ -3565,12 +3748,13 @@ function standbildMit(el, wahl) {
         standbild(el);
     } finally {
         Z.einst.an = alt.an;
+        Z.einst.scheiben = alt.scheiben;
         Z.einst.thema = alt.thema;
         Z.einst.figuren = alt.figuren;
         if (figurenAnders) {
             materialienBauen();
             for (const g of Z.figuren.values()) {
-                g.userData.netz.material = Z.mat[g.userData.farbe];
+                if (!g.userData.scheibe) g.userData.netz.material = Z.mat[g.userData.farbe];
             }
         }
     }
@@ -3890,8 +4074,7 @@ function buehneAnwenden(bu, k, animieren, tippOrt) {
         }, () => {
             bew.g.position.set(z.x, y0, z.z);
             if (bew.neu.art !== bew.g.userData.art) {
-                bew.g.userData.art = bew.neu.art;
-                bew.g.userData.netz.geometry = Z.formen[bew.neu.art];
+                figurUmformen(bew.g, bew.neu.art);
             }
             buehneWelle(bu, new THREE.Vector3(z.x, oben + 0.005, z.z), "#d8d2c4");
         }, 60);
@@ -4565,6 +4748,10 @@ async function starten() {
             new Promise((fertig) => new FontLoader().load(SCHRIFT_PFAD, fertig, undefined, () => fertig(null)))
         ]);
         Z.schrift = schrift;
+        /* Die Scheiben-Bilder (seit v0.159.0) sind Daten-Adressen und in
+           Millisekunden da — vorher fertig, damit kein Standbild leere
+           Scheiben zwischenspeichert. */
+        await scheibenVorbereiten().catch(() => {});
         Z.bereit = true;
         kachelFormen();
         /*

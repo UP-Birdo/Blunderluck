@@ -79,6 +79,15 @@ const REGEL_11A = blockNach("### 11a.");
 const REGEL_11B = blockNach("### 11b.");
 /* §11c (seit v0.151.17, Vorschlag): das Aussehen je Spiel. */
 const REGEL_11C = blockNach("### 11c.");
+/* Seit v0.159.0: die Regel mit Grau (Abschnitt 15, eingespielt 30.09.2026, ```text-Block, ganze Regel). */
+const REGEL_GRAU = (() => {
+    const start = sicherheit.indexOf("## 15. Regel §13");
+    if (start === -1) {
+        throw new Error("Abschnitt fehlt: 15");
+    }
+    const a = sicherheit.indexOf("```text", start) + "```text".length;
+    return JSON.parse(sicherheit.slice(a, sicherheit.indexOf("```", a)).trim()).rules.spieler.konten.$uid;
+})();
 
 /* Ein .validate-Ausdruck gegen einen Wert und seinen Schlüssel. */
 function ausdruckGilt(ausdruck, wert, schluessel) {
@@ -273,9 +282,42 @@ pruefe("Regel §11a, Schreib-Schleuse und Baustein nennen dieselben Aussehen-Wer
         const imBaustein = zeile[1].split(",").map((s) => s.trim().replace(/"/g, "")).filter(Boolean);
         gleich(imBaustein.join(","), schleuse[feld].join(","), feld + ": Baustein = Schleuse");
         for (const wert of schleuse[feld]) {
-            wahr(ausdruckGilt(REGEL_11A.aussehen[feld][".validate"], wert, feld), feld + " " + wert + " erlaubt die Regel");
+            /* "grau" (seit v0.159.0) erlaubt erst Regel §13 (Abschnitt 15, eingespielt 30.09.2026). */
+            const regel = (feld === "farbwelt" && wert === "grau") ? REGEL_GRAU.aussehen : REGEL_11A.aussehen;
+            wahr(ausdruckGilt(regel[feld][".validate"], wert, feld), feld + " " + wert + " erlaubt die Regel");
         }
     }
+    wahr(!ausdruckGilt(REGEL_11A.aussehen.farbwelt[".validate"], "grau", "farbwelt"),
+        "die alte Regel §11a kannte grau noch nicht (erst §13, eingespielt 30.09.2026)");
+});
+
+/* Seit 30.09.2026 ist Regel §13 eingespielt (Entscheid „REGEL §13 LIVE"): Schalter an,
+   grau und umstellung passieren die Schleuse. `aussehenFuerRegel(roh, false)` zeigt
+   weiter das alte Verhalten (nur noch für den Vergleich). */
+pruefe("Grau und umstellung (Regel §13 eingespielt 30.09.2026): Schleuse lässt beides durch", () => {
+    gleich(SpeicherKonten.REGEL_GRAU_EINGESPIELT, true, "Schalter an (Regel §13 eingespielt)");
+    const roh = { darstellung: "hell", farbwelt: "grau", schrift: "S1", knoepfe: "K1", leseschrift: false, stand: 4, umstellung: 1 };
+    const alt = SpeicherKonten.aussehenFuerRegel(roh, false);
+    gleich(Object.keys(alt).sort().join(","), "darstellung,knoepfe,leseschrift,schrift,stand", "Schalter aus: ohne grau und umstellung");
+    const eintrag = SpeicherKonten.eintragFuerServer({ id: "a", name: "A", tag: "0001", uid: "u",
+        aussehen: roh, aussehenJe: { blunderluck: roh } });
+    gleich(eintrag.aussehen.farbwelt, "grau", "farbwelt grau passiert die Schreib-Schleuse");
+    gleich(eintrag.aussehen.umstellung, 1, "umstellung passiert die Schreib-Schleuse");
+    gleich(eintrag.aussehenJe.blunderluck.farbwelt, "grau", "aussehenJe: grau passiert");
+    gleich(eintrag.aussehenJe.blunderluck.umstellung, 1, "aussehenJe: umstellung passiert");
+    const fehler = verstoesse(REGEL_GRAU.aussehen, eintrag.aussehen, "aussehen", "aussehen")
+        .concat(verstoesse(REGEL_GRAU.aussehenJe, eintrag.aussehenJe, "aussehenJe", "aussehenJe"));
+    gleich(fehler.join(" | "), "", "besteht die eingespielte Regel §13");
+    const werkstatt = SpeicherKonten.aussehenFuerRegel(Object.assign({}, roh, { farbwelt: "werkstatt" }));
+    gleich(werkstatt.farbwelt, "werkstatt", "andere Farbwelten gehen weiter durch");
+    const spaeter = SpeicherKonten.aussehenFuerRegel(roh);
+    gleich(Object.keys(spaeter).sort().join(","), "darstellung,farbwelt,knoepfe,leseschrift,schrift,stand,umstellung", "mit Regel: alles");
+    for (const zweig of [REGEL_GRAU.aussehen, REGEL_GRAU.aussehenJe.$app]) {
+        for (const feld of Object.keys(spaeter)) {
+            wahr(!!zweig[feld] && ausdruckGilt(zweig[feld][".validate"], spaeter[feld], feld), feld + " erlaubt die Regel mit Grau");
+        }
+    }
+    gleich(SpeicherKonten.aussehenFuerRegel(Object.assign({}, roh, { umstellung: 12 }), true).umstellung, undefined, "umstellung über 9 fällt weg");
 });
 
 pruefe("§11c: aussehenJe — nur zwei Spiele, je Spiel die sechs Felder; die Schleuse hält es ein (v0.151.17)", () => {

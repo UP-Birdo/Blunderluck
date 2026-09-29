@@ -108,6 +108,7 @@ const AUSSEHEN_KONTO = {
             if (eintrag.aussehen) {
                 UPCREW_AUSSEHEN.uebernehmen(eintrag.aussehen);
             }
+            AUSSEHEN_KONTO._umstellungInsKonto(eintrag.aussehen || null);
             return;
         }
         /* Je Spiel: der eigene Zweig; fehlt er, das alte gemeinsame Feld als
@@ -121,6 +122,32 @@ const AUSSEHEN_KONTO = {
             UPCREW_AUSSEHEN.uebernehmen(eintrag.aussehen);
             AUSSEHEN_KONTO._umzugMerken();
         }
+        AUSSEHEN_KONTO._umstellungInsKonto(eigenes || null);
+    },
+
+    /*
+     * EINMALIGE UMSTELLUNG AUF GRAU (seit v0.159.0, EINBAU-2026-09-29c.md
+     * Schritt 2): Trägt das Konto-Objekt den Merker `umstellung` noch nicht
+     * (`UPCREW_AUSSEHEN.kontoBraucht`), schreibt Blunderluck EINMAL
+     * `fuerKonto()` ans Konto — auch wenn `uebernehmen` nichts übernommen
+     * hat. Höchstens einmal je Seitenaufruf: Solange die Regel mit Grau
+     * nicht eingespielt ist (`SpeicherKonten.REGEL_GRAU_EINGESPIELT` in
+     * js\speicher.js), lässt die Schreib-Schleuse `grau` und `umstellung`
+     * weg — das Konto bekäme den Merker nie, und jede Abfrage schriebe sonst
+     * erneut. Gäste: `_eigener()` liefert null, es wird nichts geschrieben.
+     */
+    _umstellungGeschrieben: false,
+
+    _umstellungInsKonto(vomKonto) {
+        if (AUSSEHEN_KONTO._umstellungGeschrieben || typeof UPCREW_AUSSEHEN.kontoBraucht !== "function") {
+            return false;
+        }
+        if (!UPCREW_AUSSEHEN.kontoBraucht(vomKonto)) {
+            return false;
+        }
+        AUSSEHEN_KONTO._umstellungGeschrieben = true;
+        AUSSEHEN_KONTO.insKonto();
+        return true;
     },
 
     UMZUG_SCHLUESSEL: "blunderluck.aussehen-umzug",

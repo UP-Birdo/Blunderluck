@@ -194,32 +194,38 @@ pruefe("Freischaltung: 2D ist die Vorgabe, 3D wählbar, wenn die Sperre aus ist"
     }
 });
 
-pruefe("Freischaltung: 3D-Figuren auf dem 2D-Brett („oben“, v0.157.3) — dritte Art, gleiche Freischaltung wie 3D", () => {
-    gleich(FREISCHALTUNG.ARTEN.join(","), "2d,oben,3d", "drei Arten");
+pruefe("Freischaltung: vier Arten (v0.159.0) — 2d, scheiben, oben, 3d; ohne Sperre alle setzbar", () => {
+    gleich(FREISCHALTUNG.ARTEN.join(","), "2d,scheiben,oben,3d", "vier Arten");
     FREISCHALTUNG.SPERRE_3D = false;
     try {
         gleich(FREISCHALTUNG.brettSetzen("oben"), "oben", "oben wählbar");
         gleich(FREISCHALTUNG.brett(), "oben", "oben gemerkt");
-        const roh = JSON.parse(speicher["blunderluck.brett3d"]);
-        gleich(roh.an === false && roh.oben === true, true, "im Speicher: an=false, oben=true");
+        let roh = JSON.parse(speicher["blunderluck.brett3d"]);
+        gleich(roh.an === false && roh.oben === true && roh.scheiben === false, true, "im Speicher: an=false, oben=true");
+        gleich(FREISCHALTUNG.brettSetzen("scheiben"), "scheiben", "Scheiben wählbar");
+        roh = JSON.parse(speicher["blunderluck.brett3d"]);
+        gleich(roh.an === true && roh.scheiben === true && roh.oben === false, true, "im Speicher: an=true, scheiben=true");
+        gleich(FREISCHALTUNG.brett(), "scheiben", "Scheiben gemerkt");
         gleich(FREISCHALTUNG.brettSetzen("3d"), "3d", "danach 3D");
-        gleich(JSON.parse(speicher["blunderluck.brett3d"]).oben, false, "3D löscht oben");
+        gleich(JSON.parse(speicher["blunderluck.brett3d"]).scheiben, false, "3D löscht scheiben");
         FREISCHALTUNG.brettSetzen("2d");
         gleich(FREISCHALTUNG.brett(), "2d", "zurück auf 2D");
     } finally {
         FREISCHALTUNG.SPERRE_3D = true;
     }
-    /* Gesperrt (Arena 0, keine Werkstatt): oben gilt nicht und lässt sich nicht setzen. */
-    speicher["blunderluck.brett3d"] = JSON.stringify({ an: false, oben: true });
-    gleich(FREISCHALTUNG.brett(), "2d", "gesperrt: gespeichertes oben wird übergangen");
+    /* Gesperrt (Arena 0, keine Werkstatt): nichts davon gilt oder lässt sich setzen. */
+    speicher["blunderluck.brett3d"] = JSON.stringify({ an: true, scheiben: true });
+    gleich(FREISCHALTUNG.brett(), "2d", "gesperrt: gespeicherte Scheiben werden übergangen");
     gleich(FREISCHALTUNG.brettSetzen("oben"), "2d", "gesperrt: oben nicht setzbar");
+    gleich(FREISCHALTUNG.brettSetzen("scheiben"), "2d", "gesperrt: Scheiben nicht setzbar");
     delete speicher["blunderluck.brett3d"];
 });
 
-pruefe("3D-Figuren von oben: Bilder aus dem 3D-Modul, Sammlung und flache Figuren kennen „oben“", () => {
+pruefe("3D-Figuren von oben und 2D-Scheiben: Bilder aus dem 3D-Modul, Sammlung kennt beide", () => {
     const flach = dateisystem.readFileSync(pfad.join(projekt, "js", "figuren-flach.js"), "utf8");
     const BRETT_QUELLE = dateisystem.readFileSync(pfad.join(projekt, "js", "brett-3d.js"), "utf8");
     wahr(/KLASSE_OBEN: "figuren-oben"/.test(flach) && /bildUrl\(art, farbe\)/.test(flach), "figuren-flach: Klasse und bildUrl");
+    wahr(/KLASSE_BRETT_2D: "brett-2d"/.test(flach), "figuren-flach: Klasse brett-2d");
     wahr(/function figurenBilderOben\(\)/.test(BRETT_QUELLE), "brett-3d: figurenBilderOben");
     wahr(/miniRenderer\(\)/.test(BRETT_QUELLE.slice(BRETT_QUELLE.indexOf("function figurenBilderOben"))),
         "derselbe kleine Renderer");
@@ -229,41 +235,63 @@ pruefe("3D-Figuren von oben: Bilder aus dem 3D-Modul, Sammlung und flache Figure
     wahr(/const OBEN_NEIGUNG = THREE\.MathUtils\.degToRad\(/.test(BRETT_QUELLE), "geneigte Kamera");
     wahr(!/Flaches 2D-Brett/.test(BRETT_QUELLE), "kein Knopf Flaches 2D-Brett");
     wahr(!/knopf\.textContent = "3D"/.test(BRETT_QUELLE), "kein Knopf 3D am flachen Brett");
+    /* v0.159.0: Scheiben liegen flach, leicht geneigte Kamera, Silhouetten aus figuren-flach.js. */
+    const neigung = /const SCHEIBEN_NEIGUNG = THREE\.MathUtils\.degToRad\((\d+)\)/.exec(BRETT_QUELLE);
+    wahr(!!neigung && Number(neigung[1]) > 4 && Number(neigung[1]) < 30, "Scheiben: leicht geneigt (zwischen Oben und Schräg)");
+    wahr(/FIGUREN_FLACH\.datenUrl\(art, farbeName\)/.test(BRETT_QUELLE), "Scheiben tragen die 2D-Silhouette");
+    wahr(/einst\.scheiben = .*FREISCHALTUNG\.brett\(\) === "scheiben"/.test(BRETT_QUELLE), "3D-Brett liest die Scheiben-Wahl");
+    wahr(/function wahlUebernehmen\(an, oben, scheiben\)/.test(BRETT_QUELLE), "Umschalten mit Scheiben");
+    wahr(/art === "3d" \|\| art === "scheiben"/.test(BRETT_QUELLE.slice(BRETT_QUELLE.indexOf("function dreiDGilt"))),
+        "3D-Brett gilt auch mit Scheiben");
     const sammlung = dateisystem.readFileSync(pfad.join(projekt, "js", "sammlung.js"), "utf8");
-    /* Seit v0.157.4 zwei Regale: Figuren 3D ab Holzhalle, Brett 3D ab Marmorsaal. */
-    wahr(/wert: "3d", name: "3D", frei: FREISCHALTUNG\.dreiDFrei\(\), ab: "Holzhalle"/.test(sammlung),
-        "Regal Figuren: 3D ab Holzhalle");
-    wahr(/wert: "3d", name: "3D", frei: FREISCHALTUNG\.brettDreiDFrei\(\), ab: "Marmorsaal"/.test(sammlung),
-        "Regal Brett: 3D ab Marmorsaal");
+    /* Seit v0.159.0 getauscht: Brett 3D ab Holzhalle, Figuren 3D ab Marmorsaal. */
+    wahr(/wert: "3d", name: "3D", frei: FREISCHALTUNG\.dreiDFrei\(\), ab: "Marmorsaal"/.test(sammlung),
+        "Regal Figuren: 3D ab Marmorsaal");
+    wahr(/wert: "3d", name: "3D", frei: FREISCHALTUNG\.brettDreiDFrei\(\), ab: "Holzhalle"/.test(sammlung),
+        "Regal Brett: 3D ab Holzhalle");
+    wahr(/scheiben: art === "scheiben"/.test(sammlung), "Vorschau der Sammlung zeigt Scheiben");
 });
 
-pruefe("Freischaltung v0.157.4: 3D-Brett ab Marmorsaal, Brett/Figuren getrennt, alte 3D-Wahl sinngemäss", () => {
+pruefe("Freischaltung v0.159.0: 3D-Brett ab Holzhalle, 3D-Figuren ab Marmorsaal, alle vier Kombinationen", () => {
     const arena = FREISCHALTUNG.arena;
     try {
+        FREISCHALTUNG.arena = () => 1;
+        gleich(FREISCHALTUNG.brettDreiDFrei(), false, "Werkbank: 3D-Brett zu");
+        gleich(FREISCHALTUNG.dreiDFrei(), false, "Werkbank: 3D-Figuren zu");
         FREISCHALTUNG.arena = () => 2;
-        gleich(FREISCHALTUNG.dreiDFrei(), true, "Holzhalle: 3D-Figuren frei");
-        gleich(FREISCHALTUNG.brettDreiDFrei(), false, "Holzhalle: 3D-Brett noch zu");
+        gleich(FREISCHALTUNG.brettDreiDFrei(), true, "Holzhalle: 3D-Brett frei");
+        gleich(FREISCHALTUNG.dreiDFrei(), false, "Holzhalle: 3D-Figuren noch zu");
+        /* Kein Bestandsschutz: altes an=true (3D-Brett + 3D-Figuren) → 3D-Brett mit Scheiben. */
         speicher["blunderluck.brett3d"] = JSON.stringify({ an: true });
-        gleich(FREISCHALTUNG.brett(), "oben", "wer 3D gewählt hatte, behält die 3D-Figuren");
-        gleich(FREISCHALTUNG.brettSetzen("3d"), "2d", "3D-Brett gesperrt nicht setzbar");
+        gleich(FREISCHALTUNG.brett(), "scheiben", "altes 3D in der Holzhalle: 3D-Brett mit 2D-Scheiben");
+        speicher["blunderluck.brett3d"] = JSON.stringify({ an: false, oben: true });
+        gleich(FREISCHALTUNG.brett(), "2d", "altes oben in der Holzhalle: 2D");
+        gleich(FREISCHALTUNG.brettSetzen("3d"), "scheiben", "3D gewählt, Figuren gesperrt: Scheiben");
+        gleich(FREISCHALTUNG.brettSetzen("oben"), "2d", "oben gesperrt");
         FREISCHALTUNG.arena = () => 3;
         speicher["blunderluck.brett3d"] = JSON.stringify({ an: true });
-        gleich(FREISCHALTUNG.brett(), "3d", "Marmorsaal: das 3D-Brett gilt wieder");
+        gleich(FREISCHALTUNG.brett(), "3d", "Marmorsaal: 3D-Brett mit 3D-Figuren");
+        gleich(FREISCHALTUNG.brettSetzen("oben"), "oben", "Marmorsaal: oben");
+        gleich(FREISCHALTUNG.brettSetzen("scheiben"), "scheiben", "Marmorsaal: Scheiben bleiben wählbar");
         gleich(JSON.stringify(FREISCHALTUNG.teile("oben")), JSON.stringify({ brett: "2d", figuren: "3d" }), "teile oben");
+        gleich(JSON.stringify(FREISCHALTUNG.teile("scheiben")), JSON.stringify({ brett: "3d", figuren: "2d" }), "teile scheiben");
         gleich(JSON.stringify(FREISCHALTUNG.teile("3d")), JSON.stringify({ brett: "3d", figuren: "3d" }), "teile 3d");
-        gleich(FREISCHALTUNG.artAus("3d", "2d", "brett"), "3d", "3D-Brett zieht 3D-Figuren mit");
-        gleich(FREISCHALTUNG.artAus("3d", "2d", "figuren"), "2d", "2D-Figuren ziehen das 2D-Brett mit");
-        gleich(FREISCHALTUNG.artAus("2d", "3d", "figuren"), "oben", "2D-Brett + 3D-Figuren");
-        gleich(FREISCHALTUNG.artAus("2d", "2d", "brett"), "2d", "2D + 2D");
+        gleich(FREISCHALTUNG.artAus("3d", "2d", "brett"), "scheiben", "3D-Brett + 2D-Figuren");
+        gleich(FREISCHALTUNG.artAus("3d", "2d", "figuren"), "scheiben", "nichts zieht mehr mit");
+        gleich(FREISCHALTUNG.artAus("2d", "3d"), "oben", "2D-Brett + 3D-Figuren");
+        gleich(FREISCHALTUNG.artAus("3d", "3d"), "3d", "3D + 3D");
+        gleich(FREISCHALTUNG.artAus("2d", "2d"), "2d", "2D + 2D");
     } finally {
         FREISCHALTUNG.arena = arena;
         delete speicher["blunderluck.brett3d"];
     }
 });
 
-pruefe("Freischaltung: mit Sperre gilt 3D erst ab Arena 2 (Holzhalle) oder in der Werkstatt", () => {
+pruefe("Freischaltung: mit Sperre gilt 3D erst ab seinem Ort oder in der Werkstatt; neue Spieler 2D", () => {
     FREISCHALTUNG.SPERRE_3D = true;
     try {
+        delete speicher["blunderluck.brett3d"];
+        gleich(FREISCHALTUNG.brett(), "2d", "neuer Spieler: 2D-Brett, 2D-Figuren");
         speicher["blunderluck.brett3d"] = JSON.stringify({ an: true, thema: "holz" });
         gleich(FREISCHALTUNG.dreiDFrei(), false, "Arena 0: gesperrt");
         gleich(FREISCHALTUNG.brett(), "2d", "gespeichertes an=true wird übergangen");
@@ -278,14 +306,15 @@ pruefe("Freischaltung: mit Sperre gilt 3D erst ab Arena 2 (Holzhalle) oder in de
 
         const arena = FREISCHALTUNG.arena;
         globalThis.location = { hostname: "localhost", search: "" };
+        FREISCHALTUNG.arena = () => 3;
+        gleich(FREISCHALTUNG.dreiDFrei(), true, "Arena 3 schaltet die 3D-Figuren frei");
         FREISCHALTUNG.arena = () => 2;
-        gleich(FREISCHALTUNG.dreiDFrei(), true, "Arena 2 schaltet 3D frei");
-        FREISCHALTUNG.arena = () => 1;
-        gleich(FREISCHALTUNG.dreiDFrei(), false, "Arena 1 noch nicht");
+        gleich(FREISCHALTUNG.dreiDFrei(), false, "Arena 2 noch nicht");
         FREISCHALTUNG.arena = arena;
     } finally {
         FREISCHALTUNG.SPERRE_3D = true;
         globalThis.location = { hostname: "up-birdo.github.io", search: "" };
+        delete speicher["blunderluck.brett3d"];
     }
 });
 
@@ -439,6 +468,8 @@ pruefe("Leiste: Symbole Aufgaben, Sammlung und Bald wie abgesprochen (Runde 4)",
 globalThis.FREISCHALTUNG = FREISCHALTUNG;
 /* Die Orte des Turms schalten Themen und Figuren frei (seit v0.147.0). */
 globalThis.TURM = require(pfad.join(projekt, "js", "turm.js"));
+/* Die Brett-Designs des 2D-Bretts (seit v0.159.0). */
+globalThis.BRETT_DESIGN = require(pfad.join(projekt, "js", "brett-design.js"));
 const SAMMLUNG = require(pfad.join(projekt, "js", "sammlung.js"));
 const BRETT_QUELLE = dateisystem.readFileSync(pfad.join(projekt, "js", "brett-3d.js"), "utf8");
 
@@ -476,11 +507,60 @@ pruefe("Sammlung: ohne Freigabe nur die Vorgaben frei, mit Ort am Schloss", () =
     }
 });
 
-pruefe("Sammlung: Reihenfolge der eigenen Regale Brett · Brett-Thema · Figuren", () => {
-    /* Seit v0.157.4: Brett und Figuren (2D/3D) als eigene Regale vorn. */
-    gleich(SAMMLUNG.regale().map((r) => r.schluessel).join(","), "brett,figurart,thema,figuren", "Reihenfolge");
+pruefe("Sammlung: Reihenfolge der eigenen Regale Brett · Design 2D · Design 3D · Figuren · Stil", () => {
+    /* Seit v0.159.0 wie im Entwurf Sammlung-Neu, mit den Brett-Designs. */
+    gleich(SAMMLUNG.regale().map((r) => r.schluessel).join(","), "brett,design2d,thema,figurart,figuren", "Reihenfolge");
     gleich(SAMMLUNG.regale().map((r) => r.titel).join(" | "),
-        "Brett | Figuren | Brett-Thema · 3D | Figuren-Stil · 3D", "Titel");
+        "Brett | Brett-Design · 2D | Brett-Design · 3D | Figuren | Figuren-Stil · 3D", "Titel");
+});
+
+pruefe("Brett-Design 2D (v0.159.0): Grau ist Vorgabe, Farbwelt ab Level 2, Holz … ab ihrem Ort", () => {
+    const arena = FREISCHALTUNG.arena;
+    const stufe = FREISCHALTUNG.stufe;
+    globalThis.location = { hostname: "up-birdo.github.io", search: "" };
+    try {
+        delete speicher["blunderluck.brett-design"];
+        gleich(BRETT_DESIGN.wahl(), "grau", "neuer Spieler: Grau");
+        const regal = SAMMLUNG.designRegal();
+        gleich(regal.stuecke.map((s) => s.wert).join(","), "grau,farbwelt,holz,marmor,nacht,turnier", "Stücke");
+        gleich(regal.stuecke.filter((s) => s.frei).map((s) => s.wert).join(","), "grau", "nur Grau frei");
+        gleich(regal.stuecke.find((s) => s.wert === "farbwelt").ab, "Lv 2", "Farbwelt ab Level 2");
+        gleich(regal.stuecke.find((s) => s.wert === "holz").ab, "Holzhalle", "Holz ab Holzhalle");
+        gleich(regal.stuecke.find((s) => s.wert === "turnier").ab, "Turniersaal", "Turnier ab Turniersaal");
+        wahr(regal.stuecke.every((s) => /brett-design-bild/.test(s.bild)), "flache Bilder");
+        gleich(BRETT_DESIGN.waehlen("holz"), "grau", "gesperrt nicht wählbar");
+        FREISCHALTUNG.arena = () => 2;
+        gleich(BRETT_DESIGN.waehlen("holz"), "holz", "Holzhalle: Holz wählbar");
+        gleich(speicher["blunderluck.brett-design"], "holz", "gemerkt (Gerät)");
+        FREISCHALTUNG.arena = () => 1;
+        gleich(BRETT_DESIGN.wahl(), "grau", "ohne Freischaltung wieder Grau");
+        FREISCHALTUNG.stufe = () => 2;
+        gleich(BRETT_DESIGN.frei("farbwelt"), true, "Level 2: Farbwelt frei");
+        gleich(BRETT_DESIGN.farben("farbwelt"), null, "Farbwelt ohne feste Farben");
+        gleich(JSON.stringify(BRETT_DESIGN.farben("grau")), JSON.stringify({ hell: "#dedede", dunkel: "#8e8e8e" }), "Grau");
+        gleich(Object.keys(TURM.FREI_AB.design2d).join(","), "holz,marmor,nacht,turnier", "Orte wie die 3D-Themen");
+        for (const w of Object.keys(TURM.FREI_AB.design2d)) {
+            gleich(TURM.FREI_AB.design2d[w], TURM.FREI_AB.thema[w], w + ": gleicher Ort wie 3D");
+        }
+    } finally {
+        FREISCHALTUNG.arena = arena;
+        FREISCHALTUNG.stufe = stufe;
+        delete speicher["blunderluck.brett-design"];
+    }
+});
+
+pruefe("2D-Brett flach (v0.159.0): ohne Kante und Fuge, Design über --brett2d-*", () => {
+    const css = dateisystem.readFileSync(pfad.join(projekt, "css", "stil-effekte.css"), "utf8");
+    const block = (sel) => {
+        const i = css.indexOf(sel);
+        return i === -1 ? "" : css.slice(i, css.indexOf("}", i));
+    };
+    wahr(/--kachel-schatten: 0 0 0 transparent/.test(block("body.design-3d.brett-2d .feld,")), "keine Unterkante");
+    wahr(/gap: 0/.test(block("body.design-3d.brett-2d .brett,")), "keine Fuge");
+    wahr(/--feld-hell: var\(--brett2d-hell/.test(block("body.brett-2d.brett-design-eigen .brett")), "Design setzt die Feldfarben");
+    const index = dateisystem.readFileSync(pfad.join(projekt, "index.html"), "utf8");
+    const sw = dateisystem.readFileSync(pfad.join(projekt, "sw.js"), "utf8");
+    wahr(index.indexOf("js/brett-design.js") !== -1 && sw.indexOf("\"./js/brett-design.js\"") !== -1, "geladen und offline");
 });
 
 pruefe("Sammlung: der Anteil zählt Regale, Baustein-Stücke und reine Sammlung", () => {
@@ -493,12 +573,12 @@ pruefe("Sammlung: der Anteil zählt Regale, Baustein-Stücke und reine Sammlung"
     globalThis.UPCREW_ANPASSEN = { STUFEN: { farbwelt: { a: 0, b: 2 }, schrift: { c: 0 }, knoepfe: { d: 0, e: 3 } } };
     try {
         const anteil = SAMMLUNG.anteil();
-        /* Regale: 2 + 2 + 5 + 4 = 13 Stücke (seit v0.157.4 Brett 2D/3D und
-           Figuren 2D/3D), frei 1 + 1 + 1 + 1 = 4 (je die Vorgabe). Baustein:
-           5 Stücke, frei 3. Reine Sammlung: 4 Karten + 2 Formen, alle da. */
-        gleich(anteil.alle, 13 + 5 + 6, "alle");
-        gleich(anteil.hat, 4 + 3 + 6, "gesammelt");
-        gleich(anteil.prozent, Math.round(13 / 24 * 100), "Prozent");
+        /* Regale: 2 + 6 + 5 + 2 + 4 = 19 Stücke (seit v0.159.0 mit dem
+           Brett-Design 2D), frei 1 + 1 + 1 + 1 + 1 = 5 (je die Vorgabe).
+           Baustein: 5 Stücke, frei 3. Reine Sammlung: 4 Karten + 2 Formen. */
+        gleich(anteil.alle, 19 + 5 + 6, "alle");
+        gleich(anteil.hat, 5 + 3 + 6, "gesammelt");
+        gleich(anteil.prozent, Math.round(14 / 30 * 100), "Prozent");
     } finally {
         delete globalThis.SCHACH_VARIANTEN;
         delete globalThis.UPCREW_ANPASSEN;
@@ -511,7 +591,7 @@ pruefe("3D-Brett: Sammlung-Schnittstelle da, Vorschau ändert das echte Brett ni
             "BRETT_3D." + name.split(":")[0] + " fehlt");
     }
     const mit = BRETT_QUELLE.match(/function standbildMit\(el, wahl\) \{([\s\S]*?)\n\}/)[1];
-    wahr(/finally\s*\{[\s\S]*Z\.einst\.an = alt\.an;[\s\S]*Z\.einst\.thema = alt\.thema;[\s\S]*Z\.einst\.figuren = alt\.figuren;/.test(mit),
+    wahr(/finally\s*\{[\s\S]*Z\.einst\.an = alt\.an;[\s\S]*Z\.einst\.scheiben = alt\.scheiben;[\s\S]*Z\.einst\.thema = alt\.thema;[\s\S]*Z\.einst\.figuren = alt\.figuren;/.test(mit),
         "die Wahl wird nicht zurückgesetzt");
     wahr(!/einstellungenSpeichern/.test(mit), "die Vorschau speichert");
     const waehlen = BRETT_QUELLE.match(/function aussehenWaehlen\(schluessel, wert\) \{([\s\S]*?)\n\}/)[1];

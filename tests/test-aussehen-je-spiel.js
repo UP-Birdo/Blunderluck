@@ -76,7 +76,10 @@ function welt(speicher, pfadName, geteilt) {
     return { A: umgebung.window.UPCREW_AUSSEHEN, lauscher };
 }
 
-const ALT = JSON.stringify({ darstellung: "dunkel", farbwelt: "feld", schrift: "S2", knoepfe: "K3", leseschrift: false, stand: 5 });
+/* Seit v0.159.0 mit dem Merker der einmaligen Umstellung auf Grau (EINBAU-2026-09-29c.md) — ohne ihn würde jedes
+   alte Aussehen beim ersten Lesen zu Grau. Die Umstellung selbst prüfen die Fälle weiter unten. */
+const ALT = JSON.stringify({ darstellung: "dunkel", farbwelt: "feld", schrift: "S2", knoepfe: "K3", leseschrift: false, stand: 5,
+    umstellung: 1 });
 
 pruefe("Der Schalter steht im Baustein auf false (jedes Spiel sein eigenes)", () => {
     wahr(/const GETEILT = false;/.test(QUELLE), "GETEILT = false");
@@ -94,7 +97,7 @@ pruefe("GETEILT = false: Umzug aus dem gemeinsamen Schlüssel, danach eigener", 
 });
 
 pruefe("GETEILT = false: Übernehmen in Blunderluck ändert Typoluck nicht", () => {
-    const speicher = { "upcrew.aussehen": ALT, "typoluck.aussehen": JSON.stringify({ farbwelt: "tiefsee", stand: 9 }) };
+    const speicher = { "upcrew.aussehen": ALT, "typoluck.aussehen": JSON.stringify({ farbwelt: "tiefsee", stand: 9, umstellung: 1 }) };
     const blunder = welt(speicher, "/Blunderluck/", false);
     blunder.A.setzen({ farbwelt: "gold", darstellung: "hell" });
     gleich(JSON.parse(speicher["blunderluck.aussehen"]).farbwelt, "gold", "Blunderluck gold");
@@ -179,6 +182,72 @@ pruefe("Anpassen: der Umschalter Typoluck/Blunderluck nur bei GETEILT", () => {
     wahr(/\$\{geteilt \? `<div class="upa-mini-seg"/.test(a), "Umschalter nur bei geteilt");
 });
 
+pruefe("Grau (v0.159.0): Standard für neue Spieler, erste der sechs Welten", () => {
+    const { A } = welt({}, "/Blunderluck/", false);
+    gleich(A.STANDARD.farbwelt, "grau", "Standard");
+    gleich(A.WAHL.farbwelt, ["grau", "werkstatt", "studio", "feld", "tiefsee", "gold"], "sechs Welten, Grau vorn");
+    gleich(A.lesen().farbwelt, "grau", "frische Seite: Grau");
+    gleich(A.umgestelltJetzt, false, "ein neuer Spieler wird nicht umgestellt");
+});
+
+pruefe("Einmalige Umstellung (v0.159.0): altes Aussehen ohne Merker wird Grau, stand bleibt, danach frei", () => {
+    const speicher = { "blunderluck.aussehen": JSON.stringify({ farbwelt: "gold", schrift: "S2", stand: 7 }) };
+    const erst = welt(speicher, "/Blunderluck/", false);
+    const a = erst.A.lesen();
+    gleich([a.farbwelt, a.schrift, a.stand, a.umstellung], ["grau", "S2", 7, 1], "umgestellt, Rest bleibt");
+    gleich(erst.A.umgestelltJetzt, true, "dieser Start hat umgestellt");
+    gleich(JSON.parse(speicher["blunderluck.aussehen"]).umstellung, 1, "sofort zurückgeschrieben");
+    erst.A.setzen({ farbwelt: "werkstatt" });
+    const zweit = welt(speicher, "/Blunderluck/", false);
+    gleich(zweit.A.lesen().farbwelt, "werkstatt", "eine Wahl nach der Umstellung bleibt");
+    gleich(zweit.A.umgestelltJetzt, false, "kein zweites Mal");
+});
+
+pruefe("Konto (v0.159.0): alte Wahl ohne Merker gewinnt nie, kontoBraucht meldet den fehlenden Merker", () => {
+    const speicher = {};
+    const { A } = welt(speicher, "/Blunderluck/", false);
+    A.lesen();
+    A.uebernehmen({ farbwelt: "gold", stand: 99 });
+    gleich(A.lesen().farbwelt, "grau", "Konto ohne Merker: Grau");
+    gleich(A.kontoBraucht({ farbwelt: "gold", stand: 99 }), true, "Merker fehlt");
+    gleich(A.kontoBraucht(undefined), true, "gar kein Aussehen am Konto");
+    gleich(A.kontoBraucht({ farbwelt: "grau", stand: 1, umstellung: 1 }), false, "Merker da");
+    A.uebernehmen({ farbwelt: "studio", stand: 200, umstellung: 1 });
+    gleich(A.lesen().farbwelt, "studio", "neuere Wahl mit Merker gewinnt");
+});
+
+pruefe("aussehen-konto.js (v0.159.0): fehlt der Merker am Konto, EINMAL je Seitenaufruf schreiben", () => {
+    const SPIELER = require(pfad.join(projekt, "js", "spieler.js"));
+    const baue = (aussehenJe) => {
+        let geschrieben = 0;
+        const eintrag = { id: "i", name: "A", uid: "u", aussehenJe };
+        const umgebung = {
+            console, SPIELER,
+            ANMELDUNG: {
+                abgleich: { daten: { spieler: [eintrag] }, aendern: () => { geschrieben++; } },
+                ich: () => eintrag
+            },
+            UPCREW_AUSSEHEN: {
+                GETEILT: false,
+                uebernehmen: () => false,
+                kontoBraucht: (v) => !(v && v.umstellung >= 1),
+                fuerKonto: () => ({ darstellung: "geraet", farbwelt: "grau", schrift: "S1", knoepfe: "K1",
+                    leseschrift: false, stand: 3, umstellung: 1 })
+            },
+            module: { exports: {} }
+        };
+        vm.createContext(umgebung);
+        vm.runInContext(lesen("js/aussehen-konto.js"), umgebung);
+        return { K: umgebung.module.exports, zahl: () => geschrieben };
+    };
+    const ohne = baue({ blunderluck: { farbwelt: "gold", stand: 3 } });
+    ohne.K.vomKonto();
+    ohne.K.vomKonto();
+    gleich(ohne.zahl(), 1, "ohne Merker: genau einmal geschrieben");
+    const mit = baue({ blunderluck: { farbwelt: "grau", stand: 3, umstellung: 1 } });
+    mit.K.vomKonto();
+    gleich(mit.zahl(), 0, "mit Merker: nichts");
+});
 pruefe("Vorschläge an final liegen bei, byte-gleich mit dem, was Blunderluck nutzt", () => {
     for (const name of ["upcrew-aussehen.js", "upcrew-anpassen.js"]) {
         gleich(lesen("docs/bausteine/" + name), lesen("js/" + name), name);

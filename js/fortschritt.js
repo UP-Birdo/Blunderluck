@@ -789,6 +789,45 @@ const FORTSCHRITT = {
         return (zweig.turm && zweig.turm.figuren) ? zweig.turm.figuren : {};
     },
 
+    /* Die „betretenen" Stationen ohne Figuren (seit v0.160.0, js\turm.js:
+       Rast, Truhe, Händler, Fund) — `{ "<ort·100+nr>": 1 }`, leer ohne Turm. */
+    turmSchwuere(stand, app) {
+        const zweig = FORTSCHRITT.zweig(stand, app);
+        return (zweig.turm && FORTSCHRITT._istObjekt(zweig.turm.schwuere)) ? zweig.turm.schwuere : {};
+    },
+
+    /*
+     * EINE TURM-STATION OHNE PARTIE (seit v0.160.0): `schluessel` („<ort·100
+     * + nr>") wird auf 1 gesetzt (nur, wenn er fehlt), dazu wachsen Zähler um
+     * `plus` ({ muenzenVerdient: 20, tippGekauft: 1, … } — nur Namen aus
+     * Buchstaben, nur positive Zahlen; Regel §13 unverändert). Liefert einen
+     * NEUEN Stand.
+     */
+    turmStation(stand, schluessel, plus, zeitpunkt, app) {
+        const sauber = FORTSCHRITT.normalisieren(stand);
+        const name = app || FORTSCHRITT.APP;
+        const zweig = sauber.spiele[name] || FORTSCHRITT.spielLeer();
+        if (schluessel !== null && schluessel !== undefined && /^\d{1,3}$/.test(String(schluessel))) {
+            const turm = FORTSCHRITT._istObjekt(zweig.turm) ? zweig.turm : {};
+            const schwuere = Object.assign({}, FORTSCHRITT._istObjekt(turm.schwuere) ? turm.schwuere : {});
+            if (!(Number(schwuere[schluessel]) > 0)) {
+                schwuere[String(schluessel)] = 1;
+            }
+            zweig.turm = Object.assign({}, turm, { figuren: turm.figuren || {}, schwuere: schwuere });
+        }
+        const zaehler = FORTSCHRITT._zaehlerAnlegen(zweig);
+        for (const k of Object.keys(plus || {})) {
+            const wert = plus[k];
+            if (/^[a-zA-Z]{1,32}$/.test(k) && typeof wert === "number" && isFinite(wert) && wert > 0) {
+                zaehler[k] = Math.min((typeof zaehler[k] === "number" ? zaehler[k] : 0) + Math.floor(wert), 1000000000);
+            }
+        }
+        zweig.zaehler = zaehler;
+        zweig.stand = Math.max(zweig.stand + 1, zeitpunkt || 0);
+        sauber.spiele[name] = zweig;
+        return sauber;
+    },
+
     /* ---------------------------------------------------------------- *
      * Belohnungen je Level
      * ---------------------------------------------------------------- */

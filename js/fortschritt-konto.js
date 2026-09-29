@@ -227,6 +227,8 @@ const FORTSCHRITT_KONTO = {
         const xpNachher = FORTSCHRITT.gesamtXp(nachher);
         FORTSCHRITT_KONTO._ablegen(nachher);
         FORTSCHRITT_KONTO._muenzenMelden(muenzen);
+        /* Herzen und Rückfall des neuen Turms (seit v0.160.0, Gerät). */
+        FORTSCHRITT_KONTO._turmNachPartie(partie, team, vorher);
         const ergebnis = {
             xp: xpNachher - xpVorher,
             levelVorher: FORTSCHRITT.levelAus(xpVorher).level,
@@ -289,6 +291,147 @@ const FORTSCHRITT_KONTO = {
 
     turmOrt() {
         return (typeof TURM === "undefined") ? 1 : TURM.erreicht(FORTSCHRITT_KONTO.turmFiguren());
+    },
+
+    /* ---------------------------------------------------------------- *
+     * DER NEUE TURM (seit v0.160.0, js\turm.js): Seed, Lauf, Gerät
+     * ---------------------------------------------------------------- */
+
+    /* Herzen und „neu zu spielen" liegen NUR auf dem Gerät (Regel §13 hat
+       dafür kein Feld): { "<person>|<ort>|<durchgang>": { herzen, wieder,
+       geheilt } }. */
+    TURM_GERAET_SCHLUESSEL: "blunderluck.turm-lauf",
+    TURM_GERAET_MAX: 12,
+
+    /* Durchgang und Generator-Version aus den Zählern (fehlen sie: 1 und die
+       neueste Version — geschrieben beim ersten Schritt im Turm). */
+    _turmDurchgangAus(stand) {
+        const zweig = FORTSCHRITT.zweig(stand, FORTSCHRITT.APP);
+        const z = FORTSCHRITT._istObjekt(zweig.zaehler) ? zweig.zaehler : {};
+        const d = (Number.isInteger(z.turmDurchgang) && z.turmDurchgang > 0) ? z.turmDurchgang : 1;
+        const v = (typeof UPCREW_ZUFALL !== "undefined") ? UPCREW_ZUFALL.version(z.turmGenerator)
+            : (z.turmGenerator || 1);
+        return { durchgang: d, version: v, gemerkt: typeof z.turmDurchgang === "number" && typeof z.turmGenerator === "number" };
+    },
+
+    /* Beim ersten Schritt im neuen Turm: Durchgang und Version festhalten,
+       damit ein laufender Durchgang seine Version behält. */
+    turmDurchgangSichern() {
+        const d = FORTSCHRITT_KONTO._turmDurchgangAus(FORTSCHRITT_KONTO.lesen());
+        if (d.gemerkt) {
+            return 0;
+        }
+        return FORTSCHRITT_KONTO.zaehlerHeben({ turmDurchgang: d.durchgang, turmGenerator: d.version });
+    },
+
+    _turmGeraetAlle() {
+        try {
+            const roh = JSON.parse(window.localStorage.getItem(FORTSCHRITT_KONTO.TURM_GERAET_SCHLUESSEL) || "{}");
+            return FORTSCHRITT._istObjekt(roh) ? roh : {};
+        } catch (fehler) {
+            return {};
+        }
+    },
+
+    _turmGeraetName(nr, durchgang) {
+        return FORTSCHRITT_KONTO._person() + "|" + nr + "|" + durchgang;
+    },
+
+    turmGeraet(nr, durchgang) {
+        const g = FORTSCHRITT_KONTO._turmGeraetAlle()[FORTSCHRITT_KONTO._turmGeraetName(nr, durchgang)];
+        return FORTSCHRITT._istObjekt(g) ? g : {};
+    },
+
+    turmGeraetSetzen(nr, durchgang, geraet) {
+        try {
+            const alle = FORTSCHRITT_KONTO._turmGeraetAlle();
+            const name = FORTSCHRITT_KONTO._turmGeraetName(nr, durchgang);
+            delete alle[name];
+            alle[name] = {
+                herzen: geraet.herzen,
+                wieder: (geraet.wieder || []).slice(0, 60),
+                geheilt: (geraet.geheilt || []).slice(0, 60)
+            };
+            const namen = Object.keys(alle);
+            for (const alt of namen.slice(0, Math.max(0, namen.length - FORTSCHRITT_KONTO.TURM_GERAET_MAX))) {
+                delete alle[alt];
+            }
+            window.localStorage.setItem(FORTSCHRITT_KONTO.TURM_GERAET_SCHLUESSEL, JSON.stringify(alle));
+        } catch (fehler) {
+            /* ohne Gerätespeicher: Herzen gelten bis zum Neuladen nicht */
+        }
+    },
+
+    /* Alles, was `TURM.lauf` braucht — aus einem Stand (sonst dem geltenden). */
+    turmAngabe(nr, stand) {
+        const s = stand || FORTSCHRITT_KONTO.lesen();
+        const d = FORTSCHRITT_KONTO._turmDurchgangAus(s);
+        const g = FORTSCHRITT_KONTO.turmGeraet(nr, d.durchgang);
+        return {
+            figuren: FORTSCHRITT.turmFiguren(s),
+            schwuere: FORTSCHRITT.turmSchwuere(s),
+            spieler: FORTSCHRITT_KONTO._person(),
+            durchgang: d.durchgang,
+            version: d.version,
+            herzen: g.herzen,
+            wieder: g.wieder,
+            geheilt: g.geheilt
+        };
+    },
+
+    turmLauf(nr, stand) {
+        return (typeof TURM === "undefined") ? null : TURM.lauf(nr, FORTSCHRITT_KONTO.turmAngabe(nr, stand));
+    },
+
+    /*
+     * EINE STATION OHNE PARTIE (Rast, Truhe, Händler, Fund): „betreten"
+     * merken und Zähler wachsen lassen (Münzen, Waren). `plus` wie bei
+     * `FORTSCHRITT.turmStation`. Ausgaben stehen als `muenzenAusgegeben`
+     * darin; reicht der Kontostand nicht, passiert nichts (→ false).
+     */
+    turmStation(nr, knoten, plus) {
+        const vorher = FORTSCHRITT_KONTO.lesen();
+        const ausgabe = (plus && plus.muenzenAusgegeben) || 0;
+        if (ausgabe > 0 && typeof UPCREW_MUENZEN !== "undefined" && UPCREW_MUENZEN.saldo(vorher) < ausgabe) {
+            return false;
+        }
+        FORTSCHRITT_KONTO.turmDurchgangSichern();
+        const nachher = FORTSCHRITT.turmStation(FORTSCHRITT_KONTO.lesen(),
+            knoten ? TURM.stationsSchluessel(nr, knoten.nr) : null, plus || {}, Date.now());
+        FORTSCHRITT_KONTO._ablegen(nachher);
+        return true;
+    },
+
+    /* Was der Start nach einer Turm-Partie zeigen soll (einmal, dann null). */
+    turmMeldung: null,
+
+    /*
+     * NACH EINER TURM-PARTIE (neuer Turm): Herzen und Rückfall auf dem
+     * Gerät. Gerechnet auf dem Stand VOR der Partie (so steht der Weg noch
+     * dort, wo sie begann). Remis kostet nichts.
+     */
+    _turmNachPartie(partie, team, vorher) {
+        const angabe = partie.regeln && partie.regeln.turm;
+        if (typeof TURM === "undefined" || !angabe || angabe.stufe < TURM.NR_AB || !TURM.ort(angabe.ort)) {
+            return;
+        }
+        const nr = angabe.ort;
+        const lauf = FORTSCHRITT_KONTO.turmLauf(nr, vorher);
+        const k = lauf && lauf.plan.knotenMitNr(angabe.stufe);
+        if (!k) {
+            return;
+        }
+        const d = FORTSCHRITT_KONTO._turmDurchgangAus(vorher);
+        const geraet = FORTSCHRITT_KONTO.turmGeraet(nr, d.durchgang);
+        if (partie.ergebnis === team) {
+            FORTSCHRITT_KONTO.turmGeraetSetzen(nr, d.durchgang, TURM.nachSieg(lauf, k.id, geraet));
+            FORTSCHRITT_KONTO.turmMeldung = { art: "sieg", ort: nr, id: k.id };
+        } else if (partie.ergebnis !== "remis") {
+            const r = TURM.nachNiederlage(lauf, k.id, geraet);
+            FORTSCHRITT_KONTO.turmGeraetSetzen(nr, d.durchgang, r.geraet);
+            FORTSCHRITT_KONTO.turmMeldung = { art: r.rueckfall ? "rueckfall" : "verloren", ort: nr, id: k.id,
+                minus: r.minus, herzen: r.geraet.herzen, rueckfall: r.rueckfall };
+        }
     },
 
     /* Heute (seit v0.149.0): das Datum des Geräts, die Tagesaufgabe je
