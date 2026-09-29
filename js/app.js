@@ -508,10 +508,12 @@ const APP = {
         /* SEIT v0.156.0 (Nutzer 28.09.2026: „in beiden spielen shop nach
            ganz links dann sammlung start herausforderung und dann ganz
            rechts rangliste"): Shop · Sammlung · Start · Aufgaben ·
-           Rangliste — das Wischen folgt derselben Reihenfolge. Alles
-           ausser Start und Partie öffnet als Blatt über dem Start
-           (`alsBlatt`, js\tabs.js + js\upcrew-blatt.js). */
-        for (const tab of [SHOP, SAMMLUNG, HERAUSFORDERUNGEN, RANGLISTE, EINSTELLUNGEN, VERWALTUNGS_BILDSCHIRM]) {
+           Rangliste — das Wischen folgt derselben Reihenfolge.
+           SEIT v0.156.1 (Nutzer 29.09.2026, final\EINBAU-2026-09-29.md):
+           Leisten-Tabs sind wieder SEITEN; als Blatt öffnen nur Bereiche
+           OHNE Leisten-Knopf (Einstellungen, Verwaltung; Profil, Freunde,
+           Verlauf und die Serien-Karte öffnet start.js selbst). */
+        for (const tab of [EINSTELLUNGEN, VERWALTUNGS_BILDSCHIRM]) {
             tab.alsBlatt = true;
         }
         if (typeof UPCREW_BLATT !== "undefined") {
@@ -581,29 +583,7 @@ const APP = {
                 sperren: ".vorschau, .brett, .bild-leiste, .karten-leiste",
                 bewegen: () => TABS.inhaltEl.querySelector(".tab-bereich:not([hidden])")
             });
-            /* Seit v0.156.0 auch auf den Blättern (Shop, Sammlung, Aufgaben,
-               Rangliste liegen als Blatt über dem Start): dieselbe
-               Reihenfolge, bewegt wird das oberste Blatt. */
-            const ebenen = document.getElementById("ebenen");
-            if (ebenen) {
-                UPCREW_WISCHEN.an(ebenen, {
-                    tabs: () => TABS.liste.filter((tab) => tab.inLeiste !== false)
-                        .map((tab) => (tab.platzhalter ? { id: tab.id, still: true } : tab.id)),
-                    aktiv: () => TABS.aktiveId,
-                    wechseln: (id) => TABS.wechseln(id),
-                    erlaubt: () => !document.body.classList.contains("partie-spielt")
-                        && !(typeof ANMELDUNG !== "undefined" && ANMELDUNG.anmeldenLaeuft),
-                    sperren: ".vorschau, .brett, .bild-leiste, .karten-leiste",
-                    bewegen: () => {
-                        const oben = (typeof UPCREW_BLATT !== "undefined") ? UPCREW_BLATT.oben() : null;
-                        /* Nach dem Wisch zum Start ist kein Blatt mehr da: dann
-                           gleitet der Start herein (nie #ebenen selbst — ein
-                           verschobener Halter verschöbe alle festen Blätter). */
-                        return oben ? oben.flaeche
-                            : TABS.inhaltEl.querySelector(".tab-bereich:not([hidden])");
-                    }
-                });
-            }
+            /* Seit v0.156.1 nicht mehr auf #ebenen: ein Blatt ist kein Tab. */
         }
 
         /* Den Wunsch-Knopf hängt seit v0.25.0 die Karte „Über die App" in

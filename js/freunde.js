@@ -286,6 +286,11 @@ const FREUNDE = {
         if (typeof START !== "undefined" && START.freundeOffen) {
             START._zeichnen();
         }
+        /* Seit v0.156.1 wohnt die Karte im Reiter „Freunde" der Rangliste. */
+        if (typeof RANGLISTE !== "undefined" && RANGLISTE.ansicht === "freunde"
+                && typeof TABS !== "undefined" && TABS.aktiveId === "rangliste") {
+            RANGLISTE.zeichnen();
+        }
         if (typeof TEAM_SCHACH !== "undefined" && TEAM_SCHACH.abgleich) {
             TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
         }

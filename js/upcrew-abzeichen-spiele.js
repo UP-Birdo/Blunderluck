@@ -13,7 +13,7 @@
  *   stufen   wie die gemeinsamen; `weiter: 0` = keine weiteren Stufen.
  *
  * Blunderluck: die 14 Abzeichen aus der Chronik (js\rangliste.js `ABZEICHEN`), je einmalig.
- * Typoluck: trägt seine Abzeichen hier ein (die Liste bleibt bis dahin leer).
+ * Typoluck: sechs einmalige (Kennung „tl-…“, Zähler „az…“), eingetragen in Typoluck 0.25.0.
  */
 (function () {
     "use strict";
@@ -65,7 +65,28 @@
             pfad: "M4 18 L3 7 L8 11 L12 5 L16 11 L21 7 L20 18 Z" }
     ].map((e) => Object.assign({ stufen: [1], weiter: 0, einheit: "verdient" }, e));
 
-    const TYPOLUCK = [];
+    /* Typoluck (Vorschlag Typoluck 0.25.0): sechs einmalige, gerechnet in Typolucks js\fortschritt.js
+       (`FORTSCHRITT.tlAbzeichenFelder`) aus dem eigenen Zweig — Taten der Runde und die Bibliothek. */
+    const TYPOLUCK = [
+        { kennung: "tl-zwei-versuche", titel: "Blitzmerker", kurz: "≤ 2", feld: "azZweiVersuche",
+            text: "Ein Tageswort in höchstens zwei Versuchen gelöst.",
+            pfad: "M13 2 L5 14 H11 L10 22 L19 9 H13 Z" },
+        { kennung: "tl-schwer", titel: "Schwer-Profi", kurz: "Schwer", feld: "azSchwer",
+            text: "Ein Wort im Schwer-Modus gelöst.",
+            pfad: "M12 3 L19 6 V11 C19 16 16 19 12 21 C8 19 5 16 5 11 V6 Z M9 12 L11 14 L15 10" },
+        { kennung: "tl-koennen", titel: "Wortkönner", kurz: "90 %", feld: "azKoennen",
+            text: "90 % Können in einer gelösten Runde.",
+            pfad: "M4 18 L9 11 L13 14 L20 6 M15 6 H20 V11" },
+        { kennung: "tl-perfekt", titel: "Perfekt", kurz: "100 %", feld: "azPerfekt",
+            text: "100 % Können in einer gelösten Runde.",
+            pfad: "M12 3 L14.6 8.6 L20.5 9.3 L16 13.3 L17.3 19.2 L12 16.2 L6.7 19.2 L8 13.3 L3.5 9.3 L9.4 8.6 Z" },
+        { kennung: "tl-erstes-buch", titel: "Erstes Buch", kurz: "Buch", feld: "azErstesBuch",
+            text: "Das erste Buch der Bibliothek geschafft.",
+            pfad: "M4 5 C7 4 10 4 12 6 C14 4 17 4 20 5 V19 C17 18 14 18 12 20 C10 18 7 18 4 19 Z M12 6 V20" },
+        { kennung: "tl-buecherwurm", titel: "Bücherwurm", kurz: "Alle", feld: "azBuecherwurm",
+            text: "Alle Bücher der Bibliothek geschafft.",
+            pfad: "M5 4 H9 V20 H5 Z M10 4 H14 V20 H10 Z M15 5 L19 4 L21 19 L17 20 Z" }
+    ].map((e) => Object.assign({ stufen: [1], weiter: 0, einheit: "verdient" }, e));
 
     const UPCREW_ABZEICHEN_SPIELE = {
         blunderluck: { marke: "BL", name: "Blunderluck", abzeichen: BLUNDERLUCK },

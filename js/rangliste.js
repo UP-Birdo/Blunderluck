@@ -300,16 +300,61 @@ const RANGLISTE = {
         RANGLISTE.zeichnen();
     },
 
-    /* Seit v0.156.0: Kam man aus dem Profil-Blatt („Statistik und Partien",
-       js\profil.js), ist das ausführliche Profil beim Verlassen erledigt —
-       die Rangliste beginnt beim nächsten Mal wieder mit der Wertung. */
-    _blattZurueck: false,
-
+    /* Seit v0.156.1 ist die Rangliste wieder eine SEITE: „Statistik und
+       Partien" im Profil-Blatt (js\profil.js) wechselt hierher mit dem
+       Rückweg „profil". Wer die Seite verlässt, hat das ausführliche
+       Profil erledigt — die Rangliste beginnt beim nächsten Mal wieder mit
+       der Wertung. */
     beimVerlassen() {
-        if (RANGLISTE._blattZurueck) {
-            RANGLISTE._blattZurueck = false;
+        if (RANGLISTE.profilRueckweg === "profil") {
+            RANGLISTE.profilRueckweg = "";
             RANGLISTE.offenesProfil = "";
         }
+    },
+
+    /*
+     * DIE REITER DER RANGLISTE (seit v0.156.1, Nutzer 29.09.2026: Freunde
+     * als eigener Reiter in der Rangliste, das Menüband oben rechts ist
+     * weg): „Wertung" (die Gesamtwertung wie bisher) und „Freunde" (die
+     * Freundesliste, `FREUNDE.karteBauen`). Reines Anzeige-Gedächtnis.
+     */
+    ansicht: "wertung",
+
+    ANSICHTEN: [
+        { id: "wertung", titel: "Wertung" },
+        { id: "freunde", titel: "Freunde" }
+    ],
+
+    ansichtSetzen(id) {
+        RANGLISTE.ansicht = (id === "freunde") ? "freunde" : "wertung";
+        RANGLISTE.zeichnen();
+    },
+
+    /* Die Freunde öffnen (von überall): Rangliste-Seite, Reiter „Freunde". */
+    freundeOeffnen() {
+        RANGLISTE.ansicht = "freunde";
+        RANGLISTE.offenesProfil = "";
+        RANGLISTE.profilRueckweg = "";
+        if (typeof TABS !== "undefined" && TABS.aktiveId !== "rangliste") {
+            TABS.wechseln("rangliste");
+        }
+        RANGLISTE.zeichnen();
+    },
+
+    _ansichtReiterBauen() {
+        const leiste = RANGLISTE._element("div", "profil-reiter rangliste-reiter");
+        leiste.setAttribute("role", "tablist");
+        for (const reiter of RANGLISTE.ANSICHTEN) {
+            const aktiv = (reiter.id === RANGLISTE.ansicht);
+            const knopf = RANGLISTE._knopf(reiter.titel,
+                "profil-reiter-knopf" + (aktiv ? " profil-reiter-aktiv" : ""),
+                () => RANGLISTE.ansichtSetzen(reiter.id));
+            knopf.setAttribute("role", "tab");
+            knopf.setAttribute("aria-selected", aktiv ? "true" : "false");
+            knopf.dataset.reiter = reiter.id;
+            leiste.appendChild(knopf);
+        }
+        return leiste;
     },
 
     /* Die Stände an einem Ort — beide Ansichten brauchen sie. */
@@ -345,6 +390,15 @@ const RANGLISTE = {
                 return;
             }
             RANGLISTE.offenesProfil = "";
+        }
+
+        wurzel.appendChild(RANGLISTE._ansichtReiterBauen());
+        if (RANGLISTE.ansicht === "freunde") {
+            const ich = ICH.person();
+            wurzel.appendChild(ich && typeof FREUNDE !== "undefined"
+                ? FREUNDE.karteBauen(ich)
+                : ZUSTAND.leer({ zeichen: "menschen", text: "Nicht angemeldet" }));
+            return;
         }
 
         const bereich = RANGLISTE._element("section", "karte karte-ergebnis");
@@ -510,11 +564,10 @@ const RANGLISTE = {
         RANGLISTE.offenesProfil = "";
         RANGLISTE.profilRueckweg = "";
 
-        /* Aus dem Profil-Blatt gekommen (seit v0.156.0): „Zurück" legt das
-           Rangliste-Blatt weg, darunter liegt wieder das Profil. */
-        if (RANGLISTE._blattZurueck && typeof UPCREW_BLATT !== "undefined") {
-            RANGLISTE._blattZurueck = false;
-            UPCREW_BLATT.schliessen("knopf");
+        /* Aus dem Profil-Blatt gekommen (seit v0.156.1 als Seitenwechsel):
+           „Zurück" öffnet das Profil-Blatt wieder (über dem Start). */
+        if (rueckweg === "profil" && typeof PROFIL !== "undefined") {
+            PROFIL.oeffnen();
             return;
         }
 
@@ -525,7 +578,7 @@ const RANGLISTE = {
         RANGLISTE.zeichnen();
     },
 
-    /* Das eigene Profil — aus dem Menüband und den Einstellungen. */
+    /* Das eigene Profil — aus dem Profil-Blatt und den Einstellungen. */
     eigenesProfilOeffnen(rueckweg) {
         const ich = ICH.person();
         if (!ich) {

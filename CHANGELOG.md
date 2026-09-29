@@ -3,6 +3,24 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.156.1 — 29.09.2026
+
+**Shop, Sammlung, Aufgaben und Rangliste sind wieder ganze Seiten.**
+
+- Die vier Bereiche der Leiste öffnen wieder als eigene Seite, Wischen
+  wechselt zwischen ihnen wie früher. Als Blatt über dem Start öffnen nur
+  noch Profil, Einstellungen, Verwaltung, Serie und Verlauf.
+- **Behoben:** Beim Rollen hinter einem offenen Blatt schienen oben die
+  Menüs durch. Jetzt steht die Seite still, solange ein Blatt offen ist.
+- **Das Menü oben rechts ist weg.** Profil: dein Bild oben links. Einstellungen:
+  das Zahnrad im Profil. Freunde: eigener Reiter in der Rangliste. Verlauf:
+  im Profil unter „Statistik und Partien". Schach lernen: in den
+  Einstellungen unter „Nur in Blunderluck".
+- „Statistik und Partien" im Profil führt auf die Rangliste-Seite, „Schild
+  kaufen" in der Serie auf die Shop-Seite.
+- Die sechs Abzeichen aus Typoluck stehen jetzt mit in der gemeinsamen
+  Abzeichen-Liste (`js\upcrew-abzeichen-spiele.js`, = final).
+
 ## v0.156.0 — 29.09.2026
 
 **Keine Vollbild-Menüs mehr: alles öffnet über dem Start.**

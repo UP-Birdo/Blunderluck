@@ -34,8 +34,6 @@ const HERAUSFORDERUNGEN = {
     id: "herausforderungen",
     titel: "Heute",
     leisteText: "Aufgaben",
-    /* Als Blatt (seit v0.156.0) wie im Entwurf Oberfläche Runde 7. */
-    blattTitel: "Aufgaben · Heute",
     zeichen: "aufgaben",
 
     wurzelEl: null,

@@ -194,26 +194,33 @@ const PROFIL = {
         knopf.textContent = "Statistik und Partien";
         knopf.addEventListener("click", () => PROFIL.statistikOeffnen());
         statistik.appendChild(knopf);
+        const verlauf = document.createElement("button");
+        verlauf.type = "button";
+        verlauf.className = "knopf knopf-still profil-verlauf-knopf";
+        verlauf.textContent = "Verlauf";
+        verlauf.title = "Vergangene Matches";
+        verlauf.addEventListener("click", () => PROFIL.verlaufOeffnen());
+        statistik.appendChild(verlauf);
         UPCREW_PROFIL.zeichnen(eintrag.inhalt, PROFIL.daten(), {
             beiAbzeichen: () => PROFIL.abzeichenWahlOeffnen(),
             zusatz: [statistik]
         });
     },
 
-    /* Das ausführliche Profil (Statistik, Abzeichen der Chronik, Partien) als Rangliste-Blatt DARÜBER; sein
-       „Zurück“ führt wieder hierher (RANGLISTE.profilSchliessen, `_blattZurueck`). */
+    /* Das ausführliche Profil (Statistik, Abzeichen der Chronik, Partien): seit v0.156.1 ein SEITENWECHSEL auf
+       die Rangliste (Leisten-Tabs sind Seiten, final\EINBAU-2026-09-29.md); „Zurück“ dort öffnet dieses Blatt wieder. */
     statistikOeffnen() {
-        const ich = ICH.person();
-        if (!ich) {
+        if (!ICH.person()) {
             return;
         }
-        RANGLISTE.offenesProfil = ich.id;
-        RANGLISTE.profilReiter = "statistik";
-        RANGLISTE.profilAllePartien = false;
-        RANGLISTE.profilRueckweg = "";
-        RANGLISTE._blattZurueck = true;
-        TABS.blattOeffnen("rangliste");
-        RANGLISTE.zeichnen();
+        RANGLISTE.eigenesProfilOeffnen("profil");
+    },
+
+    /* „Verlauf“ (Vergangene Matches, seit v0.156.1 hier statt im Menüband): als Blatt über dem Profil. */
+    verlaufOeffnen() {
+        if (typeof START !== "undefined" && typeof START.verlaufOeffnen === "function") {
+            START.verlaufOeffnen();
+        }
     },
 
     /* Die Auswahl als zweites Blatt: jede Änderung geht gleich ans Konto (mit Zusammenführung). */

@@ -203,8 +203,11 @@ const TABS = {
      * im Hintergrund noch das Hauptmenü zeigt"; gemeinsamer Baustein
      * js\upcrew-blatt.js).
      *
-     * Ein Tab mit `alsBlatt: true` (Shop, Sammlung, Aufgaben, Rangliste,
-     * Einstellungen, Verwaltung) öffnet als BLATT über dem Start: Der Start
+     * SEIT v0.156.1 (Nutzer 29.09.2026, final\EINBAU-2026-09-29.md): Die
+     * Leisten-Tabs sind wieder SEITEN; `alsBlatt` tragen nur noch Tabs ohne
+     * Leisten-Knopf (Einstellungen, Verwaltung).
+     *
+     * Ein Tab mit `alsBlatt: true` öffnet als BLATT über dem Start: Der Start
      * bleibt sichtbar dahinter (leicht zurückgesetzt), der Bereich des Tabs
      * wandert in das Blatt. Ein Tipp in der Leiste ersetzt das Blatt, „Start"
      * schliesst alles; `blattOeffnen(id)` legt eines DARÜBER (Profil →
@@ -469,6 +472,13 @@ const TABS = {
            beim ersten Öffnen. Siehe Erklärung im Kopf dieser Datei. */
         if (typeof tab.beimOeffnen === "function") {
             tab.beimOeffnen();
+        }
+
+        /* Eine Leisten-Seite beginnt oben (seit v0.156.1, wie Typoluck
+           navigation.js) — sonst stünde sie auf der Rollhöhe der vorigen. */
+        if (tab.inLeiste !== false && typeof window !== "undefined"
+                && typeof window.scrollTo === "function") {
+            window.scrollTo(0, 0);
         }
     }
 };

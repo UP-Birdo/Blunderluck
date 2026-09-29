@@ -15,6 +15,19 @@
  * Schliessen: ✕ / Zurück, Tipp auf den abgedunkelten Grund, Esc. Die Leiste der App liegt ÜBER den Blättern und bleibt
  * bedienbar (z-index der App höher als `--up-bl-ebene`).
  *
+ * SEITE ODER BLATT (Nutzer 29.09.2026, gilt ab Blunderluck v0.157 / Typoluck 0.25): Was IN DER LEISTE steht (Shop,
+ * Sammlung, Start, Aufgaben/Herausforderungen, Rangliste), ist eine normale SEITE im Hauptelement — nie ein Blatt.
+ * Blätter und Karten NUR für Bereiche ohne Leisten-Knopf: Profil, Einstellungen, Verwaltung, Serien-Karte, Freunde,
+ * Verlauf (und kleine Hinweise/Käufe als Karte). Ein Tipp in der Leiste schliesst alle Blätter
+ * (`UPCREW_BLATT.alleSchliessen()`) und zeigt die Seite; die App ruft das in ihrem Tab-Wechsel.
+ *
+ * DIE SEITE STEHT STILL, solange etwas offen ist (29.09.2026, Nutzer: „wenn man scrollt kommt oben wieder die menüs
+ * sichtbar“): `html.up-bl-offen` + `body.up-bl-offen` halten das Dokument fest (overflow hidden, kein Überrollen);
+ * rollen kann nur der Inhalt des obersten Blatts, ohne Kette auf die Seite. Beim ersten Blatt rollt die Seite dahinter
+ * nach OBEN (in der Lücke über dem Blatt steht so immer der Kopf der Seite, nicht irgendein Teil aus ihrer Mitte), beim
+ * letzten Schliessen kommt die alte Rollposition zurück. Eine Karte allein lässt die Position stehen.
+ * Bis 29.09. setzte der Baustein nur `body.up-bl-offen`, ohne eine Regel dazu — die Seite rollte hinter dem Blatt mit.
+ *
  * Aufruf:
  *   UPCREW_BLATT.einrichten({ ebenen: <div>, haupt: <main> });     // einmal
  *   const b = UPCREW_BLATT.oeffnen({
@@ -40,6 +53,7 @@
     };
 
     const stapel = [];
+    let gemerktY = null;
     let ebenenEl = null;
     let hauptEl = null;
     let horcht = false;
@@ -84,8 +98,38 @@
         if (hauptEl && hauptEl.classList) {
             hauptEl.classList.toggle("up-bl-dahinter", an);
         }
-        if (typeof document !== "undefined" && document.body && document.body.classList) {
-            document.body.classList.toggle("up-bl-offen", stapel.length > 0);
+        seiteHalten(stapel.length > 0, blaetter() > 0);
+    }
+
+    function rollen(y) {
+        if (typeof window !== "undefined" && typeof window.scrollTo === "function") {
+            try {
+                window.scrollTo({ top: y, left: 0, behavior: "instant" });
+            } catch (fehler) {
+                window.scrollTo(0, y);
+            }
+        }
+    }
+
+    /* Die Seite hinter Blättern und Karten festhalten (siehe Kopf „DIE SEITE STEHT STILL“). */
+    function seiteHalten(an, nachOben) {
+        if (typeof document === "undefined" || !document.documentElement || !document.body) {
+            return;
+        }
+        const wurzel = document.documentElement;
+        const war = wurzel.classList.contains("up-bl-offen");
+        const y = (typeof window !== "undefined" && window.scrollY) || 0;
+        if (an && !war) {
+            gemerktY = y;
+        }
+        if (an && nachOben && y !== 0) {
+            rollen(0);
+        }
+        wurzel.classList.toggle("up-bl-offen", an);
+        document.body.classList.toggle("up-bl-offen", an);
+        if (!an && war && gemerktY !== null) {
+            rollen(gemerktY);
+            gemerktY = null;
         }
     }
 

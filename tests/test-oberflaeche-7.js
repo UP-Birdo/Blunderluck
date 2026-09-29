@@ -176,6 +176,7 @@ function neueWelt(zusatz) {
     const dokHoerer = {};
     const dokument = {
         body: koerper,
+        documentElement: neuesElement("html"),
         createElement: neuesElement,
         createElementNS: (ns, t) => neuesElement(t),
         createTextNode: textNode,
@@ -225,6 +226,7 @@ pruefe("Blatt: öffnen, stapeln, Zurück/✕, Karte über allem, Esc", () => {
     const eins = B.oeffnen({ titel: "Profil", inhalt: inhalt, beimSchliessen: (wie) => zu.push("profil:" + wie) });
     wahr(haupt.classList.contains("up-bl-dahinter"), "der Start rückt nach hinten");
     wahr(w.document.body.classList.contains("up-bl-offen"), "body weiss, dass etwas offen ist");
+    wahr(w.document.documentElement.classList.contains("up-bl-offen"), "html auch — die Seite dahinter steht still (v0.156.1)");
     gleich(eins.flaeche.getAttribute("aria-modal"), null, "ein Blatt ist nicht modal (Leiste und Wischen bleiben)");
     wahr(!!sucheText(eins.el, "Schließen"), "das erste Blatt hat ein ✕");
     wahr(!sucheText(eins.el, "Zurück"), "… und keinen Zurück-Pfeil");
@@ -252,6 +254,7 @@ pruefe("Blatt: öffnen, stapeln, Zurück/✕, Karte über allem, Esc", () => {
     wahr(!haupt.classList.contains("up-bl-dahinter"), "der Start ist wieder vorn");
     dasselbe(inhalt.parentNode, null, "das Element ist nur abgehängt");
     gleich(ebenen.kinder.length, 0, "keine Ebene bleibt liegen");
+    wahr(!w.document.documentElement.classList.contains("up-bl-offen"), "die Seite rollt wieder");
 
     B.oeffnen({ titel: "a" });
     B.oeffnen({ titel: "b" });
@@ -264,7 +267,8 @@ pruefe("Blatt: öffnen, stapeln, Zurück/✕, Karte über allem, Esc", () => {
  * ------------------------------------------------------------------ */
 
 function tabsWelt() {
-    const w = neueWelt();
+    const gerollt = [];
+    const w = neueWelt({ scrollTo: (x, y) => gerollt.push(typeof x === "object" ? x.top : y) });
     laden(w, ["js/upcrew-blatt.js", "js/tabs.js"], ["TABS"]);
     const T = w.TABS;
     const leiste = neuesElement("nav");
@@ -278,37 +282,42 @@ function tabsWelt() {
         beimOeffnen() { log.push("offen:" + id); },
         beimVerlassen() { log.push("weg:" + id); }
     }, extra || {});
-    for (const t of [tab("shop", { alsBlatt: true }), tab("sammlung", { alsBlatt: true }), tab("start"),
-        tab("herausforderungen", { alsBlatt: true }), tab("rangliste", { alsBlatt: true }),
+    for (const t of [tab("shop"), tab("sammlung"), tab("start"),
+        tab("herausforderungen"), tab("rangliste"),
         tab("team-schach", { inLeiste: false }), tab("einstellungen", { inLeiste: false, alsBlatt: true }),
         tab("verwaltung", { inLeiste: false, alsBlatt: true })]) {
         T.registrieren(t);
     }
     T.starten(leiste, inhalt, "start");
-    return { w, T, leiste, inhalt, ebenen, log, B: w.UPCREW_BLATT };
+    return { w, T, leiste, inhalt, ebenen, log, gerollt, B: w.UPCREW_BLATT };
 }
 
 const markiert = (leiste) => leiste.kinder.filter((k) => k.getAttribute("aria-current") === "page")
     .map((k) => k.dataset.tabId);
 
-pruefe("Tabs: Leisten-Tabs als Blatt über dem Start, einander ersetzend", () => {
-    const { T, leiste, inhalt, B, log } = tabsWelt();
+pruefe("Tabs: Leisten-Tabs sind Seiten (v0.156.1), ein Wechsel schliesst Blätter und rollt nach oben", () => {
+    const { T, leiste, inhalt, B, gerollt } = tabsWelt();
     gleich(leiste.kinder.map((k) => k.dataset.tabId), ["shop", "sammlung", "start", "herausforderungen", "rangliste"],
         "Leiste: Shop · Sammlung · Start · Aufgaben · Rangliste");
+    gerollt.length = 0;
     T.wechseln("shop");
     gleich(T.aktiveId, "shop", "Shop ist aktiv");
-    gleich(B.blaetter(), 1, "als Blatt");
+    gleich(B.anzahl(), 0, "kein Blatt");
     gleich(markiert(leiste), ["shop"], "Leiste markiert den Shop");
-    const start = inhalt.kinder.find((k) => k.dataset.tabId === "start");
-    wahr(start && !start.hidden, "der Start bleibt sichtbar dahinter");
-    wahr(!inhalt.kinder.some((k) => k.dataset.tabId === "shop"), "der Shop-Bereich liegt nicht im Hauptteil");
-    T.wechseln("rangliste");
-    gleich(B.blaetter(), 1, "Rangliste ersetzt den Shop");
-    wahr(log.indexOf("weg:shop") !== -1, "der Shop räumt auf");
-    gleich(markiert(leiste), ["rangliste"], "Leiste folgt");
+    const shop = inhalt.kinder.find((k) => k.dataset.tabId === "shop");
+    wahr(shop && !shop.hidden, "der Shop ist eine Seite im Hauptteil");
+    gleich(gerollt, [0], "die Seite beginnt oben");
+    /* Aus einem Blatt (Profil → Einstellungen) auf eine Leisten-Seite. */
     T.wechseln("start");
-    gleich(B.anzahl(), 0, "Start schliesst alles");
-    gleich(T.aktiveId, "start", "Start aktiv");
+    B.oeffnen({ titel: "Profil" });
+    T.wechseln("einstellungen");
+    gleich(B.blaetter(), 2, "Einstellungen über dem Profil");
+    T.wechseln("rangliste");
+    gleich(B.anzahl(), 0, "ein Leisten-Wechsel schliesst alle Blätter");
+    gleich(T.aktiveId, "rangliste", "Rangliste aktiv");
+    gleich(markiert(leiste), ["rangliste"], "Leiste folgt");
+    const rl = inhalt.kinder.find((k) => k.dataset.tabId === "rangliste");
+    wahr(rl && !rl.hidden, "die Rangliste ist eine Seite");
 });
 
 pruefe("Tabs: Einstellungen → Verwaltung stapeln, Verwaltung beenden legt nur sie weg", () => {
@@ -337,7 +346,7 @@ pruefe("Tabs: die Partie ist ein eigener Bildschirm und schliesst alle Blätter"
     gleich(B.anzahl(), 0, "keine Blätter über der Partie");
     const partie = inhalt.kinder.find((k) => k.dataset.tabId === "team-schach");
     wahr(partie && !partie.hidden, "die Partie ist sichtbar");
-    T.wechseln("herausforderungen");
+    T.wechseln("einstellungen");
     gleich(B.blaetter(), 1, "aus der Partie ein Blatt …");
     const start = inhalt.kinder.find((k) => k.dataset.tabId === "start");
     wahr(!start.hidden && partie.hidden, "… über dem Start, nicht über der Partie");
@@ -397,7 +406,9 @@ pruefe("Abzeichen: gemeinsame + Spiele, einmalige, ausrüsten nur verdiente (hö
     const stand = { spiele: { blunderluck: { partien: 12, zaehler: { azErsterSieg: 1, azLegende: 0 } },
         typoluck: { partien: 3 } } };
     const alle = A.alle(stand, 0);
-    gleich(alle.length, 5 + 14, "fünf gemeinsame + 14");
+    /* Seit v0.156.1 stehen die sechs Typoluck-Abzeichen (TL 0.25.0) mit im Baustein. */
+    gleich(w.UPCREW_ABZEICHEN_SPIELE.typoluck.abzeichen.length, 6, "6 Typoluck-Abzeichen");
+    gleich(alle.length, 5 + 14 + 6, "fünf gemeinsame + 14 + 6");
     const partien = alle.find((e) => e.kennung === "up-partien");
     gleich([partien.marke, partien.wert, partien.erreicht], ["UP", 15, 1], "gemeinsam über beide Spiele (12 + 3)");
     const sieg = alle.find((e) => e.kennung === "bl-erster-sieg");
@@ -547,13 +558,17 @@ pruefe("Einbindung: neue Dateien in index.html und offline in sw.js, Halter #ebe
     wahr(links.indexOf("stil-blatt.css") === links.length - 1, "stil-blatt.css lädt zuletzt");
 });
 
-pruefe("Einbindung: sechs Tabs als Blatt, die Partie nicht; Wischen auch auf den Blättern", () => {
+pruefe("Einbindung: nur Einstellungen und Verwaltung als Blatt, Wischen nur auf den Seiten (v0.156.1)", () => {
     const app = lesen("js/app.js");
     const zeile = app.match(/for \(const tab of \[([A-Z_, ]+)\]\) \{\s*tab\.alsBlatt = true;/);
     wahr(!!zeile, "Schleife alsBlatt");
-    gleich(zeile[1].split(/,\s*/), ["SHOP", "SAMMLUNG", "HERAUSFORDERUNGEN", "RANGLISTE", "EINSTELLUNGEN",
-        "VERWALTUNGS_BILDSCHIRM"], "Blätter");
-    wahr(/UPCREW_WISCHEN\.an\(ebenen,/.test(app), "Wischen auf #ebenen");
+    gleich(zeile[1].split(/,\s*/), ["EINSTELLUNGEN", "VERWALTUNGS_BILDSCHIRM"], "Blätter");
+    wahr(!/UPCREW_WISCHEN\.an\(ebenen,/.test(app), "kein Wischen auf #ebenen (ein Blatt ist kein Tab)");
+    wahr(/UPCREW_WISCHEN\.an\(TABS\.inhaltEl,/.test(app), "Wischen auf den Seiten");
+    const tabs = lesen("js/tabs.js");
+    wahr(/window\.scrollTo\(0, 0\)/.test(tabs), "Leisten-Seite beginnt oben");
+    const blatt = lesen("css/upcrew-blatt.css");
+    wahr(/html\.up-bl-offen/.test(blatt), "die Seite hinter Blättern ist gesperrt (Baustein aus final)");
 });
 
 pruefe("Kopf: Serie in der Kapsel, nicht mehr in den Herausforderungen; Profil als Blatt", () => {
@@ -562,7 +577,10 @@ pruefe("Kopf: Serie in der Kapsel, nicht mehr in den Herausforderungen; Profil a
     const start = lesen("js/start.js");
     wahr(/UPCREW_SERIE\.kapsel\(/.test(start), "Kapsel im Kopf");
     wahr(/TABS\.wechseln\("shop"\)/.test(start), "Schild kaufen → Shop");
-    wahr((start.match(/START\.profilOeffnen\(\)/g) || []).length >= 2, "Kurzprofil und Menü öffnen das Profil-Blatt");
+    wahr((start.match(/START\.profilOeffnen\(\)/g) || []).length >= 1, "das Kurzprofil öffnet das Profil-Blatt");
+    wahr(start.indexOf("_menuebandBauen") === -1 && start.indexOf("start-menue") === -1, "kein Menüband mehr (v0.156.1)");
+    wahr(!/blattOeffnen\("(shop|sammlung|herausforderungen|rangliste)"\)/.test(start + lesen("js/profil.js") + lesen("js/rangliste.js")),
+        "keine Leisten-Bereiche als Blatt");
     wahr(/@media \(max-width: 379px\)[\s\S]{0,80}\.start-profil-text[\s\S]{0,40}display: none/.test(lesen("css/stil-blatt.css")),
         "unter 380 px nur der Ring");
     const profil = lesen("js/profil.js");

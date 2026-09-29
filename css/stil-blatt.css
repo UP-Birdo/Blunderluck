@@ -12,24 +12,15 @@
     --up-bl-ebene: 40;
 }
 
-/* In einem Blatt gibt es keinen iPhone-Balken über dem Inhalt: Klebendes (Kopfzeilen, die Vorschau der Sammlung)
-   klebt bündig an der Oberkante des Blatts, der Übernehmen-Balken der Sammlung unten am Blatt. */
+/* In einem Blatt gibt es keinen iPhone-Balken über dem Inhalt: Klebendes klebt bündig an der Oberkante des Blatts. */
 .up-bl-inhalt {
     --oben-frei: 0px;
-    --up-sm-leiste: 0px;
-    --up-sm-rand: 12px;
 }
 
-/* Titel und Schliessen trägt das Blatt — die alten Kopfzeilen der Tabs verschwinden darin. Die Kopfzeile eines
-   geöffneten fremden Profils (Zurück zur Wertung) bleibt. */
-.tab-bereich-blatt > .partie-kopf:not(.profil-kopf),
-.up-bl-inhalt .up-shop-titel,
-.up-bl-inhalt .up-sm-titel {
+/* Titel und Schliessen trägt das Blatt — die alte Kopfzeile verschwindet darin. Seit v0.156.1 sind nur noch
+   Einstellungen und Verwaltung Tab-Blätter; Shop, Sammlung, Aufgaben und Rangliste sind wieder Seiten. */
+.tab-bereich-blatt > .partie-kopf:not(.profil-kopf) {
     display: none;
-}
-
-.up-bl-inhalt .up-sm-kopf {
-    min-height: 0;
 }
 
 /* Der Start dahinter: der Rahmen um den Rand bleibt, damit das Zurückrücken als Karte lesbar ist. */
@@ -62,8 +53,20 @@
     background: conic-gradient(var(--haupt) calc(var(--up-pf-anteil, 0) * 360deg), var(--lv-rest) 0);
 }
 
-.profil-statistik-knopf {
+.profil-statistik-knopf,
+.profil-verlauf-knopf {
     width: 100%;
+}
+
+.profil-verlauf-knopf {
+    margin-top: 8px;
+}
+
+/* ---- Reiter der Rangliste (Wertung · Freunde, seit v0.156.1) ---- */
+
+.rangliste-reiter {
+    grid-template-columns: repeat(2, 1fr);
+    margin-top: 0;
 }
 
 /* ---- Einstellungen / Verwaltung im Blatt ---- */

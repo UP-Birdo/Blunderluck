@@ -1,7 +1,38 @@
 /* upcrew-blatt.css — Blätter und Karten über dem sichtbaren Hauptmenü (gehört zu js/upcrew-blatt.js).
    Vorschlag für Design\3D-Schrift\final, entstanden in Blunderluck v0.156.0 (Entwurf Oberfläche Runde 7).
    Die App setzt: --up-bl-oben (wo das Blatt beginnt, unter dem Kopf), --up-bl-unten (Höhe der Leiste),
-   --up-bl-ebene (z-index; die Leiste der App liegt darüber und bleibt bedienbar). Farben aus der Farbwelt. */
+   --up-bl-ebene (z-index; die Leiste der App liegt darüber und bleibt bedienbar). Farben aus der Farbwelt.
+
+   29.09.2026: Blätter nur noch für Bereiche OHNE Leisten-Knopf (Profil, Einstellungen, Verwaltung, Serie, Freunde,
+   Verlauf); Leisten-Tabs sind Seiten (Abschnitt SEITEN unten). Scroll-Fehler „oben kommen die Menüs wieder“: Die Seite
+   hinter dem Blatt rollte mit, weil nichts sie festhielt — jetzt `html.up-bl-offen` (Regeln unten), keine Kette vom
+   Blatt auf die Seite, kein Gummiband. Dieselbe Lehre wie Blunderluck `body.dialog-offen` (v0.108). */
+
+/* ---- SEITEN (Leisten-Tabs): das Dokument rollt, Kopf-Streifen und Leiste stehen fest ----
+   Kein Gummiband an Ober- und Unterkante: sonst zieht das Dokument über das Ende hinaus und zeigt kurz den Grund bzw.
+   schiebt Inhalt unter den festen Streifen oben. Seitlich galt das schon (Nutzer 27.09.2026 „rechts und links Stopp“). */
+html { overscroll-behavior: none; }
+
+/* Wahlfrei: ein Kopf, der beim Rollen oben stehen bleibt (unter dem iPhone-Streifen). Deckend und mit eigener
+   Ebenen-Nummer — „ein Hintergrund macht keine Ebene“: ohne z-index zeichnet sich Inhalt mit z-index darüber.
+   Unter den Blättern (--up-bl-ebene 40) und der Leiste (App, 50). */
+.up-seite-kopf {
+  position: sticky;
+  top: var(--oben-frei, 0px);
+  z-index: var(--up-seite-kopf-ebene, 30);
+  background: var(--flaeche);
+}
+
+/* ---- Offen: die Seite steht still (upcrew-blatt.js setzt die Klasse an <html> und <body>) ---- */
+html.up-bl-offen,
+html.up-bl-offen body {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+/* Wo nichts rollt (Grund, Kopf des Blatts), rollt auch nichts dahinter — gerade am iPhone. Tipps gehen weiter. */
+.up-bl-grund,
+.up-bl-kopf { touch-action: none; }
 
 .up-bl-dahinter {
   transform: scale(.94) translateY(6px);
@@ -22,8 +53,8 @@
 
 .up-bl-karte-ebene { bottom: 0; z-index: calc(var(--up-bl-ebene, 40) + 20); }
 
-.up-bl-grund { position: absolute; inset: 0; background: color-mix(in srgb, var(--schrift, #000) 26%, transparent); animation: up-bl-ein 200ms ease-out; }
-.up-bl-oben-drauf .up-bl-grund { background: color-mix(in srgb, var(--schrift, #000) 14%, transparent); }
+.up-bl-grund { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.32); animation: up-bl-ein 200ms ease-out; }
+.up-bl-oben-drauf .up-bl-grund { background: rgba(0, 0, 0, 0.18); }
 
 .up-bl-blatt {
   position: absolute;
@@ -66,7 +97,8 @@
 }
 .up-bl-kopf-knopf svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
-.up-bl-inhalt { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; padding: 0 12px 14px; overscroll-behavior: contain; }
+.up-bl-inhalt { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; padding: 0 12px 14px; overscroll-behavior: contain;
+  touch-action: pan-y pinch-zoom; }
 
 .up-bl-karte {
   position: absolute;
@@ -75,6 +107,7 @@
   width: min(340px, calc(100% - 32px));
   max-height: calc(100% - 48px);
   overflow-y: auto;
+  overscroll-behavior: contain;
   transform: translate(-50%, -50%);
   padding: 16px;
   color: var(--schrift);

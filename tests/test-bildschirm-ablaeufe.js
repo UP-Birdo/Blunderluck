@@ -2688,8 +2688,8 @@ function einsammelnIn(element, passt, treffer) {
  * ------------------------------------------------------------------ */
 
 /*
- * Die drei kleinen Sucher der Menueband-Tests. Sie stehen hier oben, weil
- * gleich vier Pruefungen sie brauchen — jede hatte sonst ihre eigene Kopie.
+ * Der kleine Sucher der Start-Tests. Er steht hier oben, weil
+ * mehrere Pruefungen ihn brauchen — jede hatte sonst ihre eigene Kopie.
  */
 function startEinsammeln(element, passt, treffer) {
     for (const kind of element.kinder || []) {
@@ -2701,46 +2701,7 @@ function startEinsammeln(element, passt, treffer) {
     return treffer;
 }
 
-/* Der Kopf oben rechts — der Kasten, in dem bis v0.102.0 die Icon-Reihe
-   stand und seit v0.103.0 nur noch das Menueband. */
-function startKopf(START) {
-    const kopf = startEinsammeln(START.wurzelEl, (kind) =>
-        String(kind.className || "").split(" ").indexOf("start-kopf") !== -1,
-        [])[0];
-    if (!kopf) {
-        throw new Error("kein Kopf oben rechts auf dem Start");
-    }
-    return kopf;
-}
-
-/* Alle Menuepunkte in ihrer Reihenfolge. */
-function startMenueEintraege(START) {
-    return startEinsammeln(START.wurzelEl, (kind) =>
-        kind.tagName === "button"
-        && String(kind.className || "").split(" ")
-            .indexOf("start-menue-eintrag") !== -1, []);
-}
-
-/*
- * Die Beschriftung eines Menuepunktes. Sie steht NICHT am Knopf, sondern in
- * seinem Text-Feld (`.start-menue-text`) — links davon haengt das Zeichen.
- * Im nachgebauten DOM erbt `textContent` nicht nach oben, deshalb wird hier
- * ausdruecklich das Feld gesucht.
- */
-function startMenueText(eintrag) {
-    const feld = startEinsammeln(eintrag, (kind) =>
-        String(kind.className || "").split(" ")
-            .indexOf("start-menue-text") !== -1, [])[0];
-    return feld ? String(feld.textContent || "") : "";
-}
-
-/* Ein Menuepunkt mit dieser Beschriftung, oder null. */
-function startMenuePunkt(START, name) {
-    return startMenueEintraege(START).find((eintrag) =>
-        startMenueText(eintrag) === name) || null;
-}
-
-pruefe("Der Startbildschirm zeigt Vorschau, Spielen und das Menueband (v0.103.0)", () => {
+pruefe("Der Startbildschirm zeigt Vorschau, Spielen, das Kurzprofil und kein Menueband (v0.156.1)", () => {
     /*
      * BIS v0.102.0 HIESS DIESE PRUEFUNG „… und Zahnrad (v0.9.0)" und suchte
      * oben rechts drei Zeichen-Knoepfe: Verlauf, Freunde, Zahnrad.
@@ -2759,8 +2720,6 @@ pruefe("Der Startbildschirm zeigt Vorschau, Spielen und das Menueband (v0.103.0)
         throw new Error("der Start-Baustein fehlt");
     }
 
-    START.menueOffen = false;
-    START._menueHorcherAktiv = false;
     START.aufbauen(neuesElement("div"));
 
     const knoepfe = startEinsammeln(START.wurzelEl,
@@ -2780,17 +2739,15 @@ pruefe("Der Startbildschirm zeigt Vorschau, Spielen und das Menueband (v0.103.0)
         throw new Error("kein Quadrat fuer die Grundeinstellungen");
     }
 
-    /* (a) OBEN RECHTS STEHT GENAU EIN KNOPF. */
-    const kopfKnoepfe = startEinsammeln(startKopf(START),
-        (kind) => kind.tagName === "button", []);
-    if (kopfKnoepfe.length !== 1) {
-        throw new Error("oben rechts stehen " + kopfKnoepfe.length
-            + " Knoepfe statt einem: "
-            + kopfKnoepfe.map((knopf) =>
-                String((knopf.attribute || {})["aria-label"] || "?")).join(", "));
+    /* (a) DAS MENUEBAND OBEN RECHTS IST WEG (v0.156.1, Nutzer 29.09.2026).
+       Seine Punkte wohnen jetzt im Profil, in den Einstellungen und in der
+       Rangliste (Pruefung darunter). */
+    if (knoepfe.some((knopf) => knopf.attribute && knopf.attribute["aria-label"] === "Menü")) {
+        throw new Error("das Menueband steht noch auf dem Start");
     }
-    if (String((kopfKnoepfe[0].attribute || {})["aria-label"]) !== "Menü") {
-        throw new Error("der eine Knopf oben rechts ist nicht das Menueband");
+    if (startEinsammeln(START.wurzelEl, (kind) =>
+            String(kind.className || "").split(" ").indexOf("start-kopf") !== -1, []).length > 0) {
+        throw new Error("der Kopf oben rechts steht noch da");
     }
 
     /* (b) OBEN LINKS DAS KURZPROFIL (v0.120.0, Nutzer-Ansage 24.09.2026:
@@ -2833,163 +2790,63 @@ pruefe("Der Startbildschirm zeigt Vorschau, Spielen und das Menueband (v0.103.0)
         throw new Error("das Vorschaubrett hat keine Felder");
     }
 
-    /* Das Zahnrad ist nicht weg, es liegt eine Stufe tiefer: erst das
-       Menueband antippen, dann fuehrt „Einstellungen" wie bisher. */
-    if (startMenuePunkt(START, "Einstellungen")) {
-        throw new Error("das Menue steht schon offen da");
-    }
-    kopfKnoepfe[0].ausloesen("click");
-
-    const einstellungen = startMenuePunkt(START, "Einstellungen");
-    if (!einstellungen) {
-        throw new Error("hinter dem Menueband fehlen die Einstellungen");
-    }
-    einstellungen.ausloesen("click");
-    if (umgebung.TABS.gewechseltZu !== "einstellungen") {
-        throw new Error("der Menuepunkt wechselt nicht zu den Einstellungen");
-    }
-    if (START.menueOffen) {
-        throw new Error("die Wahl eines Punktes klappt das Menue nicht zu");
-    }
-    umgebung.TABS.gewechseltZu = "";
 });
 
-pruefe("Hinter dem Menueband liegen die fuenf Punkte (v0.103.0)", () => {
+pruefe("Die Punkte des alten Menuebands bleiben erreichbar (v0.156.1)", () => {
     /*
-     * DER GEMELDETE WUNSCH: „dahinter verstecken sich alle weiteren punkte
-     * wie Profil als eigner punkt unter den 3 balken und halt einstellungen
-     * freunde und verlauf" — dazu ROADMAP-Punkt 36: „Schach lernen soll wo
-     * ander hin aber nicht bei runde beitreten".
-     *
-     * Geprueft wird die REIHENFOLGE (sie ist die Nutzer-Ansage) und dass
-     * jeder Punkt sein Zeichen mitbringt. Zwei der fuenf werden ausserdem
-     * wirklich gedrueckt: „Einstellungen" oben in der Pruefung davor,
-     * „Schach lernen" hier — der Punkt, der neu dazugekommen ist.
+     * Nutzer 29.09.2026: Menueband weg. Profil = Bild oben links (Pruefung
+     * davor), Einstellungen = Zahnrad im Profil (test-oberflaeche-7.js),
+     * „Schach lernen" und „Vergangene Matches" = Einstellungen „Nur in
+     * Blunderluck", Freunde = Reiter in der Rangliste, „Runde beitreten"
+     * steht auf dem Start.
      */
     const START = umgebung.START;
+    const EINSTELLUNGEN = umgebung.EINSTELLUNGEN;
+    const RANGLISTE = umgebung.RANGLISTE;
 
-    START.menueOffen = false;
-    START._menueHorcherAktiv = false;
-    START.aufbauen(neuesElement("div"));
-    START.menueUmschalten();
-
-    const eintraege = startMenueEintraege(START);
-
-    /* Einstellungen seit v0.120.1 ganz unten (Nutzer-Ansage 24.09.2026). */
-    const erwartet = ["Profil", "Freunde", "Verlauf", "Schach lernen",
-        "Einstellungen"];
-    const gefunden = eintraege.map(startMenueText);
-    if (gefunden.join(" | ") !== erwartet.join(" | ")) {
-        throw new Error("die Menuepunkte stimmen nicht: " + gefunden.join(" | "));
-    }
-
-    /* Jeder Punkt traegt sein Zeichen links VOR dem Text. */
-    for (const eintrag of eintraege) {
-        const zeichen = (eintrag.kinder || [])[0];
-        if (!zeichen || zeichen.tagName !== "svg") {
-            throw new Error("der Punkt " + startMenueText(eintrag)
-                + " hat kein Zeichen");
+    const titel = EINSTELLUNGEN._spielAbschnitt().zeilen.map((zeile) => zeile.titel);
+    for (const name of ["Schach lernen", "Vergangene Matches"]) {
+        if (titel.indexOf(name) === -1) {
+            throw new Error(name + " fehlt unter „Nur in Blunderluck“: " + titel.join(" | "));
         }
     }
 
     /* „Schach lernen" fuehrt ins Team Schach und oeffnet die Anleitung. */
     TEAM_SCHACH.grundlagenOffen = false;
     umgebung.TABS.gewechseltZu = "";
-
-    startMenuePunkt(START, "Schach lernen").ausloesen("click");
-
-    if (umgebung.TABS.gewechseltZu !== "team-schach") {
-        throw new Error("Schach lernen wechselt nicht ins Team Schach");
-    }
-    if (!TEAM_SCHACH.grundlagenOffen) {
+    EINSTELLUNGEN._spielAbschnitt().zeilen.find((zeile) => zeile.titel === "Schach lernen").beiKlick();
+    if (umgebung.TABS.gewechseltZu !== "team-schach" || !TEAM_SCHACH.grundlagenOffen) {
         throw new Error("Schach lernen oeffnet die Anleitung nicht");
     }
-    if (START.menueOffen) {
-        throw new Error("das Menue bleibt nach der Wahl offen");
-    }
-
     TEAM_SCHACH.grundlagenSchliessen();
     umgebung.TABS.gewechseltZu = "";
     TEAM_SCHACH.uebersichtOeffnen();
-});
 
-pruefe("Das Menueband schliesst bei Klick ausserhalb (v0.103.0)", () => {
-    /*
-     * Dasselbe Muster wie beim Eck-Menue der Partie (v0.96.0, geprueft in
-     * test-bildschirm.js): Das Test-DOM feuert keine echten
-     * document-Ereignisse — `document.addEventListener` ist ein Stummel.
-     * Deshalb werden Anmelden und Abmelden hier MITGESCHRIEBEN und der
-     * angemeldete Horcher (`START._menueAussenklick`) direkt mit einem
-     * nachgestellten Ereignis aufgerufen: Klick IM Halter laesst das Menue
-     * offen, Klick ausserhalb klappt es zu und meldet den Horcher ab.
-     */
-    const START = umgebung.START;
-    const dokument = umgebung.document;
-    const echtesAnmelden = dokument.addEventListener;
-    const hatteAbmelden = Object.prototype.hasOwnProperty.call(
-        dokument, "removeEventListener");
-    const echtesAbmelden = dokument.removeEventListener;
+    /* „Runde beitreten" steht auf dem Start. */
+    START.aufbauen(neuesElement("div"));
+    if (!startEinsammeln(START.wurzelEl, (kind) => kind.tagName === "button"
+            && String(kind.textContent || "") === "Runde beitreten", []).length) {
+        throw new Error("Runde beitreten fehlt auf dem Start");
+    }
 
-    let angemeldet = null;
-    let abgemeldet = null;
+    /* Freunde: Reiter in der Rangliste. */
+    const wurzelVorher = RANGLISTE.wurzelEl;
     try {
-        dokument.addEventListener = (art, horcher) => {
-            angemeldet = { art: art, horcher: horcher };
-        };
-        dokument.removeEventListener = (art, horcher) => {
-            abgemeldet = { art: art, horcher: horcher };
-        };
-
-        START.menueOffen = false;
-        START._menueHorcherAktiv = false;
-        START.aufbauen(neuesElement("div"));
-
-        const balken = startEinsammeln(startKopf(START),
-            (kind) => kind.tagName === "button", [])[0];
-        balken.ausloesen("click");
-
-        if (START.menueOffen !== true) {
-            throw new Error("der Tipp auf die drei Balken oeffnet nichts");
+        RANGLISTE.wurzelEl = neuesElement("div");
+        RANGLISTE.ansichtSetzen("wertung");
+        const reiter = startEinsammeln(RANGLISTE.wurzelEl, (kind) => kind.tagName === "button"
+            && kind.dataset && kind.dataset.reiter, []).map((kind) => kind.dataset.reiter);
+        if (reiter.join("|") !== "wertung|freunde") {
+            throw new Error("die Rangliste hat nicht die Reiter Wertung | Freunde: " + reiter.join("|"));
         }
-        if (!angemeldet || angemeldet.art !== "click") {
-            throw new Error("beim Aufklappen wird kein Klick-Horcher angemeldet");
-        }
-
-        /* Klick IM Halter (er traegt die Marke): Das Menue bleibt offen. */
-        const halter = startEinsammeln(startKopf(START), (kind) =>
-            kind.dataset && kind.dataset.startMenue === "1", [])[0];
-        if (!halter) {
-            throw new Error("der Menue-Halter traegt die Aussenklick-Marke nicht");
-        }
-        angemeldet.horcher({ target: halter });
-        if (START.menueOffen !== true) {
-            throw new Error("ein Klick IM Halter klappt das Menue faelschlich zu");
-        }
-
-        /* Klick irgendwo anders: zu, und der Horcher wieder abgemeldet —
-           kein dauerhafter globaler Horcher. */
-        angemeldet.horcher({ target: dokument.createElement("div") });
-        if (START.menueOffen !== false) {
-            throw new Error("ein Klick ausserhalb klappt das Menue nicht zu");
-        }
-        if (!abgemeldet || abgemeldet.horcher !== angemeldet.horcher) {
-            throw new Error("der Horcher wird beim Zuklappen nicht abgemeldet");
-        }
-        if (START._menueHorcherAktiv !== false) {
-            throw new Error("der Horcher gilt nach dem Zuklappen noch als angemeldet");
-        }
-        if (startMenuePunkt(START, "Profil")) {
-            throw new Error("die Punkte stehen nach dem Zuklappen noch da");
+        RANGLISTE.ansichtSetzen("freunde");
+        if (!startEinsammeln(RANGLISTE.wurzelEl, (kind) =>
+                String(kind.className || "").indexOf("freunde-suche") !== -1, []).length) {
+            throw new Error("der Reiter Freunde zeigt die Freundesliste nicht");
         }
     } finally {
-        dokument.addEventListener = echtesAnmelden;
-        if (hatteAbmelden) {
-            dokument.removeEventListener = echtesAbmelden;
-        } else {
-            delete dokument.removeEventListener;
-        }
-        START.menueOffen = false;
-        START._menueHorcherAktiv = false;
+        RANGLISTE.ansicht = "wertung";
+        RANGLISTE.wurzelEl = wurzelVorher;
     }
 });
 
@@ -4211,18 +4068,12 @@ pruefe("Die Freunde-Seite am Start: suchen, anfragen, entfernen (Wunsch 6)", () 
     const standVorher = ANMELDUNG.abgleich.daten;
 
     try {
-        START.menueOffen = false;
-        START._menueHorcherAktiv = false;
         START.aufbauen(neuesElement("div"));
 
-        /* Erst das Menueband, dann der Punkt „Freunde". */
-        START.menueUmschalten();
-        const punkt = startMenuePunkt(START, "Freunde");
-        if (!punkt) {
-            throw new Error("kein Freunde-Punkt im Menueband");
-        }
-
-        punkt.ausloesen("click");
+        /* Seit v0.156.1 ohne Menueband: direkt (in der App fuehrt der Weg
+           in den Reiter „Freunde" der Rangliste, ohne Blatt-Baustein wie
+           hier auf die Seite am Start). */
+        START.freundeOeffnen();
         if (!START.freundeOffen) {
             throw new Error("der Punkt oeffnet die Freundesliste nicht");
         }

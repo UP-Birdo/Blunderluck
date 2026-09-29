@@ -98,20 +98,8 @@ const START = {
         const seite = document.createElement("div");
         seite.className = "start";
 
-        /*
-         * Oben rechts steht seit v0.103.0 EIN Knopf: das Menüband (drei
-         * Balken). Bis dahin lagen dort drei einzelne Zeichen nebeneinander
-         * (Verlauf, Freunde, Zahnrad) — sie sind samt Profil und „Schach
-         * lernen" in das Menü dahinter gezogen (`_menuebandBauen`).
-         */
-        const kopf = document.createElement("div");
-        kopf.className = "start-kopf";
-        kopf.appendChild(START._menuebandBauen());
-
-        /* Oben links seit v0.120.0 das Kurzprofil, rechts wie bisher der
-           Kopf mit dem Menüband — beide in einer Zeile. Das Kurzprofil
-           steht bewusst NEBEN `start-kopf`, nicht darin: Der Kopf trägt
-           genau einen Knopf (Test „oben rechts EIN Knopf"). */
+        /* Oben links das Kurzprofil (seit v0.120.0) mit der Serien-Kapsel.
+           Das Menüband oben rechts ist seit v0.156.1 weg (siehe unten). */
         const oben = document.createElement("div");
         oben.className = "start-oben";
         const kurzprofil = START._kurzprofilBauen();
@@ -120,7 +108,6 @@ const START = {
             /* Die Serien-Flamme gleich daneben (seit v0.151.18). */
             START._flammeBauen(oben);
         }
-        oben.appendChild(kopf);
         seite.appendChild(oben);
 
         /*
@@ -294,97 +281,12 @@ const START = {
         seite.appendChild(beitreten);
     },
 
-    /* ---------------------------------------------------------------- *
-     * DAS MENÜBAND OBEN RECHTS (seit v0.103.0)
-     *
-     * Nutzer-Ansage 27.08.2026: „packe auf dem haupt screen oben rechts
-     * statt den ganzen icons ein menü band hin was von aussen 3 balken sind
-     * und dahinter verstecken sich alle weiteren punkte wie Profil als
-     * eigner punkt unter den 3 balken und halt einstellungen freunde und
-     * verlauf" — dazu (Punkt 36 der ROADMAP) „Schach lernen soll wo ander
-     * hin aber nicht bei runde beitreten".
-     *
-     * Statt drei einzelner Zeichen steht dort jetzt EIN Knopf mit drei
-     * Balken; dahinter liegen fünf Punkte, jeder mit seinem bisherigen
-     * Zeichen links und der Beschriftung rechts. Vier der fünf Zeichen sind
-     * die alten — neu gezeichnet werden musste nur der Balken-Knopf, das
-     * Profil (eine Person statt zweier) und das Buch für „Schach lernen".
-     *
-     * DER AUSSENKLICK IST NACH DEM MUSTER VON v0.96.0 GEBAUT
-     * (`TEAM_SCHACH.eckMenueUmschalten` samt `_eckMenueAussenklick` in
-     * js\team-schach.js): ein Merker, ein `document`-Horcher, der beim
-     * Aufklappen an- und beim Zuklappen wieder abgemeldet wird, und eine
-     * `dataset`-Marke am eigenen Kasten, an der der Horcher „drinnen" von
-     * „draussen" unterscheidet. Nachgebaut statt geteilt, weil beide Seiten
-     * verschieden neu zeichnen (dort `TEAM_SCHACH.zeichnen(daten)`, hier
-     * `START._zeichnen()`) — ein gemeinsamer Helfer bräuchte für jeden
-     * Unterschied einen Parameter und wäre schwerer zu lesen als beide
-     * Fassungen zusammen.
-     *
-     * EIN UNTERSCHIED ZUM VORBILD: Dort liegen die Menü-Knöpfe IM
-     * Kasten-Knopf und müssen ihr Ereignis stoppen. Hier ist der
-     * Balken-Knopf ein Geschwister der Liste, beide stecken im selben
-     * Halter mit der Marke — kein `stopPropagation` nötig, weil kein Knopf
-     * im anderen liegt.
-     * ---------------------------------------------------------------- */
-
-    menueOffen: false,
-
-    /* Ist der Aussenklick-Horcher gerade am `document` angemeldet? */
-    _menueHorcherAktiv: false,
-
-    /*
-     * Die fünf Punkte in ihrer Reihenfolge — Profil zuerst (eigener Punkt,
-     * wie gewünscht), dann Freunde, Verlauf und der Zugezogene vom
-     * Beitritts-Bildschirm, zuletzt die Einstellungen (seit v0.120.1).
-     *
-     * `tun` beschreibt NUR das Ziel; das Zuklappen erledigt `_menueWahl`
-     * für alle gemeinsam.
-     */
-    _menuePunkte() {
-        return [
-            {
-                name: "Profil",
-                hinweis: "Visitenkarte · Abzeichen · Statistik",
-                zeichen: () => START._profilZeichenBauen(),
-                /* Seit v0.119.0 die ganze Profilseite statt des Popups
-                   (Nutzer-Ansage 18.09.2026); Name und Passwort ändert man
-                   dort über „Bearbeiten" (seit v0.119.1). Zurück führt
-                   hierher. */
-                tun: () => START.profilOeffnen()
-            },
-            {
-                name: "Freunde",
-                hinweis: "Suchen · Verwalten",
-                zeichen: () => START._freundeZeichenBauen(),
-                tun: () => START.freundeOeffnen()
-            },
-            {
-                name: "Verlauf",
-                hinweis: "Vergangene Matches",
-                zeichen: () => START._verlaufZeichenBauen(),
-                tun: () => START.verlaufOeffnen()
-            },
-            {
-                name: "Schach lernen",
-                hinweis: "Figuren · Schach · Matt · Patt",
-                zeichen: () => START._lernenZeichenBauen(),
-                tun: () => {
-                    TABS.wechseln("team-schach");
-                    TEAM_SCHACH.grundlagenOeffnen();
-                }
-            },
-            /* Seit v0.120.1 ganz unten (Nutzer-Ansage 24.09.2026:
-               „Einstellungen sollen ganz nach unten in der Liste") — wie
-               in den meisten Apps das Letzte im Menü. */
-            {
-                name: "Einstellungen",
-                hinweis: "Account · Spieler · Verbindung",
-                zeichen: () => START._zahnradBauen(),
-                tun: () => TABS.wechseln("einstellungen")
-            }
-        ];
-    },
+    /* DAS MENÜBAND OBEN RECHTS (v0.103.0 bis v0.156.0) ist seit v0.156.1
+       weg (Nutzer 29.09.2026). Seine Punkte wohnen jetzt: Profil = Bild oben
+       links (`_kurzprofilBauen`), Einstellungen = Zahnrad im Profil,
+       „Schach lernen" und „Vergangene Matches" = Einstellungen „Nur in
+       Blunderluck", Freunde = Reiter in der Rangliste
+       (`RANGLISTE.ansichtSetzen`), Verlauf zusätzlich im Profil. */
 
     /*
      * DAS KURZPROFIL OBEN LINKS (seit v0.120.0, Nutzer-Ansage 24.09.2026:
@@ -598,138 +500,6 @@ const START = {
         });
     },
 
-    /* Der Halter mit dem Balken-Knopf und — solange offen — der Liste. Er
-       trägt die Marke, an der der Aussenklick-Horcher „drinnen" erkennt. */
-    _menuebandBauen() {
-        const halter = document.createElement("div");
-        halter.className = "start-menue-halter";
-        halter.dataset.startMenue = "1";
-
-        const knopf = document.createElement("button");
-        knopf.type = "button";
-        knopf.className = "start-zahnrad start-menueband";
-        knopf.setAttribute("aria-label", "Menü");
-        knopf.setAttribute("aria-expanded", START.menueOffen ? "true" : "false");
-        knopf.title = "Menü";
-        knopf.appendChild(START._menuebandZeichenBauen());
-        knopf.addEventListener("click", () => START.menueUmschalten());
-        halter.appendChild(knopf);
-
-        if (!START.menueOffen) {
-            return halter;
-        }
-
-        const liste = document.createElement("div");
-        liste.className = "start-menue";
-        liste.setAttribute("role", "menu");
-
-        for (const punkt of START._menuePunkte()) {
-            const eintrag = document.createElement("button");
-            eintrag.type = "button";
-            eintrag.className = "start-menue-eintrag";
-            eintrag.setAttribute("role", "menuitem");
-            eintrag.title = punkt.hinweis;
-            eintrag.appendChild(punkt.zeichen());
-
-            const text = document.createElement("span");
-            text.className = "start-menue-text";
-            text.textContent = punkt.name;
-            eintrag.appendChild(text);
-
-            eintrag.addEventListener("click", () => START._menueWahl(punkt.tun));
-            liste.appendChild(eintrag);
-        }
-
-        halter.appendChild(liste);
-        return halter;
-    },
-
-    menueUmschalten() {
-        START.menueOffen = !START.menueOffen;
-        if (START.menueOffen) {
-            START._menueHorcherAnmelden();
-        } else {
-            START._menueHorcherAbmelden();
-        }
-        START._zeichnen();
-    },
-
-    /*
-     * Ein Menüpunkt wurde gewählt: erst zuklappen und den Start einmal neu
-     * zeichnen (dann ist das Menü weg, egal ob der Punkt hier bleibt oder
-     * den Tab wechselt), danach das Ziel öffnen. Die Reihenfolge ist
-     * Absicht — „Profil" legt einen Dialog ÜBER den Start, und darunter
-     * dürfte kein offenes Menü stehenbleiben.
-     */
-    _menueWahl(tun) {
-        START._menueZuklappen();
-        START._zeichnen();
-        tun();
-    },
-
-    /* Zuklappen ohne Neuzeichnen — wer es ruft, zeichnet selbst. */
-    _menueZuklappen() {
-        START._menueHorcherAbmelden();
-        START.menueOffen = false;
-    },
-
-    /*
-     * An- und Abmelden des Horchers. Beide Wege sind gegen die
-     * Testumgebung abgesichert: Dort ist `document` ein Stummel, dessen
-     * `addEventListener` nichts tut und dem `removeEventListener` ganz
-     * fehlt — der Code darf also nie davon abhängen, dass Ereignisse
-     * wirklich feuern (wörtlich dasselbe wie im Vorbild).
-     */
-    _menueHorcherAnmelden() {
-        if (START._menueHorcherAktiv) {
-            return;
-        }
-        if (typeof document === "undefined"
-            || typeof document.addEventListener !== "function") {
-            return;
-        }
-        document.addEventListener("click", START._menueAussenklick);
-        START._menueHorcherAktiv = true;
-    },
-
-    _menueHorcherAbmelden() {
-        if (!START._menueHorcherAktiv) {
-            return;
-        }
-        if (typeof document !== "undefined"
-            && typeof document.removeEventListener === "function") {
-            document.removeEventListener("click", START._menueAussenklick);
-        }
-        START._menueHorcherAktiv = false;
-    },
-
-    /*
-     * Der Aussenklick selbst: Vom getroffenen Element wird nach oben
-     * gelaufen (`closest` gibt es im Test-DOM nicht, und die Schleife ist
-     * genauso deutlich). Trifft der Klick den Halter — also den
-     * Balken-Knopf oder einen Menüpunkt —, passiert hier nichts: Das
-     * Umschalten macht der Knopf, das Zuklappen der Punkt selbst.
-     *
-     * Abgemeldet wird IMMER, auch wenn das Menü anderweitig schon zu ist;
-     * ein verwaister Horcher bliebe sonst hängen. Neu gezeichnet wird nur,
-     * wenn es offen war.
-     */
-    _menueAussenklick(ereignis) {
-        let element = ereignis ? ereignis.target : null;
-        while (element) {
-            if (element.dataset && element.dataset.startMenue === "1") {
-                return;
-            }
-            element = element.parentElement;
-        }
-
-        START._menueHorcherAbmelden();
-        if (START.menueOffen) {
-            START.menueOffen = false;
-            START._zeichnen();
-        }
-    },
-
     /* ---------------------------------------------------------------- *
      * Bedienung
      * ---------------------------------------------------------------- */
@@ -926,6 +696,13 @@ const START = {
     },
 
     freundeOeffnen() {
+        /* Seit v0.156.1 (Nutzer 29.09.2026) wohnen die Freunde als Reiter
+           in der Rangliste — dorthin, wenn es sie gibt. */
+        if (typeof RANGLISTE !== "undefined" && typeof RANGLISTE.freundeOeffnen === "function"
+                && START._unterAlsBlatt()) {
+            RANGLISTE.freundeOeffnen();
+            return;
+        }
         if (START._unterAlsBlatt() && TABS.aktiveId !== "start") {
             TABS.wechseln("start");
         }
@@ -1231,46 +1008,6 @@ const START = {
     },
 
     /*
-     * Das Verlauf-Zeichen (seit v0.37.0): eine Uhr — Ring, Zeiger auf zehn
-     * nach zwei. Wie die anderen beiden gezeichnet statt als Bilddatei und
-     * über currentColor gefärbt (kein Emoji, Haus-Regel).
-     */
-    _verlaufZeichenBauen() {
-        const ns = "http://www.w3.org/2000/svg";
-        const svg = document.createElementNS(ns, "svg");
-        svg.setAttribute("viewBox", "0 0 24 24");
-        svg.setAttribute("class", "start-zeichen");
-        svg.setAttribute("aria-hidden", "true");
-
-        const ring = document.createElementNS(ns, "circle");
-        ring.setAttribute("cx", "12");
-        ring.setAttribute("cy", "12");
-        ring.setAttribute("r", "8.6");
-        ring.setAttribute("fill", "none");
-        ring.setAttribute("stroke", "currentColor");
-        ring.setAttribute("stroke-width", "2.2");
-        svg.appendChild(ring);
-
-        /* Zwei Zeiger: der lange nach oben, der kurze nach rechts. */
-        const zeiger = (x2, y2, breite) => {
-            const linie = document.createElementNS(ns, "line");
-            linie.setAttribute("x1", "12");
-            linie.setAttribute("y1", "12");
-            linie.setAttribute("x2", String(x2));
-            linie.setAttribute("y2", String(y2));
-            linie.setAttribute("stroke", "currentColor");
-            linie.setAttribute("stroke-width", String(breite));
-            linie.setAttribute("stroke-linecap", "round");
-            svg.appendChild(linie);
-        };
-
-        zeiger(12, 6.4, 2.2);
-        zeiger(16, 13.4, 2.2);
-
-        return svg;
-    },
-
-    /*
      * Das Freunde-Zeichen: zwei Personen — je ein Kopf über einer Schulter,
      * die hintere kleiner und versetzt. Wie das Zahnrad gezeichnet statt
      * als Bilddatei, und über currentColor gefärbt (kein Emoji, Haus-Regel).
@@ -1317,115 +1054,6 @@ const START = {
         schulter.setAttribute("stroke-width", "2.2");
         schulter.setAttribute("stroke-linecap", "round");
         svg.appendChild(schulter);
-
-        return svg;
-    },
-
-    /*
-     * DAS MENÜBAND-ZEICHEN (seit v0.103.0): drei waagerechte Balken — das
-     * Bildzeichen, das der Nutzer wörtlich verlangt hat („von aussen 3
-     * balken"). Wie die übrigen Zeichen gezeichnet statt als Bilddatei und
-     * über currentColor gefärbt (kein Emoji, Haus-Regel).
-     *
-     * Gleich lang und gleich weit auseinander: Ein Balken-Knopf mit
-     * ungleichen Strichen sieht nach Aufzählung aus, nicht nach Menü.
-     */
-    _menuebandZeichenBauen() {
-        const ns = "http://www.w3.org/2000/svg";
-        const svg = document.createElementNS(ns, "svg");
-        svg.setAttribute("viewBox", "0 0 24 24");
-        svg.setAttribute("class", "start-zeichen");
-        svg.setAttribute("aria-hidden", "true");
-
-        for (const y of [7, 12, 17]) {
-            const balken = document.createElementNS(ns, "line");
-            balken.setAttribute("x1", "4.2");
-            balken.setAttribute("y1", String(y));
-            balken.setAttribute("x2", "19.8");
-            balken.setAttribute("y2", String(y));
-            balken.setAttribute("stroke", "currentColor");
-            balken.setAttribute("stroke-width", "2.2");
-            balken.setAttribute("stroke-linecap", "round");
-            svg.appendChild(balken);
-        }
-
-        return svg;
-    },
-
-    /*
-     * DAS PROFIL-ZEICHEN (seit v0.103.0): EINE Person, mittig — Kopf über
-     * Schulter, dieselbe Machart wie die vordere Person des
-     * Freunde-Zeichens. Der Unterschied ist genau der Punkt: Freunde sind
-     * zwei, das Profil ist einer.
-     */
-    _profilZeichenBauen() {
-        const ns = "http://www.w3.org/2000/svg";
-        const svg = document.createElementNS(ns, "svg");
-        svg.setAttribute("viewBox", "0 0 24 24");
-        svg.setAttribute("class", "start-zeichen");
-        svg.setAttribute("aria-hidden", "true");
-
-        const kopf = document.createElementNS(ns, "circle");
-        kopf.setAttribute("cx", "12");
-        kopf.setAttribute("cy", "8.4");
-        kopf.setAttribute("r", "3.6");
-        kopf.setAttribute("fill", "none");
-        kopf.setAttribute("stroke", "currentColor");
-        kopf.setAttribute("stroke-width", "2.2");
-        svg.appendChild(kopf);
-
-        const schulter = document.createElementNS(ns, "path");
-        schulter.setAttribute("d",
-            "M5.4 20 C5.4 15.4 8.2 13.2 12 13.2 C15.8 13.2 18.6 15.4 18.6 20");
-        schulter.setAttribute("fill", "none");
-        schulter.setAttribute("stroke", "currentColor");
-        schulter.setAttribute("stroke-width", "2.2");
-        schulter.setAttribute("stroke-linecap", "round");
-        svg.appendChild(schulter);
-
-        return svg;
-    },
-
-    /*
-     * DAS ZEICHEN FÜR „SCHACH LERNEN" (seit v0.103.0): ein aufgeschlagenes
-     * Buch — zwei Seiten und der Rücken dazwischen.
-     *
-     * KEINE FIGUR: Ein Bauer oder ein Springer stünde für das Spiel, nicht
-     * fürs Nachlesen — und die Figuren gibt es in dieser App bereits als
-     * gerenderte Bilder, ein zweiter, gestrichelter Springer daneben wäre
-     * eine falsche Fährte. Das Buch sagt „hier steht, wie es geht".
-     */
-    _lernenZeichenBauen() {
-        const ns = "http://www.w3.org/2000/svg";
-        const svg = document.createElementNS(ns, "svg");
-        svg.setAttribute("viewBox", "0 0 24 24");
-        svg.setAttribute("class", "start-zeichen");
-        svg.setAttribute("aria-hidden", "true");
-
-        /* Die zwei Seiten, spiegelbildlich um den Rücken bei x = 12. */
-        for (const seite of ["M12 6.8 C10 5.3 7.2 4.7 3.6 4.9 V17.5 "
-                + "C7.2 17.3 10 17.9 12 19.4",
-            "M12 6.8 C14 5.3 16.8 4.7 20.4 4.9 V17.5 "
-                + "C16.8 17.3 14 17.9 12 19.4"]) {
-            const pfad = document.createElementNS(ns, "path");
-            pfad.setAttribute("d", seite);
-            pfad.setAttribute("fill", "none");
-            pfad.setAttribute("stroke", "currentColor");
-            pfad.setAttribute("stroke-width", "2");
-            pfad.setAttribute("stroke-linejoin", "round");
-            pfad.setAttribute("stroke-linecap", "round");
-            svg.appendChild(pfad);
-        }
-
-        const ruecken = document.createElementNS(ns, "line");
-        ruecken.setAttribute("x1", "12");
-        ruecken.setAttribute("y1", "6.8");
-        ruecken.setAttribute("x2", "12");
-        ruecken.setAttribute("y2", "19.4");
-        ruecken.setAttribute("stroke", "currentColor");
-        ruecken.setAttribute("stroke-width", "2");
-        ruecken.setAttribute("stroke-linecap", "round");
-        svg.appendChild(ruecken);
 
         return svg;
     },
