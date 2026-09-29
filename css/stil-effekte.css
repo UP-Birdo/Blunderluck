@@ -1530,8 +1530,7 @@ body.brett-flach .feld-mauer > .feld-restzeit {
     display: none;
 }
 
-.brett-3d-knopf,
-.brett-3d-zurueck {
+.brett-3d-knopf {
     display: grid;
     place-items: center;
     width: 34px;
@@ -1545,18 +1544,12 @@ body.brett-flach .feld-mauer > .feld-restzeit {
     opacity: 0.85;
 }
 
-.brett-3d-knopf:hover,
-.brett-3d-zurueck:hover {
+.brett-3d-knopf:hover {
     opacity: 1;
 }
 
-.brett-3d-zurueck {
-    position: absolute;
-    right: 4px;
-    bottom: 4px;
-    z-index: 4;
-    font: 700 0.75rem/1 system-ui, sans-serif;
-}
+/* `.brett-3d-zurueck` (der Knopf „3D" auf dem flachen Brett) ist seit
+   v0.157.4 weg — kein Umschalter in der Partie. */
 
 /* Die Tafel klappt unten am Bildschirm auf, damit das Brett darüber
    sichtbar bleibt — jede Wahl wirkt sofort und soll gesehen werden. */

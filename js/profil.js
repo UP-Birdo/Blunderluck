@@ -10,10 +10,13 @@
  *   SEIT v0.157.1 OHNE VORSCHAU-KARTE (Nutzer 29.09.2026 nachts: „nicht erst eine vorschau vom profil … das was
  *     hinter dem pfeil steht soll direkt kommen“): Kopfzeile auf dem Start (START._kurzprofilBauen) und JEDER
  *     Name in der App (Rangliste, Vorraum, Freunde → RANGLISTE.profilOeffnen) öffnen direkt `oeffnen`.
- *   STUFE 2 — das AUSFÜHRLICHE Profil (`oeffnen`, ein Blatt): Kopf, Ausgerüstet, Statistik (Platz, Punkte,
- *     Bilanz, Werte aus der Chronik), Stand (Turm, Bibliothek), Partien (Verlauf), alle Abzeichen, Über
- *     (Spielzeit, dabei seit), bei Fremden die Freundschaft, ganz unten die Level-Kachel (→ Level-Pfad). Das
- *     Zahnrad oben rechts nur im eigenen Profil (→ Einstellungen).
+ *   STUFE 2 — das AUSFÜHRLICHE Profil (`oeffnen`, ein Blatt), SEIT v0.157.2 SCHLANK (Nutzer 29.09.2026 spät,
+ *     „den wählen knopf raus … Partien aus profil … flamme oben rechts … level balken … dabei seit kompakter …
+ *     sammlung der abzeichen soll auch raus“): Kopf (Name, Titel, „seit …“, Spielzeit NUR Blunderluck — Tipp →
+ *     Rechnung mit den anderen Spielen; rechts die Flamme → Serien-Karte), Level-Balken (klappt den Level-Pfad
+ *     auf), 3 Abzeichen-Plätze (eigen jeder antippbar → Auswahl, dort erst alle Abzeichen), Statistik, Stand, bei
+ *     Fremden die Freundschaft. Partien nur noch über das Menü „Verlauf“ (START.verlaufOeffnen). Das Zahnrad oben
+ *     rechts nur im eigenen Profil (→ Einstellungen).
  *
  * FREMDE PROFILE unter Regel §12: Level, Serie und die fünf gemeinsamen Abzeichen kommen aus dem öffentlichen
  * Auszug (`FORTSCHRITT.auszugVon`), die gewählten Kennungen aus dem Feld `abzeichen` des Auszugs. Abzeichen
@@ -30,11 +33,6 @@ const PROFIL = {
 
     _eintrag: null,
     _wahl: null,
-    _allePartien: false,
-
-    /* So viele Partien zeigt „Partien", bevor „Alle" nötig wird. */
-    PARTIEN_ANFANG: 5,
-
     /* Alte Kennungen im Konto-Feld (bis v0.155: „erster-sieg“ …) → neue („bl-erster-sieg“). */
     umdeuten(kennung) {
         const k = String(kennung || "");
@@ -108,8 +106,9 @@ const PROFIL = {
         const zeit = FORTSCHRITT_KONTO.spielzeit();
         const heute = FORTSCHRITT_KONTO.heute();
         const namen = (typeof RANGLISTE !== "undefined") ? RANGLISTE.SPIEL_NAMEN : {};
-        const zeilen = Object.keys(zeit.spiele).sort().filter((app) => zeit.spiele[app] > 0)
-            .map((app) => (namen[app] || app) + " " + FORTSCHRITT.spielzeitText(zeit.spiele[app]));
+        /* Spielzeit NUR dieses Spiels; die anderen und die Summe zeigt erst der Tipp (seit v0.157.2). */
+        const andere = Object.keys(zeit.spiele).sort().filter((app) => app !== "blunderluck" && zeit.spiele[app] > 0)
+            .map((app) => ({ spiel: namen[app] || app, wert: FORTSCHRITT.spielzeitText(zeit.spiele[app]) }));
         return {
             name: (eintrag && eintrag.name) || (ich ? ich.name : ""),
             tag: (typeof KONTO !== "undefined" && typeof KONTO.tagZusatz === "function") ? KONTO.tagZusatz(eintrag) : "",
@@ -124,7 +123,8 @@ const PROFIL = {
             abzeichen: UPCREW_ABZEICHEN.ausgeruestet(alle, PROFIL._gewaehlt(), SPIELER.ABZEICHEN_PLAETZE || 3),
             plaetze: SPIELER.ABZEICHEN_PLAETZE || 3,
             alle: alle,
-            spielzeit: { wert: FORTSCHRITT.spielzeitText(zeit.summe), zeilen: zeilen,
+            spielzeit: { wert: FORTSCHRITT.spielzeitText(zeit.spiele.blunderluck || 0), spiel: "Blunderluck",
+                andere: andere, summe: FORTSCHRITT.spielzeitText(zeit.summe),
                 oeffentlich: FORTSCHRITT.spielzeitOeffentlichVon(eintrag) },
             seit: zeit.seit ? RANGLISTE._tagText(zeit.seit) : "",
             orte: PROFIL.orte()
@@ -156,7 +156,7 @@ const PROFIL = {
         const abzeichen = UPCREW_ABZEICHEN.fremdAusgeruestet(alle, gewaehlt, SPIELER.ABZEICHEN_PLAETZE || 3,
             (k) => PROFIL.umdeuten(k), (e) => e.kennung.indexOf("bl-") !== 0 || e.erreicht > 0);
         const zeit = (typeof auszug.werte.spielzeit === "number")
-            ? { wert: FORTSCHRITT.spielzeitText(auszug.werte.spielzeit), zeilen: [], oeffentlich: true } : null;
+            ? { wert: FORTSCHRITT.spielzeitText(auszug.werte.spielzeit), oeffentlich: true } : null;
         return {
             name: String(person.name || ""),
             tag: RANGLISTE.tagVon(staende.spieler, spielerId) || "",
@@ -253,7 +253,6 @@ const PROFIL = {
         } else if (PROFIL._eintrag) {
             PROFIL._eintrag.schliessen();
         }
-        PROFIL._allePartien = false;
         const eintrag = UPCREW_BLATT.oeffnen({
             titel: "Profil",
             klasse: "blatt-profil",
@@ -293,10 +292,9 @@ const PROFIL = {
         UPCREW_PROFIL.zeichnen(eintrag.inhalt, daten, {
             eigen: eigen,
             beiAbzeichen: eigen ? () => PROFIL.abzeichenWahlOeffnen() : undefined,
-            beiAbzeichenTipp: (e) => RANGLISTE.abzeichenZeigen(e),
+            beiSerie: (eigen && typeof START !== "undefined") ? () => START.serieOeffnen() : undefined,
             beiLevel: () => PROFIL.levelPfadOeffnen(daten),
             statistik: (ort) => PROFIL._statistikBauen(ort, id),
-            verlauf: (ort) => PROFIL._verlaufBauen(ort, id, eigen),
             zusatz: zusatz
         });
     },
@@ -321,39 +319,10 @@ const PROFIL = {
             kurz.appendChild(feld);
         }
         ort.appendChild(kurz);
-        /* Ohne Partie sagt „Partien" darunter schon „Keine Partie" — hier nicht doppelt. */
+        /* Die Partien selbst stehen seit v0.157.2 nur noch im Menü „Verlauf". */
         if (stat.partien > 0) {
             ort.appendChild(RANGLISTE._bilanzBauen(stat, verlauf));
             RANGLISTE._statistikReiterBauen(ort, staende, stat);
-        }
-    },
-
-    /* „Partien": die jüngsten aus der Chronik (antippen = Einzelheiten), auf Wunsch alle; im eigenen Profil
-       dazu „Vergangene Matches" (Wiederholungen, auch gegen Bob). */
-    _verlaufBauen(ort, spielerId, eigen) {
-        const staende = RANGLISTE._staende();
-        const verlauf = RANGLISTE.verlauf(spielerId, staende.schach);
-        if (verlauf.length === 0) {
-            /* „Spielen" nur im eigenen Profil — bei anderen hilft es nicht weiter. */
-            ort.appendChild(eigen ? RANGLISTE._leerOhnePartie()
-                : ZUSTAND.leer({ zeichen: "pokal", text: "Keine Partie" }));
-        } else {
-            const gezeigt = PROFIL._allePartien ? verlauf : verlauf.slice(0, PROFIL.PARTIEN_ANFANG);
-            const liste = RANGLISTE._element("div", "profil-partien");
-            for (const eintrag of gezeigt) {
-                liste.appendChild(RANGLISTE._verlaufZeileBauen(eintrag, staende));
-            }
-            ort.appendChild(liste);
-            if (gezeigt.length < verlauf.length) {
-                ort.appendChild(RANGLISTE._knopf("Alle " + verlauf.length, "knopf-still knopf-klein profil-mehr", () => {
-                    PROFIL._allePartien = true;
-                    PROFIL.zeichnen();
-                }));
-            }
-        }
-        if (eigen) {
-            ort.appendChild(RANGLISTE._knopf("Vergangene Matches", "knopf-still knopf-klein profil-verlauf-knopf",
-                () => PROFIL.verlaufOeffnen()));
         }
     },
 
@@ -372,13 +341,6 @@ const PROFIL = {
         const abschnitt = UPCREW_PROFIL.abschnitt("Freunde");
         abschnitt.appendChild(fuss);
         return abschnitt;
-    },
-
-    /* „Vergangene Matches" (seit v0.156.1 im Profil): als Blatt über dem Profil. */
-    verlaufOeffnen() {
-        if (typeof START !== "undefined" && typeof START.verlaufOeffnen === "function") {
-            START.verlaufOeffnen();
-        }
     },
 
     /* Die Auswahl als zweites Blatt: jede Änderung geht gleich ans Konto (mit Zusammenführung). */

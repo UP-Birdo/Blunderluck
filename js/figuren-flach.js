@@ -79,13 +79,45 @@ const FIGUREN_FLACH = {
         return typeof FREISCHALTUNG === "undefined" || FREISCHALTUNG.brett() !== "3d";
     },
 
-    /* Die Stilregeln (einmal) und die Klasse am body (bei jeder Wahl). */
+    /*
+     * 3D-FIGUREN AUF DEM 2D-BRETT (seit v0.157.3, Nutzer 29.09.2026): Bei
+     * `FREISCHALTUNG.brett() === "oben"` bleibt das Brett das flache
+     * 2D-Brett (Klasse `brett-flach`, alle Markierungen, Züge und Tipps wie
+     * dort), die Figuren sind aber die echten 3D-Modelle, seit v0.157.4 mit
+     * leicht GENEIGTER Kamera gerendert (Form erkennbar; Fuss auf der
+     * Feldmitte, `obenMass`) — einmal je Art und Farbe von js\brett-3d.js
+     * (`figurenBilderOben`, derselbe kleine Renderer, dieselben Formen). Die
+     * Bilder liegen in `obenBilder` (Schlüssel `art-farbe`) und kommen per
+     * Stilregel mit der Klasse `figuren-oben` über die flachen. Bis sie
+     * gerechnet sind (oder ohne WebGL) gelten die flachen.
+     */
+    KLASSE_OBEN: "figuren-oben",
+
+    obenBilder: null,
+
+    /* Masse der geneigten Bilder in Feldern (seit v0.157.4, gesetzt von
+       jsrett-3d.js): `groesse` Kante, `fuss` Fuss über dem unteren Rand. */
+    obenMass: null,
+
+    oben() {
+        return typeof FREISCHALTUNG !== "undefined" && FREISCHALTUNG.brett() === "oben";
+    },
+
+    /* Das Bild einer Figur für `src` im flachen Brett: von oben gerendert,
+       sonst die flache Silhouette. */
+    bildUrl(art, farbe) {
+        const oben = FIGUREN_FLACH.oben() && FIGUREN_FLACH.obenBilder;
+        return (oben && oben[art + "-" + farbe]) || FIGUREN_FLACH.datenUrl(art, farbe);
+    },
+
+    /* Die Stilregeln (einmal) und die Klassen am body (bei jeder Wahl). */
     anwenden() {
         if (typeof document === "undefined" || !document.body) {
             return;
         }
         FIGUREN_FLACH.stilSetzen();
         document.body.classList.toggle(FIGUREN_FLACH.KLASSE, FIGUREN_FLACH.flach());
+        document.body.classList.toggle(FIGUREN_FLACH.KLASSE_OBEN, FIGUREN_FLACH.oben());
     },
 
     /* Zwölf Regeln, eine je Farbe und Art — mit einer Klasse mehr als die
@@ -95,7 +127,10 @@ const FIGUREN_FLACH = {
         const liste = [];
         for (const art of Object.keys(FIGUREN_FLACH.PFADE)) {
             for (const farbe of ["weiss", "schwarz"]) {
+                /* Zweiter Wähler: die Vorschau der Sammlung zeigt „2D"
+                   auch, wenn gerade eine andere Art gilt (seit v0.157.3). */
                 liste.push("body.design-3d." + FIGUREN_FLACH.KLASSE + " .figur-" + farbe + ".figur-art-" + art
+                    + ", body.design-3d .sammlung-buehne.nur-flach .vorschau-feld > .figur-" + farbe + ".figur-art-" + art
                     + " { background-image: url(\"" + FIGUREN_FLACH.datenUrl(art, farbe) + "\"); }");
             }
         }
@@ -113,8 +148,10 @@ const FIGUREN_FLACH = {
     },
 
     /* Ein kleines flaches Brett als SVG-Text (Regal „Brett" in der
-       Sammlung): 4 × 4 Felder mit ein paar Figuren. */
-    miniBrett() {
+       Sammlung): 4 × 4 Felder mit ein paar Figuren. `oben` (seit v0.157.3):
+       die von oben gerenderten 3D-Figuren, sobald es sie gibt. */
+    miniBrett(oben) {
+        const bilder = oben ? FIGUREN_FLACH.obenBilder : null;
         const hell = "#e9e2d0";
         const dunkel = "#8a6a4a";
         const aufstellung = [
@@ -123,6 +160,7 @@ const FIGUREN_FLACH = {
             ["laeufer", "weiss"], [null], ["bauer", "weiss"], [null],
             [null], ["dame", "weiss"], [null], ["koenig", "weiss"]
         ];
+        const mass = FIGUREN_FLACH.obenMass || { groesse: 0.88, fuss: 0.44 };
         let inhalt = "";
         for (let i = 0; i < 16; i++) {
             const x = (i % 4) * 24;
@@ -130,12 +168,19 @@ const FIGUREN_FLACH = {
             const feld = ((i % 4) + Math.floor(i / 4)) % 2 === 0 ? hell : dunkel;
             inhalt += "<rect x=\"" + x + "\" y=\"" + y + "\" width=\"24\" height=\"24\" fill=\"" + feld + "\"/>";
             const [art, farbe] = aufstellung[i];
-            if (art) {
+            if (art && bilder && bilder[art + "-" + farbe]) {
+                /* Geneigt (v0.157.4): Fuss auf der Feldmitte, ragt nach oben. */
+                const kante = mass.groesse * 24;
+                inhalt += "<image href=\"" + bilder[art + "-" + farbe] + "\" x=\"" + (x + 12 - kante / 2)
+                    + "\" y=\"" + (y + 12 + mass.fuss * 24 - kante) + "\" width=\"" + kante
+                    + "\" height=\"" + kante + "\"/>";
+            } else if (art) {
                 inhalt += FIGUREN_FLACH.svgPfad(art, farbe, x + 2.4, y + 2.4, 0.8);
             }
         }
         return "<svg class=\"sammlung-bild sammlung-bild-flach\" xmlns=\"http://www.w3.org/2000/svg\" "
-            + "viewBox=\"0 0 96 96\" aria-hidden=\"true\">" + inhalt + "</svg>";
+            + "viewBox=\"" + (bilder ? "-6 -12 108 108" : "0 0 96 96") + "\" aria-hidden=\"true\">"
+            + inhalt + "</svg>";
     }
 };
 

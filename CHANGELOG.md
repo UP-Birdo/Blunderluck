@@ -3,6 +3,44 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.158.0 — 29.09.2026
+
+**Neu: 3D-Figuren auf dem flachen Brett · Brett und Figuren getrennt in der Sammlung · Profil schlanker · Start mit grösserer Vorschau.**
+
+> Gebaut in drei Zwischenständen, die nie ausgeliefert wurden und im Code
+> noch als „v0.157.2“, „v0.157.3“ und „v0.157.4“ genannt werden. Weil
+> „3D-Figuren auf dem flachen Brett“ eine neue Funktion ist, geht das Paket
+> nach der Haus-Regel als MINOR hinaus (Nutzer-Entscheid 29.09.2026).
+
+- **Neu — Sammlung:** Brett und Figuren sind jetzt zwei eigene Stücke. Brett: 2D
+  (Standard) oder 3D — das 3D-Brett gibt es ab dem Marmorsaal. Figuren: 2D
+  (Standard) oder 3D — ab der Holzhalle. Das 3D-Brett bringt die 3D-Figuren
+  mit; wer 2D-Figuren nimmt, spielt auf dem 2D-Brett.
+- **Blickwinkel:** Mit 3D-Figuren auf dem 2D-Brett schaust du leicht schräg
+  auf die Figuren — ihre Form ist gut zu erkennen, das Brett bleibt flach.
+  Mit 2D-Figuren wie bisher von oben. In der Partie gibt es keinen
+  Umschalt-Knopf mehr.
+- **Frei:** Unten zwei Knöpfe nebeneinander — links „Runde starten“, rechts
+  „Runde beitreten“. Ist deine Runde noch offen, steht links „Zurück zur
+  Runde“. Das Zahnrad an der Vorschau öffnet die Grund-Regeln; „Speichern“
+  merkt sie, und „Runde starten“ legt sofort damit los.
+- **Turm und Frei:** Der Knopf-Bereich unten ist immer gleich hoch; die
+  Vorschau bekommt den Rest.
+- **Start:** „Runde beitreten“ steht nur noch bei „Frei“, nicht mehr im
+  Turm. Den gewonnenen Platz bekommt die Vorschau — Turm-Weg und Brett
+  sind grösser, alles passt ohne Scrollen.
+- **Profil, Abzeichen:** Der Knopf „Wählen“ ist weg. Du siehst deine drei Plätze —
+  freie mit „+“. Tippe auf einen Platz (auch einen belegten), um ein Abzeichen
+  auszusuchen. Die Liste aller Abzeichen erscheint nur noch dort.
+- **Oben rechts im Profil** steht jetzt die Flamme mit deiner Serie (antippen
+  zeigt die Serien-Karte). Darunter dein Level als Balken — antippen klappt
+  den Level-Weg direkt im Profil auf, noch mal antippen klappt ihn zu.
+- **Kürzer:** „seit Sep 2026“ statt eines ganzen Datums. Die Spielzeit zeigt
+  nur noch dieses Spiel; antippen zeigt die Rechnung mit den anderen Spielen
+  und der Summe.
+- Deine Partien stehen nicht mehr im Profil, sondern nur unter
+  Menü → Verlauf.
+
 ## v0.157.1 — 29.09.2026
 
 **Profil direkt, ohne Zwischen-Karte · Flamme und Level am Bild · Menü zurück.**

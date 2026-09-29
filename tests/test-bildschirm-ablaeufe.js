@@ -716,10 +716,11 @@ async function zeitlimitPruefen() {
                     throw new Error("die geoeffnete Runde ist nicht die auf dem Server");
                 }
 
-                /* DANACH: Knopf wieder frei. */
+                /* DANACH: Knopf wieder frei — seit v0.157.4 führt er in die
+                   eben angelegte, offene Runde zurück. */
                 const knopfDanach = klasseSuchen(START.wurzelEl, "start-spielen");
                 if (!knopfDanach || knopfDanach.disabled === true
-                        || knopfDanach.textContent !== "Spielen") {
+                        || String(knopfDanach.textContent).indexOf("Zurück zur Runde") !== 0) {
                     throw new Error("nach dem Anlegen ist der Spielen-Knopf nicht wieder frei");
                 }
                 if (TEAM_SCHACH.legtGeradeAn !== false || START.spielenLaeuft !== false) {
@@ -2710,6 +2711,13 @@ function startEinsammeln(element, passt, treffer) {
     return treffer;
 }
 
+/* Seit v0.157.4 zeigt eine offene eigene Runde unten NUR „Zurück zur Runde"
+   (Nachtrag 29.09.2026). Die Start-Prüfungen bis „nur in Frei" gelten dem
+   Start OHNE offene Runde — die Umgebung trägt aus früheren Prüfungen eine;
+   sie wird hier ausgeblendet und nach „nur in Frei" wieder eingesetzt. */
+const echteEigeneOffene = umgebung.START._eigeneOffene;
+umgebung.START._eigeneOffene = () => null;
+
 pruefe("Der Startbildschirm zeigt Vorschau, Spielen, das Kurzprofil und kein Menueband (v0.156.1)", () => {
     /*
      * BIS v0.102.0 HIESS DIESE PRUEFUNG „… und Zahnrad (v0.9.0)" und suchte
@@ -2734,10 +2742,12 @@ pruefe("Der Startbildschirm zeigt Vorschau, Spielen, das Kurzprofil und kein Men
     const knoepfe = startEinsammeln(START.wurzelEl,
         (kind) => kind.tagName === "button", []);
 
+    /* Seit v0.157.4 heisst er in Frei „Runde starten" (hier ohne
+       js\start-turm.js, also Frei). */
     const spielen = knoepfe.find(
-        (knopf) => String(knopf.textContent || "") === "Spielen");
-    if (!spielen) {
-        throw new Error("kein Spielen-Knopf");
+        (knopf) => String(knopf.className || "").split(" ").indexOf("start-spielen") !== -1);
+    if (!spielen || !/^(Runde starten|Zurück zur Runde)/.test(String(spielen.textContent || ""))) {
+        throw new Error("kein Knopf Runde starten / Zurück zur Runde");
     }
     if (String(spielen.className).indexOf("knopf-haupt") === -1) {
         throw new Error("Spielen ist nicht die Hauptaktion");
@@ -3252,21 +3262,25 @@ pruefe("Die Spielart-Kachel legt nichts an, sie merkt nur — und man bleibt auf
             + mitKlasse("spielart-kachel-aktiv").length);
     }
 
-    /* „Spielen" unten schliesst, wechselt zum Start und legt ueber
-       START.spielen an. */
+    /* Seit v0.157.4 steht unten „Speichern": merken, schliessen, zum
+       Start — angelegt wird NICHT (das macht „Runde starten" dort). */
     const echtesSpielen = START.spielen;
     let gespielt = 0;
+    const fussKnopf = mitKlasse("runde-spielen")[0];
     try {
         START.spielen = () => { gespielt++; return null; };
-        mitKlasse("runde-spielen")[0].ausloesen("click");
+        fussKnopf.ausloesen("click");
     } finally {
         START.spielen = echtesSpielen;
     }
-    if (gespielt !== 1) {
-        throw new Error("Spielen unten ruft START.spielen nicht (" + gespielt + "x)");
+    if (String(fussKnopf.textContent || "") !== "Speichern") {
+        throw new Error("unten steht nicht Speichern, sondern " + fussKnopf.textContent);
+    }
+    if (gespielt !== 0) {
+        throw new Error("Speichern legt eine Runde an (" + gespielt + "x)");
     }
     if (TEAM_SCHACH.auswahlOffen || umgebung.TABS.gewechseltZu !== "start") {
-        throw new Error("Spielen unten schliesst die Auswahl nicht und fuehrt nicht zum Start");
+        throw new Error("Speichern schliesst die Auswahl nicht und fuehrt nicht zum Start");
     }
 
     /* Und die Auswahl zeigt beim naechsten Oeffnen genau das wieder. */
@@ -3314,6 +3328,93 @@ pruefe("Der Start fuehrt zum Beitreten und Spielen ist die Hauptaktion (Wunsch 1
         throw new Error("Beitreten fuehrt nicht auf den Zwischenbildschirm");
     }
     umgebung.TABS.gewechseltZu = "";
+});
+
+/* Seit v0.157.3 (Nutzer 29.09.2026): „Runde beitreten" nur in der Art
+   Frei, im Turm nicht. */
+pruefe("Runde beitreten steht nur in Frei, nicht im Turm (v0.157.3)", () => {
+    const START = umgebung.START;
+    const alle = (element, treffer) => {
+        for (const kind of element.kinder || []) {
+            treffer.push(kind);
+            alle(kind, treffer);
+        }
+        return treffer;
+    };
+    const beitretenIn = (imTurm) => {
+        const seite = neuesElement("div");
+        START._untenBauen(seite, imTurm);
+        return alle(seite, []).some((kind) => String(kind.textContent || "") === "Runde beitreten");
+    };
+    if (!beitretenIn(false)) {
+        throw new Error("in Frei fehlt Runde beitreten");
+    }
+    if (beitretenIn(true)) {
+        throw new Error("im Turm steht noch Runde beitreten");
+    }
+});
+
+umgebung.START._eigeneOffene = echteEigeneOffene;
+
+/* Seit v0.157.4 (Nutzer 29.09.2026): EIN Knopf-Bereich fester Höhe; in
+   Frei links „Runde starten", rechts „Runde beitreten"; eine offene Runde
+   ersetzt den linken Knopf durch „Zurück zur Runde" — kein Extra-Knopf. */
+pruefe("Start unten: fester Bereich, Runde starten | Runde beitreten, offene Runde = ein Knopf ganze Breite (v0.157.4)", () => {
+    const START = umgebung.START;
+    const alle = (element, treffer) => {
+        for (const kind of element.kinder || []) {
+            treffer.push(kind);
+            alle(kind, treffer);
+        }
+        return treffer;
+    };
+    const knoepfeIn = (imTurm) => {
+        const seite = neuesElement("div");
+        START._untenBauen(seite, imTurm);
+        if ((seite.kinder || []).length !== 1 || seite.kinder[0].className !== "start-unten") {
+            throw new Error("unten steht nicht genau ein Bereich start-unten");
+        }
+        return alle(seite, []).filter((kind) => kind.tagName === "button");
+    };
+    const echt = START._eigeneOffene;
+    START._eigeneOffene = () => null;
+    let frei;
+    try {
+        frei = knoepfeIn(false);
+    } finally {
+        START._eigeneOffene = echt;
+    }
+    if (String(frei[0].textContent) !== "Runde starten" || String(frei[1].textContent) !== "Runde beitreten") {
+        throw new Error("Frei: links Runde starten, rechts Runde beitreten erwartet");
+    }
+    if (String(frei[0].className).indexOf("knopf-haupt") === -1
+            || String(frei[1].className).indexOf("start-beitreten") === -1) {
+        throw new Error("Frei: die zwei Knöpfe tragen nicht ihre Farben");
+    }
+    try {
+        START._eigeneOffene = () => ({ id: "r1", titel: "Klassisch", laeuft: false });
+        for (const imTurm of [false, true]) {
+            const knoepfe = knoepfeIn(imTurm);
+            if (String(knoepfe[0].textContent).indexOf("Zurück zur Runde") !== 0) {
+                throw new Error((imTurm ? "Turm" : "Frei") + ": offene Runde steht nicht im Hauptknopf");
+            }
+            /* Nachtrag 29.09.2026: offene Runde = NUR dieser eine Knopf
+               über die ganze Breite, „Runde beitreten" verschwindet. */
+            if (knoepfe.length !== 1) {
+                throw new Error((imTurm ? "Turm" : "Frei") + ": bei offener Runde " + knoepfe.length
+                    + " Knöpfe statt einem");
+            }
+            if (String(knoepfe[0].className).indexOf("start-ganz") === -1) {
+                throw new Error((imTurm ? "Turm" : "Frei") + ": Zurück zur Runde nicht über die ganze Breite");
+            }
+        }
+    } finally {
+        START._eigeneOffene = echt;
+    }
+    const stil = dateisystem.readFileSync(pfad.join(jsOrdner, "..", "css", "stil-start.css"), "utf8");
+    if (!/\.start-unten \{[^}]*height: 82px/.test(stil)) {
+        throw new Error("start-unten hat keine feste Höhe");
+    }
 });
 
 /*
@@ -4131,8 +4232,8 @@ pruefe("Freunde nur im Reiter der Rangliste: suchen, anfragen, entfernen (Wunsch
         /* Der Start zeigt weiter Spielen — keine Freunde-Seite. */
         START._zeichnen();
         if (!einsammeln(START.wurzelEl, (kind) => kind.tagName === "button"
-                && String(kind.textContent || "") === "Spielen", []).length) {
-            throw new Error("der Start zeigt Spielen nicht");
+                && /^(Runde starten|Zurück zur Runde)/.test(String(kind.textContent || "")), []).length) {
+            throw new Error("der Start zeigt Runde starten nicht");
         }
     } finally {
         ANMELDUNG.abgleich.daten = standVorher;

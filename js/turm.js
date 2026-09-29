@@ -145,6 +145,8 @@ const TURM = {
        js\freischaltung.js). Nummer = Ort, ab dem es frei ist. */
     FREI_AB: {
         dreiD: 2,
+        /* Das 3D-Brett (seit v0.157.4 eigenes Stück): ein Ort später. */
+        brettDreiD: 3,
         thema: { holz: 2, marmor: 3, nacht: 4, turnier: 5 },
         figuren: { matt: 2, porzellan: 3, metall: 4 }
     },

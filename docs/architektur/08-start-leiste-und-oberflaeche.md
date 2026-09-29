@@ -519,6 +519,19 @@ Nur in laufenden oder beendeten Partien (`Z.mitAblage`), dann rechnet
 `blickSetzen` die Ablage in den Bildausschnitt ein. Eine Ablage hinten war
 im Schrägblick verdeckt und ist verworfen.
 
+**3D-Figuren auf dem 2D-Brett (seit v0.157.3, Nutzer 29.09.2026).** Drei
+Arten (`FREISCHALTUNG.brett()`): `"2d"` flache Figuren, `"oben"` die
+3D-Modelle senkrecht von oben auf dem FLACHEN Brett, `"3d"` dieses Brett.
+Bei `"oben"` bleibt das 3D-Brett abgebunden (alles wie 2D: Knöpfe,
+Markierungen, Zug-Animation); `figurenBilderOben` rendert jede Figur EINMAL
+mit `miniRenderer` (perspektivisch, Kamera 4 × höchste Figur über dem Feld,
+Ausschnitt so gross, dass jede Ecke jeder Figur hineinpasst → keine Figur
+ragt über ihr Feld) und legt die Bilder per `#figuren-3d-oben` über die
+flachen (`body.brett-flach.figuren-oben`, `FIGUREN_FLACH.obenBilder`).
+Springer zweimal: `.brett-schwarz-unten` am Rahmen (setzt `anbinden`)
+dreht ihn. Speicher: Feld `oben` in `blunderluck.brett3d`; Freischaltung
+wie 3D (ab Holzhalle / Werkstatt). Gewählt in Sammlung → Brett („3D flach“).
+
 **Kein Aufblitzen (seit v0.127.0).** `TEAM_SCHACH._brett3dAbwarten` setzt
 `.brett-3d-wartet` (flaches Brett `visibility: hidden`), solange
 `BRETT_3D.laedt()`; das Modul nimmt die Klasse ab, spätestens nach 6 s ein

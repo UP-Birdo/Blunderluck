@@ -13,10 +13,9 @@
  *     über dieselben Wege wie die echte Partie (F2 — die Kachel-Vorschau
  *     aus team-schach-uebersicht.js, deshalb kann sie nicht veralten). Seit
  *     v0.20.0 ist es ein KNOPF und führt zur Brettform (Wunsch 7/8);
- *   - untere Hälfte: der Spielen-Knopf (zwei Drittel breit, für den
- *     Daumen), daneben ein Quadrat mit Pfeil, das die
- *     Grundeinstellungen der Runde öffnet (Regler und Haken);
- *   - darunter still „Runde beitreten" — der Weg zum Zwischenbildschirm.
+ *   - unten der Knopf-Bereich mit fester Höhe (seit v0.157.4,
+ *     `_untenBauen`): Turm „Spielen", Frei „Runde starten" + „Runde
+ *     beitreten", offene Runde „Zurück zur Runde"; rechts das Art-Quadrat.
  *
  * DER WIEDEREINSTIEG (Entwurf, Abschnitt 3.2) wohnt ebenfalls hier: Nach
  * jeder Anmeldung wird die Schach-Tafel nach der eigenen Kennung
@@ -121,46 +120,9 @@ const START = {
             seite.appendChild(START._freiVorschauBauen());
         }
 
-        /* Untere Hälfte: Spielen (zwei Drittel) und das Quadrat der Art. */
-        const zeile = document.createElement("div");
-        zeile.className = "start-spielen-zeile";
-
-        const spielen = document.createElement("button");
-        spielen.type = "button";
-        spielen.className = "knopf knopf-haupt start-spielen";
-        spielen.textContent = "Spielen";
-        spielen.addEventListener("click", () => (imTurm ? START.turmSpielen() : START.spielen()));
-
-        /* Im Turm sagt eine zweite Zeile, was „Spielen" startet. */
-        if (imTurm && !START.spielenLaeuft) {
-            const unter = START._turmSpielenText();
-            if (unter) {
-                const klein = document.createElement("small");
-                klein.className = "start-spielen-unter";
-                klein.textContent = unter;
-                spielen.appendChild(klein);
-            }
-        }
-
-        /* Während des Anlegens gesperrt und beschriftet (v0.114.2, siehe
-           `spielen`). `aria-busy` sagt es auch dem Vorleseprogramm. */
-        if (START.spielenLaeuft) {
-            spielen.textContent = "Wird angelegt …";
-            spielen.disabled = true;
-            spielen.setAttribute("aria-busy", "true");
-        }
-        zeile.appendChild(spielen);
-
-        /* Das Quadrat: bis v0.146 die Grundeinstellungen (Pfeil), seit
-           v0.147.0 die Wahl der Art (Turm · Frei). Die Grundeinstellungen
-           erreicht man in Frei über die Vorschau (Reiter „Gegner"). */
-        zeile.appendChild((typeof START._artKnopfBauen === "function")
-            ? START._artKnopfBauen()
-            : START._matchKnopfBauen());
-
-        seite.appendChild(zeile);
-
-        START._untenBauen(seite);
+        /* Unten der Knopf-Bereich mit FESTER Höhe (seit v0.157.4) — gleich
+           in Turm und Frei, mit und ohne offene Runde. */
+        START._untenBauen(seite, imTurm);
         wurzel.appendChild(seite);
 
         /* Ein neu erreichter Ort wird einmal gefeiert (seit v0.147.0). */
@@ -201,10 +163,33 @@ const START = {
         vorschau.setAttribute("aria-label",
             "Brettform wählen — eingestellt ist " + variante.titel);
         vorschau.title = "Brettform wählen";
+        /* Seit v0.157.3 füllt das Brett den freien Platz (stil-start.css). */
+        if (variante.breite && variante.hoehe) {
+            vorschau.style.setProperty("--start-verhaeltnis", String(variante.hoehe / variante.breite));
+        }
         vorschau.addEventListener("click", () => START.brettformWaehlen());
 
-        vorschau.appendChild(TEAM_SCHACH._vorschauBauen(
+        const mass = document.createElement("span");
+        mass.className = "start-vorschau-mass";
+        mass.appendChild(TEAM_SCHACH._vorschauBauen(
             variante, TEAM_SCHACH._vorschauBrett(variante)));
+        vorschau.appendChild(mass);
+
+        /* DIE GRUND-REGELN (seit v0.157.4, Nutzer 29.09.2026: „grund
+           einstellungen fürs spiel soll dort speichern sein … bleibt bis man
+           es ändert"): das Zahnrad oben rechts an der Vorschau öffnet sie
+           (Reiter „Gegner"); unten dort steht „Speichern" statt „Spielen". */
+        const halter = document.createElement("div");
+        halter.className = "start-vorschau-halter";
+        halter.appendChild(vorschau);
+        const regeln = document.createElement("button");
+        regeln.type = "button";
+        regeln.className = "knopf knopf-still start-regeln-knopf";
+        regeln.setAttribute("aria-label", "Grund-Regeln");
+        regeln.title = "Grund-Regeln";
+        regeln.appendChild(START._zahnradBauen());
+        regeln.addEventListener("click", () => START.matchEinstellungen());
+        halter.appendChild(regeln);
 
         /*
          * DER NAME UNTER DEM BRETT IST WEG (v0.38.0, Nutzer-Ansage
@@ -219,64 +204,131 @@ const START = {
          * steht — sonst gibt es den Namen zweimal.
          */
 
-        return vorschau;
+        return halter;
     },
 
-    /* Unter der Spielen-Zeile, in beiden Arten gleich: der Weg zurück in
-       die eigene Runde und „Runde beitreten". */
-    _untenBauen(seite) {
-        /*
-         * ZURÜCK IN DIE EIGENE RUNDE (seit v0.34.0).
-         *
-         * WOZU: Bis v0.33.0 führte der einzige Weg zurück über die Liste
-         * „Deine offenen Partien" im Zwischenbildschirm. Der automatische
-         * Wiedereinstieg (`START.wiedereinstieg`) hilft nur nach der
-         * Anmeldung und nur bei LAUFENDEN Partien — wer seine noch wartende
-         * Runde verliess, kam ohne die Liste nur über den Beitritts-Code
-         * zurück. Seit der Start die Schaltzentrale ist, gehört diese Tür
-         * hierher (Nutzer-Entscheidung 24.08.2026).
-         *
-         * Gezeigt wird sie nur, wenn es wirklich etwas zu betreten gibt —
-         * sonst steht hier nichts im Weg.
-         */
+    /* Ein Zahnrad (Linien-Zeichen, wie die übrigen Start-Zeichen). */
+    _zahnradBauen() {
+        const ns = "http://www.w3.org/2000/svg";
+        const svg = document.createElementNS(ns, "svg");
+        svg.setAttribute("viewBox", "0 0 24 24");
+        svg.setAttribute("aria-hidden", "true");
+        svg.setAttribute("class", "start-zeichen");
+        for (const [art, werte] of [
+            ["circle", { cx: "12", cy: "12", r: "3" }],
+            ["path", { d: "M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 "
+                + "1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1"
+                + "a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1"
+                + "a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3"
+                + "H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1"
+                + "a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1"
+                + "a1.7 1.7 0 0 0-1.5 1z" }]
+        ]) {
+            const teil = document.createElementNS(ns, art);
+            for (const [name, wert] of Object.entries(werte)) {
+                teil.setAttribute(name, wert);
+            }
+            teil.setAttribute("fill", "none");
+            teil.setAttribute("stroke", "currentColor");
+            teil.setAttribute("stroke-width", "2");
+            teil.setAttribute("stroke-linecap", "round");
+            teil.setAttribute("stroke-linejoin", "round");
+            svg.appendChild(teil);
+        }
+        return svg;
+    },
+
+    /*
+     * DER KNOPF-BEREICH UNTEN (seit v0.157.4, Nutzer 29.09.2026: „bei turm
+     * und frei soll spielen / runden fixe höhe haben unten … wenn noch eine
+     * runde offen ist soll statt runde erstellen zurück zur runde in dem
+     * knopf stehen"). EINE Zeile fester Höhe (`.start-unten`):
+     *
+     *   Turm:  [ Spielen · Stufe … ]                        [Art]
+     *   Frei:  [ Runde starten ] [ Runde beitreten ]        [Art]
+     *
+     * Ist eine eigene Runde offen, steht dort NUR EIN Knopf „Zurück zur
+     * Runde" über die ganze Breite (darunter klein, welche und wie sie
+     * steht; Nachtrag Nutzer 29.09.2026: „Zurück zur Runde soll dann ganz
+     * werden also runde Beitreten verschwindet solange noch eine runde offen
+     * ist") — die Höhe bleibt. Gilt in Turm und Frei gleich. „Runde beitreten" gibt es nur in Frei (v0.157.3), in
+     * einer zweiten Farbe (`.start-beitreten`). „Runde starten" legt SOFORT
+     * mit den gespeicherten Grund-Regeln an (`START.spielen`, `regeln()`) —
+     * eingestellt werden sie über das Zahnrad an der Frei-Vorschau.
+     */
+    _untenBauen(seite, imTurm) {
+        const unten = document.createElement("div");
+        unten.className = "start-unten";
+        const zeile = document.createElement("div");
+        zeile.className = "start-spielen-zeile";
+
         const eigeneOffene = START._eigeneOffene();
-        if (eigeneOffene) {
-            const zurueck = document.createElement("button");
-            zurueck.type = "button";
-            zurueck.className = "knopf knopf-still start-zurueck";
+        const haupt = document.createElement("button");
+        haupt.type = "button";
+        haupt.className = "knopf knopf-haupt start-spielen";
 
-            const titel = document.createElement("span");
-            titel.className = "start-zurueck-titel";
-            titel.textContent = "Zurück zur Runde";
-            zurueck.appendChild(titel);
-
-            const lage = document.createElement("span");
-            lage.className = "start-zurueck-lage";
-            lage.textContent = eigeneOffene.titel + " — "
-                + (eigeneOffene.laeuft
-                    ? "läuft"
-                    : "wartet auf Mitspieler");
-            zurueck.appendChild(lage);
-
-            zurueck.addEventListener("click", () => {
+        if (START.spielenLaeuft) {
+            /* Während des Anlegens gesperrt und beschriftet (v0.114.2).
+               `aria-busy` sagt es auch dem Vorleseprogramm. */
+            haupt.textContent = "Wird angelegt …";
+            haupt.disabled = true;
+            haupt.setAttribute("aria-busy", "true");
+        } else if (eigeneOffene) {
+            /* ZURÜCK IN DIE EIGENE RUNDE (seit v0.34.0; seit v0.157.4 im
+               Hauptknopf statt als eigener Knopf darunter). */
+            haupt.className += " start-zurueck start-ganz";
+            haupt.textContent = "Zurück zur Runde";
+            const lage = document.createElement("small");
+            lage.className = "start-spielen-unter start-zurueck-lage";
+            lage.textContent = eigeneOffene.titel + " · "
+                + (eigeneOffene.laeuft ? "läuft" : "wartet");
+            haupt.appendChild(lage);
+            haupt.addEventListener("click", () => {
                 TABS.wechseln("team-schach");
                 TEAM_SCHACH.partieOeffnen(eigeneOffene.id);
             });
-            seite.appendChild(zurueck);
+        } else if (imTurm) {
+            haupt.textContent = "Spielen";
+            /* Im Turm sagt eine zweite Zeile, was „Spielen" startet. */
+            const unter = (typeof START._turmSpielenText === "function") ? START._turmSpielenText() : "";
+            if (unter) {
+                const klein = document.createElement("small");
+                klein.className = "start-spielen-unter";
+                klein.textContent = unter;
+                haupt.appendChild(klein);
+            }
+            haupt.addEventListener("click", () => START.turmSpielen());
+        } else {
+            haupt.textContent = "Runde starten";
+            haupt.addEventListener("click", () => START.spielen());
+        }
+        zeile.appendChild(haupt);
+
+        /* Offene Runde: nur dieser eine Knopf, ganze Breite. */
+        if (eigeneOffene && !START.spielenLaeuft) {
+            unten.appendChild(zeile);
+            seite.appendChild(unten);
+            return;
         }
 
-        /*
-         * Der Weg zum Zwischenbildschirm (seit Wunsch 1): Seit „Spielen"
-         * die Runde selbst anlegt, führt nichts anderes mehr dorthin —
-         * dort liegen aber die Einladungen, das Code-Feld und die eigenen
-         * Partien. Still gehalten: Die Hauptaktion bleibt „Spielen".
-         */
-        const beitreten = document.createElement("button");
-        beitreten.type = "button";
-        beitreten.className = "knopf knopf-still start-beitreten";
-        beitreten.textContent = "Runde beitreten";
-        beitreten.addEventListener("click", () => START.beitreten());
-        seite.appendChild(beitreten);
+        /* Der Weg zum Zwischenbildschirm (Einladungen, Code, eigene
+           Partien) — nur in Frei. */
+        if (!imTurm) {
+            const beitreten = document.createElement("button");
+            beitreten.type = "button";
+            beitreten.className = "knopf knopf-still start-beitreten";
+            beitreten.textContent = "Runde beitreten";
+            beitreten.addEventListener("click", () => START.beitreten());
+            zeile.appendChild(beitreten);
+        }
+
+        /* Das Quadrat: seit v0.147.0 die Wahl der Art (Turm · Frei). */
+        zeile.appendChild((typeof START._artKnopfBauen === "function")
+            ? START._artKnopfBauen()
+            : START._matchKnopfBauen());
+
+        unten.appendChild(zeile);
+        seite.appendChild(unten);
     },
 
     /* DAS MENÜBAND OBEN RECHTS (v0.103.0 bis v0.156.0) ist seit v0.156.1

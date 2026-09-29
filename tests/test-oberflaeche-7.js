@@ -435,7 +435,8 @@ pruefe("Profil: Kopf mit #Tag und XP, drei Plätze, Auswahl höchstens drei", ()
     let tipp = 0;
     P.zeichnen(ort, { name: "Anna", tag: "#0042", level: 7, anteil: 0.5, xpText: "50 / 100 XP bis Level 8",
         abzeichen: [eintrag("a", 1), eintrag("b", 1)], plaetze: 3,
-        spielzeit: { wert: "1h+", zeilen: ["Blunderluck 1h+"], oeffentlich: false }, seit: "01.09.2026",
+        spielzeit: { wert: "1h+", spiel: "Blunderluck", andere: [{ spiel: "Typoluck", wert: "20 min" }], summe: "2h+",
+            oeffentlich: false }, seit: "01.09.2026",
         orte: [{ spiel: "Blunderluck", titel: "Turm · Werkbank", anteil: 0.2 }] }, { beiAbzeichen: () => tipp++ });
     wahr(!!sucheText(ort, "#0042"), "klein #Tag");
     wahr(!!sucheText(ort, "Anna#0042"), "Name + Tag in einer Zeile");
@@ -443,7 +444,18 @@ pruefe("Profil: Kopf mit #Tag und XP, drei Plätze, Auswahl höchstens drei", ()
     gleich(ort.querySelectorAll(".up-pf-leer").length, 1, "ein freier Platz");
     ort.querySelector(".up-pf-leer").ausloesen("click");
     gleich(tipp, 1, "Tipp auf einen Platz öffnet die Auswahl");
-    wahr(!!sucheText(ort, "01.09.2026") && !!sucheText(ort, "Turm · Werkbank"), "dabei seit, Ort");
+    /* Seit v0.157.2: kein „Wählen“, auch belegte Plätze antippbar; „seit Sep 2026“; Spielzeit nur dieses Spiel. */
+    gleich(ort.querySelectorAll(".up-pf-h3-knopf").length, 0, "kein „Wählen“-Knopf");
+    gleich(ort.querySelectorAll(".up-pf-platz-knopf").length, 3, "alle drei Plätze sind Knöpfe");
+    ort.querySelectorAll(".up-pf-platz-knopf")[0].ausloesen("click");
+    gleich(tipp, 2, "auch ein belegter Platz öffnet die Auswahl");
+    wahr(!!sucheText(ort, "seit Sep 2026") && !!sucheText(ort, "Turm · Werkbank"), "dabei seit kompakt, Ort");
+    const rechnung = ort.querySelector(".up-pf-rechnung");
+    wahr(!!rechnung && rechnung.hidden === true, "Rechnung erst zu");
+    wahr(ort.querySelector(".up-pf-spielzeit").textContent === "1h+", "Spielzeit nur dieses Spiel");
+    ort.querySelector(".up-pf-spielzeit").ausloesen("click");
+    wahr(rechnung.hidden === false && /Typoluck20 min/.test(rechnung.textContent) && /Summe2h\+/.test(rechnung.textContent),
+        "Tipp → Rechnung mit den anderen Spielen und Summe");
 
     const wahl = neuesElement("div");
     const gewechselt = [];
@@ -458,7 +470,7 @@ pruefe("Profil: Kopf mit #Tag und XP, drei Plätze, Auswahl höchstens drei", ()
     gleich(gewechselt, ["b,c,d", "c,d"], "jede Änderung gemeldet");
 });
 
-pruefe("Profil zweistufig (v0.157.0): EINE Vorschau-Karte, ausführlich mit Statistik/Partien, Level-Kachel ganz unten", () => {
+pruefe("Profil zweistufig (v0.157.0): EINE Vorschau-Karte; ausführlich schlank (v0.157.2) mit Flamme und Level-Balken", () => {
     const w = neueWelt();
     laden(w, ["js/upcrew-blatt.js", "js/upcrew-abzeichen.js", "js/upcrew-levelpfad.js", "js/upcrew-profil.js"]);
     const P = w.UPCREW_PROFIL;
@@ -518,16 +530,28 @@ pruefe("Profil zweistufig (v0.157.0): EINE Vorschau-Karte, ausführlich mit Stat
         (e) => e.kennung.indexOf("bl-") !== 0);
     gleich(fremd.map((e) => e.kennung), ["tl-wort"], "tl- gezeigt, bl- ohne Chronik und up- ohne Wert nicht");
 
-    /* Stufe 2: Statistik und Partien kommen von der App, die Level-Kachel steht als Letztes. */
+    /* Stufe 2 schlank (v0.157.2): Statistik von der App, KEINE Partien, keine Abzeichen-Liste, keine Level-Kachel;
+       Flamme oben rechts; Level-Balken klappt den Pfad inline auf/zu; fremde Plätze nicht antippbar. */
     const voll = neuesElement("div");
-    P.zeichnen(voll, daten, { eigen: false, statistik: (o) => o.appendChild(neuesElement("i")).className = "app-stat",
-        verlauf: (o) => o.appendChild(neuesElement("i")).className = "app-partien", beiLevel: () => pfad++ });
-    wahr(!!voll.querySelector(".app-stat") && !!voll.querySelector(".app-partien"), "Statistik und Partien der App");
-    const letztes = voll.kinder[voll.kinder.length - 1];
-    wahr(letztes.classList.contains("up-pf-levelkachel") || !!letztes.querySelector(".up-pf-levelkachel"),
-        "Level-Kachel ganz unten");
-    voll.querySelector(".up-pf-levelkachel").ausloesen("click");
-    gleich(pfad, 2, "Level-Kachel öffnet den Pfad");
+    let serieTipp = 0;
+    P.zeichnen(voll, Object.assign({ alle: [eintrag("x"), eintrag("y")] }, daten), { eigen: false,
+        statistik: (o) => o.appendChild(neuesElement("i")).className = "app-stat",
+        verlauf: (o) => o.appendChild(neuesElement("i")).className = "app-partien", beiSerie: () => serieTipp++ });
+    wahr(!!voll.querySelector(".app-stat") && !voll.querySelector(".app-partien"), "Statistik ja, Partien nein");
+    gleich(voll.querySelectorAll(".up-pf-levelkachel").length, 1, "nur der Level-Balken");
+    wahr(!!voll.querySelector(".up-pf-levelbalken") && !voll.querySelector(".up-pf-alle"), "Balken ja, Abzeichen-Liste nein");
+    wahr(!voll.querySelector(".up-pf-kopf").querySelector(".up-pf-level"), "keine Level-Zahl am Profil-Kreis");
+    gleich(voll.querySelectorAll(".up-pf-platz-knopf").length, 0, "fremd: Plätze nicht antippbar");
+    voll.querySelector(".up-pf-kopf-flamme").ausloesen("click");
+    gleich([serieTipp, voll.querySelector(".up-pf-kopf-flamme").textContent], [1, "3"], "Flamme oben rechts → Serie");
+    const balken = voll.querySelector(".up-pf-levelbalken");
+    balken.ausloesen("click");
+    const auf = voll.querySelector(".up-pf-levelpfad");
+    wahr(!!auf && !!auf.querySelector(".up-lp-weg") && !auf.querySelector(".up-lp-kopf"),
+        "Tipp klappt den Level-Pfad auf (ohne zweiten Kopf)");
+    gleich(balken.getAttribute("aria-expanded"), "true", "aufgeklappt");
+    balken.ausloesen("click");
+    wahr(!voll.querySelector(".up-pf-levelpfad"), "erneuter Tipp klappt zu");
 
     /* Der Pfad rechnet wie FORTSCHRITT (Kosten je Level). */
     laden(w, ["js/fortschritt.js"], ["FORTSCHRITT"]);
@@ -547,8 +571,8 @@ pruefe("Profil zweistufig: Blunderluck verdrahtet (jeder Name → Karte, §12-Au
         && rangliste.indexOf("vorschauZeigen") === -1 && start.indexOf("vorschauZeigen") === -1,
         "keine Vorschau-Karte als Zwischenschritt mehr (v0.157.1)");
     wahr(/FORTSCHRITT\.auszugVon\(person, heute\)/.test(profil), "fremde Profile aus dem öffentlichen Auszug");
-    wahr(/statistik: \(ort\) => PROFIL\._statistikBauen/.test(profil) && /verlauf: \(ort\) => PROFIL\._verlaufBauen/.test(profil),
-        "Statistik und Partien im ausführlichen Profil");
+    wahr(/statistik: \(ort\) => PROFIL\._statistikBauen/.test(profil) && !/verlauf: \(ort\)/.test(profil),
+        "Statistik im ausführlichen Profil, Partien nicht mehr (v0.157.2)");
     wahr(profil.indexOf("statistikOeffnen") === -1 && profil.indexOf("Statistik und Partien") === -1,
         "kein Seitenwechsel „Statistik und Partien“ mehr");
     wahr(/PROFIL\._alsBlatt\(\)[\s\S]{0,500}UPCREW_PROFIL\.kopfzeile\(halter/.test(start), "Start: die kompakte Kopfzeile statt Kurzprofil");

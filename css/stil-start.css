@@ -704,10 +704,139 @@ body.dialog-offen {
     width: min(70vw, 340px);
 }
 
+/*
+ * DIE VORSCHAU FÜLLT DEN START (seit v0.157.3, Nutzer 29.09.2026: „nutze
+ * den gewonnen platz bei start um die vorschau zu vergrößern"). Der Start
+ * ist so hoch wie der Platz zwischen Kopf und Leiste (`.start`
+ * min-height unten); Turm-Karte und Frei-Vorschau wachsen in den Rest.
+ * Das Brett in Frei richtet sich nach Breite UND Höhe seines Kastens
+ * (Container-Einheiten); `--start-verhaeltnis` = Reihen / Spalten setzt
+ * start.js. Die 0,06 sind Luft für den Überstand der Figuren.
+ */
+.start {
+    min-height: calc(100dvh - max(var(--inhalt-rand), calc(var(--oben-frei, 0px) + 8px))
+        - var(--leiste-hoehe) - 16px - env(safe-area-inset-bottom, 0px));
+}
+
+.start-vorschau {
+    position: relative;
+    min-height: 180px;
+}
+
+/* Frei (seit v0.157.4): Vorschau und das Zahnrad der Grund-Regeln oben
+   rechts darauf. Der Halter wächst statt der Vorschau in den Rest. */
+.start-vorschau-halter {
+    position: relative;
+    flex: 1 1 auto;
+    display: flex;
+    min-height: 180px;
+}
+
+.start-vorschau-halter > .start-vorschau {
+    flex: 1 1 auto;
+}
+
+/* Das Brett rückt unter das Zahnrad, damit es kein Feld verdeckt. */
+.start-vorschau-halter .start-vorschau-mass {
+    top: 46px;
+}
+
+.start-regeln-knopf {
+    position: absolute;
+    top: 0;
+    right: 0;
+    z-index: 2;
+    width: 44px;
+    height: 44px;
+    min-height: 0;
+    padding: 0;
+    display: grid;
+    place-items: center;
+}
+
+.start-regeln-knopf .start-zeichen {
+    width: 22px;
+    height: 22px;
+}
+
+/* Der Mass-Kasten füllt den Knopf (ein `button` taugt selbst nicht als
+   Container — Chrome misst dort 100cqh als 2 px). */
+.start-vorschau-mass {
+    position: absolute;
+    inset: 4px;
+    container-type: size;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.start-vorschau .vorschau {
+    width: min(100cqw - 8px, (100cqh - 8px) / (var(--start-verhaeltnis, 1) + 0.06));
+}
+
 /* `.start-spielart` (der Name unter dem Vorschaubild) ist mit v0.38.0
    entfallen — die Regel gleich mit, damit hier kein toter Stil liegen
    bleibt. Der gleichnamige Speicher-Schlüssel in `start.js`
    (`blunderluck.start-spielart`) hat damit nichts zu tun und bleibt. */
+
+/*
+ * DER KNOPF-BEREICH HAT EINE FESTE HÖHE (seit v0.157.4, Nutzer 29.09.2026:
+ * „bei turm und frei soll spielen / runden fixe höhe haben unten"): eine
+ * Zeile, 74 px Knöpfe + 8 px Luft, gleich in Turm und Frei, mit und ohne
+ * offene Runde. Was darüber frei ist, bekommt die Vorschau.
+ */
+.start-unten {
+    flex: 0 0 auto;
+    height: 82px;
+}
+
+.start-unten .start-spielen-zeile {
+    height: 74px;
+    padding-bottom: 0;
+}
+
+.start-spielen,
+.start-beitreten {
+    min-width: 0;
+    height: 74px;
+    overflow: hidden;
+}
+
+/* Frei: zwei gleich breite Knöpfe nebeneinander — links „Runde starten"
+   (Hauptfarbe), rechts „Runde beitreten" in einer zweiten Farbe. */
+.start-unten:has(.start-beitreten) .start-spielen {
+    flex: 1 1 0;
+    padding: 8px 10px;
+    font-size: 0.95rem;
+    line-height: 1.2;
+}
+
+.start-beitreten {
+    flex: 1 1 0;
+    padding: 8px 10px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+/* Offene Runde: nur „Zurück zur Runde", über die ganze Breite. */
+.start-unten .start-spielen.start-ganz {
+    flex: 1 1 auto;
+    font-size: 1.05rem;
+}
+
+/* Die zweite Farbe über die Variablen der Knopf-Familie (Fläche, Kante,
+   Schrift) — Form und Schatten bleiben die der Familie. */
+.start-beitreten.up-kn {
+    --kf: var(--gut);
+    --kk: color-mix(in srgb, var(--gut) 60%, #000);
+    --ks: var(--haupt-schrift);
+}
+
+.start-beitreten:not(.up-kn) {
+    background: var(--gut);
+    color: var(--haupt-schrift);
+}
 
 /* Die untere Hälfte: Spielen zwei Drittel, daneben das Quadrat. */
 .start-spielen-zeile {
@@ -1361,29 +1490,13 @@ body.dialog-offen {
  * darunter kleiner, um welche Runde es geht und wie sie steht. Still
  * gehalten wie „Runde beitreten": Die Hauptaktion bleibt „Spielen".
  */
-.start-zurueck {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
-    width: 100%;
-    margin-top: 10px;
-}
-
-.start-zurueck-titel {
-    font-weight: 600;
-}
-
+/* Seit v0.157.4 steht „Zurück zur Runde" IM Hauptknopf unten (zweite Zeile
+   wie im Turm, `.start-spielen-unter`); die Lage kürzt sich mit „…". */
 .start-zurueck-lage {
-    font-size: 0.85em;
-    opacity: 0.8;
-}
-
-.start-beitreten {
-    align-self: center;
-    padding: 10px 18px;
-    margin-bottom: 24px;
-    font-size: 0.95rem;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 /* ------------------------------------------------------------------ *
@@ -2304,9 +2417,10 @@ body.dialog-offen {
    passt der Start bei 390×844 ohnehin; auf kleinen Bildschirmen (bis 720 px hoch, z. B. 360×640) enger — weniger
    Abstand, der Turm-Weg darf bis 220 px schrumpfen. */
 @media (max-height: 720px) {
+    /* Die Höhe setzt seit v0.157.3 die Regel „Die Vorschau füllt den
+       Start" (genau der freie Platz, nie mehr). */
     .start {
         gap: 10px;
-        min-height: 0;
     }
 
     .turm-karte {

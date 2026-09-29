@@ -124,11 +124,14 @@ Object.assign(TEAM_SCHACH, {
         return leiste;
     },
 
-    /* Unten, klebend: der eine Weg ins Spiel. */
+    /* Unten, klebend: SPEICHERN (seit v0.157.4, Nutzer 29.09.2026: „statt
+       unten spielen steht in dem frei grund einstellungen fürs spiel soll
+       dort speichern sein"). Die Regeln bleiben, bis man sie ändert; „Runde
+       starten" auf dem Start legt dann sofort damit an. */
     _auswahlFussBauen() {
         const fuss = TEAM_SCHACH._element("div", "runde-fuss");
-        const knopf = TEAM_SCHACH._knopf("Spielen", "knopf-haupt runde-spielen",
-            () => TEAM_SCHACH.auswahlSpielen());
+        const knopf = TEAM_SCHACH._knopf("Speichern", "knopf-haupt runde-spielen runde-speichern",
+            () => TEAM_SCHACH.auswahlSpeichern());
         fuss.appendChild(knopf);
         return fuss;
     },
@@ -138,6 +141,13 @@ Object.assign(TEAM_SCHACH, {
      * Weg wie der Knopf auf dem Start (`START.spielen`), damit Sperre und
      * „Wird angelegt …" nur an einer Stelle wohnen.
      */
+    /* Merken und zurück zum Start — derselbe Weg wie „Zurück"
+       (`auswahlSchliessen`: merken, schliessen, Start). */
+    auswahlSpeichern() {
+        TEAM_SCHACH.auswahlSchliessen();
+    },
+
+    /* Bis v0.157.3 der Fuss-Knopf; bleibt als Weg für Aufrufer von aussen. */
     auswahlSpielen() {
         TEAM_SCHACH.reglerMerken();
         TEAM_SCHACH.auswahlOffen = false;
@@ -223,9 +233,10 @@ Object.assign(TEAM_SCHACH, {
     _figurBildBauen(art, farbe) {
         const bild = document.createElement("img");
         bild.className = "bild-figur";
-        /* Im 2D-Brett die flache Figur (seit v0.151.3, js\figuren-flach.js). */
+        /* Im 2D-Brett die flache Figur (seit v0.151.3, js\figuren-flach.js),
+           seit v0.157.3 bei „3D von oben" die von oben gerenderte. */
         bild.src = (typeof FIGUREN_FLACH !== "undefined" && FIGUREN_FLACH.flach())
-            ? FIGUREN_FLACH.datenUrl(art, farbe)
+            ? FIGUREN_FLACH.bildUrl(art, farbe)
             : TEAM_SCHACH.FIGUREN_ORDNER + "figur-" + art + "-" + farbe + ".png";
         bild.alt = "";
         return bild;

@@ -194,6 +194,73 @@ pruefe("Freischaltung: 2D ist die Vorgabe, 3D wählbar, wenn die Sperre aus ist"
     }
 });
 
+pruefe("Freischaltung: 3D-Figuren auf dem 2D-Brett („oben“, v0.157.3) — dritte Art, gleiche Freischaltung wie 3D", () => {
+    gleich(FREISCHALTUNG.ARTEN.join(","), "2d,oben,3d", "drei Arten");
+    FREISCHALTUNG.SPERRE_3D = false;
+    try {
+        gleich(FREISCHALTUNG.brettSetzen("oben"), "oben", "oben wählbar");
+        gleich(FREISCHALTUNG.brett(), "oben", "oben gemerkt");
+        const roh = JSON.parse(speicher["blunderluck.brett3d"]);
+        gleich(roh.an === false && roh.oben === true, true, "im Speicher: an=false, oben=true");
+        gleich(FREISCHALTUNG.brettSetzen("3d"), "3d", "danach 3D");
+        gleich(JSON.parse(speicher["blunderluck.brett3d"]).oben, false, "3D löscht oben");
+        FREISCHALTUNG.brettSetzen("2d");
+        gleich(FREISCHALTUNG.brett(), "2d", "zurück auf 2D");
+    } finally {
+        FREISCHALTUNG.SPERRE_3D = true;
+    }
+    /* Gesperrt (Arena 0, keine Werkstatt): oben gilt nicht und lässt sich nicht setzen. */
+    speicher["blunderluck.brett3d"] = JSON.stringify({ an: false, oben: true });
+    gleich(FREISCHALTUNG.brett(), "2d", "gesperrt: gespeichertes oben wird übergangen");
+    gleich(FREISCHALTUNG.brettSetzen("oben"), "2d", "gesperrt: oben nicht setzbar");
+    delete speicher["blunderluck.brett3d"];
+});
+
+pruefe("3D-Figuren von oben: Bilder aus dem 3D-Modul, Sammlung und flache Figuren kennen „oben“", () => {
+    const flach = dateisystem.readFileSync(pfad.join(projekt, "js", "figuren-flach.js"), "utf8");
+    const BRETT_QUELLE = dateisystem.readFileSync(pfad.join(projekt, "js", "brett-3d.js"), "utf8");
+    wahr(/KLASSE_OBEN: "figuren-oben"/.test(flach) && /bildUrl\(art, farbe\)/.test(flach), "figuren-flach: Klasse und bildUrl");
+    wahr(/function figurenBilderOben\(\)/.test(BRETT_QUELLE), "brett-3d: figurenBilderOben");
+    wahr(/miniRenderer\(\)/.test(BRETT_QUELLE.slice(BRETT_QUELLE.indexOf("function figurenBilderOben"))),
+        "derselbe kleine Renderer");
+    wahr(/body\.design-3d\.brett-flach\.figuren-oben /.test(BRETT_QUELLE), "Stilregel am flachen Brett");
+    wahr(/brett-schwarz-unten/.test(BRETT_QUELLE), "Springer dreht mit, wenn Schwarz unten steht");
+    /* v0.157.4: geneigte Kamera, kein Umschalter in der Partie. */
+    wahr(/const OBEN_NEIGUNG = THREE\.MathUtils\.degToRad\(/.test(BRETT_QUELLE), "geneigte Kamera");
+    wahr(!/Flaches 2D-Brett/.test(BRETT_QUELLE), "kein Knopf Flaches 2D-Brett");
+    wahr(!/knopf\.textContent = "3D"/.test(BRETT_QUELLE), "kein Knopf 3D am flachen Brett");
+    const sammlung = dateisystem.readFileSync(pfad.join(projekt, "js", "sammlung.js"), "utf8");
+    /* Seit v0.157.4 zwei Regale: Figuren 3D ab Holzhalle, Brett 3D ab Marmorsaal. */
+    wahr(/wert: "3d", name: "3D", frei: FREISCHALTUNG\.dreiDFrei\(\), ab: "Holzhalle"/.test(sammlung),
+        "Regal Figuren: 3D ab Holzhalle");
+    wahr(/wert: "3d", name: "3D", frei: FREISCHALTUNG\.brettDreiDFrei\(\), ab: "Marmorsaal"/.test(sammlung),
+        "Regal Brett: 3D ab Marmorsaal");
+});
+
+pruefe("Freischaltung v0.157.4: 3D-Brett ab Marmorsaal, Brett/Figuren getrennt, alte 3D-Wahl sinngemäss", () => {
+    const arena = FREISCHALTUNG.arena;
+    try {
+        FREISCHALTUNG.arena = () => 2;
+        gleich(FREISCHALTUNG.dreiDFrei(), true, "Holzhalle: 3D-Figuren frei");
+        gleich(FREISCHALTUNG.brettDreiDFrei(), false, "Holzhalle: 3D-Brett noch zu");
+        speicher["blunderluck.brett3d"] = JSON.stringify({ an: true });
+        gleich(FREISCHALTUNG.brett(), "oben", "wer 3D gewählt hatte, behält die 3D-Figuren");
+        gleich(FREISCHALTUNG.brettSetzen("3d"), "2d", "3D-Brett gesperrt nicht setzbar");
+        FREISCHALTUNG.arena = () => 3;
+        speicher["blunderluck.brett3d"] = JSON.stringify({ an: true });
+        gleich(FREISCHALTUNG.brett(), "3d", "Marmorsaal: das 3D-Brett gilt wieder");
+        gleich(JSON.stringify(FREISCHALTUNG.teile("oben")), JSON.stringify({ brett: "2d", figuren: "3d" }), "teile oben");
+        gleich(JSON.stringify(FREISCHALTUNG.teile("3d")), JSON.stringify({ brett: "3d", figuren: "3d" }), "teile 3d");
+        gleich(FREISCHALTUNG.artAus("3d", "2d", "brett"), "3d", "3D-Brett zieht 3D-Figuren mit");
+        gleich(FREISCHALTUNG.artAus("3d", "2d", "figuren"), "2d", "2D-Figuren ziehen das 2D-Brett mit");
+        gleich(FREISCHALTUNG.artAus("2d", "3d", "figuren"), "oben", "2D-Brett + 3D-Figuren");
+        gleich(FREISCHALTUNG.artAus("2d", "2d", "brett"), "2d", "2D + 2D");
+    } finally {
+        FREISCHALTUNG.arena = arena;
+        delete speicher["blunderluck.brett3d"];
+    }
+});
+
 pruefe("Freischaltung: mit Sperre gilt 3D erst ab Arena 2 (Holzhalle) oder in der Werkstatt", () => {
     FREISCHALTUNG.SPERRE_3D = true;
     try {
@@ -410,8 +477,10 @@ pruefe("Sammlung: ohne Freigabe nur die Vorgaben frei, mit Ort am Schloss", () =
 });
 
 pruefe("Sammlung: Reihenfolge der eigenen Regale Brett · Brett-Thema · Figuren", () => {
-    gleich(SAMMLUNG.regale().map((r) => r.schluessel).join(","), "brett,thema,figuren", "Reihenfolge");
-    gleich(SAMMLUNG.regale().map((r) => r.titel).join(" | "), "Brett | Brett-Thema · 3D | Figuren · 3D", "Titel");
+    /* Seit v0.157.4: Brett und Figuren (2D/3D) als eigene Regale vorn. */
+    gleich(SAMMLUNG.regale().map((r) => r.schluessel).join(","), "brett,figurart,thema,figuren", "Reihenfolge");
+    gleich(SAMMLUNG.regale().map((r) => r.titel).join(" | "),
+        "Brett | Figuren | Brett-Thema · 3D | Figuren-Stil · 3D", "Titel");
 });
 
 pruefe("Sammlung: der Anteil zählt Regale, Baustein-Stücke und reine Sammlung", () => {
@@ -424,12 +493,12 @@ pruefe("Sammlung: der Anteil zählt Regale, Baustein-Stücke und reine Sammlung"
     globalThis.UPCREW_ANPASSEN = { STUFEN: { farbwelt: { a: 0, b: 2 }, schrift: { c: 0 }, knoepfe: { d: 0, e: 3 } } };
     try {
         const anteil = SAMMLUNG.anteil();
-        /* Regale: 2 + 5 + 4 = 11 Stücke, frei 1 (2D; 3D erst ab Holzhalle,
-           seit v0.147.0) + 1 + 1 = 3. Baustein: 5 Stücke, frei 3. Reine
-           Sammlung: 4 Karten + 2 Formen, alle da. */
-        gleich(anteil.alle, 11 + 5 + 6, "alle");
-        gleich(anteil.hat, 3 + 3 + 6, "gesammelt");
-        gleich(anteil.prozent, Math.round(12 / 22 * 100), "Prozent");
+        /* Regale: 2 + 2 + 5 + 4 = 13 Stücke (seit v0.157.4 Brett 2D/3D und
+           Figuren 2D/3D), frei 1 + 1 + 1 + 1 = 4 (je die Vorgabe). Baustein:
+           5 Stücke, frei 3. Reine Sammlung: 4 Karten + 2 Formen, alle da. */
+        gleich(anteil.alle, 13 + 5 + 6, "alle");
+        gleich(anteil.hat, 4 + 3 + 6, "gesammelt");
+        gleich(anteil.prozent, Math.round(13 / 24 * 100), "Prozent");
     } finally {
         delete globalThis.SCHACH_VARIANTEN;
         delete globalThis.UPCREW_ANPASSEN;

@@ -24,9 +24,13 @@
  * 2D-Schach, 3D ab Arena 2, in Blunderluck selbst, kein Bestandsschutz"):
  *
  *   dreiDFrei()   Arena ≥ 2 ODER Werkstatt — solange SPERRE_3D an ist.
- *   brett()       "2d" | "3d": was gerade gilt. Gewähltes 3D zählt nur,
+ *   brett()       "2d" | "oben" | "3d": was gerade gilt (seit v0.157.3
+ *                 "oben" = 3D-Figuren auf dem 2D-Brett, Draufsicht). Gewähltes 3D zählt nur,
  *                 wenn es frei ist; ein gespeichertes an=true wird sonst
  *                 übergangen.
+ *   brettDreiDFrei()  das 3D-BRETT (seit v0.157.4 ein eigenes Stück der
+ *                 Sammlung): erst ab Marmorsaal (Ort 3, `TURM.FREI_AB.brettDreiD`)
+ *                 oder Werkstatt. Die 3D-FIGUREN bleiben bei `dreiDFrei()`.
  *   brettSetzen(w)  merkt die Wahl (Gerätespeicher des 3D-Bretts,
  *                 `blunderluck.brett3d`, Feld `an`) und sagt es dem
  *                 3D-Brett, falls es schon geladen ist.
@@ -103,14 +107,66 @@ const FREISCHALTUNG = {
         }
     },
 
+    /* Seit v0.157.3 DREI Arten (Nutzer 29.09.2026): "3d" = 3D-Figuren auf
+       dem 3D-Brett, "oben" = 3D-Figuren auf dem flachen 2D-Brett, senkrecht
+       von oben gesehen (Feld `oben` im selben Gerätespeicher), "2d" = flache
+       Figuren. "oben" zeigt die 3D-Figuren und hängt darum an derselben
+       Freischaltung wie 3D (ab Holzhalle / Werkstatt). */
+    ARTEN: ["2d", "oben", "3d"],
+
+    /* Das 3D-Brett (v0.157.4, Nutzer 29.09.2026: „2d brett standard drin
+       und an und 3d brett erst später"): ein Ort nach den 3D-Figuren. */
+    BRETT_3D_AB_ARENA: 3,
+
+    brettDreiDFrei() {
+        if (!FREISCHALTUNG.SPERRE_3D) {
+            return true;
+        }
+        const ab = (typeof TURM !== "undefined" && TURM.FREI_AB && TURM.FREI_AB.brettDreiD)
+            || FREISCHALTUNG.BRETT_3D_AB_ARENA;
+        return FREISCHALTUNG.arena() >= ab || FREISCHALTUNG.werkstatt();
+    },
+
+    /* Wer „3D" gewählt hat (an=true), das 3D-Brett aber noch nicht frei hat,
+       behält seit v0.157.4 wenigstens die 3D-Figuren ("oben") — sinngemäss
+       übernommen, bis das Brett frei ist. */
     brett() {
-        return (FREISCHALTUNG._brettLesen().an === true && FREISCHALTUNG.dreiDFrei()) ? "3d" : "2d";
+        if (!FREISCHALTUNG.dreiDFrei()) {
+            return "2d";
+        }
+        const einst = FREISCHALTUNG._brettLesen();
+        if (einst.an === true) {
+            return FREISCHALTUNG.brettDreiDFrei() ? "3d" : "oben";
+        }
+        return einst.oben === true ? "oben" : "2d";
+    },
+
+    /* Die beiden Sammlungs-Stücke (seit v0.157.4) aus der einen Art:
+       Brett 2d|3d, Figuren 2d|3d. 3D-Brett setzt 3D-Figuren voraus. */
+    teile(art) {
+        const wert = art || FREISCHALTUNG.brett();
+        return { brett: wert === "3d" ? "3d" : "2d", figuren: wert === "2d" ? "2d" : "3d" };
+    },
+
+    /* Aus Brett- und Figuren-Wahl die Art. `zuletzt` sagt, welches Stück
+       gerade gewählt wurde — es gewinnt: 3D-Brett zieht 3D-Figuren mit,
+       2D-Figuren ziehen das 2D-Brett mit. */
+    artAus(brett, figuren, zuletzt) {
+        if (brett === "3d" && figuren === "3d") {
+            return "3d";
+        }
+        if (brett === "3d") {
+            return zuletzt === "figuren" ? "2d" : "3d";
+        }
+        return figuren === "3d" ? "oben" : "2d";
     },
 
     brettSetzen(wert) {
-        const an = (wert === "3d") && FREISCHALTUNG.dreiDFrei();
+        const an = (wert === "3d") && FREISCHALTUNG.dreiDFrei() && FREISCHALTUNG.brettDreiDFrei();
+        const oben = (wert === "oben") && FREISCHALTUNG.dreiDFrei();
         const einst = FREISCHALTUNG._brettLesen();
         einst.an = an;
+        einst.oben = oben;
         try {
             localStorage.setItem(FREISCHALTUNG.BRETT_SCHLUESSEL, JSON.stringify(einst));
         } catch (fehler) {
@@ -118,13 +174,13 @@ const FREISCHALTUNG = {
         }
         if (typeof window !== "undefined" && window.BRETT_3D
                 && typeof window.BRETT_3D.wahlUebernehmen === "function") {
-            window.BRETT_3D.wahlUebernehmen(an);
+            window.BRETT_3D.wahlUebernehmen(an, oben);
         }
         /* Echtes 2D (seit v0.151.3): flache Figuren an/aus. */
         if (typeof FIGUREN_FLACH !== "undefined") {
             FIGUREN_FLACH.anwenden();
         }
-        return an ? "3d" : "2d";
+        return an ? "3d" : (oben ? "oben" : "2d");
     }
 };
 

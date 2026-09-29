@@ -141,7 +141,7 @@ const SAMMLUNG = {
      * ---------------------------------------------------------------- */
 
     regale() {
-        return [SAMMLUNG.brettRegal(), SAMMLUNG.themaRegal(), SAMMLUNG.figurenRegal()];
+        return [SAMMLUNG.brettRegal(), SAMMLUNG.figurArtRegal(), SAMMLUNG.themaRegal(), SAMMLUNG.figurenRegal()];
     },
 
     _bild(name) {
@@ -168,28 +168,90 @@ const SAMMLUNG = {
     },
 
     /*
-     * Das Regal „Brett" (wie Runde 3, Punkt 5b): 2D/3D. Gesperrtes 3D zeigt
-     * der Baustein mit Schloss und „ab Holzhalle" (Runde 5: 3D ab
-     * Holzhalle statt „Arena 2"). Übernommen wird über
-     * js\freischaltung.js — das prüft die Freigabe ein zweites Mal.
+     * BRETT UND FIGUREN SIND ZWEI STÜCKE (seit v0.157.4, Nutzer 29.09.2026:
+     * „alles als items in die sammlung zum freischalten · 2d brett standard
+     * drin und an und 3d brett erst später"). Bis v0.157.3 ein Regal „Brett"
+     * mit 2D / 3D flach / 3D.
+     *
+     *   Regal „Brett"   (schluessel "brett"):   2D (Vorgabe) · 3D ab Marmorsaal
+     *   Regal „Figuren" (schluessel "figurart"): 2D (Vorgabe) · 3D ab Holzhalle
+     *
+     * Gespeichert bleibt EINE Art (jsreischaltung.js: "2d" | "oben" | "3d",
+     * "oben" = 3D-Figuren auf dem 2D-Brett). 3D-Brett setzt 3D-Figuren
+     * voraus: Wer das 3D-Brett nimmt, bekommt die 3D-Figuren mit; wer die
+     * 2D-Figuren nimmt, das 2D-Brett. Werden beide zugleich widersprüchlich
+     * übernommen, gewinnt das Brett (`_artVon`).
      */
     brettRegal() {
         return {
             schluessel: "brett",
             titel: "Brett",
-            wert: FREISCHALTUNG.brett(),
+            wert: FREISCHALTUNG.teile().brett,
             stuecke: [
-                /* Seit v0.151.3 echtes 2D: das Bild zeigt die flachen
-                   Figuren (js\figuren-flach.js) statt der alten Aufnahme. */
                 { wert: "2d", name: "2D", bild: (typeof FIGUREN_FLACH !== "undefined")
                     ? FIGUREN_FLACH.miniBrett() : SAMMLUNG._bild("brett-2d") },
-                { wert: "3d", name: "3D", frei: FREISCHALTUNG.dreiDFrei(), ab: "Holzhalle",
+                { wert: "3d", name: "3D", frei: FREISCHALTUNG.brettDreiDFrei(), ab: "Marmorsaal",
                     bild: SAMMLUNG._bild("brett-3d") }
             ],
             uebernehmen(wert) {
-                FREISCHALTUNG.brettSetzen(wert);
+                SAMMLUNG._teilWaehlen("brett", wert);
             }
         };
+    },
+
+    figurArtRegal() {
+        const oben = typeof FIGUREN_FLACH !== "undefined" && FIGUREN_FLACH.obenBilder;
+        return {
+            schluessel: "figurart",
+            titel: "Figuren",
+            wert: FREISCHALTUNG.teile().figuren,
+            stuecke: [
+                { wert: "2d", name: "2D", bild: (typeof FIGUREN_FLACH !== "undefined")
+                    ? FIGUREN_FLACH.miniBrett() : SAMMLUNG._bild("brett-2d") },
+                { wert: "3d", name: "3D", frei: FREISCHALTUNG.dreiDFrei(), ab: "Holzhalle",
+                    bild: oben ? FIGUREN_FLACH.miniBrett(true) : SAMMLUNG._bild("brett-3d") }
+            ],
+            uebernehmen(wert) {
+                SAMMLUNG._teilWaehlen("figuren", wert);
+            }
+        };
+    },
+
+    /* Die Art aus einem Entwurf (Brett- und Figuren-Wahl) — was sich
+       gegenüber jetzt geändert hat, gewinnt; beide geändert: das Brett. */
+    _artVon(brett, figuren) {
+        const jetzt = FREISCHALTUNG.teile();
+        const b = brett || jetzt.brett;
+        const f = figuren || jetzt.figuren;
+        const zuletzt = (b !== jetzt.brett) ? "brett" : (f !== jetzt.figuren ? "figuren" : "brett");
+        return FREISCHALTUNG.artAus(b, f, zuletzt);
+    },
+
+    /* Der Baustein ruft `uebernehmen` je geändertem Regal nacheinander —
+       gesammelt und EINMAL angewandt, danach neu gezeichnet, falls das
+       andere Stück mitgezogen wurde. */
+    _wahl: null,
+
+    _teilWaehlen(teil, wert) {
+        if (!SAMMLUNG._wahl) {
+            SAMMLUNG._wahl = {};
+            Promise.resolve().then(() => SAMMLUNG._wahlAnwenden());
+        }
+        SAMMLUNG._wahl[teil] = wert;
+    },
+
+    _wahlAnwenden() {
+        const wahl = SAMMLUNG._wahl || {};
+        SAMMLUNG._wahl = null;
+        const jetzt = FREISCHALTUNG.teile();
+        const b = wahl.brett || jetzt.brett;
+        const f = wahl.figuren || jetzt.figuren;
+        const art = FREISCHALTUNG.brettSetzen(SAMMLUNG._artVon(wahl.brett, wahl.figuren));
+        const danach = FREISCHALTUNG.teile(art);
+        if ((danach.brett !== b || danach.figuren !== f) && SAMMLUNG.tab) {
+            SAMMLUNG._zeigen();
+        }
+        return art;
     },
 
     /* Die Regale „Brett-Thema · 3D" und „Figuren · 3D": gleich gebaut, nur
@@ -224,7 +286,7 @@ const SAMMLUNG = {
     },
 
     figurenRegal() {
-        return SAMMLUNG._stilRegal("figuren", "Figuren · 3D", SAMMLUNG.FIGUREN);
+        return SAMMLUNG._stilRegal("figuren", "Figuren-Stil · 3D", SAMMLUNG.FIGUREN);
     },
 
     /* ---------------------------------------------------------------- *
@@ -412,7 +474,7 @@ const SAMMLUNG = {
      * Rückruf des Bausteins nach jedem Zeichnen der Vorschau
      * (`opt.vorschau(el, entwurf, app)`). Für Blunderluck ersetzt er das
      * gezeichnete 6×6 durch die ECHTE Start-Vorschau (dieselbe wie auf dem
-     * Start, `TEAM_SCHACH._vorschauBauen`). Bei „3D" legt das 3D-Brett ein
+     * Start, `TEAM_SCHACH._vorschauBauen`). Bei 3D-Brett legt das 3D-Brett ein
      * Standbild mit Thema und Figuren des ENTWURFS darüber — nur für dieses
      * Bild; das echte Brett ändert erst „Übernehmen". Ohne 3D (kein WebGL,
      * noch am Laden) bleibt es beim flachen Gitter.
@@ -428,11 +490,17 @@ const SAMMLUNG = {
         }
 
         const extra = entwurf.extra || {};
-        const drei = extra.brett === "3d";
+        /* Seit v0.157.4 zwei Stücke — die Vorschau zeigt, was „Übernehmen"
+           daraus machen würde. */
+        const art = SAMMLUNG._artVon(extra.brett, extra.figurart);
+        const drei = art === "3d";
         const start = SAMMLUNG._startBrett();
         const gitter = TEAM_SCHACH._vorschauBauen(start.variante, start.brett, true);
         const halter = document.createElement("div");
-        halter.className = "sammlung-buehne";
+        /* Seit v0.157.3 zeigt die flache Vorschau die Figuren des ENTWURFS
+           (2D flach oder 3D von oben), unabhängig von der geltenden Art. */
+        halter.className = "sammlung-buehne"
+            + (art === "oben" ? " figuren-oben" : (drei ? "" : " nur-flach"));
         halter.appendChild(gitter);
         buehne.replaceWith(halter);
 
@@ -445,7 +513,7 @@ const SAMMLUNG = {
             kopf.textContent = drei
                 ? "3D · " + SAMMLUNG._name(SAMMLUNG.THEMEN, extra.thema)
                     + " · " + SAMMLUNG._name(SAMMLUNG.FIGUREN, extra.figuren)
-                : "2D";
+                : (art === "oben" ? "2D-Brett · 3D-Figuren" : "2D");
         }
     }
 };

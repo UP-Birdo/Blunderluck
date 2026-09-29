@@ -264,6 +264,9 @@ function einstellungenLaden() {
        Wahl gilt also auch ohne Admin-Freigabe, aber nur, solange 3D frei
        ist. Die Antwort gibt allein js\freischaltung.js. */
     einst.an = dreiDGilt();
+    /* Seit v0.157.3: 3D-Figuren auf dem 2D-Brett — nur gemerkt, damit
+       `einstellungenSpeichern` die Wahl nicht verliert. */
+    einst.oben = typeof FREISCHALTUNG !== "undefined" && FREISCHALTUNG.brett() === "oben";
     if (!THEMEN[einst.thema]) einst.thema = VORGABE.thema;
     if (!FIGUR_STILE[einst.figuren]) einst.figuren = VORGABE.figuren;
     if (!BLICKE[einst.blick]) einst.blick = VORGABE.blick;
@@ -3024,20 +3027,14 @@ function tafelUmschalten() {
 
     const fuss = document.createElement("div");
     fuss.className = "brett-3d-fuss";
-    const zwei = document.createElement("button");
-    zwei.type = "button";
-    zwei.className = "knopf knopf-still knopf-klein";
-    zwei.textContent = "Flaches 2D-Brett";
-    zwei.addEventListener("click", () => {
-        tafelUmschalten();
-        FREISCHALTUNG.brettSetzen("2d");
-    });
+    /* Kein Umschalter 2D/3D in der Partie (seit v0.157.4, Nutzer 29.09.2026:
+       „keinen extra knopf im match") — gewählt wird in der Sammlung. */
     const zu = document.createElement("button");
     zu.type = "button";
     zu.className = "knopf knopf-haupt knopf-klein";
     zu.textContent = "Fertig";
     zu.addEventListener("click", () => tafelUmschalten());
-    fuss.append(zwei, zu);
+    fuss.append(zu);
     tafel.appendChild(fuss);
 
     document.body.appendChild(tafel);
@@ -3064,6 +3061,7 @@ function aussehenAnwenden(schluessel) {
             g.userData.netz.material = Z.mat[g.userData.farbe];
         }
         figurenBilder();
+        if (typeof FIGUREN_FLACH !== "undefined" && FIGUREN_FLACH.obenBilder) figurenBilderOben();
         anstossen();
         return;
     }
@@ -3098,34 +3096,25 @@ function abbinden() {
     }
 }
 
-/* Auf dem flachen Brett ein kleiner Knopf zurück ins 3D — seit v0.144.0
-   nur, wenn 3D freigeschaltet ist (gesperrt: kein Umschalter). */
+/* Bis v0.157.3 stand auf dem flachen Brett ein kleiner Knopf „3D". Seit
+   v0.157.4 gibt es in der Partie keinen Umschalter mehr (Nutzer 29.09.2026:
+   „keinen extra knopf im match · sondern alles als items in die sammlung")
+   — hier wird nur ein alter Knopf entfernt, falls noch einer steht. */
 function zweiDKnopf(halter) {
     const rahmen = halter && halter.querySelector(".brett-rahmen");
-    if (!rahmen) return;
-    const alt = rahmen.querySelector(".brett-3d-zurueck");
-    if (!dreiDFrei()) {
-        if (alt) alt.remove();
-        return;
-    }
-    if (alt) return;
-    const knopf = document.createElement("button");
-    knopf.type = "button";
-    knopf.className = "brett-3d-zurueck";
-    knopf.textContent = "3D";
-    knopf.title = "Brett in 3D zeigen";
-    knopf.addEventListener("click", () => {
-        knopf.remove();
-        FREISCHALTUNG.brettSetzen("3d");
-    });
-    rahmen.appendChild(knopf);
+    const alt = rahmen && rahmen.querySelector(".brett-3d-zurueck");
+    if (alt) alt.remove();
 }
 
 /* Die Wahl 2D/3D hat sich geändert (js\freischaltung.js `brettSetzen`,
    Tab „Anpassen" oder die Knöpfe oben): übernehmen und neu zeichnen. */
-function wahlUebernehmen(an) {
+function wahlUebernehmen(an, oben) {
     if (!Z.einst) return;
     Z.einst.an = an === true;
+    Z.einst.oben = oben === true;
+    if (Z.einst.oben && typeof FIGUREN_FLACH !== "undefined" && !FIGUREN_FLACH.obenBilder) {
+        try { figurenBilderOben(); } catch (fehler) { console.error("3D-Bild nicht möglich:", fehler); }
+    }
     if (!Z.einst.an) {
         abbinden();
         if (Z.letzte && Z.letzte.halter) zweiDKnopf(Z.letzte.halter);
@@ -3134,6 +3123,14 @@ function wahlUebernehmen(an) {
     const alt = Z.letzte && Z.letzte.halter && Z.letzte.halter.querySelector(".brett-3d-zurueck");
     if (alt) alt.remove();
     neuZeichnen(false);
+}
+
+/* Wer unten steht: die eigene Farbe, sonst Weiss. */
+function untenFarbeVon(partie, person) {
+    try {
+        if (SCHACH_RUNDE.teamVon(partie, person.id) === "schwarz") return "schwarz";
+    } catch (fehler) { /* Zuschauer */ }
+    return "weiss";
 }
 
 function neuZeichnen(animieren) {
@@ -3147,6 +3144,10 @@ function anbinden(halter, partie, person, animierenErlaubt) {
     if (!Z.einst.an) {
         document.body.classList.remove("brett-3d-aktiv");
         zweiDKnopf(halter);
+        /* 3D-Figuren von oben (v0.157.3): Steht Schwarz unten, schaut der
+           Springer andersherum. */
+        const flachRahmen = halter.querySelector(".brett-rahmen");
+        if (flachRahmen) flachRahmen.classList.toggle("brett-schwarz-unten", untenFarbeVon(partie, person) === "schwarz");
         return;
     }
     const rahmen = halter.querySelector(".brett-rahmen");
@@ -3162,13 +3163,7 @@ function anbinden(halter, partie, person, animierenErlaubt) {
     if (Z.huelle.parentNode !== rahmen) rahmen.appendChild(Z.huelle);
     Z.knoepfe = beschreibung.knoepfe;
 
-    /* Wer unten steht: die eigene Farbe, sonst Weiss. */
-    let unten = "weiss";
-    try {
-        const team = SCHACH_RUNDE.teamVon(partie, person.id);
-        if (team === "schwarz") unten = "schwarz";
-    } catch (fehler) { /* Zuschauer */ }
-    Z.untenFarbe = unten;
+    Z.untenFarbe = untenFarbeVon(partie, person);
 
     const schluessel = beschreibung.spalten + "x" + beschreibung.reihen + ":"
         + beschreibung.zellen.map((z) => (z.ausserhalb ? "0" : "1")).join("")
@@ -4159,6 +4154,152 @@ function figurenBilder() {
 }
 
 /* ------------------------------------------------------------------ *
+ * 3D-Figuren auf dem 2D-Brett (seit v0.157.3; seit v0.157.4 GENEIGT,
+ * Nutzer 29.09.2026: „mache den blick winkel ansicht abhängig der figuren
+ * 3d figuren aus der top ansicht kann man nicht so gut ansehen").
+ *
+ * Das Brett bleibt das flache 2D-Brett von oben (Markierungen, Züge,
+ * Tippen wie dort, jsiguren-flach.js) — geneigt ist NUR die Kamera, mit
+ * der jede Figur einmal gerechnet wird (`OBEN_NEIGUNG` gegen die
+ * Senkrechte, orthografisch, derselbe kleine Renderer `miniRenderer`). Das
+ * Bild steht mit dem Fuss auf der Feldmitte und ragt nach oben ins Feld
+ * dahinter, wie die Figuren des alten 3D-Looks — die Treffer bleiben
+ * dabei die Felder selbst (`pointer-events: none` an der Figur), eine
+ * Umrechnung wie am schrägen 3D-Brett braucht es nicht.
+ *
+ * KEINE DURCHDRINGUNG: Der Ausschnitt ist für alle Figuren gleich, quadratisch
+ * und fasst jede Ecke jeder Figur (auch des gedrehten Springers — gerechnet
+ * mit dem grössten Radius). Seitlich bleibt jede Figur in ihrer Spalte
+ * (höchstens 0,46 Felder zur Seite, `OBEN_SEITE`). Nach oben überdeckt eine
+ * vordere Figur die hintere, weil der Browser die Felder von hinten nach
+ * vorn zeichnet — so, wie man es auch in echt sähe. Der Springer schaut zum
+ * Gegner; steht Schwarz unten (`.brett-schwarz-unten`), gilt das zweite Bild.
+ * ------------------------------------------------------------------ */
+
+/* Neigung der Kamera gegen die Senkrechte — „leicht", die Form ist
+   erkennbar, das Brett bleibt die Draufsicht. */
+const OBEN_NEIGUNG = THREE.MathUtils.degToRad(38);
+/* Höchstens so weit (in Feldern) darf eine Figur seitlich von der
+   Feldmitte reichen. */
+const OBEN_SEITE = 0.46;
+
+/* Die Masse des Ausschnitts in Feldern: Seite, Fuss über dem unteren Rand,
+   Massstab (Felder je Modell-Einheit). */
+function obenMasse() {
+    let radius = 0.2;
+    let hoehe = 0.2;
+    for (const art of ARTEN) {
+        const pos = Z.formen[art].attributes.position;
+        for (let i = 0; i < pos.count; i++) {
+            radius = Math.max(radius, Math.hypot(pos.getX(i), pos.getZ(i)));
+            hoehe = Math.max(hoehe, pos.getY(i));
+        }
+    }
+    const sin = Math.sin(OBEN_NEIGUNG);
+    const cos = Math.cos(OBEN_NEIGUNG);
+    const unten = radius * cos * 1.06 + 0.02;
+    const seite = Math.max(unten + hoehe * sin + radius * cos + 0.02, radius * 2.04);
+    return { seite, unten, massstab: Math.min(1, OBEN_SEITE / radius) };
+}
+
+function figurenBilderOben() {
+    if (!Z.bereit || !Z.formen || typeof FIGUREN_FLACH === "undefined") return;
+    const m = obenMasse();
+    const kamera = new THREE.OrthographicCamera(-m.seite / 2, m.seite / 2, m.seite - m.unten, -m.unten, 0.1, 40);
+    kamera.position.set(0, Math.cos(OBEN_NEIGUNG), Math.sin(OBEN_NEIGUNG)).multiplyScalar(12);
+    kamera.up.set(0, 1, 0);
+    kamera.lookAt(0, 0, 0);
+
+    const szene = new THREE.Scene();
+    szene.add(new THREE.HemisphereLight(0xf4f7ff, 0x3a3f4a, 1.35));
+    /* Licht fast senkrecht: der Schatten bleibt im eigenen Feld. */
+    const licht = new THREE.DirectionalLight(0xffffff, 2.0);
+    licht.position.set(-2, 12, 3);
+    licht.castShadow = true;
+    licht.shadow.mapSize.set(512, 512);
+    licht.shadow.bias = -0.0006;
+    licht.shadow.normalBias = 0.02;
+    const sk = licht.shadow.camera;
+    sk.left = -1; sk.right = 1; sk.top = 1; sk.bottom = -1; sk.near = 1; sk.far = 30;
+    szene.add(licht, licht.target);
+    const boden = new THREE.Mesh(new THREE.PlaneGeometry(2, 2),
+        new THREE.ShadowMaterial({ opacity: 0.3 }));
+    boden.rotation.x = -Math.PI / 2;
+    boden.receiveShadow = true;
+    szene.add(boden);
+
+    const ren = miniRenderer();
+    ren.setSize(256, 256, false);
+    const bilder = {};
+    const aufnehmen = (art, farbeName, drehung) => {
+        const netz = new THREE.Mesh(Z.formen[art], Z.mat[farbeName]);
+        netz.castShadow = true;
+        netz.rotation.y = drehung;
+        szene.add(netz);
+        ren.render(szene, kamera);
+        szene.remove(netz);
+        return ren.domElement.toDataURL("image/png");
+    };
+    /* Wie `ausrichten`: die untere Farbe schaut nach oben (zum Gegner). */
+    const hoch = Math.PI / 2 + 0.35;
+    const runter = -Math.PI / 2 + 0.35;
+    for (const art of ARTEN) {
+        for (const farbeName of ["weiss", "schwarz"]) {
+            if (art === "springer") {
+                bilder[art + "-" + farbeName] = aufnehmen(art, farbeName, farbeName === "weiss" ? hoch : runter);
+                bilder[art + "-" + farbeName + "-gedreht"] = aufnehmen(art, farbeName, farbeName === "weiss" ? runter : hoch);
+            } else {
+                bilder[art + "-" + farbeName] = aufnehmen(art, farbeName, 0);
+            }
+        }
+    }
+    boden.geometry.dispose();
+    boden.material.dispose();
+    szene.remove(licht);
+    licht.dispose();
+    FIGUREN_FLACH.obenBilder = bilder;
+    /* In Feldern: Kantenlänge des Bildes, Fuss über seinem unteren Rand,
+       Überstand über die oberste Reihe. */
+    const groesse = m.seite * m.massstab;
+    const fuss = m.unten * m.massstab;
+    const ueber = Math.max(0, 0.5 - fuss + groesse - 1);
+    FIGUREN_FLACH.obenMass = { groesse, fuss, ueber };
+
+    const regeln = [];
+    const zahl = (wert) => String(Math.round(wert * 10000) / 100);
+    regeln.push("body.design-3d.brett-flach.figuren-oben .feld > .figur-bild, "
+        + "body.design-3d.brett-flach.figuren-oben .vorschau-feld > .figur-bild, "
+        + "body.design-3d .sammlung-buehne.figuren-oben .vorschau-feld > .figur-bild"
+        + " { width: " + zahl(groesse) + "%; height: " + zahl(groesse) + "%; left: 50%; margin-left: -"
+        + zahl(groesse / 2) + "%; top: auto; margin-top: 0; bottom: " + zahl(0.5 - fuss)
+        + "%; background-size: 100% 100%; background-position: center bottom; }");
+    regeln.push("body.design-3d.brett-flach.figuren-oben .brett { padding-top: calc(var(--figur-groesse, 30px) / 0.68 * "
+        + (Math.round(ueber * 1000) / 1000) + "); }");
+    regeln.push("body.design-3d.brett-flach.figuren-oben .vorschau, body.design-3d .sammlung-buehne.figuren-oben .vorschau"
+        + " { padding-top: calc(" + zahl(ueber) + "% / var(--vorschau-spalten, 8)); }");
+
+    for (const art of ARTEN) {
+        for (const farbeName of ["weiss", "schwarz"]) {
+            const figur = ".figur-" + farbeName + ".figur-art-" + art;
+            regeln.push("body.design-3d.brett-flach.figuren-oben " + figur
+                + ", body.design-3d .sammlung-buehne.figuren-oben .vorschau-feld > " + figur
+                + " { background-image: url(\"" + bilder[art + "-" + farbeName] + "\"); }");
+            if (art === "springer") {
+                regeln.push("body.design-3d.brett-flach.figuren-oben .brett-schwarz-unten " + figur
+                    + " { background-image: url(\"" + bilder[art + "-" + farbeName + "-gedreht"] + "\"); }");
+            }
+        }
+    }
+    let stil = document.getElementById("figuren-3d-oben");
+    if (!stil) {
+        stil = document.createElement("style");
+        stil.id = "figuren-3d-oben";
+        document.head.appendChild(stil);
+    }
+    stil.textContent = regeln.join("\n");
+}
+
+/* ------------------------------------------------------------------ *
  * Die Fähigkeitskarten als 3D-Plättchen (seit v0.127.0, ROADMAP 60)
  *
  * Jede Fähigkeit und jedes Unglück wird eine kleine Karte aus Emaille im
@@ -4442,10 +4583,14 @@ async function starten() {
             fertig();
         }, 20));
         await spaeter(figurenBilder);
+        /* 3D-Figuren von oben (v0.157.3): nur, wenn sie wählbar sind —
+           gewählt zuerst, sonst nach den kleinen Brettern (Bild im Regal). */
+        if (Z.einst.oben) await spaeter(figurenBilderOben);
         const wartend = MINI.warte.splice(0);
         for (const el of wartend) {
             await spaeter(() => { if (el.isConnected) standbild(el); });
         }
+        if (!Z.einst.oben && dreiDFrei()) await spaeter(figurenBilderOben);
     } catch (fehler) {
         Z.fehler = true;
         window.BRETT_3D_AUS = true;

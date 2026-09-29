@@ -435,6 +435,9 @@ Object.assign(START, {
     _freiDurch(nr) {
         const namen = [];
         if (TURM.FREI_AB.dreiD === nr) {
+            namen.push("3D-Figuren");
+        }
+        if (TURM.FREI_AB.brettDreiD === nr) {
             namen.push("3D-Brett");
         }
         const themen = { holz: "Holz", marmor: "Marmor", nacht: "Nacht", turnier: "Turnier" };
