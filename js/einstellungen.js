@@ -10,15 +10,20 @@
  *   1. UPCREW-KONTO · ALLE SPIELE — wer angemeldet ist (Name, klein #Tag,
  *      Rolle), Spielstand sichern (nur Gast), Name, Nummer, Passwort
  *      ändern, Abmelden.
- *   2. AUSSEHEN — Darstellung (Auto / Hell / Dunkel, js\darstellung.js),
- *      Standard-Schrift und der Weg in die Sammlung; gilt über das
- *      gemeinsame UPCrew-Aussehen auch in Typoluck.
+ *   2. AUSSEHEN — Darstellung (Auto / Hell / Dunkel, js\darstellung.js)
+ *      und der Weg in die Sammlung (der Schalter „Standard-Schrift" ist
+ *      seit v0.157.0 weg, Nutzer 29.09.2026).
  *   3. PRIVATSPHÄRE — Spielzeit privat oder öffentlich (am Konto).
  *   4. NUR IN BLUNDERLUCK — Vibration (dieses Gerät), Schach lernen,
  *      vergangene Matches.
  *   5. HILFE — Wunsch oder Fehler melden (js\wunsch.js).
  *   6. ADMIN — Verwaltung (nur Rolle Admin), öffnet als Blatt darüber.
- *   7. ÜBER — Version und Verbindung (Stand in app.js, `APP.status`).
+ *   7. ÜBER — Version und „Speicher" mit Status-Lampe (seit v0.157.0,
+ *      `UPCREW_EINSTELLUNGEN.speicherZeile`; Stand in app.js, `APP.status`).
+ *
+ * KURZE TEXTE (seit v0.157.0, Nutzer 29.09.2026: „zu viele texte sätze"):
+ * `unter` höchstens 3 Wörter, `hinweis` höchstens 6 — Längeres zeigt der
+ * Baustein ohnehin nicht.
  *   8. ganz unten, rot, mit Rückfrage: UPCrew-Konto löschen.
  *
  * Bis v0.155 drei Karten „Dieses Gerät", „UPCrew-Konto", „Über
@@ -61,6 +66,11 @@ const EINSTELLUNGEN = {
     aufbauen(behaelter) {
         EINSTELLUNGEN.wurzelEl = behaelter;
         EINSTELLUNGEN._zeichnen();
+        /* Die Lampe folgt auch dem Netz (seit v0.157.0): offline sofort rot. */
+        if (typeof window !== "undefined" && typeof window.addEventListener === "function") {
+            window.addEventListener("online", () => EINSTELLUNGEN.statusAktualisieren());
+            window.addEventListener("offline", () => EINSTELLUNGEN.statusAktualisieren());
+        }
         /* Stellt Typoluck (oder das Konto) das Aussehen um, während die
            Einstellungen offen sind, ziehen die Umschalter mit. */
         if (typeof DARSTELLUNG !== "undefined") {
@@ -83,8 +93,7 @@ const EINSTELLUNGEN = {
             return;
         }
         wurzel.innerHTML = "";
-        EINSTELLUNGEN.statusEl = null;
-        EINSTELLUNGEN.statusTextEl = null;
+        EINSTELLUNGEN.lampeEl = null;
 
         /* Als Blatt (seit v0.156.0) trägt das Blatt Titel und Zurück; als
            Seite (ohne den Baustein) wie bisher ein Fenster mit Pfeil. */
@@ -170,13 +179,12 @@ const EINSTELLUNGEN = {
             zeichen: "person",
             titel: eintrag ? eintrag.name : person.name,
             tag: eintrag ? KONTO.tagZusatz(eintrag) : "",
-            unter: "Angemeldet" + (rolle ? " · " + rolle : "")
-                + (eintrag && eintrag.gast === true ? " · nur dieses Gerät" : " · gilt in allen Spielen"),
+            unter: (eintrag && eintrag.gast === true) ? "Gast · dieses Gerät" : (rolle || "Angemeldet"),
             klasse: "einstellungen-ich"
         }];
 
         if (eintrag && eintrag.gast === true) {
-            zeilen.push({ zeichen: "hoch", titel: "Spielstand sichern", unter: "Konto anlegen · alle Geräte",
+            zeilen.push({ zeichen: "hoch", titel: "Spielstand sichern", unter: "Konto anlegen",
                 rechts: "pfeil", beiKlick: () => ANMELDUNG.gastSichernOeffnen() });
         }
         if (eintrag && eintrag.gast !== true) {
@@ -212,17 +220,10 @@ const EINSTELLUNGEN = {
                     EINSTELLUNGEN._zeichnen();
                 }, "Darstellung") });
         }
-        /* Standard-Schrift: an = immer die gut lesbare Grundschrift, egal
-           welche Crew-Schrift in der Sammlung gewählt ist. */
-        if (typeof UPCREW_AUSSEHEN !== "undefined") {
-            zeilen.push({ zeichen: "schrift", titel: "Standard-Schrift", unter: "immer die Leseschrift",
-                rechts: UPCREW_EINSTELLUNGEN.schalter(UPCREW_AUSSEHEN.lesen().leseschrift === true, (an) => {
-                    UPCREW_AUSSEHEN.setzen({ leseschrift: an });
-                    EINSTELLUNGEN._zeichnen();
-                }, "Standard-Schrift") });
-        }
+        /* Den Schalter „Standard-Schrift" gibt es seit v0.157.0 nicht mehr
+           (Nutzer 29.09.2026: „brauchen wir eigentlich nicht"). */
         if (typeof SAMMLUNG !== "undefined") {
-            zeilen.push({ zeichen: "sammlung", titel: "Anpassen", unter: "Farbwelt, Schrift, Knöpfe · Sammlung",
+            zeilen.push({ zeichen: "sammlung", titel: "Anpassen", unter: "Farbwelt · Schrift · Knöpfe",
                 rechts: "pfeil", beiKlick: () => TABS.wechseln(SAMMLUNG.id) });
         }
         return { art: "aussehen", zeilen: zeilen };
@@ -245,7 +246,7 @@ const EINSTELLUNGEN = {
             return { art: "privatsphaere", zeilen: [] };
         }
         return { art: "privatsphaere", zeilen: [
-            { zeichen: "uhr", titel: "Spielzeit", unter: "Standard privat · sonst nur du und Admins",
+            { zeichen: "uhr", titel: "Spielzeit", unter: "Standard privat",
                 rechts: UPCREW_EINSTELLUNGEN.segment([
                     { wert: false, text: "Privat" },
                     { wert: true, text: "Öffentlich" }
@@ -254,7 +255,7 @@ const EINSTELLUNGEN = {
                         ANMELDUNG.abgleich.daten, ichSelbst.id, wert), false);
                     EINSTELLUNGEN._zeichnen();
                 }, "Spielzeit") }
-        ], hinweis: "Unter 1 h „N min“, danach „1h+“ · gezählt nur, solange die App sichtbar ist" };
+        ] };
     },
 
     /* ---------------------------------------------------------------- *
@@ -280,7 +281,7 @@ const EINSTELLUNGEN = {
                 }, "Vibration")
                 : "nicht möglich" });
         if (typeof TEAM_SCHACH !== "undefined" && typeof TEAM_SCHACH.grundlagenOeffnen === "function") {
-            zeilen.push({ zeichen: "figur", titel: "Schach lernen", unter: "Figuren · Schach · Matt · Patt",
+            zeilen.push({ zeichen: "figur", titel: "Schach lernen", unter: "Figuren · Matt",
                 rechts: "pfeil", beiKlick: () => {
                     TABS.wechseln("team-schach");
                     TEAM_SCHACH.grundlagenOeffnen();
@@ -305,7 +306,7 @@ const EINSTELLUNGEN = {
             return { art: "admin", zeilen: [] };
         }
         return { art: "admin", zeilen: [
-            { zeichen: "werkzeug", titel: "Verwaltung", unter: "nur Rolle Admin", rechts: "pfeil",
+            { zeichen: "werkzeug", titel: "Verwaltung", unter: "nur Admin", rechts: "pfeil",
                 beiKlick: () => ANMELDUNG.verwaltungOeffnen() }
         ] };
     },
@@ -314,29 +315,39 @@ const EINSTELLUNGEN = {
      * 6. Über Blunderluck — Version und Verbindung
      *
      * Die Versionsanzeige (seit v0.25.0 hier) steht wie in Typoluck ohne
-     * vorangestelltes v. Die Verbindung (seit v0.15.0, Wunsch 2): Punkt und
-     * ein, zwei Wörter; die technische Meldung nur beim Darüberfahren.
+     * vorangestelltes v. Die Verbindung (seit v0.15.0, Wunsch 2) ist seit
+     * v0.157.0 die Zeile „Speicher" mit STATUS-LAMPE des Bausteins (Nutzer
+     * 29.09.2026: „bei speicher mache eine status lampe rein"): grün
+     * gespeichert, gelb wartet, rot keine Verbindung — aus dem echten
+     * Abgleich-Zustand (`lampeZustand`); die Meldung beim Darüberfahren.
      * ---------------------------------------------------------------- */
 
-    statusEl: null,
-    statusTextEl: null,
+    lampeEl: null,
+
+    /* APP.status (laedt, bereit, schreibt, fehler) → Lampe. Ohne Netz ist
+       es immer rot, auch wenn der letzte Abgleich noch „bereit" meldete. */
+    lampeZustand(status, online) {
+        if (online === false || status === "fehler") {
+            return "offline";
+        }
+        return status === "bereit" ? "gespeichert" : "wartet";
+    },
+
+    _lampeJetzt() {
+        const stand = (typeof APP !== "undefined" && APP.status) ? APP.status : "laedt";
+        const online = (typeof navigator !== "undefined" && typeof navigator.onLine === "boolean")
+            ? navigator.onLine : true;
+        return EINSTELLUNGEN.lampeZustand(stand, online);
+    },
 
     _ueberAbschnitt() {
         const version = EINSTELLUNGEN._element("span", "up-es-wert version",
             typeof KONFIG !== "undefined" ? KONFIG.APP_VERSION : "");
-
-        const zeile = EINSTELLUNGEN._element("span", "status status-karte");
-        const punkt = EINSTELLUNGEN._element("span", "status-punkt");
-        punkt.setAttribute("aria-hidden", "true");
-        zeile.appendChild(punkt);
-        const text = EINSTELLUNGEN._element("span", null, null);
-        zeile.appendChild(text);
-        EINSTELLUNGEN.statusEl = zeile;
-        EINSTELLUNGEN.statusTextEl = text;
-
+        const speicher = UPCREW_EINSTELLUNGEN.speicherZeile(EINSTELLUNGEN._lampeJetzt());
+        EINSTELLUNGEN.lampeEl = speicher.lampe;
         return { art: "ueber", zeilen: [
-            { zeichen: "info", titel: "Über Blunderluck", unter: "Ein Spiel von UPCrew", rechts: version },
-            { zeichen: "datenbank", titel: "Verbindung", rechts: zeile }
+            { zeichen: "info", titel: "Über Blunderluck", unter: "von UPCrew", rechts: version },
+            speicher
         ] };
     },
 
@@ -357,17 +368,16 @@ const EINSTELLUNGEN = {
     /* Gerufen beim Zeichnen und aus APP.statusZeigen, solange die Karte
        hängt. Ohne Karte ist nichts zu tun — der Stand steht in app.js. */
     statusAktualisieren() {
-        if (!EINSTELLUNGEN.statusEl) {
+        const lampe = EINSTELLUNGEN.lampeEl;
+        if (!lampe) {
             return;
         }
-
-        const stand = (typeof APP !== "undefined") ? APP.status : "laedt";
-        const text = (typeof APP !== "undefined") ? APP.statusText : "";
+        if (typeof lampe.setzen === "function") {
+            lampe.setzen(EINSTELLUNGEN._lampeJetzt());
+        }
+        const text = (typeof APP !== "undefined") ? (APP.statusText || "") : "";
         const technik = (typeof APP !== "undefined") ? (APP.statusTechnik || "") : "";
-
-        EINSTELLUNGEN.statusEl.setAttribute("data-status", stand);
-        EINSTELLUNGEN.statusTextEl.textContent = text;
-        EINSTELLUNGEN.statusTextEl.title = technik;
+        lampe.title = [text, technik].filter((t) => t).join(" · ");
     },
 
     /* ---------------------------------------------------------------- *

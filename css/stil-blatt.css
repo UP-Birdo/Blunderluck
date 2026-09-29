@@ -6,6 +6,8 @@
 
 :root {
     /* Das Blatt beginnt unter der Kopfzeile des Starts (Kurzprofil 56 px + Abstände) und endet über der Leiste.
+       Seit v0.157.0 misst upcrew-blatt.js die echte Unterkante des Kopfs (`data-up-bl-kopf`); dieser Wert gilt nur
+       ohne Kopf (andere Seiten). */
        Die Leiste (z-index --ebene-schwebend = 50) liegt über den Blättern (40) und bleibt bedienbar. */
     --up-bl-oben: calc(var(--oben-frei, 0px) + 76px);
     --up-bl-unten: calc(var(--leiste-hoehe) + env(safe-area-inset-bottom, 0px));
@@ -35,6 +37,13 @@
     flex: none;
 }
 
+/* Seit v0.157.0 die kompakte Kopfzeile (UPCREW_PROFIL.kopfzeile, upcrew-profil.css) — Flamme rechts darin,
+   keine Serien-Kapsel-Zeile (Koordination 29.09.2026 „Start ohne Scrollen“, gleich wie Typoluck). */
+.start-kopfzeile {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
 /* Unter 380 px nur der Ring (Entwurf: „Name im Kopf unter 380 px aus"). */
 @media (max-width: 379px) {
     .start-profil-text {
@@ -48,13 +57,21 @@
 
 /* ---- Profil ---- */
 
+/* Die Vorschau-Karte eines Namens (seit v0.157.0) liegt in einer Karte des Blatt-Bausteins — ohne zweiten Rahmen. */
+.karte-profil .up-pf-karte {
+    padding: 4px 0 0;
+    border: 0;
+    box-shadow: none;
+    background: transparent;
+}
+
 /* Der Ring trägt ab Level 5 den Rahmen des Levels (Kupfer, Silber …) wie am Start. */
 .up-pf-ring[class*="level-rahmen-"] {
     background: conic-gradient(var(--haupt) calc(var(--up-pf-anteil, 0) * 360deg), var(--lv-rest) 0);
 }
 
-.profil-statistik-knopf,
-.profil-verlauf-knopf {
+.profil-verlauf-knopf,
+.profil-mehr {
     width: 100%;
 }
 
@@ -76,11 +93,6 @@
     padding-top: 2px;
 }
 
-.up-es .status-karte {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-}
 
 .verwaltung-spieler > .karte {
     margin: 0 0 10px;

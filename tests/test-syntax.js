@@ -211,7 +211,9 @@ const UPCREW_BAUSTEINE_CSS = ["upcrew-intro.css", "upcrew-knoepfe.css", "upcrew-
     /* seit v0.152.0: Münzen und Shop */
     "upcrew-shop.css",
     /* seit v0.152.1: die Spielerliste für Admins */
-    "upcrew-spielerliste.css"];
+    "upcrew-spielerliste.css",
+    /* seit v0.157.0: Profil zweistufig (Karten-Knopf erbt die Rundung) und Level-Pfad */
+    "upcrew-profil.css", "upcrew-levelpfad.css"];
 
 pruefe("Ordner css und index.html nennen dieselben Stildateien", () => {
     const vorhanden = dateisystem.readdirSync(pfad.join(projekt, "css"))

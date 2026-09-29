@@ -148,14 +148,14 @@ pruefe("Normalisieren: Müll fliegt, unbekannte Felder oben wandern durch", () =
  * Belohnungen
  * ------------------------------------------------------------------ */
 
-pruefe("Belohnungen: Aussehen aus den Stufen, Rahmen ab 10 alle 5 Level, sonst Serien-Schutz ab 11", () => {
+pruefe("Belohnungen: Aussehen aus den Stufen, Rahmen ab 10 alle 5 Level, kein Serien-Schutz mehr (v0.157.0)", () => {
     const stufen = { farbwelt: { werkstatt: 0, studio: 2 }, schrift: { S4: 2 }, knoepfe: { K5: 2 } };
     const zwei = FORTSCHRITT.belohnungen(2, stufen).map((b) => b.art + ":" + b.wert).join(",");
     gleich(zwei, "farbwelt:studio,schrift:S4,knoepfe:K5", "Level 2");
     gleich(FORTSCHRITT.belohnungen(5, stufen).length, 0, "Level 5: kein Rahmen mehr (seit v0.151.0)");
     gleich(FORTSCHRITT.belohnungen(10, stufen).map((b) => b.art + ":" + b.wert).join(","),
         "rahmen:silber,titel:Stammgast", "Level 10: erster Rahmen (Silber, wie Typoluck)");
-    gleich(FORTSCHRITT.belohnungen(11, stufen).map((b) => b.art).join(","), "schutz", "Level 11");
+    gleich(FORTSCHRITT.belohnungen(11, stufen).length, 0, "Level 11: kein Serien-Schutz mehr");
     gleich(FORTSCHRITT.belohnungen(15, stufen).map((b) => b.wert).join(","), "gold", "Level 15");
     gleich(FORTSCHRITT.belohnungen(20, stufen).map((b) => b.wert).join(","), "platin", "Level 20");
     gleich(FORTSCHRITT.belohnungen(25, stufen).map((b) => b.art + ":" + b.wert).join(","),
@@ -167,7 +167,8 @@ pruefe("Belohnungen: Aussehen aus den Stufen, Rahmen ab 10 alle 5 Level, sonst S
     }
     gleich(FORTSCHRITT.belohnungen(3, stufen).length, 0, "Level 3 ohne Stufen-Eintrag");
     gleich(FORTSCHRITT.schutzVerdient(10), 0, "bis 10 kein Schutz");
-    gleich(FORTSCHRITT.schutzVerdient(16), 5, "11–14 und 16");
+    gleich(FORTSCHRITT.schutzVerdient(16), 0, "seit v0.157.0 nie Schutz");
+    gleich(FORTSCHRITT.schutzVerdient(80), 0, "auch hoch nicht");
     gleich(FORTSCHRITT.rahmenVon(9), null, "unter 10 kein Rahmen");
     gleich(FORTSCHRITT.rahmenVon(12).id, "silber", "12 = Silber");
     gleich(FORTSCHRITT.rahmenVon(17).id, "gold", "17 = Gold");

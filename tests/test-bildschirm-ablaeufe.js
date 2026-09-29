@@ -2395,25 +2395,34 @@ pruefe("Der Stand des Abgleichs steht in den Einstellungen (Wunsch 2)", () => {
             return null;
         };
 
-        const zeile = suchen(EINSTELLUNGEN.wurzelEl, "status-karte");
-        if (!zeile) {
-            throw new Error("keine Verbindungs-Karte in den Einstellungen");
+        /* Seit v0.157.0 die Status-Lampe des Bausteins (Zeile „Speicher"). */
+        const lampe = suchen(EINSTELLUNGEN.wurzelEl, "up-es-lampe");
+        if (!lampe || lampe !== EINSTELLUNGEN.lampeEl) {
+            throw new Error("keine Status-Lampe in den Einstellungen");
         }
-        if (zeile.attribute["data-status"] !== "bereit") {
-            throw new Error("die Karte zeigt den Stand nicht: "
-                + zeile.attribute["data-status"]);
+        const wort = () => String(lampe.kinder[1].textContent);
+        if (wort() !== "Gespeichert") {
+            throw new Error("die Lampe zeigt den Stand nicht: " + wort());
         }
-        if (String(EINSTELLUNGEN.statusTextEl.textContent) !== "Gemeinsame Tabelle") {
-            throw new Error("die Karte zeigt den Text nicht");
+        if (String(lampe.title).indexOf("Gemeinsame Tabelle") === -1) {
+            throw new Error("die Meldung steht nicht beim Darueberfahren");
         }
 
-        /* Eine spaetere Meldung erreicht die haengende Karte. */
+        /* Eine spaetere Meldung erreicht die haengende Lampe. */
+        umgebung.APP.status = "schreibt";
+        EINSTELLUNGEN.statusAktualisieren();
+        if (wort() !== "Wartet") {
+            throw new Error("schreiben: gelb erwartet, ist " + wort());
+        }
         umgebung.APP.status = "fehler";
         umgebung.APP.statusText = "Nicht erreichbar";
         EINSTELLUNGEN.statusAktualisieren();
-
-        if (zeile.attribute["data-status"] !== "fehler") {
-            throw new Error("eine spaetere Meldung kommt nicht an");
+        if (wort() !== "Keine Verbindung") {
+            throw new Error("eine spaetere Meldung kommt nicht an: " + wort());
+        }
+        if (EINSTELLUNGEN.lampeZustand("bereit", false) !== "offline"
+                || EINSTELLUNGEN.lampeZustand("laedt", true) !== "wartet") {
+            throw new Error("ohne Netz rot, beim Laden gelb");
         }
     } finally {
         delete umgebung.APP;
@@ -4035,22 +4044,18 @@ pruefe("Der Zwischenbildschirm laesst per Code beitreten (v0.10.0)", () => {
     TEAM_SCHACH.uebersichtOeffnen();
 });
 
-pruefe("Die Freunde-Seite am Start: suchen, anfragen, entfernen (Wunsch 6)", () => {
+pruefe("Freunde nur im Reiter der Rangliste: suchen, anfragen, entfernen (Wunsch 6, seit v0.157.0)", () => {
     /*
-     * DER GEMELDETE WUNSCH: „Freunde-Icon neben dem Zahnrad auf dem Start:
-     * dort die Freundesliste sehen, Freunde suchen und anhand des
-     * eingegebenen Benutzernamens einladen."
-     *
-     * Bis v0.18.0 hing dieselbe Karte auf dem Zwischenbildschirm; der Test
-     * lief deshalb gegen TEAM_SCHACH. Jetzt gegen START — der Ablauf
-     * darunter (Modell, Zusammenfuehrung) ist unveraendert.
-     *
-     * SEIT v0.103.0 STEHT DAS ZEICHEN NICHT MEHR OBEN RECHTS, sondern als
-     * Punkt „Freunde" im Menueband („statt den ganzen icons ein menue
-     * band"). Geoeffnet wird die Seite deshalb ueber zwei Tipps statt
-     * einen; alles danach ist unveraendert.
+     * DER GEMELDETE WUNSCH (Wunsch 6): die Freundesliste sehen, Freunde
+     * suchen und anhand des Benutzernamens einladen. Bis v0.156.1 gab es
+     * dafuer eine Seite am Start; seit v0.157.0 (Nutzer 29.09.2026: „nein
+     * nicht mehr am start nur rangliste") ist sie ganz weg — Freunde sind
+     * nur noch der Reiter „Freunde" der Rangliste. `START.freundeOeffnen`
+     * leitet dorthin. Der Ablauf darunter (Modell, Zusammenfuehrung) ist
+     * unveraendert.
      */
     const START = umgebung.START;
+    const RANGLISTE = umgebung.RANGLISTE;
 
     const einsammeln = (element, passt, treffer) => {
         for (const kind of element.kinder || []) {
@@ -4061,28 +4066,33 @@ pruefe("Die Freunde-Seite am Start: suchen, anfragen, entfernen (Wunsch 6)", () 
         }
         return treffer;
     };
-    const knopfMitText = (text) => einsammeln(START.wurzelEl, (kind) =>
+    const knopfMitText = (text) => einsammeln(RANGLISTE.wurzelEl, (kind) =>
         kind.tagName === "button"
         && String(kind.textContent || "") === text, [])[0] || null;
 
     const standVorher = ANMELDUNG.abgleich.daten;
+    const wurzelVorher = RANGLISTE.wurzelEl;
 
     try {
         START.aufbauen(neuesElement("div"));
+        RANGLISTE.wurzelEl = neuesElement("div");
 
-        /* Seit v0.156.1 ohne Menueband: direkt (in der App fuehrt der Weg
-           in den Reiter „Freunde" der Rangliste, ohne Blatt-Baustein wie
-           hier auf die Seite am Start). */
-        START.freundeOeffnen();
-        if (!START.freundeOffen) {
-            throw new Error("der Punkt oeffnet die Freundesliste nicht");
+        /* Keine Seite am Start mehr — auch kein Rueckfall. */
+        if ("freundeOffen" in START || typeof START._freundeZeichnen === "function"
+                || typeof START.freundeSchliessen === "function") {
+            throw new Error("die alte Freunde-Seite am Start gibt es noch");
         }
+        START.freundeOeffnen();
+        if (RANGLISTE.ansicht !== "freunde") {
+            throw new Error("START.freundeOeffnen fuehrt nicht in den Reiter Freunde");
+        }
+        RANGLISTE.zeichnen();
 
         /* Suchen: Der Filter laeuft ueber die Spielerliste. */
-        const feld = einsammeln(START.wurzelEl, (kind) =>
+        const feld = einsammeln(RANGLISTE.wurzelEl, (kind) =>
             String(kind.className || "").indexOf("freunde-suche") !== -1, [])[0];
         if (!feld) {
-            throw new Error("kein Suchfeld auf der Freunde-Seite");
+            throw new Error("kein Suchfeld im Reiter Freunde");
         }
 
         feld.value = "ber";
@@ -4100,11 +4110,11 @@ pruefe("Die Freunde-Seite am Start: suchen, anfragen, entfernen (Wunsch 6)", () 
             throw new Error("die Anfrage steht nicht im eigenen Eintrag");
         }
 
-        /* Bert nimmt an (Modell-Schritt seines Geraets) — die Seite zeigt
+        /* Bert nimmt an (Modell-Schritt seines Geraets) — der Reiter zeigt
            ihn danach als Freund mit Entfernen-Knopf. */
         ANMELDUNG.abgleich.daten = SPIELER.freundHinzufuegen(
             ANMELDUNG.abgleich.daten, "id-bert", "id-anna", 9000);
-        START._zeichnen();
+        RANGLISTE.zeichnen();
 
         const entfernen = knopfMitText("Entfernen");
         if (!entfernen) {
@@ -4118,26 +4128,20 @@ pruefe("Die Freunde-Seite am Start: suchen, anfragen, entfernen (Wunsch 6)", () 
             throw new Error("Entfernen wirkt nicht");
         }
 
-        /* Zurueck fuehrt auf den Start — und der zeigt wieder Spielen. */
-        const zurueck = knopfMitText("Zurück");
-        if (!zurueck) {
-            throw new Error("kein Zurueck-Knopf auf der Freunde-Seite");
-        }
-        zurueck.ausloesen("click");
-        if (START.freundeOffen) {
-            throw new Error("Zurueck schliesst die Freundesliste nicht");
-        }
-        if (!knopfMitText("Spielen")) {
-            throw new Error("nach Zurueck steht der Start nicht wieder da");
+        /* Der Start zeigt weiter Spielen — keine Freunde-Seite. */
+        START._zeichnen();
+        if (!einsammeln(START.wurzelEl, (kind) => kind.tagName === "button"
+                && String(kind.textContent || "") === "Spielen", []).length) {
+            throw new Error("der Start zeigt Spielen nicht");
         }
     } finally {
         ANMELDUNG.abgleich.daten = standVorher;
         umgebung.FREUNDE.suchtext = "";
-        START.freundeOffen = false;
+        RANGLISTE.ansicht = "wertung";
+        RANGLISTE.wurzelEl = wurzelVorher;
         TEAM_SCHACH.uebersichtOeffnen();
     }
 });
-
 pruefe("Der Zwischenbildschirm traegt die Freunde-Karte nicht mehr (Wunsch 6)", () => {
     TEAM_SCHACH.uebersichtOeffnen();
 

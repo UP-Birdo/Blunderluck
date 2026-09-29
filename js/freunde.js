@@ -5,7 +5,8 @@
  * Annehmen, Ablehnen, Zurückziehen und Entfernen. Die Karte hing bis
  * v0.18.0 auf dem Zwischenbildschirm „Spielen"; seit Wunsch 6 (v0.19.0)
  * wohnt sie am Freunde-Zeichen des Startbildschirms
- * (`START.freundeOeffnen`) — der Zwischenbildschirm ist seit Wunsch 1 nur
+ * (seit v0.157.0 nur noch Reiter „Freunde" der Rangliste,
+ * `START.freundeOeffnen` leitet dorthin) — der Zwischenbildschirm ist seit Wunsch 1 nur
  * noch der Weg ins Beitreten. Fürs Einladen in eine laufende Runde bleibt
  * es bei der Liste an den Teams (v0.13.0).
  *
@@ -280,13 +281,10 @@ const FREUNDE = {
         ANMELDUNG.abgleich.aendern(
             aenderung(ANMELDUNG.abgleich.daten, person.id), true);
 
-        /* Wer die Karte gerade zeigt, zeichnet neu. Seit Wunsch 6
-           (v0.19.0) ist das der Startbildschirm; das Team Schach zeichnet
-           trotzdem mit, weil dort die Einladungen an den Teams hängen. */
-        if (typeof START !== "undefined" && START.freundeOffen) {
-            START._zeichnen();
-        }
-        /* Seit v0.156.1 wohnt die Karte im Reiter „Freunde" der Rangliste. */
+        /* Wer die Karte gerade zeigt, zeichnet neu: seit v0.156.1 der
+           Reiter „Freunde" der Rangliste (die Seite am Start ist seit
+           v0.157.0 weg); das Team Schach zeichnet mit, weil dort die
+           Einladungen an den Teams hängen. */
         if (typeof RANGLISTE !== "undefined" && RANGLISTE.ansicht === "freunde"
                 && typeof TABS !== "undefined" && TABS.aktiveId === "rangliste") {
             RANGLISTE.zeichnen();

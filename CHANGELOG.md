@@ -3,6 +3,33 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.157.0 — 29.09.2026
+
+**Ein Profil in zwei Stufen, Level-Weg zum Antippen, Serie ohne Schild.**
+
+- **Profil:** Oben auf dem Start steht eine schmale Zeile: dein Bild mit dem
+  Level als Ring, Name und deine drei Abzeichen als Zeichen, rechts die
+  Flamme mit deiner Serie. Der Start passt so ohne Rollen auf den Bildschirm.
+  Bild antippen zeigt deine Profil-Karte (Name, Titel, Level, Serie,
+  Abzeichen), die Karte antippen das ganze Profil mit Statistik, deinen
+  Partien, allen Abzeichen — und ganz unten dem Level. Ein Name in der
+  Rangliste oder im Spiel zeigt dieselbe Karte für andere Spieler, mit ihren
+  drei Abzeichen aus jedem Spiel.
+- **Zurück-Taste / Wischen zurück** schliesst die oberste Karte oder das
+  oberste Fenster (Profil, Level-Weg, Serie, Abzeichen-Wahl), statt die App
+  zu verlassen.
+- Fenster beginnen genau unter der Kopfzeile, nichts schaut mehr halb heraus.
+- **Level antippen** (auf der Karte, im Profil unten oder nach einer Partie):
+  Der Level-Weg zeigt, was du schon hast, wo du stehst und was noch kommt.
+- **Serien-Schild und Serien-Schutz sind weg.** Ein verpasster Tag beendet
+  die Serie. Wer noch Flammen-Schilde gekauft hatte, bekommt einmal 50 Münzen
+  je Stück zurück.
+- **Einstellungen:** echtes Zahnrad, beim Speicher eine Lampe (grün
+  gespeichert, gelb wartet, rot keine Verbindung), der Schalter
+  „Standard-Schrift" ist weg, weniger Text.
+- Die alte Freunde-Seite am Start ist ganz weg — Freunde findest du im
+  Reiter „Freunde" der Rangliste.
+
 ## v0.156.1 — 29.09.2026
 
 **Shop, Sammlung, Aufgaben und Rangliste sind wieder ganze Seiten.**

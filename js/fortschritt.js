@@ -87,11 +87,12 @@
  *     Rechnung. Warum ein Zähler statt einer langen Tagesliste: Die Liste
  *     wüchse endlos und wäre gegen die Regel (§11b: `tage` höchstens 1000
  *     Einträge) irgendwann zu lang; zwei Zahlen reichen für jede Länge.
- *   - SCHUTZ: je Serie so viele Tage wie verdient (`schutzVerdient`, über das
- *     Level), danach gekaufte Flammen-Schilde (`zaehler.schildGekauft` −
- *     `schildGenutzt`, js\upcrew-muenzen.js). Ein gekaufter Schild wird beim
- *     Überbrücken verbraucht (`schildGenutzt` +1 im Spiel, das die Serie
- *     fortschreibt).
+ *   - SCHUTZ und SCHILD gibt es seit v0.157.0 nicht mehr (Nutzer 29.09.2026:
+ *     „serien schild raus"): `schutzVerdient` und `schildVorrat` liefern 0,
+ *     ein fehlender Tag beendet die Serie. Die Zähler `serieSchutz`,
+ *     `schildGekauft` und `schildGenutzt` bleiben liegen (nichts löschen,
+ *     Regeln unverändert); nicht verbrauchte Schilde erstattet
+ *     `schildeErstatten` einmal in Münzen.
  *   - ZUSAMMENFÜHREN (gleiches Spiel, zwei Geräte): Zähler, die nur wachsen
  *     (Münzen, Käufe, Tagesaufgaben …), nehmen je Name den GRÖSSEREN Wert;
  *     die drei Serien-Zähler kommen gemeinsam aus der Fassung mit dem
@@ -511,8 +512,39 @@ const FORTSCHRITT = {
 
     /* Gekaufte, noch nicht verbrauchte Flammen-Schilde über alle Spiele. */
     schildVorrat(stand) {
-        return Math.max(0, FORTSCHRITT._zaehlerSumme(stand, "schildGekauft")
-            - FORTSCHRITT._zaehlerSumme(stand, "schildGenutzt"));
+        return 0;
+    },
+
+    /*
+     * ERSTATTUNG ALTER SCHILDE (seit v0.157.0, wie Typoluck 0.26.0): Wer vor
+     * dem Wegfall Flammen-Schilde gekauft und nicht verbraucht hat, bekommt
+     * EINMAL den Kaufpreis als Münzen (`preis` je Stück, 50). Jedes Spiel
+     * erstattet nur, was in SEINEM Zweig gekauft wurde, gemerkt im Zähler
+     * `schildErstattet` (Stückzahl, wächst nur). Offen sind alle Käufe
+     * minus alle Verbrauche über alle Zweige; was ein anderes Spiel schon
+     * erstattet hat, zieht ab — so zahlt keiner zweimal. Rein; liefert
+     * { stand, stueck, muenzen } (ohne Erstattung stueck 0).
+     */
+    schildeErstatten(stand, app, preis, zeitpunkt) {
+        const sauber = FORTSCHRITT.normalisieren(stand);
+        const zweig = sauber.spiele[app];
+        const z = zweig && FORTSCHRITT._istObjekt(zweig.zaehler) ? zweig.zaehler : null;
+        const zahl = (wert) => (typeof wert === "number" && isFinite(wert) && wert > 0) ? Math.floor(wert) : 0;
+        const gekauft = z ? zahl(z.schildGekauft) : 0;
+        const erstattet = z ? zahl(z.schildErstattet) : 0;
+        const offen = Math.max(0, FORTSCHRITT._zaehlerSumme(sauber, "schildGekauft")
+            - FORTSCHRITT._zaehlerSumme(sauber, "schildGenutzt"));
+        const andere = FORTSCHRITT._zaehlerSumme(sauber, "schildErstattet") - erstattet;
+        const soll = Math.min(gekauft, Math.max(0, offen - andere));
+        const stueck = soll - erstattet;
+        if (stueck <= 0) {
+            return { stand: sauber, stueck: 0, muenzen: 0 };
+        }
+        const muenzen = stueck * Math.max(0, Math.floor(preis || 0));
+        z.schildErstattet = soll;
+        z.muenzenVerdient = Math.min(zahl(z.muenzenVerdient) + muenzen, 1000000000);
+        zweig.stand = Math.max((zweig.stand || 0) + 1, zeitpunkt || 0);
+        return { stand: sauber, stueck: stueck, muenzen: muenzen };
     },
 
     /*
@@ -810,22 +842,16 @@ const FORTSCHRITT = {
         }
         if (level >= FORTSCHRITT.GLANZ_AB && level % 5 === 0) {
             liste.push({ art: "rahmen", wert: "glanz", name: "Glanz " + level });
-        } else if (level > 10 && level % 5 !== 0) {
-            liste.push({ art: "schutz", wert: "schutz", name: "Serien-Schutz" });
         }
+        /* Den Serien-Schutz als Belohnung gibt es seit v0.157.0 nicht mehr. */
         return liste;
     },
 
-    /* Wie viele Serien-Schutze bis Level L verdient sind (Level 11 bis L,
-       ohne die Rahmen-Level). Verbraucht werden sie mit „Heute". */
+    /* Serien-Schutz gibt es nicht mehr (seit v0.157.0, Nutzer 29.09.2026:
+       „serien schild raus … soll nach einem lose nicht aufhaltbar sein") —
+       immer 0, die Serie reisst ohne Rettung. Wie Typoluck. */
     schutzVerdient(level) {
-        let anzahl = 0;
-        for (let l = 11; l <= level; l++) {
-            if (l % 5 !== 0) {
-                anzahl++;
-            }
-        }
-        return anzahl;
+        return 0;
     },
 
     /* ---------------------------------------------------------------- *

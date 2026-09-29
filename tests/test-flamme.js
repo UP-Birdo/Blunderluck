@@ -59,10 +59,11 @@ pruefe("Zustände: aus, voll, offen", () => {
     gleich(F.zustand({ serie: 0, heuteGeschafft: true }), "aus", "Serie 0 ist aus");
     gleich(F.zustand({ serie: 5, heuteGeschafft: true }), "voll", "heute geschafft");
     gleich(F.zustand({ serie: 5, heuteGeschafft: false }), "offen", "heute offen");
-    wahr(/Schutz 2/.test(F.beschriftung({ serie: 3, heuteGeschafft: false, schutz: 2 })), "Schutz im Vorlesetext");
+    /* Seit v0.157.0 ohne Serien-Schutz: ein alter Wert wird still übergangen. */
+    wahr(!/Schutz/.test(F.beschriftung({ serie: 3, heuteGeschafft: false, schutz: 2 })), "kein Schutz im Vorlesetext");
 });
 
-pruefe("Der Knopf: Klassen, Zahl, Schild, Vorlesetext", () => {
+pruefe("Der Knopf: Klassen, Zahl, kein Schild, Vorlesetext", () => {
     const el = (tag) => ({
         tag, kinder: [], className: "", textContent: "", attribute: {}, title: "", lauscher: {},
         appendChild(k) { this.kinder.push(k); return k; }, setAttribute(n, w) { this.attribute[n] = w; },
@@ -76,7 +77,7 @@ pruefe("Der Knopf: Klassen, Zahl, Schild, Vorlesetext", () => {
         gleich(halter.kinder[0], f.el, "angehängt");
         gleich(f.el.className, "up-fl up-fl-aus", "Start: aus");
         f.setzen({ serie: 1234, heuteGeschafft: true, schutz: 1 });
-        gleich(f.el.className, "up-fl up-fl-voll up-fl-schutz", "voll mit Schutz");
+        gleich(f.el.className, "up-fl up-fl-voll", "voll, ein alter Schutz-Wert zeigt kein Schild");
         gleich(f.el.kinder[1].textContent, "1k+", "Zahl");
         wahr(/Serie 1234 Tage/.test(f.el.attribute["aria-label"]), "Vorlesetext");
         f.setzen({ serie: 3, heuteGeschafft: false, schutz: 0 });
@@ -102,7 +103,7 @@ pruefe("Serie aus BEIDEN Zweigen: Blunderluck ODER Typoluck hält sie am Leben",
 
 pruefe("Eingebunden: Kurzprofil, Tipp zu Aufgaben, Aktualisieren bei neuem Stand, offline", () => {
     const start = lesen("js/start.js");
-    wahr(/START\._flammeBauen\(oben\)/.test(start), "im Kurzprofil");
+    wahr(/START\._flammeBauen\(oben, START\._kopfFlamme\)/.test(start), "im Kurzprofil (seit v0.157.0 die Flamme der Kopfzeile)");
     wahr(/TABS\.wechseln\("herausforderungen"\)/.test(start), "Tipp führt zu Aufgaben");
     wahr(/FORTSCHRITT_KONTO\.beiAenderung\(\(\) => START\.flammeAktualisieren\(\)\)/.test(start), "nach Tagesaufgabe");
     wahr(/START\.flammeAktualisieren\(\)/.test(lesen("js/app.js")), "wenn der Konto-Stand eintrifft");

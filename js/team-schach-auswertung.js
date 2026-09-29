@@ -111,8 +111,13 @@ Object.assign(TEAM_SCHACH, {
             zeile.appendChild(m);
         }
         if (gewinn.levelNachher > gewinn.levelVorher) {
-            zeile.appendChild(TEAM_SCHACH._element("span", "abschluss-xp-level",
-                "Level " + gewinn.levelNachher));
+            const level = TEAM_SCHACH._element("span", "abschluss-xp-level",
+                "Level " + gewinn.levelNachher);
+            /* Antippen → Level-Pfad (seit v0.157.0, Nutzer 29.09.2026). */
+            if (typeof UPCREW_LEVELPFAD !== "undefined" && typeof FORTSCHRITT_KONTO !== "undefined") {
+                UPCREW_LEVELPFAD.knopf(level, () => FORTSCHRITT_KONTO.level());
+            }
+            zeile.appendChild(level);
         }
         /* Die Tür ist auf: der nächste Ort (seit v0.147.0). Das Banner
            dazu zeigt der Start. */

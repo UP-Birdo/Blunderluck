@@ -356,40 +356,35 @@ pruefe("Tabs: die Partie ist ein eigener Bildschirm und schliesst alle Blätter"
  * 3. upcrew-serie.js
  * ------------------------------------------------------------------ */
 
-pruefe("Serie: Werte sauber, Kapsel mit Woche und zwei Schilden, Karte mit Kauf", () => {
+pruefe("Serie: Werte sauber, Kapsel mit Woche OHNE Schilde, Karte ohne Kauf (seit v0.157.0)", () => {
     const w = neueWelt();
     laden(w, ["js/upcrew-flamme.js", "js/upcrew-serie.js"]);
     const S = w.UPCREW_SERIE;
-    const s = S.sauber({ serie: 12.7, woche: [true, true], schild: -1, schutz: 1, schutzAlle: 1 });
+    const s = S.sauber({ serie: 12.7, woche: [true, true], schild: 2, schutz: 3, schutzAlle: 1 });
     gleich(s.woche.length, 7, "immer sieben Tage");
     gleich(s.woche.slice(-2), [true, true], "heute zuletzt");
-    gleich([s.serie, s.schild], [12, 0], "ganze Zahlen, nie negativ");
+    gleich(s.serie, 12, "ganze Zahl");
+    wahr(!("schild" in s) && !("schutz" in s), "alte Schild-Felder fallen still weg");
 
     const halter = neuesElement("div");
     let getippt = 0;
     const k = S.kapsel(halter, { beiKlick: () => getippt++ });
-    k.setzen({ serie: 5, heute: true, woche: [0, 0, 0, 1, 1, 1, 1].map(Boolean), schild: 1, schutz: 0, schutzAlle: 1 });
-    gleich(k.el.getAttribute("aria-label"), "Serie 5 Tage · Flammen-Schild 1 · Serien-Schutz 0", "Beschriftung");
+    k.setzen({ serie: 5, heute: true, woche: [0, 0, 0, 1, 1, 1, 1].map(Boolean), schild: 1, schutz: 2 });
+    gleich(k.el.getAttribute("aria-label"), "Serie 5 Tage · heute geschafft", "Beschriftung ohne Schild");
     gleich(k.el.querySelectorAll(".up-se-woche")[0].kinder.length, 7, "sieben Flammen hinter dem Kreis");
-    gleich(k.el.querySelectorAll(".up-se-schild").length, 2, "zwei Schilde");
-    wahr(k.el.querySelector(".up-se-level").classList.contains("up-se-leer"), "leerer Schutz blass");
+    gleich(k.el.querySelectorAll(".up-se-schild").length, 0, "kein Schild");
     k.el.ausloesen("click");
     k.el.ausloesen("keydown", { key: "Enter" });
     gleich(getippt, 2, "Tipp und Enter öffnen");
 
     const karte = neuesElement("div");
-    let gekauft = 0;
-    S.karteFuellen(karte, { serie: 1, schild: 2, schildMax: 2, schutz: 1, schutzAlle: 1 }, { beiKauf: () => gekauft++ });
-    const kauf = sucheText(karte, "Schild kaufen");
-    wahr(!!kauf, "Knopf Schild kaufen");
-    gleich(kauf.disabled, true, "voll → gesperrt");
-    wahr(!!sucheText(karte, "2 / 2") && !!sucheText(karte, "1 / 1"), "beide Schilde mit Zahl");
-    const karte2 = neuesElement("div");
-    S.karteFuellen(karte2, { serie: 3, schild: 0, schildMax: 2 }, { beiKauf: () => gekauft++ });
-    sucheText(karte2, "Schild kaufen").ausloesen("click");
-    gleich(gekauft, 1, "Kaufen ruft die App");
-});
+    S.karteFuellen(karte, { serie: 1, schild: 2, schildMax: 2, schutz: 1 }, { beiZu: () => null });
+    wahr(!sucheText(karte, "Schild kaufen"), "kein Knopf Schild kaufen");
+    wahr(!!sucheText(karte, "Schließen"), "nur Schließen");
 
+    const start = lesen("js/start.js");
+    wahr(!/schildMax|schutzAlle|beiKauf|schutzFrei/.test(start), "der Start rechnet keine Schilde mehr");
+});
 /* ------------------------------------------------------------------ *
  * 4. Abzeichen: eine Liste für alle Spiele
  * ------------------------------------------------------------------ */
@@ -406,9 +401,10 @@ pruefe("Abzeichen: gemeinsame + Spiele, einmalige, ausrüsten nur verdiente (hö
     const stand = { spiele: { blunderluck: { partien: 12, zaehler: { azErsterSieg: 1, azLegende: 0 } },
         typoluck: { partien: 3 } } };
     const alle = A.alle(stand, 0);
-    /* Seit v0.156.1 stehen die sechs Typoluck-Abzeichen (TL 0.25.0) mit im Baustein. */
-    gleich(w.UPCREW_ABZEICHEN_SPIELE.typoluck.abzeichen.length, 6, "6 Typoluck-Abzeichen");
-    gleich(alle.length, 5 + 14 + 6, "fünf gemeinsame + 14 + 6");
+    /* Seit v0.156.1 stehen die Typoluck-Abzeichen mit im Baustein; seit TL 0.26.0 / BL v0.157.0 fünf
+       (ohne „Schwer-Profi", der Schwer-Modus ist weg). */
+    gleich(w.UPCREW_ABZEICHEN_SPIELE.typoluck.abzeichen.length, 5, "5 Typoluck-Abzeichen");
+    gleich(alle.length, 5 + 14 + 5, "fünf gemeinsame + 14 + 5");
     const partien = alle.find((e) => e.kennung === "up-partien");
     gleich([partien.marke, partien.wert, partien.erreicht], ["UP", 15, 1], "gemeinsam über beide Spiele (12 + 3)");
     const sieg = alle.find((e) => e.kennung === "bl-erster-sieg");
@@ -462,6 +458,113 @@ pruefe("Profil: Kopf mit #Tag und XP, drei Plätze, Auswahl höchstens drei", ()
     gleich(gewechselt, ["b,c,d", "c,d"], "jede Änderung gemeldet");
 });
 
+pruefe("Profil zweistufig (v0.157.0): EINE Vorschau-Karte, ausführlich mit Statistik/Partien, Level-Kachel ganz unten", () => {
+    const w = neueWelt();
+    laden(w, ["js/upcrew-blatt.js", "js/upcrew-abzeichen.js", "js/upcrew-levelpfad.js", "js/upcrew-profil.js"]);
+    const P = w.UPCREW_PROFIL;
+    const eintrag = (k) => ({ kennung: k, id: k, titel: k, kurz: k, zeichen: "partie", stufen: [1], weiter: 0,
+        wert: 1, erreicht: 1, einheit: "" });
+    const daten = { name: "Mara", tag: "#0917", titel: "Kenner", level: 27, imLevel: 120, kosten: 500, anteil: 0.24,
+        serie: 3, heute: false, abzeichen: [eintrag("up-partien"), eintrag("tl-wort")], plaetze: 3 };
+
+    /* Stufe 1: die Karte. Tipp auf die Karte → Profil, Tipp auf „Level" → Pfad (nicht das Profil). */
+    const ort = neuesElement("div");
+    let offen = 0;
+    let pfad = 0;
+    P.vorschau(ort, daten, { beiOeffnen: () => offen++, beiLevel: () => pfad++ });
+    wahr(!!sucheText(ort, "Mara#0917") && !!sucheText(ort, "Kenner"), "Name #Tag und Titel");
+    gleich(ort.querySelectorAll(".up-az-symbol").length, 3, "drei Plätze, kompakt als Zeichen (seit 29.09. abends)");
+    gleich(ort.querySelectorAll(".up-az-symbol-leer").length, 1, "ein leerer Platz, ohne Plus");
+    gleich(ort.querySelectorAll(".up-az").length, 0, "keine Kachel mit Wort in der Karte");
+    ort.querySelector(".up-pf-lv").ausloesen("click");
+    gleich([pfad, offen], [1, 0], "Level öffnet den Pfad");
+    ort.querySelector(".up-pf-karte-auf").ausloesen("click");
+    gleich(offen, 1, "Karte öffnet das ausführliche Profil");
+
+    /* Der Start-Kopf: EINE Zeile — Kreis mit Level-Ring, Name, drei Zeichen, Flamme → Serie. */
+    laden(w, ["js/upcrew-flamme.js"]);
+    const kopfOrt = neuesElement("div");
+    let serieAuf = 0;
+    const kopf = P.kopfzeile(kopfOrt, daten, { beiOeffnen: () => offen++, beiSerie: () => serieAuf++ });
+    wahr(!!kopfOrt.querySelector(".up-pf-ring-kopf") && !!kopfOrt.querySelector(".up-pf-level"), "Kreis mit Level");
+    gleich(kopfOrt.querySelectorAll(".up-az-symbol").length, 3, "drei Abzeichen-Zeichen im Kopf");
+    wahr(!!kopf.flamme && !!kopfOrt.querySelector(".up-fl"), "eine Flamme im Kreis");
+    kopfOrt.querySelector(".up-pf-kz-auf").ausloesen("click");
+    kopf.flamme.el.ausloesen("click");
+    gleich([offen, serieAuf], [2, 1], "Kreis → Vorschau, Flamme → Serie");
+
+    /* Fremde: gewählte Spiel-Abzeichen gelten als verdient, ausser die Prüfung sagt nein (bl-… an der Chronik). */
+    const A = w.UPCREW_ABZEICHEN;
+    const vorrat = [Object.assign(eintrag("tl-wort"), { erreicht: 0 }), Object.assign(eintrag("bl-sieg"), { erreicht: 0 }),
+        Object.assign(eintrag("up-partien"), { erreicht: 0 })];
+    const fremd = A.fremdAusgeruestet(vorrat, ["tl-wort", "bl-sieg", "up-partien"], 3, null,
+        (e) => e.kennung.indexOf("bl-") !== 0);
+    gleich(fremd.map((e) => e.kennung), ["tl-wort"], "tl- gezeigt, bl- ohne Chronik und up- ohne Wert nicht");
+
+    /* Stufe 2: Statistik und Partien kommen von der App, die Level-Kachel steht als Letztes. */
+    const voll = neuesElement("div");
+    P.zeichnen(voll, daten, { eigen: false, statistik: (o) => o.appendChild(neuesElement("i")).className = "app-stat",
+        verlauf: (o) => o.appendChild(neuesElement("i")).className = "app-partien", beiLevel: () => pfad++ });
+    wahr(!!voll.querySelector(".app-stat") && !!voll.querySelector(".app-partien"), "Statistik und Partien der App");
+    const letztes = voll.kinder[voll.kinder.length - 1];
+    wahr(letztes.classList.contains("up-pf-levelkachel") || !!letztes.querySelector(".up-pf-levelkachel"),
+        "Level-Kachel ganz unten");
+    voll.querySelector(".up-pf-levelkachel").ausloesen("click");
+    gleich(pfad, 2, "Level-Kachel öffnet den Pfad");
+
+    /* Der Pfad rechnet wie FORTSCHRITT (Kosten je Level). */
+    laden(w, ["js/fortschritt.js"], ["FORTSCHRITT"]);
+    for (const l of [1, 7, 14, 17, 60]) {
+        gleich(w.UPCREW_LEVELPFAD.kosten(l), w.FORTSCHRITT.levelKosten(l), "Kosten Level " + l);
+    }
+    gleich(w.UPCREW_LEVELPFAD.ausXp(2100).level, w.FORTSCHRITT.levelAus(2100).level, "Level aus XP");
+});
+
+pruefe("Profil zweistufig: Blunderluck verdrahtet (jeder Name → Karte, §12-Auszug, kein zweites Kurzprofil)", () => {
+    const profil = lesen("js/profil.js");
+    const rangliste = lesen("js/rangliste.js");
+    const start = lesen("js/start.js");
+    wahr(/PROFIL\.vorschauZeigen\(spielerId\)/.test(rangliste), "RANGLISTE.profilOeffnen zeigt die Vorschau-Karte");
+    wahr(/art: "karte"/.test(profil) && /UPCREW_PROFIL\.vorschau\(eintrag\.inhalt, daten/.test(profil), "Karte über allem");
+    wahr(/FORTSCHRITT\.auszugVon\(person, heute\)/.test(profil), "fremde Profile aus dem öffentlichen Auszug");
+    wahr(/statistik: \(ort\) => PROFIL\._statistikBauen/.test(profil) && /verlauf: \(ort\) => PROFIL\._verlaufBauen/.test(profil),
+        "Statistik und Partien im ausführlichen Profil");
+    wahr(profil.indexOf("statistikOeffnen") === -1 && profil.indexOf("Statistik und Partien") === -1,
+        "kein Seitenwechsel „Statistik und Partien“ mehr");
+    wahr(/PROFIL\._alsBlatt\(\)[\s\S]{0,300}UPCREW_PROFIL\.kopfzeile\(halter/.test(start), "Start: die kompakte Kopfzeile statt Kurzprofil");
+    wahr(/UPCREW_ABZEICHEN\.fremdAusgeruestet\(/.test(profil), "fremde Abzeichen wie Typoluck (Baustein)");
+    wahr(/verlauf: true/.test(lesen("js/app.js")), "Zurück-Taste: Blätter und Karten mit Verlaufseintrag");
+    wahr(/UPCREW_LEVELPFAD\.knopf\(level/.test(lesen("js/team-schach-auswertung.js")), "Level nach der Partie antippbar");
+    const seite = lesen("index.html");
+    wahr(seite.indexOf("src=\"js/upcrew-levelpfad.js\"") < seite.indexOf("src=\"js/upcrew-profil.js\"")
+        && seite.indexOf("css/upcrew-levelpfad.css") !== -1, "Level-Pfad vor dem Profil eingebunden");
+    wahr(lesen("sw.js").indexOf("\"./js/upcrew-levelpfad.js\"") !== -1, "Level-Pfad offline");
+});
+
+pruefe("Einstellungen (v0.157.0): echtes Zahnrad, Status-Lampe, keine Standard-Schrift, kurze Texte", () => {
+    const w = neueWelt();
+    laden(w, ["js/upcrew-einstellungen.js"]);
+    const E = w.UPCREW_EINSTELLUNGEN;
+    const l = E.lampe("gespeichert");
+    gleich([l.dataset.zustand, l.kinder[1].textContent], ["gespeichert", "Gespeichert"], "grün");
+    l.setzen("wartet");
+    gleich(l.dataset.zustand, "wartet", "gelb");
+    l.setzen("offline");
+    gleich(l.kinder[1].textContent, "Keine Verbindung", "rot");
+    const einst = lesen("js/einstellungen.js");
+    wahr(/UPCREW_EINSTELLUNGEN\.speicherZeile\(/.test(einst), "Zeile Speicher mit Lampe");
+    wahr(einst.indexOf("titel: \"Standard-Schrift\"") === -1 && !/leseschrift/.test(einst), "Schalter Standard-Schrift weg");
+    /* Alle `unter` höchstens 3 Wörter, kein `hinweis` über 6 (der Baustein zeigt Längeres nicht). */
+    const woerter = (s) => s.split(/\s+/).filter((x) => x && x !== "·").length;
+    for (const t of einst.matchAll(/unter: "([^"]*)"/g)) {
+        wahr(woerter(t[1]) <= 3, "unter zu lang: " + t[1]);
+    }
+    for (const t of einst.matchAll(/hinweis: "([^"]*)"/g)) {
+        wahr(woerter(t[1]) <= 6, "hinweis zu lang: " + t[1]);
+    }
+    wahr(/fill-rule/.test(lesen("js/upcrew-profil.js")) && /ZAHNRAD = "M19\.37/.test(lesen("js/upcrew-profil.js")),
+        "das Profil-Zahnrad ist gefüllt (keine Sonne)");
+});
 /* ------------------------------------------------------------------ *
  * 6. upcrew-einstellungen.js
  * ------------------------------------------------------------------ */
@@ -575,16 +678,19 @@ pruefe("Kopf: Serie in der Kapsel, nicht mehr in den Herausforderungen; Profil a
     const hf = lesen("js/herausforderungen.js");
     wahr(hf.indexOf("_serieBauen") === -1 && hf.indexOf("heute-serie") === -1, "keine Serie in den Herausforderungen");
     const start = lesen("js/start.js");
-    wahr(/UPCREW_SERIE\.kapsel\(/.test(start), "Kapsel im Kopf");
-    wahr(/TABS\.wechseln\("shop"\)/.test(start), "Schild kaufen → Shop");
-    wahr((start.match(/START\.profilOeffnen\(\)/g) || []).length >= 1, "das Kurzprofil öffnet das Profil-Blatt");
+    wahr(/beiSerie: \(\) => START\.serieOeffnen\(\)/.test(start), "Flamme im Kopf öffnet die Serien-Karte");
+    wahr(/data-up-bl-kopf/.test(start), "Kopf markiert (Blätter beginnen darunter, gemessen)");
+    wahr(!/TABS\.wechseln\("shop"\)/.test(start), "kein Weg Schild kaufen → Shop mehr (v0.157.0)");
+    wahr(/UPCREW_PROFIL\.kopfzeile\(halter, PROFIL\.daten\(\), \{\s*beiOeffnen: \(\) => PROFIL\.vorschauZeigen\(\)/.test(start),
+        "oben die Kopfzeile, ein Tipp öffnet die Vorschau-Karte");
     wahr(start.indexOf("_menuebandBauen") === -1 && start.indexOf("start-menue") === -1, "kein Menüband mehr (v0.156.1)");
     wahr(!/blattOeffnen\("(shop|sammlung|herausforderungen|rangliste)"\)/.test(start + lesen("js/profil.js") + lesen("js/rangliste.js")),
         "keine Leisten-Bereiche als Blatt");
     wahr(/@media \(max-width: 379px\)[\s\S]{0,80}\.start-profil-text[\s\S]{0,40}display: none/.test(lesen("css/stil-blatt.css")),
         "unter 380 px nur der Ring");
     const profil = lesen("js/profil.js");
-    wahr(/UPCREW_PROFIL\.zahnrad\(\(\) => TABS\.blattOeffnen\("einstellungen"\)\)/.test(profil), "Zahnrad → Einstellungen");
+    wahr(/eigen \? \[UPCREW_PROFIL\.zahnrad\(\(\) => TABS\.blattOeffnen\("einstellungen"\)\)\] : \[\]/.test(profil),
+        "Zahnrad → Einstellungen, nur im eigenen Profil");
 });
 
 pruefe("Profil: alte Abzeichen-Kennungen übersetzt, Zähler az… nur höher", () => {

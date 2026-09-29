@@ -3,7 +3,7 @@
  * „Serie soll einfach: einmal eine Runde starten, egal welches Game“ · „ja über 60“ · „In-Game-Währung, die über
  * beide Spiele geht … Extra-Leben, Tipps und Schild für Flammen … in einem Shop“ · „Name → Münzen“).
  *
- * Geprüft: Serie aus beiden Zweigen, ab Rundenstart, über 60 Tage (Zähler), Schutz und gekaufte Schilde,
+ * Geprüft: Serie aus beiden Zweigen, ab Rundenstart, über 60 Tage (Zähler), ohne Rettung (v0.157.0) samt Erstattung,
  * Zusammenführen zweier Geräte; Kontostand als Summe, nie unter 0 beim Kaufen, Preise, Vorrat (Schild höchstens 2),
  * gleichzeitiger Kauf auf zwei Geräten; der Shop-Baustein (Karten, gesperrt, Kaufen); die Schleuse zum Konto
  * (§11b) lässt die neuen Zähler durch; Einbindung (Shop statt Bald, Anpfiff, Tipp, Leben, Tagesbrett-Hilfe).
@@ -79,27 +79,42 @@ pruefe("Serie über 60 Tage (Zähler statt Tagesliste), auch abwechselnd in beid
     gleich(F.serie(stand, tag(1400), 0).tage, 1, "nach langer Pause neu bei 1");
 });
 
-pruefe("Serie: ein Schutz überbrückt EINEN Tag; gekaufte Schilde danach und werden verbraucht", () => {
+pruefe("Serie ohne Rettung (seit v0.157.0): ein verpasster Tag reisst sie, auch mit alten Schilden und hohem Level", () => {
     let stand = {};
     stand = F.rundeGestartet(stand, tag(0), 1, "blunderluck", 0).stand;
     stand = F.rundeGestartet(stand, tag(2), 2, "blunderluck", 0).stand;
-    gleich(F.serie(stand, tag(2), 0).tage, 1, "ohne Schutz gerissen");
+    gleich(F.serie(stand, tag(2), 0).tage, 1, "gerissen");
+    gleich(F.schutzVerdient(40), 0, "Level bringt keinen Schutz mehr");
 
-    let mitLevel = F.rundeGestartet({}, tag(0), 1, "blunderluck", 1).stand;
-    mitLevel = F.rundeGestartet(mitLevel, tag(2), 2, "blunderluck", 1).stand;
-    gleich(F.serie(mitLevel, tag(2), 1).tage, 2, "Level-Schutz überbrückt");
-
-    let gekauft = F.rundeGestartet({}, tag(0), 1, "blunderluck", 0).stand;
-    gekauft = M.verdienen(gekauft, "blunderluck", 200, 2);
-    gekauft = M.kaufen(gekauft, "typoluck", "schild", 3).stand;
-    gleich(F.schildVorrat(gekauft), 1, "ein Schild (in Typoluck gekauft)");
-    gleich(F.serie(gekauft, tag(2), 0).tage, 1, "gestern verpasst: lebt noch dank Schild");
-    gekauft = F.rundeGestartet(gekauft, tag(2), 4, "blunderluck", 0).stand;
-    gleich(F.serie(gekauft, tag(2), 0).tage, 2, "überbrückt");
-    gleich(F.schildVorrat(gekauft), 0, "Schild verbraucht");
-    gleich(gekauft.spiele.blunderluck.zaehler.schildGenutzt, 1, "im Spiel gebucht, das die Serie fortschreibt");
+    /* Ein alter Stand mit gekauften, unbenutzten Schilden (Zähler bleiben liegen). */
+    let alt = F.rundeGestartet({}, tag(0), 1, "blunderluck", 0).stand;
+    alt.spiele.blunderluck.zaehler.schildGekauft = 2;
+    gleich(F.schildVorrat(alt), 0, "Vorrat immer 0");
+    gleich(F.serie(alt, tag(2), F.schutzVerdient(40)).tage, 0, "gestern verpasst: Serie auf 0");
+    alt = F.rundeGestartet(alt, tag(2), 4, "blunderluck", F.schutzVerdient(40)).stand;
+    gleich(F.serie(alt, tag(2), 0).tage, 1, "neu bei 1");
+    gleich(alt.spiele.blunderluck.zaehler.schildGenutzt || 0, 0, "kein Schild verbraucht");
 });
 
+pruefe("Alte Schilde: einmal Kaufpreis in Münzen erstattet, nie doppelt (auch nicht über zwei Geräte)", () => {
+    let s = M.verdienen({}, "blunderluck", 10, 1);
+    s.spiele.blunderluck.zaehler.schildGekauft = 2;
+    s.spiele.blunderluck.zaehler.schildGenutzt = 0;
+    const vorher = M.saldo(s);
+    const r = F.schildeErstatten(s, "blunderluck", 50, 5);
+    gleich([r.stueck, r.muenzen], [2, 100], "zwei Stück = 100 Münzen");
+    gleich(M.saldo(r.stand), vorher + 100, "gutgeschrieben");
+    gleich(r.stand.spiele.blunderluck.zaehler.schildErstattet, 2, "gemerkt");
+    gleich(F.schildeErstatten(r.stand, "blunderluck", 50, 6).stueck, 0, "zweites Mal nichts");
+    /* Zwei Geräte erstatten gleichzeitig: beim Zusammenführen gilt je Zähler das Grössere. */
+    const zweites = F.schildeErstatten(s, "blunderluck", 50, 7).stand;
+    gleich(M.saldo(F.zusammenfuehren(r.stand, zweites)), vorher + 100, "zusammengeführt nicht doppelt");
+    /* Ein verbrauchter Schild wird nicht erstattet; ein in Typoluck gekaufter nur dort. */
+    const t = { spiele: { blunderluck: { stand: 1, zaehler: { schildGekauft: 1, schildGenutzt: 1 } } } };
+    gleich(F.schildeErstatten(t, "blunderluck", 50, 2).stueck, 0, "verbraucht: nichts");
+    const tl = { spiele: { typoluck: { stand: 1, zaehler: { schildGekauft: 1 } } } };
+    gleich(F.schildeErstatten(tl, "blunderluck", 50, 2).stueck, 0, "in Typoluck gekauft: nicht hier");
+});
 pruefe("Alte Stände ohne Zähler: dieselbe Rechnung wie bisher (aus den Tagen)", () => {
     const stand = { spiele: {
         blunderluck: { tage: ["2026-09-24", "2026-09-26"] },
@@ -131,7 +146,8 @@ pruefe("Zwei Geräte, dasselbe Spiel: wachsende Zähler nehmen das Größere, Se
 
 pruefe("Kontostand = Summe über beide Zweige, Preise und Vorrat", () => {
     gleich(M.WAEHRUNG.name, "Münzen", "Name an einer Stelle");
-    gleich([M.WAREN.schild.preis, M.WAREN.leben.preis, M.WAREN.tipp.preis], [50, 30, 15], "Preise");
+    gleich(M.WAREN.schild, undefined, "kein Flammen-Schild mehr (seit v0.157.0)");
+    gleich([M.WAREN.leben.preis, M.WAREN.tipp.preis], [30, 15], "Preise");
     gleich(M.VERDIENST, { tagesaufgabe: 10, sieg: 3, figur: 5, boss: 25, serieWoche: 20, level: 10 }, "Verdienst");
     let s = M.verdienen({}, "blunderluck", 40, 1);
     s = M.verdienen(s, "typoluck", 30, 1);
@@ -147,14 +163,14 @@ pruefe("Kontostand = Summe über beide Zweige, Preise und Vorrat", () => {
     gleich(M.benutzen(b.stand, "blunderluck", "leben", 4).ok, false, "ohne Vorrat nicht");
 });
 
-pruefe("Nie unter 0 beim Kaufen; Schild höchstens 2; gleichzeitiger Kauf zweier Geräte", () => {
-    let s = M.verdienen({}, "blunderluck", 49, 1);
-    gleich(M.kaufen(s, "blunderluck", "schild", 2).ok, false, "49 reicht nicht für 50");
-    gleich(M.kannKaufen(s, "schild").grund, "zuWenig", "Grund");
+pruefe("Nie unter 0 beim Kaufen; kein Schild mehr; gleichzeitiger Kauf zweier Geräte", () => {
+    let s = M.verdienen({}, "blunderluck", 29, 1);
+    gleich(M.kaufen(s, "blunderluck", "leben", 2).ok, false, "29 reicht nicht für 30");
+    gleich(M.kannKaufen(s, "leben").grund, "zuWenig", "Grund");
     s = M.verdienen(s, "blunderluck", 200, 2);
-    s = M.kaufen(s, "blunderluck", "schild", 3).stand;
-    s = M.kaufen(s, "blunderluck", "schild", 4).stand;
-    gleich(M.kannKaufen(s, "schild").grund, "voll", "höchstens 2");
+    gleich(M.kaufen(s, "blunderluck", "schild", 3).ok, false, "Schild nicht mehr kaufbar");
+    gleich(M.kannKaufen(s, "schild").grund, "unbekannt", "unbekannte Ware");
+    gleich(M.vorrat(s, "schild"), 0, "Vorrat 0");
     /* Zwei Geräte sehen denselben Stand (60) und kaufen je ein Leben für 30 … und je ein Tipp. */
     let basis = M.verdienen({}, "blunderluck", 30, 1);
     basis = M.verdienen(basis, "typoluck", 10, 1);
@@ -183,7 +199,7 @@ function dom() {
     };
 }
 
-pruefe("Shop: drei Karten, Preis, Du hast, gesperrt ohne Geld, Kaufen ruft die App", () => {
+pruefe("Shop: zwei Karten (ohne Schild), Preis, gesperrt ohne Geld, Kaufen ruft die App", () => {
     global.document = dom();
     global.UPCREW_MUENZEN = M;
     try {
@@ -194,13 +210,12 @@ pruefe("Shop: drei Karten, Preis, Du hast, gesperrt ohne Geld, Kaufen ruft die A
         const griff = S.bauen(behaelter, { titel: "Shop", lesen: () => stand,
             kaufen: async (w) => { gekauft.push(w); return true; } });
         const karten = griff.liste.kinder;
-        gleich(karten.length, 3, "Schild, Leben, Tipp");
+        gleich(karten.length, 2, "Leben, Tipp");
         const knopf = (k) => k.kinder[2].kinder[1];
-        gleich(karten.map((k) => k.className.indexOf("up-shop-zu") !== -1), [true, true, false], "nur der Tipp (15) geht mit 20");
-        gleich(knopf(karten[0]).disabled, true, "Schild gesperrt");
-        knopf(karten[2]).lauscher.click();
+        gleich(karten.map((k) => k.className.indexOf("up-shop-zu") !== -1), [true, false], "nur der Tipp (15) geht mit 20");
+        gleich(knopf(karten[0]).disabled, true, "Zeit zurück gesperrt");
+        knopf(karten[1]).lauscher.click();
         gleich(gekauft, ["tipp"], "Kaufen ruft die App");
-        wahr(/Du hast: 0 \/ 2/.test(karten[0].kinder[1].kinder[2].textContent), "Vorrat mit Höchstgrenze beim Schild");
     } finally {
         delete global.document;
         delete global.UPCREW_MUENZEN;
@@ -218,8 +233,8 @@ pruefe("Shop: Zeit zurück zeigt die Uhr (Option bilder, seit v0.153.0 aus final
             bilder: { leben: uhr } });
         const pfadVon = (karte) => karte.kinder[0].kinder[0].kinder[0].attribute.d;
         const karten = griff.liste.kinder;
-        gleich(pfadVon(karten[1]), uhr, "Zeit zurück: Uhr");
-        wahr(pfadVon(karten[0]) && pfadVon(karten[0]) !== uhr, "Schild: gemeinsames Bild");
+        gleich(pfadVon(karten[0]), uhr, "Zeit zurück: Uhr");
+        wahr(pfadVon(karten[1]) && pfadVon(karten[1]) !== uhr, "Tipp: gemeinsames Bild");
         const shop = lesen("js/shop.js");
         wahr(shop.indexOf(uhr) !== -1 && /bilder: SHOP\.BILDER/.test(shop), "Blunderluck gibt die Uhr mit");
     } finally {

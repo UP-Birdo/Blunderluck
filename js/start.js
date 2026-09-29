@@ -67,19 +67,11 @@ const START = {
             return;
         }
 
-        /* Die Freundesliste ist seit v0.19.0 (Wunsch 6) eine eigene Seite
-           INNERHALB des Starts — kein eigener Tab, sondern ein Fenster mit
-           Zurück-Knopf, wie die Einstellungen. */
-        /* Seit v0.156.0 liegen beide als BLATT über dem Start (keine
-           Vollbild-Menüs, Entwurf Oberfläche Runde 7); ohne den Baustein
-           (Bildschirm-Tests) wie bisher als Seite. */
+        /* Die vergangenen Matches (seit v0.37.0) liegen seit v0.156.0 als
+           BLATT über dem Start; ohne den Baustein (Bildschirm-Tests) als
+           Seite. Die Freunde-Seite am Start ist seit v0.157.0 ganz weg
+           (Nutzer 29.09.2026) — Freunde sind ein Reiter der Rangliste. */
         const alsBlatt = START._unterAlsBlatt();
-        if (START.freundeOffen && !alsBlatt) {
-            START._freundeZeichnen(wurzel);
-            return;
-        }
-
-        /* Die vergangenen Matches, nach demselben Muster (seit v0.37.0). */
         if (START.verlaufOffen && !alsBlatt) {
             START._verlaufZeichnen(wurzel);
             return;
@@ -98,15 +90,21 @@ const START = {
         const seite = document.createElement("div");
         seite.className = "start";
 
-        /* Oben links das Kurzprofil (seit v0.120.0) mit der Serien-Kapsel.
-           Das Menüband oben rechts ist seit v0.156.1 weg (siehe unten). */
+        /* Oben links das Kurzprofil (seit v0.120.0) mit der Serien-Flamme.
+           Das Menüband oben rechts ist seit v0.156.1 weg (siehe unten). Seit
+           v0.157.0 EINE kompakte Kopfzeile aus dem Baustein (Kreis mit
+           Level-Ring, Name, drei Abzeichen-Zeichen, Flamme rechts) — der Start
+           passt ohne Rollen; `data-up-bl-kopf` = hier beginnen Blätter darunter. */
         const oben = document.createElement("div");
         oben.className = "start-oben";
+        oben.setAttribute("data-up-bl-kopf", "");
+        START._kopfFlamme = null;
         const kurzprofil = START._kurzprofilBauen();
         if (kurzprofil) {
             oben.appendChild(kurzprofil);
-            /* Die Serien-Flamme gleich daneben (seit v0.151.18). */
-            START._flammeBauen(oben);
+            /* Die Serien-Flamme gleich daneben (seit v0.151.18; seit v0.157.0
+               baut sie die Kopfzeile mit). */
+            START._flammeBauen(oben, START._kopfFlamme);
         }
         seite.appendChild(oben);
 
@@ -298,11 +296,29 @@ const START = {
      * eigene Profil; „Zurück" führt wieder hierher. Die Zahlen rechnet
      * RANGLISTE (`kurzprofil`) — dieselbe Zählung wie in der Tabelle.
      * Ohne Anmeldung steht hier nichts.
+     *
+     * SEIT v0.157.0 DIE VORSCHAU-KARTE (Nutzer 29.09.2026: „nur ein vorschau
+     * profil … karte die oben ist"; final\EINBAU-2026-09-29b.md): Ring,
+     * Name #Tag, Titel, Level-Knopf (→ Level-Pfad), Serie und die drei
+     * ausgerüsteten Abzeichen — `UPCREW_PROFIL.vorschau`. Ein Tipp auf die
+     * Karte (auch auf den Ring oben links) öffnet das ausführliche Profil.
+     * Der alte Knopf darunter bleibt nur für die Bildschirm-Tests ohne
+     * Baustein.
      */
     _kurzprofilBauen() {
         const ich = ICH.person();
         if (!ich) {
             return null;
+        }
+        if (typeof PROFIL !== "undefined" && PROFIL._alsBlatt() && typeof UPCREW_PROFIL.kopfzeile === "function") {
+            const halter = document.createElement("div");
+            halter.className = "start-kopfzeile";
+            const kopf = UPCREW_PROFIL.kopfzeile(halter, PROFIL.daten(), {
+                beiOeffnen: () => PROFIL.vorschauZeigen(),
+                beiSerie: () => START.serieOeffnen()
+            });
+            START._kopfFlamme = kopf.flamme;
+            return halter;
         }
         const daten = RANGLISTE.kurzprofil(ich.id);
         const name = daten ? daten.name : ich.name;
@@ -404,17 +420,20 @@ const START = {
     /*
      * SEIT v0.156.0 DIE SERIEN-KAPSEL (gemeinsamer Baustein
      * js\upcrew-serie.js, Entwurf Oberfläche Runde 7): hinter dem
-     * Flammen-Kreis die sieben Tage und die beiden Schilde (Flammen-Schild
-     * aus dem Shop, Serien-Schutz vom Level). Ein Tipp öffnet die Karte mit
-     * Erklärung und „Schild kaufen" — die Serie steht nicht mehr in den
-     * Herausforderungen. Ohne den Baustein wie bis v0.155 nur der Kreis,
+     * Flammen-Kreis die sieben Tage. Ein Tipp öffnet die Karte zur Serie —
+     * sie steht nicht mehr in den Herausforderungen. Seit v0.157.0 ohne
+     * Schilde und Serien-Schutz (Nutzer 29.09.2026: „serien schild raus"). Ohne den Baustein wie bis v0.155 nur der Kreis,
      * ein Tipp führt dann in die Herausforderungen.
      */
-    _flammeBauen(halter) {
+    _flammeBauen(halter, fertig) {
         if (typeof UPCREW_FLAMME === "undefined" || typeof FORTSCHRITT_KONTO === "undefined") {
             return;
         }
-        if (typeof UPCREW_SERIE !== "undefined") {
+        if (fertig) {
+            /* Seit v0.157.0: die Flamme der Kopfzeile (ein Kreis, keine Kapsel-Zeile, keine Woche). */
+            START._kapsel = null;
+            START._flamme = fertig;
+        } else if (typeof UPCREW_SERIE !== "undefined") {
             START._kapsel = UPCREW_SERIE.kapsel(halter, { beiKlick: () => START.serieOeffnen() });
             START._flamme = null;
         } else {
@@ -431,8 +450,8 @@ const START = {
     },
 
     /* Die Werte der Kapsel und der Karte aus dem gemeinsamen Fortschritt:
-       die letzten sieben Tage (heute zuletzt), gekaufte Schilde mit ihrer
-       Höchstmenge und der Serien-Schutz des Levels (frei / verdient). */
+       die letzten sieben Tage (heute zuletzt) — seit v0.157.0 ohne Schild
+       und Schutz. */
     TAGE_KURZ: ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"],
 
     serieWerte() {
@@ -443,18 +462,11 @@ const START = {
             tage.unshift(tag);
             tag = FORTSCHRITT._vortag(tag);
         }
-        const schutzAlle = FORTSCHRITT.schutzVerdient(FORTSCHRITT_KONTO.level().level);
-        const ware = (typeof UPCREW_MUENZEN !== "undefined" && UPCREW_MUENZEN.WAREN)
-            ? UPCREW_MUENZEN.WAREN.schild : null;
         return {
             serie: heute.serie.tage,
             heute: heute.serie.heute === true,
             woche: tage.map((datum) => heute.tage.has(datum)),
-            tage: tage.map((datum) => START.TAGE_KURZ[new Date(datum + "T12:00:00").getDay()] || ""),
-            schild: heute.schilde,
-            schildMax: ware ? ware.hoechstens : 0,
-            schutz: Math.max(0, heute.schutzFrei - heute.schilde),
-            schutzAlle: schutzAlle
+            tage: tage.map((datum) => START.TAGE_KURZ[new Date(datum + "T12:00:00").getDay()] || "")
         };
     },
 
@@ -470,11 +482,7 @@ const START = {
             titel: "Serie",
             klasse: "karte-serie",
             inhalt: (ort) => UPCREW_SERIE.karteFuellen(ort, werte, {
-                beiZu: () => UPCREW_BLATT.schliessen("knopf"),
-                beiKauf: () => {
-                    UPCREW_BLATT.schliessen("knopf");
-                    TABS.wechseln("shop");
-                }
+                beiZu: () => UPCREW_BLATT.schliessen("knopf")
             })
         });
     },
@@ -495,8 +503,7 @@ const START = {
         const heute = FORTSCHRITT_KONTO.heute();
         START._flamme.setzen({
             serie: heute.serie.tage,
-            heuteGeschafft: heute.serie.heute,
-            schutz: heute.schutzFrei
+            heuteGeschafft: heute.serie.heute
         });
     },
 
@@ -504,43 +511,10 @@ const START = {
      * Bedienung
      * ---------------------------------------------------------------- */
 
-    /* ---------------------------------------------------------------- *
-     * Die Freundesliste als Seite (Wunsch 6, 24.08.2026)
-     *
-     * Bis v0.18.0 hing die Karte „Freunde" auf dem Zwischenbildschirm
-     * „Spielen" — dort, wo man vor Bündel A seine Mitspieler suchte. Seit
-     * „Spielen" die Runde selbst anlegt (Wunsch 1), kommt man dort kaum
-     * noch vorbei. Sie hängt deshalb jetzt am eigenen Zeichen oben rechts.
-     *
-     * Ein Fenster, kein Tab: Die Leiste geht weg, oben links steht der eine
-     * Zurück-Knopf (Haus-Muster seit v0.110). Gezeichnet wird die KARTE aus
-     * freunde.js — dieselbe wie vorher, nur an einem anderen Ort.
-     * ---------------------------------------------------------------- */
-
-    freundeOffen: false,
-
-    _freundeZeichnen(wurzel) {
-        TABS.rundeSetzen("start", true);
-        wurzel.innerHTML = "";
-
-        const kopfzeile = document.createElement("div");
-        kopfzeile.className = "partie-kopf";
-
-        const zurueck = document.createElement("button");
-        zurueck.type = "button";
-        zurueck.className = "knopf knopf-still knopf-klein";
-        zurueck.textContent = "Zurück";
-        zurueck.addEventListener("click", () => START.freundeSchliessen());
-        kopfzeile.appendChild(ZUSTAND.alsZurueck(zurueck));
-
-        const titel = document.createElement("h2");
-        titel.className = "partie-titel";
-        titel.textContent = "Freunde";
-        kopfzeile.appendChild(titel);
-        wurzel.appendChild(kopfzeile);
-
-        wurzel.appendChild(FREUNDE.karteBauen(ICH.person()));
-    },
+    /* DIE FREUNDESLISTE ALS SEITE AM START (Wunsch 6, v0.19.0 bis v0.156.1)
+       ist seit v0.157.0 ganz weg (Nutzer 29.09.2026: „nicht mehr am start
+       nur rangliste"). `START.freundeOeffnen` führt in den Reiter „Freunde"
+       der Rangliste. */
 
     /* ---------------------------------------------------------------- *
      * Die vergangenen Matches als Seite (seit v0.37.0)
@@ -619,12 +593,11 @@ const START = {
     },
 
     /* ---------------------------------------------------------------- *
-     * Freunde und Verlauf als BLATT (seit v0.156.0)
+     * Der Verlauf als BLATT (seit v0.156.0)
      *
-     * `freundeOffen`/`verlaufOffen` bleiben der eine Schalter; `_zeichnen`
-     * hält das Blatt dazu offen und zeichnet seinen Inhalt neu (Freunde
-     * zeichnen bei jeder Änderung über START._zeichnen). Geht das Blatt zu
-     * (✕, Grund, Esc, ein anderer Tab), fällt der Schalter zurück.
+     * `verlaufOffen` ist der eine Schalter; `_zeichnen` hält das Blatt dazu
+     * offen und zeichnet seinen Inhalt neu. Geht das Blatt zu (✕, Grund,
+     * Esc, ein anderer Tab), fällt der Schalter zurück.
      * ---------------------------------------------------------------- */
 
     _unterBlatt: null,
@@ -635,7 +608,7 @@ const START = {
     },
 
     _unterBlattPflegen() {
-        const art = START.freundeOffen ? "freunde" : (START.verlaufOffen ? "verlauf" : "");
+        const art = START.verlaufOffen ? "verlauf" : "";
         const offen = START._unterBlatt;
         if (offen && offen.art !== art) {
             START._unterBlatt = null;
@@ -646,16 +619,14 @@ const START = {
         }
         if (!START._unterBlatt) {
             const eintrag = UPCREW_BLATT.oeffnen({
-                titel: art === "freunde" ? "Freunde" : "Vergangene Matches",
+                titel: "Vergangene Matches",
                 klasse: "blatt-" + art,
                 beimSchliessen: (wie) => {
                     if (!START._unterBlatt || START._unterBlatt.eintrag !== eintrag) {
                         return;
                     }
                     START._unterBlatt = null;
-                    START.freundeOffen = false;
                     START.verlaufOffen = false;
-                    FREUNDE.suchtext = "";
                     if (wie !== "alle") {
                         START._zeichnen();
                     }
@@ -665,11 +636,7 @@ const START = {
         }
         const ort = START._unterBlatt.eintrag.inhalt;
         ort.innerHTML = "";
-        if (art === "freunde") {
-            ort.appendChild(FREUNDE.karteBauen(ICH.person()));
-        } else {
-            START._verlaufInhaltBauen(ort);
-        }
+        START._verlaufInhaltBauen(ort);
     },
 
     _unterZu() {
@@ -684,7 +651,6 @@ const START = {
         if (START._unterAlsBlatt() && TABS.aktiveId !== "start") {
             TABS.wechseln("start");
         }
-        START.freundeOffen = false;
         START.verlaufOffen = true;
         START._zeichnen();
     },
@@ -695,27 +661,12 @@ const START = {
         START._zeichnen();
     },
 
+    /* Die Freunde wohnen seit v0.156.1 als Reiter in der Rangliste; seit
+       v0.157.0 gibt es keinen Rückfall auf eine Seite am Start mehr. */
     freundeOeffnen() {
-        /* Seit v0.156.1 (Nutzer 29.09.2026) wohnen die Freunde als Reiter
-           in der Rangliste — dorthin, wenn es sie gibt. */
-        if (typeof RANGLISTE !== "undefined" && typeof RANGLISTE.freundeOeffnen === "function"
-                && START._unterAlsBlatt()) {
+        if (typeof RANGLISTE !== "undefined" && typeof RANGLISTE.freundeOeffnen === "function") {
             RANGLISTE.freundeOeffnen();
-            return;
         }
-        if (START._unterAlsBlatt() && TABS.aktiveId !== "start") {
-            TABS.wechseln("start");
-        }
-        START.verlaufOffen = false;
-        START.freundeOffen = true;
-        START._zeichnen();
-    },
-
-    freundeSchliessen() {
-        START.freundeOffen = false;
-        FREUNDE.suchtext = "";
-        START._unterZu();
-        START._zeichnen();
     },
 
     /*

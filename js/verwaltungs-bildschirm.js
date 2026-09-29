@@ -187,8 +187,8 @@ const VERWALTUNGS_BILDSCHIRM = {
     _spielerlisteDaten() {
         const daten = ANMELDUNG.abgleich.daten;
         const heute = FORTSCHRITT.datumVon(Date.now());
-        const serieVon = (stand) => FORTSCHRITT.serie(stand, heute,
-            FORTSCHRITT.schutzVerdient(FORTSCHRITT.level(stand).level)).tage;
+        /* Ohne Serien-Schutz (seit v0.157.0). */
+        const serieVon = (stand) => FORTSCHRITT.serie(stand, heute, 0).tage;
         const spieler = ((daten && daten.spieler) || [])
             .filter((eintrag) => !SPIELER.istVerteiler(eintrag))
             .map((eintrag) => Object.assign({}, eintrag, {

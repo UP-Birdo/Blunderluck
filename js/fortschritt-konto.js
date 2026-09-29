@@ -304,11 +304,34 @@ const FORTSCHRITT_KONTO = {
             blunderluck: FORTSCHRITT.heuteVon(stand, "blunderluck", datum),
             typoluck: FORTSCHRITT.heuteVon(stand, "typoluck", datum),
             serie: serie,
-            tage: FORTSCHRITT.alleTage(stand),
-            /* Seit v0.152.0 mit den gekauften Flammen-Schilden. */
-            schutzFrei: Math.max(0, schutz - serie.schutzGenutzt) + FORTSCHRITT.schildVorrat(stand),
-            schilde: FORTSCHRITT.schildVorrat(stand)
+            tage: FORTSCHRITT.alleTage(stand)
+            /* `schutzFrei` und `schilde` sind seit v0.157.0 weg (kein Schutz, kein Schild). */
         };
+    },
+
+    /*
+     * ALTE FLAMMEN-SCHILDE ERSTATTEN (seit v0.157.0, einmalig): Wer noch
+     * gekaufte, unbenutzte Schilde hat, bekommt ihren Kaufpreis
+     * (`SCHILD_PREIS`, 50 je Stück wie im alten Shop) als verdiente Münzen.
+     * Gemerkt im Zähler `schildErstattet` des Blunderluck-Zweigs — beim
+     * Zusammenführen gilt je Zähler der grössere Wert, so zahlt auch ein
+     * zweites Gerät nicht doppelt. Gerufen bei jedem Spieler-Stand
+     * (app.js `beiDaten`); liefert die gutgeschriebenen Münzen (meist 0).
+     */
+    SCHILD_PREIS: 50,
+
+    schildeErstatten() {
+        if (!FORTSCHRITT_KONTO._person() || typeof FORTSCHRITT.schildeErstatten !== "function") {
+            return 0;
+        }
+        const r = FORTSCHRITT.schildeErstatten(FORTSCHRITT_KONTO.lesen(), FORTSCHRITT.APP,
+            FORTSCHRITT_KONTO.SCHILD_PREIS, Date.now());
+        if (r.stueck <= 0) {
+            return 0;
+        }
+        FORTSCHRITT_KONTO._ablegen(r.stand);
+        FORTSCHRITT_KONTO._muenzenMelden(r.muenzen);
+        return r.muenzen;
     },
 
     /* ---------------------------------------------------------------- *

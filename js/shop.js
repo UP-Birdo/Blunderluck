@@ -5,7 +5,7 @@
  * Spiele geht; mit denen kann man sich Extra-Leben, Tipps und Schild für
  * Flammen kaufen in einem Shop" · „Shop auf dem Platz von Bald soll der
  * kommen" · „Name → Münzen". Seit v0.152.2 heisst das Extra-Leben hier
- * „Zeit zurück" (siehe `TEXTE`).
+ * „Zeit zurück" (siehe `TEXTE`); den Schild gibt es seit v0.157.0 nicht mehr.
  *
  * Aussehen und Aufbau kommen aus dem gemeinsamen Baustein js\upcrew-shop.js
  * (gleich in Typoluck), Rechnung aus js\upcrew-muenzen.js; hier nur, woher
@@ -30,7 +30,9 @@ const SHOP = {
        Text im Spiel (Menü, Abschluss, Kurzmeldung, Rückfrage) kommt von
        hier (`TEAM_SCHACH._wareName`). */
     TEXTE: {
-        schild: { name: "Flammen-Schild", text: "Rettet die Flamme über einen verpassten Tag" },
+        /* Den Flammen-Schild gibt es seit v0.157.0 nicht mehr (Nutzer
+           29.09.2026: „serien schild raus"); alte Käufe erstattet
+           FORTSCHRITT_KONTO.schildeErstatten einmal in Münzen. */
         /* Nutzer 28.09.2026: „Keine Halbzug-Beschreibung, sondern ein
            ganzer Zug." — dein Zug samt Bobs Antwort ist EIN Zug. Und: „nur
            im Turm nutzbar, Bob da rauslassen". */

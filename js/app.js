@@ -422,7 +422,11 @@ const APP = {
 
                 /* Die Serien-Flamme (seit v0.151.18): Der Fortschritt vom
                    Konto kommt mit dem Spieler-Stand — auf einem neuen Gerät
-                   erst nach der Anmeldung. */
+                   erst nach der Anmeldung. Seit v0.157.0 werden dabei
+                   alte Flammen-Schilde einmal in Münzen erstattet. */
+                if (typeof FORTSCHRITT_KONTO !== "undefined" && FORTSCHRITT_KONTO.schildeErstatten) {
+                    FORTSCHRITT_KONTO.schildeErstatten();
+                }
                 if (typeof START !== "undefined" && START.flammeAktualisieren) {
                     START.flammeAktualisieren();
                 }
@@ -432,12 +436,6 @@ const APP = {
                    soll ankommen, ohne dass erst ein Zug passiert. */
                 if (TEAM_SCHACH.abgleich) {
                     TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
-                }
-
-                /* Die Freundesliste hängt seit v0.19.0 (Wunsch 6) am
-                   Startbildschirm — steht sie offen, zieht sie mit. */
-                if (START.freundeOffen) {
-                    START._zeichnen();
                 }
             },
             beiStatus: (status, text, technik) => APP.statusZeigen(status, text, technik),
@@ -519,7 +517,11 @@ const APP = {
         if (typeof UPCREW_BLATT !== "undefined") {
             UPCREW_BLATT.einrichten({
                 ebenen: document.getElementById("ebenen"),
-                haupt: document.getElementById("tab-inhalt")
+                haupt: document.getElementById("tab-inhalt"),
+                /* Seit v0.157.0: jedes Blatt und jede Karte (Profil, Level-Pfad, Vorschau, Serie, Abzeichen-Wahl)
+                   legt einen Verlaufseintrag an — die Zurück-Taste/Wischgeste schliesst das oberste statt die
+                   App-Seite zu verlassen (Baustein horcht selbst auf popstate). */
+                verlauf: true
             });
         }
         TABS.registrieren(SHOP);

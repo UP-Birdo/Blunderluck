@@ -300,17 +300,9 @@ const RANGLISTE = {
         RANGLISTE.zeichnen();
     },
 
-    /* Seit v0.156.1 ist die Rangliste wieder eine SEITE: „Statistik und
-       Partien" im Profil-Blatt (js\profil.js) wechselt hierher mit dem
-       Rückweg „profil". Wer die Seite verlässt, hat das ausführliche
-       Profil erledigt — die Rangliste beginnt beim nächsten Mal wieder mit
-       der Wertung. */
-    beimVerlassen() {
-        if (RANGLISTE.profilRueckweg === "profil") {
-            RANGLISTE.profilRueckweg = "";
-            RANGLISTE.offenesProfil = "";
-        }
-    },
+    /* Seit v0.156.1 ist die Rangliste wieder eine SEITE. Seit v0.157.0
+       steht das ausführliche Profil im Profil-Blatt (js\profil.js); die
+       Profilseite hier gibt es nur noch ohne Blatt-Baustein (Tests). */
 
     /*
      * DIE REITER DER RANGLISTE (seit v0.156.1, Nutzer 29.09.2026: Freunde
@@ -544,6 +536,13 @@ const RANGLISTE = {
     profilRueckweg: "",
 
     profilOeffnen(spielerId, rueckweg) {
+        /* Seit v0.157.0 zweistufig (js\profil.js): jeder Name zeigt erst die
+           Vorschau-Karte, ein Tipp darauf das ausführliche Profil. Die
+           Profilseite hier nur noch ohne Blatt-Baustein (Tests). */
+        if (typeof PROFIL !== "undefined" && PROFIL._alsBlatt()) {
+            PROFIL.vorschauZeigen(spielerId);
+            return;
+        }
         RANGLISTE.offenesProfil = spielerId;
         RANGLISTE.profilReiter = "statistik";
         RANGLISTE.profilAllePartien = false;
@@ -564,13 +563,6 @@ const RANGLISTE = {
         RANGLISTE.offenesProfil = "";
         RANGLISTE.profilRueckweg = "";
 
-        /* Aus dem Profil-Blatt gekommen (seit v0.156.1 als Seitenwechsel):
-           „Zurück" öffnet das Profil-Blatt wieder (über dem Start). */
-        if (rueckweg === "profil" && typeof PROFIL !== "undefined") {
-            PROFIL.oeffnen();
-            return;
-        }
-
         if (rueckweg && typeof TABS !== "undefined") {
             TABS.wechseln(rueckweg);
             return;
@@ -578,12 +570,17 @@ const RANGLISTE = {
         RANGLISTE.zeichnen();
     },
 
-    /* Das eigene Profil — aus dem Profil-Blatt und den Einstellungen. */
+    /* Das eigene Profil: seit v0.157.0 das Profil-Blatt, ohne den
+       Baustein (Tests) die Profilseite hier. */
     eigenesProfilOeffnen(rueckweg) {
         const ich = ICH.person();
         if (!ich) {
             DIALOG.hinweis("Nicht angemeldet",
                 "Dieses Gerät · niemand angemeldet");
+            return;
+        }
+        if (typeof PROFIL !== "undefined" && PROFIL._alsBlatt()) {
+            PROFIL.oeffnen();
             return;
         }
         RANGLISTE.profilOeffnen(ich.id, rueckweg);
@@ -1148,8 +1145,7 @@ const RANGLISTE = {
                 FORTSCHRITT.auszugSerie(auszug, heute));
         }
         const sauber = FORTSCHRITT.normalisieren(FORTSCHRITT_KONTO.lesen());
-        const schutz = FORTSCHRITT.schutzVerdient(FORTSCHRITT.level(sauber).level);
-        const laufend = FORTSCHRITT.serie(sauber, heute, schutz).tage;
+        const laufend = FORTSCHRITT.serie(sauber, heute, 0).tage;   // ohne Schutz seit v0.157.0
         return UPCREW_ABZEICHEN.liste(sauber, laufend);
     },
 
@@ -1517,7 +1513,13 @@ const RANGLISTE = {
             return;
         }
         const lage = SPIELER.freundschaft(staende.spieler, ich.id, person.id);
-        const danach = () => RANGLISTE.zeichnen();
+        /* Im Profil-Blatt (seit v0.157.0) zeichnet auch das neu. */
+        const danach = () => {
+            RANGLISTE.zeichnen();
+            if (typeof PROFIL !== "undefined" && PROFIL.offen()) {
+                PROFIL.zeichnen();
+            }
+        };
 
         if (lage === "freunde") {
             fuss.appendChild(RANGLISTE._element("span", "chip chip-fertig", "Ihr seid Freunde"));

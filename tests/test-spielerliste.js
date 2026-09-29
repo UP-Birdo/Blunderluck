@@ -108,7 +108,7 @@ pruefe("Shop: eigene Texte je Spiel, WAREN bleiben unverändert", () => {
         gleich(S.text("leben", { leben: { name: "Zweite Chance", text: "Nochmal raten" } }),
             { name: "Zweite Chance", text: "Nochmal raten" }, "eigener Text");
         gleich(S.text("tipp", {}).name, "Tipp", "Rückfall auf WAREN");
-        gleich(S.text("schild").text, M.WAREN.schild.text, "ohne texte");
+        gleich(S.text("leben").text, M.WAREN.leben.text, "ohne texte");
         gleich(JSON.stringify(M.WAREN), vorher, "WAREN unverändert");
         const shop = lesen("js/shop.js");
         wahr(/texte: SHOP\.TEXTE/.test(shop) && !/UPCREW_MUENZEN\.WAREN\.[a-z]+\.(name|text)\s*=/.test(shop),

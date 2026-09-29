@@ -2300,3 +2300,20 @@ body.dialog-offen {
         animation: bereich-auf 0.16s ease-out;
     }
 }
+/* START OHNE ROLLEN (seit v0.157.0, Koordination 29.09.2026 „Start ohne Scrollen“): mit der kompakten Kopfzeile
+   passt der Start bei 390×844 ohnehin; auf kleinen Bildschirmen (bis 720 px hoch, z. B. 360×640) enger — weniger
+   Abstand, der Turm-Weg darf bis 220 px schrumpfen. */
+@media (max-height: 720px) {
+    .start {
+        gap: 10px;
+        min-height: 0;
+    }
+
+    .turm-karte {
+        min-height: 0;
+    }
+
+    .turm-weg {
+        min-height: 220px;
+    }
+}
