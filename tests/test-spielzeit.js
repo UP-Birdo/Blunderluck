@@ -5,13 +5,14 @@
  * Nutzer 28.09.2026: „log die zeit wie lange die app offen ist auf jedem
  * account" · „okay privat … auch bei gästen … sowohl als auch der start
  * datum" · „bis zur ersten stunde 0 bis 59 min danach 1h+ 2h". Geprüft:
- * die reine Rechnung in js\fortschritt.js (Zählen mit Grenze, „seit",
- * Zusammenführen, Anzeige, Summe, Haken mit Standard aus), das Zählen nur
- * bei sichtbarer Seite und der Gast→Konto-Umzug in js\fortschritt-konto.js,
- * die Einbindung (Profil, Einstellungen, Verwaltung, app.js) und — wenn der
- * Typoluck-Ordner daneben liegt und Typoluck die Spielzeit schon hat — dass
- * der Auszug- und Spielzeit-Teil von fortschritt.js in beiden Spielen
- * Zeile für Zeile gleich ist.
+ * die reine Rechnung (seit v0.160.1 im Kern-Baustein js\fortschritt-kern.js,
+ * gerufen über `FORTSCHRITT`: Zählen mit Grenze, „seit", Zusammenführen,
+ * Anzeige, Summe, Haken mit Standard aus), das Zählen nur bei sichtbarer
+ * Seite und der Gast→Konto-Umzug in js\fortschritt-konto.js, die Einbindung
+ * (Profil, Einstellungen, Verwaltung, app.js) und dass der Auszug- und
+ * Spielzeit-Teil im Kern-Baustein steht (bis v0.160.0: Vergleich Zeile für
+ * Zeile mit Typolucks fortschritt.js — den ersetzt der Byte-Vergleich des
+ * Bausteins in test-bausteine-quelle.js).
  *
  * Intro-Streifen (Nutzer: „dünne Streifen beim Intro am PC beheben"):
  * `INTRO._raenderDecken` setzt `html.intro-offen` (+ Farbe) und nimmt es
@@ -74,7 +75,8 @@ function welt(ich) {
     };
     umgebung.globalThis = umgebung;
     vm.createContext(umgebung);
-    vm.runInContext(lesen("js/fortschritt.js") + "\n;" + lesen("js/upcrew-abzeichen.js") + "\n;"
+    vm.runInContext(lesen("js/fortschritt-kern.js") + "\n;" + lesen("js/fortschritt.js") + "\n;"
+        + lesen("js/upcrew-abzeichen.js") + "\n;"
         + lesen("js/fortschritt-konto.js")
         + "\nObject.assign(globalThis, { FORTSCHRITT, FORTSCHRITT_KONTO });", umgebung);
     return { F: umgebung.FORTSCHRITT, K: umgebung.FORTSCHRITT_KONTO, gespeichert, geschrieben, speicher };
@@ -169,21 +171,18 @@ function welt(ich) {
         wahr(/dabei seit|Dabei seit/.test(r), "dabei seit im Profil");
     });
 
-    await pruefe("Typoluck kann Zeile für Zeile übernehmen (Auszug + Spielzeit gleich, wenn schon nachgezogen)", () => {
-        const eigenes = lesen("js/fortschritt.js");
-        const start = eigenes.indexOf("     * DER ÖFFENTLICHE AUSZUG");
-        wahr(start !== -1 && eigenes.indexOf("SPIELZEIT UND „DABEI SEIT\"") > start, "Spielzeit steht im Auszug-Teil");
-        const typoPfad = pfad.join(projekt, "..", "Typoluck", "js", "fortschritt.js");
-        if (!fs.existsSync(typoPfad)) {
-            return;
-        }
-        const typo = fs.readFileSync(typoPfad, "utf8");
-        if (typo.indexOf("spielzeitZaehlen") === -1) {
-            /* Typoluck hat noch nicht nachgezogen (UEBERGABE.md). */
-            return;
-        }
-        const teil = (text) => text.slice(text.indexOf("     * DER ÖFFENTLICHE AUSZUG"));
-        gleich(teil(typo) === teil(eigenes), true, "Auszug- und Spielzeit-Teil gleich");
+    /* Bis v0.160.0 stand dieser Teil in js\fortschritt.js und wurde Zeile für
+       Zeile mit Typolucks js\fortschritt.js verglichen. Seit v0.160.1 ist er
+       der Baustein js\fortschritt-kern.js: Beide Spiele bekommen dieselbe
+       Datei aus Apps\UPCrew\bausteine\kern, und die Gleichheit prüft
+       test-bausteine-quelle.js byte-genau gegen die Quelle — ein Blick ins
+       Schwester-Spiel ist dafür nicht mehr nötig. */
+    await pruefe("Auszug + Spielzeit stehen im Kern-Baustein, den Typoluck gleich bekommt (seit v0.160.1)", () => {
+        const kern = lesen("js/fortschritt-kern.js");
+        const start = kern.indexOf("     * DER ÖFFENTLICHE AUSZUG");
+        wahr(start !== -1 && kern.indexOf("SPIELZEIT UND „DABEI SEIT\"") > start, "Spielzeit steht im Auszug-Teil");
+        wahr(!/^ {4}(auszug|spielzeitZaehlen)\s*\(/m.test(lesen("js/fortschritt.js")),
+            "nicht noch einmal im eigenen Teil");
     });
 
     await pruefe("Intro-Streifen: html.intro-offen solange das Intro steht, mit seiner Farbe", async () => {

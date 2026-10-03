@@ -20,7 +20,7 @@ require(pfad.join(__dirname, "..", "js", "schach-runde-faehigkeiten.js"));
 const SCHACH_TAFEL = require(pfad.join(__dirname, "..", "js", "schach-tafel.js"));
 const TURM = require(pfad.join(__dirname, "..", "js", "turm.js"));
 globalThis.TURM = TURM;
-const FORTSCHRITT = require(pfad.join(__dirname, "..", "js", "fortschritt.js"));
+const FORTSCHRITT = require(pfad.join(__dirname, "fortschritt-laden.js"));
 globalThis.FORTSCHRITT = FORTSCHRITT;
 
 const SCHACH_VARIANTEN = globalThis.SCHACH_VARIANTEN;

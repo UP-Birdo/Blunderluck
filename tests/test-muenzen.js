@@ -42,7 +42,7 @@ function wahr(bedingung, was) {
 
 const projekt = pfad.join(__dirname, "..");
 const lesen = (name) => fs.readFileSync(pfad.join(projekt, name), "utf8");
-const F = require(pfad.join(projekt, "js", "fortschritt.js"));
+const F = require(pfad.join(__dirname, "fortschritt-laden.js"));
 const M = require(pfad.join(projekt, "js", "upcrew-muenzen.js"));
 
 /* Ein Datum N Tage nach dem 1.1.2026. */

@@ -501,9 +501,10 @@ const bausteinNamen = ["KONFIG", "SPIELER", "ANMELDUNG", "SCHACH_VARIANTEN", "SC
     "Abgleich"];
 
 /* Die Reihenfolge ist dieselbe wie in index.html — die drei team-schach-Teile
-   ergänzen das Objekt und müssen nach ihm kommen. */
+   ergänzen das Objekt und müssen nach ihm kommen. Seit v0.160.1 steht
+   `SpeicherKonten` im Baustein speicher-konten.js, direkt nach speicher.js. */
 const dateien = ["konfig.js", "fuehlen.js", "zustand.js",
-    "konto.js", "spieler.js", "speicher.js", "abgleich.js",
+    "konto.js", "spieler.js", "speicher.js", "speicher-konten.js", "abgleich.js",
     "anmeldung.js", "anmeldung-konto.js",
     "faehigkeit-zeichen.js", "schach-varianten.js",
     "schach.js", "schach-runde.js", "schach-runde-faehigkeiten.js",

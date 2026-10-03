@@ -27,7 +27,7 @@ const fs = require("fs");
 const vm = require("vm");
 
 const projekt = pfad.join(__dirname, "..");
-const FORTSCHRITT = require(pfad.join(projekt, "js", "fortschritt.js"));
+const FORTSCHRITT = require(pfad.join(__dirname, "fortschritt-laden.js"));
 
 let anzahlOk = 0;
 let anzahlFehler = 0;
@@ -185,12 +185,14 @@ function kontoVerstoesse(eintrag) {
 }
 
 /* ------------------------------------------------------------------ *
- * Die echte Schreib-Schleuse aus js\speicher.js
+ * Die echte Schreib-Schleuse — seit v0.160.1 im Baustein
+ * js\speicher-konten.js, der `SpeicherGemeinsam` aus js\speicher.js braucht
  * ------------------------------------------------------------------ */
 
 const kontext = { console: console, JSON: JSON, Math: Math, FORTSCHRITT: FORTSCHRITT };
 vm.createContext(kontext);
 vm.runInContext(fs.readFileSync(pfad.join(projekt, "js", "speicher.js"), "utf8")
+    + "\n;\n" + fs.readFileSync(pfad.join(projekt, "js", "speicher-konten.js"), "utf8")
     + "\n;this.SpeicherKonten = SpeicherKonten;", kontext, { filename: "speicher.js" });
 const SpeicherKonten = kontext.SpeicherKonten;
 

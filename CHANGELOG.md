@@ -3,6 +3,26 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.160.1 — 03.10.2026
+
+**Dein Level stimmt jetzt ohne Neustart — auch wenn du es in einem anderen UPCrew-Spiel verdient hast.**
+
+- **Level aus Typoluck kommt von selbst an:** Hast du in einem anderen UPCrew-Spiel mit demselben Konto XP
+  gesammelt, zeigt Blunderluck das neue Level, sobald du zurück in die App wechselst. Bisher brauchte es dafür
+  einen echten Neustart.
+- **Der Kopf am Start zieht nach:** Kommt dein Stand vom Konto erst kurz nach dem Start an, springen Level-Ring
+  und Zahl oben links sofort um. Bisher zog nur die Flamme nach.
+- **Als Gast siehst du, warum dein Level niedrig ist:** Im Profil steht unter dem Level-Balken eine Zeile
+  „Gast · Level nur auf diesem Gerät“ mit dem Knopf „Anmelden“ (führt zur Konto-Karte in den Einstellungen).
+- Sonst merkst du nichts: Unter der Haube sind zwei Teile (Konten-Speicher, gemeinsamer Fortschritt) in Bausteine
+  umgezogen, die Blunderluck und Typoluck sich jetzt teilen. Am Spiel ändert das nichts.
+
+## Ohne neue Version — 03.10.2026 (nur Tests und Doku, nichts ausgeliefert)
+
+- Für dich ändert sich nichts. Die gemeinsamen Bausteine aller UPCrew-Spiele haben ab jetzt eine einzige Quelle
+  (`Apps\UPCrew\bausteine`); der Test, der darüber wacht, vergleicht jetzt dorthin — auch das Konto.
+- Untersucht, noch nicht behoben: „Level in Blunderluck 1, in Typoluck 6“. Befund in `UEBERGABE.md` (oben).
+
 ## v0.160.0 — 30.09.2026
 
 **Neu: der Turm als echter Turm · mehrere Wege · viel weniger Partien bis zum Boss · Elite, Rast, Truhe, Händler und Fund.**

@@ -39,7 +39,7 @@ function wahr(bedingung, was) {
     }
 }
 
-const FORTSCHRITT = require(pfad.join(projekt, "js", "fortschritt.js"));
+const FORTSCHRITT = require(pfad.join(__dirname, "fortschritt-laden.js"));
 globalThis.FORTSCHRITT = FORTSCHRITT;
 const SPIELER = require(pfad.join(projekt, "js", "spieler.js"));
 globalThis.SPIELER = SPIELER;
@@ -434,5 +434,61 @@ pruefe("Farbwelten nach Level (v0.159.0): Grau 0, Werkstatt 2, Studio 3, Feld 11
     gleich(Object.keys(fenster.UPCREW_INTRO.WELTEN)[0], "grau", "Grau steht in den Welten vorn");
     gleich(Object.keys(fenster.UPCREW_INTRO.WELTEN).length, 6, "sechs Welten");
 });
+
+/* ------------------------------------------------------------------ *
+ * Der Kern-Baustein (seit v0.160.1): js\fortschritt-kern.js trägt den
+ * gemeinsamen Teil, js\fortschritt.js setzt sich daraus zusammen
+ * ------------------------------------------------------------------ */
+
+pruefe("Kern: Blunderluck liefert jedes Glied, das der Kern vom Spiel erwartet", () => {
+    const kern = require(pfad.join(projekt, "js", "fortschritt-kern.js"));
+    wahr(Array.isArray(kern.FORTSCHRITT_KERN_ERWARTET) && kern.FORTSCHRITT_KERN_ERWARTET.length > 0, "Liste da");
+    const fehlend = kern.FORTSCHRITT_KERN_ERWARTET.filter((name) => !(name in FORTSCHRITT)
+        || FORTSCHRITT[name] === undefined || name in kern.FORTSCHRITT_KERN);
+    gleich(fehlend.join(","), "", "fehlende (oder nur im Kern vorhandene) Glieder");
+    gleich(FORTSCHRITT.APP, "blunderluck", "APP");
+    /* Und umgekehrt: Was im Kern steht, kommt im zusammengesetzten Ding an. */
+    const verloren = Object.keys(kern.FORTSCHRITT_KERN).filter((name) => FORTSCHRITT[name] !== kern.FORTSCHRITT_KERN[name]);
+    gleich(verloren.join(","), "", "Glieder des Kerns, die nicht (oder ersetzt) ankommen");
+});
+
+pruefe("Kern: js\\fortschritt.js definiert kein Glied, das auch im Kern steht (kein stilles Überschreiben)", () => {
+    const vm = require("vm");
+    const fs = require("fs");
+    const kern = require(pfad.join(projekt, "js", "fortschritt-kern.js"));
+    /* Die Datei mit einem LEEREN Kern laufen lassen: Was dann in FORTSCHRITT
+       steht, hat sie selbst definiert. */
+    const umgebung = {};
+    vm.createContext(umgebung);
+    vm.runInContext("const FORTSCHRITT_KERN = {};\n"
+        + fs.readFileSync(pfad.join(projekt, "js", "fortschritt.js"), "utf8")
+        + "\n;this.EIGEN = FORTSCHRITT;", umgebung, { filename: "fortschritt.js" });
+    const eigene = Object.keys(umgebung.EIGEN);
+    wahr(eigene.length > 0, "eigene Glieder gefunden");
+    const doppelt = eigene.filter((name) => name in kern.FORTSCHRITT_KERN);
+    gleich(doppelt.join(","), "", "doppelt definierte Glieder");
+    gleich(Object.keys(FORTSCHRITT).length, Object.keys(kern.FORTSCHRITT_KERN).length + eigene.length,
+        "Kern + eigene = alle Glieder");
+});
+
+pruefe("Kern: index.html und sw.js nennen beide Kern-Dateien, in der richtigen Reihenfolge", () => {
+    const fs = require("fs");
+    const seite = fs.readFileSync(pfad.join(projekt, "index.html"), "utf8");
+    const skripte = [...seite.matchAll(/<script src="(js\/[^"]+)"/g)].map((t) => t[1]);
+    const offline = [...fs.readFileSync(pfad.join(projekt, "sw.js"), "utf8").matchAll(/"\.\/(js\/[^"]+)"/g)]
+        .map((t) => t[1]);
+    for (const [liste, wo] of [[skripte, "index.html"], [offline, "sw.js"]]) {
+        for (const datei of ["js/fortschritt-kern.js", "js/fortschritt.js", "js/speicher.js", "js/speicher-konten.js"]) {
+            gleich(liste.filter((eintrag) => eintrag === datei).length, 1, datei + " genau einmal in " + wo);
+        }
+        gleich(liste.indexOf("js/fortschritt-kern.js") + 1, liste.indexOf("js/fortschritt.js"),
+            wo + ": fortschritt-kern.js direkt VOR fortschritt.js");
+        gleich(liste.indexOf("js/speicher.js") + 1, liste.indexOf("js/speicher-konten.js"),
+            wo + ": speicher-konten.js direkt NACH speicher.js");
+    }
+    wahr(!/class\s+SpeicherKonten\b/.test(fs.readFileSync(pfad.join(projekt, "js", "speicher.js"), "utf8")),
+        "die Klasse SpeicherKonten steht nicht mehr in speicher.js");
+});
+
 console.log(anzahlOk + " ok, " + anzahlFehler + " Fehler");
 process.exit(anzahlFehler === 0 ? 0 : 1);

@@ -41,7 +41,7 @@ function wahr(bedingung, was) {
 const projekt = pfad.join(__dirname, "..");
 const lesen = (name) => fs.readFileSync(pfad.join(projekt, name), "utf8");
 const AZ = require(pfad.join(projekt, "js", "upcrew-abzeichen.js"));
-const FORTSCHRITT = require(pfad.join(projekt, "js", "fortschritt.js"));
+const FORTSCHRITT = require(pfad.join(__dirname, "fortschritt-laden.js"));
 
 /* Ein Stand mit beiden Spielen: Blunderluck ohne Zähler (Tage, Turm), Typoluck mit Zählern. */
 const STAND = {

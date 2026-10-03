@@ -331,7 +331,7 @@ function appLaden(fb) {
 
     const jsOrdner = pfad.join(__dirname, "..", "js");
     const quelltext = ["konto.js", "spieler.js", "versiegelung.js", "ich.js", "fuehlen.js",
-        "speicher.js", "abgleich.js", "anmeldung.js", "anmeldung-konto.js"]
+        "speicher.js", "speicher-konten.js", "abgleich.js", "anmeldung.js", "anmeldung-konto.js"]
         .map((name) => dateisystem.readFileSync(pfad.join(jsOrdner, name), "utf8"))
         .join("\n;\n")
         + "\nObject.assign(globalThis, { KONTO, SPIELER, VERSIEGELUNG, ICH, ANMELDUNG,"

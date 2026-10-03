@@ -53,6 +53,56 @@ Object.assign(ANMELDUNG, {
     },
 
     /* ---------------------------------------------------------------- *
+     * DER EIGENE KONTO-EINTRAG, GEZIELT GEHOLT (seit v0.160.1)
+     *
+     * WARUM: Der Abgleich holt die Spielerliste nur, wenn die Marke
+     * `spieler/geaendertAm` gestiegen ist. Ein anderes UPCrew-Spiel schreibt
+     * seinen Fortschritt aber an DIESES Konto, ohne dass die Marke steigen
+     * muss — das dort verdiente Level blieb hier bis zum Neustart stehen.
+     * Kommt die Seite in den Vordergrund zurück, holt `Abgleich.rueckkehr`
+     * deshalb den eigenen Knoten `konten/<uid>` einzeln: ein kleiner Aufruf,
+     * höchstens einmal je Rückkehr, nur für angemeldete Konten (ein Gast
+     * zählt nur auf dem Gerät). WANN übernommen wird — die zwei Sperren —
+     * steht in js\abgleich.js (`eigenenEintragHolen`); hier nur WAS geholt
+     * und WOHIN es gesetzt wird.
+     * ---------------------------------------------------------------- */
+
+    /* Liefert { uid, eintrag } — oder null: Gast, nicht angemeldet, lokaler
+       Speicher, kein Eintrag. Wirft bei Netzfehler (der Abgleich fängt es). */
+    async eigenenEintragHolen() {
+        const ich = ANMELDUNG.ich();
+        const speicher = ANMELDUNG.abgleich ? ANMELDUNG.abgleich.speicher : null;
+        if (!ich || ich.gast === true || !KONTO.aktiv() || !KONTO.angemeldet()
+                || KONTO.istGastSitzung() || ich.uid !== KONTO.uid()
+                || !speicher || typeof speicher.teilLaden !== "function") {
+            return null;
+        }
+        const uid = KONTO.uid();
+        const eintrag = await speicher.teilLaden("konten/" + uid);
+        return (eintrag && typeof eintrag === "object") ? { uid: uid, eintrag: eintrag } : null;
+    },
+
+    /* Setzt den geholten Eintrag an die Stelle des eigenen und liefert den
+       NEUEN Stand; null, wenn er nicht (mehr) zu diesem Gerät passt — etwa
+       weil inzwischen jemand anders angemeldet ist. Aufbereitet wie beim
+       Laden der ganzen Liste (`SPIELER.normalisieren`). */
+    eigenenEintragEinsetzen(daten, geholt) {
+        if (!geholt || !geholt.eintrag || !geholt.uid || geholt.uid !== KONTO.uid()) {
+            return null;
+        }
+        const stand = SPIELER.normalisieren(daten);
+        const stelle = stand.spieler.findIndex((spieler) => spieler.uid === geholt.uid);
+        const frisch = SPIELER.normalisieren({
+            spieler: [Object.assign({}, geholt.eintrag, { uid: geholt.uid })]
+        }).spieler[0];
+        if (stelle === -1 || !frisch || frisch.id !== stand.spieler[stelle].id) {
+            return null;
+        }
+        stand.spieler[stelle] = frisch;
+        return stand;
+    },
+
+    /* ---------------------------------------------------------------- *
      * Die Vollbilder
      * ---------------------------------------------------------------- */
 

@@ -22,7 +22,7 @@ globalThis.SCHACH_RUNDE = require(pfad.join(__dirname, "..", "js", "schach-runde
 require(pfad.join(__dirname, "..", "js", "schach-runde-faehigkeiten.js"));
 const SCHACH_TAFEL = require(pfad.join(__dirname, "..", "js", "schach-tafel.js"));
 const TAGESBRETT = require(pfad.join(__dirname, "..", "js", "tagesbrett.js"));
-const FORTSCHRITT = require(pfad.join(__dirname, "..", "js", "fortschritt.js"));
+const FORTSCHRITT = require(pfad.join(__dirname, "fortschritt-laden.js"));
 
 const SCHACH = globalThis.SCHACH;
 const SCHACH_RUNDE = globalThis.SCHACH_RUNDE;

@@ -97,14 +97,8 @@ const START = {
         const oben = document.createElement("div");
         oben.className = "start-oben";
         oben.setAttribute("data-up-bl-kopf", "");
-        START._kopfFlamme = null;
-        const kurzprofil = START._kurzprofilBauen();
-        if (kurzprofil) {
-            oben.appendChild(kurzprofil);
-            /* Die Serien-Flamme gleich daneben (seit v0.151.18; seit v0.157.0
-               baut sie die Kopfzeile mit). */
-            START._flammeBauen(oben, START._kopfFlamme);
-        }
+        START._obenEl = oben;
+        START._obenFuellen(oben);
         seite.appendChild(oben);
 
         /*
@@ -134,6 +128,61 @@ const START = {
         if (imTurm && typeof START._turmNachPartiePruefen === "function") {
             START._turmNachPartiePruefen();
         }
+    },
+
+    /* ---------------------------------------------------------------- *
+     * Der Kopf: Kurzprofil mit Level-Ring und Serien-Flamme
+     *
+     * SEIT v0.160.1 EIN EIGENES STÜCK, das auch OHNE das ganze Neuzeichnen
+     * nachzieht (`kopfAktualisieren`). Gemessen am 03.10.2026: Traf der
+     * Stand vom Konto erst nach dem ersten Zeichnen ein — etwa mit dem in
+     * einem anderen UPCrew-Spiel verdienten Level —, rechnete
+     * `FORTSCHRITT_KONTO.level()` schon das neue Level, der Kopf zeigte
+     * aber bis zum Neustart das alte. Nur der Kopf wird neu gebaut: Der
+     * Rest des Starts (Turm-Karte, Knöpfe, offene Karten) bleibt stehen.
+     * ---------------------------------------------------------------- */
+
+    _obenEl: null,
+    _kopfStand: "",
+
+    _obenFuellen(oben) {
+        oben.innerHTML = "";
+        START._kopfFlamme = null;
+        const kurzprofil = START._kurzprofilBauen();
+        if (kurzprofil) {
+            oben.appendChild(kurzprofil);
+            /* Die Serien-Flamme gleich daneben (seit v0.151.18; seit v0.157.0
+               baut sie die Kopfzeile mit). */
+            START._flammeBauen(oben, START._kopfFlamme);
+        }
+        START._kopfStand = START._kopfStandText();
+    },
+
+    /* Was der Kopf vom Fortschritt zeigt, als ein Text zum Vergleichen:
+       Level, XP im Level, Kosten des Levels, Serie und „heute geschafft". */
+    _kopfStandText() {
+        if (typeof FORTSCHRITT_KONTO === "undefined") {
+            return "";
+        }
+        const lv = FORTSCHRITT_KONTO.level();
+        const serie = FORTSCHRITT_KONTO.heute().serie;
+        return [lv.level, Math.round(lv.imLevel), Math.round(lv.kosten),
+            serie.tage, serie.heute === true].join("|");
+    },
+
+    /* Den Kopf neu bauen, WENN sich Level, XP oder Serie seit dem letzten
+       Zeichnen geändert haben (app.js `beiDaten`). Liefert, ob neu gebaut
+       wurde — ohne gezeichneten Start und ohne Änderung passiert nichts. */
+    kopfAktualisieren() {
+        const oben = START._obenEl;
+        if (!oben || typeof FORTSCHRITT_KONTO === "undefined") {
+            return false;
+        }
+        if (START._kopfStandText() === START._kopfStand) {
+            return false;
+        }
+        START._obenFuellen(oben);
+        return true;
     },
 
     /* Das Pfeil-Quadrat der Grundeinstellungen (bis v0.146 immer neben

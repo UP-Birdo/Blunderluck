@@ -234,7 +234,11 @@
     <script src="js/konto.js"></script>
     <script src="js/spieler.js"></script>
     <!-- XP und Level über alle UPCrew-Spiele (seit v0.146.0) — die reine
-         Rechnung; spieler.js führt den Fortschritt damit zusammen. -->
+         Rechnung; spieler.js führt den Fortschritt damit zusammen. Seit
+         v0.160.1 zwei Dateien: der gemeinsame Kern (Baustein aus
+         Apps\UPCrew\bausteine\kern, nur kopiert) direkt VOR dem eigenen
+         Teil, der sich daraus zusammensetzt. -->
+    <script src="js/fortschritt-kern.js"></script>
     <script src="js/fortschritt.js"></script>
     <!-- Zufall mit Seed (seit v0.160.0, Baustein aus Design\3D-Schrift\final):
          der Turm rechnet seine Wege damit. -->
@@ -266,6 +270,10 @@
     <script src="js/brett-design.js"></script>
     <script src="js/verwaltung.js"></script>
     <script src="js/speicher.js"></script>
+    <!-- Die Rückwand der UPCrew-Konten (seit v0.160.1 eigene Datei, Baustein
+         aus Apps\UPCrew\bausteine\kern, nur kopiert) — erbt von
+         SpeicherGemeinsam und steht deshalb direkt NACH speicher.js. -->
+    <script src="js/speicher-konten.js"></script>
     <script src="js/abgleich.js"></script>
     <script src="js/dialog.js"></script>
     <!-- Blätter über dem Start (seit v0.156.0) — TABS öffnet Tabs darin. -->

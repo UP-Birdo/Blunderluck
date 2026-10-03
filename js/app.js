@@ -427,6 +427,14 @@ const APP = {
                 if (typeof FORTSCHRITT_KONTO !== "undefined" && FORTSCHRITT_KONTO.schildeErstatten) {
                     FORTSCHRITT_KONTO.schildeErstatten();
                 }
+                /* Der Kopf am Start (seit v0.160.1): Bringt der Stand vom
+                   Konto ein anderes Level, andere XP oder eine andere Serie
+                   mit — etwa aus einem anderen UPCrew-Spiel —, zeichnet der
+                   Kopf neu, ohne Neustart. Bis v0.160.0 zog nur die Flamme
+                   nach, der Level-Ring blieb stehen. */
+                if (typeof START !== "undefined" && START.kopfAktualisieren) {
+                    START.kopfAktualisieren();
+                }
                 if (typeof START !== "undefined" && START.flammeAktualisieren) {
                     START.flammeAktualisieren();
                 }
@@ -447,6 +455,15 @@ const APP = {
             leereDaten: () => SPIELER.leereDaten(),
             inhaltGleich: (a, b) => SPIELER.inhaltGleich(a, b),
             zusammenfuehren: (fremd, eigen, id) => SPIELER.zusammenfuehren(fremd, eigen, id),
+
+            /* Zurück im Vordergrund (seit v0.160.1): den eigenen
+               Konto-Eintrag gezielt holen, auch wenn die Marke stillsteht
+               (`Abgleich.rueckkehr`, js\anmeldung-konto.js) — nur für
+               angemeldete Konten, höchstens einmal je Rückkehr. */
+            eigenerEintrag: {
+                holen: () => ANMELDUNG.eigenenEintragHolen(),
+                einsetzen: (daten, geholt) => ANMELDUNG.eigenenEintragEinsetzen(daten, geholt)
+            },
 
             /* Die Spielerliste fragt seit v0.152.5 nur alle 15 Sekunden
                (`KONFIG.speicher.abfrageTaktMs.spieler`). */

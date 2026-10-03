@@ -417,7 +417,7 @@ async function alles() {
         };
         global.localStorage = ls;
         global.window = { localStorage: ls };
-        global.FORTSCHRITT = require(pfad.join(projekt, "js", "fortschritt.js"));
+        global.FORTSCHRITT = require(pfad.join(__dirname, "fortschritt-laden.js"));
         global.TURM = require(pfad.join(projekt, "js", "turm.js"));
         global.WERTUNG = { genauigkeitVon: () => 100 };
         try {

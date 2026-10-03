@@ -190,7 +190,7 @@ for (const name of stilNamen) {
 }
 
 /*
- * DIE GEMEINSAMEN UPCREW-BAUSTEINE werden aus Design\3D-Schrift\final nur
+ * DIE GEMEINSAMEN UPCREW-BAUSTEINE werden aus Apps\UPCrew\bausteine nur
  * KOPIERT, nie abgewandelt (Auftrag Runde 3). Blunderluck-Hausregeln, die
  * sie verletzen, werden an der Quelle behoben, nicht hier — die Prüfungen
  * unten nehmen sie deshalb EINZELN und begründet aus. Findet eine Prüfung
@@ -520,7 +520,7 @@ pruefe("_figurKlasse vergibt Marker- und Art-Klasse (v0.121, erweitert v0.122)",
  *
  * DAS STUDIO-INTRO (seit v0.140.3): css\upcrew-intro.css liest `--t0`, `--i`,
  * `--aus`, `--an`, die js\upcrew-intro.js je Element im `style`-Attribut
- * setzt. Der Baustein wird aus Design\3D-Schrift\final nur KOPIERT, nie
+ * setzt. Der Baustein wird aus Apps\UPCrew\bausteine nur KOPIERT, nie
  * abgewandelt — deshalb zählt hier, was er selbst setzt, als definiert.
  *
  * DAS AUSSEHEN (seit v0.144.0): Die Farbwelt setzt ihre Variablen zur
@@ -935,7 +935,7 @@ pruefe("app.js meldet den Service Worker abgesichert an", () => {
  * Verwendung (heute 15 Stellen in 11 Dateien).
  *
  * DIE EINE AUSNAHME (seit v0.140.3): das Studio-Intro js\upcrew-intro.js,
- * gemeinsamer Baustein aus Design\3D-Schrift\final (nur kopiert, nie
+ * gemeinsamer Baustein aus Apps\UPCrew\bausteine (nur kopiert, nie
  * abgewandelt). Es setzt sein Bild als SVG-Text ein — genau EINE Zeile,
  * wörtlich unten. Durchgesehen am 25.09.2026: kein Spielername kommt
  * hinein; App-Name und Version laufen durch seine Maskierung `text()`, die

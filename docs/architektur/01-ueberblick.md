@@ -57,7 +57,10 @@ anderer Speicher-Dienst kostet genau eine neue Klasse in `speicher.js`.
 | `js/versiegelung.js` | Prüfsummen: Salz erzeugen, PIN- und Verwaltungs-Prüfwert bilden und prüfen. |
 | `js/ich.js` | Der Gerätespeicher: wer ich bin (Kennung, Name), Verwaltungs-Schalter, gesehene Partie-Abschlüsse. Verlässt das Gerät nie. |
 | `js/speicher.js` | Zwei Rückwände (`SpeicherLokal`, `SpeicherGemeinsam`) mit gleicher Schnittstelle plus `speicherErzeugen()`. |
-| `js/abgleich.js` | Klasse `Abgleich`: erstes Laden, verzögertes Schreiben, regelmäßiges Nachfragen im gemeinsamen Modus. |
+| `js/speicher-konten.js` | **Baustein** (seit v0.160.1, Quelle `Apps\UPCrew\bausteine\kern`, hier nie ändern): die dritte Rückwand `SpeicherKonten` der UPCrew-Konten (je Konto ein Knoten, Regel §12/§13, Schreib-Schleuse `eintragFuerServer`). Erbt von `SpeicherGemeinsam`, lädt direkt nach `speicher.js`. Bis v0.160.0 stand die Klasse in `speicher.js`. |
+| `js/fortschritt-kern.js` | **Baustein** (seit v0.160.1, dieselbe Quelle): `FORTSCHRITT_KERN` — der in allen UPCrew-Spielen gleiche Teil des Fortschritts (Zusammenführen, Serie, Auszug, Spielzeit, 41 Glieder). Lädt direkt vor `fortschritt.js`. |
+| `js/fortschritt.js` | `FORTSCHRITT` = `Object.assign({}, FORTSCHRITT_KERN, { … })`: der Kern plus Blunderlucks eigene Glieder (XP-Quellen, Level, Turm, Tagesaufgabe, `normalisieren`, `fuerKonto`). Der Kern ruft alles über den Namen `FORTSCHRITT`; kein Glied des Kerns wird hier noch einmal definiert (`test-fortschritt.js`). |
+| `js/abgleich.js` | Klasse `Abgleich`: erstes Laden, verzögertes Schreiben, regelmäßiges Nachfragen im gemeinsamen Modus. Seit v0.160.1 `rueckkehr()`: Zurück im Vordergrund wird der eigene Konto-Eintrag auch bei unveränderter Marke einmal geholt (Rückruf `eigenerEintrag`, nur Spielerliste). |
 | `js/anmeldung.js` | Anmelde-Ablauf (drei Wege: bekanntes Gerät, Liste + PIN, neu), Profil (Name/PIN ändern), Verwaltung öffnen/beenden, Spieler entfernen. |
 | `js/dialog.js` | `DIALOG.frage()`, `DIALOG.hinweis()`, `DIALOG.eingabe()`, `DIALOG.zahlen()`, `DIALOG.liste()`, `DIALOG.zweiSchritt()`. |
 | `js/tabs.js` | Offenes Tab-Register; ein Tab meldet sich mit `id`, `titel` und `aufbauen(behaelter)` an. |

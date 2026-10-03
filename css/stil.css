@@ -1918,6 +1918,22 @@ body.partie-fest .phasen-leiste {
     letter-spacing: 0.05em;
 }
 
+/* Der Gast-Hinweis unter dem Level-Balken (seit v0.160.1, js\profil.js):
+   eine leise Zeile, rechts der Weg zum Konto. */
+.profil-gast-hinweis {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 8px;
+    font-size: 0.8rem;
+    color: var(--schrift-leise);
+}
+
+.profil-gast-hinweis-text {
+    min-width: 0;
+}
+
 /* Zeile 2: vier Kurzwerte, gleich breit, durch feine Linien getrennt. */
 .profil-kurzwerte {
     display: grid;

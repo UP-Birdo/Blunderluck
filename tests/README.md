@@ -26,6 +26,9 @@ das es so nicht mehr gibt.
 | `test-zeit-zurueck.js` | Zeit zurück (v0.152.2): Merken/Einlösen des Rückblicks im Modell (zwei Halbzüge, Karten, Verluste, Verlauf, auch ohne leere Listen), nicht gegen Menschen, nicht nach Aufgeben, Tagesbrett verfehlt; Bildschirm (lädt `bildschirm-umgebung.js`): Knopf im Spiel-Menü hinter dem Trennstrich, Abschluss-Weg ohne Doppelbuchung; Turm-Wertung mit Hilfe höchstens 1 Figur; Name nur aus `SHOP.TEXTE` |
 | `test-turm.js` | Turm (seit v0.160.0 neu): gleicher Seed = gleicher Turm, Stärke je Stockwerk für jeden Seed gleich, mind. zwei Wege, Boss-Abstand = Stockwerke, Partien je Weg im Rahmen des Orts (±1, weniger als der alte Turm), feste Reihen, Elite +2, jede Kampf-Station spielbar, Schlüssel passen in Regel §13, Lauf/Kreuzung/nur vorwärts, Herzen und Rückfall, Übernahme alter Stände (Tür-Zähler, vor dem Boss), Freischaltung Holzhalle/Marmorsaal |
 | `test-zufall.js` | Baustein `upcrew-zufall.js` (v0.160.0): gleich bei gleicher Eingabe, andere Eingabe → anderer Seed, Version (v1-Folge festgenagelt), Tages-Seed, Verteilung (10 Fächer, Würfel, Gewichte), Zweige, kein Math.random, lädt vor dem Turm |
+| `test-bausteine-quelle.js` | Gemeinsame Bausteine byte-gleich mit der Quelle `..\UPCrew\bausteine\` (seit 03.10.2026; bis dahin `test-bausteine-final.js` gegen `Design\3D-Schrift\final`): jede `css\upcrew-*.css` und `js\upcrew-*.js` per SHA-256 gegen `<css|js>\` dort (ausser der eigenen `upcrew-schicht.css`), `js\konto.js` gegen `kern\konto.js` mit eingesetztem Schlüssel `blunderluck.konto`, seit v0.160.1 dazu `js\speicher-konten.js` und `js\fortschritt-kern.js` gegen `kern\` (ohne Platzhalter); ein Vorschlag in `docs\bausteine\` wird hingenommen; fehlt der Ordner, wird übersprungen |
+| `test-fortschritt.js` | XP und Level: Rechnung (`FORTSCHRITT`), Gerät und Konto (`FORTSCHRITT_KONTO`), Fortschritt am Spieler-Eintrag. Seit v0.160.1 der Kern-Baustein: Blunderluck liefert jedes Glied aus `FORTSCHRITT_KERN_ERWARTET`, `js\fortschritt.js` definiert kein Glied des Kerns noch einmal (kein stilles Überschreiben), `index.html` und `sw.js` nennen `fortschritt-kern.js` direkt VOR `fortschritt.js` und `speicher-konten.js` direkt NACH `speicher.js` |
+| `test-level-luecken.js` | Die drei Level-Lücken (v0.160.1, Befund 03.10.2026): **Rückkehr in den Vordergrund** holt den eigenen Konto-Eintrag auch bei unveränderter Marke (echte Dateien gegen `regel-nachbau.js` mit Regel §13: nur `konten/<uid>`, einmal je Rückkehr, nicht als Gast, beide Sperren des Abgleichs, überholte Antwort verworfen); **Start-Kopf** zeichnet neu, wenn Level, XP oder Serie vom Konto anders eintreffen, der Rest des Starts bleibt stehen; **Gast-Hinweis** im Profil (eine Zeile, Knopf → Einstellungen, nie mit Konto, nie am fremden Profil) — die beiden letzten in `bildschirm-umgebung.js` |
 | `test-knopf-innenrand.js` | Knöpfe mit eigenem Innenrand 0 (Karten-Leiste: ✓ ✕ ?, Karte, Menü) haben eine `.knopf.<klasse>`-Regel, die `.knopf:not(.up-kn)` schlägt (v0.152.3, „Verstärken kann man nicht einsetzen") |
 | `test-faehigkeit-absage.js` | Warum eine Fähigkeit nicht geht (v0.152.3, `SCHACH_RUNDE.faehigkeitAbsage`): mehrere Könige = kein Schach, König im Schach sperrt nur solange, „gäbe Schach", ohne Zielfeld; Absage passt immer zum Einsetzen |
 | `test-intro.js` | Wann das UPCrew-Intro kommt (v0.152.3, `INTRO.entscheiden`, gleich Typoluck 0.18.2; seit v0.152.4 in der eigenen Farbwelt, `INTRO.welt`, wie 0.18.3) |
@@ -38,7 +41,7 @@ das es so nicht mehr gibt.
 | `test-name-tag.js` | Name und klein #Nummer bei allen (v0.155.0; bis v0.154.0 `test-keine-nummer.js`): Freunde-Karte und Rangliste im nachgebauten DOM |
 | `test-rundenstart.js` | Rundenstart (v0.155.1): Partie beenden → Abschluss wegwischen → neue Runde zeigt kein altes Ergebnis, die alte ist genau einmal gebucht und abgehakt; ungesehene alte Partie still gebucht; gegen Bob sofort `laeuft`, Seite zugelost in der ersten Fassung, fest beim Neuladen, mal Weiss, mal Schwarz; Seite selbst wählen und Menschen-Runden unverändert |
 | `test-team-max.js` | Höchstens 3 je Team (v0.155.2): Modell (`teamBeitreten`, `teamVoll`, auch Bot und Nachzügler), alte Partien mit mehr Spielern, Bildschirm (nicht wählbar, „voll · 3/3", Zufall nie ins volle Team) |
-| `test-spielzeit.js` | Spielzeit und „dabei seit" (v0.155.0): Rechnung in `fortschritt.js` (Grenze je Schritt, seit = früheres Datum, Anzeige „N min"/„Nh+", Haken Standard privat, Auszug nur mit Haken), Zählen nur bei sichtbarer Seite, Gast→Konto-Umzug, Einbindung; Vergleich mit Typolucks `fortschritt.js`, sobald nachgezogen; Intro-Streifen (`INTRO._raenderDecken`, `html.intro-offen`) |
+| `test-spielzeit.js` | Spielzeit und „dabei seit" (v0.155.0): Rechnung in `fortschritt.js` (Grenze je Schritt, seit = früheres Datum, Anzeige „N min"/„Nh+", Haken Standard privat, Auszug nur mit Haken), Zählen nur bei sichtbarer Seite, Gast→Konto-Umzug, Einbindung; Auszug- und Spielzeit-Teil stehen im Kern-Baustein (bis v0.160.0: Vergleich mit Typolucks `fortschritt.js` — den ersetzt der Byte-Vergleich in `test-bausteine-quelle.js`); Intro-Streifen (`INTRO._raenderDecken`, `html.intro-offen`) |
 
 Dazu kommt **`bildschirm-umgebung.js`** — die gemeinsame Testumgebung der drei
 Bildschirm-Testdateien (nachgebautes DOM, echte `js\`-Dateien im vm-Kontext,
@@ -52,6 +55,15 @@ Firebase-Regel-Ausdrücke wirklich aus (`.read`-Kaskade, `.write` je Pfad,
 `.validate` samt `$anderes`, `newData.parent()`, `auth.provider`) und stellt
 eine ganze Firebase (Anmeldung + Datenbank über REST) nach. Nachbau ist nicht
 Firebase: Die Gegenprobe gegen den Emulator steht aus (SICHERHEIT.md §14).
+
+Und **`fortschritt-laden.js`** (seit v0.160.1) — lädt den Fortschritt wie der
+Browser: erst den Kern-Baustein `js\fortschritt-kern.js` als
+`FORTSCHRITT_KERN`, dann `js\fortschritt.js`, und stellt das Ergebnis als
+`FORTSCHRITT` bereit (der Kern ruft seine Glieder über diesen Namen). Jede
+Testdatei, die `FORTSCHRITT` per `require` braucht, lädt diese Datei; wer in
+einem eigenen vm-Kontext arbeitet, setzt `fortschritt-kern.js` vor
+`fortschritt.js` (und `speicher-konten.js` nach `speicher.js`) in seine
+Dateiliste.
 
 ## Aufruf
 

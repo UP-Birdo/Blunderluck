@@ -71,6 +71,18 @@ class Abgleich {
         this.taktMs = rueckrufe.taktMs || null;
         this.letzteAbfrage = 0;
 
+        /*
+         * DER EIGENE EINTRAG, GEZIELT (seit v0.160.1, optional):
+         * `{ holen(), einsetzen(daten, geholt) }`. `holen()` liefert ein
+         * Versprechen auf den eigenen Eintrag vom Server (oder null: Gast,
+         * nicht angemeldet), `einsetzen` setzt ihn in einen Stand und
+         * liefert den NEUEN Stand (oder null, wenn er nicht passt). Gebraucht
+         * von `rueckkehr` — nur die Spielerliste gibt ihn mit, das Schach
+         * hat keinen „eigenen Eintrag".
+         */
+        this.eigenerEintrag = rueckrufe.eigenerEintrag || null;
+        this.eigenerEintragLaeuft = false;
+
         this.daten = this.leereDaten();
 
         /* Ist schon einmal ein echter Stand angekommen (seit v0.140.0)? Bis
@@ -214,11 +226,13 @@ class Abgleich {
              * Sobald die Seite wieder sichtbar wird, sofort nachsehen — nicht
              * erst nach dem nächsten Zeitabstand. Zusammen mit der Sperre in
              * fremdenStandHolen() heißt das: im Hintergrund wird gar nicht
-             * abgefragt, beim Zurückkommen dafür ohne Verzögerung.
+             * abgefragt, beim Zurückkommen dafür ohne Verzögerung. Seit
+             * v0.160.1 über `rueckkehr`: Steht die Marke still, wird der
+             * eigene Eintrag trotzdem einmal geholt.
              */
             document.addEventListener("visibilitychange", () => {
                 if (!document.hidden) {
-                    this.fremdenStandHolen();
+                    this.rueckkehr();
                 }
             });
         }
@@ -362,6 +376,80 @@ class Abgleich {
         this.fremdenStandHolen();
     }
 
+    /*
+     * ZURÜCK IM VORDERGRUND (seit v0.160.1).
+     *
+     * WAS FEHLTE (gemessen am 03.10.2026, UEBERGABE.md): Nachgeholt wurde
+     * nur, wenn die Marke `geaendertAm` gestiegen war. Ein anderes
+     * UPCrew-Spiel schreibt seinen Fortschritt aber an das EIGENE Konto,
+     * ohne dass die Marke steigen muss — das dort verdiente Level blieb hier
+     * bis zum echten Neustart unsichtbar.
+     *
+     * Deshalb: erst der gewohnte Blick (`fremdenStandHolen`). Hat er einen
+     * Stand geholt, steckt der eigene Eintrag schon darin. Hat er NICHTS
+     * geholt (Marke unverändert), wird der eigene Eintrag einzeln geholt —
+     * also höchstens EIN Aufruf des eigenen Eintrags je Rückkehr.
+     */
+    async rueckkehr() {
+        const geholt = await this.fremdenStandHolen();
+        if (geholt === true) {
+            return true;
+        }
+        return this.eigenenEintragHolen();
+    }
+
+    /*
+     * Den eigenen Eintrag vom Server holen und einsetzen. Liefert `true`,
+     * wenn sich der Stand dadurch geändert hat.
+     *
+     * DIE ZWEI SPERREN GELTEN WIE IN `fremdenStandHolen`: Solange eine
+     * eigene Änderung aussteht, wird nichts übernommen — und geprüft wird
+     * NACH der Antwort noch einmal, samt Zähler der eigenen Vorgänge
+     * (eine Sperre, die vor einem `await` geprüft wurde, gilt danach nicht
+     * mehr). Eingesetzt wird in den Stand von JETZT, nicht in den von vor
+     * dem Aufruf.
+     */
+    async eigenenEintragHolen() {
+        if (!this.eigenerEintrag || this.eigenerEintragLaeuft) {
+            return false;
+        }
+        if (this.schreibtGerade || this.aenderungOffen || this.schreibZeitgeber !== null
+            || this.eigeneVorgaenge > 0) {
+            return false;
+        }
+
+        const standVorher = this.vorgangsZaehler;
+        this.eigenerEintragLaeuft = true;
+        try {
+            const geholt = await this.eigenerEintrag.holen();
+
+            if (geholt === null || geholt === undefined) {
+                return false;
+            }
+            if (this.schreibtGerade || this.aenderungOffen
+                || this.schreibZeitgeber !== null || this.eigeneVorgaenge > 0
+                || this.vorgangsZaehler !== standVorher) {
+                return false;
+            }
+
+            const neu = this.eigenerEintrag.einsetzen(this.daten, geholt);
+            if (!neu || this.inhaltGleich(neu, this.daten)) {
+                return false;
+            }
+            this.daten = neu;
+            this.beiDaten(this.daten);
+            return true;
+        } catch (fehler) {
+            /* Kein Netz oder eine Absage: Die nächste Rückkehr fragt wieder,
+               und die regelmässige Abfrage läuft ohnehin weiter. */
+            return false;
+        } finally {
+            this.eigenerEintragLaeuft = false;
+        }
+    }
+
+    /* Liefert `true`, wenn ein Stand geholt UND übernommen wurde (auch wenn
+       er inhaltlich gleich war) — sonst nichts. `rueckkehr` fragt danach. */
     async fremdenStandHolen() {
         if (this.schreibtGerade || this.aenderungOffen || this.schreibZeitgeber !== null
             || this.eigeneVorgaenge > 0) {
@@ -487,6 +575,7 @@ class Abgleich {
                 this.markeGanzGesehen = marke;
             }
             this.melden("bereit", this.speicher.beschreibung);
+            return true;
         } catch (fehler) {
             this.melden("fehler", "Kein Netz", fehler.message);
         }

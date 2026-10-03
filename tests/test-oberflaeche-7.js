@@ -554,7 +554,7 @@ pruefe("Profil zweistufig (v0.157.0): EINE Vorschau-Karte; ausführlich schlank 
     wahr(!voll.querySelector(".up-pf-levelpfad"), "erneuter Tipp klappt zu");
 
     /* Der Pfad rechnet wie FORTSCHRITT (Kosten je Level). */
-    laden(w, ["js/fortschritt.js"], ["FORTSCHRITT"]);
+    laden(w, ["js/fortschritt-kern.js", "js/fortschritt.js"], ["FORTSCHRITT"]);
     for (const l of [1, 7, 14, 17, 60]) {
         gleich(w.UPCREW_LEVELPFAD.kosten(l), w.FORTSCHRITT.levelKosten(l), "Kosten Level " + l);
     }
@@ -750,8 +750,8 @@ pruefe("Profil: alte Abzeichen-Kennungen übersetzt, Zähler az… nur höher", 
         },
         ANMELDUNG: { abgleich: null, ich: () => null }
     });
-    laden(w, ["js/fortschritt.js", "js/upcrew-abzeichen.js", "js/upcrew-abzeichen-spiele.js", "js/fortschritt-konto.js",
-        "js/profil.js"], ["FORTSCHRITT", "FORTSCHRITT_KONTO", "PROFIL"]);
+    laden(w, ["js/fortschritt-kern.js", "js/fortschritt.js", "js/upcrew-abzeichen.js", "js/upcrew-abzeichen-spiele.js",
+        "js/fortschritt-konto.js", "js/profil.js"], ["FORTSCHRITT", "FORTSCHRITT_KONTO", "PROFIL"]);
     w.RANGLISTE = { ABZEICHEN: [{ id: "erster-sieg" }, { id: "veteran" }] };
     gleich([w.PROFIL.umdeuten("erster-sieg"), w.PROFIL.umdeuten("up-partien"), w.PROFIL.umdeuten("bl-veteran")],
         ["bl-erster-sieg", "up-partien", "bl-veteran"], "umdeuten");

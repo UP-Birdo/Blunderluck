@@ -45,7 +45,7 @@ Bildlaufleisten und Auswahlfelder mitziehen.
 `--still-kante`, dazu das Brett `--feld-hell/-dunkel` und seine Kanten)
 überschreibt zur Laufzeit die Farbwelt an `<html>`:
 `js\upcrew-farbwelten.js` ist der gemeinsame Baustein aller UPCrew-Spiele
-aus `Design\3D-Schrift\final` (nur kopiert, nie hier abwandeln). **Welche
+aus `Apps\UPCrew\bausteine` (nur kopiert, nie hier abwandeln). **Welche
 Welt gilt, wählt seit v0.144.0 der Spieler** im Tab „Anpassen" — gemeinsam
 für alle UPCrew-Spiele (`js\upcrew-aussehen.js`); Standard und heute
 einzige freie Welt ist „Werkstatt" (Orange). Die Werte in den Stildateien

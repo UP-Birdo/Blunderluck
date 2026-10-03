@@ -129,8 +129,9 @@ function appLaden(fb) {
     vm.createContext(umgebung);
 
     const jsOrdner = pfad.join(projekt, "js");
-    const quelltext = ["konto.js", "fortschritt.js", "upcrew-abzeichen.js", "spieler.js", "versiegelung.js",
-        "ich.js", "fuehlen.js", "speicher.js", "abgleich.js", "anmeldung.js", "anmeldung-konto.js"]
+    const quelltext = ["konto.js", "fortschritt-kern.js", "fortschritt.js", "upcrew-abzeichen.js", "spieler.js",
+        "versiegelung.js", "ich.js", "fuehlen.js", "speicher.js", "speicher-konten.js", "abgleich.js",
+        "anmeldung.js", "anmeldung-konto.js"]
         .map((name) => dateisystem.readFileSync(pfad.join(jsOrdner, name), "utf8"))
         .join("\n;\n")
         + "\nObject.assign(globalThis, { KONTO, FORTSCHRITT, SPIELER, ICH, ANMELDUNG,"

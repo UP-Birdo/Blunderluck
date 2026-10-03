@@ -1,6 +1,6 @@
 /*
  * test-zufall.js — der gemeinsame Baustein js\upcrew-zufall.js (seit
- * v0.160.0, Quelle Design\3D-Schrift\final): gleich bei gleicher Eingabe,
+ * v0.160.0, Quelle Apps\UPCrew\bausteine): gleich bei gleicher Eingabe,
  * Versionsnummer, Tages-Seed, Verteilung.
  *
  * Geprüft wird die ECHTE Datei.

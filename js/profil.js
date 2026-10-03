@@ -301,6 +301,41 @@ const PROFIL = {
             statistik: (ort) => PROFIL._statistikBauen(ort, id),
             zusatz: zusatz
         });
+        if (eigen && PROFIL._istGast()) {
+            PROFIL._gastHinweisEinsetzen(eintrag.inhalt);
+        }
+    },
+
+    /*
+     * DER GAST-HINWEIS AM LEVEL (seit v0.160.1). Ein Gast zählt nur auf dem
+     * Gerät (js\fortschritt-konto.js) — wer in einem anderen UPCrew-Spiel
+     * mit Konto spielt und hier als Gast, sah Level 1 ohne jede Erklärung
+     * (Befund 03.10.2026). EINE Zeile direkt unter dem Level-Balken, dort
+     * klappt auch der Level-Pfad auf; der Knopf führt in die Einstellungen
+     * zur Konto-Karte (Spielstand sichern oder abmelden und anmelden).
+     * Der Baustein js\upcrew-profil.js bleibt unberührt: Die Zeile wird
+     * NACH seinem Zeichnen eingehängt; fehlt der Level-Abschnitt, ans Ende.
+     */
+    _istGast() {
+        const eintrag = (typeof ANMELDUNG !== "undefined" && typeof ANMELDUNG.ich === "function")
+            ? ANMELDUNG.ich() : null;
+        return !!(eintrag && eintrag.gast === true);
+    },
+
+    _gastHinweisEinsetzen(ort) {
+        const zeile = RANGLISTE._element("div", "profil-gast-hinweis");
+        zeile.appendChild(RANGLISTE._element("span", "profil-gast-hinweis-text",
+            "Gast · Level nur auf diesem Gerät"));
+        zeile.appendChild(RANGLISTE._knopf("Anmelden", "knopf-still knopf-klein",
+            () => TABS.blattOeffnen("einstellungen")));
+        const level = (typeof ort.querySelector === "function")
+            ? ort.querySelector(".up-pf-level-abschnitt") : null;
+        if (level && level.parentNode === ort) {
+            ort.insertBefore(zeile, level.nextSibling);
+        } else {
+            ort.appendChild(zeile);
+        }
+        return zeile;
     },
 
     /* „Statistik": Platz, Punkte, Partien, Quote, die Bilanz, dann die Werte aus der Chronik (RANGLISTE rechnet). */

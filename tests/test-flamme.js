@@ -41,7 +41,7 @@ function wahr(bedingung, was) {
 const projekt = pfad.join(__dirname, "..");
 const lesen = (name) => fs.readFileSync(pfad.join(projekt, name), "utf8");
 const F = require(pfad.join(projekt, "js", "upcrew-flamme.js"));
-const FORTSCHRITT = require(pfad.join(projekt, "js", "fortschritt.js"));
+const FORTSCHRITT = require(pfad.join(__dirname, "fortschritt-laden.js"));
 
 pruefe("Anzeige: drei Stellen, ab 1000 kurz k+", () => {
     const soll = { 0: "0", 7: "7", 99: "99", 999: "999", 1000: "1k+", 2500: "2k+", 12345: "12k+" };

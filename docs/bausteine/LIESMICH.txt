@@ -1,4 +1,10 @@
-docs\bausteine — Vorschläge an Design\3D-Schrift\final
+docs\bausteine — Vorschläge an die Quelle der Bausteine
+
+SEIT 03.10.2026 (Nutzer-Entscheid): Die Quelle aller gemeinsamen Bausteine ist Apps\UPCrew\bausteine
+(..\UPCrew\bausteine\LIESMICH.md), nicht mehr Design\3D-Schrift\final. Neue Vorschläge gehen an UPCrew;
+geändert wird ein Baustein nur dort. Was unten „final" heisst, ist die alte Quelle — die Einträge bleiben
+als Verlauf stehen. Stand 03.10.2026: Alle Bausteine in js\ und css\ sind byte-gleich mit UPCrew\bausteine
+(tests\test-bausteine-quelle.js), es wartet kein Vorschlag.
 
 upcrew-anpassen.css: ERLEDIGT 27.09.2026 — der Fix .upa-vorschau { height: auto; min-height: 280px; }
 steht jetzt in final und ist mit v0.151.13 byte-gleich in css\upcrew-anpassen.css übernommen.

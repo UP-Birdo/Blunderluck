@@ -41,7 +41,7 @@ function wahr(bedingung, was) {
 
 const projekt = pfad.join(__dirname, "..");
 const lesen = (name) => fs.readFileSync(pfad.join(projekt, name), "utf8");
-const FORTSCHRITT = require(pfad.join(projekt, "js", "fortschritt.js"));
+const FORTSCHRITT = require(pfad.join(__dirname, "fortschritt-laden.js"));
 const M = require(pfad.join(projekt, "js", "upcrew-muenzen.js"));
 const AZ = require(pfad.join(projekt, "js", "upcrew-abzeichen.js"));
 const SL = require(pfad.join(projekt, "js", "upcrew-spielerliste.js"));
