@@ -54,6 +54,47 @@ Zwei Regeln hängen daran:
 Der Wiedereinstieg in die eigene laufende Partie läuft über
 `SCHACH_TAFEL.eigeneLaufende`.
 
+## Das Seiten-Band — Tabs wechseln durch Wischen (seit v0.161.0)
+
+Die Seiten der Leisten-Tabs liegen nebeneinander in EINEM Behälter (`#seiten-band`, Baustein
+`js\upcrew-wischen.js` + `css\upcrew-wischen.css`): Der Browser rollt ihn waagrecht und rastet an jeder Seite
+ein. Was daraus für jeden folgt, der an Leiste oder Leisten-Seiten baut:
+
+- **Aufbau** (legt `TABS._bandAnlegen` an): `div.up-band-seite.band-seite[data-up-seite]` (rollt senkrecht) →
+  `div.tab-inhalt.band-inhalt` (Innenabstand für Kopf und Leiste) → `section.tab-bereich` (bekommt der Tab in
+  `aufbauen`). Der Innenabstand sitzt am Kind, damit Klebendes weiter ab der Fensterkante zählt.
+- **Alle Leisten-Seiten stehen gleichzeitig im Dokument**, nie `hidden`. Eine Seite darf sich beim Verlassen nicht
+  abbauen; gefüllt wird sie vorab über den wahlfreien Haken `vorzeichnen()`, geöffnet (`beimOeffnen`) erst nach
+  dem Einrasten. Teures (3D, Turm) rechnet nur auf der offenen Seite — `TABS.offeneSeite`, Beispiel `START._ruht`.
+- **Ein Weg:** `TABS.wechseln(id)` für Tipp und Band; es ruft am Ende `band.zu(id)`.
+- **Die Leiste zieht früher nach (seit v0.162.0, `frueh: true`):** Hält kein Finger das Band und hat es die Hälfte
+  zur Nachbarseite überschritten, ruft der Baustein `wechseln` sofort (`TABS.wechseln(id, { vomBand: true })`) — Tab
+  und Leiste stehen gleich, das Band rollt allein zu Ende. `beimOeffnen` läuft erst nach dem Einrasten
+  (`TABS._oeffnenNachEinrasten` fragt je Bild `band.ort()`; höchstens 3 s). Wer in `wechseln` etwas ergänzt: nichts
+  rollen und die ankommende Seite nicht umbauen, solange `_bandRolltNoch` gilt.
+- **Das Dokument rollt nicht** (`html.im-band`), ausser in der Partie: Sie liegt im alten Behälter `#tab-inhalt`,
+  das Band ist dann verborgen und gesperrt.
+- **Sperre:** Partie, Fenster (`runde-offen`), Anmeldung, offenes Blatt/Dialog. Wer die Bedingung ändert, ruft
+  `TABS.bandAuffrischen()`.
+- **Hinter einem Blatt** rückt der Inhalt der offenen Seite zurück (`TABS.beiHaupt`), nie das Band selbst.
+- **Nichts in einer Leisten-Seite zieht oder rollt selbst waagrecht** — sonst Klasse `up-band-fest` im eigenen
+  Markup. Seit v0.162.0 gilt das auch für die Sammlung (Variante A: Kategorie-Kacheln, ein Tipp öffnet ein Blatt;
+  gemessen bei 360 und 390 px: auf keiner der fünf Seiten ein Element mit waagrechtem Rollbalken).
+
+## Die Sammlung — Variante A (seit v0.162.0)
+
+`js\sammlung.js` übergibt wie bisher seine fünf Regale an `UPCREW_ANPASSEN.zeigen` (jetzt mit `shop: false`, ohne
+`besitz`). Der Baustein zeichnet daraus und aus dem Katalog (`js\upcrew-katalog.js`) Kacheln im 2er-Raster; die
+Stück-Knöpfe gibt es erst im geöffneten Blatt (`tab.blattOeffnen(k)`), das in der Ebene von `UPCREW_BLATT` hängt,
+nicht im Ort. Die Abschnitte der reinen Sammlung (Abzeichen, Fähigkeiten, Brettformen) macht
+`UPCREW_SAMMLUNG.restEinsetzen` zu Kacheln; ihr Blatt trägt den Abschnitt selbst (`g.restOeffnen(kennung)`).
+„NN %" = `tab.zaehlen()` plus Fähigkeiten und Brettformen. Jede Grafik sitzt in einem Platz (`js\upcrew-platz.js`).
+Die Oberfläche nennt kein Level mehr; frei ist, was vorher frei war (`BRETT_DESIGN.frei`, `FREISCHALTUNG`).
+`SAMMLUNG._vorschau` wird je Zeichnen auch für die kompakte Vorschau im Blatt gerufen.
+
+Bis v0.160 (seit v0.151.14) folgte ein eigener Zeiger-Horcher dem Finger und schaltete die Bereiche über `hidden`
+um; ohne Band-Element (Tests, alte Proben) arbeitet `tabs.js` weiter so.
+
 ## Der Start ist die Schaltzentrale (v0.14.0 bis v0.21.0)
 
 Aus dem Umbau-Schwung vom 24.08.2026, je eine Auslieferung pro Nutzer-Ansage

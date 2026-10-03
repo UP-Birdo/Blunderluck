@@ -60,11 +60,34 @@ const START = {
      * Zeichnen
      * ---------------------------------------------------------------- */
 
+    /* Schon einmal gezeichnet? (seit v0.161.0, siehe `_ruht`) */
+    _gezeichnet: false,
+
+    /*
+     * DER START RECHNET NUR, SOLANGE ER EINGERASTET IST (seit v0.161.0,
+     * Seiten-Band): Turm-Karte und 3D-Vorschau werden nur gezeichnet, wenn
+     * der Start die offene Seite des Bandes ist. Steht das Band woanders
+     * oder ist es verborgen (Partie), bleibt sein letztes Bild stehen —
+     * `TABS.wechseln` ruft `beimOeffnen`, sobald der Start wieder einrastet,
+     * und zeichnet dann frisch. Bis v0.160 zeichnete z. B. „Spielen" den
+     * verborgenen Start nach dem Wechsel in die Partie noch einmal. Das
+     * erste Bild entsteht immer (beim Aufbauen). Ohne Band (Tests, alte
+     * Proben) wie bisher.
+     */
+    _ruht() {
+        return START._gezeichnet && typeof TABS !== "undefined" && !!TABS.bandEl
+            && TABS.offeneSeite !== START.id;
+    },
+
     _zeichnen() {
         const wurzel = START.wurzelEl;
         if (!wurzel) {
             return;
         }
+        if (START._ruht()) {
+            return;
+        }
+        START._gezeichnet = true;
 
         /* Die vergangenen Matches (seit v0.37.0) liegen seit v0.156.0 als
            BLATT über dem Start; ohne den Baustein (Bildschirm-Tests) als

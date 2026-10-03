@@ -1171,6 +1171,14 @@ button.turm-ortname {
     background: var(--turm-himmel-unten);
 }
 
+/* Die kleine Sicht auf dem Start zieht nicht selbst (nur der Turm im
+   Vollbild lässt sich umsehen, js\start-turm.js): Dort gehört der Wisch dem
+   Seiten-Band und das Rollen der Seite (seit v0.161.0) — mit `none` begänne
+   auf der halben Start-Seite kein Seitenwechsel. */
+.turm-sicht.turm-sicht-klein {
+    touch-action: auto;
+}
+
 .turm-sicht-klein {
     --turm-kn: 32px;
 }

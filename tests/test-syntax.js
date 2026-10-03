@@ -213,7 +213,9 @@ const UPCREW_BAUSTEINE_CSS = ["upcrew-intro.css", "upcrew-knoepfe.css", "upcrew-
     /* seit v0.152.1: die Spielerliste für Admins */
     "upcrew-spielerliste.css",
     /* seit v0.157.0: Profil zweistufig (Karten-Knopf erbt die Rundung) und Level-Pfad */
-    "upcrew-profil.css", "upcrew-levelpfad.css"];
+    "upcrew-profil.css", "upcrew-levelpfad.css",
+    /* seit v0.162.0 (Runde 8, Sammlung Variante A): der Platz einer Grafik */
+    "upcrew-platz.css"];
 
 pruefe("Ordner css und index.html nennen dieselben Stildateien", () => {
     const vorhanden = dateisystem.readdirSync(pfad.join(projekt, "css"))
@@ -954,10 +956,22 @@ pruefe("app.js meldet den Service Worker abgesichert an", () => {
  * Browser-Speicher desselben Ursprungs, nicht vom Konto — also kein Weg
  * für Fremde; behoben wird es an der Quelle (STATUS.md, Meldung an die
  * Design-Sitzung). Die Ausnahme gilt nur für diese eine Datei.
+ *
+ * DIE DRITTE AUSNAHME (seit v0.162.0, Sammlung Variante A): der Platz einer
+ * Grafik, js\upcrew-platz.js — GENAU EINE Zeile, `el.innerHTML = o.html;`.
+ * Durchgesehen am 04.10.2026: `html` ist der Platzhalter eines Platzes, und
+ * den gibt nur Code mit: der Anpassen-Baustein seine zwei gezeichneten
+ * Zeichen (Schloss, Würfel) und das `bild` der eigenen Regale, das
+ * js\sammlung.js übergibt (feste Bildpfade, `FIGUREN_FLACH.miniBrett`,
+ * `BRETT_DESIGN.miniBild` — kein Spielername, nichts vom Konto, nichts aus
+ * dem Browser-Speicher). Der Gerüst-Baustein js\upcrew-sammlung.js gibt nur
+ * `text` mit (läuft über textContent). Jede ANDERE innerHTML-Zeile in der
+ * Datei schlägt weiter an.
  */
 pruefe("innerHTML leert nur, es setzt nichts ein (Stored XSS)", () => {
     const erlaubt = /\.innerHTML\s*=\s*""\s*;/;
     const introAusnahme = "behaelter.innerHTML = `<div class=\"upi-buehne\">${html}</div>`;";
+    const platzAusnahme = "el.innerHTML = o.html;";
     const funde = [];
 
     for (const name of dateien) {
@@ -975,6 +989,9 @@ pruefe("innerHTML leert nur, es setzt nichts ein (Stored XSS)", () => {
                 return;
             }
             if (name === "upcrew-intro.js" && zeile.trim() === introAusnahme) {
+                return;
+            }
+            if (name === "upcrew-platz.js" && zeile.trim() === platzAusnahme) {
                 return;
             }
             funde.push(name + ":" + (nummer + 1) + "  " + zeile.trim());

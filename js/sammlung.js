@@ -8,32 +8,49 @@
  *   - „Anpassen" (v0.144.0, js\anpassen.js).
  * Beide Kennungen führen weiter hierher (`TABS.UMLEITUNGEN`).
  *
+ * SEIT v0.162.0 „VARIANTE A" (UPCrew Runde 8; Nutzer 03.10.2026: „es soll
+ * nicht mehr nach rechts oder links scroll bar sein das hin und her wischen
+ * gehört dem tab wechsel", Wahl im Entwurf „1. A"): statt waagrecht
+ * rollender Regal-Reihen KATEGORIE-KACHELN im 2er-Raster; ein Tipp öffnet
+ * ein BLATT mit den Stücken (3er-Raster, rollt nur senkrecht). Nichts auf
+ * dieser Seite rollt mehr waagrecht — ein Wisch gehört dem Seiten-Band.
+ *
  * WAS AUF DER EINEN FLÄCHE STEHT, von oben nach unten:
  *   1. die Kopfzeile wie in den anderen Tabs, rechts „NN %" gesammelt;
  *   2. der gemeinsame Baustein js\upcrew-anpassen.js (`UPCREW_ANPASSEN`,
- *      Kopie aus Design\3D-Schrift\final, in Typoluck gleich): die Vorschau
- *      klebt bündig unter der Kopfzeile, darunter die Regale — zuerst die
- *      EIGENEN (Brett · Brett-Thema · Figuren), dann Farbwelt, Schrift,
- *      Knöpfe, Darstellung, Sets;
- *   3. die REINE SAMMLUNG — Dinge, die man nicht „anzieht": Fähigkeiten
- *      (dieselbe Bibliothek wie bisher im Tab „Fähigkeiten", nichts fehlt)
- *      und Brettformen. Sie steht VOR dem Übernehmen-Balken des Bausteins,
- *      damit der Balken immer ganz unten bleibt;
- *   4. unten der Balken „Zurück / Übernehmen", bündig auf der Leiste.
+ *      Kopie aus Apps\UPCrew\bausteine, in Typoluck gleich): die Vorschau
+ *      klebt bündig unter der Kopfzeile, darunter die Kacheln — zuerst die
+ *      EIGENEN Regale (Brett · Brett-Design 2D · Brett-Design 3D · Figuren ·
+ *      Figuren-Stil 3D), dann die Arten des Katalogs (js\upcrew-katalog.js:
+ *      Farbwelten, Schriften, Knöpfe … — was noch nicht wirkt, trägt
+ *      „bald"), dann Darstellung und Sets;
+ *   3. die REINE SAMMLUNG — Dinge, die man nicht „anzieht": Abzeichen,
+ *      Fähigkeiten (dieselbe Bibliothek wie bisher im Tab „Fähigkeiten",
+ *      nichts fehlt) und Brettformen. Der Gerüst-Baustein
+ *      (js\upcrew-sammlung.js) macht aus jedem Abschnitt eine Kachel im
+ *      selben Raster und öffnet ihn im Blatt; der Abschnitt bleibt dasselbe
+ *      Element;
+ *   4. unten der Balken „Würfel · Zurück · Übernehmen", bündig auf der
+ *      Leiste. Die Probe bleibt beim Schliessen eines Blatts stehen.
  *
- * FREI IST: 2D (immer), das Brett-Thema „Farbwelt" und die Figuren
- * „Emaille". 3D, die übrigen Themen und Figuren schaltet seit v0.147.0 der
- * Turm frei (js\freischaltung.js: 3D und Holz/Matt ab Holzhalle …); bis
- * dahin tragen sie ein Schloss mit dem Ort. Admin-Freigabe und Werkstatt
- * schalten alles frei.
- * In der reinen Sammlung ist in dieser Runde alles „da" (Taten = Runde 5).
+ * FREI IST: 2D (immer), das Brett-Design „Grau", das Brett-Thema „Farbwelt"
+ * und die Figuren „Emaille". 3D, die übrigen Themen und Figuren schaltet
+ * seit v0.147.0 der Turm frei (js\freischaltung.js: 3D und Holz/Matt ab
+ * Holzhalle …); bis dahin tragen sie ein Band mit dem Ort. Admin-Freigabe
+ * und Werkstatt schalten alles frei. Daran ändert v0.162.0 nichts.
+ * DIE OBERFLÄCHE NENNT KEIN LEVEL MEHR (seit v0.162.0): Was über das Level
+ * frei wird (Farbwelt, Schrift, Knöpfe, Brett-Design „Farbwelt"), wirkt wie
+ * bisher, trägt aber statt „Lv N" ein Band des Bausteins.
+ * OHNE SHOP UND BESITZ (v0.162.0): `shop: false` — gesperrte Stücke tragen
+ * „wird erspielt"; `besitz` wird nicht übergeben, nichts wird gespeichert.
+ * In der reinen Sammlung ist alles „da" (Taten = Runde 5).
  *
- * Beim Verlassen wird der Baustein abgebaut, beim nächsten Öffnen neu
- * aufgebaut — so zeigt er immer den aktuellen Stand, auch wenn Typoluck
- * inzwischen etwas umgestellt hat. Die reine Sammlung wird dagegen nur
- * EINMAL gebaut und bei jedem Öffnen wieder eingehängt: Ein aufgeklappter
- * Eintrag bleibt so offen, und die Bibliothek meldet sich nicht bei jedem
- * Öffnen ein weiteres Mal bei `TEAM_SCHACH._kartenWurzeln` an.
+ * Bei jedem Öffnen wird der Anpassen-Baustein neu aufgebaut — so zeigt er
+ * immer den aktuellen Stand, auch wenn Typoluck inzwischen etwas umgestellt
+ * hat. Die reine Sammlung wird dagegen nur EINMAL gebaut und bei jedem
+ * Öffnen wieder eingehängt: Ein aufgeklappter Eintrag bleibt so offen, und
+ * die Bibliothek meldet sich nicht bei jedem Öffnen ein weiteres Mal bei
+ * `TEAM_SCHACH._kartenWurzeln` an.
  */
 
 const SAMMLUNG = {
@@ -96,12 +113,18 @@ const SAMMLUNG = {
         SAMMLUNG._zeigen();
     },
 
-    beimVerlassen() {
-        if (SAMMLUNG.tab) {
-            SAMMLUNG.tab.entfernen();
-            SAMMLUNG.tab = null;
-        }
+    /* Die Seite steht im Band neben der offenen (seit v0.161.0): einmal
+       füllen, damit sie beim Wischen zu sehen ist. */
+    vorzeichnen() {
+        SAMMLUNG._zeigen();
     },
+
+    /* KEIN `beimVerlassen` MEHR (seit v0.161.0): Bis v0.160 baute sich der
+       Anpassen-Baustein beim Verlassen ab (`tab.entfernen()`). Im
+       Seiten-Band muss die Sammlung als Nachbarseite beim Wischen zu sehen
+       sein — sie bleibt stehen und zeigt ihr letztes Bild. Ein nicht
+       übernommener Entwurf verfällt wie bisher: `beimOeffnen` baut bei
+       jedem Einrasten frisch (`_zeigen` räumt den alten Stand selbst ab). */
 
     _zeigen() {
         if (!SAMMLUNG.ortEl) {
@@ -115,11 +138,21 @@ const SAMMLUNG = {
             SAMMLUNG.restEl = SAMMLUNG.restBauen();
         }
 
+        /* Ein offenes Blatt der reinen Sammlung geht vorher zu: Sein
+           Abschnitt hängt dann wieder im Rest und bekommt unten seine
+           Kachel (das Blatt einer Kategorie schliesst `tab.entfernen()`
+           oben selbst). */
+        SAMMLUNG._restBlattSchliessen();
+
         if (typeof UPCREW_ANPASSEN !== "undefined") {
             SAMMLUNG.tab = UPCREW_ANPASSEN.zeigen(SAMMLUNG.ortEl, {
                 app: "blunderluck",
                 stufe: FREISCHALTUNG.stufe(),
                 alleFrei: FREISCHALTUNG.werkstatt(),
+                /* Der Shop mit Besitz kommt später (eigene Version): Gesperrtes
+                   trägt bis dahin „wird erspielt". `besitz` bleibt weg — frei
+                   ist, was heute frei ist (Level, Turm, Werkstatt). */
+                shop: false,
                 regale: SAMMLUNG.regale(),
                 vorschau: SAMMLUNG._vorschau
             });
@@ -134,6 +167,20 @@ const SAMMLUNG = {
         const anteil = SAMMLUNG.anteil();
         SAMMLUNG.geruest.anteilSetzen(anteil.hat, anteil.alle);
         SAMMLUNG.geruest.obenSetzen();
+    },
+
+    /* Liegt oben ein Blatt der reinen Sammlung (Klasse `up-sm-blatt` des
+       Gerüst-Bausteins), geht es zu — sein Abschnitt wandert dabei von
+       selbst zurück in den Rest. Fremde Blätter bleiben unberührt. */
+    _restBlattSchliessen() {
+        if (typeof UPCREW_BLATT === "undefined" || typeof UPCREW_BLATT.oben !== "function") {
+            return;
+        }
+        const oben = UPCREW_BLATT.oben();
+        if (oben && oben.el && typeof oben.el.querySelector === "function"
+                && oben.el.querySelector(".up-sm-blatt") && typeof oben.schliessen === "function") {
+            oben.schliessen();
+        }
     },
 
     /* ---------------------------------------------------------------- *
@@ -229,6 +276,10 @@ const SAMMLUNG = {
      * BRETT-DESIGN · 2D (seit v0.159.0, js\brett-design.js): flache
      * Paletten für das 2D-Brett — Grau (Vorgabe), Farbwelt (ab Level 2),
      * Holz, Marmor, Nacht, Turnier (ab ihrem Ort im Turm).
+     * Seit v0.162.0 nennt `ab` nur noch einen ORT, nie ein Level („Lv 2"
+     * fällt weg — die Oberfläche nennt kein Level mehr): Die gesperrte
+     * „Farbwelt" bekommt ihr Band vom Baustein. Frei wird sie weiter mit
+     * Level 2 (`BRETT_DESIGN.frei`, unverändert).
      */
     designRegal() {
         return {
@@ -239,7 +290,7 @@ const SAMMLUNG = {
                 wert: d.wert,
                 name: d.name,
                 frei: BRETT_DESIGN.frei(d.wert),
-                ab: d.ort || (d.stufe ? "Lv " + d.stufe : ""),
+                ab: d.ort || "",
                 bild: BRETT_DESIGN.miniBild(d.wert)
             })),
             uebernehmen(wert) {
@@ -321,45 +372,39 @@ const SAMMLUNG = {
     /* ---------------------------------------------------------------- *
      * „NN %" gesammelt (Auftrag Gemeinsam, Punkt 2)
      *
-     * Anteil der freigeschalteten Stücke über ALLE Regale (die eigenen
-     * und Farbwelt, Schrift, Knöpfe des Bausteins) und die Gruppen der
-     * reinen Sammlung. Nicht mitgezählt: „Darstellung" (Hell/Dunkel/Gerät
-     * ist eine Einstellung, nichts zum Sammeln) und die Sets (eigene
-     * Merkplätze). Die Werkstatt zählt alles als frei — wie der Baustein.
+     * SEIT v0.162.0 zählt der Anpassen-Baustein selbst (`tab.zaehlen()`):
+     * alle Sammel-Kategorien — die eigenen Regale (mit den Stücken des
+     * Katalogs, auch denen, die noch „bald" sind) und die Arten des
+     * Katalogs. Dazu kommen hier die eigenen Abschnitte der reinen Sammlung
+     * (Fähigkeiten, Brettformen — wie bisher; die Abzeichen zählten nie mit
+     * und zählen weiter nicht). Die eigene Rechnung über `STUFEN` ist
+     * entfallen. Nicht mitgezählt: „Darstellung" (Hell/Dunkel/Gerät ist eine
+     * Einstellung, nichts zum Sammeln) und die Sets (eigene Merkplätze).
+     * Steht der Baustein noch nicht (Tests ohne Bildschirm), zählen nur die
+     * eigenen Regale.
      * ---------------------------------------------------------------- */
 
     anteil() {
-        const alleFrei = FREISCHALTUNG.werkstatt();
         let hat = 0;
         let alle = 0;
 
-        for (const regal of SAMMLUNG.regale()) {
-            for (const stueck of regal.stuecke) {
-                alle++;
-                if (alleFrei || stueck.frei !== false) {
-                    hat++;
-                }
-            }
-        }
-
-        if (typeof UPCREW_ANPASSEN !== "undefined" && UPCREW_ANPASSEN.STUFEN) {
-            const stufe = FREISCHALTUNG.stufe();
-            /* Seit v0.159.0 (EINBAU-2026-09-29c.md Schritt 4) rechnet der
-               Baustein selbst, was frei ist (Level oder Besitz). */
-            const frei = (art, wert, stufen) => (typeof UPCREW_ANPASSEN.frei === "function")
-                ? UPCREW_ANPASSEN.frei(art, wert, stufe) : stufen[wert] <= stufe;
-            for (const art of ["farbwelt", "schrift", "knoepfe"]) {
-                const stufen = UPCREW_ANPASSEN.STUFEN[art] || {};
-                for (const wert of Object.keys(stufen)) {
+        if (SAMMLUNG.tab && typeof SAMMLUNG.tab.zaehlen === "function") {
+            const gezaehlt = SAMMLUNG.tab.zaehlen();
+            hat += gezaehlt.hat;
+            alle += gezaehlt.alle;
+        } else {
+            const alleFrei = FREISCHALTUNG.werkstatt();
+            for (const regal of SAMMLUNG.regale()) {
+                for (const stueck of regal.stuecke) {
                     alle++;
-                    if (alleFrei || frei(art, wert, stufen)) {
+                    if (alleFrei || stueck.frei !== false) {
                         hat++;
                     }
                 }
             }
         }
 
-        /* Die reine Sammlung: in dieser Runde alles „da". */
+        /* Die eigenen Abschnitte der reinen Sammlung: alles „da". */
         const karten = SAMMLUNG.kartenAnzahl();
         const formen = SAMMLUNG.brettformen().length;
         alle += karten + formen;
@@ -511,6 +556,13 @@ const SAMMLUNG = {
      * Standbild mit Thema und Figuren des ENTWURFS darüber — nur für dieses
      * Bild; das echte Brett ändert erst „Übernehmen". Ohne 3D (kein WebGL,
      * noch am Laden) bleibt es beim flachen Gitter.
+     *
+     * SEIT v0.162.0 ruft der Baustein ihn ZWEIMAL je Zeichnen, solange ein
+     * Blatt offen ist: für die klebende Vorschau der Seite und für die
+     * KOMPAKTE im Blatt (`el` trägt dann `upa-kompakt`). Beide bekommen
+     * dasselbe Brett — jedes sein eigenes Gitter; die kleinere Breite der
+     * kompakten setzt css\stil.css (`.upa-kompakt .sammlung-buehne`). Das
+     * 3D-Standbild rechnet dabei nur einmal (`MINI.cache` in brett-3d.js).
      */
     _vorschau(el, entwurf, app) {
         if (app !== "blunderluck" || typeof TEAM_SCHACH === "undefined"

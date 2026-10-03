@@ -3,6 +3,42 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.162.0 — 04.10.2026
+
+**Die Sammlung ist neu geordnet: Kacheln statt Reihen — und beim Wischen zieht die Leiste früher nach.**
+
+- **Sammlung als Kacheln:** Statt der Reihen, die du seitlich rollen musstest, steht jetzt je Kategorie eine Kachel
+  (Brett, Brett-Design, Figuren, Farbwelten, Schriften, Knöpfe …) mit ihrem angelegten Stück und „wie viele habe ich".
+  Ein Tipp öffnet ein Blatt mit allen Stücken der Kategorie — antippen zum Anprobieren, unten „Zurück · Würfel ·
+  Übernehmen". Die Vorschau bleibt oben stehen, auch im Blatt.
+- **Nichts rollt mehr seitlich:** Ein Wisch nach links oder rechts wechselt in der Sammlung jetzt überall die Seite —
+  egal, wo du ansetzt.
+- **Abzeichen, Fähigkeiten und Brettformen** sind ebenfalls Kacheln und öffnen sich im Blatt; darin ist alles wie bisher.
+- **Mehr zu sehen:** Die Sammlung zeigt jetzt auch, was noch kommt (Materialien, Sieg-Effekte, Flammen-Farben …) — mit
+  „bald" markiert, noch nicht wählbar. Darum ist die Prozentzahl oben kleiner als vorher: Es wird mehr mitgezählt,
+  weggenommen wurde dir nichts.
+- **Kein „Lv" mehr an den Stücken:** Was du noch nicht hast, trägt den Ort im Turm oder „wird erspielt".
+  Frei ist genau das, was vorher frei war.
+- **Die Leiste unten zieht früher nach:** Nach einem Wisch springt die Kapsel schon um, sobald feststeht, wohin die
+  Seite rollt — nicht erst, wenn sie eingerastet ist.
+- Der Shop ist unverändert; der neue Shop mit Designs kommt in einer eigenen Version.
+
+## v0.161.0 — 04.10.2026
+
+**Tabs wechseln wie Blättern: Ein kleiner Wisch reicht, und die nächste Seite ist schon beim Wischen zu sehen.**
+
+- **Die Seiten hängen aneinander:** Shop, Sammlung, Start, Aufgaben und Rangliste liegen jetzt nebeneinander wie auf
+  einem Band. Wischst du zur Seite, rollt die Nachbarseite sofort mit herein und rastet ein — du musst nicht mehr weit
+  ziehen. Höchstens eine Seite je Wisch.
+- **Rechts und links ist weiter Stopp:** Vor dem Shop und hinter der Rangliste geht es nicht weiter, kein Rundlauf.
+- **Die Leiste unten bleibt, wie sie ist:** Ein Tipp rollt das Band zur Seite; nach einem Wisch zieht die Kapsel nach,
+  sobald die Seite eingerastet ist.
+- **In der Partie wird nicht gewischt** — auch nicht, solange ein Blatt (Profil, Einstellungen) oder ein Dialog offen ist.
+- **In der Sammlung** rollen die Regal-Reihen weiter für sich: Wischst du auf einer Reihe, rollt die Reihe; daneben
+  wechselst du die Seite.
+- Sonst ist alles gleich: dieselben fünf Tabs in derselben Reihenfolge, derselbe Inhalt, dasselbe Aussehen. Jede Seite
+  rollt jetzt für sich und beginnt oben, wenn du zu ihr wechselst.
+
 ## v0.160.1 — 03.10.2026
 
 **Dein Level stimmt jetzt ohne Neustart — auch wenn du es in einem anderen UPCrew-Spiel verdient hast.**

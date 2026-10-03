@@ -306,7 +306,9 @@ pruefe("Tabs: Leisten-Tabs sind Seiten (v0.156.1), ein Wechsel schliesst Blätte
     gleich(markiert(leiste), ["shop"], "Leiste markiert den Shop");
     const shop = inhalt.kinder.find((k) => k.dataset.tabId === "shop");
     wahr(shop && !shop.hidden, "der Shop ist eine Seite im Hauptteil");
-    gleich(gerollt, [0], "die Seite beginnt oben");
+    /* Seit v0.161.0 (Seiten-Band) rollt nicht mehr das Fenster nach oben, sondern jede Seite für sich —
+       geprüft in test-wischen.js; hier (ohne Band-Element) bleibt das Fenster in Ruhe. */
+    gleich(gerollt, [], "das Fenster wird nicht mehr gerollt");
     /* Aus einem Blatt (Profil → Einstellungen) auf eine Leisten-Seite. */
     T.wechseln("start");
     B.oeffnen({ titel: "Profil" });
@@ -711,9 +713,10 @@ pruefe("Einbindung: nur Einstellungen und Verwaltung als Blatt, Wischen nur auf 
     wahr(!!zeile, "Schleife alsBlatt");
     gleich(zeile[1].split(/,\s*/), ["EINSTELLUNGEN", "VERWALTUNGS_BILDSCHIRM"], "Blätter");
     wahr(!/UPCREW_WISCHEN\.an\(ebenen,/.test(app), "kein Wischen auf #ebenen (ein Blatt ist kein Tab)");
-    wahr(/UPCREW_WISCHEN\.an\(TABS\.inhaltEl,/.test(app), "Wischen auf den Seiten");
+    /* Seit v0.161.0 das Seiten-Band: der Baustein hängt am Band der Leisten-Seiten, nicht mehr am alten Behälter. */
+    wahr(/UPCREW_WISCHEN\.an\(TABS\.bandEl,/.test(app), "Wischen auf den Seiten (Band)");
     const tabs = lesen("js/tabs.js");
-    wahr(/window\.scrollTo\(0, 0\)/.test(tabs), "Leisten-Seite beginnt oben");
+    wahr(/eintrag\.seite\.scrollTop = 0;/.test(tabs), "Leisten-Seite beginnt oben (die Seite rollt, nicht das Fenster)");
     const blatt = lesen("css/upcrew-blatt.css");
     wahr(/html\.up-bl-offen/.test(blatt), "die Seite hinter Blättern ist gesperrt (Baustein aus final)");
 });

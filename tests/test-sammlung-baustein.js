@@ -6,6 +6,8 @@
  * Geprüft: der Aufbau nach dem Markup-Vertrag, „NN %“, die reine Sammlung vor dem Balken, die Teile
  * der reinen Sammlung; im Stil nur Farbwelt-Variablen und nur Klassen mit `up-sm-` (plus die zwei
  * Anpassen-Teile, die das Gerüst setzt); Blunderluck nutzt NUR den Baustein für das Gerüst.
+ * Seit v0.162.0 (Variante A) macht `restEinsetzen` aus jedem Abschnitt eine Kachel mit Blatt — das prüft
+ * tests\test-sammlung-a.js im Zusammenspiel mit js\sammlung.js und dem Anpassen-Baustein.
  *
  * Aufruf: siehe tests\README.md
  */
@@ -48,7 +50,14 @@ function element(tag) {
         tagName: tag.toUpperCase(), kinder: [], className: "", textContent: "", attribute: {}, title: "",
         stil: {}, lauscher: {},
         style: { setProperty(n, w) { el.stil[n] = w; } },
-        classList: { add(k) { el.className = (el.className + " " + k).trim(); } },
+        classList: {
+            add(k) { el.className = (el.className + " " + k).trim(); },
+            /* seit v0.162.0: der Baustein schaltet `up-sm-rest-kacheln` am Rest (Variante A) */
+            toggle(k, an) {
+                const ohne = el.className.split(" ").filter((x) => x && x !== k);
+                el.className = (an ? ohne.concat([k]) : ohne).join(" ");
+            }
+        },
         appendChild(k) { el.kinder.push(k); return k; },
         insertBefore(k, vor) { const i = el.kinder.indexOf(vor); el.kinder.splice(i === -1 ? el.kinder.length : i, 0, k); return k; },
         setAttribute(n, w) { el.attribute[n] = String(w); },
@@ -98,6 +107,9 @@ pruefe("Reine Sammlung vor den Balken, Kopfhöhe als --upa-oben", () => {
     const rest = U.rest();
     g.restEinsetzen(rest);
     gleich(g.ort.kinder.indexOf(rest), 1, "vor dem Balken");
+    /* Variante A (seit v0.162.0): Ohne Kachel-Raster und ohne upcrew-blatt.js bleiben die Abschnitte wie bisher
+       untereinander — der Rest trägt dann KEIN `up-sm-rest-kacheln` (das blendete sie aus). */
+    gleich(rest.className, "up-sm-rest", "ohne Raster/Blatt keine Kacheln");
     g.obenSetzen();
     gleich(tab.stil["--upa-oben"], "43px", "Kopfhöhe");
 });
@@ -130,7 +142,9 @@ pruefe("Stil: nur Farbwelt-Variablen, nur up-sm-Klassen, Vertrag im Kopf", () =>
     wahr(!/\brgba?\(/.test(ohneKommentare), "feste Farbe (rgb)");
     const klassen = [...new Set((ohneKommentare.match(/\.[a-z][a-z0-9-]*/g) || []))];
     const fremd = klassen.filter((k) => !k.startsWith(".up-sm") && [".upa-vorschau-rahmen", ".upa-aktion",
-        /* seit v0.156.0: der Würfel im Balken (Vorschlag an final) */ ".upa-zufall"].indexOf(k) === -1);
+        /* seit v0.156.0: der Würfel im Balken (Vorschlag an final) */ ".upa-zufall",
+        /* seit v0.162.0 (Variante A): die Breite eines Platzes (upcrew-platz.css) in einem Stück der reinen Sammlung */
+        ".up-platz"].indexOf(k) === -1);
     gleich(fremd, [], "fremde Klassen");
     wahr(/MARKUP-VERTRAG/.test(css) && /--up-sm-rand/.test(css) && /--up-sm-leiste/.test(css) && /--oben-frei/.test(css),
         "Vertrag und Stellschrauben im Kopf");

@@ -555,6 +555,11 @@ Object.assign(ANMELDUNG, {
         }
         ANMELDUNG.anmeldenLaeuft = true;
         ANMELDUNG.wurzelEl.hidden = false;
+        /* Die Anmeldung sperrt das Seiten-Band (seit v0.161.0, `erlaubt`
+           in app.js) — sofort, nicht erst bei der nächsten Berührung. */
+        if (typeof TABS !== "undefined" && typeof TABS.bandAuffrischen === "function") {
+            TABS.bandAuffrischen();
+        }
 
         const kasten = ANMELDUNG._kastenBauen("Spielstand sichern",
             "Name und Passwort · alles als "

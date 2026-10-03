@@ -524,7 +524,10 @@ pruefe("Brett-Design 2D (v0.159.0): Grau ist Vorgabe, Farbwelt ab Level 2, Holz 
         const regal = SAMMLUNG.designRegal();
         gleich(regal.stuecke.map((s) => s.wert).join(","), "grau,farbwelt,holz,marmor,nacht,turnier", "Stücke");
         gleich(regal.stuecke.filter((s) => s.frei).map((s) => s.wert).join(","), "grau", "nur Grau frei");
-        gleich(regal.stuecke.find((s) => s.wert === "farbwelt").ab, "Lv 2", "Farbwelt ab Level 2");
+        /* Seit v0.162.0 nennt die Oberfläche kein Level mehr: `ab` ist leer
+           (das Band kommt vom Baustein), frei wird sie weiter mit Level 2. */
+        gleich(regal.stuecke.find((s) => s.wert === "farbwelt").ab, "", "Farbwelt: kein „Lv 2“ mehr am Stück");
+        gleich(BRETT_DESIGN.eintrag("farbwelt").stufe, 2, "Farbwelt weiter ab Level 2");
         gleich(regal.stuecke.find((s) => s.wert === "holz").ab, "Holzhalle", "Holz ab Holzhalle");
         gleich(regal.stuecke.find((s) => s.wert === "turnier").ab, "Turniersaal", "Turnier ab Turniersaal");
         wahr(regal.stuecke.every((s) => /brett-design-bild/.test(s.bild)), "flache Bilder");
@@ -563,23 +566,34 @@ pruefe("2D-Brett flach (v0.159.0): ohne Kante und Fuge, Design über --brett2d-*
     wahr(index.indexOf("js/brett-design.js") !== -1 && sw.indexOf("\"./js/brett-design.js\"") !== -1, "geladen und offline");
 });
 
-pruefe("Sammlung: der Anteil zählt Regale, Baustein-Stücke und reine Sammlung", () => {
+/* Seit v0.162.0 (Sammlung Variante A) zählt der Anpassen-Baustein selbst
+   (`tab.zaehlen()`), die eigene Rechnung über `UPCREW_ANPASSEN.STUFEN` ist
+   entfallen — das Zusammenspiel prüft tests\test-sammlung-a.js. Hier bleibt
+   der Fall OHNE Baustein (kein Bildschirm): die eigenen Regale und die
+   eigenen Abschnitte der reinen Sammlung. */
+pruefe("Sammlung: ohne Baustein zählt der Anteil die eigenen Regale und die reine Sammlung", () => {
     globalThis.SCHACH_VARIANTEN = {
         STUFEN: [{ id: "a" }, { id: "b" }],
         faehigkeitenDerStufe: (id) => (id === "a" ? ["x", "y"] : ["z"]),
         pechDerStufe: (id) => (id === "a" ? ["p"] : []),
         zurAuswahl: () => [{ id: "k" }, { id: "r" }]
     };
+    /* Eine Level-Tabelle des Bausteins ändert daran nichts mehr. */
     globalThis.UPCREW_ANPASSEN = { STUFEN: { farbwelt: { a: 0, b: 2 }, schrift: { c: 0 }, knoepfe: { d: 0, e: 3 } } };
     try {
         const anteil = SAMMLUNG.anteil();
         /* Regale: 2 + 6 + 5 + 2 + 4 = 19 Stücke (seit v0.159.0 mit dem
            Brett-Design 2D), frei 1 + 1 + 1 + 1 + 1 = 5 (je die Vorgabe).
-           Baustein: 5 Stücke, frei 3. Reine Sammlung: 4 Karten + 2 Formen. */
-        gleich(anteil.alle, 19 + 5 + 6, "alle");
-        gleich(anteil.hat, 5 + 3 + 6, "gesammelt");
-        gleich(anteil.prozent, Math.round(14 / 30 * 100), "Prozent");
+           Reine Sammlung: 4 Karten + 2 Formen. */
+        gleich(anteil.alle, 19 + 6, "alle");
+        gleich(anteil.hat, 5 + 6, "gesammelt");
+        gleich(anteil.prozent, Math.round(11 / 25 * 100), "Prozent");
+        /* Steht der Baustein, gilt SEINE Zählung plus die eigenen Abschnitte. */
+        SAMMLUNG.tab = { zaehlen: () => ({ hat: 7, alle: 40 }) };
+        gleich(SAMMLUNG.anteil().hat, 7 + 6, "mit Baustein: tab.zaehlen() + eigene Abschnitte");
+        gleich(SAMMLUNG.anteil().alle, 40 + 6, "mit Baustein: alle");
     } finally {
+        SAMMLUNG.tab = null;
         delete globalThis.SCHACH_VARIANTEN;
         delete globalThis.UPCREW_ANPASSEN;
     }

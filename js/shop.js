@@ -71,6 +71,12 @@ const SHOP = {
         SHOP.zeichnen();
     },
 
+    /* Die Seite steht im Band neben der offenen (seit v0.161.0): einmal
+       füllen, damit sie beim Wischen zu sehen ist. */
+    vorzeichnen() {
+        SHOP.zeichnen();
+    },
+
     zeichnen() {
         if (SHOP.griff) {
             SHOP.griff.zeichnen();

@@ -6,6 +6,13 @@ geändert wird ein Baustein nur dort. Was unten „final" heisst, ist die alte Q
 als Verlauf stehen. Stand 03.10.2026: Alle Bausteine in js\ und css\ sind byte-gleich mit UPCrew\bausteine
 (tests\test-bausteine-quelle.js), es wartet kein Vorschlag.
 
+STAND 04.10.2026 (v0.162.0, Sammlung „Variante A"): upcrew-anpassen.js/.css und upcrew-sammlung.js/.css
+kommen jetzt in der neuen Fassung aus UPCrew\bausteine. Die gleichnamigen Dateien HIER sind der Stand bis
+v0.161.0 (längst übernommene Vorschläge) — nur noch Verlauf, sie gleichen dem benutzten Baustein nicht mehr
+(tests\test-aussehen-je-spiel.js vergleicht deshalb nur noch upcrew-aussehen.js). Löschen: wartet wie die
+übrigen auf das OK des Nutzers. Neue Vorschläge aus v0.162.0 stehen in UEBERGABE.md (oberster Abschnitt,
+„Aufgefallen / Vorschläge an UPCrew") — ohne eigene Datei hier, an den Bausteinen wurde nichts geändert.
+
 upcrew-anpassen.css: ERLEDIGT 27.09.2026 — der Fix .upa-vorschau { height: auto; min-height: 280px; }
 steht jetzt in final und ist mit v0.151.13 byte-gleich in css\upcrew-anpassen.css übernommen.
 Die Datei hier ist damit überflüssig und kann gelöscht werden (wartet auf das OK des Nutzers).

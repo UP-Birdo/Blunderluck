@@ -300,6 +300,12 @@ const RANGLISTE = {
         RANGLISTE.zeichnen();
     },
 
+    /* Die Seite steht im Band neben der offenen (seit v0.161.0): einmal
+       füllen, damit sie beim Wischen zu sehen ist. */
+    vorzeichnen() {
+        RANGLISTE.zeichnen();
+    },
+
     /* Seit v0.156.1 ist die Rangliste wieder eine SEITE. Seit v0.157.0
        steht das ausführliche Profil im Profil-Blatt (js\profil.js); die
        Profilseite hier gibt es nur noch ohne Blatt-Baustein (Tests). */

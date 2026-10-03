@@ -536,16 +536,40 @@ const APP = {
         for (const tab of [EINSTELLUNGEN, VERWALTUNGS_BILDSCHIRM]) {
             tab.alsBlatt = true;
         }
-        if (typeof UPCREW_BLATT !== "undefined") {
+        /* Was hinter einem Blatt zurückrückt (`haupt`): seit v0.161.0 der
+           Inhalt der offenen Leisten-Seite (`.band-inhalt`) und, solange die
+           Partie offen ist, der alte Behälter `#tab-inhalt` — TABS meldet
+           jeden Wechsel (`beiHaupt`). `einrichten` darf mehrfach laufen (es
+           meldet seine Horcher nur einmal an). */
+        const bandEl = document.getElementById("seiten-band");
+        const blattEinrichten = (haupt) => {
+            if (typeof UPCREW_BLATT === "undefined") {
+                return;
+            }
             UPCREW_BLATT.einrichten({
                 ebenen: document.getElementById("ebenen"),
-                haupt: document.getElementById("tab-inhalt"),
+                haupt: haupt,
                 /* Seit v0.157.0: jedes Blatt und jede Karte (Profil, Level-Pfad, Vorschau, Serie, Abzeichen-Wahl)
                    legt einen Verlaufseintrag an — die Zurück-Taste/Wischgeste schliesst das oberste statt die
                    App-Seite zu verlassen (Baustein horcht selbst auf popstate). */
                 verlauf: true
             });
-        }
+        };
+        let hauptJetzt = document.getElementById("tab-inhalt");
+        blattEinrichten(hauptJetzt);
+        TABS.beiHaupt = (neu) => {
+            if (!neu || neu === hauptJetzt) {
+                return;
+            }
+            /* Liegt (entgegen der Regel) noch ein Blatt offen, zieht die
+               Marke „dahinter" mit um. */
+            if (hauptJetzt.classList.contains("up-bl-dahinter")) {
+                hauptJetzt.classList.remove("up-bl-dahinter");
+                neu.classList.add("up-bl-dahinter");
+            }
+            hauptJetzt = neu;
+            blattEinrichten(neu);
+        };
         TABS.registrieren(SHOP);
         TABS.registrieren(SAMMLUNG);
         TABS.registrieren(START);
@@ -574,7 +598,8 @@ const APP = {
         TABS.starten(
             document.getElementById("tab-leiste"),
             document.getElementById("tab-inhalt"),
-            "start"
+            "start",
+            bandEl
         );
 
         /* Die wandernde Kapsel der Leiste (seit v0.151.16, Baustein
@@ -589,23 +614,43 @@ const APP = {
         /*
          * WISCHEN WECHSELT DIE TABS (seit v0.151.14, Nutzer 27.09.2026: „mache,
          * dass man in den Menüs swipen kann, um die Tabs zu wechseln").
-         * Gemeinsamer Baustein js\upcrew-wischen.js; gewechselt wird über
-         * denselben Weg wie ein Tipp auf die Leiste (`TABS.wechseln`), in
-         * Leisten-Reihenfolge, „Bald" (Platzhalter) wird übersprungen. Nicht
-         * während einer Runde (Leiste weg, `partie-spielt`), nicht in einem
-         * eigenen Fenster (`runde-offen`), nicht während der Anmeldung.
+         * SEIT v0.161.0 ALS SEITEN-BAND (UPCrew Runde 8, neuer Vertrag des
+         * Bausteins js\upcrew-wischen.js; Nutzer 03.10.2026: „es soll schon
+         * kleine swip bewegung ausreichen. wenn man in eine richtung wischt
+         * soll dort schon die nächste seite zu sehen sein"): Die Leisten-Seiten
+         * liegen nebeneinander im Band (`TABS._bandAnlegen`), der Browser
+         * rollt es und rastet ein. Der Baustein ruft `wechseln` — derselbe
+         * Weg wie ein Tipp auf die Leiste (`TABS.wechseln`, ruft am Ende
+         * `band.zu`). Ein Platzhalter-Tab ist
+         * still und steht nicht im Band. Gesperrt während einer Runde
+         * (`partie-spielt`), in einem eigenen Fenster (`runde-offen`),
+         * während der Anmeldung und solange das Band verborgen ist (Partie);
+         * wo sich das ändert, ruft der Code `TABS.bandAuffrischen()` (seit
+         * v0.162.0 beobachtet der Baustein die Klassen an html/body auch
+         * selbst — die Aufrufe bleiben, die Anmeldung hängt an keiner Klasse).
+         * `maus` bleibt aus: Am Rechner wechselt der Tipp auf die Leiste.
+         *
+         * SEIT v0.162.0 `frueh: true` (Nutzer 03.10.2026: „die leiste" soll
+         * nicht warten): `wechseln` kommt schon, sobald das losgelassene
+         * Band die Hälfte zur Nachbarseite überschritten hat, nicht erst
+         * nach dem Einrasten; das Band rollt allein zu Ende. `vomBand` sagt
+         * `TABS.wechseln`, dass es dabei nichts rollen und die Seite erst
+         * nach dem Einrasten frisch zeichnen soll.
          */
-        if (typeof UPCREW_WISCHEN !== "undefined") {
-            UPCREW_WISCHEN.an(TABS.inhaltEl, {
-                tabs: () => TABS.liste.filter((tab) => tab.inLeiste !== false)
-                    .map((tab) => (tab.platzhalter ? { id: tab.id, still: true } : tab.id)),
-                aktiv: () => TABS.aktiveId,
-                wechseln: (id) => TABS.wechseln(id),
-                erlaubt: () => !document.body.classList.contains("partie-spielt")
+        if (typeof UPCREW_WISCHEN !== "undefined" && TABS.bandEl) {
+            TABS.band = UPCREW_WISCHEN.an(TABS.bandEl, {
+                tabs: () => TABS.bandTabs(),
+                /* Die offene Leisten-Seite — auch während ein Blatt
+                   (Einstellungen) darüber liegt und `aktiveId` das Blatt
+                   nennt. In der Partie: kein Tab des Bandes, es ruht. */
+                aktiv: () => TABS.offeneSeite || TABS.aktiveId,
+                wechseln: (id) => TABS.wechseln(id, { vomBand: true }),
+                erlaubt: () => TABS.bandSichtbar()
+                    && !document.body.classList.contains("partie-spielt")
                     && !document.body.classList.contains("runde-offen")
                     && !(typeof ANMELDUNG !== "undefined" && ANMELDUNG.anmeldenLaeuft),
-                sperren: ".vorschau, .brett, .bild-leiste, .karten-leiste",
-                bewegen: () => TABS.inhaltEl.querySelector(".tab-bereich:not([hidden])")
+                kommt: (id) => TABS.seiteKommt(id),
+                frueh: true
             });
             /* Seit v0.156.1 nicht mehr auf #ebenen: ein Blatt ist kein Tab. */
         }
@@ -618,6 +663,12 @@ const APP = {
            ob es auf den Start geht oder direkt in die eigene laufende
            Partie (Entwurf, Abschnitt 3.2). */
         ANMELDUNG.beiAngemeldet = () => {
+            /* Die Anmeldung ist durch: Das Band darf wieder rollen, und die
+               übrigen Leisten-Seiten entstehen im Leerlauf (seit v0.161.0) —
+               erst jetzt steht fest, für wen sie zeichnen. */
+            TABS.bandAuffrischen();
+            TABS.vorbauen();
+
             /* Erst jetzt steht fest, WESSEN beendete Partien in die Tafel
                gehören (Verlauf, Abschluss) — der Ladeweg holt sie nach
                (seit v0.114.3). Der Wiedereinstieg braucht darauf nicht zu

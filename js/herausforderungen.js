@@ -52,6 +52,12 @@ const HERAUSFORDERUNGEN = {
         HERAUSFORDERUNGEN.zeichnen();
     },
 
+    /* Die Seite steht im Band neben der offenen (seit v0.161.0): einmal
+       füllen, damit sie beim Wischen zu sehen ist. */
+    vorzeichnen() {
+        HERAUSFORDERUNGEN.zeichnen();
+    },
+
     _el(tag, klasse, text) {
         const element = document.createElement(tag);
         if (klasse) {

@@ -25,7 +25,9 @@
     display: none;
 }
 
-/* Der Start dahinter: der Rahmen um den Rand bleibt, damit das Zurückrücken als Karte lesbar ist. */
+/* Der Start dahinter: der Rahmen um den Rand bleibt, damit das Zurückrücken als Karte lesbar ist. Seit v0.161.0
+   rückt der Inhalt der offenen Leisten-Seite zurück (`.tab-inhalt.band-inhalt`, app.js `TABS.beiHaupt`) — nie das
+   Seiten-Band selbst —, über der Partie weiter der alte Behälter. */
 .tab-inhalt.up-bl-dahinter {
     border-radius: var(--rund-mittel);
     overflow: hidden;

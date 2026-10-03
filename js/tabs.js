@@ -19,9 +19,44 @@
  *                                              // Leiste, ausgegraut, ohne Inhalt
  *         aufbauen(behaelter),                 // legt das Gerüst einmalig an
  *         beimOeffnen(),                       // optional: bei jedem Wechsel
- *         beimVerlassen()                      // optional (seit v0.144.0):
+ *         beimVerlassen(),                     // optional (seit v0.144.0):
  *                                              // wenn ein ANDERER Tab kommt
+ *         vorzeichnen()                        // optional (seit v0.161.0): die
+ *                                              // Seite steht im Band, ist aber
+ *                                              // NICHT offen — einmal füllen,
+ *                                              // damit sie beim Wischen zu
+ *                                              // sehen ist
  *     }
+ *
+ * DAS SEITEN-BAND (seit v0.161.0, UPCrew Runde 8, Baustein
+ * js\upcrew-wischen.js; Nutzer 03.10.2026: „als wären die Seiten nicht
+ * wirklich getrennt … eine Breite, wo man durch scrollen kann waagrecht und
+ * an Fixpunkten hängen bleibt"). Die Bereiche der Leisten-Tabs (ohne
+ * Platzhalter) sind die Seiten EINES Bandes, alle gleichzeitig im Dokument
+ * und nie `hidden`:
+ *     <div class="up-band seiten-band" id="seiten-band">        index.html
+ *         <div class="up-band-seite band-seite" data-up-seite="start">   rollt
+ *             <div class="tab-inhalt band-inhalt">              Innenabstand
+ *                 <section class="tab-bereich" data-tab-id="start">
+ * Der Browser rollt das Band und rastet ein; `TABS.wechseln` ist der eine Weg
+ * für Tipp UND Band und ruft am Ende immer `band.zu(id)`. Gebaut wird die
+ * offene Seite sofort, die anderen im Leerlauf (`vorbauen`) und spätestens,
+ * wenn sie in Sicht kommen (`seiteKommt`). Was keinen Leisten-Knopf hat (die
+ * Partie), bleibt im alten Behälter `#tab-inhalt`; solange es offen ist, ist
+ * das Band verborgen und das Dokument rollt wie bis v0.160 (`html.im-band`
+ * fehlt). Ohne Band-Element (Tests, alte Proben) arbeitet diese Datei wie
+ * bis v0.160: alle Bereiche im Behälter, umgeschaltet über `hidden`.
+ *
+ * DIE LEISTE ZIEHT FRÜHER NACH (seit v0.162.0, Wahl `frueh: true` am
+ * Baustein; Nutzer 03.10.2026: „die leiste" soll nicht warten): Ist der
+ * Finger oben und hat das Band die Hälfte zur Nachbarseite überschritten,
+ * ruft der Baustein `wechseln` SOFORT — das Band rollt allein zu Ende.
+ * `TABS.wechseln(id, { vomBand: true })` setzt dann gleich Tab und Leiste,
+ * tut aber nichts, was das Rollen stört: kein Rollen, kein Umbau der Seite,
+ * auf der das Band gerade ankommt. `beimOeffnen` (zeichnet die Seite frisch:
+ * Sammlung neu aufgebaut, Turm-Karte, 3D-Standbild) läuft erst, wenn das
+ * Band dort eingerastet ist (`band.ort()`), also zum selben Zeitpunkt wie
+ * bis v0.161 — siehe `_oeffnenNachEinrasten`.
  *
  * DIE LEISTE IST DER GEMEINSAME BAUSTEIN (seit v0.145.0, UPCrew-Angleichung
  * Runde 4, css\upcrew-leiste.css aus Design\3D-Schrift\final, in Typoluck
@@ -54,6 +89,20 @@ const TABS = {
     inhaltEl: null,
     aufgebaut: {},
 
+    /* Das Seiten-Band (seit v0.161.0, siehe Kopf): der Behälter aus
+       index.html, der Griff des Bausteins (`UPCREW_WISCHEN.an`, setzt
+       app.js), die Seiten je Tab und die Leisten-Seite, auf der das Band
+       steht (null = verborgen, die Partie ist offen). `beiHaupt(element)`
+       meldet app.js, WAS gerade zu sehen ist — der Inhalt der offenen
+       Leisten-Seite oder der alte Behälter mit der Partie; das ist es, was
+       hinter einem Blatt zurückrückt (Blatt-Baustein, `haupt`). */
+    bandEl: null,
+    band: null,
+    offeneSeite: null,
+    beiHaupt: null,
+    _seiten: {},
+    _bandSicht: null,
+
     /*
      * ALTE TAB-KENNUNGEN FÜHREN WEITER (seit v0.145.0): Die Tabs
      * „Fähigkeiten" und „Anpassen" sind im Tab „Sammlung" aufgegangen. Wer
@@ -73,10 +122,14 @@ const TABS = {
        ersten). Tabs mit `inLeiste: false` bekommen keinen Knopf — sie sind
        nur über TABS.wechseln erreichbar (seit v0.9.0: Team Schach über den
        Spielen-Knopf, die Einstellungen über das Zahnrad). */
-    starten(leisteEl, inhaltEl, startId) {
+    starten(leisteEl, inhaltEl, startId, bandEl) {
         TABS.leisteEl = leisteEl;
         TABS.inhaltEl = inhaltEl;
         TABS.leisteEl.innerHTML = "";
+        TABS.bandEl = bandEl || null;
+        if (TABS.bandEl) {
+            TABS._bandAnlegen();
+        }
 
         for (const tab of TABS.liste) {
             if (tab.inLeiste === false) {
@@ -90,6 +143,220 @@ const TABS = {
                 && TABS.liste.some((eintrag) => eintrag.id === startId);
             TABS.wechseln(start ? startId : TABS.liste[0].id);
         }
+    },
+
+    /* ---------------------------------------------------------------- *
+     * Das Seiten-Band (seit v0.161.0)
+     * ---------------------------------------------------------------- */
+
+    /* Steht dieser Tab als Seite im Band? Nur mit Band-Element, nur
+       Leisten-Tabs, kein Platzhalter (der bleibt still und ohne Seite). */
+    _imBand(tab) {
+        return !!TABS.bandEl && !!tab && tab.inLeiste !== false && !tab.platzhalter;
+    },
+
+    /* Die Leisten-Reihenfolge für den Baustein: Platzhalter als still. */
+    bandTabs() {
+        return TABS.liste.filter((tab) => tab.inLeiste !== false)
+            .map((tab) => (tab.platzhalter ? { id: tab.id, still: true } : tab.id));
+    },
+
+    /* Ist das Band gerade zu sehen (eine Leisten-Seite offen, nicht die
+       Partie)? */
+    bandSichtbar() {
+        return TABS._bandSicht === true;
+    },
+
+    /* Legt für jeden Leisten-Tab die leere Seite an — alle sofort, in
+       Leisten-Reihenfolge. Gefüllt werden sie später (`_seiteBauen`). */
+    _bandAnlegen() {
+        TABS.bandEl.innerHTML = "";
+        TABS.bandEl.classList.add("up-band");
+        TABS._seiten = {};
+        for (const tab of TABS.liste) {
+            if (!TABS._imBand(tab)) {
+                continue;
+            }
+            const seite = document.createElement("div");
+            seite.className = "up-band-seite band-seite";
+            seite.dataset.upSeite = tab.id;
+            /* Der Innenabstand (Kopf oben, Leiste unten) sitzt am Kind, nicht
+               an der rollenden Seite: Klebendes (`position: sticky`) zählt
+               so weiter ab der Fensterkante — wie bis v0.160, als das
+               Dokument rollte und `.tab-inhalt` den Abstand trug. */
+            const innen = document.createElement("div");
+            innen.className = "tab-inhalt band-inhalt";
+            const bereich = document.createElement("section");
+            bereich.className = "tab-bereich";
+            bereich.dataset.tabId = tab.id;
+            innen.appendChild(bereich);
+            seite.appendChild(innen);
+            TABS.bandEl.appendChild(seite);
+            TABS._seiten[tab.id] = { seite: seite, innen: innen, bereich: bereich };
+        }
+    },
+
+    /* Baut das Gerüst einer Band-Seite, falls es noch fehlt. `vorab` = die
+       Seite ist (noch) nicht offen: Sie wird einmal gefüllt
+       (`tab.vorzeichnen`), damit sie beim Wischen zu sehen ist. */
+    _seiteBauen(tab, vorab) {
+        const eintrag = TABS._seiten[tab.id];
+        if (!eintrag || TABS.aufgebaut[tab.id]) {
+            return false;
+        }
+        TABS.aufgebaut[tab.id] = true;
+        tab.aufbauen(eintrag.bereich);
+        if (vorab && typeof tab.vorzeichnen === "function") {
+            tab.vorzeichnen();
+        }
+        return true;
+    },
+
+    /* Rückruf `kommt(id)` des Bausteins: Die Seite kommt gleich in Sicht. */
+    seiteKommt(id) {
+        const tab = TABS.liste.find((eintrag) => eintrag.id === id);
+        if (tab && TABS._imBand(tab)) {
+            TABS._seiteBauen(tab, true);
+        }
+    },
+
+    _imLeerlauf(aufgabe) {
+        if (typeof requestIdleCallback === "function") {
+            requestIdleCallback(aufgabe, { timeout: 1500 });
+        } else {
+            setTimeout(aufgabe, 200);
+        }
+    },
+
+    /* Baut die übrigen Band-Seiten im Leerlauf, eine je Atempause, die
+       Nachbarn der offenen Seite zuerst. app.js ruft es nach der Anmeldung
+       (vorher steht nicht fest, für wen gezeichnet wird). */
+    _vorbauLaeuft: false,
+
+    vorbauen() {
+        if (!TABS.bandEl || TABS._vorbauLaeuft) {
+            return;
+        }
+        const reihe = TABS.liste.filter((tab) => TABS._imBand(tab));
+        const mitte = Math.max(0, reihe.findIndex((tab) => tab.id === (TABS.offeneSeite || "start")));
+        const offen = reihe.filter((tab) => !TABS.aufgebaut[tab.id])
+            .sort((a, b) => Math.abs(reihe.indexOf(a) - mitte) - Math.abs(reihe.indexOf(b) - mitte));
+        if (offen.length === 0) {
+            return;
+        }
+        TABS._vorbauLaeuft = true;
+        const weiter = () => {
+            const tab = offen.shift();
+            if (!tab) {
+                TABS._vorbauLaeuft = false;
+                return;
+            }
+            TABS._imLeerlauf(() => {
+                try {
+                    TABS._seiteBauen(tab, true);
+                } finally {
+                    weiter();
+                }
+            });
+        };
+        weiter();
+    },
+
+    /* Band oder Partie: Genau eines von beiden ist zu sehen. Mit dem Band
+       steht das Dokument fest (`html.im-band`, css\stil.css), jede Seite
+       rollt für sich; in der Partie rollt das Dokument wie bis v0.160. */
+    _sichtSetzen(imBand) {
+        if (!TABS.bandEl || TABS._bandSicht === imBand) {
+            return;
+        }
+        TABS._bandSicht = imBand;
+        TABS.bandEl.hidden = !imBand;
+        TABS.inhaltEl.hidden = imBand;
+        if (typeof document !== "undefined" && document.documentElement
+                && document.documentElement.classList) {
+            document.documentElement.classList.toggle("im-band", imBand);
+        }
+    },
+
+    /* Was hinter einem Blatt zurückrückt: der Inhalt der offenen Seite
+       (`.band-inhalt` — dasselbe Stück wie bis v0.160 der Behälter
+       `.tab-inhalt`) oder, in der Partie, der alte Behälter. NICHT das Band
+       selbst: Der Baustein upcrew-blatt.js verkleinert sein `haupt`
+       (`transform: scale`), und das Band misst seine Breite am Bildschirm —
+       ein verkleinertes Band verrechnete sich um 6 % (im Browser gemessen:
+       es galt nicht mehr als eingerastet). */
+    _hauptMelden() {
+        if (typeof TABS.beiHaupt !== "function") {
+            return;
+        }
+        const eintrag = TABS.offeneSeite ? TABS._seiten[TABS.offeneSeite] : null;
+        TABS.beiHaupt(eintrag ? eintrag.innen : TABS.inhaltEl);
+    },
+
+    /* Das Band zur Seite rollen — sanft beim Tipp, ohne Weg, wenn das Band
+       gerade erst wieder erscheint (zurück aus der Partie). Steht es schon
+       dort (der Wechsel kam vom Band selbst), geschieht nichts. */
+    _bandZu(id, sofort) {
+        if (TABS.band && typeof TABS.band.zu === "function") {
+            TABS.band.zu(id, sofort ? { sofort: true } : undefined);
+        }
+    },
+
+    /* Die Sperre des Bandes hat sich geändert (Partie, Fenster, Anmeldung):
+       sofort gelten lassen, nicht erst bei der nächsten Berührung. */
+    bandAuffrischen() {
+        if (TABS.band && typeof TABS.band.auffrischen === "function") {
+            TABS.band.auffrischen();
+        }
+    },
+
+    /* Zeigt den Bereich eines Seiten-Tabs. Leisten-Tab mit Band: Das Band
+       erscheint, die Seite wird gebaut, falls sie es noch nicht ist —
+       umgeschaltet wird nichts, alle Seiten bleiben stehen. Sonst (Partie,
+       oder ganz ohne Band) wie bis v0.160 über `hidden`. Liefert, ob das
+       Band dabei erst wieder erschienen ist. */
+    _bereichZeigen(tab) {
+        const id = tab.id;
+        if (TABS._imBand(tab)) {
+            const erschienen = TABS._bandSicht !== true;
+            TABS._sichtSetzen(true);
+            TABS.offeneSeite = id;
+            TABS._hauptMelden();
+            TABS._seiteBauen(tab, false);
+            return erschienen;
+        }
+        TABS._sichtSetzen(false);
+        TABS.offeneSeite = null;
+        TABS._hauptMelden();
+
+        for (const bereich of TABS.inhaltEl.querySelectorAll(".tab-bereich")) {
+            const zeigen = bereich.dataset.tabId === id;
+
+            /* Der neu sichtbare Bereich blendet kurz ein (seit v0.107): Die
+               Klasse wird entfernt und frisch gesetzt, damit die Animation
+               bei JEDEM Wechsel spielt, nicht nur beim ersten. Für
+               Leisten-Seiten im Band entfällt das (seit v0.161.0): Die Seite
+               ist schon da, wenn sie hereinrollt. */
+            if (zeigen && bereich.hidden && bereich.classList) {
+                bereich.classList.remove("tab-bereich-zeigt");
+                void bereich.offsetWidth;
+                bereich.classList.add("tab-bereich-zeigt");
+            }
+
+            bereich.hidden = !zeigen;
+        }
+
+        /* Das Gerüst wird beim ersten Öffnen einmal aufgebaut. */
+        if (!TABS.aufgebaut[id]) {
+            const bereich = document.createElement("section");
+            bereich.className = "tab-bereich tab-bereich-zeigt";
+            bereich.dataset.tabId = id;
+            TABS.inhaltEl.appendChild(bereich);
+            tab.aufbauen(bereich);
+            TABS.aufgebaut[id] = true;
+            bereich.hidden = false;
+        }
+        return false;
     },
 
     /*
@@ -175,10 +442,15 @@ const TABS = {
             return;
         }
 
+        /* Partie und Fenster sperren das Band (seit v0.161.0, `erlaubt`
+           in app.js) — wo sich das ändert, gilt die Sperre sofort. */
+        let sperreNeu = false;
+
         const sollSpielt = (spielt === true);
         if (TABS._spielt !== sollSpielt) {
             TABS._spielt = sollSpielt;
             document.body.classList.toggle("partie-spielt", sollSpielt);
+            sperreNeu = true;
         }
 
         /* Vor dem Ausstieg unten: Auch wenn sich am „offen" nichts ändert,
@@ -190,11 +462,14 @@ const TABS = {
         }
 
         const soll = (offen === true);
-        if (TABS._rundeOffen === soll) {
-            return;
+        if (TABS._rundeOffen !== soll) {
+            TABS._rundeOffen = soll;
+            document.body.classList.toggle("runde-offen", soll);
+            sperreNeu = true;
         }
-        TABS._rundeOffen = soll;
-        document.body.classList.toggle("runde-offen", soll);
+        if (sperreNeu) {
+            TABS.bandAuffrischen();
+        }
     },
 
     /* ---------------------------------------------------------------- *
@@ -355,27 +630,66 @@ const TABS = {
     _seiteZeigen(tab) {
         const id = tab.id;
         TABS.aktiveId = id;
-        for (const bereich of TABS.inhaltEl.querySelectorAll(".tab-bereich")) {
-            const zeigen = bereich.dataset.tabId === id;
-            if (zeigen && bereich.hidden && bereich.classList) {
-                bereich.classList.remove("tab-bereich-zeigt");
-                void bereich.offsetWidth;
-                bereich.classList.add("tab-bereich-zeigt");
-            }
-            bereich.hidden = !zeigen;
-        }
-        if (!TABS.aufgebaut[id]) {
-            const bereich = document.createElement("section");
-            bereich.className = "tab-bereich tab-bereich-zeigt";
-            bereich.dataset.tabId = id;
-            TABS.inhaltEl.appendChild(bereich);
-            tab.aufbauen(bereich);
-            TABS.aufgebaut[id] = true;
-            bereich.hidden = false;
-        }
+        TABS._oeffnenMarke++;
+        TABS._bereichZeigen(tab);
         if (typeof tab.beimOeffnen === "function") {
             tab.beimOeffnen();
         }
+        /* Hinter einem Blatt steht die Seite sofort da, ohne Weg. */
+        if (TABS._imBand(tab)) {
+            TABS._bandZu(id, true);
+        }
+    },
+
+    /* ---------------------------------------------------------------- *
+     * Die Leiste zieht früher nach (seit v0.162.0, siehe Kopf)
+     * ---------------------------------------------------------------- */
+
+    /* Zählt jeden Wechsel auf eine Seite. Ein aufgeschobenes Öffnen gilt
+       nur, solange kein neuerer Wechsel kam. */
+    _oeffnenMarke: 0,
+
+    /* So lange wartet ein aufgeschobenes Öffnen höchstens auf das
+       Einrasten (das Band rastet sonst in rund 0,3 s ein). Danach öffnet
+       die Seite trotzdem — sie ist laut Leiste die offene. */
+    OEFFNEN_WARTEN_MS: 3000,
+
+    /* Kam der Wechsel vom Band, BEVOR es auf der Seite eingerastet ist
+       (Baustein-Wahl `frueh`)? Ein Tipp auf die Leiste und der Wechsel
+       nach dem Einrasten sind es nicht. */
+    _bandRolltNoch(id, optionen) {
+        return !!(optionen && optionen.vomBand) && !!TABS.band
+            && typeof TABS.band.ort === "function" && TABS.band.ort() !== id;
+    },
+
+    _naechstesBild(aufgabe) {
+        if (typeof requestAnimationFrame === "function") {
+            requestAnimationFrame(aufgabe);
+        } else {
+            setTimeout(aufgabe, 50);
+        }
+    },
+
+    /* `beimOeffnen` der Seite, sobald das Band auf ihr eingerastet ist
+       (`band.ort()`), geprüft je Bild. Überholt (ein neuerer Wechsel, die
+       Partie, zurückgezogen auf die alte Seite) verfällt es still. */
+    _oeffnenNachEinrasten(tab) {
+        const marke = TABS._oeffnenMarke;
+        const beginn = Date.now();
+        const pruefen = () => {
+            if (marke !== TABS._oeffnenMarke || TABS.offeneSeite !== tab.id) {
+                return;
+            }
+            const rollt = !!TABS.band && typeof TABS.band.ort === "function" && TABS.band.ort() !== tab.id;
+            if (rollt && Date.now() - beginn < TABS.OEFFNEN_WARTEN_MS) {
+                TABS._naechstesBild(pruefen);
+                return;
+            }
+            if (typeof tab.beimOeffnen === "function") {
+                tab.beimOeffnen();
+            }
+        };
+        TABS._naechstesBild(pruefen);
     },
 
     wechseln(gewuenscht, optionen) {
@@ -407,14 +721,17 @@ const TABS = {
             }
         }
 
-        /* Der bisherige Tab räumt auf, wenn er es will (seit v0.144.0; der
-           Tab „Sammlung" baut seinen Baustein ab). */
+        /* Der bisherige Tab räumt auf, wenn er es will (seit v0.144.0). Eine
+           Leisten-Seite darf sich dabei NICHT abbauen (seit v0.161.0): Sie
+           bleibt im Band stehen und ist beim Wischen als Nachbar zu sehen —
+           die Sammlung hat ihr `beimVerlassen` deshalb verloren. */
         const vorher = TABS.liste.find((eintrag) => eintrag.id === TABS.aktiveId);
         if (vorher && vorher.id !== id && typeof vorher.beimVerlassen === "function") {
             vorher.beimVerlassen();
         }
 
         TABS.aktiveId = id;
+        TABS._oeffnenMarke++;
 
         /* Beim Wechsel ist erst einmal keine Partie im Bild (seit v0.151.3):
            die Leiste kommt zurück; eine offene Partie setzt es beim
@@ -442,43 +759,40 @@ const TABS = {
             }
         }
 
-        for (const bereich of TABS.inhaltEl.querySelectorAll(".tab-bereich")) {
-            const zeigen = bereich.dataset.tabId === id;
-
-            /* Der neu sichtbare Bereich blendet kurz ein (seit v0.107): Die
-               Klasse wird entfernt und frisch gesetzt, damit die Animation
-               bei JEDEM Wechsel spielt, nicht nur beim ersten. */
-            if (zeigen && bereich.hidden && bereich.classList) {
-                bereich.classList.remove("tab-bereich-zeigt");
-                void bereich.offsetWidth;
-                bereich.classList.add("tab-bereich-zeigt");
-            }
-
-            bereich.hidden = !zeigen;
-        }
-
-        /* Das Gerüst wird beim ersten Öffnen einmal aufgebaut. */
-        if (!TABS.aufgebaut[id]) {
-            const bereich = document.createElement("section");
-            bereich.className = "tab-bereich tab-bereich-zeigt";
-            bereich.dataset.tabId = id;
-            TABS.inhaltEl.appendChild(bereich);
-            tab.aufbauen(bereich);
-            TABS.aufgebaut[id] = true;
-            bereich.hidden = false;
-        }
+        /* Band-Seite: Das Band erscheint (falls die Partie offen war), die
+           Seite wird gebaut, falls sie noch fehlt. Sonst wie bis v0.160. */
+        const erschienen = TABS._bereichZeigen(tab);
 
         /* Danach zeichnet der Tab seinen aktuellen Stand — jedes Mal, nicht nur
-           beim ersten Öffnen. Siehe Erklärung im Kopf dieser Datei. */
-        if (typeof tab.beimOeffnen === "function") {
+           beim ersten Öffnen. Siehe Erklärung im Kopf dieser Datei. Im Band
+           läuft das NACH dem Einrasten — Teures rechnet so nur auf der
+           eingerasteten Seite. Seit v0.162.0 kommt der Wechsel vom Band
+           schon, sobald das losgelassene Band die Hälfte überschritten hat
+           (`frueh`): Tab und Leiste stehen dann sofort (oben gesetzt), das
+           Zeichnen wartet auf das Einrasten — ein Umbau der Seite, auf der
+           das Band gerade ankommt, störte das Rollen sichtbar. */
+        const rolltNoch = TABS._imBand(tab) && TABS._bandRolltNoch(id, optionen);
+        if (rolltNoch) {
+            TABS._oeffnenNachEinrasten(tab);
+        } else if (typeof tab.beimOeffnen === "function") {
             tab.beimOeffnen();
         }
 
-        /* Eine Leisten-Seite beginnt oben (seit v0.156.1, wie Typoluck
-           navigation.js) — sonst stünde sie auf der Rollhöhe der vorigen. */
-        if (tab.inLeiste !== false && typeof window !== "undefined"
-                && typeof window.scrollTo === "function") {
-            window.scrollTo(0, 0);
+        /* Eine Leisten-Seite beginnt oben (seit v0.156.1). Bis v0.160 rollte
+           dafür das Fenster nach oben; seit v0.161.0 rollt jede Seite für
+           sich: Verlassene Seiten setzt der Baustein nach oben, die offene
+           (erneut angetippt oder zurück aus der Partie) diese Zeile — nicht,
+           solange das Band noch auf die Seite zurollt (sie steht dann schon
+           oben, und mitten im Rollen wird nichts gerollt). Am
+           Ende IMMER `band.zu(id)` — ob der Wechsel vom Tipp oder vom Band
+           kam; steht das Band schon dort oder rollt es von selbst hin,
+           geschieht nichts. */
+        if (TABS._imBand(tab)) {
+            const eintrag = TABS._seiten[id];
+            if (!rolltNoch && eintrag && eintrag.seite.scrollTop) {
+                eintrag.seite.scrollTop = 0;
+            }
+            TABS._bandZu(id, erschienen);
         }
     }
 };

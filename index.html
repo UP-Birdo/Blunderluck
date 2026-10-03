@@ -150,13 +150,18 @@
          eigenen Stil. Die Knopf-Familie K1–K6 (upcrew-knoepfe.css) lädt
          über upcrew-schicht.css in eine eigene Ebene — warum, steht dort. -->
     <link rel="stylesheet" href="css/upcrew-schicht.css">
+    <!-- Der Platz einer Grafik (seit v0.162.0, UPCrew Runde 8): jede
+         sichtbare Grafik der Sammlung ist ein benannter, austauschbarer
+         Platz. Gemeinsamer Baustein, VOR upcrew-anpassen.css. -->
+    <link rel="stylesheet" href="css/upcrew-platz.css">
     <link rel="stylesheet" href="css/upcrew-anpassen.css">
     <!-- Das Gerüst der Sammlung (seit v0.151.11): gemeinsamer Baustein,
          gleich in Typoluck, NACH upcrew-anpassen.css. -->
     <link rel="stylesheet" href="css/upcrew-sammlung.css">
     <!-- Die fünf Abzeichen (seit v0.151.12): gemeinsamer Baustein. -->
     <link rel="stylesheet" href="css/upcrew-abzeichen.css">
-    <!-- Tabs wechseln durch Wischen (seit v0.151.14): gemeinsamer Baustein. -->
+    <!-- Tabs wechseln durch Wischen (seit v0.151.14, seit v0.161.0 als
+         Seiten-Band): gemeinsamer Baustein. -->
     <link rel="stylesheet" href="css/upcrew-wischen.css">
     <!-- Die Serien-Flamme im Kurzprofil (seit v0.151.18): gemeinsamer Baustein. -->
     <link rel="stylesheet" href="css/upcrew-flamme.css">
@@ -200,7 +205,14 @@
          v0.145.0), gefüllt von js/tabs.js. -->
     <nav class="tab-leiste up-leiste" id="tab-leiste" aria-label="Bereiche"></nav>
 
+    <!-- Hier steht, was KEINEN Leisten-Knopf hat: die Partie (js/tabs.js). -->
     <main class="tab-inhalt" id="tab-inhalt"></main>
+
+    <!-- Das Seiten-Band (seit v0.161.0, Baustein js/upcrew-wischen.js +
+         css/upcrew-wischen.css): die Seiten der Leisten-Tabs nebeneinander,
+         der Browser rollt und rastet ein. Die Seiten legt js/tabs.js an
+         (`TABS._bandAnlegen`); wo das Band steht, sagt css/stil.css. -->
+    <div class="up-band seiten-band" id="seiten-band"></div>
 
     <!-- Die Blätter und Karten (js/upcrew-blatt.js, seit v0.156.0): über dem
          Start, unter der Leiste; die Karten über allem ausser Dialogen. -->
@@ -336,6 +348,11 @@
          „Anpassen" und die Blunderluck-Sammlung darum (Regale Brett,
          Brett-Thema, Figuren; Fähigkeiten und Brettformen). Ersetzt die
          Tabs „Fähigkeiten" (v0.9.0) und „Anpassen" (v0.144.0). -->
+    <!-- Seit v0.162.0 (Sammlung Variante A): die EINE Liste aller
+         Sammel-Stücke und der Platz einer Grafik — gemeinsame Bausteine,
+         beide VOR upcrew-anpassen.js und upcrew-sammlung.js. -->
+    <script src="js/upcrew-katalog.js"></script>
+    <script src="js/upcrew-platz.js"></script>
     <script src="js/upcrew-anpassen.js"></script>
     <script src="js/upcrew-abzeichen.js"></script>
     <!-- Die Abzeichen der einzelnen Spiele als Daten (seit v0.156.0) — eine

@@ -248,8 +248,11 @@ pruefe("aussehen-konto.js (v0.159.0): fehlt der Merker am Konto, EINMAL je Seite
     mit.K.vomKonto();
     gleich(mit.zahl(), 0, "mit Merker: nichts");
 });
+/* Seit v0.162.0 ohne upcrew-anpassen.js: Der Baustein ist jetzt die Variante A aus der Quelle
+   (Apps\UPCrew\bausteine, byte-gleich: test-bausteine-quelle.js). docs\bausteine\upcrew-anpassen.js ist der
+   längst übernommene Vorschlag vom Stand bis v0.161.0 und bleibt als Verlauf liegen (docs\bausteine\LIESMICH.txt). */
 pruefe("Vorschläge an final liegen bei, byte-gleich mit dem, was Blunderluck nutzt", () => {
-    for (const name of ["upcrew-aussehen.js", "upcrew-anpassen.js"]) {
+    for (const name of ["upcrew-aussehen.js"]) {
         gleich(lesen("docs/bausteine/" + name), lesen("js/" + name), name);
     }
 });

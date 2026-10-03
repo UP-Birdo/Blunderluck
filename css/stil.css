@@ -443,6 +443,9 @@ select {
 }
 
 .hinweis {
+    /* Über dem Seiten-Band (seit v0.161.0), das fest über dem Fenster liegt. */
+    position: relative;
+    z-index: var(--ebene-schwebend);
     margin: 0;
     padding: 12px var(--abstand);
     background: var(--warnung-flaeche);
@@ -579,6 +582,70 @@ select {
     padding-bottom: calc(var(--leiste-hoehe) + 16px + env(safe-area-inset-bottom, 0px));
     max-width: 820px;
     margin: 0 auto;
+}
+
+/* ------------------------------------------------------------------ *
+ * DAS SEITEN-BAND (seit v0.161.0, UPCrew Runde 8; Baustein
+ * css\upcrew-wischen.css + js\upcrew-wischen.js, Gerüst in js\tabs.js)
+ *
+ * Die Seiten der Leisten-Tabs liegen nebeneinander in EINEM Behälter, den
+ * der Browser waagrecht rollt und einrastet. Der Baustein sagt, WIE das Band
+ * rollt; hier steht nur, WO es steht und was Blunderluck drum herum braucht:
+ *
+ *   - Das Band liegt fest über dem ganzen Fenster, unter Leiste, Decke und
+ *     Blättern (eigene Ebene durch `position: fixed`, ohne z-index).
+ *   - Solange es zu sehen ist (`html.im-band`, setzt `TABS._sichtSetzen`),
+ *     rollt das DOKUMENT nicht mehr — jede Seite rollt für sich. In der
+ *     Partie (Band verborgen) rollt das Dokument wie bis v0.160.
+ *   - Der Innenabstand für Kopf und Leiste sitzt an `.band-inhalt` (trägt
+ *     auch `.tab-inhalt`, also dieselben Werte wie bisher, samt der
+ *     Handy-Regel in css\stil-start.css) — NICHT an der rollenden Seite.
+ *     So zählt alles Klebende (`position: sticky`: Kopf der Sammlung, des
+ *     Shops, der Aufgaben; Vorschau; Balken „Zurück · Übernehmen") weiter
+ *     ab der Fensterkante, genau wie zu der Zeit, als das Dokument rollte.
+ * ------------------------------------------------------------------ */
+
+html.im-band,
+html.im-band body {
+    height: 100%;
+    overflow: hidden;
+}
+
+/* Am Rechner hält sonst <html> auf beiden Seiten Platz für den Rollbalken
+   frei (siehe oben, `scrollbar-gutter`). Mit dem Band rollt die SEITE — den
+   Platz hält deshalb sie frei (unten), nicht mehr das Dokument: Der Inhalt
+   bleibt so breit und so mittig wie bisher, der Balken sitzt am Fensterrand. */
+html.im-band {
+    scrollbar-gutter: auto;
+}
+
+.seiten-band {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: auto;
+    height: auto;
+}
+
+/* Der Baustein gibt dem Band `display: flex` — das schlüge das [hidden] des
+   Browsers (dieselbe Falle wie `.tab-bereich[hidden]` weiter unten). */
+.seiten-band[hidden] {
+    display: none;
+}
+
+/* KEIN eigener Grund an der Seite: Hinter einem Blatt dunkelt der Baustein
+   das Band ab (`up-bl-dahinter`, Filter) — mit deckender Fläche würde die
+   ganze Seite dunkel statt nur ihr Inhalt (am Foto gemessen). */
+.band-seite {
+    scrollbar-gutter: stable both-edges;
+}
+
+/* Der alte Behälter trägt nur noch die Partie; verborgen bleibt er es auch
+   dort, wo eine Regel ihm ein `display` gibt (`body.partie-fest`). */
+.tab-inhalt[hidden] {
+    display: none;
 }
 
 /*
@@ -934,13 +1001,6 @@ body.design-3d .heute-bild .vorschau {
     display: none;
 }
 
-/* Wischen (seit v0.151.14, css\upcrew-wischen.css): während einer Runde
-   gibt es kein Wischen — dort behält der Inhalt alle Gesten. */
-body.partie-spielt .tab-inhalt.up-wischen,
-body.runde-offen .tab-inhalt.up-wischen {
-    touch-action: auto;
-}
-
 :root {
     /* Das Gold der Abzeichen-Punkte (seit v0.151.12, css\upcrew-abzeichen.css)
        — wie Typoluck, hell und dunkel gleich. */
@@ -963,13 +1023,30 @@ body.runde-offen .tab-inhalt.up-wischen {
    `_vorschau`): so gross, dass sie mit Kopf und Knöpfen in die feste
    Höhe der Vorschau passt (280 px im Baustein). */
 .sammlung-buehne {
+    --sammlung-buehne-breite: 150px;
     align-self: center;
-    width: 150px;
+    width: var(--sammlung-buehne-breite);
     flex: none;
 }
 
 .sammlung-buehne .vorschau {
-    font-size: calc(150px / var(--vorschau-spalten, 8) * 0.8);
+    font-size: calc(var(--sammlung-buehne-breite) / var(--vorschau-spalten, 8) * 0.8);
+}
+
+/* Die KOMPAKTE Vorschau im Blatt einer Kategorie (seit v0.162.0, Sammlung
+   Variante A): so breit wie das gezeichnete Brett des Bausteins dort
+   (`.upa-kompakt .upa-schach`, 124 px) — darunter müssen die Stücke und
+   der Balken Platz haben. Auf einem niedrigen Bildschirm noch kleiner,
+   damit zwischen Vorschau und Balken eine Reihe Stücke ganz zu sehen ist
+   (angesehen bei 360 × 640). */
+.upa-kompakt .sammlung-buehne {
+    --sammlung-buehne-breite: 124px;
+}
+
+@media (max-height: 700px) {
+    .upa-kompakt .sammlung-buehne {
+        --sammlung-buehne-breite: 96px;
+    }
 }
 
 /* Im Kleinen frisst der Abstand von 4 px zwischen den Steinen (3D-Look,

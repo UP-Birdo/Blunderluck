@@ -290,6 +290,11 @@ const ANMELDUNG = {
         }
         ANMELDUNG.anmeldenLaeuft = true;
         ANMELDUNG.wurzelEl.hidden = false;
+        /* Die Anmeldung sperrt das Seiten-Band (seit v0.161.0, `erlaubt`
+           in app.js) — sofort, nicht erst bei der nächsten Berührung. */
+        if (typeof TABS !== "undefined" && typeof TABS.bandAuffrischen === "function") {
+            TABS.bandAuffrischen();
+        }
         if (KONTO.aktiv()) {
             ANMELDUNG._kontoStartZeigen(vorname);
         } else {
@@ -303,6 +308,9 @@ const ANMELDUNG = {
         if (ANMELDUNG.wurzelEl) {
             ANMELDUNG.wurzelEl.hidden = true;
             ANMELDUNG.wurzelEl.innerHTML = "";
+        }
+        if (typeof TABS !== "undefined" && typeof TABS.bandAuffrischen === "function") {
+            TABS.bandAuffrischen();
         }
         ANMELDUNG._anzeigenAuffrischen();
         ANMELDUNG._angemeldetMelden();
