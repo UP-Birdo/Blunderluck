@@ -66,8 +66,12 @@ const EINSTELLUNGEN = {
     aufbauen(behaelter) {
         EINSTELLUNGEN.wurzelEl = behaelter;
         EINSTELLUNGEN._zeichnen();
-        /* Die Lampe folgt auch dem Netz (seit v0.157.0): offline sofort rot. */
-        if (typeof window !== "undefined" && typeof window.addEventListener === "function") {
+        /* Die Lampe folgt auch dem Netz — seit v0.167.0 über den Baustein
+           js\upcrew-offline.js (`UPCREW_OFFLINE.lampe`, in `_ueberAbschnitt`):
+           grau „Offline · später", erst nach 1,2 s ohne Netz, wie das Zeichen
+           am Profilbild. Ohne Baustein wie bis v0.166.4 sofort. */
+        if (typeof UPCREW_OFFLINE === "undefined"
+                && typeof window !== "undefined" && typeof window.addEventListener === "function") {
             window.addEventListener("online", () => EINSTELLUNGEN.statusAktualisieren());
             window.addEventListener("offline", () => EINSTELLUNGEN.statusAktualisieren());
         }
@@ -87,12 +91,19 @@ const EINSTELLUNGEN = {
         EINSTELLUNGEN._zeichnen();
     },
 
+    /* Beim Schliessen (seit v0.167.1) die Lampe beim Offline-Hinweis
+       abmelden — sie hängt nicht mehr im Bild. */
+    beimVerlassen() {
+        EINSTELLUNGEN._lampeLoesen();
+    },
+
     _zeichnen() {
         const wurzel = EINSTELLUNGEN.wurzelEl;
         if (!wurzel) {
             return;
         }
         wurzel.innerHTML = "";
+        EINSTELLUNGEN._lampeLoesen();
         EINSTELLUNGEN.lampeEl = null;
 
         /* Als Blatt (seit v0.156.0) trägt das Blatt Titel und Zurück; als
@@ -324,19 +335,42 @@ const EINSTELLUNGEN = {
 
     lampeEl: null,
 
+    /* Die Löse-Funktion aus `UPCREW_OFFLINE.lampe` (seit v0.167.1,
+       EINBAU-OFFLINE.md): beim Neuzeichnen und Schliessen gerufen, damit
+       nach mehrmaligem Öffnen nur die aktuelle Lampe angemeldet ist. */
+    _lampeLoeser: null,
+
+    _lampeLoesen() {
+        const loesen = EINSTELLUNGEN._lampeLoeser;
+        EINSTELLUNGEN._lampeLoeser = null;
+        if (typeof loesen === "function") {
+            loesen();
+        }
+    },
+
     /* APP.status (laedt, bereit, schreibt, fehler) → Lampe. Ohne Netz ist
-       es immer rot, auch wenn der letzte Abgleich noch „bereit" meldete. */
+       sie grau „Offline · später" (seit v0.167.0, Baustein; bis v0.166.4
+       rot), auch wenn der letzte Abgleich noch „bereit" meldete. Ein
+       Fehlschlag MIT Netz heisst „wartet": Die Änderung bleibt offen und wird
+       wiederholt (js\abgleich.js) — ohne Netz übernimmt der Offline-Hinweis. */
     lampeZustand(status, online) {
-        if (online === false || status === "fehler") {
+        if (online === false) {
             return "offline";
         }
         return status === "bereit" ? "gespeichert" : "wartet";
     },
 
+    /* „Ohne Netz" heisst seit v0.167.0: der Offline-Hinweis steht (nach
+       1,2 s, `UPCREW_OFFLINE.sichtbar`) — sonst wie bisher das Gerät. */
     _lampeJetzt() {
         const stand = (typeof APP !== "undefined" && APP.status) ? APP.status : "laedt";
-        const online = (typeof navigator !== "undefined" && typeof navigator.onLine === "boolean")
-            ? navigator.onLine : true;
+        let online;
+        if (typeof UPCREW_OFFLINE !== "undefined" && typeof UPCREW_OFFLINE.sichtbar === "function") {
+            online = !UPCREW_OFFLINE.sichtbar();
+        } else {
+            online = (typeof navigator !== "undefined" && typeof navigator.onLine === "boolean")
+                ? navigator.onLine : true;
+        }
         return EINSTELLUNGEN.lampeZustand(stand, online);
     },
 
@@ -345,6 +379,10 @@ const EINSTELLUNGEN = {
             typeof KONFIG !== "undefined" ? KONFIG.APP_VERSION : "");
         const speicher = UPCREW_EINSTELLUNGEN.speicherZeile(EINSTELLUNGEN._lampeJetzt());
         EINSTELLUNGEN.lampeEl = speicher.lampe;
+        if (typeof UPCREW_OFFLINE !== "undefined" && speicher.lampe) {
+            EINSTELLUNGEN._lampeLoesen();
+            EINSTELLUNGEN._lampeLoeser = UPCREW_OFFLINE.lampe(speicher.lampe);
+        }
         return { art: "ueber", zeilen: [
             { zeichen: "info", titel: "Über Blunderluck", unter: "von UPCrew", rechts: version },
             speicher

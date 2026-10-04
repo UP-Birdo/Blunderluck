@@ -425,7 +425,7 @@ body.dialog-offen {
 /* ------------------------------------------------------------------ *
  * DER UPCREW-LOOK DES ANFANGS (seit v0.138.0, Nutzer-Ansage 25.09.2026:
  * „das UPCrew-Menü am Anfang, das minimalistische Design — beide Apps
- * gleich"). Vorlage ist Typoluck (Apps\Typoluck\css\stil.css, Abschnitte
+ * gleich"). Vorlage ist Typoluck (dort `stil.css`, Abschnitte
  * „Das UPCrew-Intro" und „Anmeldung"): Intro mit dem Studio-Zeichen (seit
  * v0.140.3 der gemeinsame Baustein css\upcrew-intro.css), dann eine
  * schlichte Karte mit der Marke UPCREW und Tasten-Knöpfen (Farben seit
@@ -518,7 +518,7 @@ body.dialog-offen {
 
 /* Das UPCrew-Intro steht seit v0.140.3 NICHT mehr hier, sondern im
    gemeinsamen Baustein css\upcrew-intro.css (Klassen mit „upi-", kopiert
-   aus Design\3D-Schrift\final, hier nie abwandeln). Von diesem Stil liest
+   aus der UPCrew, hier nie abwandeln). Von diesem Stil liest
    er nur --ebene-intro (oben). */
 
 /* ------------------------------------------------------------------ *
@@ -967,7 +967,7 @@ body.dialog-offen {
 
 /* ------------------------------------------------------------------ *
  * DER TURM (seit v0.160.0 ein echter Turm, js\start-turm.js; Vorlage der
- * abgenommene Entwurf Design\3D-Schrift\entwuerfe\Oberflaeche-Runde-7\,
+ * abgenommene Entwurf „Oberfläche Runde 7",
  * turm.css): Vorschau auf dem Start, groß im Vollbild. Die Kamera
  * verschiebt `.turm-welt`, der Himmel fährt langsamer mit (Tiefe). Jeder
  * Ort hat eine eigene Farbe (`--turm-farbe`); Turm, Stationen, Himmel und

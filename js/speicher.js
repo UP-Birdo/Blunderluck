@@ -196,9 +196,13 @@ class SpeicherGemeinsam {
                antwortet mit Fehler" — und der Unterschied gehört in die
                Meldung, sonst sucht man an der falschen Stelle. */
             if (fehler && fehler.name === "AbortError") {
-                throw new Error(was + " hat zu lange gedauert (über "
+                /* Seit v0.167.1 als „TimeoutError" benannt: So erkennt
+                   UPCREW_OFFLINE.istNetzFehler das Zeitlimit als „kein Netz". */
+                const zuLang = new Error(was + " hat zu lange gedauert (über "
                     + Math.round(zeitlimit / 1000) + " s) · Verbindung "
                     + "zu schlecht");
+                zuLang.name = "TimeoutError";
+                throw zuLang;
             }
             throw fehler;
         } finally {
@@ -323,7 +327,7 @@ SpeicherGemeinsam.tokenGeber = null;
 /* ------------------------------------------------------------------ *
  * Rückwand 3: die UPCrew-Konten — seit v0.160.1 der Baustein
  * js\speicher-konten.js (Klasse `SpeicherKonten`, Quelle
- * Apps\UPCrew\bausteine\kern — hier nie ändern). Er erbt von
+ * die UPCrew-Bausteine — hier nie ändern). Er erbt von
  * `SpeicherGemeinsam` und lädt deshalb direkt NACH dieser Datei;
  * `speicherErzeugen` unten nennt ihn erst beim Aufruf.
  * ------------------------------------------------------------------ */

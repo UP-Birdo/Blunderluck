@@ -21,7 +21,7 @@
  * Was hier liegt (ein JSON unter `upcrew.aussehen`, bei GETEILT = false unter `<app>.aussehen`):
  *     darstellung  "geraet" | "hell" | "dunkel"
  *     farbwelt     "grau" | "werkstatt" | "studio" | "feld" | "tiefsee" | "gold"   (Standard seit 29.09.2026c: "grau")
- *     schrift      "S1" … "S6"   (Crew-Schnitte, docs\SCHRIFT-KNOEPFE.md)
+ *     schrift      "S1" … "S6"   (Crew-Schnitte)
  *     knoepfe      "K1" … "K6"
  *     (leseschrift — seit 29.09.2026 WEG, Nutzer: „was macht standart schrift? brauchen wir eigentlich nicht“. Ein
  *      alter Wert im Gerät oder am Konto wird still übergangen und beim nächsten Speichern nicht mehr geschrieben;
@@ -61,7 +61,7 @@
  *     UPCREW_AUSSEHEN.beobachten(() => neuZeichnen);  andere App hat umgestellt
  *     UPCREW_AUSSEHEN.setzen({ darstellung: "hell" });
  *
- * Quelle NUR hier (Design\3D-Schrift\final), verteilt mit tools\Intro-Verteilen.cmd — nie in einer App abwandeln.
+ * Gemeinsamer Baustein — nie in einer App abwandeln.
  */
 (function () {
   "use strict";

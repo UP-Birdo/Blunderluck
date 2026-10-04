@@ -524,7 +524,7 @@ select {
  * Tabs — DIE LEISTE UNTEN IST DER GEMEINSAME BAUSTEIN (seit v0.145.0)
  *
  * UPCrew-Angleichung Runde 4: Aussehen und Bewegung der Leiste stehen
- * NUR in css\upcrew-leiste.css (Kopie aus Design\3D-Schrift\final, lädt
+ * NUR in css\upcrew-leiste.css (Baustein der UPCrew, nur kopiert, lädt
  * nach diesem Stil, in Typoluck gleich): nur Symbole, der Name nur am
  * aktiven Eintrag — seit v0.151.3 eine breite Kapsel in der Hauptfarbe,
  * Symbol und Name nebeneinander (Variante C; bis v0.151.2 eine gehobene
@@ -710,7 +710,7 @@ body.partie-spielt .tab-inhalt {
 
 /* ------------------------------------------------------------------ *
  * DIE EINSTELLUNGEN IM TYPOLUCK-STIL (seit v0.143.0, js\einstellungen.js;
- * Werte aus `Apps\Typoluck\css\stil.css` und `stil-bildschirme.css`):
+ * Werte aus Typolucks `stil.css` und `stil-bildschirme.css`):
  * Zeile mit Symbol + Name links und Segment-Schalter rechts, Knöpfe
  * untereinander, Angaben als zweispaltige Liste.
  * ------------------------------------------------------------------ */

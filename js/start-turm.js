@@ -1,7 +1,7 @@
 /*
  * start-turm.js — der Turm auf dem Startbildschirm (seit v0.147.0; NEU seit
  * v0.160.0 als echter Turm mit mehreren Wegen, Vorlage: der abgenommene
- * Entwurf Design\3D-Schrift\entwuerfe\Oberflaeche-Runde-7\, `wegBauen`,
+ * Entwurf „Oberfläche Runde 7", `wegBauen`,
  * `vollbildOeffnen`, `stationAntippen`).
  *
  * ERGÄNZT das Objekt START (Object.assign) und lädt deshalb NACH start.js.

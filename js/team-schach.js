@@ -2384,7 +2384,32 @@ const TEAM_SCHACH = {
                 partie, person, "partie-code code-knopf"));
         }
 
+        /* Ganz rechts der Platz für den Offline-Hinweis (seit v0.167.0). */
+        leiste.appendChild(TEAM_SCHACH._offlinePlatzBauen());
+
         return leiste;
+    },
+
+    /*
+     * DER OFFLINE-HINWEIS IM SPIEL (seit v0.167.0, Baustein
+     * js\upcrew-offline.js, Variante A): rechts in der Leiste über dem Brett,
+     * nie über dem Feld. Ein fester schmaler Platz (`.partie-offline`), damit
+     * nichts springt, wenn das Zeichen kommt. Die Leiste baut sich bei jedem
+     * Zeichnen neu — der alte Griff wird gelöst, der neue angeheftet; steht
+     * gerade „offline", zeigt der Baustein das Zeichen gleich still mit.
+     */
+    _offlineGriff: null,
+
+    _offlinePlatzBauen() {
+        const platz = TEAM_SCHACH._element("span", "partie-offline");
+        if (TEAM_SCHACH._offlineGriff) {
+            TEAM_SCHACH._offlineGriff.aus();
+            TEAM_SCHACH._offlineGriff = null;
+        }
+        if (typeof UPCREW_OFFLINE !== "undefined") {
+            TEAM_SCHACH._offlineGriff = UPCREW_OFFLINE.an(platz, { ecke: "rechts" });
+        }
+        return platz;
     },
 
     /* ---------------------------------------------------------------- *

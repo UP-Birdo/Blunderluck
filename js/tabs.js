@@ -59,7 +59,7 @@
  * bis v0.161 — siehe `_oeffnenNachEinrasten`.
  *
  * DIE LEISTE IST DER GEMEINSAME BAUSTEIN (seit v0.145.0, UPCrew-Angleichung
- * Runde 4, css\upcrew-leiste.css aus Design\3D-Schrift\final, in Typoluck
+ * Runde 4, css\upcrew-leiste.css aus der UPCrew, in Typoluck
  * gleich). Nutzer 27.09.2026: „keine Schrift bis auf den Tab, wo man
  * derzeit ist, und das Symbol nach vorne gehoben". Je Eintrag ein
  * `button.up-tab` mit Symbol und Namen; der Name ist nur am aktiven Eintrag

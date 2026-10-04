@@ -19,7 +19,7 @@ class Abgleich {
      * speicher     — Rückwand aus speicher.js
      * einstellung  — KONFIG.speicher
      * rueckrufe    — {
-     *                    beiDaten(daten), beiStatus(status, text),
+     *                    beiDaten(daten), beiStatus(status, text, technik, fehler),
      *                    leereDaten(), inhaltGleich(a, b),
      *                    zusammenfuehren(fremd, eigen, eigeneId)   // optional
      *                }
@@ -38,6 +38,12 @@ class Abgleich {
         this.leereDaten = rueckrufe.leereDaten;
         this.inhaltGleich = rueckrufe.inhaltGleich;
         this.zusammenfuehren = rueckrufe.zusammenfuehren || null;
+
+        /* BESTÄTIGT GESCHRIEBEN (seit v0.167.0, optional): gerufen, sobald
+           der Server ein Schreiben mit „ok" beantwortet hat — für den
+           Haken des Offline-Hinweises (`UPCREW_OFFLINE.hochgeladen`). Nie
+           vorher, nie beim blossen `online`-Ereignis. */
+        this.beiGeschrieben = rueckrufe.beiGeschrieben || null;
 
         /*
          * EIN EIGENER LADEWEG (seit v0.114.3, optional). Wer ihn mitgibt,
@@ -246,7 +252,7 @@ class Abgleich {
             this.melden("bereit", this.speicher.beschreibung);
             geladen = true;
         } catch (fehler) {
-            this.melden("fehler", "Kein Netz", fehler.message);
+            this.melden("fehler", "Kein Netz", fehler.message, fehler);
         }
 
         if (this.speicher.art === "gemeinsam") {
@@ -413,12 +419,15 @@ class Abgleich {
             this.schreibFehlschlaege = 0;
             this.beiDaten(this.daten);
             this.melden("bereit", this.speicher.beschreibung);
+            if (this.beiGeschrieben) {
+                this.beiGeschrieben();
+            }
         } catch (fehler) {
             /* Die Änderung bleibt offen und wird beim nächsten Versuch erneut
                geschrieben — nichts geht verloren, solange das Fenster offen ist.
                Seit v0.163.0 mit wachsender Wartezeit (`_wiederholungMs`). */
             this.schreibFehlschlaege++;
-            this.melden("fehler", "Nicht gespeichert", fehler.message);
+            this.melden("fehler", "Nicht gespeichert", fehler.message, fehler);
             this.schreibenPlanen(this._wiederholungMs());
         } finally {
             this.schreibtGerade = false;
@@ -645,13 +654,15 @@ class Abgleich {
             this.melden("bereit", this.speicher.beschreibung);
             return true;
         } catch (fehler) {
-            this.melden("fehler", "Kein Netz", fehler.message);
+            this.melden("fehler", "Kein Netz", fehler.message, fehler);
         }
     }
 
-    melden(status, text, technik) {
+    /* `fehler` (seit v0.167.1): das Fehler-Objekt selbst, nicht nur sein
+       Text — nur daran erkennt UPCREW_OFFLINE.istNetzFehler „kein Netz". */
+    melden(status, text, technik, fehler) {
         if (this.beiStatus) {
-            this.beiStatus(status, text, technik || "");
+            this.beiStatus(status, text, technik || "", fehler || null);
         }
     }
 }

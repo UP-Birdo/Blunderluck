@@ -1,6 +1,6 @@
 /*
  * upcrew-anpassen.js — der Tab „Anpassen“ (in der Sammlung), gleich in Blunderluck und Typoluck.
- * Quelle NUR hier (Apps\UPCrew\bausteine), in die Apps KOPIEREN, nie abwandeln.
+ * Gemeinsamer Baustein: in die Apps KOPIEREN, nie abwandeln.
  *
  * Nutzer, 26.09.2026: „ein Anpassungsbereich, wo die Spieler ihre Belohnungen testen und kombinieren können —
  * ein eigener Tab mit Vorschau, damit Spieler sich austoben können“ … „in beiden Apps“.

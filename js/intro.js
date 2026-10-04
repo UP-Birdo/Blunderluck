@@ -6,12 +6,11 @@
  * Ansage 25.09.2026: „beide Apps gleich").
  *
  * SEIT v0.140.3 STECKT DAS INTRO SELBST IN js\upcrew-intro.js (+ css\upcrew-
- * intro.css) — dem gemeinsamen Baustein aller UPCrew-Apps. Quelle ist
- * dev\Design\3D-Schrift\final\; dort wird er geändert und in die Apps
- * KOPIERT, hier nie abgewandelt (Schnittstelle und Regeln:
- * Design\3D-Schrift\docs\EINBAU-INTRO.md). Diese Datei sagt ihm nur, was
+ * intro.css) — dem gemeinsamen Baustein aller UPCrew-Apps. Er wird an
+ * EINER Stelle der UPCrew geändert und in die Apps KOPIERT, hier nie
+ * abgewandelt. Diese Datei sagt ihm nur, was
  * nur Blunderluck weiss: hell oder dunkel, Nummer, Name und Version der App.
- * Vorlage war Apps\Typoluck\js\intro.js (0.6.1).
+ * Vorlage war Typolucks `js\intro.js` (0.6.1).
  *
  * Die Regeln (Nutzer-Entscheidung 25.09.2026):
  *   - bei JEDEM Start (die Sperre „einmal je Besuch" ist weg);
@@ -153,17 +152,26 @@ const INTRO = {
     },
 
     /* Zeigt das Intro im Behälter und liefert ein Versprechen, das nach dem
-       Ausblenden erfüllt ist (mit { art, welt, modus } oder null). */
-    zeigen(behaelter) {
+       Ausblenden erfüllt ist (mit { art, welt, modus, wer, frist } oder null).
+       SEIT v0.167.0 (Runde 10, Teil 3): `wer` ist das Versprechen von
+       `UPCREW_WER_SPIELT.starten` (js\app.js). Das Studio-Intro verbirgt das
+       Laden: Es endet erst, wenn die Animation durch ist UND feststeht, wer
+       spielt — spätestens zur Frist des Bausteins; das letzte Bild bleibt
+       dabei stehen. Kommt kein Intro (nach dem automatischen Neuladen,
+       Werkstatt), wird höchstens 3 s auf dasselbe Ergebnis gewartet. Das
+       Glied `danach` (späteres Spiel-Intro) bleibt leer. */
+    zeigen(behaelter, wer) {
         if (!behaelter || typeof UPCREW_INTRO === "undefined" || !INTRO.faellig()) {
-            return Promise.resolve(null);
+            return (typeof UPCREW_WER_SPIELT !== "undefined" && wer)
+                ? UPCREW_WER_SPIELT.abwarten(3000).then(() => null) : Promise.resolve(null);
         }
         const fertig = UPCREW_INTRO.zeigen(behaelter, {
             modus: INTRO.modus(),
             /* Die eigene Farbwelt (seit v0.151.17; seit v0.152.4 über
                `welt`, wie Typoluck). */
             welt: INTRO.welt(),
-            app: { nr: INTRO.APP_NR, name: INTRO.APP_NAME, version: KONFIG.APP_VERSION }
+            app: { nr: INTRO.APP_NR, name: INTRO.APP_NAME, version: KONFIG.APP_VERSION },
+            werSpielt: wer || undefined
         });
         INTRO._raenderDecken(behaelter, fertig);
         return fertig;

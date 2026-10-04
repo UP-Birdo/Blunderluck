@@ -5,7 +5,7 @@
  * Nutzer 28.09.2026: „turm soll besser animiert werden wie ein richtiger
  * turm · auch mehrere pfade aber viel weniger runden bis zum boss auch elite
  * gegner und co“ · „ja seeds einbauen“. Vorlage: der abgenommene Entwurf
- * Design\3D-Schrift\entwuerfe\Oberflaeche-Runde-7\ (turm-seed.js,
+ * „Oberfläche Runde 7" (turm-seed.js,
  * TURM-TABELLE.md). Muster wie die Typoluck-Bibliothek (js\bibliothek.js).
  *
  * Die reine Tabelle und Rechnung — kein Bildschirm (js\start-turm.js), kein

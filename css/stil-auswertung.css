@@ -1105,6 +1105,22 @@
 }
 
 /*
+ * DER PLATZ DES OFFLINE-HINWEISES (seit v0.167.0, Baustein
+ * css\upcrew-offline.css, Ecke „rechts"): ganz rechts in der Leiste über dem
+ * Brett, immer gleich breit — das Zeichen kommt und geht, ohne dass etwas
+ * springt. Ohne Code (beendete Partie) schiebt er sich selbst nach rechts.
+ */
+.partie-offline {
+    flex: none;
+    align-self: stretch;
+    width: 22px;
+    margin-left: auto;
+}
+.partie-code ~ .partie-offline {
+    margin-left: 6px;
+}
+
+/*
  * IN LANGEN ANSICHTEN KLEBT DIE KOPFZEILE (seit v0.110): Bibliothek und
  * „Schach lernen" tragen diese Klasse, damit der EINE Zurück-Knopf beim
  * Rollen erreichbar bleibt — er ersetzt den schwebenden Zweitknopf von

@@ -16,7 +16,7 @@
  *   Fehler  Zeichen, ein bis zwei Wörter, Knopf „Nochmal", der genau den
  *           fehlgeschlagenen Schritt wiederholt.
  *
- * Vorbild ist Typoluck (`Apps\Typoluck\js\zustand.js`) — gleiche Namen,
+ * Vorbild ist Typoluck (dort `js\zustand.js`) — gleiche Namen,
  * gleiche Klassen, damit beide UPCrew-Spiele gleich aussehen. Blunderluck
  * hat keinen `BAUSTEINE`-Baukasten; Knöpfe und Zeichen baut diese Datei
  * deshalb selbst, mit denselben Klassen wie jeder andere Knopf der App
@@ -75,7 +75,7 @@ const ZUSTAND = {
            Absprache Runde 3, in Typoluck gleich). */
         anpassen: "M4 7 H13 M17 7 H20 M15 5 V9 M4 17 H7 M11 17 H20 M9 15 V19",
         /* Sammlung: vier Kästchen, und Bald: eine Uhr — beide gemeinsame
-           Absprache Runde 4 (Design\3D-Schrift\docs\AUFTRAEGE-RUNDE-4.md),
+           Absprache Runde 4,
            in Typoluck gleich. Seit v0.145.0. */
         sammlung: "M4 4 H10 V10 H4 Z M14 4 H20 V10 H14 Z M4 14 H10 V20 H4 Z M14 14 H20 V20 H14 Z",
         bald: "M12 7 V12 L15 14 M12 3 A9 9 0 1 0 12.01 3",

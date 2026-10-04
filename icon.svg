@@ -3,7 +3,7 @@
 
     <!--
         SEIT v0.144.1 NICHT MEHR DAS ZEICHEN DER APP. Die App zeigt die
-        gerenderten 3D-Bilder in icons\ (aus Design\3D-Schrift, docs\ICON-3D.md);
+        gerenderten 3D-Bilder in icons\ (aus der UPCrew-Marke);
         index.html und manifest.webmanifest verweisen nicht mehr hierher.
         Die Datei bleibt, weil _werkstatt-3d.html sie noch als Tab-Zeichen
         nutzt. Beschreibung des alten Zeichens:

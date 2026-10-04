@@ -1566,7 +1566,7 @@ Object.assign(TEAM_SCHACH, {
      * und `_bibliothekSchliessen` — die aufklappbare Bibliothek in vier
      * Stufen-Karten. Sie sind mit Wunsch 5 entfallen; an ihre Stelle traten
      * das Icon-Raster (v0.12.0) und die Stufen-Legende (oben). Wer sie
-     * nachlesen will, findet sie im Backup `Backup\Blunderluck\v0.15.0`.
+     * nachlesen will, findet sie im Backup v0.15.0.
      */
 
     /* ---------------------------------------------------------------- *

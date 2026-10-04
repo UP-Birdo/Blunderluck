@@ -128,7 +128,7 @@ const SPIELER = {
          * Umzug). Die Liste gehört seitdem ALLEN UPCrew-Spielen; was ein
          * anderes Spiel ergänzt, darf Blunderluck beim Zurückschreiben nicht
          * verlieren. Bis v0.136.0 fiel hier alles Unbekannte weg. Dasselbe
-         * gilt oben im Stand (Regel 1 im Kopf von Apps\Typoluck\js\spieler.js).
+         * gilt oben im Stand (Regel 1 im Kopf von Typolucks `js\spieler.js`).
          */
         for (const schluessel of Object.keys(rohdaten)) {
             if (!(schluessel in daten)) {
@@ -461,7 +461,7 @@ const SPIELER = {
     /*
      * DAS AUSSEHEN IST DIE EINE AUSNAHME VON „DER EIGENE EINTRAG GEWINNT"
      * (seit v0.144.1). Typoluck schreibt NUR das Feld
-     * `konten/<uid>/aussehen` (Apps\Typoluck\js\aussehen-abgleich.js),
+     * `konten/<uid>/aussehen` (Typolucks `js\aussehen-abgleich.js`),
      * Blunderluck immer den ganzen eigenen Eintrag. Ohne diese Ausnahme
      * überschriebe Blunderluck beim nächsten Speichern (Freunde, Abzeichen)
      * eine eben in Typoluck getroffene, NEUERE Wahl mit seiner älteren.

@@ -432,6 +432,25 @@ const START = {
      * Der alte Knopf darunter bleibt nur für die Bildschirm-Tests ohne
      * Baustein.
      */
+    /*
+     * DER OFFLINE-HINWEIS AM PROFILBILD (seit v0.167.0, Baustein
+     * js\upcrew-offline.js, Variante A): ein ruhiges Zeichen unten links am
+     * Kreis, Tipp → kleine Sprechblase. Baut sich der Kopf neu, wird der
+     * alte Griff gelöst und am neuen Kreis wieder angeheftet (EINBAU-
+     * OFFLINE.md); den Zustand hält der Baustein selbst.
+     */
+    _offlineGriff: null,
+
+    _offlineAnheften(anker) {
+        if (START._offlineGriff) {
+            START._offlineGriff.aus();
+            START._offlineGriff = null;
+        }
+        if (anker && typeof UPCREW_OFFLINE !== "undefined") {
+            START._offlineGriff = UPCREW_OFFLINE.an(anker, { ecke: "unten-links" });
+        }
+    },
+
     _kurzprofilBauen() {
         const ich = ICH.person();
         if (!ich) {
@@ -453,6 +472,7 @@ const START = {
                 ]
             });
             START._kopfFlamme = kopf.flamme;
+            START._offlineAnheften(halter.querySelector(".up-pf-kz-feld"));
             return halter;
         }
         const daten = RANGLISTE.kurzprofil(ich.id);

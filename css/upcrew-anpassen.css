@@ -1,6 +1,6 @@
 /*
  * upcrew-anpassen.css — Tab „Anpassen“ (zu upcrew-anpassen.js). Alles unter .upa, nichts Globales.
- * Quelle NUR hier (Apps\UPCrew\bausteine), in die Apps KOPIEREN, nie abwandeln. Seit Runde 8: VARIANTE A.
+ * Gemeinsamer Baustein: in die Apps KOPIEREN, nie abwandeln. Seit Runde 8: VARIANTE A.
  * NICHTS ROLLT WAAGRECHT (kein overflow-x): Kategorie-Kacheln im 2er-Raster, Stücke im Blatt im 3er-Raster.
  * Farben: Farbwelt-Variablen der App; die Vorschau trägt eigene. Braucht upcrew-platz.css.
  * --upa-oben: wie weit die klebende Vorschau oben Abstand hält (Höhe einer festen App-Kopfzeile), Standard 0.

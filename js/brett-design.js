@@ -5,7 +5,7 @@
  * Nutzer 29.09.2026: „Es soll Brett designs für das 2d brett geben sowie
  * für das 3d … das 2d brett soll nicht 3d schatten haben wie bei 3d brett
  * sondern einfach 2d felder eine 2d palette". Vorlage der Paletten:
- * Design\3D-Schrift\entwuerfe\Sammlung-Neu (`BRETT_FARBEN`).
+ * der Entwurf „Sammlung neu" (`BRETT_FARBEN`).
  *
  * Ein Design ist nur ein Farbpaar für helle und dunkle Felder. „Grau" ist
  * die Vorgabe (passend zum Grau-Start, EINBAU-2026-09-29c.md); „Farbwelt"

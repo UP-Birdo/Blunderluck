@@ -207,20 +207,12 @@ const SHOP = {
      * der Baustein beim Kauf rechnet, nicht der angezeigte. Neu zeichnen tut
      * der Baustein selbst (auch offene Blätter).
      *
-     * SEIT v0.164.1 (Prüfung Besitz + Kauf, Funde 2 und 3): Ist das Konto
-     * dieses Geräts noch nicht geladen (Start ohne Netz, die ersten
-     * Sekunden), kommt statt der Rückfrage nur die Kurzmeldung
-     * `KAUF_WARTET` — gebucht wird nichts (`BESITZ.kaufBereit`). Ein echter
-     * Gast kauft wie bisher; Anprobieren geht immer.
+     * Die Wartesperre „Kaufen geht, sobald dein Konto geladen ist" (v0.164.1
+     * bis v0.166.4) ist seit v0.167.0 weg: Ein gemerktes Konto kauft auch
+     * vor dem Laden in seinen eigenen Geräte-Eintrag (js\besitz.js).
      */
-    KAUF_WARTET: "Kaufen geht, sobald dein Konto geladen ist",
-
     async kaufenStueck(stueck, preis) {
         if (!stueck || typeof BESITZ === "undefined") {
-            return false;
-        }
-        if (typeof BESITZ.kaufBereit === "function" && !BESITZ.kaufBereit()) {
-            DIALOG.kurzmeldung(SHOP.KAUF_WARTET);
             return false;
         }
         const waehrung = UPCREW_MUENZEN.WAEHRUNG.name;
@@ -230,10 +222,7 @@ const SHOP = {
         }
         const r = BESITZ.kaufen(stueck.art, stueck.wert);
         if (!r.ok) {
-            /* „laedt": Der eigene Eintrag ist während der Rückfrage
-               verschwunden — auch dann ist nichts gebucht. */
-            DIALOG.kurzmeldung(r.grund === "laedt" ? SHOP.KAUF_WARTET
-                : (r.grund === "zuWenig" ? "Zu wenig " + waehrung : "Nicht kaufbar"));
+            DIALOG.kurzmeldung(r.grund === "zuWenig" ? "Zu wenig " + waehrung : "Nicht kaufbar");
             return false;
         }
         if (typeof FUEHLEN !== "undefined") {

@@ -1,13 +1,12 @@
 /*
  * darstellung.js — der Blunderluck-Anpasser für EIN Aussehen aller
- * UPCrew-Spiele (seit v0.144.0, UPCrew-Angleichung Runde 3,
- * Design\3D-Schrift\docs\AUFTRAEGE-RUNDE-3.md).
+ * UPCrew-Spiele (seit v0.144.0, UPCrew-Angleichung Runde 3).
  *
  * WER WAS FÜHRT:
  *
  *   Hell/Dunkel, Farbwelt, Schrift und Knöpfe stehen NUR noch im
  *   gemeinsamen Baustein js\upcrew-aussehen.js (`UPCREW_AUSSEHEN`, Kopie aus
- *   Design\3D-Schrift\final, nie abwandeln) unter `upcrew.aussehen`. Stellt
+ *   der UPCrew, nie abwandeln) unter `upcrew.aussehen`. Stellt
  *   Typoluck im selben Browser um, zieht Blunderluck sofort mit — und
  *   umgekehrt. Diese Datei schreibt nichts Eigenes mehr, sie ergänzt nur,
  *   was der Baustein nicht kennt:

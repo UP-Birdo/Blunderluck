@@ -1,7 +1,7 @@
 /*
  * fortschritt.js — XP und Level über alle UPCrew-Spiele (seit v0.146.0,
- * Runde 5, Design\3D-Schrift\docs\AUFTRAEGE-RUNDE-5.md; Regeln und Zahlen:
- * Apps\UPCrew\docs\FORTSCHRITT.md, „GÜLTIGER STAND").
+ * UPCrew-Runde 5; Regeln und Zahlen: die gemeinsame Absprache zum
+ * Fortschritt, „GÜLTIGER STAND").
  *
  * Die reine Rechnung — kein Bildschirm, kein Speicher (die stehen in
  * js\fortschritt-konto.js). Ohne Browser testbar.
@@ -20,7 +20,7 @@
  *     (Nutzer 27.09.2026, Frage 6).
  *
  * DATENVERTRAG — gemeinsam mit Typoluck (seit v0.150.0, Runde 6 Teil A,
- * Design\3D-Schrift\docs\AUFTRAEGE-RUNDE-6.md; Typoluck zieht mit 0.11.0
+ * UPCrew; Typoluck zieht mit 0.11.0
  * nach). Er steht in BEIDEN `js\fortschritt.js`-Köpfen gleich:
  *
  *     Gerät  `upcrew.fortschritt` = { "<spieler-id oder gast>": FORTSCHRITT }
@@ -105,7 +105,7 @@
  * neuere `stand` (`zusammenfuehren`). Die Summe wird nur GERECHNET.
  *
  * SEIT v0.160.1 LIEGT DER GEMEINSAME TEIL IM BAUSTEIN js\fortschritt-kern.js
- * (`FORTSCHRITT_KERN`, Quelle Apps\UPCrew\bausteine\kern — hier nie ändern;
+ * (`FORTSCHRITT_KERN`, Quelle sind die UPCrew-Bausteine — hier nie ändern;
  * lädt VOR dieser Datei). Dort stehen jetzt, Zeichen für Zeichen wie vorher
  * hier: das Zusammenführen (`zusammenfuehren`, `_zaehlerZusammen`), die Serie
  * (`serie`, `serieStand`, `rundeGestartet`, `_zaehlerAnlegen`,

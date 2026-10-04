@@ -1,6 +1,6 @@
 /*
  * sammlung.js — der Tab „Sammlung" (seit v0.145.0, UPCrew-Angleichung
- * Runde 4, Design\3D-Schrift\docs\AUFTRAEGE-RUNDE-4.md).
+ * Runde 4).
  *
  * Nutzer 27.09.2026: „Anpassen soll nicht unter einem Knopf liegen, muss
  * zusammenpassen." Deshalb sind hier ZWEI frühere Tabs aufgegangen:
@@ -18,7 +18,7 @@
  * WAS AUF DER EINEN FLÄCHE STEHT, von oben nach unten:
  *   1. die Kopfzeile wie in den anderen Tabs, rechts „NN %" gesammelt;
  *   2. der gemeinsame Baustein js\upcrew-anpassen.js (`UPCREW_ANPASSEN`,
- *      Kopie aus Apps\UPCrew\bausteine, in Typoluck gleich): die Vorschau
+ *      Kopie aus der UPCrew, in Typoluck gleich): die Vorschau
  *      klebt bündig unter der Kopfzeile, darunter die Kacheln — zuerst die
  *      EIGENEN Regale (Brett · Brett-Design 2D · Brett-Design 3D · Figuren ·
  *      Figuren-Stil 3D), dann die Arten des Katalogs (js\upcrew-katalog.js:
@@ -63,8 +63,7 @@ const SAMMLUNG = {
     zeichen: "sammlung",
 
     /* Die kleinen Bilder der Regale (echte Aufnahmen aus der Werkstatt,
-       27.09.2026, aus Design\3D-Schrift\entwuerfe\Herausforderungen\bilder
-       kopiert). */
+       27.09.2026, aus dem Entwurf „Herausforderungen" kopiert). */
     BILD_ORDNER: "img/sammlung/",
 
     /*

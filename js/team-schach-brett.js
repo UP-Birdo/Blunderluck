@@ -1782,7 +1782,7 @@ Object.assign(TEAM_SCHACH, {
      * Helligkeiten der gezeichneten Würfelflächen aus der Stufenfarbe. Mit
      * dem gerenderten Bild (Wunsch 10) steckt diese Rechnung in
      * `tools\Lootbox-Blender.py` (`ton_aendern`, derselbe Faktor 0.55 für
-     * den Beschlag). Der alte Code steht im Backup `Backup\Blunderluck\v0.20.0`.
+     * den Beschlag). Der alte Code steht im Backup v0.20.0.
      */
 
     /*

@@ -1,10 +1,10 @@
 /*
  * knoepfe.js — macht aus den Knöpfen der App UPCrew-Knöpfe (seit v0.144.0,
- * UPCrew-Angleichung Runde 3, Design\3D-Schrift\docs\AUFTRAEGE-RUNDE-3.md).
+ * UPCrew-Angleichung Runde 3).
  *
  * DIE KNOPF-FAMILIE (K1–K6) wählt der Spieler im Tab „Anpassen"; wie ein
  * Knopf dann aussieht, steht ausschließlich im gemeinsamen Baustein
- * css\upcrew-knoepfe.css (Kopie aus Design\3D-Schrift\final, nie abwandeln).
+ * css\upcrew-knoepfe.css (Kopie aus der UPCrew, nie abwandeln).
  * Ein Knopf braucht dafür:
  *
  *     class="up-kn up-haupt | up-zweit | up-gefahr"  (+ up-rund nur Symbol)

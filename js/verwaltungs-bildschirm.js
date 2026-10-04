@@ -229,7 +229,7 @@ const VERWALTUNGS_BILDSCHIRM = {
     },
 
     /*
-     * „§12 NACHZIEHEN" (seit v0.154.0, Apps\UPCrew\docs\DATENBANK-KONZEPT-12.md
+     * „§12 NACHZIEHEN" (seit v0.154.0, Datenbank-Konzept §12,
      * Phase A Punkt 4 und Phase B Schritt 2): Direkt nach dem Einspielen der
      * Regel §12 fehlen die öffentlichen Auszüge und das Anmeldeverzeichnis —
      * bis dahin stehen keine Namen in den Listen, und auf neuen Geräten geht

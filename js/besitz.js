@@ -1,7 +1,6 @@
 /*
  * besitz.js — was der Spieler im Shop GEKAUFT hat: wo es liegt und wie
- * gekauft wird (seit v0.163.0, UPCrew Runde 8, Auftrag
- * ..\UPCrew\AUFTRAG-Blunderluck-v0.163.0.md).
+ * gekauft wird (seit v0.163.0, UPCrew Runde 8).
  *
  * Die Rechnung steht im gemeinsamen Baustein js\upcrew-besitz.js
  * (`UPCREW_BESITZ`: lesen, vereinigen, Preis, Kauf, Merker „Kauf offen") —
@@ -39,8 +38,8 @@
  * unter „gast" liegen — wie der Fortschritt.
  *
  * DER KAUF (`kaufen`, Reihenfolge aus dem Kopf von js\upcrew-besitz.js):
- *   0. seit v0.164.1: nur, wenn feststeht, wem er gehört (`kaufBereit` —
- *      ein gemerktes Konto, das noch nicht geladen ist, kauft nicht),
+ *   (0. die Sperre `kaufBereit` von v0.164.1 ist seit v0.167.0 weg — ein
+ *      gemerktes Konto kauft in seinen eigenen Geräte-Eintrag),
  *   1. rechnen (`UPCREW_BESITZ.kaufen` — speichert nichts),
  *   2. Merker „Kauf offen" aufs Gerät (`upcrew.kaufOffen.blunderluck` =
  *      { wem: "<person>", merker: … }),
@@ -326,20 +325,16 @@ const BESITZ = {
      * ---------------------------------------------------------------- */
 
     /*
-     * DARF JETZT GEKAUFT WERDEN? (seit v0.164.1; Prüfung Besitz + Kauf vom
-     * 04.10.2026, Funde 2 und 3.) Erst, wenn feststeht, wem der Kauf gehört,
-     * und der Besitz dieses Kontos da ist — sonst läge er beim Gast (also
-     * bei der falschen Person) oder bezahlte ein Stück ein zweites Mal, das
-     * am anderen Gerät oder im anderen Spiel schon gekauft ist. Die Antwort
-     * gibt `FORTSCHRITT_KONTO.personSteht()` (dort steht, wann: ein echter
-     * Gast kauft wie bisher aufs Gerät). Bei „nein" bucht `kaufen` nichts
-     * (Grund „laedt"), der Shop zeigt eine Kurzmeldung. Anprobieren fragt
-     * hier nicht.
+     * KEINE KAUF-SPERRE MEHR (seit v0.167.0, Nutzer 04.10.2026; die Sperre
+     * `kaufBereit` gab es von v0.164.1 bis v0.166.4). Ein gemerktes Konto
+     * heisst auch vor dem Laden und ohne Netz nicht mehr „gast"
+     * (`FORTSCHRITT_KONTO._person`): Der Kauf landet im Geräte-Eintrag
+     * DIESES Kontos und geht beim nächsten Abgleich als Vereinigung ans
+     * Konto. Doppelt bezahlt wird auf diesem Gerät nicht (Merker „Kauf
+     * offen", Vereinigung). Bleibt ein Fall: ohne Netz ein Stück kaufen, das
+     * am anderen Gerät schon gekauft ist — dann zweimal bezahlt, einmal im
+     * Besitz; verloren geht nichts. Bewusst nicht gesperrt (Nutzer).
      */
-    kaufBereit() {
-        return !BESITZ._da() || typeof FORTSCHRITT_KONTO.personSteht !== "function"
-            || FORTSCHRITT_KONTO.personSteht();
-    },
 
     /*
      * Ein Stück kaufen — ohne Rückfrage (die stellt js\shop.js). Liefert
@@ -350,12 +345,6 @@ const BESITZ = {
     kaufen(art, wert, datum) {
         if (!BESITZ._da()) {
             return { ok: false, grund: "unbekannt", preis: 0, fehlt: 0, neu: [] };
-        }
-        /* Seit v0.164.1: Solange nicht feststeht, wem der Kauf gehört (das
-           Konto ist gemerkt, aber noch nicht geladen), wird NICHTS gebucht —
-           kein Merker, kein Besitz, keine Zahlung (`kaufBereit`). */
-        if (!BESITZ.kaufBereit()) {
-            return { ok: false, grund: "laedt", preis: 0, fehlt: 0, neu: [] };
         }
         /* Ein früherer Kauf, der nicht zu Ende kam, wird zuerst geklärt. */
         BESITZ.offenAufloesen();

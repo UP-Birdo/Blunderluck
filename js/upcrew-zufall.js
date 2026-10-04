@@ -1,10 +1,10 @@
 /*
  * upcrew-zufall.js — Zufall mit SEED für alle UPCrew-Spiele (rein: kein Bildschirm, kein Speicher, kein Netz).
- * Quelle Design\3D-Schrift\final — in die Apps KOPIEREN, nie abwandeln (Blunderluck seit v0.160.0; Typoluck baut
+ * Gemeinsamer Baustein: in die Apps KOPIEREN, nie abwandeln (Blunderluck seit v0.160.0; Typoluck baut
  * ihn später ein, siehe EINBAU-2026-09-30.md).
  *
  * Nutzer, 28.09.2026: „evtl macht es sinn in beiden spielen seeds einzubauen“ → „ja seeds einbauen“. Entschieden
- * (UPCrew\docs\entscheidungen\entschieden.md, 28.09.2026 spät):
+ * (28.09.2026 spät):
  *   - Die SCHWIERIGKEIT kommt vom Ort bzw. Buch, die ABWECHSLUNG vom Seed.
  *   - Seed = Spieler + Turm/Buch + Durchgang. Gespeichert wird NUR die Durchgangsnummer; alles andere lässt sich
  *     jederzeit neu rechnen (jedes Gerät, jedes Mal dasselbe).
@@ -19,11 +19,11 @@
  *   hash   FNV-1a (32 Bit) über die Zeichen des Seed-Texts, danach durchmischt (murmur3-Finalizer), damit ähnliche
  *          Texte („…|1“, „…|2“) weit auseinanderliegende Zahlen ergeben.
  *   folge  mulberry32: aus einer 32-Bit-Zahl eine Folge von Zahlen in [0, 1) — gleich auf jedem Gerät, jedem Browser.
- *   Der Seed-Text ist sichtbar und prüfbar, z. B. „jonas#4821|turm|2|3|v1“.
+ *   Der Seed-Text ist sichtbar und prüfbar, z. B. „anna#4821|turm|2|3|v1“.
  *
  * Nutzung:
- *     const s = UPCREW_ZUFALL.spielSeed({ spieler: "jonas#4821", welt: "turm", durchgang: 3, teil: [2] });
- *               // → { text: "jonas#4821|turm|2|3|v1", zahl: 3804030671, hex: "E2BCE6CF", version: 1 }
+ *     const s = UPCREW_ZUFALL.spielSeed({ spieler: "anna#4821", welt: "turm", durchgang: 3, teil: [2] });
+ *               // → { text: "anna#4821|turm|2|3|v1", zahl: 2276217332, hex: "87AC51F4", version: 1 }
  *               //   `teil` = wahlfreie Zusätze vor dem Durchgang (z. B. der Ort im Turm, das Buch)
  *     const t = UPCREW_ZUFALL.tagesSeed("2026-09-30", "tagesbrett");   // für alle gleich
  *     const z = UPCREW_ZUFALL.folge(s);            // oder folge(zahl, version)
@@ -103,7 +103,7 @@
     }
 
     /* Spieler + Welt (Turm/Buch) + wahlfreie Zusätze + Durchgang. Der Spieler wird klein geschrieben und getrimmt,
-       damit „Jonas#4821“ und „jonas#4821 “ denselben Weg bekommen. */
+       damit „Anna#4821“ und „anna#4821 “ denselben Weg bekommen. */
     function spielSeed(angabe) {
         const a = angabe || {};
         const spieler = String(a.spieler || "gast").trim().toLowerCase();

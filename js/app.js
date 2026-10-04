@@ -373,9 +373,8 @@ const APP = {
            v0.140.0) — EIN Zuhörer für die ganze Seite, js\fuehlen.js. */
         FUEHLEN.einrichten(document);
 
-        /* Das UPCrew-Intro legt sich über alles; die App lädt darunter
-           weiter, deshalb wird NICHT darauf gewartet (wie in Typoluck). */
-        INTRO.zeigen(document.getElementById("intro"));
+        /* Das UPCrew-Intro startet seit v0.167.0 weiter unten, gleich nach
+           dem Spieler-Speicher (es braucht den frühen Abruf „wer spielt"). */
 
         /* Die Spielzeit (seit v0.155.0): gezählt, solange die Seite sichtbar
            ist (FORTSCHRITT_KONTO.spielzeitStarten). */
@@ -407,6 +406,29 @@ const APP = {
             APP.hinweisZeigen(spielerSpeicher.hinweis);
         }
 
+        /*
+         * ---- Wer spielt (seit v0.167.0, Runde 10, Teil 3) ----
+         * Nutzer 04.10.2026: „Das laden können wir ja schon beginnen beim
+         * UPcrew intro?" — und: „nur das studio intro [soll] das laden
+         * verbergen, die animation soll flüssig laufen und der letzte frame
+         * soll stehen bleiben". Im selben Takt wie bisher, gleich nach Konto
+         * und Spieler-Speicher: den EIGENEN Konto-Eintrag früh holen
+         * (`UPCREW_WER_SPIELT`, js\wer-spielt.js), mit dem Gerät vereinigen,
+         * und das Intro wartet darauf (Frist im Baustein). Das erste Laden
+         * des Abgleichs übernimmt genau diesen Abruf — kein zweiter. Der
+         * Abgleich wartet NICHT auf das Intro.
+         */
+        const wer = APP.werSpieltStarten(spielerSpeicher.speicher);
+        INTRO.zeigen(document.getElementById("intro"), wer)
+            .then(() => APP.werSpieltDa(typeof UPCREW_WER_SPIELT !== "undefined" ? UPCREW_WER_SPIELT.stand() : null));
+
+        /* Offline erspieltes hochladen (seit v0.167.0): einmal beim Start
+           vormerken — sobald der eigene Eintrag geladen ist, geht ein
+           neuerer Gerätestand ans Konto (`beiDaten` unten). */
+        if (typeof FORTSCHRITT_KONTO !== "undefined" && FORTSCHRITT_KONTO.hochladenVormerken) {
+            FORTSCHRITT_KONTO.hochladenVormerken();
+        }
+
         const spielerAbgleich = new Abgleich(spielerSpeicher.speicher, KONFIG.speicher, {
             beiDaten: (daten) => {
                 ANMELDUNG.datenAktualisiert(daten);
@@ -425,6 +447,13 @@ const APP = {
                    (Brett-Design, Figuren). */
                 if (typeof BESITZ !== "undefined") {
                     BESITZ.abgleichen();
+                }
+
+                /* Offline Erspieltes (seit v0.167.0): Ist das Hochladen
+                   vorgemerkt (Start, `online`) und der eigene Eintrag jetzt
+                   da, geht ein neuerer Gerätestand EINMAL ans Konto. */
+                if (typeof FORTSCHRITT_KONTO !== "undefined" && FORTSCHRITT_KONTO.hochladen) {
+                    FORTSCHRITT_KONTO.hochladen();
                 }
 
                 /* Seit v0.163.0 baut die Rangliste bei neuen Daten nur, wenn
@@ -462,7 +491,14 @@ const APP = {
                     TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
                 }
             },
-            beiStatus: (status, text, technik) => APP.statusZeigen(status, text, technik),
+            beiStatus: (status, text, technik, fehler) => APP.statusZeigen(status, text, technik, fehler),
+            /* Bestätigt geschrieben (seit v0.167.0): der kurze Haken des
+               Offline-Hinweises — nur, wenn vorher ein Zeichen stand. */
+            beiGeschrieben: () => {
+                if (typeof UPCREW_OFFLINE !== "undefined") {
+                    UPCREW_OFFLINE.hochgeladen();
+                }
+            },
             leereDaten: () => SPIELER.leereDaten(),
             inhaltGleich: (a, b) => SPIELER.inhaltGleich(a, b),
             zusammenfuehren: (fremd, eigen, id) => SPIELER.zusammenfuehren(fremd, eigen, id),
@@ -484,6 +520,14 @@ const APP = {
 
         ANMELDUNG.verbinden(spielerAbgleich);
         ANMELDUNG.aufbauen(document.getElementById("anmeldung"));
+
+        /* Der Offline-Hinweis horcht selbst auf online/offline (seit
+           v0.167.0); kommt das Netz zurück, wird SOFORT hochgeladen — nicht
+           erst beim nächsten geplanten Versuch (`APP.wiederOnline`). */
+        if (typeof UPCREW_OFFLINE !== "undefined") {
+            UPCREW_OFFLINE.lauschen();
+        }
+        window.addEventListener("online", () => APP.wiederOnline(spielerAbgleich));
 
         /* ---- Team Schach ---- */
         const schachSpeicher = speicherErzeugen(
@@ -680,6 +724,12 @@ const APP = {
             TABS.bandAuffrischen();
             TABS.vorbauen();
 
+            /* Ein vorgemerktes Hochladen (seit v0.167.0), falls der eigene
+               Eintrag erst mit dieser Anmeldung da ist (Passwort neu). */
+            if (typeof FORTSCHRITT_KONTO !== "undefined" && FORTSCHRITT_KONTO.hochladen) {
+                FORTSCHRITT_KONTO.hochladen();
+            }
+
             /* Erst jetzt steht fest, WESSEN beendete Partien in die Tafel
                gehören (Verlauf, Abschluss) — der Ladeweg holt sie nach
                (seit v0.114.3). Der Wiedereinstieg braucht darauf nicht zu
@@ -738,15 +788,125 @@ const APP = {
      * gerade offen sind (seit Wunsch 2). Wer sie öffnet, sieht den
      * aktuellen Stand, weil die Karte ihn beim Zeichnen abholt.
      */
-    statusZeigen(status, text, technik) {
+    statusZeigen(status, text, technik, fehler) {
         APP.status = status;
         APP.statusText = text;
         APP.statusTechnik = technik || "";
+
+        /* Der Offline-Hinweis (seit v0.167.0, EINBAU-OFFLINE.md): Scheitert
+           Laden oder Schreiben am Netz (keine Antwort, Zeitlimit — kein
+           HTTP-Status), meldet der Baustein „offline" (sichtbar erst nach
+           1,2 s); eine Antwort des Servers beweist Netz. Eine Kurzmeldung
+           „Kein Netz" gibt es nicht — die Lampe und das Zeichen genügen.
+           Seit v0.167.1 entscheidet das Fehler-Objekt (`fehler`), nicht
+           der Text: unlesbares JSON oder ein Programmfehler ist kein
+           „offline". */
+        if (typeof UPCREW_OFFLINE !== "undefined") {
+            if (status === "fehler" && APP.istNetzFehler(fehler)) {
+                UPCREW_OFFLINE.setzen(true);
+            } else if (status === "bereit"
+                    && !(typeof navigator !== "undefined" && navigator.onLine === false)) {
+                /* Meldet das Gerät selbst „offline" (lokaler Speicher sagt
+                   trotzdem „bereit"), bleibt das Zeichen. */
+                UPCREW_OFFLINE.setzen(false);
+            }
+        }
 
         if (typeof EINSTELLUNGEN !== "undefined"
                 && EINSTELLUNGEN.statusAktualisieren) {
             EINSTELLUNGEN.statusAktualisieren();
         }
+    },
+
+    /* Kein Netz = der Server hat gar nicht geantwortet (fetch scheitert,
+       Zeitlimit). Seit v0.167.1 die Regel des Bausteins
+       (`UPCREW_OFFLINE.istNetzFehler`, mit dem Fehler-Objekt): Eine Absage
+       MIT Status („HTTP 401"), unlesbares JSON und Programmfehler sind kein
+       Netzfehler. */
+    istNetzFehler(fehler) {
+        if (typeof UPCREW_OFFLINE === "undefined" || typeof UPCREW_OFFLINE.istNetzFehler !== "function") {
+            return false;
+        }
+        return UPCREW_OFFLINE.istNetzFehler(fehler);
+    },
+
+    /*
+     * WER SPIELT — DER FRÜHE ABRUF (seit v0.167.0, Baustein js\wer-spielt.js,
+     * Einbau-Anleitung der UPCrew „Intro wartet auf wer spielt"). Die Person kommt aus
+     * `FORTSCHRITT_KONTO.gemerktePerson()` — DERSELBEN Regel, nach der das
+     * Spiel Fortschritt und Besitz auf dem Gerät ablegt: die gemerkte
+     * Kennung nur bei echter Konto-Sitzung; ist der Schlüssel weg, gilt die
+     * Person als abgemeldet (Baustein: „gast", kein Abruf). Geholt wird NUR
+     * `konten/<uid>` über die Konten-Rückwand; ohne UPCrew-Konto (Werkstatt)
+     * gar nichts. Hängt der Abruf, bricht das Zeitlimit der Rückwand (8 s)
+     * ihn ab — das erste `laden()` wartet höchstens so lange.
+     */
+    werSpieltStarten(speicher) {
+        if (typeof UPCREW_WER_SPIELT === "undefined") {
+            return null;
+        }
+        const id = (typeof FORTSCHRITT_KONTO !== "undefined" && FORTSCHRITT_KONTO.gemerktePerson)
+            ? FORTSCHRITT_KONTO.gemerktePerson() : null;
+        const holen = (KONTO.aktiv() && speicher && typeof speicher._teilHolen === "function")
+            ? (uid) => speicher._teilHolen("konten/" + uid) : null;
+        return UPCREW_WER_SPIELT.starten({
+            wer: { id: id, uid: KONTO.uid(), gast: KONTO.istGastSitzung() },
+            holen: holen
+        });
+    },
+
+    /*
+     * Nach dem Intro (seit v0.167.0): Der Stand liegt schon auf dem Gerät
+     * (der Baustein hat Fortschritt und Besitz des Kontos mit dem
+     * Geräte-Eintrag vereinigt) — Kopf, Level-Ring, Münzen und Flamme
+     * zeichnen einmal neu. `e` darf null sein (abgemeldet, während geladen
+     * wurde): Auch dann wird nur neu gezeichnet; WER spielt, sagt
+     * `FORTSCHRITT_KONTO.person()` aus dem Zustand von jetzt — nie die alte
+     * Person.
+     */
+    werSpieltDa(e) {
+        if (typeof START !== "undefined") {
+            if (START.kopfAktualisieren) {
+                START.kopfAktualisieren();
+            }
+            if (START.flammeAktualisieren) {
+                START.flammeAktualisieren();
+            }
+        }
+        return e || null;
+    },
+
+    /*
+     * DAS NETZ IST ZURÜCK (seit v0.167.0; Nutzer: „beim nächsten internet
+     * kontakt sollen die spieler daten vortschrit hochgeladen werden"). Bis
+     * v0.166.4 frischte `online` nur die Lampe auf; hochgeladen wurde beim
+     * nächsten geplanten Versuch (bis 30 s) oder gar erst mit der nächsten
+     * Änderung. Jetzt EINMAL je Ereignis: eine offene Änderung sofort
+     * schreiben, den eigenen Stand frisch holen (`rueckkehr`), dann den
+     * Fortschritt (falls der Gerätestand neuer ist) und den Besitz
+     * vereinigt ans Konto — nur der eigene Eintrag, keine Schleife. Den
+     * Haken zeigt erst das bestätigte Schreiben (`beiGeschrieben`).
+     */
+    wiederOnline(abgleich) {
+        if (typeof FORTSCHRITT_KONTO !== "undefined" && FORTSCHRITT_KONTO.hochladenVormerken) {
+            FORTSCHRITT_KONTO.hochladenVormerken();
+        }
+        return Promise.resolve()
+            .then(() => abgleich.sofortSchreiben())
+            .then(() => abgleich.rueckkehr())
+            .catch(() => false)
+            .then(() => {
+                if (typeof FORTSCHRITT_KONTO !== "undefined" && FORTSCHRITT_KONTO.hochladen) {
+                    FORTSCHRITT_KONTO.hochladen();
+                }
+                if (typeof BESITZ !== "undefined" && BESITZ._eigener && BESITZ._eigener()) {
+                    BESITZ.abgleichen();
+                }
+                /* Was dabei entstand, geht gleich hinaus — nicht erst nach
+                   der Schreib-Verzögerung. */
+                return abgleich.sofortSchreiben();
+            })
+            .catch(() => false);
     },
 
     hinweisZeigen(text) {

@@ -4,7 +4,7 @@
  *
  * Nutzer 25.09.2026: Vibration „beim Tasten drücken und allem", Töne nein.
  * EIN Baustein, damit jede Stelle dasselbe Muster benutzt — dieselben
- * Muster wie in Typoluck (`Apps\Typoluck\js\fuehlen.js`), damit sich beide
+ * Muster wie in Typoluck (dort `js\fuehlen.js`), damit sich beide
  * UPCrew-Spiele gleich anfühlen:
  *
  *     FUEHLEN.tippen()   ganz kurz — jeder Knopf, jedes Feld (von selbst,

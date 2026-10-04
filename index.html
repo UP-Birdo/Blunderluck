@@ -138,9 +138,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>Blunderluck</title>
 
-    <!-- Zeichen der App (seit v0.144.1): gerenderte 3D-Bilder aus
-         Design\3D-Schrift (docs\ICON-3D.md), verteilt mit
-         tools\Icons-Verteilen.cmd — vorerst die vorläufige Fassung. NUR
+    <!-- Zeichen der App (seit v0.144.1): gerenderte 3D-Bilder aus der
+         UPCrew-Marke — vorerst die vorläufige Fassung. NUR
          PNG: das alte icon.svg (Springer) nähmen moderne Browser sonst
          vor dem PNG als Tab-Zeichen. -->
     <link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png">
@@ -176,10 +175,10 @@
     <link rel="stylesheet" href="css/stil-auswertung.css">
     <link rel="stylesheet" href="css/stil-start.css">
     <!-- Das UPCrew-Studio-Intro: gemeinsamer Baustein aller UPCrew-Apps,
-         kopiert aus Design\3D-Schrift\final (seit v0.140.3). -->
+         nur kopiert (seit v0.140.3). -->
     <link rel="stylesheet" href="css/upcrew-intro.css">
     <!-- Knöpfe und Tab „Anpassen": gemeinsame Bausteine aller UPCrew-Spiele
-         aus Design\3D-Schrift\final, nur kopiert (seit v0.144.0), NACH dem
+         der UPCrew, nur kopiert (seit v0.144.0), NACH dem
          eigenen Stil. Die Knopf-Familie K1–K6 (upcrew-knoepfe.css) lädt
          über upcrew-schicht.css in eine eigene Ebene — warum, steht dort. -->
     <link rel="stylesheet" href="css/upcrew-schicht.css">
@@ -215,6 +214,9 @@
     <link rel="stylesheet" href="css/upcrew-levelpfad.css">
     <link rel="stylesheet" href="css/upcrew-profil.css">
     <link rel="stylesheet" href="css/upcrew-einstellungen.css">
+    <!-- Der dezente Offline-Hinweis (seit v0.167.0, Variante A): Zeichen am
+         Profilbild bzw. rechts im Kopf der Partie — gemeinsamer Baustein. -->
+    <link rel="stylesheet" href="css/upcrew-offline.css">
     <link rel="stylesheet" href="css/stil-blatt.css">
 </head>
 <body>
@@ -280,12 +282,12 @@
     <script src="js/spieler.js"></script>
     <!-- XP und Level über alle UPCrew-Spiele (seit v0.146.0) — die reine
          Rechnung; spieler.js führt den Fortschritt damit zusammen. Seit
-         v0.160.1 zwei Dateien: der gemeinsame Kern (Baustein aus
-         Apps\UPCrew\bausteine\kern, nur kopiert) direkt VOR dem eigenen
+         v0.160.1 zwei Dateien: der gemeinsame Kern (Baustein der UPCrew,
+         nur kopiert) direkt VOR dem eigenen
          Teil, der sich daraus zusammensetzt. -->
     <script src="js/fortschritt-kern.js"></script>
     <script src="js/fortschritt.js"></script>
-    <!-- Zufall mit Seed (seit v0.160.0, Baustein aus Design\3D-Schrift\final):
+    <!-- Zufall mit Seed (seit v0.160.0, Baustein der UPCrew):
          der Turm rechnet seine Wege damit. -->
     <script src="js/upcrew-zufall.js"></script>
     <!-- Der Turm (seit v0.147.0, neu seit v0.160.0): Orte, Wege aus dem
@@ -298,8 +300,7 @@
          für alle UPCrew-Spiele (upcrew-aussehen.js, seit v0.144.0). So früh
          wie möglich, damit nichts in der falschen Farbe oder Schrift
          aufblitzt. Die Farbwelten brauchen die Grundfarben aus dem
-         Intro-Baustein. Die drei Bausteine aus Design\3D-Schrift\final, nur
-         kopiert. darstellung.js ist der frühe Aufruf
+         Intro-Baustein. Die drei Bausteine der UPCrew, nur kopiert. darstellung.js ist der frühe Aufruf
          `UPCREW_AUSSEHEN.anwenden()` (eingebettete Skripte verbietet die
          Sperre im Kopf) und übergibt vorher einmalig die alte Wahl. -->
     <script src="js/upcrew-intro.js"></script>
@@ -319,9 +320,13 @@
     <script src="js/verwaltung.js"></script>
     <script src="js/speicher.js"></script>
     <!-- Die Rückwand der UPCrew-Konten (seit v0.160.1 eigene Datei, Baustein
-         aus Apps\UPCrew\bausteine\kern, nur kopiert) — erbt von
+         der UPCrew, nur kopiert) — erbt von
          SpeicherGemeinsam und steht deshalb direkt NACH speicher.js. -->
     <script src="js/speicher-konten.js"></script>
+    <!-- Wer spielt (seit v0.167.0, Baustein der UPCrew, nur kopiert): holt
+         beim Intro den eigenen Konto-Eintrag früh; die Rückwand nimmt ihn
+         beim ersten Laden (kein zweiter Abruf). -->
+    <script src="js/wer-spielt.js"></script>
     <script src="js/abgleich.js"></script>
     <script src="js/dialog.js"></script>
     <!-- Blätter über dem Start (seit v0.156.0) — TABS öffnet Tabs darin. -->
@@ -394,6 +399,8 @@
          gemeinsamer Baustein, direkt NACH dem Katalog. -->
     <script src="js/upcrew-besitz.js"></script>
     <script src="js/upcrew-platz.js"></script>
+    <!-- Der dezente Offline-Hinweis (seit v0.167.0): NACH upcrew-platz.js. -->
+    <script src="js/upcrew-offline.js"></script>
     <script src="js/upcrew-anpassen.js"></script>
     <script src="js/upcrew-abzeichen.js"></script>
     <!-- Die Abzeichen der einzelnen Spiele als Daten (seit v0.156.0) — eine

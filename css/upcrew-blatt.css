@@ -1,5 +1,5 @@
 /* upcrew-blatt.css — Blätter und Karten über dem sichtbaren Hauptmenü (gehört zu js/upcrew-blatt.js).
-   Vorschlag für Design\3D-Schrift\final, entstanden in Blunderluck v0.156.0 (Entwurf Oberfläche Runde 7).
+   Entstanden in Blunderluck v0.156.0 (Entwurf Oberfläche Runde 7).
    Die App setzt: --up-bl-oben (wo das Blatt beginnt, unter dem Kopf), --up-bl-unten (Höhe der Leiste),
    --up-bl-ebene (z-index; die Leiste der App liegt darüber und bleibt bedienbar). Farben aus der Farbwelt.
 

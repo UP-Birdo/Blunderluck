@@ -29,8 +29,7 @@
  *   der Bildschirm baut sich bei jedem Abgleich (alle 3 s) neu auf, die
  *   Leinwand wird nur umgehängt. Nur was sich wirklich ändert, bewegt sich.
  *
- * DIE FORMEN kommen aus der 3D-Werkstatt (`Design\Blunderluck-3D`,
- * `tools\Modelle-Exportieren.py`) als EINE glTF-Datei ohne Material.
+ * DIE FORMEN kommen aus der 3D-Werkstatt als EINE glTF-Datei ohne Material.
  * Farben, Oberflächen und das Brett selbst entstehen hier — darum lassen sie
  * sich live umstellen (Ansicht-Knopf unten rechts auf dem Brett).
  *

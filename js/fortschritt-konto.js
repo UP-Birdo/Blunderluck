@@ -5,8 +5,8 @@
  * und WOHIN er geht — nach dem Muster von js\aussehen-konto.js:
  *
  *   Gerät   immer: `upcrew.fortschritt` im Gerätespeicher (seit v0.150.0,
- *           gemeinsamer Datenvertrag, Design\3D-Schrift\docs\
- *           AUFTRAEGE-RUNDE-6.md Teil A) — EIN Schlüssel für alle
+ *           gemeinsamer Datenvertrag, UPCrew-Runde 6
+ *           Teil A) — EIN Schlüssel für alle
  *           UPCrew-Spiele, darin je Person ein Eintrag:
  *               { "<spieler-id oder gast>": FORTSCHRITT }
  *           Beide Spiele liegen auf demselben Ursprung (up-birdo.github.io),
@@ -79,11 +79,40 @@ const FORTSCHRITT_KONTO = {
 
     /* Unter welchem Eintrag im Gerätespeicher diese Person steht: die
        Spieler-Id des eigenen Kontos (in beiden Spielen dieselbe, weil beide
-       denselben Konto-Eintrag lesen), sonst „gast". */
+       denselben Konto-Eintrag lesen), sonst „gast".
+       SEIT v0.167.0 (Runde 10, Teil 3): Ein gemerktes Konto zählt NIE mehr
+       als „gast" — auch bevor die Spielerliste geladen ist und ohne Netz
+       (`gemerktePerson`). Was so gekauft oder erspielt wird, liegt im
+       Geräte-Eintrag des Kontos und geht beim nächsten Abgleich als
+       Vereinigung ans Konto. */
     _person() {
         const eintrag = FORTSCHRITT_KONTO._eigener();
-        return (eintrag && typeof eintrag.id === "string" && eintrag.id !== "")
-            ? eintrag.id : FORTSCHRITT_KONTO.GAST;
+        if (eintrag && typeof eintrag.id === "string" && eintrag.id !== "") {
+            return eintrag.id;
+        }
+        return FORTSCHRITT_KONTO.gemerktePerson() || FORTSCHRITT_KONTO.GAST;
+    },
+
+    /*
+     * DIE GEMERKTE PERSON DIESES GERÄTS (seit v0.167.0) — EIN Verhalten für
+     * `_person()` und den frühen Abruf (`UPCREW_WER_SPIELT.starten` in
+     * js\app.js): die gemerkte Spieler-Id (`ICH.person()`), aber NUR mit
+     * echter Konto-Sitzung (`KONTO.angemeldet()`, keine Gast-Sitzung). Ist
+     * der Schlüssel weg (abgemeldet, Sitzung abgelaufen → `KONTO.abmelden`),
+     * gilt die Person als abgemeldet → null („gast"), nie die alte Person.
+     * Ohne UPCrew-Konto (`KONTO.aktiv()` aus, Werkstatt) ebenfalls null —
+     * dort gilt wie bisher nur der geladene eigene Eintrag.
+     */
+    gemerktePerson() {
+        const konto = (typeof KONTO !== "undefined") ? KONTO : null;
+        if (!konto || typeof konto.aktiv !== "function" || !konto.aktiv()
+                || typeof konto.angemeldet !== "function" || !konto.angemeldet()
+                || (typeof konto.istGastSitzung === "function" && konto.istGastSitzung())) {
+            return null;
+        }
+        const ich = (typeof ICH !== "undefined" && typeof ICH.person === "function") ? ICH.person() : null;
+        return (ich && typeof ich.id === "string" && ich.id !== "" && ich.id !== FORTSCHRITT_KONTO.GAST)
+            ? ich.id : null;
     },
 
     /* Alle Einträge unter dem gemeinsamen Schlüssel — ein Objekt, notfalls
@@ -581,44 +610,12 @@ const FORTSCHRITT_KONTO = {
      *                   Stand rechnet `UPCREW_BESITZ.kaufen` (der Zähler
      *                   `muenzenAusgegeben` im eigenen Zweig wächst um den
      *                   Preis); hier wird nichts gerechnet.
-     *   personSteht()   seit v0.164.1 (Prüfung Besitz + Kauf, Funde 2 und
-     *                   3): steht fest, WEM ein Kauf gehört? Solange die
-     *                   Spielerliste nicht geladen ist (Start ohne Netz, die
-     *                   ersten Sekunden), kennt das Gerät sein Konto nur dem
-     *                   Namen nach — `person()` heisst dann „gast", und der
-     *                   Besitz vom Konto fehlt. `person()` selbst bleibt,
-     *                   wie es ist (der Fortschritt zählt weiter wie
-     *                   bisher); nur der Stück-Kauf fragt hier vorher.
-     *                     eigener Eintrag im Stand → ja (das Konto samt
-     *                       `besitz` ist da; ein Gast-Eintrag ebenso)
-     *                     kein eigener Eintrag → nur ein echter Gast:
-     *                       niemand angemeldet und kein Konto auf dem Gerät
-     *                       gemerkt, oder die gemerkte Sitzung ist die eines
-     *                       Gasts (er bleibt „gast", vor und nach dem Laden)
-     *                     sonst → nein
+     *   (`personSteht()` von v0.164.1 bis v0.166.4 ist weg: Seit v0.167.0
+     *   heisst ein gemerktes Konto auch vor dem Laden nicht mehr „gast"
+     *   (`_person`), die Kauf-Sperre entfällt — Nutzer 04.10.2026.)
      */
     person() {
         return FORTSCHRITT_KONTO._person();
-    },
-
-    personSteht() {
-        if (typeof ANMELDUNG === "undefined" || typeof ANMELDUNG.ich !== "function") {
-            return true;
-        }
-        if (ANMELDUNG.ich()) {
-            return true;
-        }
-        if (ANMELDUNG.ichId) {
-            return false;
-        }
-        const konto = (typeof KONTO !== "undefined") ? KONTO : null;
-        if (konto && typeof konto.istGastSitzung === "function" && konto.istGastSitzung()) {
-            return true;
-        }
-        if (konto && typeof konto.angemeldet === "function" && konto.angemeldet()) {
-            return false;
-        }
-        return !(typeof ICH !== "undefined" && typeof ICH.person === "function" && ICH.person());
     },
 
     ablegen(stand) {
@@ -724,6 +721,47 @@ const FORTSCHRITT_KONTO = {
             FORTSCHRITT_KONTO.spielzeitSichern(zeit);
         }
         return gebucht;
+    },
+
+    /* ---------------------------------------------------------------- *
+     * OFFLINE ERSPIELT → HOCHLADEN (seit v0.167.0; Nutzer: „beim nächsten
+     * internet kontakt sollen die spieler daten vortschrit hochgeladen
+     * werden"). Bis v0.166.4 ging ein ohne Netz erspielter Stand erst mit
+     * der NÄCHSTEN Änderung ans Konto — nach einem Neustart also nie von
+     * selbst. Jetzt ist das Hochladen beim Start und bei jedem
+     * `online`-Ereignis VORGEMERKT (`hochladenVormerken`, js\app.js); sobald
+     * der eigene Eintrag geladen ist (`beiDaten`, oder gleich nach dem
+     * Ereignis), läuft es GENAU EINMAL: Ist der Gerätestand neuer als das
+     * Konto-Feld, geht die Vereinigung über `_ablegen` an den eigenen
+     * Eintrag — sonst wird nichts geschrieben. Keine Schleife: Der Merker
+     * ist danach weg, bis das nächste `online` kommt; ein Fehlschlag beim
+     * Schreiben wiederholt der Abgleich selbst (offene Änderung).
+     * ---------------------------------------------------------------- */
+    _hochladenFaellig: false,
+
+    hochladenVormerken() {
+        FORTSCHRITT_KONTO._hochladenFaellig = true;
+    },
+
+    /* Liefert true, wenn etwas ans Konto ging. Ohne eigenen Eintrag (noch
+       nicht geladen, Gast) bleibt der Merker stehen. */
+    hochladen() {
+        if (!FORTSCHRITT_KONTO._hochladenFaellig || !FORTSCHRITT_KONTO.AM_KONTO) {
+            return false;
+        }
+        const eintrag = FORTSCHRITT_KONTO._eigener();
+        if (!eintrag) {
+            return false;
+        }
+        FORTSCHRITT_KONTO._hochladenFaellig = false;
+        const stand = FORTSCHRITT_KONTO.lesen();
+        const konto = FORTSCHRITT.fuerKonto(eintrag.fortschritt || null);
+        const zusammen = FORTSCHRITT.fuerKonto(FORTSCHRITT.zusammenfuehren(stand, konto));
+        if (JSON.stringify(zusammen) === JSON.stringify(konto)) {
+            return false;
+        }
+        FORTSCHRITT_KONTO._ablegen(stand);
+        return true;
     },
 
     /* Den Gerätestand (mit Spielzeit) ans Konto geben — nur mit echtem
