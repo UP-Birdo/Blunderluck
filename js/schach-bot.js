@@ -654,9 +654,13 @@ const SCHACH_BOT = {
      * Der fertige Zug als neue Runde — oder null, wenn nichts geht.
      * Das ist die Schnittstelle, die der Bildschirm ruft; er stellt danach
      * nur noch zu (`TEAM_SCHACH._sendenMitPruefung`).
+     *
+     * `gerechnet` (seit v0.165.0): die Wahl, die `SCHACH_BOT.zugWaehlen` für
+     * GENAU diese Runde schon geliefert hat — im Hintergrund
+     * (js\bot-rechner.js). Fehlt sie, wird hier gerechnet wie bisher.
      */
-    ziehen(runde, zeitpunkt) {
-        const wahl = SCHACH_BOT.zugWaehlen(runde);
+    ziehen(runde, zeitpunkt, gerechnet) {
+        const wahl = gerechnet === undefined ? SCHACH_BOT.zugWaehlen(runde) : gerechnet;
         if (!wahl) {
             return null;
         }

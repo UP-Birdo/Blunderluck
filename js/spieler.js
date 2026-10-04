@@ -35,8 +35,12 @@
  *                 "fortschritt": {           // seit v0.146.0: XP je Spiel
  *                     "version": 1,          // (js\fortschritt.js, dort der
  *                     "spiele": { … }        // ganze Vertrag); fehlt bei
- *                 }                          // jedem, der noch nie spielte
- *             }
+ *                 },                         // jedem, der noch nie spielte
+ *                 "besitz": {                // seit v0.163.0: im Shop Gekauftes,
+ *                     "brett2d": "holz",     // je Art EIN Text, Werte mit "_"
+ *                     "schrift": "S3_S5"     // getrennt (js\besitz.js, Baustein
+ *                 }                          // js\upcrew-besitz.js, Regel §13);
+ *             }                              // fehlt, solange nichts gekauft ist
  *         ]
  *     }
  *
@@ -202,6 +206,14 @@ const SPIELER = {
                Werte darin prüft js\fortschritt.js — hier wandert er durch. */
             if ("fortschritt" in spieler && !SPIELER._istObjekt(spieler.fortschritt)) {
                 delete spieler.fortschritt;
+            }
+
+            /* Der Besitz aus dem Shop (seit v0.163.0, Feld `besitz/<art>`,
+               Regel §13): ebenso nur als Objekt. Die Texte darin prüft der
+               Baustein js\upcrew-besitz.js beim Lesen — hier wandert er
+               durch, samt Arten, die erst eine neuere App kennt. */
+            if ("besitz" in spieler && !SPIELER._istObjekt(spieler.besitz)) {
+                delete spieler.besitz;
             }
 
             daten.spieler.push(spieler);
@@ -430,8 +442,8 @@ const SPIELER = {
 
         for (const spieler of fremdStand.spieler) {
             if (meiner && spieler.id === eigeneId) {
-                ergebnis.spieler.push(SPIELER._fortschrittZusammen(
-                    SPIELER._neueresAussehenJe(SPIELER._neueresAussehen(meiner, spieler), spieler), spieler));
+                ergebnis.spieler.push(SPIELER._besitzZusammen(SPIELER._fortschrittZusammen(
+                    SPIELER._neueresAussehenJe(SPIELER._neueresAussehen(meiner, spieler), spieler), spieler), spieler));
                 selbstGefunden = true;
             } else {
                 ergebnis.spieler.push(spieler);
@@ -510,6 +522,29 @@ const SPIELER = {
         });
     },
 
+    /*
+     * DER BESITZ IST DIE DRITTE AUSNAHME (seit v0.163.0): Käufe wachsen nur.
+     * Typoluck schreibt `konten/<uid>/besitz/<art>` einzeln, Blunderluck den
+     * ganzen Eintrag — ohne Vereinigung löschte Blunderluck beim nächsten
+     * Speichern, was inzwischen in Typoluck (oder auf einem zweiten Gerät)
+     * gekauft wurde. Vereinigt wird mit dem Baustein js\upcrew-besitz.js
+     * (`zusammenfuehren`, `alsText`); passt ein Text danach nicht mehr in
+     * die Regel (über 2000 Zeichen), bleibt der eigene Eintrag, wie er ist.
+     * Ohne den Baustein (ältere Tests) ebenso.
+     */
+    _besitzZusammen(meiner, vomServer) {
+        if (typeof UPCREW_BESITZ === "undefined"
+                || !vomServer || !SPIELER._istObjekt(vomServer.besitz)) {
+            return meiner;
+        }
+        const zusammen = UPCREW_BESITZ.alsText(UPCREW_BESITZ.zusammenfuehren(
+            SPIELER._istObjekt(meiner.besitz) ? meiner.besitz : null, vomServer.besitz));
+        if (!zusammen.ok || Object.keys(zusammen.feld).length === 0) {
+            return meiner;
+        }
+        return Object.assign({}, meiner, { besitz: zusammen.feld });
+    },
+
     /* ---------------------------------------------------------------- *
      * Vergleich (steuert das Neuzeichnen beim gemeinsamen Speicher)
      * ---------------------------------------------------------------- */
@@ -563,6 +598,12 @@ const SPIELER = {
             /* Der Fortschritt (seit v0.146.0) — sonst stünde das Level
                eines anderen Geräts erst nach einer anderen Änderung da. */
             if (JSON.stringify(spielerA.fortschritt || null) !== JSON.stringify(spielerB.fortschritt || null)) {
+                return false;
+            }
+
+            /* Der Besitz aus dem Shop (seit v0.163.0) — sonst wäre ein Kauf
+               von einem anderen Gerät erst nach einer anderen Änderung da. */
+            if (JSON.stringify(spielerA.besitz || null) !== JSON.stringify(spielerB.besitz || null)) {
                 return false;
             }
 
@@ -695,6 +736,40 @@ const SPIELER = {
         for (const spieler of neu.spieler) {
             if (spieler.id === id) {
                 spieler.fortschritt = sauber;
+            }
+        }
+        neu.geaendertAm = (zeitpunkt === undefined) ? Date.now() : zeitpunkt;
+        return neu;
+    },
+
+    /*
+     * Den Besitz aus dem Shop am eigenen Eintrag setzen (seit v0.163.0,
+     * js\besitz.js). Übergeben wird das Konto-Feld `{ <art>: "S3_S5" }` aus
+     * `UPCREW_BESITZ.alsText(…).feld`; hier zählt nur die Form der Regel §13
+     * (Art `^[a-z][a-z0-9]{1,23}$`, Text aus `[A-Za-z0-9_-]`, höchstens 2000
+     * Zeichen, nicht leer) — alles andere fällt weg. Bleibt nichts übrig,
+     * wird das Feld nicht angelegt (ein leeres Objekt kennt Firebase nicht;
+     * der Eintrag gälte sonst bei jedem Vergleich als geändert).
+     */
+    BESITZ_ART: /^[a-z][a-z0-9]{1,23}$/,
+    BESITZ_TEXT: /^[A-Za-z0-9_-]{1,2000}$/,
+
+    besitzSetzen(daten, id, feld, zeitpunkt) {
+        const neu = SPIELER.kopieren(daten);
+        const sauber = {};
+        const roh = SPIELER._istObjekt(feld) ? feld : {};
+        for (const art of Object.keys(roh).sort()) {
+            if (SPIELER.BESITZ_ART.test(art) && typeof roh[art] === "string"
+                    && SPIELER.BESITZ_TEXT.test(roh[art])) {
+                sauber[art] = roh[art];
+            }
+        }
+        if (Object.keys(sauber).length === 0) {
+            return neu;
+        }
+        for (const spieler of neu.spieler) {
+            if (spieler.id === id) {
+                spieler.besitz = sauber;
             }
         }
         neu.geaendertAm = (zeitpunkt === undefined) ? Date.now() : zeitpunkt;

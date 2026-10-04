@@ -8,7 +8,10 @@
  *   - App gestartet und Stil da → nichts passiert;
  *   - App nicht gestartet (oder Stil fehlt) → NUR der Worker dieses Ordners
  *     wird abgemeldet, NUR blunderluck-Speicher geleert, einmal neu geladen;
- *   - innerhalb von 5 Minuten ein zweites Mal → kein Neuladen, nur ein Link.
+ *   - innerhalb von 5 Minuten ein zweites Mal → kein Neuladen, nur ein Link;
+ *   - seit v0.164.0: Solange das Dokument noch LÄDT (`document.readyState`
+ *     nicht "complete"), rettet er nicht, sondern sieht jede Sekunde wieder
+ *     nach — insgesamt höchstens 30 s, dann gilt die Rettung in jedem Fall.
  * Dazu: Die CSP erlaubt genau diesen Block über seinen Fingerabdruck, und
  * Quelltext-Prüfungen am Worker.
  *
@@ -89,6 +92,7 @@ function welt(angaben) {
         ] } },
         document: {
             documentElement: {},
+            readyState: angaben.bereit || "complete",
             body: koerper,
             getElementById: (id) => koerper.kinder.find((el) => el.id === id) || null,
             createElement: () => ({ style: {} })
@@ -102,13 +106,40 @@ function welt(angaben) {
         String: String
     };
     vm.runInNewContext(treffer[1], kontext, { filename: "index.html#notfall" });
+    let abgelaufen = 0;
+    let vergangen = 0;
+    const setzen = async () => {
+        await new Promise((fertig) => setImmediate(fertig));
+        await new Promise((fertig) => setImmediate(fertig));
+    };
     return {
-        uhren, abgemeldet, geloescht, koerper, sitzung,
+        uhren, abgemeldet, geloescht, koerper, sitzung, fenster,
+        dokument: kontext.document,
         get neuGeladen() { return neuGeladen; },
+        /* Millisekunden, die über die abgelaufenen Uhren vergangen sind. */
+        get vergangen() { return vergangen; },
+        /* Uhren, die gestellt, aber noch nicht abgelaufen sind. */
+        get offen() { return uhren.length - abgelaufen; },
+        /* Lässt GENAU die nächste gestellte Uhr ablaufen (false: keine mehr da). */
+        async schritt() {
+            if (abgelaufen >= uhren.length) {
+                return false;
+            }
+            const uhr = uhren[abgelaufen++];
+            vergangen += uhr.ms;
+            uhr.f();
+            await setzen();
+            return true;
+        },
+        /* Lässt Uhren ablaufen, bis `ms` vergangen sind oder keine mehr gestellt ist. */
+        async bis(ms) {
+            while (vergangen < ms && await this.schritt()) {
+                /* weiter */
+            }
+        },
+        /* Wie bisher: die ERSTE Uhr (10 s) läuft ab. */
         async ablaufen() {
-            uhren.forEach((uhr) => uhr.f());
-            await new Promise((fertig) => setImmediate(fertig));
-            await new Promise((fertig) => setImmediate(fertig));
+            await this.schritt();
         }
     };
 }
@@ -133,10 +164,99 @@ function welt(angaben) {
         gleich(gut.uhren.map((u) => u.ms), [10000], "wartet 10 Sekunden");
         await gut.ablaufen();
         gleich([gut.neuGeladen, gut.abgemeldet.length, gut.geloescht.length], [0, 0, 0], "nichts");
+        gleich(gut.offen, 0, "und er sieht nicht noch einmal nach");
+    });
+
+    /* ---- v0.164.0: Der Notfall-Weg bricht das erste Laden nicht mehr ab ---- */
+
+    await pruefe("Lädt noch (nicht gestartet): nach 10 s KEINE Rettung, er sieht in 1 s wieder nach", async () => {
+        for (const bereit of ["loading", "interactive"]) {
+            const laedt = welt({ gestartet: undefined, bereit: bereit });
+            await laedt.ablaufen();
+            gleich([laedt.neuGeladen, laedt.abgemeldet.length, laedt.geloescht.length], [0, 0, 0], bereit + ": nichts");
+            wahr(!laedt.sitzung.getItem("blunderluck.notfall"), bereit + ": kein Merker — die eine Rettung ist nicht verbraucht");
+            gleich(laedt.koerper.kinder.length, 0, bereit + ": kein Link");
+            gleich(laedt.uhren.map((u) => u.ms), [10000, 1000], bereit + ": nächster Blick in 1 s");
+        }
+    });
+
+    await pruefe("Lädt noch, dann fertig geladen und gestartet: nichts, keine weitere Uhr", async () => {
+        const langsam = welt({ gestartet: undefined, bereit: "loading" });
+        await langsam.bis(15000);
+        gleich(langsam.neuGeladen, 0, "bis 15 s nichts");
+        langsam.dokument.readyState = "complete";
+        langsam.fenster.BLUNDERLUCK_GESTARTET = true;
+        await langsam.schritt();
+        gleich([langsam.neuGeladen, langsam.abgemeldet.length, langsam.geloescht.length], [0, 0, 0], "nichts");
+        gleich(langsam.offen, 0, "er hört auf nachzusehen");
+        gleich(langsam.vergangen, 16000, "eine Sekunde nach dem letzten Blick");
+    });
+
+    await pruefe("Lädt noch, dann fertig geladen und NICHT gestartet: Rettung beim nächsten Blick", async () => {
+        const kaputt = welt({ gestartet: undefined, bereit: "loading" });
+        await kaputt.bis(13000);
+        gleich(kaputt.neuGeladen, 0, "solange es lädt, nichts");
+        kaputt.dokument.readyState = "complete";
+        await kaputt.schritt();
+        gleich(kaputt.neuGeladen, 1, "gerettet");
+        gleich(kaputt.vergangen, 14000, "nach 14 s, nicht erst nach 30");
+        gleich(kaputt.abgemeldet, [ORDNER], "die bisherige Rettung: nur der eigene Worker");
+        gleich(kaputt.geloescht, ["blunderluck-v0.151.4", "blunderluck-v0.151.5"], "nur die eigenen Speicher");
+        gleich(kaputt.offen, 0, "danach keine Uhr mehr");
+    });
+
+    await pruefe("Lädt und lädt: bis 29 s keine Rettung, nach 30 s in jedem Fall die bisherige", async () => {
+        const haengt = welt({ gestartet: undefined, bereit: "loading" });
+        await haengt.bis(29000);
+        gleich(haengt.vergangen, 29000, "29 s");
+        gleich(haengt.neuGeladen, 0, "bis 29 s nichts");
+        await haengt.schritt();
+        gleich(haengt.vergangen, 30000, "30 s");
+        gleich(haengt.neuGeladen, 1, "nach 30 s gerettet, obwohl es noch lädt");
+        gleich(haengt.abgemeldet, [ORDNER], "nur der eigene Worker");
+        gleich(haengt.geloescht, ["blunderluck-v0.151.4", "blunderluck-v0.151.5"], "nur die eigenen Speicher");
+        wahr(!!haengt.sitzung.getItem("blunderluck.notfall"), "Merker gesetzt");
+        gleich(haengt.offen, 0, "danach keine Uhr mehr");
+        gleich(haengt.uhren.length, 21, "eine Uhr über 10 s und zwanzig über 1 s");
+    });
+
+    await pruefe("Nach 30 s gilt auch die Grenze von 5 Minuten: beim zweiten Mal nur der Link", async () => {
+        const sitzung = sitzungAttrappe();
+        const erstes = welt({ gestartet: undefined, bereit: "loading", sitzung: sitzung });
+        await erstes.bis(30000);
+        gleich(erstes.neuGeladen, 1, "erstes Mal gerettet");
+        const zweites = welt({ gestartet: undefined, bereit: "loading", sitzung: sitzung, jetzt: 1000000 + 40000 });
+        await zweites.bis(30000);
+        gleich(zweites.neuGeladen, 0, "keine Schleife");
+        gleich(zweites.koerper.kinder.map((k) => k.textContent), ["Neu laden"], "Link");
+    });
+
+    await pruefe("Gestartet, während es noch lädt (ein Bild hängt): nichts — auch nach 30 s nicht", async () => {
+        const bildHaengt = welt({ gestartet: true, bereit: "interactive" });
+        await bildHaengt.bis(30000);
+        gleich(bildHaengt.neuGeladen, 0, "nichts");
+        gleich(bildHaengt.uhren.length, 1, "schon der erste Blick genügt");
+    });
+
+    await pruefe("Gestartet, Stil fehlt, lädt noch: wartet; fertig geladen ohne Stil: retten", async () => {
+        const ohneStil = welt({ gestartet: true, stil: false, bereit: "interactive" });
+        await ohneStil.bis(12000);
+        gleich(ohneStil.neuGeladen, 0, "solange es lädt, nichts");
+        ohneStil.dokument.readyState = "complete";
+        await ohneStil.schritt();
+        gleich(ohneStil.neuGeladen, 1, "gerettet");
+    });
+
+    await pruefe("Die Zahlen stehen im Block: 10 s, höchstens 30 s, Blick jede Sekunde, complete", () => {
+        wahr(/var WARTEN_MS = 10000;/.test(treffer[1]), "WARTEN_MS");
+        wahr(/var HOECHSTENS_MS = 30000;/.test(treffer[1]), "HOECHSTENS_MS");
+        wahr(/var SCHRITT_MS = 1000;/.test(treffer[1]), "SCHRITT_MS");
+        wahr(/document\.readyState !== "complete" && gewartet < HOECHSTENS_MS/.test(treffer[1]), "Bedingung");
+        wahr(/var SPERRE_MS = 5 \* 60 \* 1000;/.test(treffer[1]), "die Grenze von 5 Minuten bleibt");
     });
 
     let merkerSitzung = null;
-    await pruefe("Nicht gestartet: nur eigener Worker ab, nur blunderluck-Speicher leer, einmal neu laden", async () => {
+    await pruefe("Fertig geladen und nicht gestartet (nach 10 s): nur eigener Worker ab, nur blunderluck-Speicher leer, einmal neu laden", async () => {
         const kaputt = welt({ gestartet: undefined });
         await kaputt.ablaufen();
         gleich(kaputt.neuGeladen, 1, "einmal neu geladen");

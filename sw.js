@@ -29,7 +29,7 @@
  */
 
 /* Der Name des Zwischenspeichers. HIER STEHT DIE NUMMER GENAU EINMAL. */
-const SPEICHER_NAME = "blunderluck-v0.162.0";
+const SPEICHER_NAME = "blunderluck-v0.166.3";
 
 /*
  * BEIM BAUEN: NETZ ZUERST. IM BETRIEB: ZWISCHENSPEICHER ZUERST.
@@ -130,6 +130,7 @@ const DATEIEN = [
     "./js/upcrew-aussehen.js",
     "./js/darstellung.js",
     "./js/freischaltung.js",
+    "./js/brett-3d-aussehen.js",
     "./js/verwaltung.js",
     "./js/speicher.js",
     "./js/speicher-konten.js",
@@ -151,6 +152,7 @@ const DATEIEN = [
     "./js/schach-bot.js",
     "./js/wertung.js",
     "./js/wertung-rechner.js",
+    "./js/bot-rechner.js",
     "./js/aktualisieren.js",
     "./js/figuren-flach.js",
     "./js/brett-design.js",
@@ -167,6 +169,7 @@ const DATEIEN = [
     "./js/start-turm.js",
     "./js/herausforderungen.js",
     "./js/upcrew-katalog.js",
+    "./js/upcrew-besitz.js",
     "./js/upcrew-platz.js",
     "./js/upcrew-anpassen.js",
     "./js/upcrew-abzeichen.js",
@@ -177,6 +180,7 @@ const DATEIEN = [
     "./js/upcrew-serie.js",
     "./js/upcrew-muenzen.js",
     "./js/upcrew-shop.js",
+    "./js/besitz.js",
     "./js/shop.js",
     "./js/upcrew-spielerliste.js",
     "./js/upcrew-sammlung.js",
@@ -194,7 +198,12 @@ const DATEIEN = [
 
     /* Das 3D-Brett (seit v0.122.0): das Modul, three.js aus dem Projekt
        (kein fremder Server) und die Formen aus der 3D-Werkstatt. Fehlen
-       sie offline, bleibt es beim flachen Brett — kaputt ist dann nichts. */
+       sie offline, bleibt es beim flachen Brett — kaputt ist dann nichts.
+       Seit v0.164.0 dazu brett-3d-start.js (WANN das Modul startet), seit
+       v0.166.0 lädt es das Modul per import() erst bei Bedarf — vorgeladen
+       wird hier weiter alles, offline geht es also wie bisher. */
+    "./js/brett-3d-vorab.js",
+    "./js/brett-3d-start.js",
     "./js/brett-3d.js",
     "./js/lib/three/LICENSE",
     "./js/lib/three/three.module.min.js",

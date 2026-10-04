@@ -365,6 +365,11 @@ const TEAM_SCHACH = {
     botWartet: false,
     botZeitgeber: null,
 
+    /* Kennung der laufenden Zugsuche (seit v0.165.0, js\bot-rechner.js):
+       `_botAbbrechen` zählt sie hoch — eine Antwort mit alter Kennung wird
+       verworfen. `botWartet` bleibt während der Suche gesetzt. */
+    botAnfrage: 0,
+
     /*
      * DIE ZWEI KLAPPEN DER ECK-KAESTEN (seit v0.80.0, dritte Nutzer-Skizze).
      *
@@ -4530,7 +4535,6 @@ const TEAM_SCHACH = {
         TEAM_SCHACH.botWartet = true;
 
         TEAM_SCHACH.botZeitgeber = window.setTimeout(() => {
-            TEAM_SCHACH.botWartet = false;
             TEAM_SCHACH.botZeitgeber = null;
 
             /*
@@ -4540,8 +4544,10 @@ const TEAM_SCHACH = {
              */
             const jetzt = SCHACH_TAFEL.partie(TEAM_SCHACH.abgleich.daten, id);
             if (!jetzt) {
+                TEAM_SCHACH.botWartet = false;
                 return;
             }
+            /* `botWartet` bleibt bis zum Ende der Suche (seit v0.165.0). */
             TEAM_SCHACH.botZiehen(jetzt);
         }, SCHACH_BOT.BEDENKZEIT_MS);
     },
@@ -4549,13 +4555,51 @@ const TEAM_SCHACH = {
     /*
      * Den Zug des Computers rechnen und senden — über denselben Weg wie
      * jeden Menschenzug, samt Zugzähler-Prüfung.
+     *
+     * SEIT v0.165.0 RECHNET DIE SUCHE IM HINTERGRUND (js\bot-rechner.js,
+     * dieselbe `SCHACH_BOT.zugWaehlen`; ohne die Datei hier wie bisher).
+     * Die Seite bleibt bedienbar; ziehen kann der Mensch nicht, denn Bob ist
+     * am Zug. Kommt die Wahl zurück, gilt sie nur, wenn die Anfrage nicht
+     * abgebrochen wurde (`botAnfrage`) und die Partie noch GENAU so steht:
+     * Bob am Zug, gleicher Zugzähler, gleiches Brett, gleiche Lootboxen.
+     * Sonst wird sie verworfen und neu gezeichnet — das stösst Bob, falls
+     * er noch dran ist, erneut an.
      */
     async botZiehen(partie) {
         if (TEAM_SCHACH.ziehtGerade) {
+            TEAM_SCHACH.botWartet = false;
             return;
         }
 
-        const neu = SCHACH_BOT.ziehen(partie);
+        const anfrage = ++TEAM_SCHACH.botAnfrage;
+        TEAM_SCHACH.botWartet = true;
+        let wahl;
+        try {
+            wahl = (typeof BOT_RECHNER !== "undefined")
+                ? await BOT_RECHNER.zugWaehlen(partie)
+                : SCHACH_BOT.zugWaehlen(partie);
+        } finally {
+            if (anfrage === TEAM_SCHACH.botAnfrage) {
+                TEAM_SCHACH.botWartet = false;
+            }
+        }
+        if (anfrage !== TEAM_SCHACH.botAnfrage || TEAM_SCHACH.ziehtGerade) {
+            return;
+        }
+
+        const jetzt = SCHACH_TAFEL.partie(TEAM_SCHACH.abgleich.daten, partie.id);
+        const lage = (runde) => {
+            const n = SCHACH_RUNDE.normalisieren(runde);
+            return JSON.stringify([n.zugZaehler, n.stand, n.bonus]);
+        };
+        if (!jetzt || !SCHACH_BOT.istAmZug(jetzt) || lage(jetzt) !== lage(partie)) {
+            if (jetzt && TEAM_SCHACH.abgleich) {
+                TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
+            }
+            return;
+        }
+
+        const neu = SCHACH_BOT.ziehen(jetzt, undefined, wahl);
         if (!neu) {
             return;
         }
@@ -4563,7 +4607,7 @@ const TEAM_SCHACH = {
         TEAM_SCHACH.ziehtGerade = true;
 
         try {
-            await TEAM_SCHACH._sendenMitPruefung(neu, partie.zugZaehler);
+            await TEAM_SCHACH._sendenMitPruefung(neu, jetzt.zugZaehler);
         } finally {
             TEAM_SCHACH.ziehtGerade = false;
         }
@@ -4576,6 +4620,13 @@ const TEAM_SCHACH = {
      */
     _botAbbrechen() {
         TEAM_SCHACH.botWartet = false;
+        /* Eine Suche, die noch rechnet, gilt nicht mehr (seit v0.165.0) —
+           und seit v0.165.1 hört sie auch auf, damit die nächste nicht
+           hinter ihr wartet (`BOT_RECHNER.verwerfen`). */
+        TEAM_SCHACH.botAnfrage++;
+        if (typeof BOT_RECHNER !== "undefined" && BOT_RECHNER.rechnet()) {
+            BOT_RECHNER.verwerfen();
+        }
 
         if (TEAM_SCHACH.botZeitgeber !== null) {
             window.clearTimeout(TEAM_SCHACH.botZeitgeber);

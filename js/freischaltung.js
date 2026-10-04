@@ -15,7 +15,9 @@
  *   brettStueckFrei(schluessel, wert)   Brett-Thema, Figuren-Stil oder
  *                 (seit v0.159.0) Brett-Design 2D frei? Die Vorgaben immer;
  *                 die übrigen ab ihrem Ort (`TURM.FREI_AB`) bzw. Level
- *                 (`STUFE_AB`), mit Admin-Freigabe oder in der Werkstatt.
+ *                 (`STUFE_AB`), mit Admin-Freigabe oder in der Werkstatt —
+ *                 und seit v0.163.0 ODER im Shop gekauft (`gekauft`,
+ *                 js\besitz.js). Der erspielte Weg ist unverändert.
  *   werkstatt()   Werkstatt-Modus: `?werkstatt` in der Adresse, NUR auf
  *                 dem eigenen Rechner (localhost/127.0.0.1) — im Netz kann
  *                 sich so niemand alles freischalten.
@@ -91,6 +93,13 @@ const FREISCHALTUNG = {
         if (FREISCHALTUNG.werkstatt() || FREISCHALTUNG.adminAnpassung()) {
             return true;
         }
+        /* Seit v0.163.0: der heutige Weg (Level, Turm — unverändert) ODER
+           im Shop gekauft (js\besitz.js). */
+        return FREISCHALTUNG.erspielt(schluessel, wert) || FREISCHALTUNG.gekauft(schluessel, wert);
+    },
+
+    /* Der heutige Weg: Level (`STUFE_AB`) bzw. Ort im Turm (`TURM.FREI_AB`). */
+    erspielt(schluessel, wert) {
         const stufen = FREISCHALTUNG.STUFE_AB[schluessel] || {};
         if (stufen[wert]) {
             return FREISCHALTUNG.stufe() >= stufen[wert];
@@ -101,6 +110,12 @@ const FREISCHALTUNG = {
             return true;
         }
         return FREISCHALTUNG.arena() >= ab;
+    },
+
+    /* Im Shop gekauft (seit v0.163.0)? `schluessel` ist der des Regals
+       (`design2d`, `thema`, `figuren`); ohne js\besitz.js (Tests) nie. */
+    gekauft(schluessel, wert) {
+        return typeof BESITZ !== "undefined" && BESITZ.frei(schluessel, wert);
     },
 
     werkstatt() {

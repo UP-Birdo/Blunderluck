@@ -84,6 +84,22 @@ const NICHT_IN_INDEX = {
         if (sw.indexOf("\"./js/wertung-rechner.js\"") === -1) {
             throw new Error("js/wertung-rechner.js fehlt in sw.js (offline kein Rechner)");
         }
+    },
+    /* Das 3D-Modul (seit v0.166.0): `import()` aus js/brett-3d-start.js,
+       das selbst eingebunden ist; der Worker lädt es weiter vor. */
+    "brett-3d.js": () => {
+        const start = dateisystem.readFileSync(pfad.join(jsOrdner, "brett-3d-start.js"), "utf8");
+        const sw = dateisystem.readFileSync(pfad.join(projekt, "sw.js"), "utf8");
+        if (start.indexOf("new URL(\"brett-3d.js\", document.currentScript.src)") === -1
+                || !/return import\(url\);/.test(start)) {
+            throw new Error("js/brett-3d-start.js lädt js/brett-3d.js nicht per import()");
+        }
+        if (skriptQuellen.indexOf("js/brett-3d-start.js") === -1) {
+            throw new Error("js/brett-3d-start.js ist nicht eingebunden — dann lädt niemand das 3D-Modul");
+        }
+        if (sw.indexOf("\"./js/brett-3d.js\"") === -1) {
+            throw new Error("js/brett-3d.js fehlt in sw.js (offline kein 3D)");
+        }
     }
 };
 

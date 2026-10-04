@@ -477,6 +477,32 @@ und Boxen, sonst die Kachel-Ebene, und ruft `knopf.click()` auf dem
 passenden Knopf — `feldAngetippt` läuft wie immer. Gesperrte Knöpfe
 (`disabled`) klicken nicht.
 
+**Wann das Modul lädt und startet (Start seit v0.164.0, Laden seit v0.166.0,
+`js\brett-3d-start.js`).** `index.html` hat KEIN festes Modul-Skript mehr: Die
+Import-Karte steht nach `app.js`, direkt dahinter `brett-3d-start.js`, das das
+Modul per `import()` holt (Adresse neben sich selbst, gleiche Herkunft — die
+CSP bleibt unverändert, `sw.js` lädt weiter alles vor). Ist etwas anderes als
+`"2d"` gewählt (`FREISCHALTUNG.brett()`), beginnt das Laden sofort und der
+Start folgt, sobald das Modul da ist; bei gewähltem 2D laden und starten erst
+nach dem ersten Bild im Leerlauf (`requestIdleCallback`, Frist 2 s; Rückfall
+200 ms; Netz 5 s) — oder sofort, sobald ein Eingang von `BRETT_3D` es verlangt
+(`anbinden`, `wahlUebernehmen` auf 3D, `standbildMit`, `buehneMoeglich`/
+`buehne`, `falleZeigen`; `standbild` NICHT). Nichts wird weggelassen. Bis das
+Modul da ist, steht ein **Platzhalter** `window.BRETT_3D` mit denselben
+Eingängen (wie das geladene, ungestartete Modul bis v0.165.1); er merkt sich
+kleine Bretter und Vorschauen und reicht sie über das EINE Versprechen
+`BRETT_3D_START.geladen` an das Modul weiter. `aussehen`, `aussehenFrei`,
+`aussehenWaehlen` beantwortet er aus `js\brett-3d-aussehen.js` (klassisch,
+ohne three.js) — dort stehen seit v0.166.0 die Tabellen (Themen, Stile,
+Blicke in Grad, Kacheln, Tempi, Vorgabe) und Laden/Speichern/Prüfen/Wählen;
+das Modul nimmt dieselben und reicht nur `Z.einst` hinein. Scheitert das
+Laden: `BRETT_3D_AUS`, das flache Brett wird gezeigt, kein zweiter Versuch.
+Was vor dem Bereitsein gefragt hat, kommt nach: das Brett über
+`TEAM_SCHACH._brett3dLetzte`, kleine Bretter über `MINI.warte`, Vorschauen
+der Sammlung über `MINI.warteMit`. `tests\test-3d-start.js` und
+`test-3d-laden.js` wachen. Die Werkstatt-Seite lädt das Modul weiter fest
+(dazu `brett-3d-aussehen.js` davor).
+
 **Daraus folgt:** Wer eine neue Feld-Markierung baut, baut sie im 2D-Brett
 wie bisher; im 3D-Brett fehlt sie, bis `felderAbgleichen` ihr einen Auftritt
 gibt. Nichts rechnet doppelt. Die 2D-Knöpfe bleiben unsichtbar im Dokument

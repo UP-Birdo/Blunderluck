@@ -20,6 +20,12 @@ v0.28.0, Seitenwahl seit v0.29.0). Diese Datei ist am 24.08.2026 aus der
   gerechnet wird auf dem Gerät eines Mitspielers.
 - **Angestossen wird er in `TEAM_SCHACH._botAnstossen`**, am Ende jedes
   Zeichnens einer offenen Partie.
+- **Gerechnet wird seit v0.165.0 im Hintergrund** (`js\bot-rechner.js`, eigene
+  Instanz von `js\wertung-rechner.js`): dieselbe `SCHACH_BOT.zugWaehlen`,
+  hinüber geht nur die Runde, zurück nur die Wahl. Rückfall auf den
+  Haupt-Thread (kein Worker, Fehler, keine Antwort binnen 30 s ab Arbeitsbeginn). Eine Antwort
+  nach `_botAbbrechen` oder auf eine inzwischen geänderte Partie verwirft
+  `TEAM_SCHACH.botZiehen`; `_botAbbrechen` beendet die laufende Suche (`BOT_RECHNER.verwerfen`, seit v0.165.1). Gleichheit Worker/Haupt-Thread: `tests\test-bot-rechner.js`.
 - **Gesucht wird mit Negamax und Alpha-Beta.** Die vier Stufen unterscheiden
   sich in Suchtiefe, Ruhesuche und Stellungsbewertung (`SCHACH_BOT.STUFEN`);
   die Stufe der Partie steht in `regeln.botStufe`.

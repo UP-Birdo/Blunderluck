@@ -12,13 +12,18 @@
          Seit v0.138.0 (UPCrew-Umzug): die UPCrew-Datenbank, die Anmeldung bei
          Firebase (identitytoolkit, securetoken) und — nur bis sie gelöscht
          ist — die ALTE Blunderluck-Datenbank für den Konto-Umzug. -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-3IBak4uiv4l6wKD16ssX6AlPnBMuJNftin3Hcb/KpfM=' 'sha256-xyH63QqWMusWs5E91xOhHS0nV7RQQL/uhjMbCm78QC8='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' data: blob: https://upcrew-7a29d-default-rtdb.europe-west1.firebasedatabase.app https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://blunderluck-8b7f0-default-rtdb.europe-west1.firebasedatabase.app; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-3IBak4uiv4l6wKD16ssX6AlPnBMuJNftin3Hcb/KpfM=' 'sha256-oxRg/sNlGFm2CISZo9GHUark3HgJe5G+qg99yVN1778='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' data: blob: https://upcrew-7a29d-default-rtdb.europe-west1.firebasedatabase.app https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://blunderluck-8b7f0-default-rtdb.europe-west1.firebasedatabase.app; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
     <!-- DER NOTFALL-WEG (seit v0.151.5) — steht bewusst ganz oben und direkt
          in der Seite, damit er auch läuft, wenn keine einzige andere Datei
          ankommt (Typoluck hatte am 27.09.2026 am iPhone eine weisse Seite:
          kein Stil, kein Skript; docs\entscheidungen\erkenntnisse.md). Nach
          10 s prüft er: Hat js\app.js gestartet (window.BLUNDERLUCK_GESTARTET)
-         und gilt der Stil (--leiste-hoehe aus css\stil.css)? Wenn nicht:
+         und gilt der Stil (--leiste-hoehe aus css\stil.css)? Seit v0.164.0
+         rettet er erst, wenn das Dokument FERTIG geladen ist
+         (document.readyState "complete") — solange noch geladen wird (erster
+         Besuch über langsames Netz: das Laden allein dauert länger als 10 s),
+         sieht er jede Sekunde wieder nach, insgesamt höchstens 30 s; dann
+         gilt die Rettung in jedem Fall. Wenn nicht gestartet oder ohne Stil:
          EINMAL den Service Worker dieses Ordners abmelden, NUR die
          blunderluck-Zwischenspeicher leeren und neu laden. Merker in
          sessionStorage — höchstens einmal in fünf Minuten, danach nur ein
@@ -30,6 +35,8 @@
         (function () {
             var MERKER = "blunderluck.notfall";
             var WARTEN_MS = 10000;
+            var HOECHSTENS_MS = 30000;
+            var SCHRITT_MS = 1000;
             var SPERRE_MS = 5 * 60 * 1000;
 
             function stilDa() {
@@ -91,14 +98,40 @@
                 });
             }
 
-            window.BLUNDERLUCK_NOTFALL = { retten: retten, stilDa: stilDa };
-            setTimeout(function () {
-                if (window.BLUNDERLUCK_GESTARTET !== true || !stilDa()) {
-                    retten();
+            var gewartet = WARTEN_MS;
+
+            function pruefen() {
+                if (window.BLUNDERLUCK_GESTARTET === true && stilDa()) {
+                    return;
                 }
-            }, WARTEN_MS);
+                if (document.readyState !== "complete" && gewartet < HOECHSTENS_MS) {
+                    gewartet += SCHRITT_MS;
+                    setTimeout(pruefen, SCHRITT_MS);
+                    return;
+                }
+                retten();
+            }
+
+            window.BLUNDERLUCK_NOTFALL = { retten: retten, stilDa: stilDa };
+            setTimeout(pruefen, WARTEN_MS);
         })();
     </script>
+    <!-- Die Import-Karte des 3D-Bretts (seit v0.122.0; seit v0.166.1 hier
+         oben, Inhalt unverändert — die CSP erlaubt sie über ihren
+         Fingerabdruck). Sie muss vor jedem Laden eines Moduls stehen, auch
+         vor dem Vorab-Laden darunter. -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "./js/lib/three/three.module.min.js",
+                "three/addons/": "./js/lib/three/addons/"
+            }
+        }
+    </script>
+    <!-- Bei gewähltem 3D three.js und das 3D-Modul früh herunterladen
+         (seit v0.166.1; nur Download, ausgeführt wird es weiter erst von
+         js\brett-3d-start.js). async: hält den Start nicht auf. -->
+    <script async src="js/brett-3d-vorab.js"></script>
     <!-- `viewport-fit=cover` lässt die Seite bis unter den iPhone-Balken
          reichen — das Dock hält sich den Streifen selbst frei
          (`env(safe-area-inset-bottom)` in der Stildatei, seit v0.113). -->
@@ -276,6 +309,9 @@
     <!-- Was schon freigeschaltet ist, darunter 2D/3D (seit v0.144.0) —
          vor dem Partie-Bildschirm und dem 3D-Brett, die beide fragen. -->
     <script src="js/freischaltung.js"></script>
+    <!-- Was am 3D-Brett gilt, ohne three.js (seit v0.166.0): Themen, Stile,
+         Gerätespeicher — Sammlung, Shop und das 3D-Modul fragen hier. -->
+    <script src="js/brett-3d-aussehen.js"></script>
     <!-- Echtes 2D: flache Figuren, solange das Brett 2D ist (seit v0.151.3). -->
     <script src="js/figuren-flach.js"></script>
     <!-- Brett-Designs des 2D-Bretts (seit v0.159.0). -->
@@ -319,6 +355,8 @@
     <!-- Die Wertung der Turm-Partien (seit v0.148.0) rechnet mit Bobs
          Bausteinen und steht deshalb nach ihm. -->
     <script src="js/wertung.js"></script>
+    <!-- Bobs Zugsuche im Hintergrund (seit v0.165.0), Rueckfall auf SCHACH_BOT. -->
+    <script src="js/bot-rechner.js"></script>
     <!-- Die Schach-Aufgabe des Tages (seit v0.149.0). -->
     <script src="js/tagesbrett.js"></script>
     <!-- Die Bildanleitung rechnet mit den Regeln oben und muss deshalb nach
@@ -352,6 +390,9 @@
          Sammel-Stücke und der Platz einer Grafik — gemeinsame Bausteine,
          beide VOR upcrew-anpassen.js und upcrew-sammlung.js. -->
     <script src="js/upcrew-katalog.js"></script>
+    <!-- Seit v0.163.0 (Shop mit Besitz): was gekauft ist und der Kauf —
+         gemeinsamer Baustein, direkt NACH dem Katalog. -->
+    <script src="js/upcrew-besitz.js"></script>
     <script src="js/upcrew-platz.js"></script>
     <script src="js/upcrew-anpassen.js"></script>
     <script src="js/upcrew-abzeichen.js"></script>
@@ -366,6 +407,9 @@
     <script src="js/upcrew-serie.js"></script>
     <script src="js/upcrew-muenzen.js"></script>
     <script src="js/upcrew-shop.js"></script>
+    <!-- Wo der Besitz aus dem Shop liegt (seit v0.163.0): Gerät und Konto —
+         braucht upcrew-besitz.js, FORTSCHRITT_KONTO und SPIELER vor sich. -->
+    <script src="js/besitz.js"></script>
     <script src="js/shop.js"></script>
     <script src="js/upcrew-spielerliste.js"></script>
     <script src="js/upcrew-sammlung.js"></script>
@@ -390,17 +434,14 @@
 
     <!-- Das 3D-Brett (seit v0.122.0): three.js liegt als Datei im Projekt
          (js\lib\three\, MIT-Lizenz) — kein Bauschritt, kein fremder Server.
-         Es lädt als Modul NACH allem anderen und hängt sich an das fertige
-         2D-Brett; fehlt WebGL, bleibt es beim flachen Brett. -->
-    <script type="importmap">
-        {
-            "imports": {
-                "three": "./js/lib/three/three.module.min.js",
-                "three/addons/": "./js/lib/three/addons/"
-            }
-        }
-    </script>
-    <script type="module" src="js/brett-3d.js"></script>
+         Das Modul js\brett-3d.js hängt sich an das fertige 2D-Brett; fehlt
+         WebGL, bleibt es beim flachen Brett.
+         Seit v0.166.0 steht es hier NICHT mehr als festes Modul-Skript:
+         brett-3d-start.js lädt es per import() — 3D gewählt: sofort; 2D
+         gewählt: im Leerlauf nach dem ersten Bild; verlangt: sofort. Die
+         Import-Karte steht seit v0.166.1 im <head> (brett-3d-vorab.js lädt
+         bei gewähltem 3D dort schon herunter). -->
+    <script src="js/brett-3d-start.js"></script>
 
 </body>
 </html>

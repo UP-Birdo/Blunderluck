@@ -187,7 +187,9 @@ pruefe("Nie unter 0 beim Kaufen; kein Schild mehr; gleichzeitiger Kauf zweier Ge
 
 function dom() {
     const el = (tag) => ({
-        tag, kinder: [], className: "", textContent: "", attribute: {}, disabled: false, lauscher: {},
+        /* `dataset` seit v0.163.0: Der neue Shop-Baustein merkt an seinen zwei Reiter-Knöpfen, wofür sie stehen —
+           auch wenn (wie hier, ohne Katalog und Besitz) nur der Vorrat gezeichnet wird. */
+        tag, kinder: [], className: "", textContent: "", attribute: {}, dataset: {}, disabled: false, lauscher: {},
         classList: { add(k) { this._besitzer.className = (this._besitzer.className + " " + k).trim(); } },
         appendChild(k) { this.kinder.push(k); return k; }, setAttribute(n, w) { this.attribute[n] = w; },
         addEventListener(n, f) { this.lauscher[n] = f; }

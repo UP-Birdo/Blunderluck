@@ -193,8 +193,12 @@ async function geraetVonAnna(fb) {
     await w.abgleich.starten();
     const an = await w.ANMELDUNG._kontoAnmeldenVersuchen("Anna", PW_ANNA);
     wahr(an.ok, "Anna angemeldet: " + JSON.stringify(an));
-    gleich(await w.abgleich.fremdenStandHolen(), true, "erster Blick holt den Stand");
-    wahr(w.abgleich.markeGesehen !== null, "Marke gesehen");
+    /* Seit v0.163.0 merkt schon `starten()` die Marke (Befund 04.10.2026
+       Nr. 2): Der erste Blick im Takt holt den Stand nicht noch einmal —
+       Liste und eigener Eintrag kamen mit der Anmeldung
+       (`ANMELDUNG._nachAnmeldungLaden`). Bis v0.162.0 stand hier `true`. */
+    gleich(await w.abgleich.fremdenStandHolen(), undefined, "erster Blick: Marke unverändert, nichts doppelt geholt");
+    wahr(w.abgleich.markeGesehen !== null, "Marke gesehen (schon beim Start)");
     wahr(!!w.ANMELDUNG.ich(), "eigener Eintrag da");
     return w;
 }

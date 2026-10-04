@@ -418,7 +418,18 @@ const APP = {
                     AUSSEHEN_KONTO.vomKonto();
                 }
 
-                RANGLISTE.zeichnen();
+                /* Der Besitz aus dem Shop (seit v0.163.0, js\besitz.js):
+                   Gerät und Konto vereinigen — hier, wo auch der Fortschritt
+                   vom Konto ankommt (Start, Anmeldung, zurück im
+                   Vordergrund). Steht VOR allem, was „frei" fragt
+                   (Brett-Design, Figuren). */
+                if (typeof BESITZ !== "undefined") {
+                    BESITZ.abgleichen();
+                }
+
+                /* Seit v0.163.0 baut die Rangliste bei neuen Daten nur, wenn
+                   sie zu sehen ist (sonst merkt sie sich "veraltet"). */
+                RANGLISTE.datenGeaendert();
 
                 /* Die Serien-Flamme (seit v0.151.18): Der Fortschritt vom
                    Konto kommt mit dem Spieler-Stand — auf einem neuen Gerät
@@ -491,7 +502,7 @@ const APP = {
         const schachAbgleich = new Abgleich(schachSpeicher.speicher, KONFIG.speicher, {
             beiDaten: (tafel) => {
                 TEAM_SCHACH.zeichnen(tafel);
-                RANGLISTE.zeichnen();
+                RANGLISTE.datenGeaendert();
             },
             beiStatus: () => { /* Der Kopf zeigt den Stand der Spielerliste. */ },
             leereDaten: () => SCHACH_TAFEL.leereTafel(),

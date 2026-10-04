@@ -50,19 +50,18 @@ import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.j
 const MODELL_PFAD = "modelle/blunderluck-modelle.glb";
 /* Droid Sans Bold (Apache 2.0, NOTICE daneben), gekürzt auf a–p, A–P, 0–9. */
 const SCHRIFT_PFAD = "js/lib/three/addons/fonts/brett-schrift.typeface.json";
-const SPEICHER_SCHLUESSEL = "blunderluck.brett3d";
-
 /* ------------------------------------------------------------------ *
  * Die Einstellungen — alles, was der Spieler am Aussehen drehen kann.
+ *
+ * SEIT v0.166.0 stehen die Tabellen und das Laden, Speichern, Prüfen und
+ * Wählen in js\brett-3d-aussehen.js (klassisch, ohne three.js) — Sammlung
+ * und Shop fragen dort, ohne dass dieses Modul geladen sein muss. Hier
+ * stehen dieselben Tabellen unter ihren alten Namen; die Funktionen weiter
+ * unten reichen nur `Z.einst` (das fertige Brett) hinein.
  * ------------------------------------------------------------------ */
 
-const THEMEN = {
-    blunderluck: { name: "Blunderluck", hell: "#eef2f7", dunkel: "#4a7fb5", rahmen: "#1d2330", sockel: "#141821" },
-    holz:        { name: "Holz",        hell: "#ecd3a8", dunkel: "#a0703f", rahmen: "#4b2e18", sockel: "#2c1a0c" },
-    turnier:     { name: "Turnier",     hell: "#eeeed2", dunkel: "#769656", rahmen: "#2f3a24", sockel: "#1b2215" },
-    marmor:      { name: "Marmor",      hell: "#efeeea", dunkel: "#80868e", rahmen: "#2b2d31", sockel: "#18191c" },
-    nacht:       { name: "Nacht",       hell: "#56607a", dunkel: "#262c3b", rahmen: "#0f1219", sockel: "#07090d" }
-};
+const AUSSEHEN = BRETT_3D_AUSSEHEN;
+const { THEMEN, FIGUR_STILE, KACHELN, TEMPI, VORGABE } = AUSSEHEN;
 
 /*
  * DAS STANDARD-THEMA FOLGT DER FARBWELT (seit v0.141.0, UPCrew-Angleichung
@@ -108,42 +107,12 @@ function istDunkel() {
     return !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
 }
 
-const FIGUR_STILE = {
-    /* Die Vorgabe trägt das Material der alten gerenderten Figuren
-       (tools\Figuren-Blender.py: Rauheit 0,60, Glanz 0,25, kein Lack) —
-       Nutzer 24.09.2026: „sollen genauso matt bleiben wie die alten". */
-    emaille:   { name: "Emaille",   weiss: "#f2ecdf", schwarz: "#2b2e35", rau: 0.6, metall: 0.0, lack: 0.0, lackRau: 0.5, glanz: 0.5 },
-    porzellan: { name: "Porzellan", weiss: "#f6f4ef", schwarz: "#1f2228", rau: 0.26, metall: 0.0, lack: 0.8, lackRau: 0.08 },
-    matt:      { name: "Matt",      weiss: "#ebe5d8", schwarz: "#35383f", rau: 0.85, metall: 0.0, lack: 0.0, lackRau: 0.5 },
-    metall:    { name: "Metall",    weiss: "#d9dde3", schwarz: "#8a5a2b", rau: 0.32, metall: 0.9, lack: 0.2, lackRau: 0.2 }
-};
-
-/* Blickwinkel als Abstand von der Senkrechten. v0.132.0 bis v0.140.3
-   höchstens 17 Grad (bei 40 Grad verdeckte jede Figur die dahinter,
-   Nutzer-Foto 24.09.2026). TEST 25.09.2026 (Nutzer: „der Blickwinkel soll
-   nicht mehr so steil sein", dazu grössere Figuren): „Schräg" 30 Grad —
-   Überdeckung wird dafür in Kauf genommen. */
-const BLICKE = {
-    oben:    { name: "Oben",   winkel: THREE.MathUtils.degToRad(4) },
-    schraeg: { name: "Schräg", winkel: THREE.MathUtils.degToRad(30) }
-};
-
-const KACHELN = {
-    rund:   { name: "Rund",   rundung: 0.12, fase: 0.035, fuge: 0.07 },
-    kantig: { name: "Kantig", rundung: 0.02, fase: 0.012, fuge: 0.03 }
-};
-
-const TEMPI = {
-    flott:  { name: "Flott",  faktor: 0.72 },
-    normal: { name: "Normal", faktor: 1.0 }
-};
-
-/* `an` ist seit v0.144.0 ab Werk AUS: 3D ist eine Freischaltung
-   (js\freischaltung.js), wer nichts gewählt hat, spielt 2D. */
-const VORGABE = {
-    an: false, thema: "blunderluck", figuren: "emaille", blick: "schraeg",
-    kacheln: "rund", schatten: true, tempo: "normal"
-};
+/* Blickwinkel als Abstand von der Senkrechten (Begründung der Grade bei
+   `BLICKE` in js\brett-3d-aussehen.js), hier in Bogenmass. */
+const BLICKE = {};
+for (const [id, blick] of Object.entries(AUSSEHEN.BLICKE)) {
+    BLICKE[id] = { name: blick.name, winkel: THREE.MathUtils.degToRad(blick.grad) };
+}
 
 /* Farben der Markierungen — dieselben wie im 2D-Brett (stil-brett.css). */
 const FARBE = {
@@ -242,59 +211,20 @@ const Z = {
  * Einstellungen laden und speichern (nur auf diesem Gerät)
  * ------------------------------------------------------------------ */
 
+/* Laden, Prüfen und Speichern stehen seit v0.166.0 in
+   js\brett-3d-aussehen.js (dort auch, warum Thema, Figuren und Brett-Art
+   so und nicht anders geschrieben werden). Hier gilt nur: ohne `einst`
+   das fertige Brett (`Z.einst`). */
 function einstellungenLaden() {
-    let gespeichert = {};
-    try {
-        gespeichert = JSON.parse(localStorage.getItem(SPEICHER_SCHLUESSEL) || "{}") || {};
-    } catch (fehler) {
-        gespeichert = {};
-    }
-    /* Ohne Admin-Freigabe gilt die Vorgabe — auch wenn auf diesem Gerät
-       noch ein älteres eigenes Aussehen gespeichert ist (seit v0.129.0).
-       Seit v0.145.0 zählt die Werkstatt mit (`aussehenFrei`), wie im Tab
-       „Sammlung". Brett-Thema und Figuren gelten seit v0.147.0 JE STÜCK,
-       sobald ihr Ort im Turm erreicht ist (js\freischaltung.js). */
-    const einst = Object.assign({}, VORGABE, aussehenFrei() ? gespeichert : {});
-    for (const schluessel of ["thema", "figuren"]) {
-        if (typeof gespeichert[schluessel] === "string" && stueckFrei(schluessel, gespeichert[schluessel])) {
-            einst[schluessel] = gespeichert[schluessel];
-        }
-    }
-    /* 2D oder 3D wählt seit v0.144.0 jeder selbst (Tab „Anpassen") — die
-       Wahl gilt also auch ohne Admin-Freigabe, aber nur, solange 3D frei
-       ist. Die Antwort gibt allein js\freischaltung.js. */
-    einst.an = dreiDGilt();
-    /* Seit v0.157.3: 3D-Figuren auf dem 2D-Brett — nur gemerkt, damit
-       `einstellungenSpeichern` die Wahl nicht verliert. */
-    einst.oben = typeof FREISCHALTUNG !== "undefined" && FREISCHALTUNG.brett() === "oben";
-    /* Seit v0.159.0: 2D-Figuren als Scheiben auf dem 3D-Brett. */
-    einst.scheiben = typeof FREISCHALTUNG !== "undefined" && FREISCHALTUNG.brett() === "scheiben";
-    if (!THEMEN[einst.thema]) einst.thema = VORGABE.thema;
-    if (!FIGUR_STILE[einst.figuren]) einst.figuren = VORGABE.figuren;
-    if (!BLICKE[einst.blick]) einst.blick = VORGABE.blick;
-    if (!KACHELN[einst.kacheln]) einst.kacheln = VORGABE.kacheln;
-    if (!TEMPI[einst.tempo]) einst.tempo = VORGABE.tempo;
-    return einst;
-}
-
-/* Gilt gerade das 3D-BRETT (mit 3D-Figuren oder, seit v0.159.0, mit
-   2D-Scheiben)? Ohne js\freischaltung.js (darf nicht sein) bleibt es 2D. */
-function dreiDGilt() {
-    if (typeof FREISCHALTUNG === "undefined") return false;
-    const art = FREISCHALTUNG.brett();
-    return art === "3d" || art === "scheiben";
+    return AUSSEHEN.einstellungenLaden();
 }
 
 function dreiDFrei() {
-    return typeof FREISCHALTUNG !== "undefined" && FREISCHALTUNG.dreiDFrei();
+    return AUSSEHEN.dreiDFrei();
 }
 
-function einstellungenSpeichern() {
-    try {
-        localStorage.setItem(SPEICHER_SCHLUESSEL, JSON.stringify(Z.einst));
-    } catch (fehler) {
-        /* privates Fenster: dann eben nur für diese Sitzung */
-    }
+function einstellungenSpeichern(gewaehlt, einst) {
+    AUSSEHEN.einstellungenSpeichern(gewaehlt, einst || Z.einst);
 }
 
 function dauer(ms) {
@@ -3060,69 +2990,30 @@ function knopfLeisteBauen() {
     anpassungZeigen();
 }
 
-/*
- * DAS AUSSEHEN STELLT NUR DER ADMIN UM (seit v0.129.0, Nutzer-Ansage
- * 24.09.2026: „die Farben-Einstellungen nur der Admin — in den
- * Admin-Einstellungen ein Anpassungs-Knopf an/aus"). Zu sehen ist der
- * Paletten-Knopf nur, wenn auf diesem Gerät die Verwaltung freigeschaltet
- * UND dort „Brett-Anpassung" eingeschaltet ist (`ICH.anpassungAn`).
- */
+/* Wer was wählen darf (Admin, Werkstatt, je Stück) und die Auskünfte für
+   Sammlung und Shop stehen seit v0.166.0 in js\brett-3d-aussehen.js. */
 function anpassungErlaubt() {
-    return typeof ICH !== "undefined" && !!ICH.verwaltungAktiv && ICH.verwaltungAktiv()
-        && !!ICH.anpassungAn && ICH.anpassungAn();
+    return AUSSEHEN.anpassungErlaubt();
 }
 
-/*
- * BRETT-THEMA UND FIGUREN SIND FREI (seit v0.145.0, Tab „Sammlung",
- * Runde 4): mit der Admin-Freigabe oben ODER in der Werkstatt
- * (js\freischaltung.js). Für alle anderen gilt die Vorgabe, bis der Turm
- * (Runde 5) die Themen über Orte freischaltet. Der Paletten-Knopf am
- * Brett bleibt dem Admin vorbehalten (`anpassungZeigen`).
- */
 function aussehenFrei() {
-    return anpassungErlaubt()
-        || (typeof FREISCHALTUNG !== "undefined" && FREISCHALTUNG.werkstatt());
-}
-
-/* Ein einzelnes Thema oder ein Figuren-Stil frei? (seit v0.147.0) Die
-   Antwort gibt js\freischaltung.js — der Turm schaltet sie je Ort frei. */
-function stueckFrei(schluessel, wert) {
-    if (typeof FREISCHALTUNG !== "undefined" && typeof FREISCHALTUNG.brettStueckFrei === "function") {
-        return FREISCHALTUNG.brettStueckFrei(schluessel, wert);
-    }
-    return aussehenFrei() || wert === VORGABE[schluessel];
+    return AUSSEHEN.aussehenFrei();
 }
 
 /* Was gerade gilt — auch vor dem ersten Aufbau (dann aus dem Speicher). */
 function aussehenLesen() {
-    const einst = Z.einst || einstellungenLaden();
-    return { thema: einst.thema, figuren: einst.figuren };
+    return AUSSEHEN.aussehenLesen(Z.einst);
 }
 
 /*
- * Brett-Thema oder Figuren wählen (seit v0.145.0, „Übernehmen" im Tab
- * „Sammlung"). Nur Bekanntes und nur, wenn es frei ist; gespeichert wird
- * wie über die Paletten-Tafel. Ohne fertiges Brett wird nur gespeichert —
- * der Aufbau liest es dann.
+ * Brett-Thema oder Figuren wählen („Übernehmen" im Tab „Sammlung"). Prüfen
+ * und Speichern: js\brett-3d-aussehen.js. Noch nicht aufgebaut: `Z.einst`
+ * bleibt leer (daran erkennen andere Stellen „noch nicht da"), nur der
+ * Speicher bekommt es; am fertigen Brett wird es gleich angewendet.
  */
 function aussehenWaehlen(schluessel, wert) {
-    const liste = schluessel === "thema" ? THEMEN : schluessel === "figuren" ? FIGUR_STILE : null;
-    if (!liste || !liste[wert] || !stueckFrei(schluessel, wert)) return false;
-    if (!Z.einst) {
-        /* Noch nicht aufgebaut: `Z.einst` bleibt leer (daran erkennen
-           andere Stellen „noch nicht da"), nur der Speicher bekommt es. */
-        const einst = einstellungenLaden();
-        einst[schluessel] = wert;
-        try {
-            localStorage.setItem(SPEICHER_SCHLUESSEL, JSON.stringify(einst));
-        } catch (fehler) {
-            /* privates Fenster: dann eben nur für diese Sitzung */
-        }
-        return true;
-    }
-    Z.einst[schluessel] = wert;
-    einstellungenSpeichern();
-    if (Z.bereit) aussehenAnwenden(schluessel);
+    if (!AUSSEHEN.aussehenWaehlen(schluessel, wert, Z.einst)) return false;
+    if (Z.einst && Z.bereit) aussehenAnwenden(schluessel);
     return true;
 }
 
@@ -3165,7 +3056,7 @@ function tafelUmschalten() {
             k.appendChild(document.createTextNode(eintrag.name));
             k.addEventListener("click", () => {
                 Z.einst[schluessel] = id;
-                einstellungenSpeichern();
+                einstellungenSpeichern(schluessel);
                 auswahl.querySelectorAll(".brett-3d-segment").forEach((b) => b.classList.remove("ist-an"));
                 k.classList.add("ist-an");
                 aussehenAnwenden(schluessel);
@@ -3447,7 +3338,7 @@ function anbinden(halter, partie, person, animierenErlaubt) {
  * senkrecht von oben, alle anderen schräg.
  * ------------------------------------------------------------------ */
 
-const MINI = { renderer: null, cache: new Map(), warte: [] };
+const MINI = { renderer: null, cache: new Map(), warte: [], warteMit: [] };
 const MINI_ZELLE = 64;          // Bildpunkte je Feld
 const MINI_UEBER = 0.4;        // Platz über der hintersten Reihe, in Zellen
 const MINI_FIGUR = 1.0;       // Figuren im kleinen Bild etwas kleiner
@@ -3734,7 +3625,14 @@ function standbild(el) {
  * Gibt zurück, ob ein Bild entstanden ist (ohne fertiges 3D: nein).
  */
 function standbildMit(el, wahl) {
-    if (!el || !Z.bereit || Z.fehler) return false;
+    if (!el || Z.fehler || window.BRETT_3D_AUS) return false;
+    if (!Z.bereit) {
+        /* Noch am Laden (seit v0.164.0 startet das Modul bei gewähltem 2D
+           erst im Leerlauf, js\brett-3d-start.js): gemerkt, `starten` holt
+           das Bild nach, wenn das Gitter dann noch im Bildschirm steht. */
+        MINI.warteMit.push({ el, wahl });
+        return false;
+    }
     const alt = { an: Z.einst.an, thema: Z.einst.thema, figuren: Z.einst.figuren, scheiben: Z.einst.scheiben };
     const w = wahl || {};
     Z.einst.an = true;
@@ -4777,6 +4675,11 @@ async function starten() {
         for (const el of wartend) {
             await spaeter(() => { if (el.isConnected) standbild(el); });
         }
+        /* Vorschauen der Sammlung, die vor dem Bereitsein gefragt haben
+           (seit v0.164.0, `standbildMit`). */
+        for (const offen of MINI.warteMit.splice(0)) {
+            await spaeter(() => { if (offen.el.isConnected) standbildMit(offen.el, offen.wahl); });
+        }
         if (!Z.einst.oben && dreiDFrei()) await spaeter(figurenBilderOben);
     } catch (fehler) {
         Z.fehler = true;
@@ -4786,8 +4689,23 @@ async function starten() {
     }
 }
 
+/*
+ * WER 3D JETZT BRAUCHT, STÖSST DEN START AN (seit v0.164.0). Bei gewähltem
+ * 2D wartet `starten` auf den Leerlauf nach dem ersten Bild
+ * (js\brett-3d-start.js). Die Eingänge unten, die ohne fertiges Modul nichts
+ * zeigen können — Partie, Wechsel auf 3D, Vorschau der Sammlung, Falle,
+ * Bühne —, verlangen ihn sofort; ihr Ergebnis kommt wie bisher nach, sobald
+ * die Formen da sind (`_brett3dLetzte`, `MINI.warte`, `MINI.warteMit`).
+ * `standbild` verlangt ihn NICHT: Im 2D-Betrieb entsteht dort kein Bild, und
+ * der Start-Tab ruft es schon beim ersten Zeichnen.
+ */
+function startVerlangen(grund) {
+    if (typeof BRETT_3D_START !== "undefined") BRETT_3D_START.anfordern(grund);
+}
+
 window.BRETT_3D = {
     anbinden(halter, partie, person) {
+        startVerlangen("partie");
         anbinden(halter, partie, person, true);
     },
     aktiv() {
@@ -4795,7 +4713,10 @@ window.BRETT_3D = {
     },
     /* 2D/3D umschalten (seit v0.144.0) — gerufen NUR aus
        js\freischaltung.js, das die Wahl vorher speichert und prüft. */
-    wahlUebernehmen,
+    wahlUebernehmen(an, oben, scheiben) {
+        if (an === true || oben === true) startVerlangen("wahl");
+        wahlUebernehmen(an, oben, scheiben);
+    },
     /* Formen noch unterwegs? Dann verbirgt der Bildschirm das flache Brett. */
     laedt() {
         return !Z.bereit && !Z.fehler;
@@ -4804,21 +4725,31 @@ window.BRETT_3D = {
     standbild,
     /* Tab „Sammlung" (seit v0.145.0): Vorschau mit der Wahl des Entwurfs,
        Brett-Thema und Figuren lesen, frei?, wählen. */
-    standbildMit,
+    standbildMit(el, wahl) {
+        startVerlangen("vorschau");
+        return standbildMit(el, wahl);
+    },
     aussehen: aussehenLesen,
     aussehenFrei,
     aussehenWaehlen,
     /* Die letzte Falle noch einmal zeigen (seit v0.136.0); `art` ohne
        gespeicherte Szene: die Karte dieser Art (Wiederholen nach Neuladen). */
     falleZeigen(art, felder) {
+        startVerlangen("falle");
         if (art && (!Z.letzteFalle || Z.letzteFalle.art !== art)) {
             Z.letzteFalle = { art, felder: felder || [] };
         }
         return falleZeigen();
     },
     /* Die Anleitung als abgespielte 3D-Bühne (seit v0.135.0). */
-    buehneMoeglich,
-    buehne,
+    buehneMoeglich() {
+        startVerlangen("buehne");
+        return buehneMoeglich();
+    },
+    buehne(el, auftrag) {
+        startVerlangen("buehne");
+        return buehne(el, auftrag);
+    },
     /* Werkstatt: Zusammenstösse in jeder Animation — `true` misst ab
        jetzt, `false` hört auf, ohne Wert kommt die Liste. */
     kollisionen(an) {
@@ -4832,4 +4763,24 @@ window.BRETT_3D = {
     _zustand: Z
 };
 
-starten();
+/*
+ * WANN GESTARTET WIRD (seit v0.164.0): Das entscheidet
+ * js\brett-3d-start.js — bei gewähltem 3D sofort wie bisher, bei gewähltem
+ * 2D im Leerlauf nach dem ersten Bild oder sobald jemand 3D verlangt
+ * (`startVerlangen` oben), in jedem Fall genau einmal. Bis dahin ist `Z.einst`
+ * leer und `Z.bereit` falsch — der Zustand, den es bisher nur ohne WebGL
+ * gab; jeder Eingang oben prüft ihn, bevor er etwas anfasst. Fehlt die Datei
+ * (Werkstatt-Seite), startet es wie bis v0.163.0 sofort.
+ *
+ * SEIT v0.166.0 lädt index.html dieses Modul gar nicht mehr fest: Es kommt
+ * über `import()` aus js\brett-3d-start.js — bei gewähltem 3D sofort, sonst
+ * erst im Leerlauf oder wenn jemand 3D verlangt. Bis dahin steht dort ein
+ * Platzhalter `window.BRETT_3D`, den die Zuweisung oben ersetzt; was er
+ * sich gemerkt hat (kleine Bretter, Vorschauen), reicht er nach dem Laden
+ * hierher weiter.
+ */
+if (typeof BRETT_3D_START !== "undefined") {
+    BRETT_3D_START.anmelden(starten);
+} else {
+    starten();
+}

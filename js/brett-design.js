@@ -51,8 +51,12 @@ const BRETT_DESIGN = {
         if (!BRETT_DESIGN.eintrag(wert)) {
             return false;
         }
+        /* Seit v0.163.0: der heutige Weg (Vorgabe, Level, Turm) ODER im Shop
+           gekauft — `FREISCHALTUNG.brettStueckFrei` fragt den Besitz selbst
+           (js\besitz.js, Art `brett2d`). */
         if (typeof FREISCHALTUNG === "undefined") {
-            return wert === BRETT_DESIGN.VORGABE;
+            return wert === BRETT_DESIGN.VORGABE
+                || (typeof BESITZ !== "undefined" && BESITZ.frei("design2d", wert));
         }
         return FREISCHALTUNG.brettStueckFrei("design2d", wert);
     },

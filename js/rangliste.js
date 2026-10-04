@@ -306,6 +306,42 @@ const RANGLISTE = {
         RANGLISTE.zeichnen();
     },
 
+    /*
+     * NEUE DATEN — NUR BAUEN, WENN DIE SEITE ZU SEHEN IST (seit v0.163.0,
+     * Befund 04.10.2026 Nr. 4). Bis v0.162.0 baute jede Änderung am Spieler-
+     * ODER Schach-Stand die Rangliste komplett neu (alles leeren, dann
+     * `gesamt` über alle Partien) — auch mitten in einer Partie oder auf
+     * einer anderen Seite. Jetzt wie der Start (`START._ruht`): Ist die
+     * Rangliste nicht die offene Seite des Bandes, wird nur gemerkt, dass
+     * sie veraltet ist. Nachgeholt wird beim Öffnen (`beimOeffnen` zeichnet
+     * ohnehin) und schon, wenn sie beim Wischen in Sicht kommt
+     * (`TABS.seiteKommt` → `nachholen`). Wer die Rangliste BEDIENT (Reiter,
+     * Profil, Freunde), ruft weiter `zeichnen()` — das baut immer. Ohne
+     * Band (Tests, alte Proben) wie bisher.
+     */
+    _veraltet: false,
+
+    _ruht() {
+        return typeof TABS !== "undefined" && !!TABS.bandEl && TABS.offeneSeite !== RANGLISTE.id;
+    },
+
+    /* Gerufen von js\app.js bei jedem neuen Spieler- oder Schach-Stand.
+       Liefert, ob gezeichnet wurde. */
+    datenGeaendert() {
+        if (RANGLISTE._ruht()) {
+            RANGLISTE._veraltet = true;
+            return false;
+        }
+        RANGLISTE.zeichnen();
+        return true;
+    },
+
+    nachholen() {
+        if (RANGLISTE._veraltet) {
+            RANGLISTE.zeichnen();
+        }
+    },
+
     /* Seit v0.156.1 ist die Rangliste wieder eine SEITE. Seit v0.157.0
        steht das ausführliche Profil im Profil-Blatt (js\profil.js); die
        Profilseite hier gibt es nur noch ohne Blatt-Baustein (Tests). */
@@ -372,6 +408,7 @@ const RANGLISTE = {
         if (!wurzel) {
             return;
         }
+        RANGLISTE._veraltet = false;
 
         wurzel.innerHTML = "";
 

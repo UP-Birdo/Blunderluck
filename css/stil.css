@@ -1049,6 +1049,88 @@ body.design-3d .heute-bild .vorschau {
     }
 }
 
+/*
+ * DIE ANPROBE-LEISTE DES SHOPS (seit v0.163.0, js\shop.js `_anprobeLeiste`):
+ * solange ein Stück anprobiert wird, steht sie oben über allem ausser Dialog
+ * und Vollbild — auch über dem offenen Blatt des Stücks (Blätter 40, Leiste
+ * 50). Links bei Brett-Stücken die echte Start-Vorschau klein, in der Mitte
+ * der Name, rechts „Anprobe beenden" (bei wenig Platz darunter). Sie rollt
+ * nicht und ragt nicht über den Rand: Ein zu langer Name kürzt sich mit „…".
+ */
+.shop-anprobe {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    top: calc(6px + var(--oben-frei, 0px));
+    max-width: 480px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 8px 6px 10px;
+    background: var(--karte);
+    color: var(--schrift);
+    border: 2px solid var(--haupt);
+    border-radius: var(--rund-mittel);
+    box-shadow: 0 var(--karte-tiefe) 0 var(--still-kante);
+    z-index: calc(var(--ebene-schwebend) + 10);
+}
+
+/* Text und Knopf: nebeneinander, wenn es reicht — sonst der Knopf unter
+   dem Text (mit Brett-Vorschau bei 360 und 390 px). */
+.shop-anprobe-rest {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px 10px;
+}
+
+.shop-anprobe-text {
+    flex: 1 1 120px;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    line-height: 1.2;
+}
+
+.shop-anprobe-text small {
+    font-size: 0.72rem;
+    color: var(--schrift-leise);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.shop-anprobe-text b {
+    font-size: 0.92rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Kleiner als ein gewöhnlicher Knopf, damit die Leiste den Kopf des Blatts
+   darunter frei lässt (nur Grösse und Innenrand — Form und Fläche kommen
+   aus der Knopf-Familie). */
+.knopf.shop-anprobe-ende {
+    flex: none;
+    min-height: 0;
+    padding: 6px 12px;
+    font-size: 0.82rem;
+    white-space: nowrap;
+}
+
+.shop-anprobe-brett {
+    flex: none;
+    display: flex;
+}
+
+.shop-anprobe-brett .sammlung-buehne {
+    --sammlung-buehne-breite: 56px;
+}
+
 /* Im Kleinen frisst der Abstand von 4 px zwischen den Steinen (3D-Look,
    css\stil-effekte.css) ein Viertel der Breite — die Steine würden schmal
    und hoch. Angesehen am 27.09.2026 bei 390 px. */

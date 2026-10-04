@@ -506,6 +506,18 @@ body.brett-2d.brett-design-eigen .vorschau {
     display: block;
 }
 
+/* Im Shop (seit v0.163.0, js\shop.js `bildVon`) sitzt dasselbe Bild in einem
+   Platz des Bausteins — Kachel, Kategorie, grosses Bild im Blatt. Dort füllt
+   es den quadratischen Platz; die feste Regal-Grösse aus `.sammlung-bild`
+   (50 × 40) gälte sonst und drückte es flach. Das ist das EIGENE Bild im
+   Platz, kein Stil am Baustein. */
+.up-shop .up-platz > .brett-design-bild,
+.up-shop-blatt .up-platz > .brett-design-bild {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1;
+}
+
 /*
  * Die kleinen Figuren ausserhalb des Bretts (Beute-Bilanz im Abschluss,
  * die Figuren in „Schach lernen") stehen in Textzeilen, nicht auf Kacheln.

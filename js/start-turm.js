@@ -323,12 +323,17 @@ Object.assign(START, {
                 START.turmOeffnen({});
             }
         });
-        /* Erst im Dokument messen (Höhe der Sicht) — nach dem Einhängen. */
+        /* Erst im Dokument messen (Höhe der Sicht) — nach dem Einhängen.
+           Seit v0.163.0 (Befund 04.10.2026 Nr. 6) nur noch EINMAL: im
+           nächsten Bild, wenn die Karte im Dokument steht. Bis v0.162.0
+           wurde zusätzlich sofort gebaut — noch ohne Masse, also umsonst.
+           Ohne `requestAnimationFrame` (Tests) bleibt das direkte Bauen. */
         const zeichnen = () => START._turmSichtBauen(sicht, stand, { klein: true });
         if (typeof requestAnimationFrame === "function") {
             requestAnimationFrame(zeichnen);
+        } else {
+            zeichnen();
         }
-        zeichnen();
         return karte;
     },
 

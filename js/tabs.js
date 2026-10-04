@@ -212,11 +212,17 @@ const TABS = {
         return true;
     },
 
-    /* Rückruf `kommt(id)` des Bausteins: Die Seite kommt gleich in Sicht. */
+    /* Rückruf `kommt(id)` des Bausteins: Die Seite kommt gleich in Sicht.
+       Steht sie schon, darf sie nachholen, was sie verborgen ausgelassen
+       hat (`tab.nachholen`, optional, seit v0.163.0 — die Rangliste baut
+       sich bei neuen Daten nur noch, wenn sie zu sehen ist). */
     seiteKommt(id) {
         const tab = TABS.liste.find((eintrag) => eintrag.id === id);
         if (tab && TABS._imBand(tab)) {
-            TABS._seiteBauen(tab, true);
+            const neuGebaut = TABS._seiteBauen(tab, true);
+            if (!neuGebaut && TABS.aufgebaut[tab.id] && typeof tab.nachholen === "function") {
+                tab.nachholen();
+            }
         }
     },
 

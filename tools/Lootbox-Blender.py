@@ -55,7 +55,33 @@ from mathutils import Vector
 # ===========================================================================
 
 # Wohin die fertigen PNGs geschrieben werden. Wird angelegt, falls es fehlt.
-AUSGABE_ORDNER = r"c:\Users\jonas.boeckle\OneDrive - Biffar GmbH & Co. KG\Biffar - IT\JKB\dev\Apps\Blunderluck\img\lootboxen"
+# Seit v0.166.1 aus dem Ort dieses Skripts errechnet (tools\ -> Projektordner
+# -> img\lootboxen) statt fest mit Benutzer- und Firmennamen (tools\ wird mit
+# ausgeliefert). Laeuft es im Text-Editor von Blender, nimmt es den Pfad der
+# geoeffneten Datei.
+def _projektordner():
+    pfad = os.path.abspath(__file__) if "__file__" in globals() else ""
+    if not os.path.isfile(pfad):
+        for text in bpy.data.texts:
+            if text.filepath and os.path.basename(text.filepath) == "Lootbox-Blender.py":
+                pfad = bpy.path.abspath(text.filepath)
+                break
+    if not pfad:
+        return ""
+    return os.path.dirname(os.path.dirname(os.path.abspath(pfad)))
+
+
+# Seit v0.166.2: Liegt im errechneten Ordner nicht das Projekt (index.html und
+# js\), bricht das Skript ab, BEVOR es etwas anlegt - sonst schriebe es still
+# in einen falschen Ordner (Pruefung 04.10.2026, Fund 4).
+PROJEKT_ORDNER = _projektordner()
+if not (PROJEKT_ORDNER and os.path.isfile(os.path.join(PROJEKT_ORDNER, "index.html"))
+        and os.path.isdir(os.path.join(PROJEKT_ORDNER, "js"))):
+    raise SystemExit("Projektordner nicht gefunden: " + repr(PROJEKT_ORDNER)
+                     + " - das Skript aus tools\\ starten (Lootboxen rendern.cmd) oder die Datei"
+                     + " in Blender ueber Text -> Open oeffnen. Nichts angelegt.")
+
+AUSGABE_ORDNER = os.path.join(PROJEKT_ORDNER, "img", "lootboxen")
 
 # Bildgroesse (quadratisch). Kleiner als bei den Figuren (384): Eine Lootbox
 # fuellt auf dem Brett 76 Prozent eines Feldes, eine Figur das Doppelte.

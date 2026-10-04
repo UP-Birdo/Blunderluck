@@ -94,6 +94,10 @@ class Abgleich {
         this.aenderungOffen = false;
         this.abfrageZeitgeber = null;
 
+        /* Fehlschläge beim Schreiben in Folge (seit v0.163.0) — bestimmt
+           die Wartezeit bis zum nächsten Versuch (`_wiederholungMs`). */
+        this.schreibFehlschlaege = 0;
+
         /* Kennung des eigenen Spielers — nötig, um beim Schreiben zu wissen,
            welcher Eintrag der eigene ist. Wird von anmeldung.js gesetzt. */
         this.eigeneId = null;
@@ -169,6 +173,19 @@ class Abgleich {
         return this.speicher.laden();
     }
 
+    /* Die Marke des Standes am Server — oder null (keine Marke, Fehler). */
+    async _markeHolen() {
+        if (typeof this.speicher.marke !== "function") {
+            return null;
+        }
+        try {
+            const marke = await this.speicher.marke();
+            return (marke === undefined) ? null : marke;
+        } catch (fehler) {
+            return null;
+        }
+    }
+
     /* Ein eigener Schreibvorgang beginnt — bis er endet, wird kein fremder
        Stand übernommen. */
     eigenerVorgangBeginnt() {
@@ -207,8 +224,24 @@ class Abgleich {
            Einstellungen nur beim Darüberfahren. */
         this.melden("laedt", "Lädt");
         try {
+            /*
+             * DIE MARKE SCHON BEIM START MERKEN (seit v0.163.0, Befund
+             * 04.10.2026 Nr. 2): Bis v0.162.0 blieben `markeGesehen` und
+             * `markeGanzGesehen` nach dem ersten Laden leer — die erste
+             * Abfrage im Takt fand darum nie „gleich" und holte den ganzen
+             * Stand ein zweites Mal. Dieselbe Reihenfolge wie in
+             * `fremdenStandHolen`: die Marke VOR dem Laden holen, erst NACH
+             * dem geglückten Laden merken — so gehört zur gemerkten Marke
+             * nie ein älterer Stand. Ohne Marke (lokaler Speicher, Fehler)
+             * bleibt alles wie bisher.
+             */
+            const marke = await this._markeHolen();
             this.daten = await this._standLaden(true);
             this.geladen = true;
+            if (marke !== null) {
+                this.markeGesehen = marke;
+                this.markeGanzGesehen = marke;
+            }
             this.beiDaten(this.daten);
             this.melden("bereit", this.speicher.beschreibung);
             geladen = true;
@@ -304,14 +337,40 @@ class Abgleich {
         this.schreibenPlanen();
     }
 
-    schreibenPlanen() {
+    /* `warten` (Millisekunden) nur für die Wiederholung nach einem
+       Fehlschlag (`_wiederholungMs`); sonst die übliche Verzögerung. */
+    schreibenPlanen(warten) {
         if (this.schreibZeitgeber !== null) {
             window.clearTimeout(this.schreibZeitgeber);
         }
         this.schreibZeitgeber = window.setTimeout(
             () => this.schreiben(),
-            this.einstellung.schreibVerzoegerungMs
+            (typeof warten === "number") ? warten : this.einstellung.schreibVerzoegerungMs
         );
+    }
+
+    /*
+     * WIE LANGE NACH EINEM FEHLSCHLAG GEWARTET WIRD (seit v0.163.0, Befund
+     * 04.10.2026 Nr. 1). Bis v0.162.0 plante der Fehlerfall sofort neu, mit
+     * den festen 500 ms und ohne Ende — im Funkloch (oder nach einer Absage
+     * der Regel) alle halbe Sekunde ein voller Ladeversuch samt Schreiben,
+     * solange das Fenster offen war: Akku und Datenvolumen.
+     *
+     * Jetzt verdoppelt sich die Wartezeit je Fehlschlag in Folge — 500 ms,
+     * 1 s, 2 s … höchstens `WIEDERHOLUNG_MAX_MS` (30 s) — und fällt nach dem
+     * ersten Erfolg auf den Anfang zurück. Verloren geht nichts: Die
+     * Änderung bleibt offen. Eine NEUE Änderung (`aendern`) und der Abgang
+     * der Seite (`sofortSchreiben`) versuchen es wie bisher sofort.
+     */
+    static get WIEDERHOLUNG_MAX_MS() {
+        return 30000;
+    }
+
+    _wiederholungMs() {
+        const grund = this.einstellung.schreibVerzoegerungMs;
+        const basis = (typeof grund === "number" && grund > 0) ? grund : 500;
+        const stufe = Math.min(Math.max(this.schreibFehlschlaege - 1, 0), 16);
+        return Math.min(basis * Math.pow(2, stufe), Abgleich.WIEDERHOLUNG_MAX_MS);
     }
 
     async schreiben() {
@@ -329,29 +388,38 @@ class Abgleich {
              * Ausgenommen: Aktionen, die absichtlich fremde Einträge ändern.
              * Und der lokale Speicher, wo es niemanden gibt, mit dem man sich
              * abstimmen müsste.
+             *
+             * OHNE GEGLÜCKTES LADEN WIRD NICHT GESCHRIEBEN (seit v0.164.1,
+             * Prüfung Besitz + Kauf vom 04.10.2026, Fund 5). Bis v0.164.0
+             * ging der eigene Eintrag bei einem Ladefehler ungeprüft hinaus
+             * („der Versuch ist besser als gar nichts"). Der Eintrag wird
+             * aber GANZ geschrieben — scheiterte nur das Laden (Zeitlimit im
+             * Funkloch) und das Schreiben kam durch, überschrieb der alte
+             * Stand, was inzwischen am Konto dazugekommen war: einen Kauf
+             * aus dem anderen Spiel oder vom anderen Gerät (`besitz`),
+             * ebenso Fortschritt und Aussehen. Jetzt gilt ein Ladefehler als
+             * Fehlschlag des ganzen Vorgangs: Die Änderung bleibt offen und
+             * wird mit wachsender Wartezeit wiederholt (unten, `catch`).
              */
             if (this.zusammenfuehren && this.speicher.art === "gemeinsam"
                 && !this.globaleAenderung && this.eigeneId) {
-                try {
-                    const fremd = await this.speicher.laden();
-                    this.daten = this.zusammenfuehren(fremd, this.daten, this.eigeneId);
-                } catch (ladefehler) {
-                    /* Kein Kontakt zum Server: dann eben ohne Abgleich schreiben,
-                       der Versuch ist besser als gar nichts zu speichern. */
-                    console.warn("Zusammenführen übersprungen:", ladefehler);
-                }
+                const fremd = await this.speicher.laden();
+                this.daten = this.zusammenfuehren(fremd, this.daten, this.eigeneId);
             }
 
             await this.speicher.speichern(this.daten);
             this.aenderungOffen = false;
             this.globaleAenderung = false;
+            this.schreibFehlschlaege = 0;
             this.beiDaten(this.daten);
             this.melden("bereit", this.speicher.beschreibung);
         } catch (fehler) {
             /* Die Änderung bleibt offen und wird beim nächsten Versuch erneut
-               geschrieben — nichts geht verloren, solange das Fenster offen ist. */
+               geschrieben — nichts geht verloren, solange das Fenster offen ist.
+               Seit v0.163.0 mit wachsender Wartezeit (`_wiederholungMs`). */
+            this.schreibFehlschlaege++;
             this.melden("fehler", "Nicht gespeichert", fehler.message);
-            this.schreibenPlanen();
+            this.schreibenPlanen(this._wiederholungMs());
         } finally {
             this.schreibtGerade = false;
         }

@@ -317,10 +317,60 @@ const DIALOG = {
      */
     _laufnummer: 0,
 
+    /*
+     * DER FOKUS GEHT ZURÜCK AN DEN AUSLÖSER (seit v0.163.0, Befund
+     * 04.10.2026 Nr. 5). Bis v0.162.0 fiel er nach dem Schliessen auf den
+     * `body` — wer mit Tastatur oder Vorleser bedient, verlor seine Stelle.
+     *
+     * Gemerkt wird beim Öffnen, was gerade den Fokus hat. Folgt ein Dialog
+     * auf den anderen (Frage, dann Fehler), steht der Fokus noch IM alten
+     * Dialog — dann bleibt der zuerst gemerkte Auslöser. Zurückgegeben wird
+     * erst beim wirklichen Aufräumen (kein weiterer Dialog), und nur, wenn
+     * das Element noch im Dokument steht. Eingabefelder bekommen ihn nicht
+     * wieder: Am Handy klappte sonst die Tastatur auf.
+     */
+    _ausloeser: null,
+
+    _ausloeserMerken(behaelter) {
+        if (typeof document === "undefined") {
+            return;
+        }
+        const aktiv = document.activeElement || null;
+        const imDialog = !!aktiv && !!behaelter && typeof behaelter.contains === "function"
+            && behaelter.contains(aktiv);
+        if (imDialog || (behaelter && behaelter.hidden === false)) {
+            /* Ein Dialog steht noch: Der erste Auslöser gilt weiter. */
+            return;
+        }
+        DIALOG._ausloeser = (aktiv && aktiv !== document.body && typeof aktiv.focus === "function")
+            ? aktiv : null;
+    },
+
+    _fokusZurueck() {
+        const ziel = DIALOG._ausloeser;
+        DIALOG._ausloeser = null;
+        if (!ziel || typeof ziel.focus !== "function" || typeof document === "undefined"
+                || typeof document.contains !== "function" || !document.contains(ziel)) {
+            return;
+        }
+        const art = String(ziel.tagName || "").toLowerCase();
+        if (art === "input" || art === "textarea" || art === "select" || ziel.isContentEditable === true) {
+            return;
+        }
+        try {
+            ziel.focus({ preventScroll: true });
+        } catch (fehler) {
+            /* Ein Element, das den Fokus nicht (mehr) nimmt: dann eben nicht. */
+        }
+    },
+
     _zeigen(vorgabe) {
         return new Promise((erfuellen) => {
             const behaelter = DIALOG.behaelter;
             const meineNummer = ++DIALOG._laufnummer;
+            /* Wer den Dialog ausgelöst hat — VOR dem Leeren merken (seit
+               v0.163.0, `_ausloeserMerken`). */
+            DIALOG._ausloeserMerken(behaelter);
             behaelter.innerHTML = "";
             behaelter.classList.remove("dialog-geht-hintergrund");
 
@@ -562,6 +612,7 @@ const DIALOG = {
                         behaelter.innerHTML = "";
                         behaelter.classList.remove("dialog-geht-hintergrund");
                         document.body.classList.remove("dialog-offen");
+                        DIALOG._fokusZurueck();
                     }
                     erfuellen(antwort);
                 }, 100);

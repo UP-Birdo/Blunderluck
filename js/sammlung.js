@@ -41,8 +41,11 @@
  * DIE OBERFLÄCHE NENNT KEIN LEVEL MEHR (seit v0.162.0): Was über das Level
  * frei wird (Farbwelt, Schrift, Knöpfe, Brett-Design „Farbwelt"), wirkt wie
  * bisher, trägt aber statt „Lv N" ein Band des Bausteins.
- * OHNE SHOP UND BESITZ (v0.162.0): `shop: false` — gesperrte Stücke tragen
- * „wird erspielt"; `besitz` wird nicht übergeben, nichts wird gespeichert.
+ * MIT SHOP UND BESITZ (seit v0.163.0): Kaufbares, das noch gesperrt ist,
+ * trägt „im Shop"; was im Shop gekauft wurde, ist frei und lässt sich
+ * übernehmen (`besitz: BESITZ.haken()`, js\besitz.js — dazu fragen
+ * `BRETT_DESIGN.frei` und `FREISCHALTUNG.brettStueckFrei` den Besitz
+ * selbst). In v0.162.0 stand hier noch `shop: false`.
  * In der reinen Sammlung ist alles „da" (Taten = Runde 5).
  *
  * Bei jedem Öffnen wird der Anpassen-Baustein neu aufgebaut — so zeigt er
@@ -66,7 +69,8 @@ const SAMMLUNG = {
 
     /*
      * Die Brett-Themen und Figuren-Stile — die Kennungen sind die aus
-     * js\brett-3d.js (`THEMEN`, `FIGUR_STILE`; test-sammlung.js hält beide
+     * js\brett-3d-aussehen.js (`THEMEN`, `FIGUR_STILE`, seit v0.166.0; bis
+     * dahin js\brett-3d.js; test-aussehen.js hält beide
      * Listen gleich). `ort` ist der Ort im Turm, der das Stück später
      * freischaltet; ohne `ort` ist es die freie Vorgabe.
      */
@@ -103,6 +107,26 @@ const SAMMLUNG = {
         SAMMLUNG.kopfEl = SAMMLUNG.geruest.kopf;
         SAMMLUNG.anteilEl = SAMMLUNG.geruest.anteil;
         SAMMLUNG.ortEl = SAMMLUNG.geruest.ort;
+        /* Nach einem Kauf im Shop (seit v0.163.0) zeigt die Sammlung das
+           Stück als frei, sobald sie wieder zu sehen ist. */
+        if (typeof BESITZ !== "undefined" && BESITZ.beiAenderung) {
+            BESITZ.beiAenderung(() => SAMMLUNG.besitzGeaendert());
+        }
+    },
+
+    /* Der Besitz hat sich geändert (Kauf, Anmeldung, anderes Gerät). Steht
+       die Sammlung nur als Nachbarseite im Band, wird sie gleich neu
+       gezeichnet — sonst zeigte sie beim Wischen noch den alten Stand. Ist
+       sie die OFFENE Seite, bleibt sie stehen (ein Entwurf ginge verloren);
+       `beimOeffnen` baut ohnehin bei jedem Einrasten frisch. */
+    besitzGeaendert() {
+        if (!SAMMLUNG.ortEl || !SAMMLUNG.tab) {
+            return;
+        }
+        if (typeof TABS !== "undefined" && TABS.offeneSeite === SAMMLUNG.id) {
+            return;
+        }
+        SAMMLUNG._zeigen();
     },
 
     beimOeffnen() {
@@ -149,10 +173,13 @@ const SAMMLUNG = {
                 app: "blunderluck",
                 stufe: FREISCHALTUNG.stufe(),
                 alleFrei: FREISCHALTUNG.werkstatt(),
-                /* Der Shop mit Besitz kommt später (eigene Version): Gesperrtes
-                   trägt bis dahin „wird erspielt". `besitz` bleibt weg — frei
-                   ist, was heute frei ist (Level, Turm, Werkstatt). */
-                shop: false,
+                /* Seit v0.163.0 mit Shop und Besitz: Kaufbares verweist auf
+                   den Shop, Gekauftes ist frei (js\besitz.js) — zusätzlich
+                   zum heutigen Weg (Level, Turm, Werkstatt). */
+                besitz: (typeof BESITZ !== "undefined") ? BESITZ.haken() : undefined,
+                /* Seit v0.166.3: „Im Shop ansehen" statt des grauen
+                   „Nicht im Besitz" (siehe `zumShop`). */
+                zumShop: (typeof SHOP !== "undefined") ? ((stueck) => SAMMLUNG.zumShop(stueck)) : undefined,
                 regale: SAMMLUNG.regale(),
                 vorschau: SAMMLUNG._vorschau
             });
@@ -167,6 +194,36 @@ const SAMMLUNG = {
         const anteil = SAMMLUNG.anteil();
         SAMMLUNG.geruest.anteilSetzen(anteil.hat, anteil.alle);
         SAMMLUNG.geruest.obenSetzen();
+    },
+
+    /* DER WEG IN DEN SHOP (seit v0.166.3, UPCrew Runde 9; Vertrag
+       `opt.zumShop` im Kopf von js\upcrew-anpassen.js). Der Baustein ruft
+       das für ein kaufbares, nicht besessenes Stück mit dem KATALOG-Schlüssel
+       der Art ({ art: "brett3d", wert: "holz" }), nachdem er sein Blatt
+       geschlossen hat. Weg wie ein Tipp auf die Leiste: `TABS.wechseln`
+       baut die Shop-Seite, falls sie noch fehlt (Nachbarseiten entstehen
+       sonst erst im Leerlauf), und zeichnet sie sofort — ein Tipp wartet
+       nicht aufs Einrasten des Bandes. Danach Reiter „Design" und das
+       Stück-Blatt mit Preis und „Kaufen". Klappt das nicht (kein Shop, Tab
+       nicht gewechselt, Stück unbekannt), bleibt es still beim Tab-Wechsel.
+       Liefert, ob das Stück-Blatt offen ist. */
+    zumShop(stueck) {
+        if (!stueck || typeof TABS === "undefined" || typeof SHOP === "undefined") {
+            return false;
+        }
+        try {
+            TABS.wechseln(SHOP.id);
+            const griff = SHOP.griff;
+            if (TABS.aktiveId !== SHOP.id || !griff || typeof griff.oeffnen !== "function") {
+                return false;
+            }
+            if (typeof griff.teil === "function" && griff.teil() !== "design" && typeof griff.teilSetzen === "function") {
+                griff.teilSetzen("design");
+            }
+            return griff.oeffnen("stueck:" + stueck.art + "-" + stueck.wert) === true;
+        } catch (fehler) {
+            return false;
+        }
     },
 
     /* Liegt oben ein Blatt der reinen Sammlung (Klasse `up-sm-blatt` des

@@ -590,6 +590,11 @@ Object.assign(ANMELDUNG, {
             if (ergebnis.ok && typeof FORTSCHRITT_KONTO !== "undefined") {
                 FORTSCHRITT_KONTO.gastUebernehmen();
             }
+            /* Der Besitz aus dem Shop zieht genau hier mit (seit v0.163.0) —
+               an derselben Stelle und auf dieselbe Art wie der Fortschritt. */
+            if (ergebnis.ok && typeof BESITZ !== "undefined") {
+                BESITZ.gastUebernehmen();
+            }
         });
 
         kasten.appendChild(los);

@@ -569,6 +569,66 @@ const FORTSCHRITT_KONTO = {
         return { ok: r.ok, grund: r.grund };
     },
 
+    /*
+     * FÜR DEN BESITZ AUS DEM SHOP (seit v0.163.0, js\besitz.js):
+     *   person()        unter welchem Eintrag diese Person auf dem Gerät
+     *                   steht — der Besitz (`upcrew.besitz`) nimmt genau
+     *                   denselben Schlüssel, damit Fortschritt und Besitz
+     *                   einer Person nie auseinanderlaufen.
+     *   ablegen(stand)  den Fortschritt nach einem Stück-Kauf speichern —
+     *                   derselbe Weg wie nach einem Vorrat-Kauf (`kaufen`
+     *                   oben): Gerät, dann Konto, dann die Horcher. Den
+     *                   Stand rechnet `UPCREW_BESITZ.kaufen` (der Zähler
+     *                   `muenzenAusgegeben` im eigenen Zweig wächst um den
+     *                   Preis); hier wird nichts gerechnet.
+     *   personSteht()   seit v0.164.1 (Prüfung Besitz + Kauf, Funde 2 und
+     *                   3): steht fest, WEM ein Kauf gehört? Solange die
+     *                   Spielerliste nicht geladen ist (Start ohne Netz, die
+     *                   ersten Sekunden), kennt das Gerät sein Konto nur dem
+     *                   Namen nach — `person()` heisst dann „gast", und der
+     *                   Besitz vom Konto fehlt. `person()` selbst bleibt,
+     *                   wie es ist (der Fortschritt zählt weiter wie
+     *                   bisher); nur der Stück-Kauf fragt hier vorher.
+     *                     eigener Eintrag im Stand → ja (das Konto samt
+     *                       `besitz` ist da; ein Gast-Eintrag ebenso)
+     *                     kein eigener Eintrag → nur ein echter Gast:
+     *                       niemand angemeldet und kein Konto auf dem Gerät
+     *                       gemerkt, oder die gemerkte Sitzung ist die eines
+     *                       Gasts (er bleibt „gast", vor und nach dem Laden)
+     *                     sonst → nein
+     */
+    person() {
+        return FORTSCHRITT_KONTO._person();
+    },
+
+    personSteht() {
+        if (typeof ANMELDUNG === "undefined" || typeof ANMELDUNG.ich !== "function") {
+            return true;
+        }
+        if (ANMELDUNG.ich()) {
+            return true;
+        }
+        if (ANMELDUNG.ichId) {
+            return false;
+        }
+        const konto = (typeof KONTO !== "undefined") ? KONTO : null;
+        if (konto && typeof konto.istGastSitzung === "function" && konto.istGastSitzung()) {
+            return true;
+        }
+        if (konto && typeof konto.angemeldet === "function" && konto.angemeldet()) {
+            return false;
+        }
+        return !(typeof ICH !== "undefined" && typeof ICH.person === "function" && ICH.person());
+    },
+
+    ablegen(stand) {
+        if (!FORTSCHRITT._istObjekt(stand)) {
+            return false;
+        }
+        FORTSCHRITT_KONTO._ablegen(FORTSCHRITT.normalisieren(stand));
+        return true;
+    },
+
     /* Ein Stück aus dem Vorrat nehmen (Zeit zurück = Ware „leben", Tipp).
        Liefert true/false. */
     benutzen(ware) {

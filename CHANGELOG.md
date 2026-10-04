@@ -3,6 +3,102 @@
 Neueste Version oben. Jede ausgelieferte Version bekommt hier ihren Eintrag —
 in Nutzersprache: Was habe ich davon?
 
+## v0.166.3 — 04.10.2026
+
+- In der Sammlung trägt ein Stück, das man im Shop kaufen kann, jetzt den Knopf „Im Shop ansehen“ — ein Tipp führt direkt zu diesem Stück im Shop, mit Preis und „Kaufen“.
+- Nach dem Kauf ist es zurück in der Sammlung sofort im Besitz und lässt sich übernehmen.
+
+## v0.166.2 — 04.10.2026
+
+- Mit gewähltem 3D-Brett wird jetzt auch das letzte Teil der 3D-Technik gleich zu Beginn geholt — ein Warten weniger beim ersten Besuch.
+- Die Hilfsprogramme für die Figurenbilder brechen ab, statt in einen falschen Ordner zu schreiben.
+
+## v0.166.1 — 04.10.2026
+
+- Mit gewähltem 3D-Brett holt die App die 3D-Technik wieder gleich zu Beginn im Hintergrund — das 3D-Brett ist beim ersten Besuch früher da als in v0.166.0.
+- Zwei Hilfsprogramme für die Figurenbilder nennen keinen festen Ordner mit Namen mehr.
+
+## v0.166.0 — 04.10.2026
+
+**Die App ist schneller da — das 3D-Brett lädt erst, wenn es gebraucht wird.**
+
+- **Spielst du mit dem 2D-Brett,** wartet der Start nicht mehr auf die 3D-Technik (rund 900 KB). Sie kommt still im
+  Hintergrund nach, sobald die App steht. Über ein langsames Netz war der Start in der Messung mehrere Sekunden früher
+  da; am schnellen Rechner ist der Unterschied kaum spürbar.
+- **Mit gewähltem 3D-Brett** beginnt das Laden wie bisher sofort; das Intro kommt etwas früher, das 3D-Brett beim
+  allerersten Besuch einen Augenblick später.
+- Sonst ändert sich nichts: Figurenbilder, Plättchen, Vorschauen in der Sammlung, die abgespielten Anleitungen und
+  deine Wahl von Brett-Design und Figuren-Stil sind wie vorher da. Offline geht alles wie bisher.
+
+## v0.165.1 — 04.10.2026
+
+- Verlässt du eine Partie, während Bob rechnet, hört er sofort auf — in der nächsten Partie denkt er wieder im Hintergrund statt die Seite anzuhalten.
+- Rechnet Bob auf einem langsamen Gerät lange, wartet die App geduldiger (30 Sekunden) auf ihn, statt alles noch einmal im Vordergrund zu rechnen.
+
+## v0.165.0 — 04.10.2026
+
+**Während Bob nachdenkt, bleibt die App bedienbar — und deine 3D-Wahl geht nicht mehr verloren.**
+
+- **Bob denkt im Hintergrund:** Auf „Schwer" und vor allem „Meister" stand die Seite bisher still, solange Bob
+  rechnete (auf einem langsamen Gerät eine Viertelsekunde bis über zwei Sekunden). Jetzt rechnet er nebenher: Du
+  kannst rollen und Blätter öffnen, ziehen kannst du erst wieder, wenn er gezogen hat. Bob spielt genau gleich wie
+  vorher — dieselbe Stellung ergibt denselben Zug. Verlässt du die Partie, während er rechnet, zieht er nicht mehr
+  hinein.
+- **Deine Wahl 3D-Brett / 3D-Figuren bleibt gemerkt,** auch wenn sich das Brett aufbaut, bevor dein Konto geladen ist.
+  Bisher konnte sie dann auf 2D zurückspringen, sobald irgendeine Brett-Einstellung gespeichert wurde.
+
+## v0.164.1 — 04.10.2026
+
+**Käufe im Shop landen sicher bei dir — auch mit zwei Geräten und im Funkloch.**
+
+- **Kaufen erst, wenn dein Konto geladen ist:** Startet die App ohne Netz (oder in den ersten Sekunden), sagt der
+  Kauf-Knopf kurz „Kaufen geht, sobald dein Konto geladen ist" und bucht nichts. So wird kein Stück doppelt bezahlt,
+  das du am anderen Gerät oder in Typoluck schon gekauft hast, und nichts landet beim Gast. Als Gast kaufst du wie
+  bisher; Anprobieren geht immer.
+- **Im Funkloch geht kein Kauf vom Konto verloren:** Klappt das Nachsehen vor dem Speichern nicht, wartet das
+  Speichern und versucht es wieder — statt mit einem alten Stand zu überschreiben, was inzwischen dazugekommen ist.
+- **Dein gewähltes 3D-Brett-Design bleibt gemerkt,** auch wenn das Brett sich aufbaut, bevor dein Kauf vom Konto da ist.
+
+## v0.164.0 — 04.10.2026
+
+**Der Start wird ruhiger: Das erste Laden bricht nicht mehr ab, und das erste Bild kommt etwas früher.**
+
+- **Erstes Laden über langsames Netz:** Bisher hat sich die App nach zehn Sekunden selbst neu geladen, wenn sie bis
+  dahin nicht gestartet war — auch dann, wenn sie einfach noch am Herunterladen war (erster Besuch im Funkloch). Jetzt
+  wartet sie, solange noch geladen wird, und greift erst ein, wenn alles da ist und trotzdem nichts startet —
+  spätestens nach 30 Sekunden. Der Schutz gegen die weisse Seite bleibt, wie er war.
+- **Das erste Bild kommt früher, wenn du mit dem 2D-Brett spielst:** Die 3D-Bilder (Figuren, Fähigkeits-Plättchen,
+  kleine Bretter) werden weiter gerechnet, aber erst nach dem ersten Bild in einer Atempause — nicht mehr davor. Wer
+  das 3D-Brett gewählt hat oder gleich eine Partie, eine Anleitung oder die Vorschau in der Sammlung öffnet, bekommt
+  alles sofort wie bisher. Am schnellen Rechner ist der Gewinn klein; an langsamen Geräten spürbarer.
+- **Blätter in Sammlung und Shop:** Escape schliesst zuerst die Rückfrage, die über einem Blatt liegt, nicht das Blatt
+  darunter; nach dem Schliessen steht die Tastatur-Auswahl wieder auf dem Knopf, der das Blatt geöffnet hat. Lange
+  Namen wie „Profilzeichen" brechen im Shop nicht mehr mitten im Wort.
+- Zu sehen ist sonst nichts Neues — alles sieht aus wie in v0.163.0.
+
+## v0.163.0 — 04.10.2026
+
+**Der neue Shop ist da: Designs kaufen, anprobieren und behalten — in beiden UPCrew-Spielen.**
+
+- **Zwei Reiter im Shop:** „Design" mit dem Angebot des Tages (drei Stücke, 20 % billiger, für alle gleich), den
+  Design-Paketen und den Einzelteilen (Farbwelten, Schriften, Knöpfe, Brett-Design 2D und 3D, Figuren-Stil …) — und
+  „Blunderluck" mit dem Vorrat wie bisher (Tipp, Zeit zurück).
+- **Ein Tipp öffnet ein Blatt:** je Kategorie alle Stücke mit Preis; je Stück ein grosses Bild, „Anprobieren" und
+  „Kaufen". Fehlen dir Münzen, steht da, wie viele. Vor dem Kauf wirst du kurz gefragt.
+- **Gekauft heisst: deins.** Das Stück liegt danach in der Sammlung, ist dort frei und lässt sich übernehmen. Mit
+  Konto kommt es auf jedes Gerät mit — und was beiden Spielen gehört (Farbwelt, Schrift, Knöpfe), gilt auch in
+  Typoluck. Als Gast bleibt es auf diesem Gerät; sicherst du deinen Spielstand, zieht es mit ins Konto.
+- **Anprobieren kostet nichts:** Farbwelt, Schrift und Knöpfe legen sich probeweise über die App, ein Brett-Design
+  oder Figuren-Stil erscheint oben im kleinen Brett. „Anprobe beenden" (oder ein Wechsel auf eine andere Seite)
+  stellt alles zurück — gespeichert wird dabei nichts.
+- **Erspielen geht weiter wie bisher:** Was Level oder Turm freischalten, bleibt genau so frei. Kaufen ist ein
+  zweiter Weg, kein Ersatz. In der Sammlung steht an Kaufbarem jetzt „im Shop" statt „wird erspielt".
+- **Nichts rollt seitlich:** Auch im Shop wechselt ein Wisch nach links oder rechts überall die Seite.
+- **Unter der Haube sparsamer:** Bei schlechtem Netz versucht die App das Speichern nicht mehr jede halbe Sekunde,
+  sondern in wachsenden Abständen (höchstens alle 30 Sekunden); beim Start wird der Stand nicht mehr doppelt
+  geladen; die Rangliste baut sich nur noch neu, wenn du sie ansiehst. Nach einem Dialog steht die Tastatur-Auswahl
+  wieder auf dem Knopf, der ihn geöffnet hat.
+
 ## v0.162.0 — 04.10.2026
 
 **Die Sammlung ist neu geordnet: Kacheln statt Reihen — und beim Wischen zieht die Leiste früher nach.**

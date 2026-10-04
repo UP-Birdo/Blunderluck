@@ -119,5 +119,15 @@ pruefe("Es gibt Bausteine zu prüfen", () => {
     }
 });
 
+/* Seit v0.163.0 (Shop mit Besitz) gehört `js\upcrew-besitz.js` dazu — die Schleife oben vergleicht nur, was hier
+   liegt; dass der Baustein hier liegt, steht deshalb eigens da. */
+pruefe("js\\upcrew-besitz.js liegt hier (Shop mit Besitz, seit v0.163.0) — und neben dem neuen Shop-Baustein", () => {
+    for (const name of ["upcrew-besitz.js", "upcrew-shop.js", "upcrew-katalog.js"]) {
+        if (!bausteine.some((b) => b.ordner === "js" && b.name === name)) {
+            throw new Error("js\\" + name + " fehlt — aus UPCrew\\bausteine\\js kopieren");
+        }
+    }
+});
+
 console.log(anzahlOk + " ok, " + anzahlFehler + " Fehler");
 process.exit(anzahlFehler === 0 ? 0 : 1);

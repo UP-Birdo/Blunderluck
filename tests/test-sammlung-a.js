@@ -12,14 +12,15 @@
  *      `brett3d`, `SAMMLUNG.FIGUREN` = `figurstil` (ohne `glas`, das noch nicht wirkt).
  *   2. Die Fläche: Kacheln statt Regal-Reihen — erst die fünf eigenen Regale, dann die Arten des Katalogs, dann
  *      Darstellung und Sets, dann die Abschnitte der reinen Sammlung. Die Stück-Knöpfe stehen im Blatt, nicht im Ort.
- *   3. Kein „Lv": Die Oberfläche nennt kein Level mehr; ohne Shop tragen gesperrte Stücke „wird erspielt".
+ *   3. Kein „Lv": Die Oberfläche nennt kein Level mehr. Seit v0.163.0 mit Shop und Besitz: Kaufbares, das noch
+ *      gesperrt ist, trägt „im Shop"; ein gekauftes Stück (js\besitz.js) ist frei und lässt sich übernehmen.
  *   4. „NN %": `anteil()` = `tab.zaehlen()` plus die eigenen Abschnitte.
  *   5. Im Blatt: Ein freies Stück lässt sich wählen und übernehmen (eigenes Regal UND Art des Katalogs), ein
  *      gesperrtes nur ansehen, eines, das noch nicht wirkt, gar nicht antippen.
  *   6. Die reine Sammlung: Abschnitt wandert ins Blatt und zurück; ein neues Zeichnen schliesst ihr Blatt.
  *   7. Die Vorschau kommt mit der kompakten im Blatt zurecht.
- *   8. Einbindung und Stil: Reihenfolge in index.html, offline, `shop: false`, kein `besitz`; kein Baustein der
- *      Sammlung lässt etwas waagrecht rollen.
+ *   8. Einbindung und Stil: Reihenfolge in index.html, offline, der Haken `besitz` (kein `shop: false` mehr); kein
+ *      Baustein der Sammlung lässt etwas waagrecht rollen.
  *
  * Wie es aussieht und ob am Gerät wirklich nichts waagrecht rollt, zeigt nur der Browser (ansicht\v0.162.0,
  * Messung in UEBERGABE.md).
@@ -65,7 +66,7 @@ const ohneKommentare = (text) => text.replace(/\/\*[\s\S]*?\*\//g, "");
 /* In der Reihenfolge aus index.html (soweit die Sammlung sie braucht). */
 const DATEIEN = ["js/upcrew-intro.js", "js/upcrew-farbwelten.js", "js/upcrew-aussehen.js", "js/upcrew-blatt.js",
     "js/freischaltung.js", "js/upcrew-zufall.js", "js/turm.js", "js/brett-design.js", "js/schach-varianten.js", "js/upcrew-katalog.js",
-    "js/upcrew-platz.js", "js/upcrew-anpassen.js", "js/upcrew-sammlung.js", "js/sammlung.js"];
+    "js/upcrew-besitz.js", "js/upcrew-platz.js", "js/upcrew-anpassen.js", "js/upcrew-sammlung.js", "js/besitz.js", "js/sammlung.js"];
 
 /*
  * Eine Welt: Dokument, Gerätespeicher, die Attrappen — und die offene Sammlung.
@@ -90,7 +91,9 @@ function welt(wahl) {
             search: o.werkstatt ? "?werkstatt" : "", pathname: "/Blunderluck/" },
         matchMedia: () => ({ matches: false, addEventListener() {} }),
         addEventListener() {}, removeEventListener() {},
-        FORTSCHRITT_KONTO: { level: () => ({ level: o.level || 0 }), turmOrt: () => o.ort || 1 },
+        /* Seit v0.163.0 dazu, was js\besitz.js vom Fortschritt braucht: die Person (hier immer der Gast). */
+        FORTSCHRITT_KONTO: { level: () => ({ level: o.level || 0 }), turmOrt: () => o.ort || 1,
+            GAST: "gast", AM_KONTO: true, person: () => "gast", _eigener: () => null },
         DIALOG: { hinweis() {} },
         RANGLISTE: {
             abzeichenListe: () => [{ id: "a", erreicht: 1 }, { id: "b", erreicht: 0 }, { id: "c", erreicht: 0 }],
@@ -115,6 +118,10 @@ function welt(wahl) {
     if (o.start) {
         umgebung.START = { _spielart: () => ({ id: "standard" }) };
     }
+    /* `besitz` (seit v0.163.0): was der Gast auf diesem Gerät gekauft hat — in der Form von js\besitz.js. */
+    if (o.besitz) {
+        speicher["upcrew.besitz"] = JSON.stringify({ gast: o.besitz });
+    }
     umgebung.window = umgebung;
     umgebung.globalThis = umgebung;
     vm.createContext(umgebung);
@@ -122,6 +129,7 @@ function welt(wahl) {
         vm.runInContext(lesen(datei), umgebung, { filename: datei });
     }
     const hol = (name) => vm.runInContext(name, umgebung);
+    umgebung.FREISCHALTUNG_TEST = hol("FREISCHALTUNG");
 
     const ebenen = dokument.createElement("div");
     const haupt = dokument.createElement("main");
@@ -234,7 +242,8 @@ pruefe("Kein „Lv“ in der Sammlung: weder im Ort noch in einem Blatt; `ab` ne
     wahr(!/"Lv /.test(ohneKommentare(lesen("js/sammlung.js"))), "js\\sammlung.js setzt kein „Lv “ mehr zusammen");
 });
 
-pruefe("Ohne Shop: kaufbare gesperrte Stücke tragen „wird erspielt“, Orte bleiben Orte, nichts heisst „im Shop“", () => {
+/* Seit v0.163.0 MIT Shop und Besitz (bis v0.162.0 stand hier `shop: false` und überall „wird erspielt"). */
+pruefe("Mit Shop: kaufbare gesperrte Stücke tragen „im Shop“, Erspieltes „wird erspielt“, Orte bleiben Orte", () => {
     const w = welt();
     const band = (wert) => {
         const b = w.stueck(wert).querySelector(".upa-band");
@@ -242,28 +251,66 @@ pruefe("Ohne Shop: kaufbare gesperrte Stücke tragen „wird erspielt“, Orte b
     };
     w.S.tab.blattOeffnen("design2d");
     gleich(band("grau"), "", "frei: kein Band");
-    gleich(band("farbwelt"), "wird erspielt", "Farbwelt (heute über das Level): wird erspielt");
+    gleich(band("farbwelt"), "im Shop", "Farbwelt (kaufbar, heute auch über das Level): im Shop");
     gleich(band("holz"), "Holzhalle", "Holz: der Ort");
     w.S.tab.blattOeffnen("schrift");
     gleich(band("S1"), "", "Crew 1 frei");
-    gleich(band("S4"), "wird erspielt", "Crew 4");
+    gleich(band("S4"), "im Shop", "Crew 4");
     w.S.tab.blattOeffnen("farbwelt");
-    gleich(band("gold"), "wird erspielt", "Gold wird erspielt");
+    gleich(band("gold"), "wird erspielt", "Gold wird erspielt (nicht kaufbar)");
     gleich(band("neon"), "bald", "was noch nicht wirkt: bald");
     w.S.tab.blattOeffnen("figuren");
     gleich(band("glas"), "bald", "Glas: bald");
     gleich(band("matt"), "Holzhalle", "Matt: der Ort");
-    for (const k of w.S.tab.kategorien()) {
+    /* jedes gesperrte, wirkende Katalog-Stück ohne Ort: „im Shop“ genau dann, wenn es kaufbar ist */
+    for (const k of ["farbwelt", "schrift", "knoepfe"]) {
         w.S.tab.blattOeffnen(k);
-        for (const b of w.blatt().querySelectorAll(".upa-band")) {
-            wahr(b.textContent !== "im Shop", k + ": „im Shop“ ohne Shop");
+        for (const s of w.K.stuecke(k).filter((x) => x.wirkt && x.weg !== "start")) {
+            gleich(band(s.wert), s.weg === "kauf" ? "im Shop" : "wird erspielt", k + "/" + s.wert);
         }
     }
     w.S.tab.blattSchliessen();
     const quelle = ohneKommentare(lesen("js/sammlung.js"));
-    wahr(/UPCREW_ANPASSEN\.zeigen\(SAMMLUNG\.ortEl, \{[\s\S]*?shop: false,[\s\S]*?\}\);/.test(quelle), "zeigen(…, { shop: false })");
     const aufruf = quelle.slice(quelle.indexOf("UPCREW_ANPASSEN.zeigen("), quelle.indexOf("});", quelle.indexOf("UPCREW_ANPASSEN.zeigen(")));
-    wahr(!/besitz/.test(aufruf), "besitz wird nicht übergeben");
+    wahr(!/shop\s*:\s*false/.test(quelle), "`shop: false` ist herausgenommen");
+    wahr(/besitz: \(typeof BESITZ !== "undefined"\) \? BESITZ\.haken\(\) : undefined/.test(aufruf), "der Haken des Besitzes wird übergeben");
+});
+
+pruefe("Besitz: ein im Shop gekauftes Stück ist in der Sammlung frei und lässt sich übernehmen — der Rest bleibt gesperrt", () => {
+    /* Der Gast hat Holz (Brett-Design 2D), Matt (Figuren-Stil) und Crew 2 (Schrift) gekauft — Ort 1, Level 0. */
+    const w = welt({ besitz: { brett2d: ["holz"], figurstil: ["matt"], schrift: ["S2"] } });
+    const frei = (wert) => !w.stueck(wert).classList.contains("zu");
+    w.S.tab.blattOeffnen("design2d");
+    gleich(["grau", "farbwelt", "holz", "marmor"].map(frei), [true, false, true, false], "Brett-Design 2D: Holz frei, Marmor nicht");
+    gleich(w.blatt().querySelector(".upa-b-zahl").textContent, "2/6", "n/m zählt den Kauf mit");
+    wahr(!w.stueck("holz").querySelector(".upa-band"), "kein Band mehr am gekauften Stück");
+    w.stueck("holz").click();
+    gleich(w.knopf("upa-uebernehmen").disabled, false, "Übernehmen an");
+    w.knopf("upa-uebernehmen").click();
+    gleich(w.B.wahl(), "holz", "übernommen: das Spiel trägt Holz (BRETT_DESIGN.frei: heutiger Weg ODER Besitz)");
+    gleich(w.speicher["blunderluck.brett-design"], "holz", "gemerkt");
+    gleich(w.B.waehlen("marmor"), "holz", "nicht Gekauftes lehnt das Spiel weiter ab");
+    /* die Freischaltung selbst: Regal-Schlüssel des Spiels, Besitz mit der Art des Katalogs */
+    const F = w.umgebung.FREISCHALTUNG_TEST;
+    gleich([F.brettStueckFrei("design2d", "holz"), F.brettStueckFrei("design2d", "marmor"),
+        F.brettStueckFrei("figuren", "matt"), F.brettStueckFrei("figuren", "metall"),
+        F.brettStueckFrei("thema", "holz")], [true, false, true, false, false], "brettStueckFrei");
+    gleich([F.erspielt("design2d", "holz"), F.gekauft("design2d", "holz")], [false, true], "erspielt nein, gekauft ja");
+    w.S.tab.blattOeffnen("figuren");
+    gleich(["emaille", "matt", "porzellan"].map(frei), [true, true, false], "Figuren-Stil: Matt frei");
+    w.S.tab.blattOeffnen("schrift");
+    gleich(["S1", "S4", "S2"].map(frei), [true, false, true], "Schrift: Crew 2 gekauft, Crew 4 nicht");
+    w.stueck("S2").click();
+    w.knopf("upa-uebernehmen").click();
+    gleich(w.A.lesen().schrift, "S2", "gekaufte Schrift übernommen");
+    /* ohne Kauf wie bisher */
+    const ohne = welt();
+    ohne.S.tab.blattOeffnen("design2d");
+    wahr(ohne.stueck("holz").classList.contains("zu"), "ohne Besitz bleibt Holz gesperrt");
+    /* der heutige Weg bleibt daneben unverändert: Holzhalle erreicht, nichts gekauft */
+    const turm = welt({ ort: 2 });
+    gleich([turm.umgebung.FREISCHALTUNG_TEST.erspielt("design2d", "holz"),
+        turm.umgebung.FREISCHALTUNG_TEST.gekauft("design2d", "holz")], [true, false], "Turm: erspielt ja, gekauft nein");
 });
 
 /* ------------------------------------------------------------------ *
@@ -513,9 +560,20 @@ pruefe("index.html, sw.js: Katalog und Platz vor Anpassen und Sammlung, Platz-St
     wahr(stelle("js/upcrew-platz.js") < stelle("js/upcrew-anpassen.js")
         && stelle("js/upcrew-platz.js") < stelle("js/upcrew-sammlung.js"), "Platz vor Anpassen und Sammlung");
     wahr(stelle("js/upcrew-blatt.js") < stelle("js/sammlung.js"), "der Blatt-Baustein ist geladen, bevor die Sammlung zeichnet");
-    /* nicht dabei: Besitz und der neue Shop */
-    wahr(!fs.existsSync(pfad.join(projekt, "js", "upcrew-besitz.js")) && stelle("js/upcrew-besitz.js") === -1,
-        "upcrew-besitz.js gehört nicht in diese Version");
+    /* seit v0.163.0 dabei: der Besitz — Baustein direkt NACH dem Katalog und VOR dem Platz, das eigene Modul vor
+       Shop und Sammlung */
+    for (const name of ["js/upcrew-besitz.js", "js/besitz.js"]) {
+        wahr(stelle(name) !== -1, name + " fehlt in index.html");
+        wahr(lesen("sw.js").indexOf("\"./" + name + "\"") !== -1, name + " fehlt in sw.js");
+        wahr(fs.existsSync(pfad.join(projekt, name)), name + " fehlt");
+    }
+    wahr(stelle("js/upcrew-katalog.js") < stelle("js/upcrew-besitz.js")
+        && stelle("js/upcrew-besitz.js") < stelle("js/upcrew-platz.js"), "upcrew-besitz.js zwischen Katalog und Platz");
+    wahr(/"js\/upcrew-katalog\.js"><\/script>\s*(<!--[\s\S]*?-->\s*)?<script src="js\/upcrew-besitz\.js"/.test(index),
+        "upcrew-besitz.js direkt nach dem Katalog");
+    wahr(stelle("js/besitz.js") < stelle("js/shop.js") && stelle("js/besitz.js") < stelle("js/sammlung.js"),
+        "js/besitz.js vor Shop und Sammlung");
+    wahr(stelle("js/fortschritt-konto.js") < stelle("js/besitz.js"), "js/besitz.js nach dem Fortschritt");
 });
 
 pruefe("Stil: kein Baustein der Sammlung lässt etwas waagrecht rollen; die Sammlung hat keine eigene Roll-Regel", () => {

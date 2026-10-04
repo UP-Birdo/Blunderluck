@@ -239,9 +239,11 @@ pruefe("3D-Figuren von oben und 2D-Scheiben: Bilder aus dem 3D-Modul, Sammlung k
     const neigung = /const SCHEIBEN_NEIGUNG = THREE\.MathUtils\.degToRad\((\d+)\)/.exec(BRETT_QUELLE);
     wahr(!!neigung && Number(neigung[1]) > 4 && Number(neigung[1]) < 30, "Scheiben: leicht geneigt (zwischen Oben und Schräg)");
     wahr(/FIGUREN_FLACH\.datenUrl\(art, farbeName\)/.test(BRETT_QUELLE), "Scheiben tragen die 2D-Silhouette");
-    wahr(/einst\.scheiben = .*FREISCHALTUNG\.brett\(\) === "scheiben"/.test(BRETT_QUELLE), "3D-Brett liest die Scheiben-Wahl");
+    /* Seit v0.166.0 stehen Laden und dreiDGilt in js\brett-3d-aussehen.js (ohne three.js). */
+    const AUSSEHEN_QUELLE = dateisystem.readFileSync(pfad.join(projekt, "js", "brett-3d-aussehen.js"), "utf8");
+    wahr(/einst\.scheiben = .*FREISCHALTUNG\.brett\(\) === "scheiben"/.test(AUSSEHEN_QUELLE), "3D-Brett liest die Scheiben-Wahl");
     wahr(/function wahlUebernehmen\(an, oben, scheiben\)/.test(BRETT_QUELLE), "Umschalten mit Scheiben");
-    wahr(/art === "3d" \|\| art === "scheiben"/.test(BRETT_QUELLE.slice(BRETT_QUELLE.indexOf("function dreiDGilt"))),
+    wahr(/art === "3d" \|\| art === "scheiben"/.test(AUSSEHEN_QUELLE.slice(AUSSEHEN_QUELLE.indexOf("dreiDGilt() {"))),
         "3D-Brett gilt auch mit Scheiben");
     const sammlung = dateisystem.readFileSync(pfad.join(projekt, "js", "sammlung.js"), "utf8");
     /* Seit v0.159.0 getauscht: Brett 3D ab Holzhalle, Figuren 3D ab Marmorsaal. */
@@ -472,12 +474,14 @@ globalThis.TURM = require(pfad.join(projekt, "js", "turm.js"));
 globalThis.BRETT_DESIGN = require(pfad.join(projekt, "js", "brett-design.js"));
 const SAMMLUNG = require(pfad.join(projekt, "js", "sammlung.js"));
 const BRETT_QUELLE = dateisystem.readFileSync(pfad.join(projekt, "js", "brett-3d.js"), "utf8");
+/* Seit v0.166.0 stehen die Tabellen in js\brett-3d-aussehen.js (das Modul nimmt sie von dort). */
+const BRETT_AUSSEHEN = require(pfad.join(projekt, "js", "brett-3d-aussehen.js"));
 
 pruefe("Sammlung: Themen und Figuren sind genau die des 3D-Bretts", () => {
-    const schluessel = (block) => {
-        const text = BRETT_QUELLE.match(new RegExp("const " + block + " = \\{([\\s\\S]*?)\\n\\};"))[1];
-        return [...text.matchAll(/^\s{4}([a-z]+):/gm)].map((t) => t[1]).sort().join(",");
-    };
+    const schluessel = (block) => Object.keys(BRETT_AUSSEHEN[block]).sort().join(",");
+    wahr(/const \{ THEMEN, FIGUR_STILE, KACHELN, TEMPI, VORGABE \} = AUSSEHEN;/.test(BRETT_QUELLE)
+        && /const AUSSEHEN = BRETT_3D_AUSSEHEN;/.test(BRETT_QUELLE), "das Modul nimmt dieselben Tabellen");
+    wahr(!/\nconst THEMEN = \{/.test(BRETT_QUELLE) && !/\nconst FIGUR_STILE = \{/.test(BRETT_QUELLE), "keine zweite Tabelle im Modul");
     gleich(SAMMLUNG.THEMEN.map((t) => t.wert).sort().join(","), schluessel("THEMEN"), "Brett-Themen");
     gleich(SAMMLUNG.FIGUREN.map((t) => t.wert).sort().join(","), schluessel("FIGUR_STILE"), "Figuren-Stile");
     gleich(SAMMLUNG.THEMEN[0].wert, "blunderluck", "die Vorgabe (Farbwelt) steht vorn");
@@ -609,7 +613,10 @@ pruefe("3D-Brett: Sammlung-Schnittstelle da, Vorschau ändert das echte Brett ni
         "die Wahl wird nicht zurückgesetzt");
     wahr(!/einstellungenSpeichern/.test(mit), "die Vorschau speichert");
     const waehlen = BRETT_QUELLE.match(/function aussehenWaehlen\(schluessel, wert\) \{([\s\S]*?)\n\}/)[1];
-    wahr(/!stueckFrei\(schluessel, wert\)\) return false/.test(waehlen), "Wählen prüft die Freigabe nicht");
+    wahr(/AUSSEHEN\.aussehenWaehlen\(schluessel, wert, Z\.einst\)\) return false/.test(waehlen), "das Modul wählt über brett-3d-aussehen.js");
+    const aussehenQuelle = dateisystem.readFileSync(pfad.join(projekt, "js", "brett-3d-aussehen.js"), "utf8");
+    const waehlenA = aussehenQuelle.match(/\n {4}aussehenWaehlen\(schluessel, wert, einst\) \{([\s\S]*?)\n {4}\}/)[1];
+    wahr(/!A\.stueckFrei\(schluessel, wert\)\) return false/.test(waehlenA), "Wählen prüft die Freigabe nicht");
 });
 
 pruefe("Die zwölf Crew-Schriften liegen bei und gehen offline mit", () => {
