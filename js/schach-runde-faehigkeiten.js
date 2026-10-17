@@ -10,7 +10,7 @@
  * Hier drin: Bilanz und Beute, Bonusfelder samt Nachziehen, der Einsatz der
  * Fähigkeiten mit Zielfeldern und Wirkungen, die Unglücke und der Händler.
  *
- * Aufgeteilt am 27.08.2026 (v0.92.0) — reiner Umzug aus schach-runde.js,
+ * Aufgeteilt am 27.08.2026 — reiner Umzug aus schach-runde.js,
  * kein Verhalten geändert.
  */
 
@@ -428,7 +428,7 @@ Object.assign(SCHACH_RUNDE, {
      * Verfahren: FNV-1a, eine gängige einfache Streufunktion.
      *
      * ------------------------------------------------------------------
-     * WAS SICH UNTERSCHEIDET, GEHÖRT AN DEN ANFANG DER SAAT (seit v0.49.1).
+     * WAS SICH UNTERSCHEIDET, GEHÖRT AN DEN ANFANG DER SAAT.
      *
      * FNV-1a verodert jedes Zeichen und multipliziert dann mit einer Primzahl.
      * Ein Unterschied im LETZTEN Zeichen erlebt danach genau eine
@@ -1738,7 +1738,7 @@ Object.assign(SCHACH_RUNDE, {
             runde.stand = wirkung.stand;
             text += " — " + wirkung.text;
 
-            /* Die Karte für die Hand (seit v0.82.0): Wer das Unglück
+            /* Die Karte für die Hand: Wer das Unglück
                abbekommen hat, trägt es ab jetzt als Karte. Nur ein Unglück,
                das WIRKT, zählt — ein verpufftes hat niemanden getroffen. */
             runde.unglueckskarten[farbe].push({
@@ -1960,7 +1960,7 @@ Object.assign(SCHACH_RUNDE, {
     },
 
     /*
-     * WARUM GEHT DIESE FÄHIGKEIT GERADE NICHT? (seit v0.152.3)
+     * WARUM GEHT DIESE FÄHIGKEIT GERADE NICHT?
      *
      * Nutzer 28.09.2026: „Verstärken kann man nicht einsetzen" · „ging einfach
      * für ein paar Runden nicht" — dazu ein Dialog „König im Schach", obwohl
@@ -2730,7 +2730,7 @@ Object.assign(SCHACH_RUNDE, {
             runde.faehigkeiten[beute.opfer].splice(stelle, 1);
         }
 
-        /* Höchstens `regeln.itemMax` (seit v0.152.4): Der Dieb selbst liegt
+        /* Höchstens `regeln.itemMax`: Der Dieb selbst liegt
            noch in der Hand und geht gleich — er zählt deshalb nicht mit.
            Was darüber ist, verpufft. */
         const grenze = SCHACH_RUNDE.normalisieren(runde).regeln.itemMax;

@@ -1,5 +1,10 @@
 /*
- * versiegelung.js — Prüfsummen für Spieler-PIN und Verwaltungs-Passwort.
+ * versiegelung.js — Prüfsummen für Spieler-PIN und Würfel-Siegel.
+ *
+ * Bis v0.167.2 auch für das Verwaltungs-Passwort (`verwaltungPruefen` mit
+ * eigener Admin-Zutat) — entfernt mit v0.168.0, die Verwaltung hängt allein
+ * an der Admin-Rolle des UPCrew-Kontos (js\verwaltung.js). Der Test wacht,
+ * dass die alte Zutat hier nicht wieder auftaucht — auch nicht im Kommentar.
  *
  * Die gemeinsame Ablage liegt in einer öffentlich erreichbaren Datenbank und
  * der Quelltext auf GitHub. Deshalb steht keine Zahl im Klartext irgendwo:
@@ -26,7 +31,7 @@ const VERSIEGELUNG = {
     },
 
     /* ---------------------------------------------------------------- *
-     * Zahlenwörter (Spieler-PIN und Verwaltungs-Passwort)
+     * Zahlenwörter (Spieler-PIN; bis v0.167.2 auch Verwaltungs-Passwort)
      *
      * Dasselbe Verfahren, anderer Zweck: Gespeichert wird nie die Zahl selbst,
      * sondern nur ihre Prüfsumme. Wer die Datenbank oder den Quelltext liest,
@@ -50,9 +55,8 @@ const VERSIEGELUNG = {
          *
          * Diese Zeichenketten gehen in die Prüfsumme ein und dürfen ab der
          * ersten echten Runde NIE mehr angepasst werden. Wer hier etwas
-         * ändert, macht auf einen Schlag jede gespeicherte Spieler-PIN und
-         * das Verwaltungs-Passwort ungültig — und der Fehler fiele erst beim
-         * nächsten Anmelden auf.
+         * ändert, macht auf einen Schlag jede gespeicherte Spieler-PIN
+         * ungültig — und der Fehler fiele erst beim nächsten Anmelden auf.
          *
          * Dasselbe gilt für die Speicherpfade in `konfig.js`. Die Lehre
          * stammt aus dem Quizz (dort v0.89 umbenannt, v0.90 zurückgebaut):
@@ -70,23 +74,6 @@ const VERSIEGELUNG = {
         }
         const gerechnet = await VERSIEGELUNG.pinPruefwertBilden(pin, salz);
         return gerechnet !== "" && gerechnet === pruefwert;
-    },
-
-    /* Prüfsumme des Verwaltungs-Passworts. Kein Salz: Der Vergleichswert steht
-       fest in js\konfig.js, es gibt nur dieses eine Passwort. */
-    async verwaltungPruefwertBilden(passwort) {
-        if (!VERSIEGELUNG.verfuegbar()) {
-            return "";
-        }
-        return VERSIEGELUNG._summeBilden("blunderluck-admin|" + String(passwort || ""));
-    },
-
-    async verwaltungPruefen(passwort, erwartet) {
-        if (!erwartet) {
-            return false;
-        }
-        const gerechnet = await VERSIEGELUNG.verwaltungPruefwertBilden(passwort);
-        return gerechnet !== "" && gerechnet === erwartet;
     },
 
     /* ---------------------------------------------------------------- *

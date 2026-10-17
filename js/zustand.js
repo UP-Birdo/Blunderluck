@@ -56,7 +56,7 @@ const ZUSTAND = {
         vibration: "M8.5 4 H15.5 V20 H8.5 Z M11 17 H13 M4.5 8.5 V15.5 M19.5 8.5 V15.5 "
             + "M2 10.5 V13.5 M22 10.5 V13.5",
         "vibration-aus": "M8.5 4 H15.5 V20 H8.5 Z M11 17 H13 M4 4 L20 20",
-        /* Die Darstellung in den Einstellungen (seit v0.141.0): Sonne = hell,
+        /* Die Darstellung in den Einstellungen: Sonne = hell,
            Mond = dunkel, halb gefüllter Kreis = wie das Gerät. */
         sonne: "M12 8 A4 4 0 1 0 12 16 A4 4 0 1 0 12 8 Z M12 2.5 V4.5 M12 19.5 V21.5 "
             + "M2.5 12 H4.5 M19.5 12 H21.5 M5.3 5.3 L6.7 6.7 M17.3 17.3 L18.7 18.7 "
@@ -81,9 +81,9 @@ const ZUSTAND = {
         bald: "M12 7 V12 L15 14 M12 3 A9 9 0 1 0 12.01 3",
         /* Shop (seit v0.152.0, Platz 5 statt „Bald"): eine Einkaufstüte. */
         shop: "M5 8 H19 L18 21 H6 Z M9 8 V6.5 A3 3 0 0 1 15 6.5 V8 M9 12 A3 3 0 0 0 15 12",
-        /* Tipp in der Partie (seit v0.152.0): eine Glühbirne. */
+        /* Tipp in der Partie: eine Glühbirne. */
         tipp: "M9 18 H15 M10 21 H14 M12 3 A6 6 0 0 1 16 13.5 C15.2 14.3 15 15 15 16 H9 C9 15 8.8 14.3 8 13.5 A6 6 0 0 1 12 3 Z",
-        /* Achtung (seit v0.152.3): ein Dreieck mit Ausrufezeichen — für
+        /* Achtung: ein Dreieck mit Ausrufezeichen — für
            „Geht nicht" nach einer Regel (König im Schach, zu spät …), nicht
            für Netzfehler (dort bleibt „kein-netz"). */
         achtung: "M12 4 L21 19.5 H3 Z M12 10 V14 M12 16.8 V17",
@@ -143,7 +143,7 @@ const ZUSTAND = {
      *   nochmal  Funktion — wiederholt den fehlgeschlagenen Schritt
      *   technik  die technische Meldung; steht NICHT im Bild, nur als
      *            Hinweis beim Darüberfahren (für die Fehlersuche)
-     *   zeichen  wahlfrei (seit v0.152.3), Vorgabe "kein-netz" — für eine
+     *   zeichen  wahlfrei, Vorgabe "kein-netz" — für eine
      *            abgelehnte Regel statt eines Netzfehlers "achtung"
      */
     fehler(angaben) {

@@ -13,7 +13,7 @@
  *   arena()       Seit v0.147.0 der ERREICHTE ORT im Turm (js\turm.js; 1 =
  *                 Werkbank, 2 = Holzhalle …). Ohne Turm (Tests) 0.
  *   brettStueckFrei(schluessel, wert)   Brett-Thema, Figuren-Stil oder
- *                 (seit v0.159.0) Brett-Design 2D frei? Die Vorgaben immer;
+ *                 Brett-Design 2D frei? Die Vorgaben immer;
  *                 die übrigen ab ihrem Ort (`TURM.FREI_AB`) bzw. Level
  *                 (`STUFE_AB`), mit Admin-Freigabe oder in der Werkstatt —
  *                 und seit v0.163.0 ODER im Shop gekauft (`gekauft`,
@@ -35,7 +35,7 @@
  *                   "2d"       2D-Brett, 2D-Figuren (Vorgabe, neue Spieler)
  *                   "scheiben" 3D-Brett, 2D-Figuren als flache Scheiben
  *                              (seit v0.159.0, js\brett-3d.js)
- *                   "oben"     2D-Brett, 3D-Figuren leicht geneigt (v0.157.3)
+ *                   "oben"     2D-Brett, 3D-Figuren leicht geneigt
  *                   "3d"       3D-Brett, 3D-Figuren
  *                 Gewähltes zählt nur, soweit es frei ist; sonst gilt der
  *                 freie Teil (3D-Brett ohne 3D-Figuren = "scheiben").
@@ -60,7 +60,7 @@ const FREISCHALTUNG = {
 
     BRETT_SCHLUESSEL: "blunderluck.brett3d",
 
-    /* Was am LEVEL hängt statt am Ort (seit v0.159.0): das Brett-Design
+    /* Was am LEVEL hängt statt am Ort: das Brett-Design
        „Farbwelt" im 2D-Brett, zugleich mit der ersten Farbwelt nach Grau
        (Werkstatt, Level 2 — `UPCREW_ANPASSEN.STUFEN.farbwelt`). */
     STUFE_AB: {
@@ -112,7 +112,7 @@ const FREISCHALTUNG = {
         return FREISCHALTUNG.arena() >= ab;
     },
 
-    /* Im Shop gekauft (seit v0.163.0)? `schluessel` ist der des Regals
+    /* Im Shop gekauft? `schluessel` ist der des Regals
        (`design2d`, `thema`, `figuren`); ohne js\besitz.js (Tests) nie. */
     gekauft(schluessel, wert) {
         return typeof BESITZ !== "undefined" && BESITZ.frei(schluessel, wert);
@@ -173,7 +173,7 @@ const FREISCHALTUNG = {
         return FREISCHALTUNG.artAus(brett, figuren);
     },
 
-    /* Die beiden Sammlungs-Stücke (seit v0.157.4) aus der einen Art. */
+    /* Die beiden Sammlungs-Stücke aus der einen Art. */
     teile(art) {
         const wert = art || FREISCHALTUNG.brett();
         return {
@@ -213,7 +213,7 @@ const FREISCHALTUNG = {
                 && typeof window.BRETT_3D.wahlUebernehmen === "function") {
             window.BRETT_3D.wahlUebernehmen(an, oben, scheiben);
         }
-        /* Echtes 2D (seit v0.151.3): flache Figuren an/aus. */
+        /* Echtes 2D: flache Figuren an/aus. */
         if (typeof FIGUREN_FLACH !== "undefined") {
             FIGUREN_FLACH.anwenden();
         }

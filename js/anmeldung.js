@@ -73,11 +73,11 @@ const ANMELDUNG = {
      *     wurde — dann wird das Gerät abgemeldet und fragt neu. (Dass er
      *     durch ein Überschreiben verschwindet, verhindert
      *     `SPIELER.zusammenfuehren`.)
-     *  2. **Den Nachzügler-Fall auffangen (seit v0.89.0)** — siehe unten.
+     *  2. **Den Nachzügler-Fall auffangen** — siehe unten.
      */
     datenAktualisiert(daten) {
         /*
-         * DAS KONTO KOMMT ZURÜCK, WENN DER STAND NACHKOMMT (seit v0.89.0).
+         * DAS KONTO KOMMT ZURÜCK, WENN DER STAND NACHKOMMT.
          *
          * DER FEHLER, DEN DAS BEHEBT (dringende Nutzer-Meldung 27.08.2026:
          * „jemand hat sich angemeldet, das Spiel geschlossen — und ist in
@@ -124,7 +124,7 @@ const ANMELDUNG = {
 
             const nachgekommen = SPIELER.spielerFinden(daten, person.id);
 
-            /* Mit UPCrew-Konto (seit v0.138.0) gehört zur gemerkten Person
+            /* Mit UPCrew-Konto gehört zur gemerkten Person
                auch die Firebase-Sitzung. Fehlt sie — das Gerät stammt von
                vor dem Umzug —, muss einmal das Passwort her; ein echter
                Stand liegt vor, also darf jetzt gefragt werden. */
@@ -264,7 +264,7 @@ const ANMELDUNG = {
             }
         }
 
-        /* Weg 3 (seit v0.151.7): NIEMAND auf dem Gerät und ein
+        /* Weg 3: NIEMAND auf dem Gerät und ein
            Einladungslink (`?code=…`) — still als Gast anmelden und direkt
            beitreten, ohne Anmelde-Bild (anmeldung-konto.js). */
         if (!person && ANMELDUNG.einladungOhneAnmeldung()) {
@@ -278,7 +278,7 @@ const ANMELDUNG = {
     /* Gilt der stille Gast-Weg? Nur mit UPCrew-Konten und einem gültigen
        Code in der Adresse. */
     einladungOhneAnmeldung() {
-        return typeof KONTO !== "undefined" && KONTO.aktiv()
+        return KONTO.aktiv()
             && typeof ANMELDUNG.einladungAlsGast === "function"
             && typeof TEAM_SCHACH !== "undefined" && typeof window !== "undefined" && !!window.location
             && TEAM_SCHACH.einladungsCodeAusAdresse(window.location.href) !== "";
@@ -292,7 +292,7 @@ const ANMELDUNG = {
         ANMELDUNG.wurzelEl.hidden = false;
         /* Die Anmeldung sperrt das Seiten-Band (seit v0.161.0, `erlaubt`
            in app.js) — sofort, nicht erst bei der nächsten Berührung. */
-        if (typeof TABS !== "undefined" && typeof TABS.bandAuffrischen === "function") {
+        if (typeof TABS.bandAuffrischen === "function") {
             TABS.bandAuffrischen();
         }
         if (KONTO.aktiv()) {
@@ -309,7 +309,7 @@ const ANMELDUNG = {
             ANMELDUNG.wurzelEl.hidden = true;
             ANMELDUNG.wurzelEl.innerHTML = "";
         }
-        if (typeof TABS !== "undefined" && typeof TABS.bandAuffrischen === "function") {
+        if (typeof TABS.bandAuffrischen === "function") {
             TABS.bandAuffrischen();
         }
         ANMELDUNG._anzeigenAuffrischen();
@@ -552,7 +552,7 @@ const ANMELDUNG = {
         );
 
         /*
-         * DAS NEUE KONTO WARTET NICHT AUF DIE SCHREIBVERZÖGERUNG (v0.91.0).
+         * DAS NEUE KONTO WARTET NICHT AUF DIE SCHREIBVERZÖGERUNG.
          *
          * `aendern` schreibt erst nach 500 ms — wer die Seite sofort nach
          * dem Erstellen schloss, verlor sein Konto (Nebenbefund v0.89.0).
@@ -766,7 +766,7 @@ const ANMELDUNG = {
         }
     },
 
-    /* Der Eintrag „Nummer ändern" (seit v0.151.8) — nur mit UPCrew-Konto,
+    /* Der Eintrag „Nummer ändern" — nur mit UPCrew-Konto,
        nicht für Gäste; sonst eine leere Liste. */
     _nummerEintrag(ich) {
         if (!ich || ich.gast === true || typeof KONTO === "undefined" || !KONTO.aktiv()
@@ -957,7 +957,7 @@ const ANMELDUNG = {
        Knöpfe dafür baut einstellungen.js). Betrifft absichtlich einen
        fremden Eintrag: ohne Zusammenführung schreiben. */
     spielerEntfernen(spielerId) {
-        /* Mit UPCrew-Konto (seit v0.138.0): nur dieser eine Knoten, und nur
+        /* Mit UPCrew-Konto: nur dieser eine Knoten, und nur
            mit den Rechten des Admin-Kontos (Regeln). */
         if (KONTO.aktiv()) {
             return ANMELDUNG._kontoAdminAendern(spielerId, "entfernen");
@@ -1027,7 +1027,7 @@ const ANMELDUNG = {
             return;
         }
 
-        /* Mit UPCrew-Konto (seit v0.138.0): Eintrag UND Firebase-Konto. */
+        /* Mit UPCrew-Konto: Eintrag UND Firebase-Konto. */
         if (KONTO.aktiv()) {
             return ANMELDUNG._kontoLoeschen(ich);
         }

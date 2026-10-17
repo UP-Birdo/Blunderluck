@@ -4118,7 +4118,7 @@ const SCHACH = {
             brett: felder.join("")
         }, umrechnen);
 
-        /* Die toten Ecken wachsen mit (seit v0.77.1) — siehe `_eckenFortsetzen`. */
+        /* Die toten Ecken wachsen mit — siehe `_eckenFortsetzen`. */
         neu.risse = neu.risse
             .concat(SCHACH._eckenFortsetzen(stand, seite, neuBreite))
             .filter((feld, stelle, alle) => alle.indexOf(feld) === stelle)
@@ -4136,7 +4136,7 @@ const SCHACH = {
     },
 
     /*
-     * DIE TOTEN ECKEN WACHSEN MIT (seit v0.77.1).
+     * DIE TOTEN ECKEN WACHSEN MIT.
      *
      * GEMELDET AM 18.08. mit Bildschirmfoto: „Gerade ist etwas ganz Komisches
      * passiert." Auf einem Kreuz-Brett waren die vier toten Ecken zerfranst —

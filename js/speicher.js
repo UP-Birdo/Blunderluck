@@ -79,7 +79,7 @@ class SpeicherGemeinsam {
     }
 
     /* ---------------------------------------------------------------- *
-     * DIE MARKE (seit v0.111.0) — 13 Bytes statt 190 Kilobyte
+     * DIE MARKE — 13 Bytes statt 190 Kilobyte
      *
      * WAS SIE LÖST, GEMESSEN AM 30.08.2026: Die regelmässige Abfrage holte
      * alle drei Sekunden den GANZEN Stand — beim Schach 193.800 Bytes, also
@@ -233,7 +233,7 @@ class SpeicherGemeinsam {
     }
 
     /* ---------------------------------------------------------------- *
-     * TEILE STATT DES GANZEN (seit v0.114.3)
+     * TEILE STATT DES GANZEN
      *
      * GEMESSEN AM 18.09.2026: Der ganze Schach-Stand ist 192 Kilobyte,
      * eine einzelne Partie 8, die Chronik 9, die Schlüsselliste 0,6. Jeder
@@ -303,7 +303,7 @@ SpeicherGemeinsam.ZEITLIMIT_LADEN_MS = 8000;
 SpeicherGemeinsam.ZEITLIMIT_SPEICHERN_MS = 12000;
 
 /*
- * Die Marke (seit v0.111.0) bekommt bewusst WENIG Zeit: Sie ist eine
+ * Die Marke bekommt bewusst WENIG Zeit: Sie ist eine
  * Abkürzung, kein Weg. Antwortet sie nicht in einer halben Sekunde, wird der
  * volle Stand geholt — das ist langsamer, aber immer richtig.
  */
@@ -318,7 +318,7 @@ SpeicherGemeinsam.ZEITLIMIT_MARKE_MS = 500;
 SpeicherGemeinsam.MARKEN_FELD = "geaendertAm";
 
 /*
- * Woher der Anmelde-Schlüssel kommt (seit v0.138.0) — `KONTO.token`, von
+ * Woher der Anmelde-Schlüssel kommt — `KONTO.token`, von
  * app.js gesetzt. Fehlt er, laufen alle Anfragen ohne Schlüssel wie bis
  * v0.137.0 (lokaler Modus, Tests).
  */
@@ -347,7 +347,7 @@ SpeicherGemeinsam.tokenGeber = null;
 function speicherErzeugen(konfig, pfad, lokalerSchluessel, aufbereiten, eigeneUid) {
     const einstellung = konfig.speicher;
 
-    /* Die Spielerliste mit UPCrew-Konten (seit v0.138.0): Wer `eigeneUid`
+    /* Die Spielerliste mit UPCrew-Konten: Wer `eigeneUid`
        mitgibt und ein Konto eingerichtet hat, bekommt die Konten-Rückwand. */
     if (eigeneUid && einstellung.modus === "gemeinsam" && einstellung.firebaseBasis
             && konfig.konto && konfig.konto.apiKey) {

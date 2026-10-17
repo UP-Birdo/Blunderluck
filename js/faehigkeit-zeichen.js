@@ -1,5 +1,5 @@
 /*
- * Blunderluck — die Zeichen der Fähigkeiten und Unglücke (seit v0.63.0)
+ * Blunderluck — die Zeichen der Fähigkeiten und Unglücke
  *
  * NUTZER-ANSAGE 25.08.2026: „Die Icons kannst du mal selbst anhand dessen,
  * was sie machen / wie sie heissen, erstellen — querliegender Holzstamm bei

@@ -63,7 +63,7 @@
  * Rast gelten als gegangen (`uebernommen`). Angefangene Orte ohne das
  * beginnen unten — der neue Ort hat ohnehin nur 3 bis 5 Partien.
  *
- * DIE EIGENHEIT EINES GEGNERS IST DIE REGEL SEINER PARTIE (seit v0.147.0):
+ * DIE EIGENHEIT EINES GEGNERS IST DIE REGEL SEINER PARTIE:
  * Bob spielt nur auf einer seiner vier Stufen; was eine Partie anders macht,
  * sind vorhandene Regler. Es gibt keine eigene Spiel-Mechanik für den Turm.
  */
@@ -541,7 +541,7 @@ const TURM = {
         return (Number.isInteger(wert) && wert > 0) ? Math.min(wert, 3) : 0;
     },
 
-    /* Hatte der alte Turm (bis v0.159.0) hier den Boss besiegt? */
+    /* Hatte der alte Turm hier den Boss besiegt? */
     altTuer(figuren, nr) {
         const ort = TURM.ort(nr);
         return !!ort && TURM.figurenVon(figuren, nr, ort.altBoss) > 0;

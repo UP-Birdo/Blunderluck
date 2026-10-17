@@ -1,5 +1,5 @@
 /*
- * brett-3d.js — das Schachbrett in echtem 3D (seit v0.122.0).
+ * brett-3d.js — das Schachbrett in echtem 3D.
  *
  * AUFTRAG (Nutzer, 24.09.2026): „Baue zuerst das Schachbrett nach, dann
  * lasse die Würfel als echte 3D-Blöcke drüber schweben … neue Winkel aufs
@@ -87,7 +87,7 @@ function themaFarben() {
     });
 }
 
-/* Die Schrift der App für Zeichen auf der Leinwand (seit v0.144.0): der
+/* Die Schrift der App für Zeichen auf der Leinwand: der
    Baustein js\upcrew-aussehen.js setzt --schrift-familie an <html>. Ist die
    gewählte Schrift noch nicht geladen, nimmt die Leinwand den Rückfall. */
 function schriftFamilie() {
@@ -1063,7 +1063,7 @@ function figurenAbgleichen(beschreibung, animieren, bekannterZug, extras) {
 
     const schlagOrte = new Set(bewegungen.map((b) => b.nach));
 
-    /* 3a. Die Bahnen planen, BEVOR sich etwas bewegt (seit v0.132.0):
+    /* 3a. Die Bahnen planen, BEVOR sich etwas bewegt:
            Wer geschlagen wird, ist weg, bevor der Angreifer ihn berührt;
            wer zieht, springt so hoch, dass er über jede Figur auf seinem
            Weg kommt. */
@@ -1237,7 +1237,7 @@ function opferMs() {
 }
 
 /* ------------------------------------------------------------------ *
- * Hitboxen und Bahnplanung (seit v0.132.0) — Haus-Regel „keine
+ * Hitboxen und Bahnplanung — Haus-Regel „keine
  * Durchdringung": Keine Figur geht durch eine andere, auch nicht für
  * einen Augenblick.
  * ------------------------------------------------------------------ */
@@ -1614,7 +1614,7 @@ function boxenAbgleichen(beschreibung, animieren, gewonnen) {
             boxOeffnen(g, inhalt);
             continue;
         }
-        /* Sofort und schnell nach oben (seit v0.132.0) — bis dahin wartete
+        /* Sofort und schnell nach oben — bis dahin wartete
            sie 140 ms, und die ankommende Figur fuhr in sie hinein. */
         tween(dauer(420), (t) => {
             g.userData.dreher.rotation.y += 0.35;
@@ -1737,7 +1737,7 @@ function boxOeffnen(g, inhalt) {
         }
         funkenWolke(mitte, hex, 22, 1.4);
 
-        /* 3a. Eine FALLE zeigt ihre Karte gross über dem Brett (v0.136.0). */
+        /* 3a. Eine FALLE zeigt ihre Karte gross über dem Brett. */
         if (inhalt.pech) {
             falleKarteZeigen(inhalt.art, mitte);
             return;
@@ -1781,7 +1781,7 @@ function boxOeffnen(g, inhalt) {
 }
 
 /* ------------------------------------------------------------------ *
- * DIE FALLEN-SZENE (seit v0.136.0)
+ * DIE FALLEN-SZENE
  *
  * So liest man sie ohne Text:
  *   1. Die Box springt auf (wie jede).
@@ -2644,7 +2644,7 @@ function restzeitSetzen(feld, text) {
  * ------------------------------------------------------------------ */
 
 /*
- * EINE SCHLEIFE, NIE ZWEI (seit v0.133.0). `Z.laeuft` heisst: „ein Bild ist
+ * EINE SCHLEIFE, NIE ZWEI. `Z.laeuft` heisst: „ein Bild ist
  * bestellt". Bis v0.132.0 setzte `bild` die Marke zu Beginn zurück und
  * bestellte am Ende selbst neu — stiess währenddessen etwas `anstossen` an
  * (Funken, Box öffnet, Landung), lief ab da eine ZWEITE Schleife mit, und
@@ -2783,7 +2783,7 @@ function bildInnen(zeit) {
     if (Z.steuerung.update()) weiter = true;
 
     /*
-     * IM LEERLAUF HALBER TAKT (seit v0.133.0): Bewegt sich nur, was immer
+     * IM LEERLAUF HALBER TAKT: Bewegt sich nur, was immer
      * schwebt oder pulsiert (Lootboxen, Schilder, Ringe), reichen 30 Bilder
      * in der Sekunde — das Auge sieht das sanfte Schweben gleich, das Handy
      * rechnet die Hälfte. Sobald etwas zieht, fliegt oder aufgeht, wieder
@@ -2802,7 +2802,7 @@ function bildInnen(zeit) {
 }
 
 /*
- * SCHWACHE GERÄTE (seit v0.133.0): Brauchen die bewegten Bilder im Schnitt
+ * SCHWACHE GERÄTE: Brauchen die bewegten Bilder im Schnitt
  * deutlich länger als 1/40 Sekunde, rechnet die Leinwand mit weniger
  * Bildpunkten (Stufen 0,25, nie unter 1). Nur abwärts — sonst pendelt es.
  */
@@ -2902,7 +2902,7 @@ function bedienungAnmelden() {
     const zeiger = new THREE.Vector2();
 
     /*
-     * DER TIPP ZÄHLT BEIM AUFSETZEN (seit v0.129.0).
+     * DER TIPP ZÄHLT BEIM AUFSETZEN.
      *
      * Nutzer-Meldung 24.09.2026: „riesen Probleme mit der Zeit, wo ich was
      * drücke". Gemessen: Tipp plus Neuzeichnen kosten 3 bis 4 ms — daran lag
@@ -3160,7 +3160,7 @@ function wahlUebernehmen(an, oben, scheiben) {
     if (!Z.einst) return;
     Z.einst.an = an === true;
     Z.einst.oben = oben === true;
-    /* Scheiben ⇄ 3D-Figuren (seit v0.159.0): alle Figuren neu bauen — das
+    /* Scheiben ⇄ 3D-Figuren: alle Figuren neu bauen — das
        Brett gilt als neu (`Z.masse`), die Standbilder als veraltet. */
     const scheibenNeu = Z.einst.an && scheiben === true;
     if (scheibenNeu !== !!Z.einst.scheiben) {
@@ -3179,6 +3179,32 @@ function wahlUebernehmen(an, oben, scheiben) {
     const alt = Z.letzte && Z.letzte.halter && Z.letzte.halter.querySelector(".brett-3d-zurueck");
     if (alt) alt.remove();
     neuZeichnen(false);
+}
+
+/* Der Konto-Stand ist da (seit v0.167.2, gerufen aus `beiDaten` in
+   js\app.js): `Z.einst` entsteht einmal beim Aufbau. Baut sich das Brett,
+   bevor das Konto antwortet (Anmeldung erst nach dem Start, oder der
+   Leerlauf-Start ist schneller als das Konto), ist dort die Wahl auf das
+   damals Freie gekürzt — 3D, Thema und Figuren blieben bis zum Neuladen auf
+   der Vorgabe. Hier wird frisch gelesen und nur Abweichendes übernommen:
+   die Brett-Art über `wahlUebernehmen`, Thema und Figuren über
+   `aussehenAnwenden`. Gespeichert wird nichts. Noch nicht aufgebaut: nichts
+   zu tun, der Aufbau liest selbst frisch. */
+function einstellungenAbgleichen() {
+    if (!Z.einst) return false;
+    const neu = einstellungenLaden();
+    let geaendert = false;
+    for (const schluessel of ["thema", "figuren"]) {
+        if (neu[schluessel] === Z.einst[schluessel]) continue;
+        Z.einst[schluessel] = neu[schluessel];
+        if (Z.bereit) aussehenAnwenden(schluessel);
+        geaendert = true;
+    }
+    if (neu.an !== !!Z.einst.an || neu.oben !== !!Z.einst.oben || neu.scheiben !== !!Z.einst.scheiben) {
+        wahlUebernehmen(neu.an, neu.oben, neu.scheiben);
+        geaendert = true;
+    }
+    return geaendert;
 }
 
 /* Wer unten steht: die eigene Farbe, sonst Weiss. */
@@ -3200,7 +3226,7 @@ function anbinden(halter, partie, person, animierenErlaubt) {
     if (!Z.einst.an) {
         document.body.classList.remove("brett-3d-aktiv");
         zweiDKnopf(halter);
-        /* 3D-Figuren von oben (v0.157.3): Steht Schwarz unten, schaut der
+        /* 3D-Figuren von oben: Steht Schwarz unten, schaut der
            Springer andersherum. */
         const flachRahmen = halter.querySelector(".brett-rahmen");
         if (flachRahmen) flachRahmen.classList.toggle("brett-schwarz-unten", untenFarbeVon(partie, person) === "schwarz");
@@ -3325,7 +3351,7 @@ function anbinden(halter, partie, person, animierenErlaubt) {
 }
 
 /* ------------------------------------------------------------------ *
- * Die kleinen Bretter als 3D-Standbilder (seit v0.123.0)
+ * Die kleinen Bretter als 3D-Standbilder
  *
  * Startvorschau, Brettform-Kacheln, Bildanleitungen, „Schach lernen" und
  * die Rückschau bauen ihre Bretter weiter als 2D-Gitter (`.vorschau`).
@@ -3348,7 +3374,7 @@ function miniNeigung() {
     return blickWinkel();
 }
 
-/* Der Blickwinkel des Bretts: mit Scheiben (seit v0.159.0) nur leicht
+/* Der Blickwinkel des Bretts: mit Scheiben nur leicht
    geneigt, damit die flachen Figuren lesbar bleiben; mit 3D-Figuren der
    gewählte Blick. */
 function blickWinkel() {
@@ -4178,7 +4204,7 @@ function buehneTakt(zeit) {
 }
 
 /* ------------------------------------------------------------------ *
- * Die Figurenbilder der App aus denselben Formen (seit v0.123.0)
+ * Die Figurenbilder der App aus denselben Formen
  *
  * Überall, wo eine Figur als Bild steht (Hand, Bilanz, „Schach lernen",
  * Rückschau …), zeigte die App die gerenderten PNGs aus img\figuren\. Jetzt
@@ -4476,7 +4502,7 @@ function kaestchenWeich(werte, b, h, dx, dy) {
 }
 
 /*
- * DAS ZEICHEN IST EINGESCHNITTEN, NICHT ERHABEN (seit v0.129.0).
+ * DAS ZEICHEN IST EINGESCHNITTEN, NICHT ERHABEN.
  *
  * Nutzer-Ansage 24.09.2026: „die Muster sollen nicht rausstehen, sondern
  * reingehen in die Karten — wie bei der Schablone beim IT-Logo". Auf der
@@ -4645,14 +4671,14 @@ async function starten() {
             new Promise((fertig) => new FontLoader().load(SCHRIFT_PFAD, fertig, undefined, () => fertig(null)))
         ]);
         Z.schrift = schrift;
-        /* Die Scheiben-Bilder (seit v0.159.0) sind Daten-Adressen und in
+        /* Die Scheiben-Bilder sind Daten-Adressen und in
            Millisekunden da — vorher fertig, damit kein Standbild leere
            Scheiben zwischenspeichert. */
         await scheibenVorbereiten().catch(() => {});
         Z.bereit = true;
         kachelFormen();
         /*
-         * ERST DAS BRETT, DANN DER REST (seit v0.133.0). Bis v0.132.0
+         * ERST DAS BRETT, DANN DER REST. Bis v0.132.0
          * rechnete das Modul zuerst die zwölf Figurenbilder und alle
          * kleinen Bretter — am Handy sah man so lange das flache Brett.
          * Jetzt steht das grosse Brett sofort; die Bilder folgen danach,
@@ -4667,7 +4693,7 @@ async function starten() {
             fertig();
         }, 20));
         await spaeter(figurenBilder);
-        /* 3D-Figuren von oben (v0.157.3): nur, wenn sie wählbar sind —
+        /* 3D-Figuren von oben: nur, wenn sie wählbar sind —
            gewählt zuerst, sonst nach den kleinen Brettern (Bild im Regal). */
         if (Z.einst.oben) await spaeter(figurenBilderOben);
         const wartend = MINI.warte.splice(0);
@@ -4689,7 +4715,7 @@ async function starten() {
 }
 
 /*
- * WER 3D JETZT BRAUCHT, STÖSST DEN START AN (seit v0.164.0). Bei gewähltem
+ * WER 3D JETZT BRAUCHT, STÖSST DEN START AN. Bei gewähltem
  * 2D wartet `starten` auf den Leerlauf nach dem ersten Bild
  * (js\brett-3d-start.js). Die Eingänge unten, die ohne fertiges Modul nichts
  * zeigen können — Partie, Wechsel auf 3D, Vorschau der Sammlung, Falle,
@@ -4710,19 +4736,24 @@ window.BRETT_3D = {
     aktiv() {
         return Z.bereit && Z.einst && Z.einst.an;
     },
-    /* 2D/3D umschalten (seit v0.144.0) — gerufen NUR aus
+    /* 2D/3D umschalten — gerufen NUR aus
        js\freischaltung.js, das die Wahl vorher speichert und prüft. */
     wahlUebernehmen(an, oben, scheiben) {
         if (an === true || oben === true) startVerlangen("wahl");
         wahlUebernehmen(an, oben, scheiben);
     },
+    /* Nach dem Konto-Stand frisch einlesen — gerufen NUR aus
+       `beiDaten` in js\app.js. Der Platzhalter aus js\brett-3d-start.js hat
+       diesen Eingang nicht: Vor dem Laden des Moduls gibt es nichts
+       nachzuziehen. */
+    einstellungenAbgleichen,
     /* Formen noch unterwegs? Dann verbirgt der Bildschirm das flache Brett. */
     laedt() {
         return !Z.bereit && !Z.fehler;
     },
     /* Kleine Bretter (`.vorschau`) als 3D-Standbild. */
     standbild,
-    /* Tab „Sammlung" (seit v0.145.0): Vorschau mit der Wahl des Entwurfs,
+    /* Tab „Sammlung": Vorschau mit der Wahl des Entwurfs,
        Brett-Thema und Figuren lesen, frei?, wählen. */
     standbildMit(el, wahl) {
         startVerlangen("vorschau");
@@ -4731,7 +4762,7 @@ window.BRETT_3D = {
     aussehen: aussehenLesen,
     aussehenFrei,
     aussehenWaehlen,
-    /* Die letzte Falle noch einmal zeigen (seit v0.136.0); `art` ohne
+    /* Die letzte Falle noch einmal zeigen; `art` ohne
        gespeicherte Szene: die Karte dieser Art (Wiederholen nach Neuladen). */
     falleZeigen(art, felder) {
         startVerlangen("falle");
@@ -4740,7 +4771,7 @@ window.BRETT_3D = {
         }
         return falleZeigen();
     },
-    /* Die Anleitung als abgespielte 3D-Bühne (seit v0.135.0). */
+    /* Die Anleitung als abgespielte 3D-Bühne. */
     buehneMoeglich() {
         startVerlangen("buehne");
         return buehneMoeglich();
@@ -4763,7 +4794,7 @@ window.BRETT_3D = {
 };
 
 /*
- * WANN GESTARTET WIRD (seit v0.164.0): Das entscheidet
+ * WANN GESTARTET WIRD: Das entscheidet
  * js\brett-3d-start.js — bei gewähltem 3D sofort wie bisher, bei gewähltem
  * 2D im Leerlauf nach dem ersten Bild oder sobald jemand 3D verlangt
  * (`startVerlangen` oben), in jedem Fall genau einmal. Bis dahin ist `Z.einst`

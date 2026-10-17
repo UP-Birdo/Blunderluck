@@ -1,5 +1,5 @@
 /*
- * wertung-rechner.js — der Web Worker der Wertung (seit v0.151.0).
+ * wertung-rechner.js — der Web Worker der Wertung.
  *
  * Bis v0.150.0 rechnete `WERTUNG.zugWerten` auf dem Hauptstrang: am
  * Bürorechner 1,3 s im Mittel, bis 2,7 s je eigenem Turm-Zug — solange

@@ -67,7 +67,7 @@ Object.assign(TEAM_SCHACH, {
     },
 
     /* ---------------------------------------------------------------- *
-     * DAS FREIE ZIEHEN DES VORSCHAU-KASTENS (seit v0.84.0)
+     * DAS FREIE ZIEHEN DES VORSCHAU-KASTENS
      *
      * Nutzer-Wunsch vom 26.08.2026: „Künftig zieht man den Bereich mit
      * Finger oder Maus frei über das Brett — nichts passiert, bis man
@@ -354,7 +354,7 @@ Object.assign(TEAM_SCHACH, {
     },
 
     /*
-     * DIE KLEINEN BRETTER IN 3D (seit v0.123.0). Wer ein `.vorschau`-Gitter
+     * DIE KLEINEN BRETTER IN 3D. Wer ein `.vorschau`-Gitter
      * baut (Startvorschau, Brettform-Kacheln, Bildanleitungen, Rückschau),
      * reicht es hier durch; `jsrett-3d.js` legt ein 3D-Standbild darüber.
      * Ohne 3D-Modul (Tests, kein WebGL) bleibt es beim Gitter.
@@ -385,7 +385,7 @@ Object.assign(TEAM_SCHACH, {
 
         /*
          * Solange eine Fähigkeit platziert wird, trägt das Brett eine eigene
-         * Klasse (seit v0.84.0): Die Stildatei schaltet darüber das Scrollen
+         * Klasse: Die Stildatei schaltet darüber das Scrollen
          * per Finger ab (`touch-action: none`) — sonst schiebt jeder Zieh-
          * Versuch am Handy die Seite, statt den Rahmen. Genau dieser Einwand
          * stand hinter der Entscheidung vom 08.08. gegen das Ziehen.
@@ -459,7 +459,7 @@ Object.assign(TEAM_SCHACH, {
          */
         const vorschlaege = TEAM_SCHACH._teamVorschlaege(partie, person);
         const vorschau = { geister: {}, weg: {}, ziele: {} };
-        /* Der gewählte Händler-Tausch als Vorschau (seit v0.136.0). */
+        /* Der gewählte Händler-Tausch als Vorschau. */
         const handelVorschau = TEAM_SCHACH._handelVorschau ? TEAM_SCHACH._handelVorschau(partie) : null;
 
         for (const eintrag of vorschlaege) {
@@ -637,7 +637,7 @@ Object.assign(TEAM_SCHACH, {
                     SCHACH.feldName(feld, breite, hoehe) + ", " + zelle.title);
 
                 /*
-                 * DIE BOX GEHT GANZ NACH VORN IN DAS FELD (seit v0.83.1) —
+                 * DIE BOX GEHT GANZ NACH VORN IN DAS FELD —
                  * also HINTER alles, was danach kommt, allen voran die Figur:
                  * Sie liegt auf dem Feld, die Figur steht darauf. Bis v0.83.0
                  * wurde sie angehängt und lag damit vor der Figur (gemeldet
@@ -838,7 +838,7 @@ Object.assign(TEAM_SCHACH, {
             }
 
             /*
-             * Der Vorschlag eines Team-Mitglieds (seit v0.83.0): Laufweg und
+             * Der Vorschlag eines Team-Mitglieds: Laufweg und
              * Ziel grün, auf einem freien Ziel die Figur als Schemen — mit
              * derselben Klasse wie ein Grab, das ist die gewünschte Optik
              * („transparent wie beim Nekromanten"). Steht auf dem Ziel eine
@@ -861,7 +861,7 @@ Object.assign(TEAM_SCHACH, {
             }
 
             /*
-             * DER GEWÄHLTE TAUSCH DES HÄNDLERS (seit v0.136.0): Was weggeht,
+             * DER GEWÄHLTE TAUSCH DES HÄNDLERS: Was weggeht,
              * trägt den roten Ring; wo Neues hinkommt, steht es als Geist —
              * steht dort noch die alte Figur, tritt sie für die Vorschau
              * zurück (nie zwei Figuren in einem Feld).
@@ -954,7 +954,7 @@ Object.assign(TEAM_SCHACH, {
             brett.appendChild(zelle);
         }
 
-        /* Das freie Ziehen des Vorschau-Kastens (seit v0.84.0) — die drei
+        /* Das freie Ziehen des Vorschau-Kastens — die drei
            Ereignisse hängen am BRETT, nicht an jedem Feld: einer statt
            vierundsechzig, und nur so bekommt man die Bewegung ÜBER die
            Feldgrenzen hinweg mit. */
@@ -977,7 +977,7 @@ Object.assign(TEAM_SCHACH, {
 
         halter.appendChild(rahmen);
 
-        /* Gemerkt für `_brettEinpassen` (v0.52.0): Es rechnet aus der
+        /* Gemerkt für `_brettEinpassen`: Es rechnet aus der
            zugeteilten Höhe zurück auf die Breite und braucht dafür beide
            Elemente und beide Seitenlängen der ANSICHT. */
         TEAM_SCHACH.brettHalterEl = halter;
@@ -986,7 +986,7 @@ Object.assign(TEAM_SCHACH, {
         TEAM_SCHACH.brettReihen = quer ? breite : hoehe;
 
         /*
-         * UNTER DEM BRETT STEHT KEIN ERKLÄRTEXT MEHR (seit v0.54.0).
+         * UNTER DEM BRETT STEHT KEIN ERKLÄRTEXT MEHR.
          *
          * Nutzer-Ansage 25.08.2026: „Der Infotext, wo umschaltet, unter dem
          * Brett weg — der drückt das Feld hoch, runter, wenn ich eine Figur
@@ -1036,7 +1036,7 @@ Object.assign(TEAM_SCHACH, {
          * folgt, ist etwas anderes als eine, die der Gegner auslöst.
          */
 
-        /* Mit der Karten-Leiste (seit v0.130.0) stehen Einsetzen, Drehen und
+        /* Mit der Karten-Leiste stehen Einsetzen, Drehen und
            Abbrechen dort — die zwei Text-Karten unter dem Brett entfallen. */
         const mitLeiste = TEAM_SCHACH._mitHandLeiste(partie, person);
 
@@ -1143,7 +1143,7 @@ Object.assign(TEAM_SCHACH, {
          */
         if (TEAM_SCHACH.zielFaehigkeit === "nudelholz") {
             /*
-             * AUS SICHT DES SPIELERS BESCHRIFTET (seit v0.73.0). Die Kante
+             * AUS SICHT DES SPIELERS BESCHRIFTET. Die Kante
              * ist in Brett-Koordinaten gespeichert; wer nicht von unten
              * spielt, sähe sonst bei jeder der vier Richtungen die falsche
              * Auskunft. Warum das so gelöst ist, steht bei
@@ -1736,7 +1736,7 @@ Object.assign(TEAM_SCHACH, {
     },
 
     /*
-     * DER FLACHE WÜRFEL (seit v0.152.4): eine abgerundete Fläche in der
+     * DER FLACHE WÜRFEL: eine abgerundete Fläche in der
      * Stufenfarbe mit dunkler Kante wie die 2D-Figuren, darauf ein weisses
      * Fragezeichen — beim Unglück (wenn es gezeigt wird) kopfüber, wie
      * beim gerenderten Würfel. Die verborgene Stufe ist grau.
@@ -1840,7 +1840,7 @@ Object.assign(TEAM_SCHACH, {
         const arten = ["B", "S", "L", "T", "D"];
 
         /*
-         * DIE FELDNUMMER STEHT VORNE (seit v0.49.1) — und das ist kein Zierat.
+         * DIE FELDNUMMER STEHT VORNE — und das ist kein Zierat.
          *
          * `_zufallsWert` ist FNV-1a: Ein Unterschied im LETZTEN Zeichen der
          * Saat erlebt nur noch eine Multiplikation und verschiebt das Ergebnis
@@ -1918,7 +1918,7 @@ Object.assign(TEAM_SCHACH, {
      * Messung stehen.
      */
     /*
-     * DAS BRETT IN DIE ÜBRIGE HÖHE EINPASSEN (seit v0.52.0).
+     * DAS BRETT IN DIE ÜBRIGE HÖHE EINPASSEN.
      *
      * Nutzer-Ansage 24.08.2026: „Das Match an sich soll nicht mehr scrollbar
      * sein, also fix eine Seite, angepasst für das Handy oder PC, Tablet und
@@ -2052,14 +2052,14 @@ Object.assign(TEAM_SCHACH, {
 
     /*
      * Unter welchen Bedingungen die gemerkte Brettbreite entstanden ist —
-     * Fenstergrösse und Brettmasse als Zeichenkette (seit v0.88.0). Stimmt
+     * Fenstergrösse und Brettmasse als Zeichenkette. Stimmt
      * sie noch, wird die Zahl wiederverwendet statt neu gerechnet.
      */
     _brettLage: "",
     _brettBreite: 0,
 
     /*
-     * DAS FLACHE BRETT BLITZT NICHT MEHR AUF (v0.127.0).
+     * DAS FLACHE BRETT BLITZT NICHT MEHR AUF.
      *
      * Das 3D-Brett lädt als Modul und braucht seine Formen; bis dahin stand
      * rund eine Sekunde lang das flache Brett da und wurde dann ersetzt.
@@ -2477,7 +2477,7 @@ Object.assign(TEAM_SCHACH, {
                 (strecke / Math.max(1, laenge)) * TEAM_SCHACH.NUDELHOLZ_ROLL_MS));
 
             /*
-             * EINE ANIMATION STATT EINES ÜBERGANGS (v0.117.1): Startlage,
+             * EINE ANIMATION STATT EINES ÜBERGANGS: Startlage,
              * Wartezeit und Gleiten stecken in EINEM Stück, das synchron
              * beim Aufbau gesetzt wird — `backwards` hält das erste Bild
              * (die Figur auf ihrem alten Feld) während der Verzögerung.

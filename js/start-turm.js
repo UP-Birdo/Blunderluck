@@ -254,7 +254,7 @@ Object.assign(START, {
         const figuren = (typeof FORTSCHRITT_KONTO !== "undefined") ? FORTSCHRITT_KONTO.turmFiguren() : {};
         const ort = TURM.erreicht(figuren);
         const nr = Math.min(ort, TURM.anzahlOrte());
-        const lauf = (typeof FORTSCHRITT_KONTO !== "undefined" && typeof FORTSCHRITT_KONTO.turmLauf === "function")
+        const lauf = (typeof FORTSCHRITT_KONTO.turmLauf === "function")
             ? FORTSCHRITT_KONTO.turmLauf(nr)
             : TURM.lauf(nr, { figuren: figuren });
         return { figuren: figuren, ort: ort, nr: nr, oben: ort > TURM.anzahlOrte(), lauf: lauf };
@@ -1218,7 +1218,7 @@ Object.assign(START, {
         if (START.spielenLaeuft) {
             return;
         }
-        if (typeof ANMELDUNG !== "undefined" && typeof ANMELDUNG.istOberAdmin === "function"
+        if (typeof ANMELDUNG.istOberAdmin === "function"
                 && ANMELDUNG.istOberAdmin()) {
             await DIALOG.hinweis("Nicht mit UP#Plus",
                 "Verwaltungskonto · spielt nicht · mit Spieler-Konto anmelden");
@@ -1228,7 +1228,7 @@ Object.assign(START, {
         if (!regeln) {
             return;
         }
-        if (typeof FORTSCHRITT_KONTO !== "undefined" && typeof FORTSCHRITT_KONTO.turmDurchgangSichern === "function") {
+        if (typeof FORTSCHRITT_KONTO.turmDurchgangSichern === "function") {
             FORTSCHRITT_KONTO.turmDurchgangSichern();
         }
         START.spielenLaeuft = true;

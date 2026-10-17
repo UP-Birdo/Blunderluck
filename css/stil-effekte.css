@@ -115,7 +115,7 @@ body.design-3d .feld-schlag {
     box-shadow: var(--kachel-schatten), inset 0 0 0 3px #e05a52;
 }
 
-/* Die Team-Vorschläge (v0.83.0) leuchten auch hier als Ring auf der Kachel —
+/* Die Team-Vorschläge leuchten auch hier als Ring auf der Kachel —
    dünner als Ziel und Schlag, siehe die Basis-Regeln. */
 body.design-3d .feld-vorschlag-weg {
     box-shadow: var(--kachel-schatten), inset 0 0 0 2px var(--spur-ende);
@@ -126,7 +126,7 @@ body.design-3d .feld-vorschlag-ziel {
 }
 
 /*
- * EIN RISS IST EIN LOCH — UND EIN LOCH HAT KEINE KANTE (seit v0.83.1).
+ * EIN RISS IST EIN LOCH — UND EIN LOCH HAT KEINE KANTE.
  *
  * DER FEHLER, DEN DAS BEHEBT (gemeldet 27.08.2026: „der untere Rand der
  * fehlenden Felder bleibt da"): `.feld-riss` weiter unten setzt zwar
@@ -153,7 +153,7 @@ body.design-3d .feld-riss {
 }
 
 /*
- * DIE ECKEN EINES KREUZ-BRETTS SIND KEINE KACHELN (v0.31.0). Diese Regel
+ * DIE ECKEN EINES KREUZ-BRETTS SIND KEINE KACHELN. Diese Regel
  * steht bewusst als LETZTE der Kachel-Regeln: Sie hat dieselbe Stärke wie
  * `.feld-hell` und `.feld-dunkel` und gewinnt nur, weil sie später kommt.
  * Wer hier etwas einfügt, fügt es DAVOR ein.
@@ -298,7 +298,7 @@ body.design-3d .vorschau-feld > .figur-bild {
 
 /*
  * IM VORSCHAUBRETT HÄNGT DIE FIGUR AN DER ZELLE, NICHT AN DER SCHRIFT
- * (seit v0.87.0).
+ *.
  *
  * DER FEHLER, DEN DAS BEHEBT (Nutzer-Meldung 27.08.2026: „die Grösse des
  * Vorschau-Schachbretts im Vergleich zu den Figuren stimmt noch nicht"):
@@ -334,7 +334,7 @@ body.design-3d .brett {
 }
 
 /*
- * DAS VORSCHAUBRETT RECHNET IN `em`, NICHT IN PIXELN (seit v0.75.0).
+ * DAS VORSCHAUBRETT RECHNET IN `em`, NICHT IN PIXELN.
  *
  * DER FEHLER, DEN DAS BEHEBT (Nutzer-Meldung 26.08.2026: „die Vorschaubilder
  * der Items stimmen nicht mehr … und die Grösse der Figuren darin stimmt auch
@@ -524,7 +524,7 @@ body.brett-2d.brett-design-eigen .vorschau {
  * Sie bleiben deshalb im Fluss und bekommen nur einen passenden Kasten.
  */
 body.design-3d .bilanz-figur,
-/* Die Figur vor ihrem Kapitel in „Schach lernen" (seit v0.109.0) —
+/* Die Figur vor ihrem Kapitel in „Schach lernen" —
    derselbe Fall: ein Bild in einer Textzeile, kein Brettfeld. */
 body.design-3d .grundlagen-figur {
     display: inline-block;
@@ -928,7 +928,7 @@ body.brett-flach .feld-mauer > .feld-restzeit {
  * die neue Wirkung geht, nicht wo die alte liegt.
  */
 /*
- * NUR EIN RAND, KEINE FLÄCHE (seit v0.79.0).
+ * NUR EIN RAND, KEINE FLÄCHE.
  *
  * Nutzer-Ansage 26.08.2026: „… soll vormarkiert werden, aber NICHT mit dem
  * grünen draufgelegten rechteckigen Feld, was gar nicht mehr in den Stil
@@ -1019,7 +1019,7 @@ body.brett-flach .feld-mauer > .feld-restzeit {
     pointer-events: none;
 
     /*
-     * SIE LIEGT AUF DEM FELD, DIE FIGUR STEHT DARAUF (seit v0.83.1).
+     * SIE LIEGT AUF DEM FELD, DIE FIGUR STEHT DARAUF.
      *
      * DER FEHLER, DEN DAS BEHEBT (gemeldet 27.08.2026: „die Lootbox ist im
      * Vordergrund statt hinter der Figur"): Die Box hatte `z-index: 2`, die
@@ -1375,7 +1375,7 @@ body.brett-flach .feld-mauer > .feld-restzeit {
 }
 
 /*
- * Der Schub durch die Walze (v0.117.1): Die Figur wartet auf ihrem alten
+ * Der Schub durch die Walze: Die Figur wartet auf ihrem alten
  * Feld — `backwards` am Aufruf hält das erste Bild während der
  * Verzögerung — und gleitet erst, wenn die Walze sie erreicht. Eine
  * ANIMATION statt eines Übergangs: kein Zwischenbild, in dem die Figur
@@ -1621,7 +1621,7 @@ body.brett-flach .feld-mauer > .feld-restzeit {
     z-index: 4;
 }
 
-/* Ohne Admin-Freigabe gibt es den Paletten-Knopf nicht (v0.129.0). */
+/* Ohne Admin-Freigabe gibt es den Paletten-Knopf nicht. */
 .brett-3d-leiste[hidden] {
     display: none;
 }
@@ -1722,7 +1722,7 @@ body.brett-flach .feld-mauer > .feld-restzeit {
 }
 
 /* ------------------------------------------------------------------ *
- * DIE KLEINEN BRETTER IN 3D (seit v0.123.0)
+ * DIE KLEINEN BRETTER IN 3D
  *
  * `js\brett-3d.js` legt über jedes `.vorschau`-Gitter ein gerendertes
  * Bild (`.vorschau-3d-bild`). Das Gitter bleibt darunter stehen — es gibt
@@ -1785,7 +1785,7 @@ body.design-3d .vorschau.vorschau-3d,
  * beim Linienzeichen in der gerahmten Karte bleibt.
  * ------------------------------------------------------------------ */
 
-/* DER FRIEDHOF IM 3D-BRETT (v0.127.0): Die Gefallenen stehen als
+/* DER FRIEDHOF IM 3D-BRETT: Die Gefallenen stehen als
    Grabsteine vor dem Brett. Die flache Klappe entfällt; Totenkopf und Zahl
    bleiben als ruhige Anzeige (ohne Pfeil, nicht antippbar), damit die
    Namens-Kästen und die Kartenhöhe bleiben, wie sie sind. */

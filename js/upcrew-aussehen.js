@@ -1,5 +1,5 @@
 /*
- * upcrew-aussehen.js — das Aussehen der UPCrew-Spiele (Blunderluck, Typoluck; NICHT Trainer).
+ * upcrew-aussehen.js — das Aussehen der UPCrew-Apps (Blunderluck, Typoluck, seit 09.10.2026 Kaffekasse; NICHT Trainer).
  *
  * DER SCHALTER `GETEILT` (Entwickler-Schalter, nichts für Spieler; Nutzer 27.09.2026: „mach es doch so, dass es
  * nicht sync ist, also die Designs — wenn man auf Übernehmen drückt, soll sich nur das Spiel ändern. Aber mach einen
@@ -69,7 +69,8 @@
   // ENTWICKLER-SCHALTER (siehe Kopf): false = jedes Spiel sein eigenes Aussehen, true = eins für alle.
   const GETEILT = false;
   const GEMEINSAM = "upcrew.aussehen";
-  const SPIELE = ["blunderluck", "typoluck"];
+  // Die Apps mit eigenem Aussehen (seit 09.10.2026 auch Kaffekasse — kein Spiel, derselbe Baustein).
+  const SPIELE = ["blunderluck", "typoluck", "kaffekasse"];
   const ALT_FARBWELT = "upcrew.farbwelt";   // liest das Intro; nur bei GETEILT mitgeschrieben
 
   let app = (function () {

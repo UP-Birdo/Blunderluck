@@ -77,7 +77,7 @@ const RANGLISTE = {
 
         for (const partie of SCHACH_TAFEL.normalisieren(tafel).chronik) {
             /*
-             * PARTIEN GEGEN DEN COMPUTER ZÄHLEN NICHT (seit v0.27.0).
+             * PARTIEN GEGEN DEN COMPUTER ZÄHLEN NICHT.
              *
              * Die gemeinsame Tabelle vergleicht Menschen miteinander. Ein
              * Bot der Stufe 1 schaut nicht voraus und ist leichte Beute —
@@ -221,7 +221,7 @@ const RANGLISTE = {
         const liste = [];
 
         for (const partie of SCHACH_TAFEL.normalisieren(schachTafel).chronik) {
-            /* Dieselbe Ausnahme wie in `schachPunkte` (v0.27.0): Das Profil
+            /* Dieselbe Ausnahme wie in `schachPunkte`: Das Profil
                erklärt, wie die Summe zustande kommt — es darf deshalb keine
                Partie zeigen, die gar nicht mitgezählt wurde. */
             if (SCHACH_BOT.istBotPartie(partie)) {
@@ -300,7 +300,7 @@ const RANGLISTE = {
         RANGLISTE.zeichnen();
     },
 
-    /* Die Seite steht im Band neben der offenen (seit v0.161.0): einmal
+    /* Die Seite steht im Band neben der offenen: einmal
        füllen, damit sie beim Wischen zu sehen ist. */
     vorzeichnen() {
         RANGLISTE.zeichnen();
@@ -537,7 +537,7 @@ const RANGLISTE = {
         bereich.appendChild(tabelle);
 
         /*
-         * HIER STAND EIN ERKLÄRABSATZ (bis v0.107.0): „Gezählt werden alle
+         * HIER STAND EIN ERKLÄRABSATZ: „Gezählt werden alle
          * beendeten Partien. Die Rechnung steht hinter dem i — und wer auf
          * einen Namen tippt, sieht, aus welchen Partien die Punkte kamen."
          *
@@ -630,7 +630,7 @@ const RANGLISTE = {
     },
 
     /* ---------------------------------------------------------------- *
-     * Die Statistik eines Spielers — gerechnet aus der Chronik (v0.119.0)
+     * Die Statistik eines Spielers — gerechnet aus der Chronik
      *
      * Alles aus `verlauf`, also aus beendeten Partien unter Menschen.
      * Serien laufen in Spielreihenfolge (das Älteste zuerst), sonst zählte
@@ -974,7 +974,7 @@ const RANGLISTE = {
     },
 
     profilBearbeiten() {
-        /* „Nummer ändern" (seit v0.151.8) nur mit Konto — aus ANMELDUNG. */
+        /* „Nummer ändern" nur mit Konto — aus ANMELDUNG. */
         const nummer = (typeof ANMELDUNG !== "undefined" && typeof ANMELDUNG._nummerEintrag === "function")
             ? ANMELDUNG._nummerEintrag(ANMELDUNG.ich()) : [];
         return DIALOG.liste("Profil bearbeiten", "Was ändern",
@@ -1286,7 +1286,7 @@ const RANGLISTE = {
 
     /*
      * Name, Platz und Punkte eines Spielers — für das Kurzprofil oben
-     * links auf dem Start (seit v0.120.0). Null, wenn er nicht (mehr) in
+     * links auf dem Start. Null, wenn er nicht (mehr) in
      * der Spielerliste steht.
      */
     kurzprofil(spielerId) {
@@ -1556,7 +1556,7 @@ const RANGLISTE = {
             return;
         }
         const lage = SPIELER.freundschaft(staende.spieler, ich.id, person.id);
-        /* Im Profil-Blatt (seit v0.157.0) zeichnet auch das neu. */
+        /* Im Profil-Blatt zeichnet auch das neu. */
         const danach = () => {
             RANGLISTE.zeichnen();
             if (typeof PROFIL !== "undefined" && PROFIL.offen()) {

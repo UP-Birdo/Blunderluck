@@ -54,13 +54,13 @@ const VERWALTUNGS_BILDSCHIRM = {
         }
         wurzel.innerHTML = "";
 
-        /* Als Blatt (seit v0.156.0) über den Einstellungen: Titel und
+        /* Als Blatt über den Einstellungen: Titel und
            Zurück trägt das Blatt. Ohne den Baustein wie bisher ein Fenster
            mit dem einen Zurück-Knopf (Haus-Muster seit v0.113). */
-        const alsBlatt = typeof TABS !== "undefined" && Array.isArray(TABS._blattTabs)
+        const alsBlatt = Array.isArray(TABS._blattTabs)
             && TABS._blattTabs.indexOf(VERWALTUNGS_BILDSCHIRM.id) !== -1;
         if (!alsBlatt) {
-            if (typeof TABS !== "undefined" && TABS.rundeSetzen) {
+            if (TABS.rundeSetzen) {
                 TABS.rundeSetzen("verwaltung", true);
             }
             const kopfzeile = document.createElement("div");
@@ -83,15 +83,15 @@ const VERWALTUNGS_BILDSCHIRM = {
         if (!ICH.verwaltungAktiv()) {
             UPCREW_EINSTELLUNGEN.bauen(inhalt, "verwaltung", [{ art: "spieler", zeilen: [{
                 zeichen: "schloss",
-                titel: (typeof KONTO !== "undefined" && KONTO.aktiv())
+                titel: (KONTO.aktiv())
                     ? "Nur Rolle Admin"
                     : "Nicht freigeschaltet · über Einstellungen mit Verwaltungs-Passwort"
             }] }], { spiel: "Blunderluck" });
             return;
         }
 
-        /* Mit UPCrew-Konto (seit v0.138.0): Name#Nummer, Rollen, Neu-Verbinden. */
-        const mitKonto = (typeof KONTO !== "undefined" && KONTO.aktiv());
+        /* Mit UPCrew-Konto: Name#Nummer, Rollen, Neu-Verbinden. */
+        const mitKonto = (KONTO.aktiv());
         UPCREW_EINSTELLUNGEN.bauen(inhalt, "verwaltung", [
             VERWALTUNGS_BILDSCHIRM._spielerAbschnitt(mitKonto),
             VERWALTUNGS_BILDSCHIRM._datenbankAbschnitt(mitKonto),
@@ -168,7 +168,7 @@ const VERWALTUNGS_BILDSCHIRM = {
     },
 
     /*
-     * Die Tabelle der UPCrew-Konten (seit v0.138.0). Wer was darf, prüfen
+     * Die Tabelle der UPCrew-Konten. Wer was darf, prüfen
      * die Regeln der Datenbank; hier werden nur die passenden Knöpfe
      * gezeigt:
      *   Neu verbinden  jeder Admin, für echte Konten („Passwort vergessen")
@@ -187,7 +187,7 @@ const VERWALTUNGS_BILDSCHIRM = {
     _spielerlisteDaten() {
         const daten = ANMELDUNG.abgleich.daten;
         const heute = FORTSCHRITT.datumVon(Date.now());
-        /* Ohne Serien-Schutz (seit v0.157.0). */
+        /* Ohne Serien-Schutz. */
         const serieVon = (stand) => FORTSCHRITT.serie(stand, heute, 0).tage;
         const spieler = ((daten && daten.spieler) || [])
             .filter((eintrag) => !SPIELER.istVerteiler(eintrag))
@@ -383,7 +383,7 @@ const VERWALTUNGS_BILDSCHIRM = {
 
         const koerper = document.createElement("tbody");
         const person = ICH.person();
-        const daten = (typeof ANMELDUNG !== "undefined" && ANMELDUNG.abgleich)
+        const daten = (ANMELDUNG.abgleich)
             ? ANMELDUNG.abgleich.daten : null;
         const liste = SPIELER.normalisieren(daten).spieler;
 

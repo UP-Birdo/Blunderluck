@@ -9,7 +9,7 @@
  * WAS GILT (FORTSCHRITT.md):
  *   - XP: Partie gespielt +10 (auch verloren, auch gegen Bob), je neue
  *     Figur im Turm +10, Tagesaufgabe +15/20/30 nach Schwierigkeit und
- *     +10 je Figur (seit v0.151.0), beide Spiele an einem Tag ×1,5,
+ *     +10 je Figur, beide Spiele an einem Tag ×1,5,
  *     Serie +5 … +35. In dieser Fassung zählt nur die Partie; Figuren und
  *     Tagesaufgabe kommen mit Turm und „Heute".
  *   - Level: Die Kosten von Level L zu L+1 sind min(100 + 25·(L−1), 500) —
@@ -199,7 +199,7 @@ const FORTSCHRITT = Object.assign({}, FORTSCHRITT_KERN, {
                 ? zweig.gezaehlt.filter((id) => typeof id === "string" && id !== "")
                     .slice(-FORTSCHRITT.GEZAEHLT_MAX)
                 : [];
-            /* Der Turm (seit v0.147.0): nur Schlüssel „Zahl-Zahl" mit 1
+            /* Der Turm: nur Schlüssel „Zahl-Zahl" mit 1
                bis 3 Figuren. Fehlt er, gibt es noch keine Figur. */
             if ("turm" in zweig) {
                 const roheFiguren = (FORTSCHRITT._istObjekt(zweig.turm)
@@ -214,7 +214,7 @@ const FORTSCHRITT = Object.assign({}, FORTSCHRITT_KERN, {
                 zweig.turm = Object.assign({},
                     FORTSCHRITT._istObjekt(zweig.turm) ? zweig.turm : {}, { figuren: figuren });
             }
-            /* Heute und die Tage der Serie (seit v0.149.0). */
+            /* Heute und die Tage der Serie. */
             if ("heute" in zweig) {
                 const h = FORTSCHRITT._istObjekt(zweig.heute) ? zweig.heute : {};
                 zweig.heute = Object.assign({}, h, {
@@ -315,7 +315,7 @@ const FORTSCHRITT = Object.assign({}, FORTSCHRITT_KERN, {
     },
 
     /* ---------------------------------------------------------------- *
-     * Heute und die Serie (seit v0.149.0)
+     * Heute und die Serie
      * ---------------------------------------------------------------- */
 
     /* Die Tagesaufgabe eines Spiels HEUTE: { versuche, figuren } — 0/0,
@@ -392,7 +392,7 @@ const FORTSCHRITT = Object.assign({}, FORTSCHRITT_KERN, {
     },
 
     /*
-     * WAS ANS KONTO GEHT (seit v0.151.0): genau die Felder, die die Regel
+     * WAS ANS KONTO GEHT: genau die Felder, die die Regel
      * `SICHERHEIT.md` §11b erlaubt — sonst lehnt die Datenbank den GANZEN
      * Konto-Eintrag ab. Weg bleiben alles Unbekannte, Typolucks flache
      * 0.10.0-Felder und `umzug` (bleibt nur auf dem Gerät, Runde 6
@@ -479,7 +479,7 @@ const FORTSCHRITT = Object.assign({}, FORTSCHRITT_KERN, {
     },
 
     /*
-     * EINE TURM-STATION OHNE PARTIE (seit v0.160.0): `schluessel` („<ort·100
+     * EINE TURM-STATION OHNE PARTIE: `schluessel` („<ort·100
      * + nr>") wird auf 1 gesetzt (nur, wenn er fehlt), dazu wachsen Zähler um
      * `plus` ({ muenzenVerdient: 20, tippGekauft: 1, … } — nur Namen aus
      * Buchstaben, nur positive Zahlen; Regel §13 unverändert). Liefert einen

@@ -91,7 +91,7 @@ const EINSTELLUNGEN = {
         EINSTELLUNGEN._zeichnen();
     },
 
-    /* Beim Schliessen (seit v0.167.1) die Lampe beim Offline-Hinweis
+    /* Beim Schliessen die Lampe beim Offline-Hinweis
        abmelden — sie hängt nicht mehr im Bild. */
     beimVerlassen() {
         EINSTELLUNGEN._lampeLoesen();
@@ -106,12 +106,12 @@ const EINSTELLUNGEN = {
         EINSTELLUNGEN._lampeLoesen();
         EINSTELLUNGEN.lampeEl = null;
 
-        /* Als Blatt (seit v0.156.0) trägt das Blatt Titel und Zurück; als
+        /* Als Blatt trägt das Blatt Titel und Zurück; als
            Seite (ohne den Baustein) wie bisher ein Fenster mit Pfeil. */
-        const alsBlatt = typeof TABS !== "undefined" && Array.isArray(TABS._blattTabs)
+        const alsBlatt = Array.isArray(TABS._blattTabs)
             && TABS._blattTabs.indexOf(EINSTELLUNGEN.id) !== -1;
         if (!alsBlatt) {
-            if (typeof TABS !== "undefined" && TABS.rundeSetzen) {
+            if (TABS.rundeSetzen) {
                 TABS.rundeSetzen("einstellungen", true);
             }
             const kopfzeile = document.createElement("div");
@@ -171,8 +171,8 @@ const EINSTELLUNGEN = {
      * ---------------------------------------------------------------- */
 
     _kontoEintrag() {
-        const mitKonto = (typeof KONTO !== "undefined" && KONTO.aktiv()
-            && typeof ANMELDUNG !== "undefined" && ANMELDUNG.abgleich);
+        const mitKonto = (KONTO.aktiv()
+            && ANMELDUNG.abgleich);
         return mitKonto ? ANMELDUNG.ich() : null;
     },
 
@@ -182,7 +182,7 @@ const EINSTELLUNGEN = {
             return { art: "konto", zeilen: [{ zeichen: "person", titel: "Nicht angemeldet" }] };
         }
 
-        /* Mit UPCrew-Konto (seit v0.138.0): Name MIT Nummer und die Rolle;
+        /* Mit UPCrew-Konto: Name MIT Nummer und die Rolle;
            ein Gast sieht, dass sein Stand nur hier liegt. */
         const eintrag = EINSTELLUNGEN._kontoEintrag();
         const rolle = eintrag ? KONTO.rolleVon(ANMELDUNG.abgleich.daten, eintrag.uid) : "";
@@ -214,7 +214,7 @@ const EINSTELLUNGEN = {
 
     /* ---------------------------------------------------------------- *
      * 2. Aussehen — gilt über das gemeinsame UPCrew-Aussehen auch in
-     *    Typoluck (seit v0.144.0). Fehlt ein Baustein (Bildschirm-Tests),
+     *    Typoluck. Fehlt ein Baustein (Bildschirm-Tests),
      *    bleibt seine Zeile weg.
      * ---------------------------------------------------------------- */
 
@@ -250,7 +250,7 @@ const EINSTELLUNGEN = {
      * ---------------------------------------------------------------- */
 
     _privatAbschnitt() {
-        const ichSelbst = (typeof ANMELDUNG !== "undefined" && typeof ANMELDUNG.ich === "function")
+        const ichSelbst = (typeof ANMELDUNG.ich === "function")
             ? ANMELDUNG.ich() : null;
         if (!ichSelbst || typeof FORTSCHRITT === "undefined"
                 || typeof FORTSCHRITT.spielzeitOeffentlichVon !== "function") {
@@ -291,14 +291,14 @@ const EINSTELLUNGEN = {
                     EINSTELLUNGEN._zeichnen();
                 }, "Vibration")
                 : "nicht möglich" });
-        if (typeof TEAM_SCHACH !== "undefined" && typeof TEAM_SCHACH.grundlagenOeffnen === "function") {
+        if (typeof TEAM_SCHACH.grundlagenOeffnen === "function") {
             zeilen.push({ zeichen: "figur", titel: "Schach lernen", unter: "Figuren · Matt",
                 rechts: "pfeil", beiKlick: () => {
                     TABS.wechseln("team-schach");
                     TEAM_SCHACH.grundlagenOeffnen();
                 } });
         }
-        if (typeof START !== "undefined" && typeof START.verlaufOeffnen === "function") {
+        if (typeof START.verlaufOeffnen === "function") {
             zeilen.push({ zeichen: "liste", titel: "Vergangene Matches", rechts: "pfeil",
                 beiKlick: () => START.verlaufOeffnen() });
         }
@@ -307,12 +307,12 @@ const EINSTELLUNGEN = {
 
     /* ---------------------------------------------------------------- *
      * 5. Admin — EIN Eintrag statt einer eingebetteten Mitspieler-Liste
-     *    (seit v0.100.0). Mit UPCrew-Konto nur für Admins (seit v0.138.0;
+     *   . Mit UPCrew-Konto nur für Admins (seit v0.138.0;
      *    ICH fragt dann die Rolle). Die Verwaltung öffnet als Blatt darüber.
      * ---------------------------------------------------------------- */
 
     _adminAbschnitt() {
-        const nurAdmins = (typeof KONTO !== "undefined" && KONTO.aktiv());
+        const nurAdmins = (KONTO.aktiv());
         if (nurAdmins && !ICH.verwaltungAktiv()) {
             return { art: "admin", zeilen: [] };
         }

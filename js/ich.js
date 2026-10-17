@@ -53,10 +53,10 @@ const ICH = {
      * ---------------------------------------------------------------- */
 
     verwaltungAktiv() {
-        /* Mit UPCrew-Konto (seit v0.138.0) entscheidet die ROLLE des
+        /* Mit UPCrew-Konto entscheidet die ROLLE des
            angemeldeten Kontos (Admin oder UP#Plus), nicht ein Schalter auf
            dem Gerät — die Regeln der Datenbank prüfen dieselbe Rolle. */
-        if (typeof KONTO !== "undefined" && KONTO.aktiv()) {
+        if (KONTO.aktiv()) {
             return typeof ANMELDUNG !== "undefined" && typeof ANMELDUNG.istAdmin === "function"
                 && ANMELDUNG.istAdmin();
         }
@@ -64,7 +64,7 @@ const ICH = {
     },
 
     /*
-     * Der Schalter „Brett-Anpassung" aus der Verwaltung (seit v0.129.0):
+     * Der Schalter „Brett-Anpassung" aus der Verwaltung:
      * Nur wenn er an ist, zeigt das 3D-Brett dem Admin den Paletten-Knopf.
      * Er gilt nur auf diesem Gerät, wie die Freischaltung selbst.
      */

@@ -14,69 +14,50 @@
  * ruft `VERWALTUNG.verlangen(...)` auf und prüft das Ergebnis.**
  *
  * WAS DER SCHUTZ LEISTET UND WAS NICHT
- * Er verhindert den Fehlgriff und das beiläufige Löschen durch jemanden, der
- * das Passwort nicht hat. Er verhindert NICHT den entschlossenen Mitspieler:
- * Die Datenbank ist offen, wer die Konsole öffnet, kann schreiben, was er will.
- * Dieselbe ehrliche Grenze wie bei der PIN und beim Würfel-Siegel; die
- * Begründung steht in docs\DECISIONS.md.
+ * Seit v0.138.0 entscheidet die ROLLE des angemeldeten UPCrew-Kontos (Admin
+ * oder UP#Plus, `ICH.verwaltungAktiv`), und dieselbe Rolle prüfen die Regeln
+ * der Datenbank serverseitig — nur dort liegt die echte Grenze. Jede Sperre
+ * in einer reinen Browser-App ist für den entschlossenen Mitspieler nur
+ * Deko; sie verhindert den Fehlgriff und das beiläufige Löschen.
  *
- * Im Quelltext steht nur die PRÜFSUMME des Passworts (`KONFIG.verwaltung`),
- * nie das Passwort selbst.
+ * BIS v0.167.2 gab es ohne Konto einen zweiten Weg: ein sechsstelliges
+ * Verwaltungs-Passwort, dessen ungesalzene Prüfsumme in js\konfig.js stand.
+ * Aus dem öffentlichen Quelltext war sie in Sekunden rückrechenbar und gab
+ * nichts frei, was die Regeln nicht ohnehin verweigern — entfernt mit
+ * v0.168.0 (Sicherheits-Befund 13.10.2026, Punkt A4). Ohne UPCrew-Konto
+ * gibt es seitdem keine Verwaltung.
  */
 
 const VERWALTUNG = {
 
     /*
-     * Fragt das Verwaltungs-Passwort ab und liefert true, wenn es stimmt.
+     * Prüft, ob die Verwaltung offen ist, und liefert true, wenn ja. Sonst
+     * zeigt sie einen Hinweis und liefert false.
      *
-     *     titel   Überschrift des Dialogs, z. B. "Raum löschen"
+     *     titel   Überschrift des Hinweises, z. B. "Raum löschen"
      *     grund   Ein Satz, WARUM gefragt wird — nicht, dass gefragt wird.
      *             Der Nutzer soll wissen, was auf dem Spiel steht.
      *
-     * Wer die Verwaltung ohnehin offen hat, wird nicht noch einmal gefragt:
-     * Sonst müsste man beim Aufräumen für jeden Raum einzeln tippen.
+     * Wer die Verwaltung ohnehin offen hat, sieht keinen Hinweis: Sonst
+     * müsste man beim Aufräumen für jeden Raum einzeln bestätigen.
      */
     async verlangen(titel, grund) {
         if (ICH.verwaltungAktiv()) {
             return true;
         }
 
-        /* Mit UPCrew-Konto gibt es kein Verwaltungs-Passwort mehr (seit
-           v0.138.0): Wer nicht Admin ist, bekommt nur den Hinweis. */
-        if (typeof KONTO !== "undefined" && KONTO.aktiv()) {
+        /* Mit UPCrew-Konto zählt die Rolle: Wer nicht Admin ist, bekommt
+           nur den Hinweis. */
+        if (KONTO.aktiv()) {
             await DIALOG.hinweis(titel, "Rolle Admin nötig");
             return false;
         }
 
-        const passwort = await DIALOG.zahlen(
-            titel,
-            grund,
-            KONFIG.verwaltung.passwortStellen,
-            "Weiter",
-            true
-        );
-
-        /* Abgebrochen — das ist kein Fehler und bekommt deshalb auch keine
-           Meldung. */
-        if (!passwort) {
-            return false;
-        }
-
-        const richtig = await VERSIEGELUNG.verwaltungPruefen(
-            passwort, KONFIG.verwaltung.pruefwert);
-
-        if (!richtig) {
-            await DIALOG.hinweis("Passwort falsch",
-                "Nichts geändert");
-            return false;
-        }
-
-        /*
-         * Ab jetzt gilt die Verwaltung auf diesem Gerät als offen. Beendet wird
-         * sie über den Knopf im Würfel-Quizz — dort ist auch der Ort, an dem
-         * man sie sichtbar wieder schliesst.
-         */
-        ICH.verwaltungSetzen(true);
-        return true;
+        /* Ohne Konto gibt es keinen Weg hinein — das Verwaltungs-Passwort
+           ist seit v0.168.0 abgeschafft. `grund` bleibt der Satz, der sagt,
+           was auf dem Spiel steht. */
+        await DIALOG.hinweis(titel,
+            "Anmeldung mit Admin-Rolle nötig" + (grund ? " · " + grund : ""));
+        return false;
     }
 };

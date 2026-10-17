@@ -38,10 +38,10 @@
  * seit v0.147.0 der Turm frei (js\freischaltung.js: 3D und Holz/Matt ab
  * Holzhalle …); bis dahin tragen sie ein Band mit dem Ort. Admin-Freigabe
  * und Werkstatt schalten alles frei. Daran ändert v0.162.0 nichts.
- * DIE OBERFLÄCHE NENNT KEIN LEVEL MEHR (seit v0.162.0): Was über das Level
+ * DIE OBERFLÄCHE NENNT KEIN LEVEL MEHR: Was über das Level
  * frei wird (Farbwelt, Schrift, Knöpfe, Brett-Design „Farbwelt"), wirkt wie
  * bisher, trägt aber statt „Lv N" ein Band des Bausteins.
- * MIT SHOP UND BESITZ (seit v0.163.0): Kaufbares, das noch gesperrt ist,
+ * MIT SHOP UND BESITZ: Kaufbares, das noch gesperrt ist,
  * trägt „im Shop"; was im Shop gekauft wurde, ist frei und lässt sich
  * übernehmen (`besitz: BESITZ.haken()`, js\besitz.js — dazu fragen
  * `BRETT_DESIGN.frei` und `FREISCHALTUNG.brettStueckFrei` den Besitz
@@ -95,7 +95,7 @@ const SAMMLUNG = {
     restEl: null,
     tab: null,
 
-    /* Das Gerüst (seit v0.151.11) baut der gemeinsame Baustein
+    /* Das Gerüst baut der gemeinsame Baustein
        js\upcrew-sammlung.js — in Typoluck dasselbe. */
     geruest: null,
 
@@ -106,7 +106,7 @@ const SAMMLUNG = {
         SAMMLUNG.kopfEl = SAMMLUNG.geruest.kopf;
         SAMMLUNG.anteilEl = SAMMLUNG.geruest.anteil;
         SAMMLUNG.ortEl = SAMMLUNG.geruest.ort;
-        /* Nach einem Kauf im Shop (seit v0.163.0) zeigt die Sammlung das
+        /* Nach einem Kauf im Shop zeigt die Sammlung das
            Stück als frei, sobald sie wieder zu sehen ist. */
         if (typeof BESITZ !== "undefined" && BESITZ.beiAenderung) {
             BESITZ.beiAenderung(() => SAMMLUNG.besitzGeaendert());
@@ -136,13 +136,13 @@ const SAMMLUNG = {
         SAMMLUNG._zeigen();
     },
 
-    /* Die Seite steht im Band neben der offenen (seit v0.161.0): einmal
+    /* Die Seite steht im Band neben der offenen: einmal
        füllen, damit sie beim Wischen zu sehen ist. */
     vorzeichnen() {
         SAMMLUNG._zeigen();
     },
 
-    /* KEIN `beimVerlassen` MEHR (seit v0.161.0): Bis v0.160 baute sich der
+    /* KEIN `beimVerlassen` MEHR: Bis v0.160 baute sich der
        Anpassen-Baustein beim Verlassen ab (`tab.entfernen()`). Im
        Seiten-Band muss die Sammlung als Nachbarseite beim Wischen zu sehen
        sein — sie bleibt stehen und zeigt ihr letztes Bild. Ein nicht
@@ -186,7 +186,7 @@ const SAMMLUNG = {
 
         /* Die reine Sammlung VOR den Übernehmen-Balken (das Gerüst weiß,
            wohin), „NN %" in den Kopf, die Vorschau bündig darunter. */
-        /* Die Abzeichen (seit v0.151.12) zeigen den Stand von JETZT — sie
+        /* Die Abzeichen zeigen den Stand von JETZT — sie
            werden bei jedem Öffnen neu gebaut, als erste Gruppe. */
         SAMMLUNG._abzeichenEinsetzen();
         SAMMLUNG.geruest.restEinsetzen(SAMMLUNG.restEl);

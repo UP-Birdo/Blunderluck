@@ -1,6 +1,6 @@
 /*
  * schach-speicher.js — WAS vom Schach-Stand geholt und geschrieben wird
- * (seit v0.114.3). Lädt nach schach-tafel.js und speicher.js.
+ *. Lädt nach schach-tafel.js und speicher.js.
  *
  * DAS PROBLEM, GEMESSEN AM 18.09.2026: Der ganze Schach-Stand („die Tafel")
  * ist 192 Kilobyte gross und wächst mit jeder beendeten Partie — 34 der 37
@@ -76,7 +76,7 @@ const SCHACH_SPEICHER = {
     _chronikAnzahlGesehen: null,
 
     /*
-     * DIE CHRONIK STÜCKWEISE (seit v0.152.5). Bis dahin kam bei jeder
+     * DIE CHRONIK STÜCKWEISE. Bis dahin kam bei jeder
      * neuen Anzahl die GANZE Chronik (9 Kilobyte bei 60 Einträgen, und sie
      * wächst mit jeder Partie, die je gespielt wurde). Jetzt liegt sie
      * zusätzlich im Gerätespeicher, je Nummer ein Eintrag, und geholt
@@ -268,7 +268,7 @@ const SCHACH_SPEICHER = {
             offeneKennungen.push(id);
 
             /*
-             * FREMDE LAUFENDE PARTIEN NICHT MEHR HOLEN (seit v0.152.5).
+             * FREMDE LAUFENDE PARTIEN NICHT MEHR HOLEN.
              * Sie zeigt niemand an: Die Übersicht listet wartende Runden
              * und Einladungen, der Start nur die eigene. Jede fremde
              * laufende Partie kostete aber bei jedem ihrer Züge 8 Kilobyte
@@ -384,7 +384,7 @@ const SCHACH_SPEICHER = {
 
         SCHACH_SPEICHER._offeneKennungen = offeneKennungen;
 
-        /* Nebenbei aufräumen (seit v0.152.5) — nicht abgewartet: Ein
+        /* Nebenbei aufräumen — nicht abgewartet: Ein
            Fehler oder eine abweisende Regel kostet nur, dass es später
            noch einmal versucht wird. */
         if (personId && einstellung.aufraeumen !== false
@@ -487,7 +487,7 @@ const SCHACH_SPEICHER = {
     },
 
     /* ---------------------------------------------------------------- *
-     * Aufräumen und Buchung (seit v0.152.5)
+     * Aufräumen und Buchung
      * ---------------------------------------------------------------- */
 
     /*
@@ -604,7 +604,7 @@ const SCHACH_SPEICHER = {
     },
 
     /* ---------------------------------------------------------------- *
-     * Takt und Code (seit v0.152.5)
+     * Takt und Code
      * ---------------------------------------------------------------- */
 
     /*

@@ -24,7 +24,7 @@
  *                       Vorschau in der Sammlung, der Wechsel auf 3D, eine
  *                       Falle.
  *
- * DER PLATZHALTER (seit v0.166.0): Bis das Modul da ist, steht hier ein
+ * DER PLATZHALTER: Bis das Modul da ist, steht hier ein
  * `window.BRETT_3D` mit denselben Eingängen. Er verhält sich wie das
  * geladene, noch nicht gestartete Modul bis v0.165.1 — wer 3D braucht,
  * verlangt den Start; Sammlung und Shop bekommen ihre drei Auskünfte

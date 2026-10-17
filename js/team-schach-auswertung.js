@@ -36,7 +36,7 @@ Object.assign(TEAM_SCHACH, {
        nur Anzeige-Gedächtnis (wie `animiertBis`). */
     _konfettiGespielt: {},
 
-    /* Dasselbe für die Vibration am Ende (seit v0.140.0) — sonst vibrierte
+    /* Dasselbe für die Vibration am Ende — sonst vibrierte
        das Gerät bei jedem Neuzeichnen. Anders als das Konfetti auch bei
        „weniger Bewegung": Vibration ist keine Bewegung auf dem Schirm. */
     _abschlussGespuert: {},
@@ -58,7 +58,7 @@ Object.assign(TEAM_SCHACH, {
         }
         const w = WERTUNG.zusammenfassung(partie.id, meinTeam);
         const block = TEAM_SCHACH._element("div", "wertung");
-        /* Rechnet der Worker noch (seit v0.151.0), steht statt der Zahl
+        /* Rechnet der Worker noch, steht statt der Zahl
            „…" — sobald er fertig ist, zeichnet der Abschluss neu. */
         const rechnet = typeof WERTUNG.rechnetNoch === "function" && WERTUNG.rechnetNoch(partie.id);
 
@@ -82,6 +82,12 @@ Object.assign(TEAM_SCHACH, {
             block.appendChild(klassen);
         }
 
+        /* Ohne Zahl sagt die Zeile, warum (seit v0.170.0) — nur wenn wirklich gewertete Züge da sind, aber
+           weniger als WERTUNG.MINDEST_ZUEGE; fehlt der Eintrag (kein Zug, Rechner ausgefallen), bleibt sie still. */
+        if (!rechnet && typeof w.genauigkeit !== "number" && w.gewertet > 0) {
+            block.appendChild(TEAM_SCHACH._element("p", "wertung-glueck wertung-zu-kurz",
+                "zu wenige Züge · ab " + WERTUNG.MINDEST_ZUEGE + " Zügen"));
+        }
         block.appendChild(TEAM_SCHACH._element("p", "wertung-glueck",
             "Glück · " + w.glueck + (w.glueck === 1 ? " Lootbox" : " Lootboxen") + " · zählt nicht"));
         return block;
@@ -96,14 +102,14 @@ Object.assign(TEAM_SCHACH, {
             return null;
         }
         const zeile = TEAM_SCHACH._element("p", "abschluss-xp");
-        /* Die Figuren einer Turm-Partie (seit v0.147.0) oder des
+        /* Die Figuren einer Turm-Partie oder des
            Tagesbretts (seit v0.149.0) vor den XP. */
         const figuren = (gewinn.turm && gewinn.turm.figuren) || (gewinn.heute && gewinn.heute.figuren) || 0;
         if (figuren > 0 && typeof START !== "undefined" && typeof START._figurenBauen === "function") {
             zeile.appendChild(START._figurenBauen(figuren, "abschluss-figuren"));
         }
         zeile.appendChild(TEAM_SCHACH._element("span", "abschluss-xp-wert", "+" + gewinn.xp + " XP"));
-        /* Die Münzen dieser Partie (seit v0.152.0). */
+        /* Die Münzen dieser Partie. */
         if (gewinn.muenzen > 0 && typeof UPCREW_MUENZEN !== "undefined") {
             const m = TEAM_SCHACH._element("span", "abschluss-xp-wert abschluss-muenzen");
             m.appendChild(UPCREW_MUENZEN.zeichen());
@@ -118,8 +124,12 @@ Object.assign(TEAM_SCHACH, {
                 UPCREW_LEVELPFAD.knopf(level, () => FORTSCHRITT_KONTO.level());
             }
             zeile.appendChild(level);
+        } else if (gewinn.bisLevel > 0 && gewinn.levelNachher > 0) {
+            /* Kein neues Level: wie weit es noch ist (seit v0.170.0). */
+            zeile.appendChild(TEAM_SCHACH._element("span", "abschluss-xp-rest",
+                "noch " + gewinn.bisLevel + " XP bis Level " + (gewinn.levelNachher + 1)));
         }
-        /* Die Tür ist auf: der nächste Ort (seit v0.147.0). Das Banner
+        /* Die Tür ist auf: der nächste Ort. Das Banner
            dazu zeigt der Start. */
         if (gewinn.turm && gewinn.turm.ortNachher > gewinn.turm.ortVorher
                 && typeof TURM !== "undefined" && TURM.ort(gewinn.turm.ortNachher)) {
@@ -186,7 +196,7 @@ Object.assign(TEAM_SCHACH, {
         const flaeche = TEAM_SCHACH._element("div", "abschluss abschluss-" + art);
 
         flaeche.appendChild(TEAM_SCHACH._element("p", "abschluss-marke", partie.titel));
-        /* Das Tagesbrett (seit v0.149.0) wird geschafft oder nicht — es
+        /* Das Tagesbrett wird geschafft oder nicht — es
            wird nicht gewonnen. */
         const tagesbrett = !!(partie.regeln && partie.regeln.tagesbrett);
         flaeche.appendChild(TEAM_SCHACH._element("h2", "abschluss-titel",
@@ -199,13 +209,13 @@ Object.assign(TEAM_SCHACH, {
             TEAM_SCHACH._konfettiStreuen(flaeche, partie.id);
         }
 
-        /* Die Wertung einer Turm-Partie (seit v0.148.0). */
+        /* Die Wertung einer Turm-Partie. */
         const wertung = TEAM_SCHACH._wertungBauen(partie, meinTeam);
         if (wertung) {
             flaeche.appendChild(wertung);
         }
 
-        /* Was die Partie fürs Level gebracht hat (seit v0.146.0). */
+        /* Was die Partie fürs Level gebracht hat. */
         const xpZeile = TEAM_SCHACH._xpZeileBauen(partie.id);
         if (xpZeile) {
             flaeche.appendChild(xpZeile);
@@ -287,8 +297,17 @@ Object.assign(TEAM_SCHACH, {
                     "knopf-haupt abschluss-zeit-zurueck",
                     () => TEAM_SCHACH.zeitZurueckEinsetzen(partie)));
             }
+            /* NOCHMAL (seit v0.170.0): eine freie Partie gegen Bob gleich noch
+               einmal, mit denselben Regeln und derselben Stufe — als NEUE
+               Partie (`nochmalGegenBob`), nicht über „Neu aufstellen". Turm und
+               Tagesbrett haben ihren eigenen Weg (Start, Aufgaben). */
+            const nochmal = TEAM_SCHACH.nochmalMoeglich(partie);
+            if (nochmal) {
+                nurZurueck.appendChild(TEAM_SCHACH._knopf("Nochmal", "knopf-haupt abschluss-nochmal",
+                    () => TEAM_SCHACH.nochmalGegenBob(partie)));
+            }
             nurZurueck.appendChild(TEAM_SCHACH._knopf("Zurück zur Übersicht",
-                zeitZurueck ? "knopf-still" : "knopf-haupt",
+                (zeitZurueck || nochmal) ? "knopf-still" : "knopf-haupt",
                 () => TEAM_SCHACH.abschlussSchliessen(partie.id)));
             flaeche.appendChild(nurZurueck);
 
@@ -337,7 +356,7 @@ Object.assign(TEAM_SCHACH, {
         const flaeche = TEAM_SCHACH._element("div", "abschluss abschluss-rueckschau");
 
         /*
-         * DIE ÜBERSCHRIFT SAGT, WIE ES AUSGING (seit v0.46.0).
+         * DIE ÜBERSCHRIFT SAGT, WIE ES AUSGING.
          *
          * Nutzer-Ansage 24.08.2026: „Schachmatt in rot für verloren, grün für
          * gewonnen, und Patt in grau soll statt ‚wie es dazu kam‘ stehen."
@@ -587,7 +606,7 @@ Object.assign(TEAM_SCHACH, {
 
                 zeile.appendChild(TEAM_SCHACH._element("span", "abschluss-platz",
                     (platz + 1) + "."));
-                /* Der Name führt ins Profil (seit v0.119.0). */
+                /* Der Name führt ins Profil. */
                 zeile.appendChild(TEAM_SCHACH._nameKnopfBauen(eintrag.id, "abschluss-name"));
 
                 if (zuwachs[eintrag.id] > 0) {
@@ -631,7 +650,7 @@ Object.assign(TEAM_SCHACH, {
     /* Abschluss weglegen: Die Partie gilt auf diesem Gerät als erledigt —
        dauerhaft, also auch nach dem Neuladen der Seite. */
     /*
-     * EINEN ABSCHLUSS ERLEDIGEN, ohne irgendwohin zu gehen (seit v0.155.1):
+     * EINEN ABSCHLUSS ERLEDIGEN, ohne irgendwohin zu gehen:
      * buchen (einmal — der Fortschritt merkt sich die Kennung) und auf
      * diesem Gerät als gesehen merken. Gerufen beim Schliessen und, wenn
      * eine ANDERE Partie geöffnet wird, während noch ein Abschluss offen
@@ -679,7 +698,7 @@ Object.assign(TEAM_SCHACH, {
 
         /* Wer als Gast über einen Link kam, wird jetzt einmal nach einem
            Konto gefragt (seit v0.151.7, anmeldung-konto.js). */
-        if (typeof ANMELDUNG !== "undefined" && typeof ANMELDUNG.nachEinladungFragen === "function") {
+        if (typeof ANMELDUNG.nachEinladungFragen === "function") {
             ANMELDUNG.nachEinladungFragen();
         }
     },
@@ -700,7 +719,7 @@ Object.assign(TEAM_SCHACH, {
      * Fähigkeiten liessen sich nirgends einsetzen.
      */
     /*
-     * DIE FÄHIGKEITEN EINER SEITE ALS KARTENREIHE (seit v0.57.0).
+     * DIE FÄHIGKEITEN EINER SEITE ALS KARTENREIHE.
      *
      * Nutzer-Skizze 25.08.2026: Die Fähigkeiten stehen als Karten am Brett —
      * die des Gegners oben, meine unten. Bis v0.56 lagen beide Seiten
@@ -775,7 +794,7 @@ Object.assign(TEAM_SCHACH, {
             + (meine ? " faehigkeit-reihe-meine" : " faehigkeit-reihe-gegner"));
 
         /*
-         * EINE LEERE REIHE ZIEHT SICH NICHT ÜBER DIE BREITE (seit v0.72.0).
+         * EINE LEERE REIHE ZIEHT SICH NICHT ÜBER DIE BREITE.
          *
          * Am Rechner gesehen 26.08.2026: „noch keine" stand am linken
          * Bildschirmrand, der Team-Kasten des Gegners rechts — dazwischen
@@ -866,7 +885,7 @@ Object.assign(TEAM_SCHACH, {
     },
 
     /*
-     * Eine Unglücks-Karte in der Hand (seit v0.82.0): dieselbe Spielkarten-
+     * Eine Unglücks-Karte in der Hand: dieselbe Spielkarten-
      * Form wie die Fähigkeiten, aber gestrichelt gerahmt (wie die Unglücks-
      * Kachel der Bibliothek) — sie ist ein Merkzettel, kein Vorrat. Antippen
      * öffnet Beschreibung und Bildanleitung; einsetzen kann man sie nie.
@@ -990,7 +1009,7 @@ Object.assign(TEAM_SCHACH, {
         }
 
         /*
-         * NUR NOCH DAS ZEICHEN, KEIN WORT MEHR (seit v0.67.0).
+         * NUR NOCH DAS ZEICHEN, KEIN WORT MEHR.
          *
          * Nutzer-Ansage 25.08.2026: „Es soll in der Runde nicht das alte
          * Item-Rechteck mit Schrift sein, sondern nur das Symbol mit der
@@ -1393,7 +1412,7 @@ Object.assign(TEAM_SCHACH, {
     },
 
     /*
-     * DAS i ÜBER DEM RASTER (seit v0.86.0): Dahinter steht alles, was bis
+     * DAS i ÜBER DEM RASTER: Dahinter steht alles, was bis
      * v0.85.0 als Text auf der Seite stand — wie die Lootboxen wirken, was
      * die zwei Zeichen am Vorrat bedeuten, und die Seltenheits-Skala.
      *
@@ -1468,7 +1487,7 @@ Object.assign(TEAM_SCHACH, {
     },
 
     /*
-     * Die Stufen-Legende (seit v0.18.0): Welche Rahmenfarbe im Raster
+     * Die Stufen-Legende: Welche Rahmenfarbe im Raster
      * welche Stufe ist — und hinter dem i, wie oft sie vorkommt. Sie
      * ersetzt die vier Stufen-Karten, nicht das Raster.
      */
@@ -1565,7 +1584,7 @@ Object.assign(TEAM_SCHACH, {
      * HIER STANDEN BIS v0.17.0 `_stufenKarteBauen`, `_bibliothekEintragBauen`
      * und `_bibliothekSchliessen` — die aufklappbare Bibliothek in vier
      * Stufen-Karten. Sie sind mit Wunsch 5 entfallen; an ihre Stelle traten
-     * das Icon-Raster (v0.12.0) und die Stufen-Legende (oben). Wer sie
+     * das Icon-Raster und die Stufen-Legende (oben). Wer sie
      * nachlesen will, findet sie im Backup v0.15.0.
      */
 
@@ -1806,7 +1825,7 @@ Object.assign(TEAM_SCHACH, {
      * und ohne Bedienung. Dazu die markierten Felder: worauf es in diesem Bild
      * ankommt.
      */
-    /* `nurGitter` (seit v0.135.0): nur das Gitter mit Figuren und Marken —
+    /* `nurGitter`: nur das Gitter mit Figuren und Marken —
        ohne Hand, Pfeile, Standbild, Schauspiel und Leiste. Daraus liest die
        3D-Bühne jeden Schritt. */
     _beispielBrettBauen(schritt, nurGitter) {
@@ -2081,7 +2100,7 @@ Object.assign(TEAM_SCHACH, {
          * Takt in der Höhe, und das Auge folgte dem Sprung statt dem Brett.
          */
         /*
-         * DIE LEISTE WIE IM SPIEL (seit v0.134.0): die Karte und daneben ✓ —
+         * DIE LEISTE WIE IM SPIEL: die Karte und daneben ✓ —
          * genau so setzt man seit v0.130.0 ein. Bis v0.133.0 stand hier ein
          * flacher Knopf mit dem Namen, den es im Spiel nicht mehr gibt. Der
          * Finger liegt auf der Karte (`knopfTipp`) oder auf ✓ (`okTipp`).
@@ -2314,7 +2333,7 @@ Object.assign(TEAM_SCHACH, {
      */
 
     /*
-     * DER PFEIL, DER AN- UND ZUKLAPPT (seit v0.80.0) — ein kleines
+     * DER PFEIL, DER AN- UND ZUKLAPPT — ein kleines
      * SVG-Winkelzeichen. Zu: Er zeigt zum Brett, denn dorthin klappt der
      * Friedhof auf. Offen: Er zeigt zurueck zum Kasten.
      */

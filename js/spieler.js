@@ -22,7 +22,7 @@
  *                 "name": "Anna",
  *                 "pinPruefwert": "7c1f…",   // Prüfsumme der PIN, "" = keine
  *                 "pinSalz": "a91b…",        // offen; jedes Gerät muss prüfen können
- *                 "freunde": ["9d2a…"],      // wen ICH als Freund führe (seit v0.11.0)
+ *                 "freunde": ["9d2a…"],      // wen ICH als Freund führe
  *                 "abgelehnt": [],           // wen ich abgelehnt oder entfernt habe
  *                 "aussehen": {              // seit v0.144.0: das gemeinsame
  *                     "darstellung": "hell", // UPCrew-Aussehen, damit es auf
@@ -86,7 +86,7 @@ const SPIELER = {
             freunde: [],
             abgelehnt: [],
 
-            /* Die bis zu drei Abzeichen auf der Visitenkarte (seit v0.119.0).
+            /* Die bis zu drei Abzeichen auf der Visitenkarte.
                Verdient wird aus der Chronik gerechnet (`RANGLISTE.abzeichenVon`);
                hier steht nur, WELCHE drei der Spieler zeigen will. */
             abzeichen: []
@@ -171,7 +171,7 @@ const SPIELER = {
                 spieler.pinSalz = roh.pinSalz;
             }
 
-            /* Die Freundes-Sicht (seit v0.11.0) — der additive Datenvertrag:
+            /* Die Freundes-Sicht — der additive Datenvertrag:
                fehlende Listen bleiben leer, fremder Müll fliegt raus. */
             for (const feld of ["freunde", "abgelehnt"]) {
                 if (Array.isArray(roh[feld])) {
@@ -180,7 +180,7 @@ const SPIELER = {
                 }
             }
 
-            /* Die gewählten Abzeichen (seit v0.119.0): Kennungen, höchstens
+            /* Die gewählten Abzeichen: Kennungen, höchstens
                drei, keine doppelt — fremder Müll fliegt raus. */
             if (Array.isArray(roh.abzeichen)) {
                 spieler.abzeichen = roh.abzeichen
@@ -189,7 +189,7 @@ const SPIELER = {
                     .slice(0, SPIELER.ABZEICHEN_PLAETZE);
             }
 
-            /* Das Aussehen (seit v0.144.0): nur ein Objekt zählt, fremder
+            /* Das Aussehen: nur ein Objekt zählt, fremder
                Müll fliegt raus. Die Werte darin prüft der Baustein
                js\upcrew-aussehen.js beim Übernehmen — was eine neuere App
                ergänzt hat, wandert hier unverändert durch. */
@@ -202,7 +202,7 @@ const SPIELER = {
                 delete spieler.aussehenJe;
             }
 
-            /* Der Fortschritt (seit v0.146.0): ebenso nur als Objekt. Die
+            /* Der Fortschritt: ebenso nur als Objekt. Die
                Werte darin prüft js\fortschritt.js — hier wandert er durch. */
             if ("fortschritt" in spieler && !SPIELER._istObjekt(spieler.fortschritt)) {
                 delete spieler.fortschritt;
@@ -270,7 +270,7 @@ const SPIELER = {
         if (!spieler) {
             return false;
         }
-        /* Unter Regel §12 (seit v0.154.0) tragen fremde Einträge keine
+        /* Unter Regel §12 tragen fremde Einträge keine
            Nummer mehr (`spieler/oeffentlich`) — dann erkennt ihn seine feste
            Konto-Nummer (`KONTO.OBER_UID`, steht ohnehin in der Regel). */
         if (typeof KONTO !== "undefined" && KONTO.OBER_UID && spieler.uid === KONTO.OBER_UID) {
@@ -460,7 +460,7 @@ const SPIELER = {
 
     /*
      * DAS AUSSEHEN IST DIE EINE AUSNAHME VON „DER EIGENE EINTRAG GEWINNT"
-     * (seit v0.144.1). Typoluck schreibt NUR das Feld
+     *. Typoluck schreibt NUR das Feld
      * `konten/<uid>/aussehen` (Typolucks `js\aussehen-abgleich.js`),
      * Blunderluck immer den ganzen eigenen Eintrag. Ohne diese Ausnahme
      * überschriebe Blunderluck beim nächsten Speichern (Freunde, Abzeichen)
@@ -500,7 +500,7 @@ const SPIELER = {
     },
 
     /*
-     * DER FORTSCHRITT IST DIE ZWEITE AUSNAHME (seit v0.146.0): Er trägt je
+     * DER FORTSCHRITT IST DIE ZWEITE AUSNAHME: Er trägt je
      * Spiel einen eigenen Zweig (js\fortschritt.js). Typoluck schreibt
      * seinen, Blunderluck seinen — beim Zusammenführen gewinnt JE ZWEIG der
      * neuere `stand`. Ohne das löschte Blunderluck beim nächsten Speichern
@@ -523,7 +523,7 @@ const SPIELER = {
     },
 
     /*
-     * DER BESITZ IST DIE DRITTE AUSNAHME (seit v0.163.0): Käufe wachsen nur.
+     * DER BESITZ IST DIE DRITTE AUSNAHME: Käufe wachsen nur.
      * Typoluck schreibt `konten/<uid>/besitz/<art>` einzeln, Blunderluck den
      * ganzen Eintrag — ohne Vereinigung löschte Blunderluck beim nächsten
      * Speichern, was inzwischen in Typoluck (oder auf einem zweiten Gerät)
@@ -559,7 +559,7 @@ const SPIELER = {
             return false;
         }
 
-        /* Rollen der UPCrew-Konten (seit v0.138.0) — sonst sähe ein neuer
+        /* Rollen der UPCrew-Konten — sonst sähe ein neuer
            Admin seine Verwaltung erst nach einer anderen Änderung. */
         if (JSON.stringify(einsA.rollen || null) !== JSON.stringify(einsB.rollen || null)) {
             return false;
@@ -576,7 +576,7 @@ const SPIELER = {
                 return false;
             }
 
-            /* Das UPCrew-Konto (seit v0.138.0): Konto-Nummer und die
+            /* Das UPCrew-Konto: Konto-Nummer und die
                Freigabe zum Neu-Verbinden — sonst zeigte die Verwaltung eine
                Freigabe erst nach einer anderen Änderung. */
             if (spielerA.uid !== spielerB.uid || spielerA.tag !== spielerB.tag
@@ -585,7 +585,7 @@ const SPIELER = {
                 return false;
             }
 
-            /* Das Aussehen (seit v0.144.0) — sonst käme eine Umstellung von
+            /* Das Aussehen — sonst käme eine Umstellung von
                einem anderen Gerät erst mit der nächsten anderen Änderung an
                (js\aussehen-konto.js liest es nach jedem neuen Stand). */
             if (JSON.stringify(spielerA.aussehen || null) !== JSON.stringify(spielerB.aussehen || null)) {
@@ -595,13 +595,13 @@ const SPIELER = {
                 return false;
             }
 
-            /* Der Fortschritt (seit v0.146.0) — sonst stünde das Level
+            /* Der Fortschritt — sonst stünde das Level
                eines anderen Geräts erst nach einer anderen Änderung da. */
             if (JSON.stringify(spielerA.fortschritt || null) !== JSON.stringify(spielerB.fortschritt || null)) {
                 return false;
             }
 
-            /* Der Besitz aus dem Shop (seit v0.163.0) — sonst wäre ein Kauf
+            /* Der Besitz aus dem Shop — sonst wäre ein Kauf
                von einem anderen Gerät erst nach einer anderen Änderung da. */
             if (JSON.stringify(spielerA.besitz || null) !== JSON.stringify(spielerB.besitz || null)) {
                 return false;
@@ -614,14 +614,14 @@ const SPIELER = {
                 return false;
             }
 
-            /* Auch die Freundes-Sicht (seit v0.11.0) — sonst zeichnet die
+            /* Auch die Freundes-Sicht — sonst zeichnet die
                App eine neue Anfrage nicht (Entwurf, Abschnitt 3.4). */
             if (spielerA.freunde.join("|") !== spielerB.freunde.join("|")
                 || spielerA.abgelehnt.join("|") !== spielerB.abgelehnt.join("|")) {
                 return false;
             }
 
-            /* Und die Abzeichen (seit v0.119.0) — sonst bliebe eine fremde
+            /* Und die Abzeichen — sonst bliebe eine fremde
                Visitenkarte alt, bis etwas anderes das Neuzeichnen auslöst. */
             if (spielerA.abzeichen.join("|") !== spielerB.abzeichen.join("|")) {
                 return false;
@@ -632,12 +632,12 @@ const SPIELER = {
     },
 
     /*
-     * Die Abzeichen auf der eigenen Visitenkarte setzen (seit v0.119.0).
+     * Die Abzeichen auf der eigenen Visitenkarte setzen.
      * Geprüft wird nur die Form — ob der Spieler ein Abzeichen wirklich
      * verdient hat, weiss die Rangliste; der Bildschirm bietet nur
      * Verdientes an. Mehr als drei nimmt die Normalisierung ohnehin nicht.
      */
-    /* Der Haken „Spielzeit öffentlich" am eigenen Eintrag (seit v0.155.2). */
+    /* Der Haken „Spielzeit öffentlich" am eigenen Eintrag. */
     spielzeitOeffentlichSetzen(daten, id, an, zeitpunkt) {
         const neu = SPIELER.kopieren(daten);
         for (const spieler of neu.spieler) {
@@ -673,7 +673,7 @@ const SPIELER = {
      */
     AUSSEHEN_TEXTE: ["darstellung", "farbwelt", "schrift", "knoepfe"],
 
-    /* Das Aussehen EINES Spiels am Eintrag (seit v0.151.17): `aussehenJe[app]`,
+    /* Das Aussehen EINES Spiels am Eintrag: `aussehenJe[app]`,
        dieselben sechs Felder wie `aussehen`. */
     aussehenJeSetzen(daten, id, app, aussehen, zeitpunkt) {
         const mitFeld = SPIELER.aussehenSetzen(daten, id, aussehen, zeitpunkt);

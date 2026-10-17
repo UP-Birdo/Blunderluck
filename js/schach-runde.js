@@ -54,7 +54,7 @@ const SCHACH_RUNDE = {
     VERLAUF_LAENGE: 40,
 
     /*
-     * ZEIT ZURÜCK (seit v0.152.2): so viele Anfänge eigener Züge merkt sich
+     * ZEIT ZURÜCK: so viele Anfänge eigener Züge merkt sich
      * eine Partie gegen Bob (`rueckblick`). Drei heisst: zweimal
      * hintereinander zurück, ohne dazwischen zu ziehen — mehr kostet bei
      * jedem Zug nur Datenmenge (jeder Eintrag trägt Brett und Verlauf).
@@ -130,7 +130,7 @@ const SCHACH_RUNDE = {
             : "";
     },
 
-    /* Eine gültige Turm-Angabe { ort, stufe } oder null (seit v0.147.0).
+    /* Eine gültige Turm-Angabe { ort, stufe } oder null.
        Die Grenzen sind grosszügig — welche Stufen es gibt, weiss nur
        js\turm.js, und das lädt nach dieser Datei. */
     turmAngabe(roh) {
@@ -200,7 +200,7 @@ const SCHACH_RUNDE = {
             bereit: { weiss: false, schwarz: false },
 
             /*
-             * DIE ZWEITE BEREITSCHAFT (seit v0.62.0) — die Zusage zur
+             * DIE ZWEITE BEREITSCHAFT — die Zusage zur
              * AUFSTELLUNG.
              *
              * Nutzer-Ansage 25.08.2026: „Sobald beide Seiten einen Spieler
@@ -280,7 +280,7 @@ const SCHACH_RUNDE = {
             gefallen: { weiss: [], schwarz: [] },
 
             /*
-             * WELCHE UNGLÜCKE JEDE SEITE ABBEKOMMEN HAT (seit v0.82.0):
+             * WELCHE UNGLÜCKE JEDE SEITE ABBEKOMMEN HAT:
              * [{ art, zugZaehler }] je Farbe, das Jüngste hinten. Daraus baut
              * die Hand ihre Unglücks-Karten (Nutzer-Ansage 26.08.2026: die
              * Meldung wird eine Karte in der Hand dessen, der aufs Feld
@@ -387,7 +387,7 @@ const SCHACH_RUNDE = {
                 armeeUnterschiedlich: false,
 
                 /*
-                 * WIRD DIE SEITE ZUFÄLLIG ZUGETEILT? (seit v0.66.0)
+                 * WIRD DIE SEITE ZUFÄLLIG ZUGETEILT?
                  *
                  * Nutzer-Ansage 25.08.2026: „Der erste Screen soll an einem
                  * Grundeinstellungs-Haken hängen, ob er erscheint oder nicht.
@@ -458,7 +458,7 @@ const SCHACH_RUNDE = {
                 einigkeit: false,
 
                 /*
-                 * AUF WELCHER STUFE SPIELT DER COMPUTER? (seit v0.28.0)
+                 * AUF WELCHER STUFE SPIELT DER COMPUTER?
                  *
                  * Leer heisst: keine Angabe. Was daraus wird, entscheidet
                  * ALLEIN `SCHACH_BOT.stufeVon` — hier steht bewusst keine
@@ -507,7 +507,7 @@ const SCHACH_RUNDE = {
             },
 
             /*
-             * ALTBESTAND (bis v0.82.0): der EINE Vorschlag mit Stimmen-Liste
+             * ALTBESTAND: der EINE Vorschlag mit Stimmen-Liste
              * („Einverstanden"-Knopf). Seit v0.83.0 stimmt das Team ab, indem
              * jeder denselben Zug selbst macht (`vorschlaege`, Nutzer-Ansage
              * 26.08.2026). Das Feld bleibt im Datenvertrag und wird
@@ -807,7 +807,7 @@ const SCHACH_RUNDE = {
      * und die Bauern immer vorne.
      */
     /*
-     * DIE ZÄHLENDE STELLE GEHÖRT AN DEN ANFANG DER SAAT (seit v0.49.1).
+     * DIE ZÄHLENDE STELLE GEHÖRT AN DEN ANFANG DER SAAT.
      *
      * `_zufallsWert` ist FNV-1a: Jedes Zeichen wird verodert und dann mit einer
      * Primzahl multipliziert. Ein Unterschied im LETZTEN Zeichen erlebt danach
@@ -1092,7 +1092,7 @@ const SCHACH_RUNDE = {
     },
 
     /*
-     * DER SAAT-ZUSATZ EINER SEITE (seit v0.62.0).
+     * DER SAAT-ZUSATZ EINER SEITE.
      *
      * Wie oft diese Seite ihre Armee schon neu gewürfelt hat, geht in die
      * Ziehung ein — dadurch ändert sich beim Neu-Würfeln GENAU die Seite, die
@@ -1309,7 +1309,7 @@ const SCHACH_RUNDE = {
         );
         runde.laeuft = (roh.laeuft === true);
 
-        /* Die Einladungen (seit v0.13.0) — additiv nachgerüstet, fremder
+        /* Die Einladungen — additiv nachgerüstet, fremder
            Müll fliegt raus. */
         if (Array.isArray(roh.eingeladen)) {
             runde.eingeladen = roh.eingeladen.filter(
@@ -1377,7 +1377,7 @@ const SCHACH_RUNDE = {
                     && Number.isInteger(eintrag.feld) && eintrag.feld >= 0)
                 .map((eintrag) => ({ art: eintrag.art, feld: eintrag.feld }));
 
-            /* Die Unglücks-Karten der Hand (seit v0.82.0) — additiv
+            /* Die Unglücks-Karten der Hand — additiv
                nachgerüstet: Eine Partie von früher hat keine, dann bleibt die
                Liste leer und die Hand zeigt schlicht nichts. Nur echte
                Unglücks-Arten werden übernommen. */
@@ -1436,7 +1436,7 @@ const SCHACH_RUNDE = {
                ihre Seitenwahl. */
             runde.regeln.seiteZufaellig = (roh.regeln.seiteZufaellig === true);
 
-            /* Die Sichtbarkeit (seit v0.118.0): nur eine der drei Stufen;
+            /* Die Sichtbarkeit: nur eine der drei Stufen;
                alles andere — und jede Partie von vorher — ist „privat". */
             if (SCHACH_RUNDE.sichtbarkeitVon(roh.regeln.sichtbarkeit)) {
                 runde.regeln.sichtbarkeit = roh.regeln.sichtbarkeit;
@@ -1479,7 +1479,7 @@ const SCHACH_RUNDE = {
             runde.regeln.einigkeit = (roh.regeln.einigkeit === true);
 
             /*
-             * Die Stufe des Computers (seit v0.28.0) — nur als Text
+             * Die Stufe des Computers — nur als Text
              * übernommen, gedeutet wird sie in `SCHACH_BOT.stufeVon` (siehe
              * die Begründung bei den Vorgaben). Die Länge ist gedeckelt,
              * damit über den offenen Datenpfad kein Roman in der Partie
@@ -1489,14 +1489,14 @@ const SCHACH_RUNDE = {
                 ? roh.regeln.botStufe.slice(0, 20)
                 : "";
 
-            /* Die Turm-Stufe (seit v0.147.0) — nur zwei kleine ganze Zahlen,
+            /* Die Turm-Stufe — nur zwei kleine ganze Zahlen,
                sonst keine (siehe `turm` bei den Vorgaben). */
             runde.regeln.turm = SCHACH_RUNDE.turmAngabe(roh.regeln.turm);
 
-            /* Das Tagesbrett (seit v0.149.0). */
+            /* Das Tagesbrett. */
             runde.regeln.tagesbrett = SCHACH_RUNDE.tagesbrettAngabe(roh.regeln.tagesbrett);
 
-            /* Höchstens N Items (seit v0.152.4) — nur eine kleine ganze
+            /* Höchstens N Items — nur eine kleine ganze
                Zahl, sonst ohne Grenze. */
             runde.regeln.itemMax = (Number.isInteger(roh.regeln.itemMax)
                 && roh.regeln.itemMax >= 1 && roh.regeln.itemMax <= 20) ? roh.regeln.itemMax : 0;
@@ -1530,7 +1530,7 @@ const SCHACH_RUNDE = {
         }
 
         /*
-         * Die Zug-Vorschläge der Abstimmung (seit v0.83.0) — additiv
+         * Die Zug-Vorschläge der Abstimmung — additiv
          * nachgerüstet: Eine Partie von früher hat keine, dann bleibt das
          * Objekt leer. Nur brauchbare Einträge werden übernommen; was weder
          * ein Zug noch eine bekannte Fähigkeit ist, fällt weg.
@@ -1682,7 +1682,7 @@ const SCHACH_RUNDE = {
         }
 
         /*
-         * Der Rückblick für Zeit zurück (seit v0.152.2) — additiv: Eine
+         * Der Rückblick für Zeit zurück — additiv: Eine
          * Partie von früher hat keinen. Hier nur grob geprüft (Brett und
          * Zugzähler da) und auf die bekannten Felder beschnitten; genau
          * normalisiert wird ein Eintrag erst, wenn er eingelöst wird
@@ -1782,7 +1782,7 @@ const SCHACH_RUNDE = {
 
     /* Die Spielart dieser Partie. */
     /*
-     * DIE DREI SICHTBARKEITEN EINER RUNDE (seit v0.118.0) — als Tabelle,
+     * DIE DREI SICHTBARKEITEN EINER RUNDE — als Tabelle,
      * damit Bildschirm und Vorraum-Schildchen dieselben Wörter benutzen.
      * Die Reihenfolge ist die der Knopfreihe: von offen nach geschlossen.
      */
@@ -1813,7 +1813,7 @@ const SCHACH_RUNDE = {
     },
 
     /*
-     * SIEHT DIESE PERSON DIE RUNDE UNTER „RUNDE BEITRETEN"? (seit v0.118.0)
+     * SIEHT DIESE PERSON DIE RUNDE UNTER „RUNDE BEITRETEN"?
      *
      *   - Wer selbst darin sitzt, sieht sie immer (das ist die eigene Runde).
      *   - „oeffentlich": jeder.
@@ -1933,7 +1933,7 @@ const SCHACH_RUNDE = {
         return neu;
     },
 
-    /* Wie viele höchstens in einem Team sitzen (seit v0.155.2). Die Regel
+    /* Wie viele höchstens in einem Team sitzen. Die Regel
        §14 prüft die Plätze 0 bis TEAM_MAX − 1 (SICHERHEIT.md). */
     TEAM_MAX: 3,
 
@@ -2029,7 +2029,7 @@ const SCHACH_RUNDE = {
 
     /*
      * DIE ZWEITE BEREITSCHAFT: Ich bin auch mit dem BRETT einverstanden —
-     * und damit geht es los (seit v0.62.0).
+     * und damit geht es los.
      *
      * Der Anpfiff steht hier und nicht mehr in `bereitSetzen`: Er hängt an
      * der letzten Zusage, die fehlt, und das ist seit dem zweiten
@@ -2073,7 +2073,7 @@ const SCHACH_RUNDE = {
     },
 
     /*
-     * DIE ARMEE NEU WÜRFELN, OHNE DIE RUNDE ZURÜCKZUSETZEN (seit v0.62.0).
+     * DIE ARMEE NEU WÜRFELN, OHNE DIE RUNDE ZURÜCKZUSETZEN.
      *
      * Nutzer-Ansage 25.08.2026: „Beide haben noch die Möglichkeit, neu
      * aufzustellen. Wenn beide dieselbe haben, können beide Spieler separat
@@ -2157,7 +2157,7 @@ const SCHACH_RUNDE = {
      * DEN BILDSCHIRM GIBT ES NUR MIT ZUFALLSARMEE (seit Punkt 8, 27.08.2026)
      * — ohne sie ist die Antwort immer nein, siehe unten.
      *
-     * MIT ZUGELOSTER SEITE GENÜGT DIE EIGENE (seit v0.66.0): Dann gibt es
+     * MIT ZUGELOSTER SEITE GENÜGT DIE EIGENE: Dann gibt es
      * keinen Seitenwahl-Bildschirm, auf den man zurückfallen könnte — wer
      * drin sitzt, steht vor dem Brett und wartet dort auf den zweiten
      * Spieler. `spielerId` sagt, wer fragt; ohne sie gilt die alte Regel
@@ -2186,7 +2186,7 @@ const SCHACH_RUNDE = {
     },
 
     /*
-     * DIE SEITE ZULOSEN, WENN DER HAKEN ES SAGT (seit v0.66.0).
+     * DIE SEITE ZULOSEN, WENN DER HAKEN ES SAGT.
      *
      * Liefert die Runde unverändert zurück, wenn nichts zu tun ist — der
      * Aufrufer muss nichts prüfen. Zugeteilt wird nur, wenn:
@@ -3190,7 +3190,7 @@ const SCHACH_RUNDE = {
         neu.laeuft = false;
         neu.ergebnis = "";
         neu.bereit = { weiss: false, schwarz: false };
-        /* Auch die Zusage zur Aufstellung (v0.62.0) — die Revanche stellt ein
+        /* Auch die Zusage zur Aufstellung — die Revanche stellt ein
            neues Brett hin, und dazu hat noch niemand ja gesagt. */
         neu.aufstellungBereit = { weiss: false, schwarz: false };
         neu.faehigkeiten = { weiss: [], schwarz: [] };
@@ -3202,7 +3202,7 @@ const SCHACH_RUNDE = {
         neu.stufeZuletzt = {};
         neu.verloren = { weiss: [], schwarz: [] };
         neu.verlauf = [];
-        /* Zeit zurück (v0.152.2) führt nie in die vorige Partie. */
+        /* Zeit zurück führt nie in die vorige Partie. */
         neu.rueckblick = [];
 
         neu.geaendertAm = wann;

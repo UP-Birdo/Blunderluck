@@ -1,5 +1,5 @@
 /*
- * anmeldung-konto.js — die Bildschirme des UPCrew-Kontos (seit v0.138.0).
+ * anmeldung-konto.js — die Bildschirme des UPCrew-Kontos.
  *
  * Ergänzt ANMELDUNG (Object.assign) und muss in index.html NACH
  * anmeldung.js stehen. anmeldung.js ruft diese Wege nur, wenn
@@ -53,7 +53,7 @@ Object.assign(ANMELDUNG, {
     },
 
     /* ---------------------------------------------------------------- *
-     * DER EIGENE KONTO-EINTRAG, GEZIELT GEHOLT (seit v0.160.1)
+     * DER EIGENE KONTO-EINTRAG, GEZIELT GEHOLT
      *
      * WARUM: Der Abgleich holt die Spielerliste nur, wenn die Marke
      * `spieler/geaendertAm` gestiegen ist. Ein anderes UPCrew-Spiel schreibt
@@ -260,7 +260,7 @@ Object.assign(ANMELDUNG, {
     },
 
     /*
-     * „Welches Konto?" (seit v0.151.9): Name und Passwort passen zu mehreren
+     * „Welches Konto?": Name und Passwort passen zu mehreren
      * gleichnamigen Konten. Hier — und nur hier im Ablauf — steht die Nummer,
      * weil die Konten sonst nicht zu unterscheiden sind; dazu Level und der
      * letzte Spieltag, soweit im Eintrag lesbar.
@@ -286,7 +286,7 @@ Object.assign(ANMELDUNG, {
         return { ok: true };
     },
 
-    /* Regel §12 (seit v0.154.0): Vor der Anmeldung war nur die Marke
+    /* Regel §12: Vor der Anmeldung war nur die Marke
        lesbar — der eigene Eintrag und die Liste kommen erst jetzt. Unter der
        alten Regel lag beides schon da; dann wird nichts extra geladen. */
     async _nachAnmeldungLaden() {
@@ -298,7 +298,7 @@ Object.assign(ANMELDUNG, {
     /* „#1234 · Level 5 · zuletzt 26.09." — was ohne Anmeldung lesbar ist. */
     _kontoErkennung(spieler) {
         const teile = ["#" + spieler.tag];
-        if (typeof FORTSCHRITT !== "undefined" && spieler.fortschritt) {
+        if (spieler.fortschritt) {
             try {
                 teile.push("Level " + FORTSCHRITT.level(spieler.fortschritt).level);
                 const tage = Array.from(FORTSCHRITT.alleTage(spieler.fortschritt)).sort();
@@ -412,7 +412,7 @@ Object.assign(ANMELDUNG, {
     },
 
     /* ---------------------------------------------------------------- *
-     * Einladungslink ohne Anmeldung (seit v0.151.7)
+     * Einladungslink ohne Anmeldung
      *
      * Nutzer 27.09.2026: „mach den teilbaren Link so, dass man in die Runde
      * kommt, ohne sich anmelden zu müssen — also einen Gast-Account im
@@ -557,7 +557,7 @@ Object.assign(ANMELDUNG, {
         ANMELDUNG.wurzelEl.hidden = false;
         /* Die Anmeldung sperrt das Seiten-Band (seit v0.161.0, `erlaubt`
            in app.js) — sofort, nicht erst bei der nächsten Berührung. */
-        if (typeof TABS !== "undefined" && typeof TABS.bandAuffrischen === "function") {
+        if (typeof TABS.bandAuffrischen === "function") {
             TABS.bandAuffrischen();
         }
 
@@ -590,7 +590,7 @@ Object.assign(ANMELDUNG, {
             if (ergebnis.ok && typeof FORTSCHRITT_KONTO !== "undefined") {
                 FORTSCHRITT_KONTO.gastUebernehmen();
             }
-            /* Der Besitz aus dem Shop zieht genau hier mit (seit v0.163.0) —
+            /* Der Besitz aus dem Shop zieht genau hier mit —
                an derselben Stelle und auf dieselbe Art wie der Fortschritt. */
             if (ergebnis.ok && typeof BESITZ !== "undefined") {
                 BESITZ.gastUebernehmen();
@@ -632,7 +632,7 @@ Object.assign(ANMELDUNG, {
         DIALOG.kurzmeldung("Umbenannt · " + ergebnis.eintrag.name);
     },
 
-    /* Die eigene Nummer ändern (seit v0.151.8): würfeln oder selbst
+    /* Die eigene Nummer ändern: würfeln oder selbst
        wählen. Anmelden geht weiter nur mit Name und Passwort. */
     async nummerAendern(ich) {
         if (!ich || ich.gast === true || !KONTO.aktiv()) {
@@ -919,7 +919,7 @@ Object.assign(ANMELDUNG, {
         /* Erfolg spürt man (UPCrew-Standard, seit v0.140.0); die Meldung
            ist ein Stichwort und der Name, kein Ausruf. */
         FUEHLEN.erfolg();
-        /* Nur der Name (seit v0.151.8): Die Nummer ist zufällig und muss
+        /* Nur der Name: Die Nummer ist zufällig und muss
            niemand kennen — zu sehen und zu ändern in den Einstellungen. */
         DIALOG.kurzmeldung(gruss + ergebnis.eintrag.name);
     },
@@ -931,6 +931,11 @@ Object.assign(ANMELDUNG, {
         abgleich.eigenerVorgangBeginnt();
         try {
             abgleich.daten = await abgleich.speicher.laden();
+            /* Seit v0.167.2: Der Stand gilt damit als geladen — sonst zeigte
+               eine leere Rangliste bis zur nächsten Abfrage „lädt" statt
+               „Noch niemand", und die nächste Abfrage meldete denselben
+               Stand ein zweites Mal als ersten. */
+            abgleich.geladen = true;
             abgleich.beiDaten(abgleich.daten);
         } catch (fehler) {
             /* Kein Netz: Die regelmässige Abfrage holt es nach. */

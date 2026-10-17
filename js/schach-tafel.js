@@ -223,7 +223,7 @@ const SCHACH_TAFEL = {
     },
 
     /*
-     * DIE EIGENEN OFFENEN PARTIEN (seit v0.34.0) — laufende UND solche, die
+     * DIE EIGENEN OFFENEN PARTIEN — laufende UND solche, die
      * noch auf jemanden warten.
      *
      * UNTERSCHIED ZU `eigeneLaufende`: Dort ist `laeuft === true` Bedingung.
@@ -388,7 +388,7 @@ const SCHACH_TAFEL = {
     },
 
     /*
-     * DER ÜBERSICHTS-EINTRAG EINER PARTIE (seit v0.114.3) — was der
+     * DER ÜBERSICHTS-EINTRAG EINER PARTIE — was der
      * Startbildschirm über eine Partie wissen muss, OHNE sie zu laden.
      *
      * Liegt in der Datenbank unter `uebersicht/<id>` neben `partien/<id>`
@@ -418,7 +418,7 @@ const SCHACH_TAFEL = {
                 schwarz: stand.teams.schwarz.slice()
             },
 
-            /* Wer eingeladen ist (seit v0.152.5): Der Lader holt eine
+            /* Wer eingeladen ist: Der Lader holt eine
                fremde LAUFENDE Partie nur noch, wenn man darin eingeladen
                ist (`SCHACH_SPEICHER.tafelLaden`). `mitEinladungen` sagt,
                dass dieser Eintrag die Liste trägt — die Datenbank speichert
@@ -480,7 +480,7 @@ const SCHACH_TAFEL = {
             partie.regeln.seltenheitZeigen = (regeln.seltenheitZeigen !== false);
             partie.regeln.pechZeigen = (regeln.pechZeigen === true);
 
-            /* Die Sichtbarkeit (seit v0.118.0) — nur eine der drei Stufen;
+            /* Die Sichtbarkeit — nur eine der drei Stufen;
                ohne gültige Angabe bleibt es bei der Modell-Vorgabe. */
             if (SCHACH_RUNDE.sichtbarkeitVon(regeln.sichtbarkeit)) {
                 partie.regeln.sichtbarkeit = regeln.sichtbarkeit;
@@ -544,7 +544,7 @@ const SCHACH_TAFEL = {
             partie.regeln.einigkeit = (regeln.einigkeit === true);
 
             /*
-             * DIE STUFE DES COMPUTERS (seit v0.28.0) — und prompt DIESELBE
+             * DIE STUFE DES COMPUTERS — und prompt DIESELBE
              * FALLE wie v0.86/v0.87: Beim Bauen fehlte diese Zeile, der
              * Regler liess sich bedienen, die Reihe zeigte die gewählte
              * Stufe, und die angelegte Partie trug leeren Text. Der Bot
@@ -558,15 +558,15 @@ const SCHACH_TAFEL = {
                 ? regeln.botStufe.slice(0, 20)
                 : "";
 
-            /* Die Turm-Stufe (seit v0.147.0) — dieselbe Falle wie oben:
+            /* Die Turm-Stufe — dieselbe Falle wie oben:
                ohne diese Zeile wüsste die Partie nicht, dass sie zum Turm
                gehört, und gäbe keine Figur. */
             partie.regeln.turm = SCHACH_RUNDE.turmAngabe(regeln.turm);
 
-            /* Das Tagesbrett (seit v0.149.0) — dieselbe Falle. */
+            /* Das Tagesbrett — dieselbe Falle. */
             partie.regeln.tagesbrett = SCHACH_RUNDE.tagesbrettAngabe(regeln.tagesbrett);
 
-            /* Höchstens N Items auf der Hand (seit v0.152.4) — dieselbe
+            /* Höchstens N Items auf der Hand — dieselbe
                Falle; der Test unten hat sie beim Bauen gefunden. */
             partie.regeln.itemMax = (Number.isInteger(regeln.itemMax)
                 && regeln.itemMax >= 1 && regeln.itemMax <= 20) ? regeln.itemMax : 0;

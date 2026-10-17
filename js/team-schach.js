@@ -89,7 +89,7 @@ const TEAM_SCHACH = {
        hält die regelmässige Abfrage davon ab, sie ständig neu zu bauen und
        dabei jeden aufgeklappten Eintrag wieder zuzuklappen. */
     /*
-     * DIE EINSTELLUNGEN DIESER PARTIE (seit v0.48.0).
+     * DIE EINSTELLUNGEN DIESER PARTIE.
      *
      * Nutzer-Ansage 24.08.2026: „Aufgeben soll hinter ein Zahnrad, welches
      * Spiel-Einstellungen beinhaltet — wie später Lautstärke und andere
@@ -133,7 +133,7 @@ const TEAM_SCHACH = {
         /* Seit v0.66.0: Seite zulosen statt aussuchen (Vorgabe AN). */
         seiteZufaellig: true,
 
-        /* Wer die Runde sieht (seit v0.118.0) — siehe `_regelnVorgabe`. */
+        /* Wer die Runde sieht — siehe `_regelnVorgabe`. */
         sichtbarkeit: "oeffentlich",
 
         /*
@@ -159,7 +159,7 @@ const TEAM_SCHACH = {
         /* Wie viele verschiedene Items es geben soll (seit v0.87). */
         itemVorrat: "alle",
 
-        /* Höchstens so viele Items auf der Hand (seit v0.152.4); 0 = ohne
+        /* Höchstens so viele Items auf der Hand; 0 = ohne
            Grenze. Vorgabe seit v0.153.0 „ohne Grenze" — Begründung bei
            `SCHACH_VARIANTEN.ITEM_MAX`. */
         itemMax: SCHACH_VARIANTEN.ITEM_MAX_VORGABE,
@@ -226,14 +226,14 @@ const TEAM_SCHACH = {
     zielFaehigkeit: "",
 
     /*
-     * DIE GEWÄHLTE KARTE OHNE ZIELFELD (seit v0.130.0). Der erste Tipp auf
+     * DIE GEWÄHLTE KARTE OHNE ZIELFELD. Der erste Tipp auf
      * eine solche Karte wählt sie nur aus (sie steht dann gross in der
      * Karten-Leiste, mit ✓ und ✕); der zweite Tipp oder ✓ setzt sie ein.
      * Gilt nur für die Stellung, in der gewählt wurde (`handWahlZaehler`).
      */
     handWahl: "",
     handWahlZaehler: -1,
-    /* Die offene Händler-Wahl (seit v0.136.0): { art, zaehler, wahl }. */
+    /* Die offene Händler-Wahl: { art, zaehler, wahl }. */
     handelLage: null,
 
     /* Ein kurzer Hinweis über der Karten-Leiste, z. B. „Gerade kein Feld
@@ -273,7 +273,7 @@ const TEAM_SCHACH = {
     zielUmriss: [],
 
     /*
-     * Wird der Vorschau-Kasten gerade GEZOGEN (seit v0.84.0)?
+     * Wird der Vorschau-Kasten gerade GEZOGEN?
      *
      * `ziehtVorschau` läuft von `pointerdown` bis `pointerup`;
      * `ziehenVerbrauchtKlick` merkt sich, dass der Kasten dabei wirklich
@@ -345,12 +345,12 @@ const TEAM_SCHACH = {
     /* Verhindert zwei Züge gleichzeitig vom selben Gerät. */
     ziehtGerade: false,
 
-    /* Verhindert zwei Anlege-Vorgänge gleichzeitig (v0.114.2) — siehe
+    /* Verhindert zwei Anlege-Vorgänge gleichzeitig — siehe
        `rundeStarten`. */
     legtGeradeAn: false,
 
     /*
-     * Der Computer denkt gerade nach (seit v0.27.0) — die Sperre gegen
+     * Der Computer denkt gerade nach — die Sperre gegen
      * doppeltes Anstossen. Die Abfrage zeichnet alle drei Sekunden neu, und
      * jedes Zeichnen käme sonst an `_botAnstossen` vorbei, während der
      * erste Bedenk-Augenblick noch läuft.
@@ -392,7 +392,7 @@ const TEAM_SCHACH = {
     friedhofOffen: { weiss: true, schwarz: true },
     eckMenueOffen: false,
 
-    /* Partien, deren Anpfiff schon an die Serie gemeldet ist (v0.152.0). */
+    /* Partien, deren Anpfiff schon an die Serie gemeldet ist. */
     _serieGemeldet: {},
 
     /*
@@ -466,7 +466,7 @@ const TEAM_SCHACH = {
     brettEl: null,
     feldEl: null,
 
-    /* Fürs Einpassen auf die feste Seite (v0.52.0) — gesetzt in
+    /* Fürs Einpassen auf die feste Seite — gesetzt in
        `_brettBauen`, gelesen in `_brettEinpassen`. */
     brettHalterEl: null,
     brettRahmenEl: null,
@@ -478,7 +478,7 @@ const TEAM_SCHACH = {
     },
 
     /* ---------------------------------------------------------------- *
-     * Holen und Schreiben in Teilen (seit v0.114.3)
+     * Holen und Schreiben in Teilen
      *
      * Bis v0.114.2 holte jeder Schreibweg die GANZE Tafel vom Server
      * (192 Kilobyte) und schrieb sie ganz zurück. Jetzt gehen alle Wege
@@ -545,7 +545,7 @@ const TEAM_SCHACH = {
         const person = TEAM_SCHACH._ich();
         return SCHACH_SPEICHER.tafelLaden(
             speicher, person ? person.id : "", abgleich.daten, {
-                verwaltung: typeof ICH !== "undefined" && typeof ICH.verwaltungAktiv === "function"
+                verwaltung: typeof ICH.verwaltungAktiv === "function"
                     && ICH.verwaltungAktiv() === true
             });
     },
@@ -564,7 +564,7 @@ const TEAM_SCHACH = {
         const partie = (TEAM_SCHACH.offeneId && tafel)
             ? SCHACH_TAFEL.partie(tafel, TEAM_SCHACH.offeneId) : null;
         return SCHACH_SPEICHER.abfrageTakt(partie,
-            (typeof KONFIG !== "undefined" && KONFIG.speicher) ? KONFIG.speicher.abfrageTaktMs : null);
+            (KONFIG.speicher) ? KONFIG.speicher.abfrageTaktMs : null);
     },
 
     /*
@@ -650,7 +650,7 @@ const TEAM_SCHACH = {
        UP#Plus (AboveAdmin) spielt nicht (Nutzer 25.09.2026) — für das
        Schach ist dann niemand angemeldet: keine Runde, kein Beitritt. */
     _ich() {
-        if (typeof ANMELDUNG !== "undefined" && typeof ANMELDUNG.istOberAdmin === "function"
+        if (typeof ANMELDUNG.istOberAdmin === "function"
                 && ANMELDUNG.istOberAdmin()) {
             return null;
         }
@@ -704,7 +704,7 @@ const TEAM_SCHACH = {
            anderen Ansichten zeigen die Leiste. */
         TABS.rundeSetzen("team-schach", false);
 
-        /* Neue Einladungen als Banner melden (seit v0.13.0) — bei jedem
+        /* Neue Einladungen als Banner melden — bei jedem
            geholten Stand, unabhängig von der gezeigten Ansicht. */
         TEAM_SCHACH._einladungenMelden(tafel);
 
@@ -728,7 +728,7 @@ const TEAM_SCHACH = {
         }
 
         /*
-         * Die Einstellungen dieser Partie stehen GANZ vorn (seit v0.48.0):
+         * Die Einstellungen dieser Partie stehen GANZ vorn:
          * Sie sind ein Fenster über der Partie, und der einzige Weg hinaus
          * ist ihr eigener Zurück-Knopf. Stünden sie weiter unten, gewänne
          * die offene Partie und man käme nie hin.
@@ -740,7 +740,7 @@ const TEAM_SCHACH = {
                    nicht zu Ende ist (vierter Wert, wie bei der offenen
                    Partie) — die Einstellungen liegen ÜBER der Partie, sie
                    sind kein Ausgang aus ihr. */
-                if (typeof TABS !== "undefined" && TABS.rundeSetzen) {
+                if (TABS.rundeSetzen) {
                     TABS.rundeSetzen("team-schach", true, false, !laufende.ergebnis);
                 }
                 TEAM_SCHACH._spielEinstellungenZeichnen(wurzel, laufende, person);
@@ -887,7 +887,7 @@ const TEAM_SCHACH = {
 
             if (partie && partie.ergebnis) {
                 /*
-                 * DER ABSCHLUSS IST EIN FENSTER (seit v0.45.0).
+                 * DER ABSCHLUSS IST EIN FENSTER.
                  *
                  * Nutzer-Ansage 24.08.2026: „Wie es dazu kam und so sollen
                  * unten die Menü-Leiste verschwinden — man muss durch
@@ -901,7 +901,7 @@ const TEAM_SCHACH = {
                  * `abschlussSchliessen`, und das geht seit v0.36.0 auf den
                  * Startbildschirm, der die Leiste selbst wieder einschaltet.
                  */
-                if (typeof TABS !== "undefined" && TABS.rundeSetzen) {
+                if (TABS.rundeSetzen) {
                     TABS.rundeSetzen("team-schach", true);
                 }
 
@@ -923,7 +923,7 @@ const TEAM_SCHACH = {
              * der App, der das tut; alle anderen rufen `rundeSetzen` ohne
              * ihn und nehmen die Klasse damit wieder zurück.
              *
-             * ERST WENN DAS MATCH LÄUFT (seit v0.55.0). Nutzer-Ansage
+             * ERST WENN DAS MATCH LÄUFT. Nutzer-Ansage
              * 25.08.2026: „Das mit dem fixen Spiel soll beim Entscheiden,
              * welches Team man ist, noch nicht sein — da ist es eher
              * verwirrend."
@@ -936,7 +936,7 @@ const TEAM_SCHACH = {
              * wurde von einem möglichst grossen Brett an den Rand gedrückt.
              * Solange gewählt wird, rollt die Seite also wie jede andere.
              */
-            /* Vierter Wert (seit v0.151.3): Solange die Partie nicht zu Ende
+            /* Vierter Wert: Solange die Partie nicht zu Ende
                ist — auch schon im Vorraum —, ist die Tab-Leiste weg. */
             TABS.rundeSetzen("team-schach", true, offene.laeuft === true, !offene.ergebnis);
 
@@ -956,7 +956,7 @@ const TEAM_SCHACH = {
             TEAM_SCHACH._zeitMessungStarten(offene.id);
             TEAM_SCHACH._partieZeichnen(wurzel, offene, person);
 
-            /* Ist der Computer dran, zieht er gleich (v0.27.0) — erst nach
+            /* Ist der Computer dran, zieht er gleich — erst nach
                dem Zeichnen, damit das eigene Brett schon dasteht. */
             TEAM_SCHACH._botAnstossen(offene, person);
         } else {
@@ -987,7 +987,7 @@ const TEAM_SCHACH = {
         TEAM_SCHACH.vorratVorstellen(partie);
 
         /*
-         * VOR DEM ANPFIFF IST DER BILDSCHIRM EIN ANDERER (seit v0.61.0).
+         * VOR DEM ANPFIFF IST DER BILDSCHIRM EIN ANDERER.
          *
          * Nutzer-Ansage 25.08.2026: „Wenn ich eine Runde starte, soll erst
          * ein Screen, welcher nur oben links wie überall Zurück hat, die
@@ -1029,7 +1029,7 @@ const TEAM_SCHACH = {
            `_faehigkeitReiheBauen`, gespeist aus `SCHACH_RUNDE.unglueckskartenVon`. */
 
         /*
-         * DIE SEITEN FLANKIEREN DAS BRETT (seit v0.53.0), eine darüber, eine
+         * DIE SEITEN FLANKIEREN DAS BRETT, eine darüber, eine
          * darunter. `_farbeObenAmBrett` sorgt dafür, dass die obere Seite zu
          * der gehört, die auch oben auf dem Brett spielt.
          */
@@ -1037,7 +1037,7 @@ const TEAM_SCHACH = {
         const untenFarbe = (obenFarbe === "weiss") ? "schwarz" : "weiss";
 
         /*
-         * DIE ANORDNUNG DER ZWEITEN NUTZER-SKIZZE (seit v0.64.0).
+         * DIE ANORDNUNG DER ZWEITEN NUTZER-SKIZZE.
          *
          * Bis v0.63.0 stand je Seite ALLES in einer Zeile: Farbpunkt, Name,
          * Lage und die Steuer-Knöpfe, darüber bzw. darunter die Kartenreihe.
@@ -1066,7 +1066,7 @@ const TEAM_SCHACH = {
          * WAS DAS KOSTET: Die Knopfspalte nimmt Höhe, die vorher in der
          * Bannerzeile mitlief. `_brettEinpassen` MISST den Rest und rechnet
          * die Brettbreite daraus — das Brett wird also von selbst kleiner,
-         * statt dass die Seite zu rollen anfängt (v0.52.0). Ob es dabei noch
+         * statt dass die Seite zu rollen anfängt. Ob es dabei noch
          * angenehm gross ist, entscheidet der Blick am Gerät.
          */
         wurzel.appendChild(TEAM_SCHACH._seitenReiheBauen(partie, person, obenFarbe, true));
@@ -1076,7 +1076,7 @@ const TEAM_SCHACH = {
          * Pfeil-Streifen sitzt IM Eck-Kasten (`_seitenReiheBauen`); die
          * aufgeklappte Liste steht als eigene Zeile zwischen Kasten und
          * Brett — dort zeigt der Pfeil hin. Die schmalen Steuer-Spalten am
-         * Rand (v0.64.0) sind damit weg.
+         * Rand sind damit weg.
          */
         if (TEAM_SCHACH.friedhofOffen[obenFarbe] && partie.laeuft && !partie.ergebnis) {
             const obenKlappe = TEAM_SCHACH._friedhofKlappeBauen(partie, obenFarbe);
@@ -1103,7 +1103,7 @@ const TEAM_SCHACH = {
         wurzel.appendChild(TEAM_SCHACH._teamExtrasBauen(partie, person));
 
         /*
-         * DIE VERLAUF-KARTE IST WEG (seit v0.59.0): Der Zugverlauf sitzt jetzt
+         * DIE VERLAUF-KARTE IST WEG: Der Zugverlauf sitzt jetzt
          * im Menue hinter dem eigenen Namens-Kasten (`zuegeOeffnen`, seit v0.80.0),
          * genau wie der Friedhof seit v0.58.0.
          *
@@ -1139,7 +1139,7 @@ const TEAM_SCHACH = {
     },
 
     /* ---------------------------------------------------------------- *
-     * Vor dem Anpfiff: der Vorraum (seit v0.115.0)
+     * Vor dem Anpfiff: der Vorraum
      *
      * EIN Bildschirm statt zwei. Bis v0.114.3 gab es die Seitenwahl (seit
      * v0.61.0, zweispaltig seit Punkt 49) und danach die Aufstellung (seit
@@ -1228,7 +1228,7 @@ const TEAM_SCHACH = {
         const vorraumBrett = TEAM_SCHACH._brettBauen(partie, person);
         wurzel.appendChild(vorraumBrett);
 
-        /* Auch hier das 3D-Brett (v0.122.0) — man sieht vor dem Anpfiff,
+        /* Auch hier das 3D-Brett — man sieht vor dem Anpfiff,
            wie das Brett im Match aussieht. */
         TEAM_SCHACH._brett3dLetzte = { halter: vorraumBrett, partie, person };
         TEAM_SCHACH._brett3dAbwarten(vorraumBrett);
@@ -1390,7 +1390,7 @@ const TEAM_SCHACH = {
     },
 
     /*
-     * DER CODE AUS EINER AUFGERUFENEN ADRESSE (seit v0.117.0) — oder "".
+     * DER CODE AUS EINER AUFGERUFENEN ADRESSE — oder "".
      * Grosszügig gelesen wie das Code-Feld: Gross-/Kleinschreibung egal,
      * Leerraum egal; alles, was danach nicht die richtige Länge hat oder
      * fremde Zeichen trägt, ist kein Code.
@@ -1421,7 +1421,7 @@ const TEAM_SCHACH = {
     },
 
     /*
-     * DER EINLADUNGSLINK BEIM START (seit v0.117.0): Steht ein Code in
+     * DER EINLADUNGSLINK BEIM START: Steht ein Code in
      * der Adresse, führt er nach der Anmeldung direkt in die Runde —
      * statt des Wiedereinstiegs, den `app.js` sonst ruft. Die Adresse
      * wird danach bereinigt, sonst holte jedes Neuladen die Einladung
@@ -1452,7 +1452,7 @@ const TEAM_SCHACH = {
         TEAM_SCHACH.codeBeitreten(code);
         /* Ein Gast wird nach dem Ende dieser Runde einmal nach einem Konto
            gefragt (seit v0.151.7, anmeldung-konto.js). */
-        if (typeof ANMELDUNG !== "undefined" && typeof ANMELDUNG.einladungsGastMerken === "function") {
+        if (typeof ANMELDUNG.einladungsGastMerken === "function") {
             ANMELDUNG.einladungsGastMerken();
         }
         return true;
@@ -1525,7 +1525,7 @@ const TEAM_SCHACH = {
                 const vorrat = SCHACH_RUNDE.itemVorrat(partie);
                 texte.push("Items: Auswahl" + (vorrat ? " (" + vorrat.length + ")" : ""));
             }
-            /* Höchstens N Items auf der Hand (seit v0.152.4). */
+            /* Höchstens N Items auf der Hand. */
             if (regeln.itemMax > 0) {
                 texte.push("Hand max " + regeln.itemMax);
             }
@@ -1544,7 +1544,7 @@ const TEAM_SCHACH = {
 
         texte.push(regeln.seiteZufaellig ? "Seiten zugelost" : "Seite wählbar");
 
-        /* Wer die Runde sieht (seit v0.118.0) — dasselbe Wort wie in den
+        /* Wer die Runde sieht — dasselbe Wort wie in den
            Grundeinstellungen. */
         const sichtbarkeit = SCHACH_RUNDE.sichtbarkeitVon(regeln.sichtbarkeit);
         if (sichtbarkeit) {
@@ -1582,6 +1582,36 @@ const TEAM_SCHACH = {
         const regeln = Object.assign({}, gemerkt, stand.regeln, {
             gegenComputer: true,
             botStufe: gemerkt.botStufe
+        });
+        await TEAM_SCHACH.rundeStarten(stand.variante, regeln);
+    },
+
+    /*
+     * NOCHMAL NACH EINER FREIEN PARTIE GEGEN BOB (seit v0.170.0). Eine NEUE
+     * Partie mit denselben Regeln, derselben Stufe und derselben Spielart —
+     * bewusst nicht `neuAufstellen`: Die Revanche behält die Kennung, und
+     * Abschluss und XP hängen an der Kennung (einmal je Partie). Turm und
+     * Tagesbrett nicht: Die haben ihren eigenen Weg mit eigenen Regeln.
+     * `rundeStarten` öffnet die neue Partie; `partieOeffnen` erledigt dabei
+     * den Abschluss der alten (gebucht, gesehen).
+     */
+    nochmalMoeglich(partie) {
+        if (!partie || !partie.ergebnis || !SCHACH_BOT.istBotPartie(partie)) {
+            return false;
+        }
+        const regeln = SCHACH_RUNDE.normalisieren(partie).regeln || {};
+        return !regeln.turm && !regeln.tagesbrett;
+    },
+
+    async nochmalGegenBob(partie) {
+        if (!TEAM_SCHACH.nochmalMoeglich(partie)) {
+            return;
+        }
+        const stand = SCHACH_RUNDE.normalisieren(partie);
+        const gemerkt = (typeof START !== "undefined") ? START.regeln() : TEAM_SCHACH._regelnVorgabe();
+        const regeln = Object.assign({}, gemerkt, stand.regeln, {
+            gegenComputer: true,
+            botStufe: stand.regeln.botStufe || gemerkt.botStufe
         });
         await TEAM_SCHACH.rundeStarten(stand.variante, regeln);
     },
@@ -1674,7 +1704,7 @@ const TEAM_SCHACH = {
             const eintrag = TEAM_SCHACH._element("div",
                 "seitenwahl-eintrag"
                 + ((id === person.id) ? " seitenwahl-eintrag-ich" : ""));
-            /* Der Name führt ins Profil (seit v0.119.0). */
+            /* Der Name führt ins Profil. */
             eintrag.appendChild(SCHACH_BOT.istBot(id)
                 ? TEAM_SCHACH._element("span", "", "Computer")
                 : TEAM_SCHACH._nameKnopfBauen(id));
@@ -1691,7 +1721,7 @@ const TEAM_SCHACH = {
                 && partie.aufstellungBereit[farbe]) {
             lage.appendChild(TEAM_SCHACH._element("span", "chip chip-fertig", "bereit"));
         }
-        /* Ein volles Team ist erkennbar gesperrt (seit v0.155.2). */
+        /* Ein volles Team ist erkennbar gesperrt. */
         if (meinTeam !== farbe && SCHACH_RUNDE.teamVoll(partie, farbe)) {
             lage.appendChild(TEAM_SCHACH._element("span", "chip chip-voll",
                 "voll · " + SCHACH_RUNDE.TEAM_MAX + "/" + SCHACH_RUNDE.TEAM_MAX));
@@ -1702,7 +1732,7 @@ const TEAM_SCHACH = {
     },
 
     /*
-     * DER WÜRFEL-KNOPF (seit v0.62.0).
+     * DER WÜRFEL-KNOPF.
      *
      * Er trägt das Würfel-Zeichen des Startbildschirms; fehlt START
      * (Testumgebung), steht das Wort da. Die Beschriftung bleibt in `title`
@@ -1745,7 +1775,7 @@ const TEAM_SCHACH = {
     },
 
     /*
-     * Neu würfeln, ohne die Runde zurückzusetzen (seit v0.62.0).
+     * Neu würfeln, ohne die Runde zurückzusetzen.
      *
      * OHNE RÜCKFRAGE, anders als `neuAufstellen`: Hier geht nichts verloren.
      * Es ist noch kein Zug geschehen, niemand hat eine Figur bewegt — was der
@@ -1764,7 +1794,7 @@ const TEAM_SCHACH = {
     },
 
     /*
-     * DER AUSGANG OBEN LINKS (seit v0.61.0).
+     * DER AUSGANG OBEN LINKS.
      *
      * Nutzer-Entscheidung 25.08.2026: Das „Zurück" tut genau das, was bis
      * v0.60.0 „Runde verlassen" in der Fussleiste tat — mit Rückfrage, denn
@@ -1940,7 +1970,7 @@ const TEAM_SCHACH = {
     },
 
     /*
-     * FREUNDE EINLADEN IST EIN ZEICHEN-KNOPF (seit v0.61.0).
+     * FREUNDE EINLADEN IST EIN ZEICHEN-KNOPF.
      *
      * Bis v0.60.0 stand darunter eine Liste: eine Zeile je Freund mit Namen
      * und einem Knopf „Einladen", dahinter der Satz „Eingeladen: …". Bei
@@ -2119,7 +2149,7 @@ const TEAM_SCHACH = {
     },
 
     /* ---------------------------------------------------------------- *
-     * DIE EINSTELLUNGEN DIESER PARTIE (seit v0.48.0)
+     * DIE EINSTELLUNGEN DIESER PARTIE
      *
      * Hinter dem Zahnrad in der Fussleiste. Heute steht darin genau eine
      * Sache — das Aufgeben —, und das ist Absicht: Der Ort ist angelegt,
@@ -2152,7 +2182,7 @@ const TEAM_SCHACH = {
             "Nur diese Partie · Gerät: Zahnrad am Start"));
 
         /*
-         * DER WUNSCH-KNOPF STEHT AUCH HIER (seit v0.78.0).
+         * DER WUNSCH-KNOPF STEHT AUCH HIER.
          *
          * Nutzer-Ansage 26.08.2026: „Wunsch-Knopf soll mit in die
          * Match-Einstellungen; wenn man es benutzt, soll nur das Popup
@@ -2209,7 +2239,7 @@ const TEAM_SCHACH = {
         }
 
         /*
-         * DER KOPF IST LEER BIS AUF DEN BEITRITTS-CODE (seit v0.40.0).
+         * DER KOPF IST LEER BIS AUF DEN BEITRITTS-CODE.
          *
          * Nutzer-Ansage 24.08.2026: „Wenn man eine Runde mit Spielen betritt
          * soll oben das Zurück Knopf weg, dann beide kleines-Brett-
@@ -2364,7 +2394,7 @@ const TEAM_SCHACH = {
             "Zug " + partie.stand.zugNummer));
 
         /*
-         * DER BEITRITTS-CODE RECHTS NEBEN DER ZUGNUMMER (seit v0.47.0).
+         * DER BEITRITTS-CODE RECHTS NEBEN DER ZUGNUMMER.
          *
          * Nutzer-Ansage 24.08.2026: „Dort, wo die Runden-Anzahl steht, dort
          * rechts hin soll der Code." Diese Leiste ist genau die, die er
@@ -2384,7 +2414,7 @@ const TEAM_SCHACH = {
                 partie, person, "partie-code code-knopf"));
         }
 
-        /* Ganz rechts der Platz für den Offline-Hinweis (seit v0.167.0). */
+        /* Ganz rechts der Platz für den Offline-Hinweis. */
         leiste.appendChild(TEAM_SCHACH._offlinePlatzBauen());
 
         return leiste;
@@ -2417,7 +2447,7 @@ const TEAM_SCHACH = {
      * ---------------------------------------------------------------- */
 
     /*
-     * EINE SEITE ALS SCHMALE ZEILE AM BRETT (seit v0.53.0).
+     * EINE SEITE ALS SCHMALE ZEILE AM BRETT.
      *
      * Nutzer-Ansage 25.08.2026: „Überlege dir einen anderen Ort, wo du die
      * Spieler hinschreibst — die zwei grossen Felder nehmen zu viel Platz
@@ -2440,7 +2470,7 @@ const TEAM_SCHACH = {
      *   „bereit"   stand im Kopf der Team-Karte.
      *
      * Genau deshalb ist diese Zeile die Voraussetzung dafür, dass der
-     * wechselnde Erklärsatz unter dem Brett wegfallen kann (v0.54.0): Was er
+     * wechselnde Erklärsatz unter dem Brett wegfallen kann: Was er
      * sagte, sagt jetzt die leuchtende Zeile — ohne die Höhe zu verändern.
      */
     _spielerZeileBauen(partie, person, farbe) {
@@ -2460,7 +2490,7 @@ const TEAM_SCHACH = {
         zeile.appendChild(TEAM_SCHACH._element("span", "spieler-punkt"));
 
         /*
-         * DIE FARBE GROSS, DER NAME KLEIN DARUNTER (seit v0.68.0).
+         * DIE FARBE GROSS, DER NAME KLEIN DARUNTER.
          *
          * Nutzer-Ansage 25.08.2026: „Die Schriftgrösse für das Team soll
          * grösser gemacht werden — also Weiss gross und der erste Name klein
@@ -2498,7 +2528,7 @@ const TEAM_SCHACH = {
 
         zeile.appendChild(stapel);
 
-        /* Wer am Zug ist, denkt (seit v0.152.4) — auch Bob. */
+        /* Wer am Zug ist, denkt — auch Bob. */
         if (amZug) {
             zeile.appendChild(TEAM_SCHACH._denkBlaseBauen());
         }
@@ -2563,7 +2593,7 @@ const TEAM_SCHACH = {
          * auf den eigenen Kasten blendet an der Stelle der Lage zwei kleine
          * Zeichen-Knöpfe ein — Einstellungen und Zugverlauf; bei mehreren
          * Mitspielern dazu „+N" für die Team-Liste. Die eigene Zeile UNTER
-         * der Reihe (v0.80.0) ist damit wieder weg.
+         * der Reihe ist damit wieder weg.
          *
          * `stopPropagation`, weil die Knöpfe IM Kasten-Knopf liegen: Ohne
          * das schlösse jeder Tipp auf einen von ihnen zugleich das Menü.
@@ -2632,12 +2662,12 @@ const TEAM_SCHACH = {
      * EINE SEITEN-ZEILE IST SEIT v0.80.0 EIN RASTER (dritte Nutzer-Skizze,
      * 26.08.2026): Der Namens-Kasten bekommt an seiner Brettseite einen
      * Pfeil-Streifen, der den Friedhof aufklappt — beide zusammen bilden
-     * den Eck-Kasten. Die schmalen Steuer-Spalten am Rand (v0.64.0) sind
+     * den Eck-Kasten. Die schmalen Steuer-Spalten am Rand sind
      * damit weg; was in ihnen stand, liegt jetzt hinter dem eigenen
      * Namens-Kasten (`_eckMenueBauen`) und hinter den Pfeilen.
      *
      * WARUM EIN RASTER UND KEINE FLEXBOX MEHR: Zwei Zusagen zugleich —
-     * die Karten sind GENAU so hoch wie der Namens-Kasten (v0.71.0), und
+     * die Karten sind GENAU so hoch wie der Namens-Kasten, und
      * der Streifen ist GENAU so breit wie der Kasten (die Skizze zeichnet
      * ihn als dessen Unterkante). In einer Flex-Zeile ginge nur eines von
      * beiden; im Raster ist der Kasten die Zelle, an der sich beide
@@ -2774,7 +2804,7 @@ const TEAM_SCHACH = {
     },
 
     /*
-     * DIE KARTEN-LEISTE UNTEN (seit v0.128.0).
+     * DIE KARTEN-LEISTE UNTEN.
      *
      * NUTZER-ANSAGE 24.09.2026 (mit einem Bildschirmfoto aus Clash Royale):
      * „im Spiel soll unten das Band mit deinem Profil verschwinden, nur noch
@@ -2830,7 +2860,7 @@ const TEAM_SCHACH = {
             links.appendChild(TEAM_SCHACH._denkBlaseBauen("denk-blase-unten"));
         }
 
-        /* Die letzte Falle als rotes Zeichen (seit v0.136.0). */
+        /* Die letzte Falle als rotes Zeichen. */
         const falle = TEAM_SCHACH._falleZeichenBauen(partie);
         if (falle) {
             links.appendChild(falle);
@@ -2953,7 +2983,7 @@ const TEAM_SCHACH = {
     },
 
     /*
-     * DIE LAUFENDE KARTE IN DER LEISTE (seit v0.130.0).
+     * DIE LAUFENDE KARTE IN DER LEISTE.
      *
      *   [ Karte ]  Titel            [?] [⟳] [✕] [✓]
      *              kurzer Hinweis · Kosten-Schild
@@ -3253,7 +3283,7 @@ const TEAM_SCHACH = {
     },
 
     /*
-     * Ein Knopf für eine Hilfe aus dem Shop im Spiel-Menü (seit v0.152.2):
+     * Ein Knopf für eine Hilfe aus dem Shop im Spiel-Menü:
      * Zeichen und Vorrat als kleine Zahl daneben.
      */
     _hilfeKnopf(zeichen, name, anzahl, klasse, aktion) {
@@ -3285,7 +3315,7 @@ const TEAM_SCHACH = {
         return blase;
     },
 
-    /* Warum eine Karte gerade nicht geht — als Stichwort (seit v0.152.3). */
+    /* Warum eine Karte gerade nicht geht — als Stichwort. */
     _absageText(partie, person, art) {
         const absage = SCHACH_RUNDE.faehigkeitAbsage(partie, person.id, art, TEAM_SCHACH._zusatzWahl(art));
         return SCHACH_RUNDE.ABSAGE_TEXTE[absage] || SCHACH_RUNDE.ABSAGE_TEXTE.keinZiel;
@@ -3333,7 +3363,7 @@ const TEAM_SCHACH = {
     },
 
     /*
-     * DIE BUCHUNG WARTET (seit v0.152.2): Endet eine Partie gegen Bob mit
+     * DIE BUCHUNG WARTET: Endet eine Partie gegen Bob mit
      * einer Niederlage, die sich mit Zeit zurück noch drehen lässt, wird sie
      * NICHT schon beim Erscheinen des Abschlusses gezählt (XP, Serie,
      * Turm-Figuren, Tagesaufgabe, Münzen), sondern erst beim Schliessen
@@ -3467,7 +3497,7 @@ const TEAM_SCHACH = {
 
 
     /*
-     * WER AUF DIESER SEITE SPIELT (seit v0.68.0).
+     * WER AUF DIESER SEITE SPIELT.
      *
      * Das Fenster hinter dem Team-Kasten. Es zeigt ALLE Namen — der Kasten
      * selbst zeigt nur den ersten, weil er in eine Bildschirmecke passen
@@ -3545,7 +3575,7 @@ const TEAM_SCHACH = {
     zufaelligBeitreten(partie) {
         const leer = ["weiss", "schwarz"].filter(
             (farbe) => partie.teams[farbe].length === 0);
-        /* Nie in ein volles Team (seit v0.155.2). */
+        /* Nie in ein volles Team. */
         const offen = ["weiss", "schwarz"].filter((f) => !SCHACH_RUNDE.teamVoll(partie, f));
         if (offen.length === 0) {
             return;
@@ -3596,7 +3626,7 @@ const TEAM_SCHACH = {
     /* Name eines Spielers aus der Spielerliste; Kennung als Rückfall. */
     _nameVon(spielerId) {
         /*
-         * Der Computer steht in KEINER Spielerliste (seit v0.27.0) — er hat
+         * Der Computer steht in KEINER Spielerliste — er hat
          * kein Konto. Ohne diesen Zweig hiesse er an der Team-Karte und im
          * Verlauf „Unbekannt".
          */
@@ -3625,7 +3655,7 @@ const TEAM_SCHACH = {
      * DAS ZAHNRAD FÜR DIE PARTIE-EINSTELLUNGEN (seit v0.59.0 hier).
      *
      * Bis v0.58 sass es allein in der Fussleiste einer laufenden Partie
-     * (v0.48.0). Mit der Nutzer-Skizze zieht es zu den Steuer-Knöpfen am
+     *. Mit der Nutzer-Skizze zieht es zu den Steuer-Knöpfen am
      * Spieler. Dahinter liegen die Einstellungen dieser Partie — heute das
      * Aufgeben, später mehr. Gezeichnet statt als Bilddatei, dasselbe Zahnrad
      * wie auf dem Startbildschirm; fehlt START (Testumgebung), steht ein Wort.
@@ -3676,7 +3706,7 @@ const TEAM_SCHACH = {
     },
 
     /*
-     * DIE FUSSLEISTE TRÄGT NUR NOCH ZWEI LAGEN (seit v0.61.0).
+     * DIE FUSSLEISTE TRÄGT NUR NOCH ZWEI LAGEN.
      *
      * Sie war seit v0.26.0 die eine Stelle für alle Runden-Aktionen — bis
      * v0.59.0 das Zahnrad zum Spieler zog und v0.61.0 die WARTENDE Partie
@@ -3703,8 +3733,8 @@ const TEAM_SCHACH = {
         const meinTeam = SCHACH_RUNDE.teamVon(partie, person.id);
 
         /*
-         * IM LAUFENDEN MATCH IST DIE FUSSLEISTE LEER (seit v0.59.0). Bis
-         * v0.58 stand hier das Zahnrad (v0.48.0); es sitzt jetzt in der
+         * IM LAUFENDEN MATCH IST DIE FUSSLEISTE LEER. Bis
+         * v0.58 stand hier das Zahnrad; es sitzt jetzt in der
          * Menue hinter dem eigenen Namens-Kasten (`_eckMenueBauen`), und dahinter
          * liegt das Aufgeben.
          */
@@ -3720,7 +3750,13 @@ const TEAM_SCHACH = {
          * in der FARBE (Hauptaktion, sobald die Partie vorbei ist) und in der
          * Rückfrage, die `neuAufstellen` ohnehin stellt.
          */
-        if (partie.ergebnis) {
+        /* Freie Partie gegen Bob (seit v0.170.0): „Nochmal" legt eine NEUE
+           Partie an — die Revanche behielte die Kennung, und eine zweite
+           Partie unter derselben Kennung bekäme weder Abschluss noch XP. */
+        if (partie.ergebnis && meinTeam && TEAM_SCHACH.nochmalMoeglich(partie)) {
+            leiste.appendChild(TEAM_SCHACH._knopf("Nochmal", "knopf-haupt fuss-nochmal",
+                () => TEAM_SCHACH.nochmalGegenBob(partie)));
+        } else if (partie.ergebnis) {
             leiste.appendChild(TEAM_SCHACH._knopf("Neu aufstellen", "knopf-haupt",
                 () => TEAM_SCHACH.neuAufstellen(partie)));
         }
@@ -3757,7 +3793,7 @@ const TEAM_SCHACH = {
         TEAM_SCHACH.auswahlOffen = false;
         TEAM_SCHACH._auswahlAufheben();
 
-        /* Die Eck-Klappen (v0.80.0) starten zu: Was in der VORIGEN Partie
+        /* Die Eck-Klappen starten zu: Was in der VORIGEN Partie
            aufgeklappt war, hat in dieser nichts verloren. Der
            Aussenklick-Horcher geht mit dem Menue — sonst verwaiste er. */
         TEAM_SCHACH.friedhofOffen = { weiss: true, schwarz: true };
@@ -3765,7 +3801,7 @@ const TEAM_SCHACH = {
         TEAM_SCHACH._eckMenueHorcherAbmelden();
 
         /*
-         * Die eingefrorene Brettgrösse gilt je Partie (seit v0.88.0): Wer
+         * Die eingefrorene Brettgrösse gilt je Partie: Wer
          * eine andere öffnet, rechnet neu. Sonst erbte eine Partie mit
          * grossem Team die Zahl einer mit kleinem — die Team-Kästen sind
          * dann höher, und die alte Zahl passte nicht mehr.
@@ -3783,7 +3819,7 @@ const TEAM_SCHACH = {
         TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
 
         /*
-         * MIT ZUGELOSTER SEITE WIRD BEIM BETRETEN ZUGETEILT (seit v0.66.0).
+         * MIT ZUGELOSTER SEITE WIRD BEIM BETRETEN ZUGETEILT.
          *
          * NACH dem Zeichnen und ohne `await`: Das Brett steht damit sofort
          * da, und die Zuteilung schiebt gleich darauf die zweite Fassung
@@ -3794,7 +3830,7 @@ const TEAM_SCHACH = {
     },
 
     /*
-     * Die Zuteilung ausführen und senden — oder nichts tun (seit v0.66.0).
+     * Die Zuteilung ausführen und senden — oder nichts tun.
      *
      * OB überhaupt zugeteilt wird, entscheidet das Modell
      * (`SCHACH_RUNDE.seiteZulosen`): Haken an, Runde wartet, Person hat noch
@@ -3835,7 +3871,7 @@ const TEAM_SCHACH = {
 
     /*
      * Die Runde, die DIESES Gerät gerade angelegt hat und der noch niemand
-     * beigetreten ist (seit v0.29.0). Nur hier im Bildschirm, nie im
+     * beigetreten ist. Nur hier im Bildschirm, nie im
      * gemeinsamen Stand — siehe `uebersichtOeffnen`.
      */
     selbstAngelegt: "",
@@ -3848,7 +3884,7 @@ const TEAM_SCHACH = {
     async uebersichtOeffnen() {
         /*
          * EINE SELBST ANGELEGTE, NIE BETRETENE RUNDE WIRD BEIM VERLASSEN
-         * GESCHLOSSEN (seit v0.29.0).
+         * GESCHLOSSEN.
          *
          * Diese Lücke ist mit der Seitenwahl entstanden: Seit v0.29.0 trägt
          * `rundeStarten` bei Computer-Runden niemanden mehr ein. Wer dann
@@ -3891,7 +3927,7 @@ const TEAM_SCHACH = {
     },
 
     /*
-     * RAUS AUS EINER RUNDE HEISST: AUF DEN STARTBILDSCHIRM (seit v0.36.0).
+     * RAUS AUS EINER RUNDE HEISST: AUF DEN STARTBILDSCHIRM.
      *
      * Nutzer-Ansage 24.08.2026: „Zurück zur Übersicht nach einer Runde soll
      * nicht zu Runde beitreten führen sondern zum Start Screen."
@@ -3968,7 +4004,7 @@ const TEAM_SCHACH = {
         }
 
         /*
-         * EIN ZIEHEN ENDET NICHT IN EINEM TIPP (seit v0.84.0).
+         * EIN ZIEHEN ENDET NICHT IN EINEM TIPP.
          *
          * Nach dem Loslassen schickt der Browser noch ein `click` auf das
          * Feld, auf dem das Ziehen begonnen hat. Wer den Rahmen verschoben
@@ -4064,7 +4100,7 @@ const TEAM_SCHACH = {
     },
 
     /*
-     * DIE EINGESTELLTEN REGLER IN DIE GERÄTE-ERINNERUNG (seit v0.33.0).
+     * DIE EINGESTELLTEN REGLER IN DIE GERÄTE-ERINNERUNG.
      *
      * DER FEHLER, DEN DAS BEHEBT: Bis v0.32.0 schrieb nur der
      * „Zurück"-Knopf und die Spielart-Kachel. Wer den Auswahl-Bildschirm
@@ -4283,7 +4319,7 @@ const TEAM_SCHACH = {
     NUDELHOLZ_UHR: ["oben", "rechts", "unten", "links"],
 
     /*
-     * WIE DER RAND AUS SICHT DES SPIELERS HEISST (seit v0.73.0).
+     * WIE DER RAND AUS SICHT DES SPIELERS HEISST.
      *
      * DER FEHLER, DEN DAS BEHEBT (Nutzer-Meldung 26.08.2026: „Nudelholz geht
      * nicht … hat evtl was mit dem drehen zu tun"): Die Kante ist in
@@ -4572,7 +4608,7 @@ const TEAM_SCHACH = {
                 TEAM_SCHACH.botWartet = false;
                 return;
             }
-            /* `botWartet` bleibt bis zum Ende der Suche (seit v0.165.0). */
+            /* `botWartet` bleibt bis zum Ende der Suche. */
             TEAM_SCHACH.botZiehen(jetzt);
         }, SCHACH_BOT.BEDENKZEIT_MS);
     },
@@ -4645,7 +4681,7 @@ const TEAM_SCHACH = {
      */
     _botAbbrechen() {
         TEAM_SCHACH.botWartet = false;
-        /* Eine Suche, die noch rechnet, gilt nicht mehr (seit v0.165.0) —
+        /* Eine Suche, die noch rechnet, gilt nicht mehr —
            und seit v0.165.1 hört sie auch auf, damit die nächste nicht
            hinter ihr wartet (`BOT_RECHNER.verwerfen`). */
         TEAM_SCHACH.botAnfrage++;
@@ -4727,10 +4763,10 @@ const TEAM_SCHACH = {
     async _sendenMitPruefung(neuePartie, erwarteterZaehler) {
         const abgleich = TEAM_SCHACH.abgleich;
 
-        /* Zeit zurück (seit v0.152.2): Hat eine Partie gegen Bob noch keinen
+        /* Zeit zurück: Hat eine Partie gegen Bob noch keinen
            Rückblick, ist der Stand VOR dieser ersten eigenen Aktion der
            Anfang des Zugs (`SCHACH_BOT.zeitMerkenVor`). */
-        if (typeof SCHACH_BOT !== "undefined" && SCHACH_BOT.zeitMerkenVor && abgleich && abgleich.daten) {
+        if (SCHACH_BOT.zeitMerkenVor && abgleich && abgleich.daten) {
             neuePartie = SCHACH_BOT.zeitMerkenVor(
                 SCHACH_TAFEL.partie(abgleich.daten, neuePartie.id), neuePartie);
         }
@@ -4819,7 +4855,7 @@ const TEAM_SCHACH = {
             abgleich.eigenerVorgangEndet();
         }
 
-        /* „Nochmal" (seit v0.140.0): derselbe Zug, erst NACH dem `finally`,
+        /* „Nochmal": derselbe Zug, erst NACH dem `finally`,
            damit der eigene Vorgang sauber beendet ist. Die Zugzähler-
            Prüfung läuft dabei neu — war inzwischen jemand schneller, gilt
            dessen Zug. */
@@ -4906,7 +4942,7 @@ const TEAM_SCHACH = {
             abgleich.eigenerVorgangEndet();
         }
 
-        /* „Nochmal" (seit v0.140.0): holt den Stand wieder frisch — sicher,
+        /* „Nochmal": holt den Stand wieder frisch — sicher,
            weil hier ohnehin zusammengeführt statt geprüft wird (siehe oben).
            Erst NACH dem `finally`, damit der eigene Vorgang beendet ist. */
         if (nochmal) {
@@ -4924,7 +4960,7 @@ const TEAM_SCHACH = {
     _regelnVorgabe() {
         return {
             /*
-             * Gegen den Computer (seit v0.27.0). Steht bewusst ganz oben:
+             * Gegen den Computer. Steht bewusst ganz oben:
              * Der Haken entscheidet nicht über eine Regel, sondern darüber,
              * GEGEN WEN gespielt wird — alles Weitere gilt danach genauso.
              *
@@ -4936,7 +4972,7 @@ const TEAM_SCHACH = {
             gegenComputer: false,
 
             /*
-             * Wie stark der Computer spielt (seit v0.28.0). Anders als
+             * Wie stark der Computer spielt. Anders als
              * `gegenComputer` reist diese Angabe MIT DER PARTIE
              * (`regeln.botStufe`): Es gibt keine zweite Quelle, aus der man
              * sie ableiten könnte, und das rechnende Gerät muss sie kennen.
@@ -4951,13 +4987,13 @@ const TEAM_SCHACH = {
             armeeUnterschiedlich: false,
             seiteZufaellig: true,
 
-            /* Wer die Runde sieht (seit v0.118.0): Vorgabe öffentlich —
+            /* Wer die Runde sieht: Vorgabe öffentlich —
                Nutzer-Ansage 18.09.2026 („Standard soll öffentlich sein"). */
             sichtbarkeit: "oeffentlich",
             armeeStaerke: "normal",
             itemVorrat: "alle",
             itemMax: SCHACH_VARIANTEN.ITEM_MAX_VORGABE,
-            /* Hat der Spieler die Grenze selbst gewählt? (seit v0.153.0)
+            /* Hat der Spieler die Grenze selbst gewählt?
                Nur dann gilt eine gemerkte Zahl — die 4 aus v0.152.4 war
                bloss die damalige Vorgabe. */
             itemMaxGewaehlt: false,
@@ -5094,7 +5130,7 @@ const TEAM_SCHACH = {
      */
     async rundeStarten(varianteId, regelnWunsch) {
         /*
-         * NUR EIN ANLEGEN AUF EINMAL (v0.114.2). SO SAH DER FEHLER AUS:
+         * NUR EIN ANLEGEN AUF EINMAL. SO SAH DER FEHLER AUS:
          * „Wenn man oft auf Spielen hintereinander drückt, crasht alles und
          * nichts geht" (Nutzer, 18.09.2026). Nachgemessen: Fünf Drücke
          * waren fünf Ladevorgänge und fünf Schreibvorgänge der GANZEN Tafel
@@ -5159,7 +5195,7 @@ const TEAM_SCHACH = {
                     abgleich.speicher, person.id, abgleich.daten);
             }
         } catch (fehler) {
-            /* „Nochmal" (seit v0.140.0) fängt von vorn an — noch ist nichts
+            /* „Nochmal" fängt von vorn an — noch ist nichts
                geschrieben, und die Sperre `legtGeradeAn` hält der Aufrufer. */
             if (await DIALOG.fehler("Nicht angelegt", {
                     technik: fehler.message, nochmal: true })) {
@@ -5169,7 +5205,7 @@ const TEAM_SCHACH = {
         }
 
         /*
-         * EINE EIGENE WARTENDE RUNDE WIRD NICHT VERDOPPELT (v0.114.2).
+         * EINE EIGENE WARTENDE RUNDE WIRD NICHT VERDOPPELT.
          *
          * Seit der Anleger beim Anlegen sofort in seinem Team sitzt
          * (zugelost, v0.114.1; davor gesetzt), schliesst „Zurück" seine
@@ -5217,7 +5253,7 @@ const TEAM_SCHACH = {
         }
 
         /*
-         * GEGEN DEN COMPUTER (seit v0.27.0): Die Abstimmung im Team passt
+         * GEGEN DEN COMPUTER: Die Abstimmung im Team passt
          * nicht dazu — man ist allein in seinem Team, und der Computer
          * stimmt über nichts ab. Der Haken wird für diese Runde deshalb
          * still ausgeschaltet; die Geräte-Erinnerung des Starts bleibt
@@ -5236,19 +5272,19 @@ const TEAM_SCHACH = {
             armeeUnterschiedlich: wunsch.armeeUnterschiedlich,
             seiteZufaellig: wunsch.seiteZufaellig,
 
-            /* Wer die Runde sieht (seit v0.118.0) — Unbekanntes wird im
+            /* Wer die Runde sieht — Unbekanntes wird im
                Modell zur Vorgabe, nicht durchgereicht. */
             sichtbarkeit: wunsch.sichtbarkeit,
             armeeStaerke: wunsch.armeeStaerke,
             itemVorrat: wunsch.itemVorrat,
             itemAuswahl: wunsch.itemAuswahl,
-            /* Höchstens N Items (seit v0.152.4); Unbekanntes → ohne Grenze
+            /* Höchstens N Items; Unbekanntes → ohne Grenze
                (Modell). */
             itemMax: wunsch.itemMax,
             einigkeit: gegenComputer ? false : wunsch.einigkeit,
 
             /*
-             * Die Stufe wandert nur in Bot-Runden mit (v0.28.0) — in einer
+             * Die Stufe wandert nur in Bot-Runden mit — in einer
              * Partie unter Menschen wäre sie ein Feld ohne Bedeutung.
              * Unbekanntes wird zur Vorgabe, nicht durchgereicht.
              */
@@ -5256,10 +5292,10 @@ const TEAM_SCHACH = {
                 ? wunsch.botStufe
                 : (gegenComputer ? SCHACH_BOT.STUFE_VORGABE : ""),
 
-            /* Die Turm-Stufe (seit v0.147.0) — nur gegen Bob. */
+            /* Die Turm-Stufe — nur gegen Bob. */
             turm: gegenComputer ? turmAngabe : null,
 
-            /* Das Tagesbrett (seit v0.149.0) — nur gegen Bob. */
+            /* Das Tagesbrett — nur gegen Bob. */
             tagesbrett: gegenComputer ? tagesbrett : null
         };
 
@@ -5292,7 +5328,7 @@ const TEAM_SCHACH = {
          * gleich ins weisse Team und muss sich um nichts kümmern.
          *
          * MIT ZUGELOSTER SEITE WIRD DER ANLEGER ZUGELOST, NICHT GESETZT
-         * (v0.114.1). SO SAH DER FEHLER AUS: „Wenn zwei spielen wollen und
+         *. SO SAH DER FEHLER AUS: „Wenn zwei spielen wollen und
          * auf Bereit drücken, beginnt das Spiel nicht" (Nutzer, 15.09.2026;
          * eine hängende Runde vom 14.09. lag in der Datenbank). Der Anleger
          * sass durch die Zeile darunter schon in Weiss, aber OHNE die erste
@@ -5331,7 +5367,7 @@ const TEAM_SCHACH = {
             }
         } else if (regeln.tagesbrett && wunsch.stellung) {
             /*
-             * DAS TAGESBRETT (seit v0.149.0): Die Partie beginnt nicht mit
+             * DAS TAGESBRETT: Die Partie beginnt nicht mit
              * der Grundstellung, sondern mit der Aufgabe des Tages. Das
              * Brett wird VOR dem ersten Schreiben ersetzt; Rochade und en
              * passant gibt es in der Aufgabe nicht. Der Mensch spielt die
@@ -5355,7 +5391,7 @@ const TEAM_SCHACH = {
             partie = SCHACH_BOT.inRundeSetzen(partie, SCHACH.gegner(seite));
         } else if (regeln.turm) {
             /*
-             * IM TURM IST DIE SEITE FEST (seit v0.147.0): Die Stufe sagt,
+             * IM TURM IST DIE SEITE FEST: Die Stufe sagt,
              * ob man Weiss oder Schwarz spielt („Du bist Schwarz"). Mensch
              * und Bob sitzen deshalb schon vor dem ersten Schreiben auf
              * ihren Seiten, beide mit der ersten Zusage — die Seitenwahl
@@ -5369,7 +5405,7 @@ const TEAM_SCHACH = {
             partie = SCHACH_BOT.inRundeSetzen(partie, SCHACH.gegner(seite));
         } else if (regeln.seiteZufaellig !== false) {
             /*
-             * GEGEN BOB MIT ZUGELOSTER SEITE (seit v0.155.1): Die Seite wird
+             * GEGEN BOB MIT ZUGELOSTER SEITE: Die Seite wird
              * schon HIER bestimmt — gerechnet aus der Kennung der neuen
              * Partie und der Person (`SCHACH_RUNDE.seiteZulosen`, kein
              * `Math.random`), also zufällig, aber fest: Sie steht in der
@@ -5487,7 +5523,7 @@ const TEAM_SCHACH = {
         /* Auch hier wird am Abgleich vorbei geschrieben — sonst holt die
            regelmässige Abfrage die eben gelöschte Partie zurück (seit v0.52,
            siehe `spielartGewaehlt`). */
-        /* „Nochmal" (seit v0.140.0) wiederholt NUR das Löschen, nicht die
+        /* „Nochmal" wiederholt NUR das Löschen, nicht die
            Passwort-Schranke oben — deshalb die Schleife statt eines neuen
            Aufrufs. Löschen ist wiederholbar: Was schon weg ist, bleibt weg. */
         let nochmal = true;
@@ -5550,8 +5586,8 @@ const TEAM_SCHACH = {
          * getroffen"). Der separate Bereit-Knopf der Seitenwahl ist
          * entfallen; deshalb passiert hier alles, was bis dahin
          * `bereitUmschalten` tat: die Zusage setzen, den Computer auf die
-         * andere Seite holen (v0.29.0) und seine Aufstellungs-Zusage
-         * erneuern (v0.64.1). Ob damit schon angepfiffen wird, entscheidet
+         * andere Seite holen und seine Aufstellungs-Zusage
+         * erneuern. Ob damit schon angepfiffen wird, entscheidet
          * das Modell (`bereitSetzen` → `kannAnpfeifen` — ohne Zufallsarmee
          * ja, mit ihr folgt die Aufstellung).
          *
@@ -5618,7 +5654,7 @@ const TEAM_SCHACH = {
             SCHACH_RUNDE.teamVerlassen(frisch, person.id), true);
 
         /*
-         * UND DANN AUF DEN STARTBILDSCHIRM (seit v0.69.0).
+         * UND DANN AUF DEN STARTBILDSCHIRM.
          *
          * Nutzer-Ansage 25.08.2026: „Wenn ich aus einer Runde rausgehe,
          * möchte ich auf dem Start-Screen landen und nicht im
@@ -5692,7 +5728,7 @@ const TEAM_SCHACH = {
             abgleich.eigenerVorgangEndet();
         }
 
-        /* „Nochmal" (seit v0.140.0): Schliessen ist wiederholbar — was schon
+        /* „Nochmal": Schliessen ist wiederholbar — was schon
            weg ist, bleibt weg. Erst NACH dem `finally`. */
         if (nochmal) {
             await TEAM_SCHACH._verwaisteRundeSchliessen(partie);
@@ -5810,7 +5846,7 @@ const TEAM_SCHACH = {
             abgleich.eigenerVorgangEndet();
         }
 
-        /* „Nochmal" (seit v0.140.0): dieselbe Änderung auf frischem Stand,
+        /* „Nochmal": dieselbe Änderung auf frischem Stand,
            erst NACH dem `finally`. Wie ein zweiter Druck auf denselben
            Knopf — mehr nicht. */
         return TEAM_SCHACH._aufFrischemSenden(partie, aenderung, nachkontrolle);
@@ -5875,7 +5911,7 @@ const TEAM_SCHACH = {
             let neu = SCHACH_RUNDE.bereitSetzen(frisch, farbe, bereit);
 
             /*
-             * JETZT STEIGT DER COMPUTER EIN (seit v0.29.0) — auf der Seite
+             * JETZT STEIGT DER COMPUTER EIN — auf der Seite
              * gegenüber. Er wartete darauf, dass der Mensch sich eine Seite
              * ausgesucht hat; deshalb steht dieser Aufruf hier und nicht beim
              * Anlegen. Wer „Doch nicht bereit" drückt, holt niemanden dazu.
@@ -5888,7 +5924,7 @@ const TEAM_SCHACH = {
             }
 
             /*
-             * UND ER BESTÄTIGT DIE AUFSTELLUNG ERNEUT (seit v0.64.1) — das ist
+             * UND ER BESTÄTIGT DIE AUFSTELLUNG ERNEUT — das ist
              * die Behebung eines Fehlers, den v0.62.0 eingebaut hat.
              *
              * SO SAH ER AUS: „Manchmal beginnt das Spiel nicht, obwohl wir
@@ -6159,7 +6195,7 @@ const TEAM_SCHACH = {
                 TEAM_SCHACH._zusatzWahl(art));
 
             if (felder.length === 0) {
-                /* Den echten Grund nennen (seit v0.152.3), nicht immer „Kein
+                /* Den echten Grund nennen, nicht immer „Kein
                    Feld frei" — das Modell weiss, ob es am Schach liegt. */
                 TEAM_SCHACH._handHinweisZeigen(TEAM_SCHACH._absageText(partie, person, art));
                 return;

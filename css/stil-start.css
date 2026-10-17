@@ -539,7 +539,7 @@ body.dialog-offen {
     margin: 0 auto;
 }
 
-/* Die oberste Zeile des Starts (seit v0.120.0): links das Kurzprofil mit
+/* Die oberste Zeile des Starts: links das Kurzprofil mit
    der Serien-Kapsel. Das Menüband rechts ist seit v0.156.1 weg. */
 .start-oben {
     display: flex;
@@ -723,7 +723,7 @@ body.dialog-offen {
     min-height: 180px;
 }
 
-/* Frei (seit v0.157.4): Vorschau und das Zahnrad der Grund-Regeln oben
+/* Frei: Vorschau und das Zahnrad der Grund-Regeln oben
    rechts darauf. Der Halter wächst statt der Vorschau in den Rest. */
 .start-vorschau-halter {
     position: relative;
@@ -848,7 +848,7 @@ body.dialog-offen {
 
 .start-spielen {
     flex: 2 1 0;
-    /* Gleich hoch wie das Quadrat daneben (seit v0.151.15). */
+    /* Gleich hoch wie das Quadrat daneben. */
     min-height: 74px;
     padding: 18px;
     font-size: 1.15rem;
@@ -886,7 +886,7 @@ body.dialog-offen {
  * ------------------------------------------------------------------ */
 
 /*
- * DAS QUADRAT HAT EINE FESTE SEITE (seit v0.151.15). Bis dahin kam seine
+ * DAS QUADRAT HAT EINE FESTE SEITE. Bis dahin kam seine
  * Breite aus `aspect-ratio` und der gestreckten Zeilenhöhe — der Halter maß
  * aber vorher nur den Inhalt (54 px), der Knopf wurde 73 px breit und ragte
  * 7 px über den rechten Rand: Die ganze Seite liess sich am Handy seitlich
@@ -2218,7 +2218,7 @@ body.turm-vb-offen {
     80% { transform: translateX(4px); }
 }
 
-/* Das Banner „Neuer Ort" oben (seit v0.147.0). */
+/* Das Banner „Neuer Ort" oben. */
 .turm-banner {
     position: fixed;
     left: 50%;
@@ -2277,7 +2277,7 @@ body.turm-vb-offen {
  * beiden eine Lücke.
  */
 /*
- * „Zurück in deine Runde" (seit v0.34.0): zwei Zeilen — oben die Ansage,
+ * „Zurück in deine Runde": zwei Zeilen — oben die Ansage,
  * darunter kleiner, um welche Runde es geht und wie sie steht. Still
  * gehalten wie „Runde beitreten": Die Hauptaktion bleibt „Spielen".
  */
@@ -2302,7 +2302,7 @@ body.turm-vb-offen {
 }
 
 /*
- * SECHS KÄSTCHEN AUS EINEM EINZIGEN FELD (seit v0.51.0)
+ * SECHS KÄSTCHEN AUS EINEM EINZIGEN FELD
  *
  * Nutzer-Entscheidung 25.08.2026: Das Feld ist genau so breit, wie der Code
  * lang ist — sechs Kästchen, wie man sie von Bestätigungscodes kennt. Der
@@ -2484,7 +2484,7 @@ body.turm-vb-offen {
 
 /*
  * AUSGEBLENDET HEISST WEG — der Umschalter über dem Raster setzt `hidden`
- * (seit v0.107.0). Dieselbe Falle wie bei der Dialog-Liste weiter oben:
+ *. Dieselbe Falle wie bei der Dialog-Liste weiter oben:
  * Die Voreinstellung des Browsers für `[hidden]` verliert gegen das
  * `display: flex` der Kachel, und ohne diese zwei Zeilen stünde die
  * ausgeblendete Karte weiterhin da.
@@ -2529,7 +2529,7 @@ body.turm-vb-offen {
 }
 
 /* ------------------------------------------------------------------ *
- * DIE ZEICHEN DER FÄHIGKEITEN (seit v0.63.0)
+ * DIE ZEICHEN DER FÄHIGKEITEN
  *
  * 29 gezeichnete Zeichen aus `js\faehigkeit-zeichen.js`, an zwei Orten:
  * gross in der Kachel der Bibliothek, klein vor dem Wort an der Marke am
@@ -2765,7 +2765,7 @@ body.turm-vb-offen {
         padding-bottom: calc(var(--leiste-hoehe) + 12px + env(safe-area-inset-bottom, 0px));
     }
 
-    /* Die zwei Regeln zum Kopfbalken sind mit ihm entfallen (v0.25.0):
+    /* Die zwei Regeln zum Kopfbalken sind mit ihm entfallen:
        Er wurde im Runden-Fenster ausgeblendet und bekam auf schmalen
        Schirmen weniger Innenabstand. */
 

@@ -18,7 +18,7 @@
  *     (js\upcrew-serie.js, Entwurf Oberfläche Runde 7).
  *
  * Unten in derselben Datei: der stille Platzhalter „Bald" für Platz 5 der
- * Leiste (seit v0.145.0).
+ * Leiste.
  */
 
 /* Die Zeichen dieses Tabs (24er-Raster, Entwurf `P`). */
@@ -46,13 +46,13 @@ const HERAUSFORDERUNGEN = {
 
     beimOeffnen() {
         /* Ein normaler Tab: kein Fenster, rollt wie immer. */
-        if (typeof TABS !== "undefined" && TABS.rundeSetzen) {
+        if (TABS.rundeSetzen) {
             TABS.rundeSetzen(HERAUSFORDERUNGEN.id, false);
         }
         HERAUSFORDERUNGEN.zeichnen();
     },
 
-    /* Die Seite steht im Band neben der offenen (seit v0.161.0): einmal
+    /* Die Seite steht im Band neben der offenen: einmal
        füllen, damit sie beim Wischen zu sehen ist. */
     vorzeichnen() {
         HERAUSFORDERUNGEN.zeichnen();
@@ -193,7 +193,7 @@ const HERAUSFORDERUNGEN = {
     },
 
     _figurenBauen(anzahl) {
-        if (typeof START !== "undefined" && typeof START._figurenBauen === "function") {
+        if (typeof START._figurenBauen === "function") {
             return START._figurenBauen(anzahl, "heute-figuren");
         }
         return HERAUSFORDERUNGEN._el("span", "heute-figuren", anzahl + "/3");

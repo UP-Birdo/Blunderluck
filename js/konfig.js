@@ -16,7 +16,7 @@ const KONFIG = {
     /* Version der App (SemVer: 0.MINOR.PATCH — die 0 vorne heisst "noch in
        Entwicklung", 1.0.0 erst bei erfuellten Fertig-Kriterien der ROADMAP).
        Wird im Kopf angezeigt und muss zu CHANGELOG.md passen. */
-    APP_VERSION: "0.167.1",
+    APP_VERSION: "0.170.0",
 
     speicher: {
 
@@ -33,8 +33,9 @@ const KONFIG = {
            seinen eigenen Bereich. Region europe-west1 (Belgien). Die Adresse
            ist kein Geheimnis: Sie steht ohnehin im Quelltext jeder
            ausgelieferten Seite. Regeln: SICHERHEIT.md (Hauptordner). Bis
-           v0.137.0 stand hier die eigene Blunderluck-Datenbank — sie wird
-           nur noch beim Umzug eines Kontos gelesen (`konto.altBasis`). */
+           v0.137.0 stand hier die eigene Blunderluck-Datenbank; bis
+           v0.167.2 wurde sie noch beim Umzug eines Kontos gelesen
+           (`konto.altBasis`), seit v0.168.0 ist der Umzugsweg abgeschaltet. */
         firebaseBasis: "https://upcrew-7a29d-default-rtdb.europe-west1.firebasedatabase.app",
 
         /* Ablage-Pfade innerhalb der Datenbank. Jeder Stand hat seinen eigenen,
@@ -92,47 +93,29 @@ const KONFIG = {
         domain: "konten.upcrew.invalid",
 
         /*
-         * DIE ALTE BLUNDERLUCK-DATENBANK — nur für den Umzug. Wer sich
-         * anmeldet und noch kein UPCrew-Konto hat, wird hier gesucht: Stimmt
-         * sein Passwort mit der alten Prüfsumme, legt die App das UPCrew-Konto
-         * an und übernimmt Name, Freunde und Abzeichen (anmeldung.js). Die
-         * Prüfsummen selbst ziehen NICHT mit. Wenn der Nutzer die alte
-         * Datenbank löscht, wird dieser Wert leer ("") — dann fällt der
-         * Umzugsweg still weg.
+         * DIE ALTE BLUNDERLUCK-DATENBANK (`blunderluck-8b7f0`) — bis v0.167.2
+         * der Umzugsweg: Wer sich anmeldete und noch kein UPCrew-Konto hatte,
+         * wurde dort gesucht und sein Konto übernommen (anmeldung-konto.js).
+         * SEIT v0.168.0 LEER (Sicherheits-Befund 13.10.2026, Punkt B1): Die
+         * alte Datenbank wird vom Nutzer geschlossen; mit leerem Wert fällt
+         * der Umzugsweg still weg, und die App spricht nur noch mit der
+         * UPCrew-Datenbank (auch die Browser-Sperre in index.html nennt nur
+         * noch diese). Der Schlüssel bleibt stehen, weil anmeldung-konto.js,
+         * tools\Partien-Umziehen.ps1 und die Tests ihn lesen — „leer“ ist
+         * dort der vorgesehene Zustand.
          */
-        altBasis: "https://blunderluck-8b7f0-default-rtdb.europe-west1.firebasedatabase.app",
+        altBasis: "",
         altPfad: "spieler"
-    },
-
-    verwaltung: {
-
-        /*
-         * Prüfsumme des Verwaltungs-Passworts (SHA-256 über
-         * "blunderluck-admin|<passwort>"). Das Passwort selbst steht bewusst
-         * NIRGENDWO in den Dateien — diese Seite ist öffentlich, jeder könnte
-         * es sonst abschreiben.
-         *
-         * Gesetzt am 23.08.2026. Das Passwort selbst kennt nur der Nutzer —
-         * es wurde nie übermittelt, gerechnet hat er die Prüfsumme selbst.
-         *
-         * Passwort ändern: In PowerShell die neue Prüfsumme rechnen und den
-         * Wert unten ersetzen. Der Text vor dem Passwort gehört dazu.
-         *
-         *     $text  = "blunderluck-admin|<neues Passwort>"
-         *     $bytes = [System.Text.Encoding]::UTF8.GetBytes($text)
-         *     $summe = [System.Security.Cryptography.SHA256]::Create().ComputeHash($bytes)
-         *     ($summe | ForEach-Object { $_.ToString("x2") }) -join ""
-         *
-         * Was die Verwaltung darf, steht in docs\ARCHITECTURE.md; was sie NICHT
-         * leistet (eine sechsstellige Zahl ist durchprobierbar), in
-         * docs\DECISIONS.md.
-         */
-        pruefwert: "da9675146c86f5988647847c5062a24eea0cdb36d7a309325a82027ef88f6703",
-
-        /* Wie viele Ziffern das Verwaltungs-Passwort hat. Muss zur Prüfsumme
-           oben passen, sonst lässt sich der Dialog nicht bestätigen.
-           (Das SPIELER-Passwort ist keine Ziffernfolge mehr: Seine Regel —
-           4 bis 8 Zeichen — wohnt seit v0.7.0 im Modell, js\spieler.js.) */
-        passwortStellen: 6
     }
+
+    /*
+     * KEIN VERWALTUNGS-PASSWORT MEHR (seit v0.168.0, Sicherheits-Befund
+     * 13.10.2026, Punkt A4). Bis v0.167.2 stand hier `verwaltung.pruefwert`,
+     * eine ungesalzene SHA-256-Prüfsumme über sechs Ziffern — aus dem
+     * öffentlichen Quelltext in Sekunden rückrechenbar. Die Verwaltung hängt
+     * seit v0.138.0 an der Rolle „admin“ des UPCrew-Kontos, die die
+     * Datenbank-Regeln serverseitig prüfen (js\verwaltung.js, js\ich.js);
+     * der Prüfwert öffnete nur noch die Oberfläche ohne Konto und war damit
+     * überflüssig und irreführend.
+     */
 };

@@ -1,5 +1,5 @@
 /*
- * bot-rechner.js — Bobs Zugsuche im Hintergrund (seit v0.165.0).
+ * bot-rechner.js — Bobs Zugsuche im Hintergrund.
  *
  * Bis v0.164.1 rechnete `SCHACH_BOT.zugWaehlen` auf dem Haupt-Thread. Gemessen
  * (kopfloser Edge, 4-fache CPU-Drossel, Standardbrett): „Schwer" 209–413 ms,
@@ -25,7 +25,7 @@
  *
  *   BOT_RECHNER.zugWaehlen(runde)  → Promise<{ von, nach, umwandlung } | null>
  *   BOT_RECHNER.rechnet()          → läuft gerade eine Suche?
- *   BOT_RECHNER.verwerfen()        → laufende Suche beenden, Offenes = null (v0.165.1)
+ *   BOT_RECHNER.verwerfen()        → laufende Suche beenden, Offenes = null
  */
 
 const BOT_RECHNER = {

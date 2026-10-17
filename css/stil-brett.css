@@ -69,7 +69,7 @@
     --spur: #cfe3b8;
     --spur-ende: #a8ce85;
 
-    /* Die Kanten der Zugspur im 3D-Look (seit v0.30.0) — abgedunkelte
+    /* Die Kanten der Zugspur im 3D-Look — abgedunkelte
        Geschwister der drei Spurfarben, damit sich die GANZE Kachel
        umfärbt und nicht nur ihre Oberseite. */
     --spur-kante: #a7c489;
@@ -99,7 +99,7 @@
     --wirkung-dauer: 1600ms;
 }
 
-/* Zweimal, wie in stil.css (seit v0.141.0): Gerät dunkel ohne „Hell"-Wahl,
+/* Zweimal, wie in stil.css: Gerät dunkel ohne „Hell"-Wahl,
    und „Dunkel" gewählt. --feld-hell/-dunkel und ihre Kanten setzt danach
    die Farbwelt (js\darstellung.js); die Werte hier sind der Rückfall. */
 @media (prefers-color-scheme: dark) {
@@ -173,7 +173,7 @@
 }
 
 /* ------------------------------------------------------------------ *
- * DIE SPIELERZEILEN AM BRETT (seit v0.53.0)
+ * DIE SPIELERZEILEN AM BRETT
  *
  * Nutzer-Ansage 25.08.2026: „Die zwei grossen Felder nehmen zu viel Platz
  * ein." An ihre Stelle treten zwei Zeilen — der Gegner über dem Brett, man
@@ -249,7 +249,7 @@
  */
 
 /*
- * DIE MENUE-KNOEPFE IM KASTEN (v0.81.0): Zahnrad und Verlaufs-Zeichen
+ * DIE MENUE-KNOEPFE IM KASTEN: Zahnrad und Verlaufs-Zeichen
  * erscheinen an der Stelle der Lage, sobald der eigene Kasten angetippt
  * ist — klein und quadratisch, damit sie den Kasten nicht sprengen.
  */
@@ -340,7 +340,7 @@
 }
 
 /* ------------------------------------------------------------------ *
- * DIE DREI BEITRITTS-KNÖPFE (seit v0.41.0)
+ * DIE DREI BEITRITTS-KNÖPFE
  *
  * Nutzer-Ansage 24.08.2026: „Die Knöpfe weiss, schwarz und Zufall sollen
  * alle drei gleich aussehen und die entsprechenden Farben bekommen. Zufall
@@ -433,7 +433,7 @@
  * wirklich zwei halbe Bildschirme, wie angesagt.
  *
  * HIER STANDEN BIS Punkt 49 `.beitritt-reihe`, `.beitritt-reihe-gross` und
- * `.seitenwahl-seiten`: die drei Knöpfe in EINER Reihe (v0.55.0) und die
+ * `.seitenwahl-seiten`: die drei Knöpfe in EINER Reihe und die
  * zwei Spielerzeilen darüber. Beide gibt es auf diesem Bildschirm nicht
  * mehr — die Knöpfe stehen jetzt an drei Orten, die Zeilen sagt die Liste
  * ihrer Spalte. `.seitenwahl-bereit` (der eigene Bereit-Knopf) war schon
@@ -629,7 +629,7 @@
 }
 
 /* ------------------------------------------------------------------ *
- * DER AUFSTELLUNGS-BILDSCHIRM (seit v0.62.0)
+ * DER AUFSTELLUNGS-BILDSCHIRM
  *
  * Der zweite Start-Bildschirm: Brett ansehen, bei Zufallsarmee neu würfeln,
  * dann zusagen. Das Brett ist hier die Hauptsache — die zwei Knöpfe stehen
@@ -667,7 +667,7 @@
 }
 
 /* ------------------------------------------------------------------ *
- * DER VORRAUM (seit v0.115.0) — ein Bildschirm statt Seitenwahl und
+ * DER VORRAUM — ein Bildschirm statt Seitenwahl und
  * Aufstellung. Aufbau von oben nach unten: Zustandszeile, Einladen-Block,
  * zwei Plätze, Brett, Regel-Schildchen, Fuss. Was von der Seitenwahl
  * weiterlebt (`seitenwahl-liste`, `-eintrag`, `-lage`, `-zufall`), behält
@@ -845,8 +845,7 @@
  * DER START-KNOPF BLEIBT IM BILD (seit v0.136.0, Nutzer 24.09.2026: „das
  * Spiel starten im Vorraum rutscht ganz nach unten"). Brett und Regel-
  * Schildchen schoben „Bereit" am Handy unter den Rand — man musste erst
- * scrollen. Jetzt klebt der Fuss unten am Bildschirm, auf eigenem Grund,
- * und die Schildchen stehen in EINER Zeile, die man seitlich wischt.
+ * scrollen. Jetzt klebt der Fuss unten am Bildschirm, auf eigenem Grund.
  */
 /* Seit v0.142.0 klebt er ÜBER der Tab-Leiste (die bleibt jetzt stehen und
    hält den iPhone-Balken selbst frei). Rollt nur der Spielbereich
@@ -875,22 +874,14 @@ body.partie-spielt:not(.partie-fest) .vorraum-fuss {
     padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
 }
 
+/* Am Handy brechen die Schildchen um wie am Rechner, nur enger. Bis v0.168.0
+   standen sie dort in EINER Zeile, die seitlich rollte (581 px Inhalt in
+   336 px, Rauchprobe v0.166.2) — gegen „auf Tab-Seiten rollt nichts
+   waagrecht". „Bereit" bleibt trotzdem im Bild: Der Fuss klebt unten. */
 @media (max-width: 600px) {
     .vorraum-regeln {
-        flex-wrap: nowrap;
-        justify-content: flex-start;
-        overflow-x: auto;
-        scrollbar-width: none;
+        gap: 4px;
         max-width: 100%;
-        padding-bottom: 2px;
-    }
-
-    .vorraum-regeln::-webkit-scrollbar {
-        display: none;
-    }
-
-    .vorraum-regel {
-        flex: none;
     }
 }
 
@@ -909,7 +900,7 @@ body.partie-spielt:not(.partie-fest) .vorraum-fuss {
    Fundstelle mehr. Deshalb hier gestrichen und nicht auskommentiert. */
 
 /* ------------------------------------------------------------------ *
- * DER TEAM-KASTEN (seit v0.68.0)
+ * DER TEAM-KASTEN
  *
  * Nutzer-Ansage 25.08.2026: „Ein grosser Kasten bis unten zum Bildschirmrand
  * mit Team plus dem ersten Benutzer — alle weiteren erscheinen, wenn man
@@ -1105,7 +1096,7 @@ body.partie-spielt:not(.partie-fest) .vorraum-fuss {
 
 /*
  * SOLANGE PLATZIERT WIRD, SCHIEBT DER FINGER DEN RAHMEN — NICHT DIE SEITE
- * (seit v0.84.0).
+ *.
  *
  * Ohne diese Zeile deutet der Browser jede Fingerbewegung auf dem Brett als
  * Rollen und das Ziehen kommt gar nicht erst an. Genau dieser Einwand stand
@@ -1509,7 +1500,7 @@ body.partie-spielt:not(.partie-fest) .vorraum-fuss {
 
 
 /* ------------------------------------------------------------------ *
- * DIE ARMEE-KNÖPFE ZEIGEN ZAHL UND MUSTER (seit v0.115.1)
+ * DIE ARMEE-KNÖPFE ZEIGEN ZAHL UND MUSTER
  *
  * Nutzer-Ansage 28.08.2026: „Beispielbilder statt Texten." Vier Wörter —
  * wenig, normal, viel, voll — sagten nichts über das Ergebnis. v0.109.0
@@ -1642,7 +1633,7 @@ body.partie-spielt:not(.partie-fest) .vorraum-fuss {
 }
 
 /*
- * DIE KARTE „WER SIEHT DIE RUNDE?" (seit v0.118.0) sieht aus wie ihre
+ * DIE KARTE „WER SIEHT DIE RUNDE?" sieht aus wie ihre
  * Nachbarin, die Figurenzahl-Karte.
  */
 .sichtbarkeit-karte {
@@ -1652,7 +1643,7 @@ body.partie-spielt:not(.partie-fest) .vorraum-fuss {
 }
 
 /*
- * DIE OFFENEN RUNDEN UNTER „RUNDE BEITRETEN" (seit v0.118.0): je Runde
+ * DIE OFFENEN RUNDEN UNTER „RUNDE BEITRETEN": je Runde
  * eine Zeile — links wer und was (zwei Zeilen), rechts Schildchen und
  * Knopf. Auf schmalen Schirmen darf der Knopf unter den Text rutschen.
  */
@@ -1697,12 +1688,12 @@ body.partie-spielt:not(.partie-fest) .vorraum-fuss {
     view-transition-name: form-aktiv;
 }
 
-/* Die Schwierigkeitsstufen des Computers (seit v0.28.0). */
+/* Die Schwierigkeitsstufen des Computers. */
 .reihen-pille-bot {
     view-transition-name: bot-aktiv;
 }
 
-/* Die Bild-Reihen der neuen Runde (seit v0.121.0) — jede mit EIGENEM
+/* Die Bild-Reihen der neuen Runde — jede mit EIGENEM
    Namen: Zwei Pillen unter demselben Namen bricht der Browser ab, dann
    gleitet gar nichts mehr. */
 .reihen-pille-aufstellung { view-transition-name: aufstellung-aktiv; }
@@ -1850,7 +1841,7 @@ body.partie-spielt:not(.partie-fest) .vorraum-fuss {
     height: 16px;
 }
 
-/* „Wie viele auf der Hand?" (seit v0.152.4): bis zu fünf Karten in einer
+/* „Wie viele auf der Hand?": bis zu fünf Karten in einer
    Zelle — enger gefächert, sonst ragen sie in die Nachbarzellen. */
 .item-karten-hand .item-mini + .item-mini {
     margin-left: -18px;
@@ -1877,7 +1868,7 @@ body.partie-spielt:not(.partie-fest) .vorraum-fuss {
 
 
 /* ------------------------------------------------------------------ *
- * DAS BILD VOR EINEM HAKEN (seit v0.110.0)
+ * DAS BILD VOR EINEM HAKEN
  *
  * Nur die drei Lootbox-Haken tragen eins (Begründung bei
  * `_schalterBildBauen`). Die Zeilen ohne Bild bekommen trotzdem den
@@ -2024,7 +2015,7 @@ body.partie-spielt:not(.partie-fest) .vorraum-fuss {
 }
 
 /* ------------------------------------------------------------------ *
- * Aufklapp-Fächer unter dem Brett (seit v0.49.0)
+ * Aufklapp-Fächer unter dem Brett
  *
  * Nutzer-Ansage 24.08.2026: Der Friedhof soll „in einem knopf verschwinden
  * der ausfahren kann mit der Liste". Der Griff ist deshalb ein normaler
@@ -2058,7 +2049,7 @@ body.partie-spielt:not(.partie-fest) .vorraum-fuss {
 }
 
 /*
- * ZWEI FÄCHER IN EINER ZEILE (seit v0.50.0) — Friedhof und Züge stehen
+ * ZWEI FÄCHER IN EINER ZEILE — Friedhof und Züge stehen
  * zugeklappt nebeneinander, damit unter dem Brett EINE Zeile genügt.
  *
  * Sobald eines aufgeht, nimmt es die ganze Breite: Eine Zugliste in einer
@@ -2123,7 +2114,7 @@ body.partie-spielt:not(.partie-fest) .vorraum-fuss {
 }
 
 /* ------------------------------------------------------------------ *
- * DIE NEUE RUNDE — EIN BILDSCHIRM, DREI REITER (seit v0.121.0)
+ * DIE NEUE RUNDE — EIN BILDSCHIRM, DREI REITER
  *
  * Nutzer-Ansage 24.09.2026: „weniger Texte, mehr Bilder, einfachere
  * Navigation". Jede Wahl ist ein Segment mit Bild oben und Wort darunter
@@ -2172,7 +2163,7 @@ body.partie-spielt:not(.partie-fest) .vorraum-fuss {
     padding: 8px 4px 6px;
 }
 
-/* Umbrechen nur zwischen Wörtern, nie im Wort (seit v0.151.13). */
+/* Umbrechen nur zwischen Wörtern, nie im Wort. */
 .bild-knopf-wort {
     font-size: 0.78rem;
     line-height: 1.15;

@@ -8,7 +8,7 @@
  *     {
  *         id:        "wuerfel-quizz",          // eindeutig, auch für die Adresse
  *         titel:     "Würfel Quizz",           // Beschriftung in der Leiste
- *         inLeiste:  false,                    // optional (seit v0.9.0): kein
+ *         inLeiste:  false,                    // optional: kein
  *                                              // Knopf — erreichbar nur über
  *                                              // TABS.wechseln (Startbildschirm)
  *         zeichen:   "start",                  // seit v0.142.0: Symbol aus
@@ -19,9 +19,9 @@
  *                                              // Leiste, ausgegraut, ohne Inhalt
  *         aufbauen(behaelter),                 // legt das Gerüst einmalig an
  *         beimOeffnen(),                       // optional: bei jedem Wechsel
- *         beimVerlassen(),                     // optional (seit v0.144.0):
+ *         beimVerlassen(),                     // optional:
  *                                              // wenn ein ANDERER Tab kommt
- *         vorzeichnen()                        // optional (seit v0.161.0): die
+ *         vorzeichnen()                        // optional: die
  *                                              // Seite steht im Band, ist aber
  *                                              // NICHT offen — einmal füllen,
  *                                              // damit sie beim Wischen zu
@@ -66,7 +66,7 @@
  * zu sehen (`aria-current="page"`), der auf einer gehobenen Kachel in der
  * Hauptfarbe sitzt. Für Vorleseprogramme trägt jeder Eintrag seinen Namen
  * als `aria-label`. Die Leiste steht fest am unteren Rand, auf JEDER Breite
- * und JEDEM Bildschirm (seit v0.142.0) — ausser in der laufenden Partie.
+ * und JEDEM Bildschirm — ausser in der laufenden Partie.
  * Die Reihenfolge der Registrierung ist die Reihenfolge in der Leiste.
  *
  * Bis v0.144 zeichnete diese Datei eine eigene Leiste (Symbol über Wort,
@@ -104,7 +104,7 @@ const TABS = {
     _bandSicht: null,
 
     /*
-     * ALTE TAB-KENNUNGEN FÜHREN WEITER (seit v0.145.0): Die Tabs
+     * ALTE TAB-KENNUNGEN FÜHREN WEITER: Die Tabs
      * „Fähigkeiten" und „Anpassen" sind im Tab „Sammlung" aufgegangen. Wer
      * noch eine alte Kennung ruft (ein gemerkter Rückweg, ein vergessener
      * Aufruf), landet dort statt im Nichts.
@@ -146,7 +146,7 @@ const TABS = {
     },
 
     /* ---------------------------------------------------------------- *
-     * Das Seiten-Band (seit v0.161.0)
+     * Das Seiten-Band
      * ---------------------------------------------------------------- */
 
     /* Steht dieser Tab als Seite im Band? Nur mit Band-Element, nur
@@ -417,7 +417,7 @@ const TABS = {
      * andere, was ein Fenster anders macht (Kurzmeldung, Ränder).
      */
     /*
-     * DER DRITTE WERT `fest` (seit v0.52.0): Dieser Bildschirm passt auf EINE
+     * DER DRITTE WERT `fest`: Dieser Bildschirm passt auf EINE
      * Seite und rollt nicht.
      *
      * Er hängt hier und nicht an einer eigenen Stelle, weil `rundeSetzen`
@@ -727,7 +727,7 @@ const TABS = {
             }
         }
 
-        /* Der bisherige Tab räumt auf, wenn er es will (seit v0.144.0). Eine
+        /* Der bisherige Tab räumt auf, wenn er es will. Eine
            Leisten-Seite darf sich dabei NICHT abbauen (seit v0.161.0): Sie
            bleibt im Band stehen und ist beim Wischen als Nachbar zu sehen —
            die Sammlung hat ihr `beimVerlassen` deshalb verloren. */
@@ -739,7 +739,7 @@ const TABS = {
         TABS.aktiveId = id;
         TABS._oeffnenMarke++;
 
-        /* Beim Wechsel ist erst einmal keine Partie im Bild (seit v0.151.3):
+        /* Beim Wechsel ist erst einmal keine Partie im Bild:
            die Leiste kommt zurück; eine offene Partie setzt es beim
            Zeichnen gleich wieder. */
         if (TABS._spielt && typeof document !== "undefined" && document.body) {
@@ -784,7 +784,7 @@ const TABS = {
             tab.beimOeffnen();
         }
 
-        /* Eine Leisten-Seite beginnt oben (seit v0.156.1). Bis v0.160 rollte
+        /* Eine Leisten-Seite beginnt oben. Bis v0.160 rollte
            dafür das Fenster nach oben; seit v0.161.0 rollt jede Seite für
            sich: Verlassene Seiten setzt der Baustein nach oben, die offene
            (erneut angetippt oder zurück aus der Partie) diese Zeile — nicht,

@@ -1336,7 +1336,7 @@ const SCHACH_VORSCHAU = {
             }));
 
             /*
-             * DAS HÄKCHEN (seit v0.134.0). Seit v0.130.0 gibt es kein Fenster
+             * DAS HÄKCHEN. Seit v0.130.0 gibt es kein Fenster
              * mit „Einsetzen" mehr: Eine Karte ohne Zielfeld wird mit dem
              * ersten Tipp gewählt und mit ✓ (oder einem zweiten Tipp)
              * eingesetzt. Genau dieser Griff bekommt sein eigenes Bild.
@@ -1424,7 +1424,7 @@ const SCHACH_VORSCHAU = {
              * DER SCHRITT NENNT SEIT DEM ABGLEICH MIT v0.84.0 ALLE HANDGRIFFE
              * (ROADMAP Punkt 11): Der Tipp setzt nur den gruenen Rahmen (seit
              * v0.57), er laesst sich seither auch mit Finger oder Maus ziehen
-             * (v0.84.0), und eingesetzt wird erst ueber den Knopf „Einsetzen"
+             *, und eingesetzt wird erst ueber den Knopf „Einsetzen"
              * unter dem Brett. Bis dahin las sich der Satz so, als wirke der
              * Tipp sofort. Den Zusatz-Knopf mancher Faehigkeiten nennt
              * `PLATZIER_KNOEPFE`.

@@ -4,9 +4,9 @@
  * Die mittlere der drei Seiten (Fähigkeiten / Start / Rangliste) und das
  * Erste, was ein Angemeldeter ohne laufende Partie sieht:
  *
- *   - oben rechts das MENÜBAND (seit v0.103.0) — ein Knopf mit drei
+ *   - oben rechts das MENÜBAND — ein Knopf mit drei
  *     Balken, dahinter Profil, Freunde, Verlauf, „Schach lernen" und
- *     zuletzt Einstellungen (seit v0.120.1). Bis v0.102.0 standen dort drei einzelne Zeichen
+ *     zuletzt Einstellungen. Bis v0.102.0 standen dort drei einzelne Zeichen
  *     (Verlauf, Freunde, Zahnrad); die Einstellungen sind seit v0.9.0
  *     kein Tab mehr und weiterhin nur von hier aus erreichbar (F8);
  *   - obere Hälfte: das Vorschaubild der eingestellten Spielart, gerechnet
@@ -75,7 +75,7 @@ const START = {
      * Proben) wie bisher.
      */
     _ruht() {
-        return START._gezeichnet && typeof TABS !== "undefined" && !!TABS.bandEl
+        return START._gezeichnet && !!TABS.bandEl
             && TABS.offeneSeite !== START.id;
     },
 
@@ -89,7 +89,7 @@ const START = {
         }
         START._gezeichnet = true;
 
-        /* Die vergangenen Matches (seit v0.37.0) liegen seit v0.156.0 als
+        /* Die vergangenen Matches liegen seit v0.156.0 als
            BLATT über dem Start; ohne den Baustein (Bildschirm-Tests) als
            Seite. Die Freunde-Seite am Start ist seit v0.157.0 ganz weg
            (Nutzer 29.09.2026) — Freunde sind ein Reiter der Rangliste. */
@@ -112,7 +112,7 @@ const START = {
         const seite = document.createElement("div");
         seite.className = "start";
 
-        /* Oben links das Kurzprofil (seit v0.120.0) mit der Serien-Flamme.
+        /* Oben links das Kurzprofil mit der Serien-Flamme.
            Das Menüband oben rechts ist seit v0.156.1 weg (siehe unten). Seit
            v0.157.0 EINE kompakte Kopfzeile aus dem Baustein (Kreis mit
            Level-Ring, Name, drei Abzeichen-Zeichen, Flamme rechts) — der Start
@@ -137,16 +137,16 @@ const START = {
             seite.appendChild(START._freiVorschauBauen());
         }
 
-        /* Unten der Knopf-Bereich mit FESTER Höhe (seit v0.157.4) — gleich
+        /* Unten der Knopf-Bereich mit FESTER Höhe — gleich
            in Turm und Frei, mit und ohne offene Runde. */
         START._untenBauen(seite, imTurm);
         wurzel.appendChild(seite);
 
-        /* Ein neu erreichter Ort wird einmal gefeiert (seit v0.147.0). */
+        /* Ein neu erreichter Ort wird einmal gefeiert. */
         if (imTurm && typeof START._neuerOrtPruefen === "function") {
             START._neuerOrtPruefen();
         }
-        /* Nach einer Turm-Partie (seit v0.160.0): an einer Kreuzung geht der
+        /* Nach einer Turm-Partie: an einer Kreuzung geht der
            Turm von selbst auf und fragt „Wo lang?"; ein Rückfall wird erklärt. */
         if (imTurm && typeof START._turmNachPartiePruefen === "function") {
             START._turmNachPartiePruefen();
@@ -328,7 +328,7 @@ const START = {
      * Runde" über die ganze Breite (darunter klein, welche und wie sie
      * steht; Nachtrag Nutzer 29.09.2026: „Zurück zur Runde soll dann ganz
      * werden also runde Beitreten verschwindet solange noch eine runde offen
-     * ist") — die Höhe bleibt. Gilt in Turm und Frei gleich. „Runde beitreten" gibt es nur in Frei (v0.157.3), in
+     * ist") — die Höhe bleibt. Gilt in Turm und Frei gleich. „Runde beitreten" gibt es nur in Frei, in
      * einer zweiten Farbe (`.start-beitreten`). „Runde starten" legt SOFORT
      * mit den gespeicherten Grund-Regeln an (`START.spielen`, `regeln()`) —
      * eingestellt werden sie über das Zahnrad an der Frei-Vorschau.
@@ -345,7 +345,7 @@ const START = {
         haupt.className = "knopf knopf-haupt start-spielen";
 
         if (START.spielenLaeuft) {
-            /* Während des Anlegens gesperrt und beschriftet (v0.114.2).
+            /* Während des Anlegens gesperrt und beschriftet.
                `aria-busy` sagt es auch dem Vorleseprogramm. */
             haupt.textContent = "Wird angelegt …";
             haupt.disabled = true;
@@ -672,7 +672,7 @@ const START = {
        der Rangliste. */
 
     /* ---------------------------------------------------------------- *
-     * Die vergangenen Matches als Seite (seit v0.37.0)
+     * Die vergangenen Matches als Seite
      *
      * Nutzer-Ansage 24.08.2026: „Die vergangenen Matches sollen auch nicht
      * bei Runde beitreten stehen sondern oben neben Freunde und
@@ -748,7 +748,7 @@ const START = {
     },
 
     /* ---------------------------------------------------------------- *
-     * Der Verlauf als BLATT (seit v0.156.0)
+     * Der Verlauf als BLATT
      *
      * `verlaufOffen` ist der eine Schalter; `_zeichnen` hält das Blatt dazu
      * offen und zeichnet seinen Inhalt neu. Geht das Blatt zu (✕, Grund,
@@ -819,7 +819,7 @@ const START = {
     /* Die Freunde wohnen seit v0.156.1 als Reiter in der Rangliste; seit
        v0.157.0 gibt es keinen Rückfall auf eine Seite am Start mehr. */
     freundeOeffnen() {
-        if (typeof RANGLISTE !== "undefined" && typeof RANGLISTE.freundeOeffnen === "function") {
+        if (typeof RANGLISTE.freundeOeffnen === "function") {
             RANGLISTE.freundeOeffnen();
         }
     },
@@ -834,7 +834,7 @@ const START = {
     async spielen() {
         /*
          * SOLANGE ANGELEGT WIRD, IST DER KNOPF GESPERRT UND SAGT ES
-         * (v0.114.2). Anlegen heisst: die ganze Tafel laden, die Runde
+         *. Anlegen heisst: die ganze Tafel laden, die Runde
          * hineinsetzen, die ganze Tafel schreiben — am Handy gern ein paar
          * Sekunden, in denen sich vorher NICHTS rührte. Wer dann noch
          * dreimal drückt, stiess dreimal denselben Vorgang an (die Sperre
@@ -845,8 +845,8 @@ const START = {
             return;
         }
 
-        /* UP#Plus verwaltet nur (seit v0.138.0). */
-        if (typeof ANMELDUNG !== "undefined" && typeof ANMELDUNG.istOberAdmin === "function"
+        /* UP#Plus verwaltet nur. */
+        if (typeof ANMELDUNG.istOberAdmin === "function"
                 && ANMELDUNG.istOberAdmin()) {
             await DIALOG.hinweis("Nicht mit UP#Plus",
                 "Verwaltungskonto · spielt nicht · "
@@ -896,7 +896,7 @@ const START = {
      * ---------------------------------------------------------------- */
 
     /*
-     * Die eine eigene offene Runde, oder nichts (seit v0.34.0). Gefragt beim
+     * Die eine eigene offene Runde, oder nichts. Gefragt beim
      * Zeichnen des Starts — deshalb still: Fehlt die Person oder der
      * Abgleich (ganz am Anfang, vor der Anmeldung), gibt es eben keine.
      *
@@ -1165,7 +1165,7 @@ const START = {
     },
 
     /*
-     * DER TOTENKOPF FÜR DEN FRIEDHOF (seit v0.65.0).
+     * DER TOTENKOPF FÜR DEN FRIEDHOF.
      *
      * Nutzer-Ansage 25.08.2026: „Das F für Friedhof soll zu einem Totenkopf
      * werden." Bis dahin stand dort der Buchstabe F.
@@ -1229,7 +1229,7 @@ const START = {
     },
 
     /*
-     * DAS VERLAUFS-ZEICHEN FÜR DIE ZUGLISTE (seit v0.65.0).
+     * DAS VERLAUFS-ZEICHEN FÜR DIE ZUGLISTE.
      *
      * Nutzer-Ansage 25.08.2026: „Z soll zu einem Verlaufs-Zeichen ersetzt
      * werden." Bis dahin stand dort der Buchstabe Z.
@@ -1278,7 +1278,7 @@ const START = {
     },
 
     /*
-     * DAS WÜRFEL-ZEICHEN FÜR „NEU AUFSTELLEN" (seit v0.62.0).
+     * DAS WÜRFEL-ZEICHEN FÜR „NEU AUFSTELLEN".
      *
      * Nutzer-Entscheidung 25.08.2026: Die Nebenaktionen werden Icons. „Neu
      * aufstellen" bekommt einen Würfel, weil der Knopf genau das tut — die

@@ -1,5 +1,5 @@
 /*
- * aktualisieren.js — eine neue Version kommt auch an (seit v0.151.2).
+ * aktualisieren.js — eine neue Version kommt auch an.
  *
  * DER FEHLER (Nutzer 27.09.2026: „ich bekomme die neuste Version nicht mehr
  * aufgerufen"; live nachgemessen): Der Server lieferte 0.151.1, die Seite
@@ -86,7 +86,7 @@ const AKTUALISIEREN = {
         const dialog = !!document.querySelector("[role=\"dialog\"]");
         let partie = false;
         try {
-            if (typeof TEAM_SCHACH !== "undefined" && TEAM_SCHACH.offeneId && TEAM_SCHACH.abgleich
+            if (TEAM_SCHACH.offeneId && TEAM_SCHACH.abgleich
                     && typeof SCHACH_TAFEL !== "undefined") {
                 const offen = SCHACH_TAFEL.partie(TEAM_SCHACH.abgleich.daten, TEAM_SCHACH.offeneId);
                 partie = !!(offen && !offen.ergebnis);

@@ -1,5 +1,5 @@
 /*
- * figuren-flach.js — ECHTES 2D: flache Figuren im 2D-Brett (seit v0.151.3).
+ * figuren-flach.js — ECHTES 2D: flache Figuren im 2D-Brett.
  *
  * Nutzer 27.09.2026: „2d bei blunder soll echtes 2d sein, also der Bauer im
  * Turm, wo du die Figur als Vorschau nutzt — es gab diese Version schon mal
@@ -102,7 +102,7 @@ const FIGUREN_FLACH = {
     obenMass: null,
 
     oben() {
-        return typeof FREISCHALTUNG !== "undefined" && FREISCHALTUNG.brett() === "oben";
+        return FREISCHALTUNG.brett() === "oben";
     },
 
     /* Das Bild einer Figur für `src` im flachen Brett: von oben gerendert,
@@ -193,7 +193,7 @@ const FIGUREN_FLACH = {
             inhalt += "<rect x=\"" + x + "\" y=\"" + y + "\" width=\"24\" height=\"24\" fill=\"" + feld + "\"/>";
             const [art, farbe] = aufstellung[i];
             if (art && bilder && bilder[art + "-" + farbe]) {
-                /* Geneigt (v0.157.4): Fuss auf der Feldmitte, ragt nach oben. */
+                /* Geneigt: Fuss auf der Feldmitte, ragt nach oben. */
                 const kante = mass.groesse * 24;
                 inhalt += "<image href=\"" + bilder[art + "-" + farbe] + "\" x=\"" + (x + 12 - kante / 2)
                     + "\" y=\"" + (y + 12 + mass.fuss * 24 - kante) + "\" width=\"" + kante

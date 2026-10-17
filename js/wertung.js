@@ -89,7 +89,7 @@ const WERTUNG = {
         return Math.max(0, Math.round(deckel(bester) - deckel(gespielt)));
     },
 
-    /* KEINE ECHTE WAHL (seit v0.151.0): Stehen der beste und der
+    /* KEINE ECHTE WAHL: Stehen der beste und der
        gespielte Zug beide jenseits des Deckels auf derselben Seite, ist die
        Partie schon entschieden — jeder Zug „verliert" dann nichts, und
        wer längst verloren hat, sammelte hier lauter 100-%-Züge (gemessen:
@@ -320,7 +320,7 @@ const WERTUNG = {
     },
 
     /* ---------------------------------------------------------------- *
-     * Im Hintergrund (seit v0.151.0): ein Web Worker rechnet
+     * Im Hintergrund: ein Web Worker rechnet
      * ---------------------------------------------------------------- */
 
     /* Adresse des Rechners (js\wertung-rechner.js), relativ zur Seite. */
@@ -472,7 +472,7 @@ const WERTUNG = {
      * ---------------------------------------------------------------- */
 
     /*
-     * ZEIT ZURÜCK (seit v0.152.2): Die Partie springt auf Zugzähler
+     * ZEIT ZURÜCK: Die Partie springt auf Zugzähler
      * `abZaehler` zurück — die Züge ab dort gibt es nicht mehr und zählen
      * nicht zur Genauigkeit. Die neuen Züge schreiben ihre Einträge danach
      * wieder unter denselben Zählern.

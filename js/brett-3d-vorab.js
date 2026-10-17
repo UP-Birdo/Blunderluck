@@ -1,5 +1,5 @@
 /*
- * brett-3d-vorab.js — bei gewähltem 3D three.js früh HERUNTERLADEN (seit v0.166.1).
+ * brett-3d-vorab.js — bei gewähltem 3D three.js früh HERUNTERLADEN.
  *
  * ANLASS (Messung v0.166.0): Seit das 3D-Modul per `import()` kommt
  * (js\brett-3d-start.js, ganz am Ende der Seite), begann bei gewähltem 3D der

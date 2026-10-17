@@ -2512,7 +2512,7 @@ const SCHACH_VARIANTEN = {
     },
 
     /*
-     * DAS GEGENSTÜCK EINER FÄHIGKEIT (seit v0.115.2) — oder "".
+     * DAS GEGENSTÜCK EINER FÄHIGKEIT — oder "".
      *
      * Enttarnen gibt es nur, wo die Seltenheit verborgen ist
      * (`nurOhneSeltenheit`), Verstecken nur, wo sie zu sehen ist

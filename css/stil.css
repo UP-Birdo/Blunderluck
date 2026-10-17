@@ -89,7 +89,7 @@
     --still-kante: #c3c8d0;
 
     /*
-     * DER SEITENRAND DES INHALTS (seit v0.72.0) — eigene Variable, weil er
+     * DER SEITENRAND DES INHALTS — eigene Variable, weil er
      * am Handy ABWEICHT und weil sich mehrere Stellen darauf beziehen
      * müssen, die sonst auseinanderlaufen.
      *
@@ -204,7 +204,7 @@ body {
     overscroll-behavior-x: none;
     background: var(--flaeche);
     color: var(--schrift);
-    /* Die Schrift wählt der Spieler (seit v0.144.0): js\upcrew-aussehen.js
+    /* Die Schrift wählt der Spieler: js\upcrew-aussehen.js
        setzt --schrift-familie an <html>. Hier steht nur der Rückfall. */
     font-family: var(--schrift-familie, "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif);
     font-size: 16px;
@@ -248,7 +248,7 @@ select,
 }
 
 /*
- * DIE DECKE ÜBER DER iPHONE-STATUSLEISTE (seit v0.151.10). Mit
+ * DIE DECKE ÜBER DER iPHONE-STATUSLEISTE. Mit
  * `viewport-fit=cover` reicht die Seite in der Home-Bildschirm-App bis unter
  * Uhr und Akku; beim Rollen lief der Inhalt dort sichtbar durch (in Typoluck
  * gemeldet, 27.09.2026 — derselbe Aufbau). Eine feste Fläche in der
@@ -326,7 +326,7 @@ select {
  *   100         Der Dialog. Er liegt über ALLEM — auch über dem schwebenden
  *               Knopf, der bis v0.93 mit 40 über dem Dialog lag und sich
  *               anklicken liess, während ein Fenster offen war.
- *   200         Der Fehler-Streifen (seit v0.105.0). Er liegt über allem,
+ *   200         Der Fehler-Streifen. Er liegt über allem,
  *               auch über dem Dialog: Der Fehler kann genau dann passieren,
  *               während ein Fenster offen ist — dann muss die Meldung
  *               trotzdem lesbar sein.
@@ -341,7 +341,7 @@ select {
     --ebene-leiste: 10;
     --ebene-schwebend: 50;
 
-    /* Das Anmelde-Vollbild (v0.8.0) liegt über der ganzen App, aber unter
+    /* Das Anmelde-Vollbild liegt über der ganzen App, aber unter
        dem Dialog — der stellt auch während der Anmeldung Fragen
        (Konto ohne Passwort, dreimal falsch). */
     --ebene-vollbild: 90;
@@ -389,7 +389,7 @@ select {
  * Kopf — es gibt keinen mehr
  *
  * Bis v0.24.0 stand oben ein Balken. Nacheinander sind seine Bewohner
- * ausgezogen: der Stand des Abgleichs (v0.15.0), der Schriftzug (v0.16.0),
+ * ausgezogen: der Stand des Abgleichs, der Schriftzug,
  * zuletzt Version und Wunsch-Knopf (v0.25.0, Nutzer-Ansage „damit mehr
  * Platz für das Wichtige ist"). Damit ist auch der Balken selbst weg, und
  * mit ihm die Klassen `.kopf`, `.kopf-titel`, `.kopf-rechts` und `.kopf h1`.
@@ -433,7 +433,7 @@ select {
     background: var(--gefahr);
 }
 
-/* Der Stand des Abgleichs in der Einstellungen-Karte (seit v0.15.0). Im
+/* Der Stand des Abgleichs in der Einstellungen-Karte. Im
    Kopf war die Zeile klein und leise; in der Karte darf sie normal gross
    sein, weil sie dort das Thema ist. */
 .status-karte {
@@ -443,7 +443,7 @@ select {
 }
 
 .hinweis {
-    /* Über dem Seiten-Band (seit v0.161.0), das fest über dem Fenster liegt. */
+    /* Über dem Seiten-Band, das fest über dem Fenster liegt. */
     position: relative;
     z-index: var(--ebene-schwebend);
     margin: 0;
@@ -455,7 +455,7 @@ select {
 }
 
 /* ------------------------------------------------------------------ *
- * Der Fehler-Streifen (seit v0.105.0)
+ * Der Fehler-Streifen
  *
  * Gebaut von `FEHLERFANG` in `js\app.js` — ganz ohne `DIALOG`, denn der ist
  * selbst App-Code und damit ein möglicher Fehlerort. Die Regeln stehen
@@ -521,7 +521,7 @@ select {
 }
 
 /* ------------------------------------------------------------------ *
- * Tabs — DIE LEISTE UNTEN IST DER GEMEINSAME BAUSTEIN (seit v0.145.0)
+ * Tabs — DIE LEISTE UNTEN IST DER GEMEINSAME BAUSTEIN
  *
  * UPCrew-Angleichung Runde 4: Aussehen und Bewegung der Leiste stehen
  * NUR in css\upcrew-leiste.css (Baustein der UPCrew, nur kopiert, lädt
@@ -894,7 +894,7 @@ body.design-3d .heute-bild .vorschau {
     white-space: nowrap;
 }
 
-/* Die Schwierigkeit der Tagesaufgabe als 1–3 Punkte (seit v0.151.0). */
+/* Die Schwierigkeit der Tagesaufgabe als 1–3 Punkte. */
 .heute-stufe {
     display: inline-flex;
     gap: 4px;
@@ -992,7 +992,7 @@ body.design-3d .heute-bild .vorschau {
  * die Stellschrauben des Bausteins und die Blunderluck-Inhalte (Regal-Bilder,
  * echte Start-Vorschau, Brettformen).
  */
-/* Ein verborgener Tab bleibt verborgen (seit v0.151.15): Bausteine, die dem
+/* Ein verborgener Tab bleibt verborgen: Bausteine, die dem
    Tab selbst ein `display` geben (bis jetzt `.up-sm { display: block }` in
    css\upcrew-sammlung.css), schlugen sonst das [hidden] — der Kopf der
    Sammlung stand dann auf jedem anderen Tab unten im Bild. Die Quelle ist
@@ -1165,7 +1165,7 @@ body.design-3d .sammlung-buehne .vorschau {
 }
 
 /* ------------------------------------------------------------------ *
- * DIE FESTE SEITE: DAS MATCH ROLLT NICHT (seit v0.52.0)
+ * DIE FESTE SEITE: DAS MATCH ROLLT NICHT
  *
  * Nutzer-Ansage 24.08.2026: „Das Match an sich soll nicht mehr scrollbar
  * sein, also fix eine Seite, angepasst für das Handy oder PC, Tablet und
@@ -1222,7 +1222,7 @@ body.partie-fest .schach {
     overflow-y: auto;
 
     /*
-     * DER PLATZ DES ROLLBALKENS BLEIBT RESERVIERT (seit v0.88.0).
+     * DER PLATZ DES ROLLBALKENS BLEIBT RESERVIERT.
      *
      * Im Browser gemessen: Sobald die Platzier-Leiste erscheint, wird der
      * Inhalt höher als das Fenster, dieser Bereich bekommt seinen eigenen
@@ -1231,7 +1231,7 @@ body.partie-fest .schach {
      * 10 px, obwohl die eingefrorene Zahl unverändert dastand (nachgemessen:
      * `_brettBreite` blieb 506, die Anzeige ging von 470 auf 460).
      *
-     * Dieselbe Lehre wie bei der Marke „Wird gesendet" (v0.79.1): Platz
+     * Dieselbe Lehre wie bei der Marke „Wird gesendet": Platz
      * freihalten schlägt wegnehmen. Und dieselbe Falle wie in v0.79.2, nur
      * an einem anderen Element — der Rollbalken IST ein Bauteil mit Grösse.
      * Die Seite selbst hat den Schutz seit v0.108 (`html`); dieser Bereich
@@ -1242,12 +1242,12 @@ body.partie-fest .schach {
     scrollbar-gutter: stable both-edges;
 
     /*
-     * DER BEREICH REICHT BIS AN DIE KANTE DES INHALTS (seit v0.72.0) — und
+     * DER BEREICH REICHT BIS AN DIE KANTE DES INHALTS — und
      * holt sich den Rand als eigenen Innenabstand zurück.
      *
      * WARUM DIESE VIER ZEILEN NÖTIG SIND, am Rechner gemessen 26.08.2026:
      * Die Team-Kästen ragen mit einem negativen Rand über den Inhalt
-     * hinaus, damit sie bündig abschliessen (v0.68.0). `overflow-y: auto`
+     * hinaus, damit sie bündig abschliessen. `overflow-y: auto`
      * macht diesen Bereich aber zu einem Rollbereich — und nach den
      * CSS-Regeln wird die WAAGERECHTE Achse dann automatisch ebenfalls
      * rollbar. Der Überstand erzeugte so unter dem Spielfeld eine
@@ -1343,7 +1343,7 @@ body.partie-fest .phasen-leiste {
  */
 /*
  * DER ÜBERSTAND RECHNET MIT `--inhalt-rand`, NICHT MIT `--abstand`
- * (seit v0.72.0). Beide sind am Rechner 16 Pixel, am Handy aber nicht: Dort
+ *. Beide sind am Rechner 16 Pixel, am Handy aber nicht: Dort
  * ist der Rand des Inhalts 12. Mit `--abstand` zog sich die Leiste dort vier
  * Pixel zu weit hinaus und erzeugte im rollbaren Spielbereich eine
  * waagerechte Bildlaufleiste — am 26.08.2026 im Browser gemessen und
@@ -1351,7 +1351,7 @@ body.partie-fest .phasen-leiste {
  */
 .stand-leiste {
     position: sticky;
-    /* Unter der Decke über dem iPhone-Balken (seit v0.151.10). */
+    /* Unter der Decke über dem iPhone-Balken. */
     top: var(--oben-frei, 0px);
     z-index: var(--ebene-leiste);
     margin-left: calc(-1 * var(--inhalt-rand));
@@ -1436,7 +1436,7 @@ body.partie-fest .phasen-leiste {
  * ------------------------------------------------------------------ */
 
 /*
- * FLACH WIE DIE TEXTZEILE DANEBEN (seit v0.81.0): Ein Chip, der hoeher
+ * FLACH WIE DIE TEXTZEILE DANEBEN: Ein Chip, der hoeher
  * ist als „Zug N", macht die Standleiste hoeher, sobald er erscheint —
  * und alles unter ihr rueckt nach (die Familie von v0.79.1). Seit die
  * Marke „Wird gesendet" weg ist, haelt kein Platzhalter mehr die Hoehe;
@@ -1877,7 +1877,7 @@ body.partie-fest .phasen-leiste {
     font-weight: 600;
 }
 
-/* Die Nummer klein hinter dem Namen (seit v0.155.0): Rangliste, Profil. */
+/* Die Nummer klein hinter dem Namen: Rangliste, Profil. */
 .name-tag {
     margin-left: 4px;
     font-size: 0.75em;
@@ -1886,7 +1886,7 @@ body.partie-fest .phasen-leiste {
 }
 
 /*
- * EIN NAME MITTEN IM TEXT ALS KNOPF (seit v0.119.0): Vorraum, Abschluss,
+ * EIN NAME MITTEN IM TEXT ALS KNOPF: Vorraum, Abschluss,
  * Partie-Karten, Freundesliste, offene Runden. Sieht aus wie der Text
  * ringsum, verrät sich beim Berühren durch die Unterstreichung.
  */
@@ -2528,7 +2528,7 @@ body.partie-fest .phasen-leiste {
 }
 
 /*
- * Die Zeile über dem Icon-Raster (seit v0.86.0): Sie trägt nichts als das i
+ * Die Zeile über dem Icon-Raster: Sie trägt nichts als das i
  * am rechten Rand — dahinter steht alles, was bis v0.85.0 als Text auf dem
  * Fähigkeiten-Tab stand (Nutzer-Ansage 27.08.2026).
  */

@@ -73,7 +73,7 @@ const SHOP = {
         if (typeof UPCREW_SHOP === "undefined" || typeof UPCREW_MUENZEN === "undefined") {
             return;
         }
-        const mitBesitz = typeof BESITZ !== "undefined" && typeof UPCREW_BESITZ !== "undefined";
+        const mitBesitz = typeof UPCREW_BESITZ !== "undefined";
         SHOP.griff = UPCREW_SHOP.bauen(behaelter, {
             titel: SHOP.titel,
             lesen: () => FORTSCHRITT_KONTO.lesen(),
@@ -93,7 +93,7 @@ const SHOP = {
                 SHOP.teil = teil;
             }
         });
-        if (typeof FORTSCHRITT_KONTO !== "undefined" && FORTSCHRITT_KONTO.beiAenderung) {
+        if (FORTSCHRITT_KONTO.beiAenderung) {
             FORTSCHRITT_KONTO.beiAenderung(() => SHOP.zeichnen());
         }
         /* Ein Kauf vom anderen Gerät, eine Anmeldung: neu zeichnen. */
@@ -103,7 +103,7 @@ const SHOP = {
     },
 
     beimOeffnen() {
-        if (typeof TABS !== "undefined" && TABS.rundeSetzen) {
+        if (TABS.rundeSetzen) {
             TABS.rundeSetzen(SHOP.id, false);
         }
         SHOP.zeichnen();
@@ -115,7 +115,7 @@ const SHOP = {
         SHOP.anprobeBeenden();
     },
 
-    /* Die Seite steht im Band neben der offenen (seit v0.161.0): einmal
+    /* Die Seite steht im Band neben der offenen: einmal
        füllen, damit sie beim Wischen zu sehen ist. */
     vorzeichnen() {
         SHOP.zeichnen();
@@ -147,14 +147,14 @@ const SHOP = {
             FUEHLEN.erfolg();
         }
         DIALOG.kurzmeldung(name + " gekauft");
-        if (typeof START !== "undefined" && START.flammeAktualisieren) {
+        if (START.flammeAktualisieren) {
             START.flammeAktualisieren();
         }
         return true;
     },
 
     /* ---------------------------------------------------------------- *
-     * Der Reiter „Design" (seit v0.163.0)
+     * Der Reiter „Design"
      * ---------------------------------------------------------------- */
 
     /*
@@ -171,7 +171,7 @@ const SHOP = {
 
     _kennt(art, wert) {
         if (art === "brett2d") {
-            return typeof BRETT_DESIGN !== "undefined" && !!BRETT_DESIGN.eintrag(wert);
+            return !!BRETT_DESIGN.eintrag(wert);
         }
         const liste = (typeof SAMMLUNG === "undefined") ? null
             : (art === "brett3d" ? SAMMLUNG.THEMEN : (art === "figurstil" ? SAMMLUNG.FIGUREN : null));
@@ -229,14 +229,14 @@ const SHOP = {
             FUEHLEN.erfolg();
         }
         DIALOG.kurzmeldung(stueck.name + " gekauft");
-        if (typeof START !== "undefined" && START.flammeAktualisieren) {
+        if (START.flammeAktualisieren) {
             START.flammeAktualisieren();
         }
         return true;
     },
 
     /* ---------------------------------------------------------------- *
-     * Die Anprobe (seit v0.163.0)
+     * Die Anprobe
      * ---------------------------------------------------------------- */
 
     /* Was gerade anprobiert wird: { name, sorte, stuecke } — oder null. */

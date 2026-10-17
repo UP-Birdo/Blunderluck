@@ -28,7 +28,7 @@
  */
 
 /* ------------------------------------------------------------------ *
- * DER GLOBALE FEHLERFANG (seit v0.105.0)
+ * DER GLOBALE FEHLERFANG
  *
  * WOGEGEN ER STEHT: Fliegt beim Start etwas auseinander, blieb bis dahin eine
  * WEISSE SEITE zurück — ohne Meldung, ohne Hinweis aufs Neuladen und ohne
@@ -282,7 +282,7 @@ const FEHLERFANG = {
 FEHLERFANG.registrieren();
 
 /* ------------------------------------------------------------------ *
- * DER SERVICE WORKER (seit v0.106.0)
+ * DER SERVICE WORKER
  *
  * Er macht die App offline-fähig und installierbar; was er tut und was
  * bewusst nicht, steht im Kopf von `sw.js` in der Projektwurzel.
@@ -362,7 +362,7 @@ const APP = {
     statusTechnik: "",
 
     starten() {
-        /* Für den Notfall-Weg in index.html (seit v0.151.5): Die App ist
+        /* Für den Notfall-Weg in index.html: Die App ist
            angekommen. Steht als ERSTES — auch wenn danach etwas stolpert,
            sind die Dateien da, und ein Neuladen würde nichts retten. */
         window.BLUNDERLUCK_GESTARTET = true;
@@ -376,7 +376,7 @@ const APP = {
         /* Das UPCrew-Intro startet seit v0.167.0 weiter unten, gleich nach
            dem Spieler-Speicher (es braucht den frühen Abruf „wer spielt"). */
 
-        /* Die Spielzeit (seit v0.155.0): gezählt, solange die Seite sichtbar
+        /* Die Spielzeit: gezählt, solange die Seite sichtbar
            ist (FORTSCHRITT_KONTO.spielzeitStarten). */
         if (typeof FORTSCHRITT_KONTO !== "undefined") {
             FORTSCHRITT_KONTO.spielzeitStarten();
@@ -422,7 +422,7 @@ const APP = {
         INTRO.zeigen(document.getElementById("intro"), wer)
             .then(() => APP.werSpieltDa(typeof UPCREW_WER_SPIELT !== "undefined" ? UPCREW_WER_SPIELT.stand() : null));
 
-        /* Offline erspieltes hochladen (seit v0.167.0): einmal beim Start
+        /* Offline erspieltes hochladen: einmal beim Start
            vormerken — sobald der eigene Eintrag geladen ist, geht ein
            neuerer Gerätestand ans Konto (`beiDaten` unten). */
         if (typeof FORTSCHRITT_KONTO !== "undefined" && FORTSCHRITT_KONTO.hochladenVormerken) {
@@ -433,7 +433,7 @@ const APP = {
             beiDaten: (daten) => {
                 ANMELDUNG.datenAktualisiert(daten);
 
-                /* Das Aussehen vom Konto (seit v0.144.0): Hat der Spieler
+                /* Das Aussehen vom Konto: Hat der Spieler
                    auf einem anderen Gerät umgestellt, gilt es jetzt auch
                    hier (js\aussehen-konto.js). */
                 if (typeof AUSSEHEN_KONTO !== "undefined") {
@@ -449,7 +449,15 @@ const APP = {
                     BESITZ.abgleichen();
                 }
 
-                /* Offline Erspieltes (seit v0.167.0): Ist das Hochladen
+                /* Das 3D-Brett: Hat es sich gebaut, bevor
+                   das Konto da war, zeigt es sonst bis zum Neuladen das
+                   damals Freie (2D, Vorgabe-Thema). Steht NACH dem Besitz,
+                   weil gekaufte Themen erst danach frei sind. */
+                if (window.BRETT_3D && typeof window.BRETT_3D.einstellungenAbgleichen === "function") {
+                    window.BRETT_3D.einstellungenAbgleichen();
+                }
+
+                /* Offline Erspieltes: Ist das Hochladen
                    vorgemerkt (Start, `online`) und der eigene Eintrag jetzt
                    da, geht ein neuerer Gerätestand EINMAL ans Konto. */
                 if (typeof FORTSCHRITT_KONTO !== "undefined" && FORTSCHRITT_KONTO.hochladen) {
@@ -460,25 +468,25 @@ const APP = {
                    sie zu sehen ist (sonst merkt sie sich "veraltet"). */
                 RANGLISTE.datenGeaendert();
 
-                /* Die Serien-Flamme (seit v0.151.18): Der Fortschritt vom
+                /* Die Serien-Flamme: Der Fortschritt vom
                    Konto kommt mit dem Spieler-Stand — auf einem neuen Gerät
                    erst nach der Anmeldung. Seit v0.157.0 werden dabei
                    alte Flammen-Schilde einmal in Münzen erstattet. */
                 if (typeof FORTSCHRITT_KONTO !== "undefined" && FORTSCHRITT_KONTO.schildeErstatten) {
                     FORTSCHRITT_KONTO.schildeErstatten();
                 }
-                /* Der Kopf am Start (seit v0.160.1): Bringt der Stand vom
+                /* Der Kopf am Start: Bringt der Stand vom
                    Konto ein anderes Level, andere XP oder eine andere Serie
                    mit — etwa aus einem anderen UPCrew-Spiel —, zeichnet der
                    Kopf neu, ohne Neustart. Bis v0.160.0 zog nur die Flamme
                    nach, der Level-Ring blieb stehen. */
-                if (typeof START !== "undefined" && START.kopfAktualisieren) {
+                if (START.kopfAktualisieren) {
                     START.kopfAktualisieren();
                 }
-                if (typeof START !== "undefined" && START.flammeAktualisieren) {
+                if (START.flammeAktualisieren) {
                     START.flammeAktualisieren();
                 }
-                /* Brett-Klassen und Brett-Design 2D (seit v0.159.0) hängen an
+                /* Brett-Klassen und Brett-Design 2D hängen an
                    Ort und Level — die kommen erst mit dem Stand vom Konto. */
                 if (typeof FIGUREN_FLACH !== "undefined") {
                     FIGUREN_FLACH.anwenden();
@@ -492,7 +500,7 @@ const APP = {
                 }
             },
             beiStatus: (status, text, technik, fehler) => APP.statusZeigen(status, text, technik, fehler),
-            /* Bestätigt geschrieben (seit v0.167.0): der kurze Haken des
+            /* Bestätigt geschrieben: der kurze Haken des
                Offline-Hinweises — nur, wenn vorher ein Zeichen stand. */
             beiGeschrieben: () => {
                 if (typeof UPCREW_OFFLINE !== "undefined") {
@@ -503,7 +511,7 @@ const APP = {
             inhaltGleich: (a, b) => SPIELER.inhaltGleich(a, b),
             zusammenfuehren: (fremd, eigen, id) => SPIELER.zusammenfuehren(fremd, eigen, id),
 
-            /* Zurück im Vordergrund (seit v0.160.1): den eigenen
+            /* Zurück im Vordergrund: den eigenen
                Konto-Eintrag gezielt holen, auch wenn die Marke stillsteht
                (`Abgleich.rueckkehr`, js\anmeldung-konto.js) — nur für
                angemeldete Konten, höchstens einmal je Rückkehr. */
@@ -552,13 +560,13 @@ const APP = {
             leereDaten: () => SCHACH_TAFEL.leereTafel(),
             inhaltGleich: (a, b) => SCHACH_TAFEL.inhaltGleich(a, b),
 
-            /* Der eigene Ladeweg (seit v0.114.3): Das Schach holt nicht die
+            /* Der eigene Ladeweg: Das Schach holt nicht die
                ganze Tafel, sondern über die Übersicht nur, was es braucht —
                und in einer offenen Partie nur diese (js\schach-speicher.js). */
             laden: (alles) => TEAM_SCHACH.standLaden(alles),
             brauchtAlles: () => TEAM_SCHACH.brauchtAlles(),
 
-            /* Der Takt je Bildschirm (seit v0.152.5): 3 s mit Menschen
+            /* Der Takt je Bildschirm: 3 s mit Menschen
                und im Vorraum, 15 s gegen Bob und ohne offene Partie. */
             taktMs: () => TEAM_SCHACH.abfrageTaktMs()
         });
@@ -578,7 +586,7 @@ const APP = {
          * (`inLeiste: false`) — sie werden über den Startbildschirm
          * betreten (Spielen-Knopf bzw. Zahnrad). Die Anmeldung
          * (anmeldung.js) hat KEINEN Tab — sie ist ein Vollbild beim Start
-         * (seit v0.8.0).
+         *.
          */
         /* SEIT v0.156.0 (Nutzer 28.09.2026: „in beiden spielen shop nach
            ganz links dann sammlung start herausforderung und dann ganz
@@ -645,7 +653,7 @@ const APP = {
            iPhone-Streifen oben zum Ansehen am Rechner — 47 px statt
            env(safe-area-inset-top), das der Browser hier mit 0 liefert
            (css\stil.css `--oben-frei`). Nur auf dem eigenen Rechner. */
-        if (typeof FREISCHALTUNG !== "undefined" && FREISCHALTUNG.werkstatt()
+        if (FREISCHALTUNG.werkstatt()
                 && /[?&]kerbe(=|&|$)/.test(location.search || "")) {
             document.documentElement.style.setProperty("--oben-frei", "47px");
         }
@@ -703,7 +711,7 @@ const APP = {
                 erlaubt: () => TABS.bandSichtbar()
                     && !document.body.classList.contains("partie-spielt")
                     && !document.body.classList.contains("runde-offen")
-                    && !(typeof ANMELDUNG !== "undefined" && ANMELDUNG.anmeldenLaeuft),
+                    && !(ANMELDUNG.anmeldenLaeuft),
                 kommt: (id) => TABS.seiteKommt(id),
                 frueh: true
             });
@@ -724,7 +732,7 @@ const APP = {
             TABS.bandAuffrischen();
             TABS.vorbauen();
 
-            /* Ein vorgemerktes Hochladen (seit v0.167.0), falls der eigene
+            /* Ein vorgemerktes Hochladen, falls der eigene
                Eintrag erst mit dieser Anmeldung da ist (Passwort neu). */
             if (typeof FORTSCHRITT_KONTO !== "undefined" && FORTSCHRITT_KONTO.hochladen) {
                 FORTSCHRITT_KONTO.hochladen();
@@ -757,7 +765,7 @@ const APP = {
             schachAbgleich.starten()
         ]).then(([spielerGeladen]) => {
             /*
-             * NUR FRAGEN, WENN WIR AUCH GESCHAUT HABEN (seit v0.89.0).
+             * NUR FRAGEN, WENN WIR AUCH GESCHAUT HABEN.
              *
              * `starten` wirft bei einem Ladefehler nicht — die App soll ja
              * auch ohne Netz hochkommen —, sondern meldet ihn und liefert
@@ -856,7 +864,7 @@ const APP = {
     },
 
     /*
-     * Nach dem Intro (seit v0.167.0): Der Stand liegt schon auf dem Gerät
+     * Nach dem Intro: Der Stand liegt schon auf dem Gerät
      * (der Baustein hat Fortschritt und Besitz des Kontos mit dem
      * Geräte-Eintrag vereinigt) — Kopf, Level-Ring, Münzen und Flamme
      * zeichnen einmal neu. `e` darf null sein (abgemeldet, während geladen

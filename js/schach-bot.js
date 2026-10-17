@@ -177,7 +177,7 @@ const SCHACH_BOT = {
     BEDENKZEIT_MS: 1000,
 
     /* ---------------------------------------------------------------- *
-     * DIE VIER SCHWIERIGKEITSSTUFEN (seit v0.28.0)
+     * DIE VIER SCHWIERIGKEITSSTUFEN
      *
      * Sie unterscheiden sich in genau drei Zahlen, und jede davon ist
      * gemessen (siehe Kopf). Reihenfolge ist die Reihenfolge am Bildschirm.
@@ -381,7 +381,7 @@ const SCHACH_BOT = {
 
     /*
      * Steht in beiden Teams NIEMAND ausser dieser Person und dem Computer?
-     * (seit v0.114.2)
+     *
      *
      * Gebraucht, wenn „Spielen" eine eigene wartende Runde vorfindet: Sitzt
      * dort nur der Anleger selbst (allenfalls mit dem Computer), wartet
@@ -442,7 +442,7 @@ const SCHACH_BOT = {
 
     /*
      * JEDE SEITE, IN DER NUR DER COMPUTER SITZT, SAGT JA ZUR AUFSTELLUNG
-     * (seit v0.62.0).
+     *.
      *
      * Gebraucht an zwei Stellen: beim Einsteigen (oben) und nach jedem
      * Neu-Würfeln — `SCHACH_RUNDE.armeeNeuWuerfeln` streicht die Zusage
@@ -469,7 +469,7 @@ const SCHACH_BOT = {
     },
 
     /*
-     * DER COMPUTER STEIGT EIN, WENN DER MENSCH BEREIT IST (seit v0.29.0).
+     * DER COMPUTER STEIGT EIN, WENN DER MENSCH BEREIT IST.
      *
      * Er setzt sich dem Spieler GEGENÜBER — welche Seite das ist, hat der
      * Mensch vorher selbst gewählt. Liefert die Runde unverändert zurück,
@@ -655,7 +655,7 @@ const SCHACH_BOT = {
      * Das ist die Schnittstelle, die der Bildschirm ruft; er stellt danach
      * nur noch zu (`TEAM_SCHACH._sendenMitPruefung`).
      *
-     * `gerechnet` (seit v0.165.0): die Wahl, die `SCHACH_BOT.zugWaehlen` für
+     * `gerechnet`: die Wahl, die `SCHACH_BOT.zugWaehlen` für
      * GENAU diese Runde schon geliefert hat — im Hintergrund
      * (js\bot-rechner.js). Fehlt sie, wird hier gerechnet wie bisher.
      */
@@ -668,7 +668,7 @@ const SCHACH_BOT = {
         const neu = SCHACH_RUNDE.ziehen(runde, SCHACH_BOT.KENNUNG,
             wahl.von, wahl.nach, wahl.umwandlung, SCHACH_BOT.NAME, zeitpunkt);
 
-        /* ZEIT ZURÜCK (seit v0.152.2): Ist danach der Mensch am Zug, beginnt
+        /* ZEIT ZURÜCK: Ist danach der Mensch am Zug, beginnt
            sein Zug hier — diesen Stand merkt sich die Partie. Endet die
            Partie mit Bobs Zug, bleibt der vorige Anfang der letzte. */
         if (neu && neu.laeuft && !neu.ergebnis && !SCHACH_BOT.istAmZug(neu) && SCHACH_BOT.zeitGilt(neu)) {

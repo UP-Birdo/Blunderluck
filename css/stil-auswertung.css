@@ -72,7 +72,7 @@
 }
 
 /*
- * DER AUSGANG ALS ÜBERSCHRIFT DER RÜCKSCHAU (seit v0.46.0): „Schachmatt"
+ * DER AUSGANG ALS ÜBERSCHRIFT DER RÜCKSCHAU: „Schachmatt"
  * grün oder rot, „Patt" grau. Die Farbe hängt hier NICHT an der Fläche
  * (`.abschluss-sieg` und Geschwister gibt es auf der Rückschau nicht),
  * sondern kommt als eigene Klasse mit — deshalb die drei Regeln.
@@ -94,7 +94,7 @@
     font-size: 1.05rem;
 }
 
-/* Die Wertung einer Turm-Partie (seit v0.148.0): Genauigkeit, sechs
+/* Die Wertung einer Turm-Partie: Genauigkeit, sechs
    Klassen mit ihren Farben (wie Chess.com), Glück getrennt. */
 .wertung {
     display: flex;
@@ -168,10 +168,11 @@
     font-size: 0.85rem;
 }
 
-/* „+10 XP · Level 3" nach der Partie (seit v0.146.0). */
+/* „+10 XP · Level 3" nach der Partie; bricht bei Platzmangel um. */
 .abschluss-xp {
     margin: 0;
     display: flex;
+    flex-wrap: wrap;
     justify-content: center;
     gap: 8px;
     font-weight: 800;
@@ -187,6 +188,14 @@
 .abschluss-xp-level {
     background: var(--haupt);
     color: var(--haupt-schrift);
+}
+
+/* „noch 40 XP bis Level 6" — leise neben den XP. */
+.abschluss-xp-rest {
+    align-self: center;
+    color: var(--schrift-leise);
+    font-weight: 700;
+    font-size: 0.85rem;
 }
 
 .abschluss-grund {
@@ -438,7 +447,7 @@
 }
 
 /*
- * AUSSERHALB DES BRETTS (seit v0.31.0): die vier Ecken eines Kreuz-Bretts.
+ * AUSSERHALB DES BRETTS: die vier Ecken eines Kreuz-Bretts.
  * Sie sehen aus wie ein Riss, sind aber keiner — ein Riss ist eine kaputte
  * Kachel, die Ecke ist gar keine. Deshalb faellt hier auch die letzte Spur
  * einer Kachel weg; im 3D-Look erledigt das die Regel im design-3d-Block,
@@ -591,7 +600,7 @@
 }
 
 /*
- * DIE LEISTE WIE IM SPIEL (seit v0.134.0): die Karte (dasselbe Plättchen
+ * DIE LEISTE WIE IM SPIEL: die Karte (dasselbe Plättchen
  * wie in der Karten-Leiste) und daneben der runde Haken. Der Finger liegt
  * unten rechts auf dem, was gerade getippt wird.
  */
@@ -768,7 +777,7 @@
  * ------------------------------------------------------------------ */
 
 /*
- * DIE FIGUR VOR IHREM KAPITEL (seit v0.109.0)
+ * DIE FIGUR VOR IHREM KAPITEL
  *
  * Nutzer-Ansage 28.08.2026: Bilder statt Wortlisten. Sechs Kapitel — Bauer
  * bis König — trugen bis v0.108.0 nur ihren Namen, obwohl das Modell die
@@ -1054,7 +1063,7 @@
 }
 
 /*
- * DIE EINSTELLUNGEN DIESER PARTIE (seit v0.48.0): Das Zahnrad in der
+ * DIE EINSTELLUNGEN DIESER PARTIE: Das Zahnrad in der
  * Fussleiste bekommt das Zeichen in Textgrösse, und das Aufgeben steht in
  * seinem Fenster ganz unten — gross und rot, wie angesagt.
  */
@@ -1076,7 +1085,7 @@
 }
 
 /*
- * EIN LEERER KOPF IST KEINE ZEILE (seit v0.47.0). Seit der Code in die
+ * EIN LEERER KOPF IST KEINE ZEILE. Seit der Code in die
  * Stand-Leiste gezogen ist, bleibt der Partie-Kopf leer, wenn die Partie
  * keinen festen Item-Vorrat hat — ohne diese Regel stünde dort eine leere
  * Zeile mit Trennlinie. Das Element bleibt trotzdem im Baum: Die
@@ -1126,7 +1135,7 @@
  * Rollen erreichbar bleibt — er ersetzt den schwebenden Zweitknopf von
  * v0.59 bis v0.109. Die Fläche dahinter deckt den rollenden Text ab.
  */
-/* Der Tipp im Eck-Menü (seit v0.152.0). */
+/* Der Tipp im Eck-Menü. */
 .eck-tipp-zeichen {
     display: block;
     width: 1.2em;
@@ -1154,7 +1163,7 @@
     font-variant-numeric: tabular-nums;
 }
 
-/* Die Münzen im Abschluss (seit v0.152.0). */
+/* Die Münzen im Abschluss. */
 .abschluss-muenzen {
     display: inline-flex;
     align-items: center;
@@ -1203,7 +1212,7 @@
     gap: 6px;
 
     /*
-     * KEIN INNENABSTAND OBEN UND UNTEN (seit v0.71.0). Jeder Pixel hier
+     * KEIN INNENABSTAND OBEN UND UNTEN. Jeder Pixel hier
      * machte die Karten NIEDRIGER als die Team-Karte, denn sie füllen die
      * Reihe abzüglich ihres Innenabstands. Bis v0.70.0 standen hier 2 px
      * plus 7 px für die überstehende Anzahl-Blase — die ist mit v0.71.0
@@ -1219,7 +1228,7 @@
     overscroll-behavior-x: contain;
 
     /*
-     * OHNE SICHTBAREN ROLLBALKEN (seit v0.79.2). Sobald die Sammlung
+     * OHNE SICHTBAREN ROLLBALKEN. Sobald die Sammlung
      * breiter wird als die Reihe, zeichnet der Desktop-Browser einen
      * waagerechten Balken IN die Reihe — und der nimmt seine rund 10 px
      * von den Karten: Sie schrumpften von 52 auf 42 und waren damit nicht
@@ -1261,7 +1270,7 @@
 }
 
 /* ------------------------------------------------------------------ *
- * DIE ANORDNUNG DER ZWEITEN NUTZER-SKIZZE (seit v0.64.0)
+ * DIE ANORDNUNG DER ZWEITEN NUTZER-SKIZZE
  *
  * Je Seite EINE Zeile aus Kartenreihe und Banner, dazu eine Knopfspalte am
  * Rand. Punktsymmetrisch um das Brett:
@@ -1280,7 +1289,7 @@
  * ------------------------------------------------------------------ */
 
 /*
- * `stretch` STATT `center` (seit v0.71.0) — daran hängt, dass die
+ * `stretch` STATT `center` — daran hängt, dass die
  * Item-Karten GENAU so hoch sind wie die Team-Karte (Nutzer-Ansage
  * 25.08.2026).
  *
@@ -1384,7 +1393,7 @@
  * Flex-Fassung; ohne die 0 drängte ein voller Streifen den Kasten aus der
  * Zeile (v0.79.2, `erkenntnisse.md`).
  *
- * `height: 0` PLUS `min-height: 100%` (seit v0.81.0): Die Karten leiten
+ * `height: 0` PLUS `min-height: 100%`: Die Karten leiten
  * ihre Breite aus ihrer Höhe ab (`aspect-ratio`), und OHNE diese zwei
  * Zeilen liefe das rückwärts — die Wunschgrösse der Karten ginge in die
  * Zeilen-Messung des Rasters ein, und die Ecke wüchse auf Karten- statt
@@ -1532,7 +1541,7 @@
 
 
 /* ------------------------------------------------------------------ *
- * DIE FÄHIGKEITEN ALS SYMBOL-STAPEL (seit v0.67.0)
+ * DIE FÄHIGKEITEN ALS SYMBOL-STAPEL
  *
  * Nutzer-Ansage 25.08.2026: „Nicht das alte Item-Rechteck mit Schrift,
  * sondern nur das Symbol mit der Umrandung — gruppiert hintereinander
@@ -1608,7 +1617,7 @@
     justify-content: center;
 
     /*
-     * DIE HÖHE KOMMT VON DER TEAM-KARTE (seit v0.71.0) — hier steht nur,
+     * DIE HÖHE KOMMT VON DER TEAM-KARTE — hier steht nur,
      * dass die Karte sie annimmt. `align-self` wiederholt, was die Zeile
      * ohnehin vorgibt; es steht trotzdem da, weil sonst nicht zu sehen
      * wäre, dass die fehlende Höhenangabe Absicht ist.
@@ -1617,7 +1626,7 @@
     height: auto;
 
     /*
-     * DER FUSS DER KARTE GEHÖRT DEN KOSTEN-ZEICHEN (seit v0.70.0). Die
+     * DER FUSS DER KARTE GEHÖRT DEN KOSTEN-ZEICHEN. Die
      * Innenkante unten nimmt dem Zeichen diese 11 Pixel weg, also sitzt es
      * mittig im oberen Teil — darunter bleibt der Streifen frei, in dem
      * Pluszeichen und Blitz stehen.
@@ -1629,7 +1638,7 @@
      * unter ihre Vorgängerin; die erste bleibt, wo sie ist. Der Schatten
      * trennt sie optisch, sonst verschwämmen die Umrandungen ineinander.
      *
-     * ES SIND 10 PIXEL STATT 12 (seit v0.70.0): Die Karte ist schmaler
+     * ES SIND 10 PIXEL STATT 12: Die Karte ist schmaler
      * geworden, das Zeichen darin aber nicht. Bei den alten 12 verschwände
      * ein Stück mehr davon unter der Nachbarkarte — so bleibt sichtbar, was
      * vorher sichtbar war. Nachgerechnet mit den 6 Pixeln Abstand der
@@ -1889,7 +1898,7 @@
 }
 
 /*
- * DIE DENK-BLASE (seit v0.152.4): neben dem Profil dessen, der am Zug ist —
+ * DIE DENK-BLASE: neben dem Profil dessen, der am Zug ist —
  * zwei kleine Punkte und eine Blase mit laufendem Kreis, in der Hauptfarbe.
  * Am eigenen runden Menü-Knopf sitzt sie oben rechts daran.
  */
@@ -2300,7 +2309,7 @@ body.partie-fest .schach > .hand-leiste {
 }
 
 /* ------------------------------------------------------------------ *
- * DIE ANLEITUNGS-BÜHNE (seit v0.135.0): eine 3D-Leinwand, die sich selbst
+ * DIE ANLEITUNGS-BÜHNE: eine 3D-Leinwand, die sich selbst
  * vorspielt (`BRETT_3D.buehne`), darunter nur die Punkte. Tippen hält an.
  * ------------------------------------------------------------------ */
 .anleitung-buehne .anleitung-bild {
@@ -2325,7 +2334,7 @@ body.partie-fest .schach > .hand-leiste {
     display: none;
 }
 
-/* Das rote Zeichen der letzten Falle neben dem Menü-Knopf (seit v0.136.0):
+/* Das rote Zeichen der letzten Falle neben dem Menü-Knopf:
    tippen = die Fallen-Szene noch einmal. */
 .falle-zeichen {
     width: 34px;
@@ -2347,7 +2356,7 @@ body.partie-fest .schach > .hand-leiste {
     height: 100%;
 }
 
-/* DIE ANGEBOTE DES HÄNDLERS in der Leiste (seit v0.136.0): Figurenbilder
+/* DIE ANGEBOTE DES HÄNDLERS in der Leiste: Figurenbilder
    statt Text, antippen = wählen, das gewählte grün umrandet. */
 .hand-angebote {
     display: flex;

@@ -36,7 +36,7 @@ const PROFIL = {
     /* Alte Kennungen im Konto-Feld (bis v0.155: „erster-sieg“ …) → neue („bl-erster-sieg“). */
     umdeuten(kennung) {
         const k = String(kennung || "");
-        if (typeof RANGLISTE !== "undefined" && RANGLISTE.ABZEICHEN.some((e) => e.id === k)) {
+        if (RANGLISTE.ABZEICHEN.some((e) => e.id === k)) {
             return "bl-" + k;
         }
         return k;
@@ -82,7 +82,7 @@ const PROFIL = {
 
     _gewaehlt() {
         const ich = ICH.person();
-        const daten = (typeof ANMELDUNG !== "undefined" && ANMELDUNG.abgleich) ? ANMELDUNG.abgleich.daten : null;
+        const daten = (ANMELDUNG.abgleich) ? ANMELDUNG.abgleich.daten : null;
         const spieler = (ich && daten) ? SPIELER.spielerFinden(daten, ich.id) : null;
         return (spieler && Array.isArray(spieler.abzeichen) ? spieler.abzeichen : []).map((k) => PROFIL.umdeuten(k));
     },
@@ -99,19 +99,19 @@ const PROFIL = {
 
     _eigeneDaten() {
         const ich = ICH.person();
-        const eintrag = (typeof ANMELDUNG !== "undefined" && typeof ANMELDUNG.ich === "function") ? ANMELDUNG.ich() : null;
+        const eintrag = (typeof ANMELDUNG.ich === "function") ? ANMELDUNG.ich() : null;
         const lv = FORTSCHRITT_KONTO.level();
         const rahmen = FORTSCHRITT.rahmenVon(lv.level);
         const alle = PROFIL.alleAbzeichen();
         const zeit = FORTSCHRITT_KONTO.spielzeit();
         const heute = FORTSCHRITT_KONTO.heute();
         const namen = (typeof RANGLISTE !== "undefined") ? RANGLISTE.SPIEL_NAMEN : {};
-        /* Spielzeit NUR dieses Spiels; die anderen und die Summe zeigt erst der Tipp (seit v0.157.2). */
+        /* Spielzeit NUR dieses Spiels; die anderen und die Summe zeigt erst der Tipp. */
         const andere = Object.keys(zeit.spiele).sort().filter((app) => app !== "blunderluck" && zeit.spiele[app] > 0)
             .map((app) => ({ spiel: namen[app] || app, wert: FORTSCHRITT.spielzeitText(zeit.spiele[app]) }));
         return {
             name: (eintrag && eintrag.name) || (ich ? ich.name : ""),
-            tag: (typeof KONTO !== "undefined" && typeof KONTO.tagZusatz === "function") ? KONTO.tagZusatz(eintrag) : "",
+            tag: (typeof KONTO.tagZusatz === "function") ? KONTO.tagZusatz(eintrag) : "",
             titel: FORTSCHRITT.titelVon(lv.level).name,
             level: lv.level,
             imLevel: Math.round(lv.imLevel),
@@ -248,9 +248,9 @@ const PROFIL = {
         const id = eigen ? ich.id : spielerId;
         if (eigen) {
             /* Das eigene Profil liegt über dem Start — offene Blätter gehen vorher zu. */
-            if (typeof TABS !== "undefined" && TABS.aktiveId !== "start") {
+            if (TABS.aktiveId !== "start") {
                 TABS.wechseln("start");
-            } else if (typeof TABS !== "undefined" && typeof TABS._blaetterStillSchliessen === "function") {
+            } else if (typeof TABS._blaetterStillSchliessen === "function") {
                 TABS._blaetterStillSchliessen();
             }
             PROFIL.abzeichenBuchen();
@@ -307,7 +307,7 @@ const PROFIL = {
     },
 
     /*
-     * DER GAST-HINWEIS AM LEVEL (seit v0.160.1). Ein Gast zählt nur auf dem
+     * DER GAST-HINWEIS AM LEVEL. Ein Gast zählt nur auf dem
      * Gerät (js\fortschritt-konto.js) — wer in einem anderen UPCrew-Spiel
      * mit Konto spielt und hier als Gast, sah Level 1 ohne jede Erklärung
      * (Befund 03.10.2026). EINE Zeile direkt unter dem Level-Balken, dort
@@ -317,7 +317,7 @@ const PROFIL = {
      * NACH seinem Zeichnen eingehängt; fehlt der Level-Abschnitt, ans Ende.
      */
     _istGast() {
-        const eintrag = (typeof ANMELDUNG !== "undefined" && typeof ANMELDUNG.ich === "function")
+        const eintrag = (typeof ANMELDUNG.ich === "function")
             ? ANMELDUNG.ich() : null;
         return !!(eintrag && eintrag.gast === true);
     },

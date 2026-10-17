@@ -3,12 +3,12 @@
  *
  * „Gross gedacht" (Nutzer-Entscheidung F13): Suchen, Anfrage stellen,
  * Annehmen, Ablehnen, Zurückziehen und Entfernen. Die Karte hing bis
- * v0.18.0 auf dem Zwischenbildschirm „Spielen"; seit Wunsch 6 (v0.19.0)
+ * v0.18.0 auf dem Zwischenbildschirm „Spielen"; seit Wunsch 6
  * wohnt sie am Freunde-Zeichen des Startbildschirms
  * (seit v0.157.0 nur noch Reiter „Freunde" der Rangliste,
  * `START.freundeOeffnen` leitet dorthin) — der Zwischenbildschirm ist seit Wunsch 1 nur
  * noch der Weg ins Beitreten. Fürs Einladen in eine laufende Runde bleibt
- * es bei der Liste an den Teams (v0.13.0).
+ * es bei der Liste an den Teams.
  *
  * Die DATEN-Regeln wohnen in spieler.js (Abschnitt „Freundschaft"): Jeder
  * schreibt nur die eigene Sicht (`freunde`, `abgelehnt`), die Beziehung
@@ -17,7 +17,7 @@
  * denn geändert wird ausschliesslich der eigene Eintrag.
  *
  * Die Freundeslisten sind öffentlich lesbar (docs\entscheidungen\offen-und-
- * abgelehnt.md, „Die offene Datenbank") — unter Regel §12 (seit v0.154.0)
+ * abgelehnt.md, „Die offene Datenbank") — unter Regel §12
  * nur noch für Angemeldete, im öffentlichen Auszug `spieler/oeffentlich`.
  */
 
@@ -37,14 +37,14 @@ const FREUNDE = {
      * Nummer „Level N" nur bei gleichen Namen — überholt.
      */
     _tagZusatz(spieler) {
-        return (typeof KONTO !== "undefined" && typeof KONTO.tagZusatz === "function")
+        return (typeof KONTO.tagZusatz === "function")
             ? KONTO.tagZusatz(spieler) : "";
     },
 
     /* Der Suchtext überlebt das Neuzeichnen der Karte. */
     suchtext: "",
 
-    /* Das Ergebnis der letzten Suche nach „Name#Nummer" (seit v0.154.0):
+    /* Das Ergebnis der letzten Suche nach „Name#Nummer":
        { eingabe, spieler | null, fehler }. Die Suche fragt die Datenbank
        (Regel §12: gezielt ein Namens-Platz) — erst, wenn Name und vier
        Zeichen Nummer dastehen. */
@@ -59,7 +59,7 @@ const FREUNDE = {
         kopf.textContent = "Freunde";
         karte.appendChild(kopf);
 
-        const daten = (typeof ANMELDUNG !== "undefined" && ANMELDUNG.abgleich)
+        const daten = (ANMELDUNG.abgleich)
             ? ANMELDUNG.abgleich.daten : null;
         if (!person || !daten) {
             karte.appendChild(ZUSTAND.leer({ zeichen: "menschen", text: "Nicht angemeldet" }));
@@ -285,11 +285,11 @@ const FREUNDE = {
            Reiter „Freunde" der Rangliste (die Seite am Start ist seit
            v0.157.0 weg); das Team Schach zeichnet mit, weil dort die
            Einladungen an den Teams hängen. */
-        if (typeof RANGLISTE !== "undefined" && RANGLISTE.ansicht === "freunde"
-                && typeof TABS !== "undefined" && TABS.aktiveId === "rangliste") {
+        if (RANGLISTE.ansicht === "freunde"
+                && TABS.aktiveId === "rangliste") {
             RANGLISTE.zeichnen();
         }
-        if (typeof TEAM_SCHACH !== "undefined" && TEAM_SCHACH.abgleich) {
+        if (TEAM_SCHACH.abgleich) {
             TEAM_SCHACH.zeichnen(TEAM_SCHACH.abgleich.daten);
         }
     },
@@ -298,7 +298,7 @@ const FREUNDE = {
      * Bausteine
      * ---------------------------------------------------------------- */
 
-    /* `id` (seit v0.119.0) macht den Namen zum Knopf ins Profil. */
+    /* `id` macht den Namen zum Knopf ins Profil. */
     _zeileBauen(name, knoepfe, id, nummer) {
         const zeile = document.createElement("div");
         zeile.className = "freunde-zeile";
@@ -307,7 +307,7 @@ const FREUNDE = {
            beisammen. */
         const wer = document.createElement("span");
         wer.className = "freunde-wer";
-        if (id && typeof TEAM_SCHACH !== "undefined" && TEAM_SCHACH._nameKnopfBauen) {
+        if (id && TEAM_SCHACH._nameKnopfBauen) {
             wer.appendChild(TEAM_SCHACH._nameKnopfBauen(id, "freunde-name"));
         } else {
             const beschriftung = document.createElement("span");

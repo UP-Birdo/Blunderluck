@@ -80,7 +80,7 @@ const INTRO = {
 
     /* Soll es jetzt kommen? */
     faellig() {
-        const werkstatt = typeof FREISCHALTUNG !== "undefined" && FREISCHALTUNG.werkstatt();
+        const werkstatt = FREISCHALTUNG.werkstatt();
         return INTRO.entscheiden({
             werkstatt: werkstatt,
             introSchalter: werkstatt && /[?&]intro(=|&|$)/.test(location.search || ""),
@@ -121,7 +121,7 @@ const INTRO = {
     },
 
     welt() {
-        const werkstatt = typeof FREISCHALTUNG !== "undefined" && FREISCHALTUNG.werkstatt();
+        const werkstatt = FREISCHALTUNG.werkstatt();
         const aussehen = (typeof UPCREW_AUSSEHEN !== "undefined") ? UPCREW_AUSSEHEN : null;
         const gewaehlt = aussehen ? aussehen.lesen().farbwelt : null;
         return INTRO.weltWaehlen({

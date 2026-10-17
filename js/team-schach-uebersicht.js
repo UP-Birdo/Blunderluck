@@ -56,7 +56,7 @@ Object.assign(TEAM_SCHACH, {
          * hat"). `zeichnen` hat die Leiste ein paar Zeilen vorher wieder
          * eingeschaltet — deshalb steht das hier und nicht dort.
          */
-        if (typeof TABS !== "undefined" && TABS.rundeSetzen) {
+        if (TABS.rundeSetzen) {
             TABS.rundeSetzen("team-schach", true);
         }
 
@@ -401,7 +401,7 @@ Object.assign(TEAM_SCHACH, {
         brett.appendChild(feld);
         seite.appendChild(brett);
 
-        /* Figuren je Seite — die Knöpfe mit Zahl und Muster (v0.115.1). */
+        /* Figuren je Seite — die Knöpfe mit Zahl und Muster. */
         seite.appendChild(TEAM_SCHACH._armeeStaerkeLeisteBauen());
 
         /* Aufstellung: gewohnt oder gewürfelt, und beim Würfeln gleich
@@ -590,7 +590,7 @@ Object.assign(TEAM_SCHACH, {
             })),
             String(Number.isInteger(regeln.itemMax) ? regeln.itemMax : SCHACH_VARIANTEN.ITEM_MAX_VORGABE),
             (id) => {
-                /* Selbst gewählt (seit v0.153.0): nur dann merkt sich das
+                /* Selbst gewählt: nur dann merkt sich das
                    Gerät die Grenze — siehe `START.regeln`. */
                 TEAM_SCHACH.neueRegeln.itemMaxGewaehlt = true;
                 TEAM_SCHACH._regelSetzen("itemMax", Number(id));
@@ -637,7 +637,7 @@ Object.assign(TEAM_SCHACH, {
         const karte = TEAM_SCHACH._element("section", "karte offene-runden");
         karte.appendChild(TEAM_SCHACH._element("h3", "", "Offene Runden"));
 
-        const spielerDaten = (typeof ANMELDUNG !== "undefined" && ANMELDUNG.abgleich)
+        const spielerDaten = (ANMELDUNG.abgleich)
             ? ANMELDUNG.abgleich.daten : null;
         const istFreund = (id) => !!spielerDaten
             && SPIELER.freundschaft(spielerDaten, person.id, id) === "freunde";
@@ -675,7 +675,7 @@ Object.assign(TEAM_SCHACH, {
             if (mitglieder.length === 0) {
                 wer.textContent = "Noch niemand";
             }
-            /* Jeder Name führt ins Profil (seit v0.119.0). */
+            /* Jeder Name führt ins Profil. */
             mitglieder.forEach((id, stelle) => {
                 if (stelle > 0) {
                     wer.appendChild(document.createTextNode(", "));
@@ -702,7 +702,7 @@ Object.assign(TEAM_SCHACH, {
     },
 
     /*
-     * DIE DAUER-ZEILE IM KLEBENDEN KOPF (seit v0.116.0).
+     * DIE DAUER-ZEILE IM KLEBENDEN KOPF.
      *
      * Dieselbe Rechnung wie unter der Spielart-Kachel (`SCHACH_RUNDE.dauerText`,
      * seit v0.93): erwartete Halbzüge aus Figurenzahl und Brettgrösse, mal
@@ -839,7 +839,7 @@ Object.assign(TEAM_SCHACH, {
             (eintrag) => eintrag.eigeneWahl);
         const aktiv = (TEAM_SCHACH.neueRegeln.itemVorrat === stufe.id);
 
-        /* Gezählt werden EINTRÄGE, nicht Fähigkeiten (seit v0.115.2): Das
+        /* Gezählt werden EINTRÄGE, nicht Fähigkeiten: Das
            Paar Enttarnen/Verstecken ist im Popup ein Eintrag, also muss
            der Knopf „19 von 19" sagen, nicht „20 von 20". */
         const eintraege = TEAM_SCHACH._itemEintraege();
@@ -901,7 +901,7 @@ Object.assign(TEAM_SCHACH, {
     },
 
     /*
-     * DIE EINTRÄGE DES POPUPS (seit v0.115.2) — je Stufe, und ein Eintrag
+     * DIE EINTRÄGE DES POPUPS — je Stufe, und ein Eintrag
      * kann ZWEI Fähigkeiten tragen.
      *
      * Nutzer-Ansage 18.09.2026: „Seltenheit anzeigen ja/nein sollen keine
@@ -979,7 +979,7 @@ Object.assign(TEAM_SCHACH, {
 
         TEAM_SCHACH._itemAuswahlFuellen(halter);
 
-        /* „Fertig" statt „Verstanden" (seit v0.151.10): Es ist eine
+        /* „Fertig" statt „Verstanden": Es ist eine
            Auswahl, keine Mitteilung. */
         DIALOG.hinweis("Welche Items?",
             "Angehakt = kommt vor · "
@@ -1014,7 +1014,7 @@ Object.assign(TEAM_SCHACH, {
         const drin = TEAM_SCHACH._itemEintragDrin(eintrag);
 
         /*
-         * EINE AN/AUS-KACHEL (seit v0.151.10). Bis dahin stand „[x] " bzw.
+         * EINE AN/AUS-KACHEL. Bis dahin stand „[x] " bzw.
          * „[ ] " als Text vor dem Namen — ein Überbleibsel aus der Zeit, als
          * die Liste noch Kästchen darstellte; auf dem Handy kam es als roher
          * Text in orangen Blöcken an (Nutzer-Bild 27.09.2026). Jetzt:
@@ -1190,7 +1190,7 @@ Object.assign(TEAM_SCHACH, {
     },
 
     /*
-     * DIE WECHSELNDE BOX (seit v0.115.3): ein Streifen aus allen Stufen-
+     * DIE WECHSELNDE BOX: ein Streifen aus allen Stufen-
      * Boxen plus einer Unglücks-Box in der ersten Stufenfarbe, der im
      * Kasten des Bildes Schritt für Schritt nach links fährt — reine CSS-
      * Animation (`lootbox-wechsel` in `css\stil-brett.css`), kein Zeitgeber,
@@ -1474,7 +1474,7 @@ Object.assign(TEAM_SCHACH, {
          * lernen; aufgefallen am 18.09.2026, als die Dauer-Zeile ihre
          * Quelle nennen sollte und der Test „2 gespielten Partien" an
          * `concat is not a function` scheiterte. `SCHACH_TAFEL.liste`
-         * ist der eine Weg von der Tabelle zur Liste (v0.116.0).
+         * ist der eine Weg von der Tabelle zur Liste.
          */
         return SCHACH_TAFEL.liste(daten);
     },
@@ -1532,7 +1532,7 @@ Object.assign(TEAM_SCHACH, {
                 "vorschau-feld " + (((reihe + spalte) % 2 === 0) ? "feld-hell" : "feld-dunkel"));
 
             if (ecken.indexOf(feld) !== -1) {
-                /* Dieselben zwei Klassen wie am echten Brett (v0.31.0):
+                /* Dieselben zwei Klassen wie am echten Brett:
                    `feld-ausserhalb` nimmt der Ecke die 3D-Kachel, sonst
                    stünden im Vorschaubild Plattenränder um nichts. */
                 zelle.classList.add("feld-riss");
@@ -1629,7 +1629,7 @@ Object.assign(TEAM_SCHACH, {
         const beitreten = TEAM_SCHACH._element("section", "karte");
         beitreten.appendChild(TEAM_SCHACH._element("h3", "", "Runde beitreten"));
 
-        /* Die Einladungen an mich (seit v0.13.0): Sie liegen hier, bis die
+        /* Die Einladungen an mich: Sie liegen hier, bis die
            Runde vorbei ist (F16a) — das Banner ist nur der Hinweis. */
         const einladungen = offene.filter((partie) =>
             SCHACH_RUNDE.istEingeladen(partie, person.id));
@@ -1648,7 +1648,7 @@ Object.assign(TEAM_SCHACH, {
         }
 
         /*
-         * DAS CODE-FELD IST EIN KÄSTCHEN-FELD (seit v0.51.0).
+         * DAS CODE-FELD IST EIN KÄSTCHEN-FELD.
          *
          * Nutzer-Ansage 24.08.2026: „Den Text anpassen bei Runde beitreten —
          * es reicht ‚rechts oben in einer Runde steht der Code' oder so, und
@@ -1715,7 +1715,7 @@ Object.assign(TEAM_SCHACH, {
 
         wurzel.appendChild(beitreten);
 
-        /* Die offenen Runden, die man sehen darf (seit v0.118.0). */
+        /* Die offenen Runden, die man sehen darf. */
         wurzel.appendChild(TEAM_SCHACH._offeneRundenBauen(tafel, person));
 
         /*
@@ -1734,7 +1734,7 @@ Object.assign(TEAM_SCHACH, {
            seit Wunsch 1 nur noch zum Beitreten. ---- */
 
         /*
-         * ---- „DEINE OFFENEN PARTIEN" IST WEG (v0.35.0). ----
+         * ---- „DEINE OFFENEN PARTIEN" IST WEG. ----
          *
          * Nutzer-Ansage 24.08.2026: „deine offenen partien es soll dort
          * eigentlich ja keine mehr geben, da man nur eine gleichzeitig offen
@@ -1766,7 +1766,7 @@ Object.assign(TEAM_SCHACH, {
             }
         }
 
-        /* ---- DIE BEENDETEN PARTIEN SIND UMGEZOGEN (v0.37.0). ----
+        /* ---- DIE BEENDETEN PARTIEN SIND UMGEZOGEN. ----
          *
          * Nutzer-Ansage 24.08.2026: „Die vergangenen Matches sollen auch
          * nicht bei Runde beitreten stehen sondern oben neben Freunde und

@@ -91,7 +91,7 @@ class Abgleich {
 
         this.daten = this.leereDaten();
 
-        /* Ist schon einmal ein echter Stand angekommen (seit v0.140.0)? Bis
+        /* Ist schon einmal ein echter Stand angekommen? Bis
            dahin ist `daten` nur der leere Anfangswert — ein Bildschirm zeigt
            dann den Lade-Platzhalter (ZUSTAND.laden), nicht „leer". */
         this.geladen = false;
@@ -100,7 +100,7 @@ class Abgleich {
         this.aenderungOffen = false;
         this.abfrageZeitgeber = null;
 
-        /* Fehlschläge beim Schreiben in Folge (seit v0.163.0) — bestimmt
+        /* Fehlschläge beim Schreiben in Folge — bestimmt
            die Wartezeit bis zum nächsten Versuch (`_wiederholungMs`). */
         this.schreibFehlschlaege = 0;
 
@@ -142,7 +142,7 @@ class Abgleich {
         this.vorgangsZaehler = 0;
 
         /*
-         * Die Marke des zuletzt ÜBERNOMMENEN Standes (seit v0.111.0) — siehe
+         * Die Marke des zuletzt ÜBERNOMMENEN Standes — siehe
          * `fremdenStandHolen`. `null` heisst „noch keine gesehen": Dann wird
          * geholt, ohne zu fragen. Nach jedem eigenen Schreibvorgang bleibt
          * sie absichtlich stehen; die Marke am Server ist dann höher, und
@@ -277,7 +277,7 @@ class Abgleich {
         }
 
         /*
-         * BEIM VERSCHWINDEN DER SEITE WIRD SOFORT GESCHRIEBEN (v0.91.0).
+         * BEIM VERSCHWINDEN DER SEITE WIRD SOFORT GESCHRIEBEN.
          *
          * Eine offene Änderung wartet sonst bis zu `schreibVerzoegerungMs`
          * (500 ms) — wer die Seite direkt nach dem Anlegen eines Kontos
@@ -312,7 +312,7 @@ class Abgleich {
             this.schreibZeitgeber = null;
         }
         if (this.aenderungOffen && !this.schreibtGerade) {
-            /* Das Versprechen geht zurück (seit v0.138.0): Das neue
+            /* Das Versprechen geht zurück: Das neue
                UPCrew-Konto wartet, bis sein Eintrag wirklich steht. */
             return this.schreiben();
         }
@@ -435,7 +435,7 @@ class Abgleich {
     }
 
     /*
-     * Ein Schlag des Zeitgebers (seit v0.152.5): Ist seit der letzten
+     * Ein Schlag des Zeitgebers: Ist seit der letzten
      * Abfrage der Takt des Bildschirms noch nicht um, bleibt er aus. Eine
      * Viertelsekunde Spiel, damit ein Takt, der genau ein Vielfaches des
      * Grundtakts ist, nicht an der Ungenauigkeit des Zeitgebers um einen
@@ -454,7 +454,7 @@ class Abgleich {
     }
 
     /*
-     * ZURÜCK IM VORDERGRUND (seit v0.160.1).
+     * ZURÜCK IM VORDERGRUND.
      *
      * WAS FEHLTE (gemessen am 03.10.2026, UEBERGABE.md): Nachgeholt wurde
      * nur, wenn die Marke `geaendertAm` gestiegen war. Ein anderes
@@ -578,7 +578,7 @@ class Abgleich {
         this.letzteAbfrage = Date.now();
 
         /* ---------------------------------------------------------------- *
-         * ERST NACHFRAGEN, DANN HOLEN (seit v0.111.0)
+         * ERST NACHFRAGEN, DANN HOLEN
          *
          * GEMESSEN AM 30.08.2026: Der volle Schach-Stand ist 193.800 Bytes,
          * geholt alle drei Sekunden — rund 233 MB je Gerät und Stunde, und
@@ -606,7 +606,7 @@ class Abgleich {
         let marke = null;
 
         /*
-         * GANZ ODER NUR EIN TEIL (seit v0.114.3): Ohne eigenen Ladeweg gibt
+         * GANZ ODER NUR EIN TEIL: Ohne eigenen Ladeweg gibt
          * es nur „ganz". Mit ihm fragt der Abgleich, ob gerade alles
          * gebraucht wird — beim Schach: keine Partie offen — und vergleicht
          * die Marke dann mit der des letzten VOLLEN Standes. Sonst reicht
@@ -658,7 +658,7 @@ class Abgleich {
         }
     }
 
-    /* `fehler` (seit v0.167.1): das Fehler-Objekt selbst, nicht nur sein
+    /* `fehler`: das Fehler-Objekt selbst, nicht nur sein
        Text — nur daran erkennt UPCREW_OFFLINE.istNetzFehler „kein Netz". */
     melden(status, text, technik, fehler) {
         if (this.beiStatus) {

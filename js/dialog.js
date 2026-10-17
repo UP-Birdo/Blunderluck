@@ -79,7 +79,7 @@ const DIALOG = {
      */
     fehler(titel, angaben) {
         const einstellung = angaben || {};
-        /* DAS ZEICHEN PASST ZUM GRUND (seit v0.152.3): Nur ein Netz- oder
+        /* DAS ZEICHEN PASST ZUM GRUND: Nur ein Netz- oder
            Datenbankfehler (es gibt eine technische Meldung) zeigt das
            durchgestrichene Netz; eine abgelehnte Regel („König im Schach",
            „Zu spät", „Kein Treffer") das Achtung-Dreieck. Bis v0.152.2 stand
@@ -256,7 +256,7 @@ const DIALOG = {
     /* Welche Passwort-Regel gilt: mit UPCrew-Konto die aus js\konto.js,
        sonst die alte aus js\spieler.js. */
     _passwortRegel() {
-        if (typeof KONTO !== "undefined" && KONTO.aktiv()) {
+        if (KONTO.aktiv()) {
             return { pruefen: KONTO.passwortPruefen, max: KONTO.PASSWORT_MAX };
         }
         return { pruefen: SPIELER.passwortPruefen, max: SPIELER.PASSWORT_MAX };

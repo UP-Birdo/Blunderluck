@@ -1,5 +1,5 @@
 /*
- * brett-3d-aussehen.js — WAS am 3D-Brett gilt, ohne three.js (seit v0.166.0).
+ * brett-3d-aussehen.js — WAS am 3D-Brett gilt, ohne three.js.
  *
  * ANLASS (Befund der Nacht 04.10.2026, Tabelle 2, Punkt B): Sammlung und Shop
  * fragen SYNCHRON nach dem geltenden Aussehen des 3D-Bretts (`aussehen`,
@@ -198,7 +198,7 @@ const BRETT_3D_AUSSEHEN = {
             || (typeof FREISCHALTUNG !== "undefined" && FREISCHALTUNG.werkstatt());
     },
 
-    /* Ein einzelnes Thema oder ein Figuren-Stil frei? (seit v0.147.0) Die
+    /* Ein einzelnes Thema oder ein Figuren-Stil frei? Die
        Antwort gibt js\freischaltung.js — der Turm schaltet sie je Ort frei. */
     stueckFrei(schluessel, wert) {
         if (typeof FREISCHALTUNG !== "undefined" && typeof FREISCHALTUNG.brettStueckFrei === "function") {

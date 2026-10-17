@@ -102,7 +102,7 @@ Object.assign(TEAM_SCHACH, {
         const karte = TEAM_SCHACH._element("section", "karte");
 
         /*
-         * ÜBERSCHRIFT LINKS, i RECHTS (seit v0.108.0) — der Einleitungssatz
+         * ÜBERSCHRIFT LINKS, i RECHTS — der Einleitungssatz
          * jeder Gruppe steht dahinter statt darüber. Vier Gruppen mal ein
          * Absatz waren vier Absätze, bevor der erste Inhalt kam.
          *

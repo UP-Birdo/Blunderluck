@@ -44,7 +44,7 @@
 
 const FORTSCHRITT_KONTO = {
 
-    /* Der gemeinsame Schlüssel aller UPCrew-Spiele (seit v0.150.0). */
+    /* Der gemeinsame Schlüssel aller UPCrew-Spiele. */
     SCHLUESSEL: "upcrew.fortschritt",
 
     /* Der Schlüssel bis v0.149.0 — wird einmalig übernommen (Umzug). */
@@ -94,7 +94,7 @@ const FORTSCHRITT_KONTO = {
     },
 
     /*
-     * DIE GEMERKTE PERSON DIESES GERÄTS (seit v0.167.0) — EIN Verhalten für
+     * DIE GEMERKTE PERSON DIESES GERÄTS — EIN Verhalten für
      * `_person()` und den frühen Abruf (`UPCREW_WER_SPIELT.starten` in
      * js\app.js): die gemerkte Spieler-Id (`ICH.person()`), aber NUR mit
      * echter Konto-Sitzung (`KONTO.angemeldet()`, keine Gast-Sitzung). Ist
@@ -110,7 +110,7 @@ const FORTSCHRITT_KONTO = {
                 || (typeof konto.istGastSitzung === "function" && konto.istGastSitzung())) {
             return null;
         }
-        const ich = (typeof ICH !== "undefined" && typeof ICH.person === "function") ? ICH.person() : null;
+        const ich = (typeof ICH.person === "function") ? ICH.person() : null;
         return (ich && typeof ich.id === "string" && ich.id !== "" && ich.id !== FORTSCHRITT_KONTO.GAST)
             ? ich.id : null;
     },
@@ -232,7 +232,7 @@ const FORTSCHRITT_KONTO = {
             return null;
         }
 
-        /* Ein Tagesbrett (seit v0.149.0) ist zugleich ein Versuch an der
+        /* Ein Tagesbrett ist zugleich ein Versuch an der
            Tagesaufgabe — im selben Schritt, also auch nur einmal. */
         let heute = null;
         const angabe = partie.regeln && partie.regeln.tagesbrett;
@@ -258,10 +258,13 @@ const FORTSCHRITT_KONTO = {
         FORTSCHRITT_KONTO._muenzenMelden(muenzen);
         /* Herzen und Rückfall des neuen Turms (seit v0.160.0, Gerät). */
         FORTSCHRITT_KONTO._turmNachPartie(partie, team, vorher);
+        const levelJetzt = FORTSCHRITT.levelAus(xpNachher);
         const ergebnis = {
             xp: xpNachher - xpVorher,
             levelVorher: FORTSCHRITT.levelAus(xpVorher).level,
-            levelNachher: FORTSCHRITT.levelAus(xpNachher).level
+            levelNachher: levelJetzt.level,
+            /* XP bis zum nächsten Level (seit v0.170.0): nur für die Zeile im Abschluss, nie gespeichert. */
+            bisLevel: Math.max(0, levelJetzt.kosten - levelJetzt.imLevel)
         };
         if (heute) {
             ergebnis.heute = heute;
@@ -279,7 +282,7 @@ const FORTSCHRITT_KONTO = {
     },
 
     /*
-     * Die Wertung einer TURM-Partie (seit v0.147.0): { schluessel, figuren,
+     * Die Wertung einer TURM-Partie: { schluessel, figuren,
      * ort, stufe } — oder null, wenn es keine Turm-Partie ist. Die Figuren
      * rechnet js\turm.js (Sieg = Bauer; Springer und König mit der
      * Genauigkeit, sobald die Wertung sie liefert).
@@ -463,7 +466,7 @@ const FORTSCHRITT_KONTO = {
         }
     },
 
-    /* Heute (seit v0.149.0): das Datum des Geräts, die Tagesaufgabe je
+    /* Heute: das Datum des Geräts, die Tagesaufgabe je
        Spiel und die Serie samt Schutz — alles für den Tab „Heute". */
     heute() {
         const stand = FORTSCHRITT_KONTO.lesen();
@@ -507,7 +510,7 @@ const FORTSCHRITT_KONTO = {
     },
 
     /* ---------------------------------------------------------------- *
-     * Serie ab Rundenstart, Münzen und Waren (seit v0.152.0)
+     * Serie ab Rundenstart, Münzen und Waren
      * ---------------------------------------------------------------- */
 
     /*
@@ -560,7 +563,7 @@ const FORTSCHRITT_KONTO = {
             const neu = FORTSCHRITT.turmFiguren(nachher)[turm.schluessel] || 0;
             if (neu > alt) {
                 summe += (neu - alt) * v.figur;
-                if (alt === 0 && typeof TURM !== "undefined" && TURM.istBoss(turm.ort, turm.stufe)) {
+                if (alt === 0 && TURM.istBoss(turm.ort, turm.stufe)) {
                     summe += v.boss;
                 }
             }
@@ -575,7 +578,7 @@ const FORTSCHRITT_KONTO = {
 
     /* Kurz einblenden: „+3 Münzen". */
     _muenzenMelden(betrag) {
-        if (betrag > 0 && typeof DIALOG !== "undefined" && typeof UPCREW_MUENZEN !== "undefined"
+        if (betrag > 0 && typeof UPCREW_MUENZEN !== "undefined"
                 && typeof DIALOG.kurzmeldung === "function") {
             DIALOG.kurzmeldung("+" + betrag + " " + UPCREW_MUENZEN.WAEHRUNG.name);
         }
