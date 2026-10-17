@@ -1596,6 +1596,12 @@ const TEAM_SCHACH = {
      * den Abschluss der alten (gebucht, gesehen).
      */
     nochmalMoeglich(partie) {
+        /* Freigabe-Kanal (seit v0.171.0): auf "aus" gestellt, gilt wieder
+           „Neu aufstellen“ wie bis v0.169.0 (Fussleiste), am Abschluss nur
+           „Zurück zur Übersicht“. */
+        if (typeof UPCREW_FREIGABE !== "undefined" && !UPCREW_FREIGABE.darf("nochmal")) {
+            return false;
+        }
         if (!partie || !partie.ergebnis || !SCHACH_BOT.istBotPartie(partie)) {
             return false;
         }

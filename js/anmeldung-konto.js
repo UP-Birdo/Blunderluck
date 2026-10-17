@@ -706,17 +706,32 @@ Object.assign(ANMELDUNG, {
         }
         const speicher = ANMELDUNG.abgleich.speicher;
         let ergebnis;
+        let wert = null;
         if (wie === "entfernen") {
             ergebnis = await KONTO.eintragEntfernen(speicher, spieler);
         } else if (wie === "freigeben") {
             ergebnis = await KONTO.freigeben(speicher, spieler);
         } else {
-            ergebnis = await KONTO.rolleSetzen(speicher, spieler.uid,
-                !KONTO.istAdmin(ANMELDUNG.abgleich.daten, spieler.uid));
+            /* Rollen (seit v0.171.0 mit „beta“): was genau geschrieben wird,
+               rechnet `rollenZiel` aus dem GELADENEN Stand — nie ein blindes
+               Umschalten (bis v0.170.0 machte der Admin-Knopf aus „beta“
+               „admin“ und löschte beim Nehmen jede Rolle). */
+            const ziel = ANMELDUNG.rollenZiel(ANMELDUNG.abgleich.daten, spieler.uid, wie);
+            if (ziel.grund) {
+                await DIALOG.hinweis("Nichts geändert", ziel.grund);
+                return false;
+            }
+            wert = ziel.wert;
+            if (wert === "admin" || (wert === null && wie === "admin-nehmen")) {
+                ergebnis = await KONTO.rolleSetzen(speicher, spieler.uid, wert === "admin");
+            } else {
+                const aenderungen = { geaendertAm: Date.now() };
+                aenderungen["rollen/" + spieler.uid] = wert;
+                ergebnis = await KONTO._schreiben(speicher, aenderungen, null);
+            }
         }
         if (!ergebnis.ok) {
-            await DIALOG.hinweis("Nicht gespeichert",
-                "Keine Berechtigung · oder kein Netz");
+            await DIALOG.hinweis("Nicht gespeichert", ANMELDUNG.rollenFehlerText(wert, ergebnis.text));
             return false;
         }
         await ANMELDUNG._kontoNachladen();
@@ -724,8 +739,81 @@ Object.assign(ANMELDUNG, {
         return true;
     },
 
-    rolleUmschalten(spielerId) {
-        return ANMELDUNG._kontoAdminAendern(spielerId, "rolle");
+    /* `wie`: "admin-geben" | "admin-nehmen" | "beta-geben" | "beta-nehmen".
+       Ohne `wie` (alter Aufruf): Admin geben oder nehmen nach dem Stand. */
+    rolleUmschalten(spielerId, wie) {
+        if (!wie) {
+            const spieler = SPIELER.spielerFinden(ANMELDUNG.abgleich.daten, spielerId);
+            wie = (spieler && ANMELDUNG._rolleWert(ANMELDUNG.abgleich.daten, spieler.uid) === "admin")
+                ? "admin-nehmen" : "admin-geben";
+        }
+        return ANMELDUNG._kontoAdminAendern(spielerId, wie);
+    },
+
+    /*
+     * BETA-ZUGANG (seit v0.171.0, Freigabe-Kanal, UPCrew bausteine\EINBAU-FREIGABE.md):
+     * UP#Plus vergibt in der Verwaltung neben „Admin“ die Rolle „beta“
+     * (`spieler/rollen/<uid>` = "beta"). Höchstens BETA_HOECHSTENS Konten —
+     * die Grenze hält die App, nicht die Datenbank. Admin schliesst Beta ein:
+     * der Beta-Knopf stuft einen Admin nie herab, „Admin nehmen“ löscht nur
+     * ein „admin“, nie ein „beta“.
+     */
+    BETA_HOECHSTENS: 10,
+
+    /* Der gespeicherte Wert: "admin" | "beta" | null. */
+    _rolleWert(daten, uid) {
+        const w = (uid && daten && daten.rollen && typeof daten.rollen === "object") ? daten.rollen[uid] : null;
+        return (w === "admin" || w === "beta") ? w : null;
+    },
+
+    /* Wie viele Konten die Rolle „beta“ tragen. */
+    betaAnzahl(daten) {
+        const rollen = (daten && daten.rollen && typeof daten.rollen === "object") ? daten.rollen : {};
+        return Object.keys(rollen).filter((uid) => rollen[uid] === "beta").length;
+    },
+
+    /* Rein: was ein Klick schreiben soll → { wert: "admin" | "beta" | null }
+       oder { grund } (nichts schreiben, kurz gesagt warum). */
+    rollenZiel(daten, uid, wie) {
+        if (!uid) {
+            return { grund: "Kein Konto" };
+        }
+        if (KONTO.istOberAdmin(daten, uid)) {
+            return { grund: "UP#Plus ist fest" };
+        }
+        const jetzt = ANMELDUNG._rolleWert(daten, uid);
+        if (wie === "admin-geben") {
+            return jetzt === "admin" ? { grund: "Schon Admin" } : { wert: "admin" };
+        }
+        if (wie === "admin-nehmen") {
+            return jetzt === "admin" ? { wert: null } : { grund: "Kein Admin" };
+        }
+        if (wie === "beta-geben") {
+            if (jetzt === "admin") {
+                return { grund: "Admin sieht Beta schon" };
+            }
+            if (jetzt === "beta") {
+                return { grund: "Schon Beta" };
+            }
+            if (ANMELDUNG.betaAnzahl(daten) >= ANMELDUNG.BETA_HOECHSTENS) {
+                return { grund: "Höchstens " + ANMELDUNG.BETA_HOECHSTENS + " Beta-Konten" };
+            }
+            return { wert: "beta" };
+        }
+        if (wie === "beta-nehmen") {
+            return jetzt === "beta" ? { wert: null } : { grund: "Kein Beta" };
+        }
+        return { grund: "Unbekannt" };
+    },
+
+    /* Die Meldung, wenn das Schreiben scheitert. Lehnt die Datenbank „beta“
+       ab (HTTP 400/401/403), fehlt die Regel mit Beta noch — die alte lässt
+       unter `rollen` nur "admin" zu. */
+    rollenFehlerText(wert, text) {
+        if (wert === "beta" && /HTTP 40[013]\b/.test(String(text || ""))) {
+            return "Regel mit Beta noch nicht eingespielt";
+        }
+        return "Keine Berechtigung · oder kein Netz";
     },
 
     /* Abmelden: Ein Gast verliert dabei alles — vorher fragen und sein

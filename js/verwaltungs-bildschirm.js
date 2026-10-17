@@ -115,6 +115,10 @@ const VERWALTUNGS_BILDSCHIRM = {
         erklaerung.textContent = "Alle UPCrew-Konten · Entfernen gilt in "
             + "ALLEN Spielen · samt Spielerliste und Rangliste";
         karte.appendChild(erklaerung);
+        const beta = mitKonto ? VERWALTUNGS_BILDSCHIRM._betaZeile() : null;
+        if (beta) {
+            karte.appendChild(beta);
+        }
         karte.appendChild(mitKonto
             ? VERWALTUNGS_BILDSCHIRM._kontoTabelleBauen()
             : VERWALTUNGS_BILDSCHIRM._tabelleBauen());
@@ -196,7 +200,7 @@ const VERWALTUNGS_BILDSCHIRM = {
                     ? UPCREW_MUENZEN.saldo(eintrag.fortschritt || null) : undefined
             }));
         return UPCREW_SPIELERLISTE.zeilen(spieler, {
-            rolle: (uid) => KONTO.rolleVon(daten, uid),
+            rolle: (uid) => VERWALTUNGS_BILDSCHIRM.rolleText(daten, uid),
             level: (stand) => ({ level: FORTSCHRITT.level(stand).level, xp: FORTSCHRITT.gesamtXp(stand) }),
             serie: serieVon,
             abzeichen: (stand) => {
@@ -271,6 +275,29 @@ const VERWALTUNGS_BILDSCHIRM = {
         };
     },
 
+    /* Die Rolle zum Anzeigen (seit v0.171.0 auch „Beta“): KONTO.rolleVon
+       kennt nur AboveAdmin und Admin und zeigte ein Beta-Konto als „-“. */
+    rolleText(daten, uid) {
+        const rolle = KONTO.rolleVon(daten, uid);
+        if (rolle) {
+            return rolle;
+        }
+        return (uid && daten && daten.rollen && daten.rollen[uid] === "beta") ? "Beta" : "";
+    },
+
+    /* „Beta-Konten · n / 10“ — nur UP#Plus (vergibt die Rolle). */
+    _betaZeile() {
+        const daten = ANMELDUNG.abgleich ? ANMELDUNG.abgleich.daten : null;
+        if (!KONTO.istOberAdmin(daten, KONTO.uid())) {
+            return null;
+        }
+        const p = document.createElement("p");
+        p.className = "erklaerung verwaltung-beta-zahl";
+        p.textContent = "Beta-Konten · " + ANMELDUNG.betaAnzahl(daten) + " / " + ANMELDUNG.BETA_HOECHSTENS
+            + " · sehen Neues früher";
+        return p;
+    },
+
     /* „N min" / „Nh+" aus dem Konto-Fortschritt, „–" ohne (Gast, alt). */
     spielzeitText(spieler) {
         if (typeof FORTSCHRITT === "undefined" || typeof FORTSCHRITT.spielzeitText !== "function"
@@ -304,7 +331,7 @@ const VERWALTUNGS_BILDSCHIRM = {
         for (const spieler of SPIELER.normalisieren(daten).spieler) {
             const binIch = spieler.uid === meineUid;
             const istOber = KONTO.istOberAdmin(daten, spieler.uid);
-            const rolle = KONTO.rolleVon(daten, spieler.uid);
+            const rolle = VERWALTUNGS_BILDSCHIRM.rolleText(daten, spieler.uid);
 
             const zeile = document.createElement("tr");
             if (binIch) {
@@ -339,7 +366,19 @@ const VERWALTUNGS_BILDSCHIRM = {
                         VERWALTUNGS_BILDSCHIRM._knopf(
                             rolle === "Admin" ? "Admin nehmen" : "Admin geben",
                             "knopf-still knopf-klein", null),
-                        () => ANMELDUNG.rolleUmschalten(spieler.id)));
+                        () => ANMELDUNG.rolleUmschalten(spieler.id,
+                            rolle === "Admin" ? "admin-nehmen" : "admin-geben")));
+                }
+                /* Beta (seit v0.171.0, nur UP#Plus): neben „Admin“. Ein Admin
+                   bekommt keinen Beta-Knopf — Admin schliesst Beta ein und wird
+                   darüber nie herabgestuft. */
+                if (binOberAdmin && spieler.gast !== true && rolle !== "Admin") {
+                    aktion.appendChild(DIALOG.zweiSchritt(
+                        VERWALTUNGS_BILDSCHIRM._knopf(
+                            rolle === "Beta" ? "Beta nehmen" : "Beta geben",
+                            "knopf-still knopf-klein verwaltung-beta", null),
+                        () => ANMELDUNG.rolleUmschalten(spieler.id,
+                            rolle === "Beta" ? "beta-nehmen" : "beta-geben")));
                 }
                 aktion.appendChild(DIALOG.zweiSchritt(
                     VERWALTUNGS_BILDSCHIRM._knopf("Entfernen",

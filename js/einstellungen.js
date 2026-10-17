@@ -383,10 +383,28 @@ const EINSTELLUNGEN = {
             EINSTELLUNGEN._lampeLoesen();
             EINSTELLUNGEN._lampeLoeser = UPCREW_OFFLINE.lampe(speicher.lampe);
         }
-        return { art: "ueber", zeilen: [
+        const zeilen = [
             { zeichen: "info", titel: "Über Blunderluck", unter: "von UPCrew", rechts: version },
             speicher
-        ] };
+        ];
+        /* Beta-Zugang (seit v0.171.0, Freigabe-Kanal): nur für Rolle beta/admin
+           sichtbar — Gast und alle anderen sehen die Zeile nicht. */
+        const rolle = EINSTELLUNGEN.betaRolle();
+        if (rolle) {
+            zeilen.push({ zeichen: "schild", titel: "Beta-Zugang",
+                unter: rolle === "admin" ? "Als Admin" : "Neues früher",
+                rechts: UPCREW_EINSTELLUNGEN.wert("Aktiv") });
+        }
+        return { art: "ueber", zeilen: zeilen };
+    },
+
+    /* Die Rolle aus dem Freigabe-Kanal: "beta" | "admin" | null (Gast, ohne Rolle, ohne Baustein). */
+    betaRolle() {
+        if (typeof UPCREW_FREIGABE === "undefined" || typeof UPCREW_FREIGABE.rolle !== "function") {
+            return null;
+        }
+        const r = UPCREW_FREIGABE.rolle();
+        return (r === "beta" || r === "admin") ? r : null;
     },
 
     /* 7. Ganz unten, rot und mit Rückfrage: das Konto löschen. */

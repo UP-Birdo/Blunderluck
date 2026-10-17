@@ -267,6 +267,10 @@
 
     <!-- Reihenfolge zählt: erst Einstellungen und Datenlogik, dann die
          Bausteine, zuletzt der Startpunkt. -->
+    <!-- Freigabe-Kanal (seit v0.171.0, Baustein der UPCrew, nur kopiert): VOR konfig.js,
+         die ihre Tabelle FREIGABEN gleich meldet, und vor konto.js /
+         speicher-konten.js, die die Rolle setzen. -->
+    <script src="js/freigabe.js"></script>
     <script src="js/konfig.js"></script>
     <!-- Anfass-Gefühl und die drei Zustände (UPCrew-Standard, seit
          v0.140.0) — früh, weil Dialog, Anmeldung und Bildschirme sie

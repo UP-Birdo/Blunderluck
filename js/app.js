@@ -369,6 +369,22 @@ const APP = {
 
         DIALOG.aufbauen(document.getElementById("dialog"));
 
+        /* Freigabe-Kanal (seit v0.171.0, js\freigabe.js): die Tabelle der
+           App melden; ändert sich die Rolle (Laden, Abmelden, Kontowechsel —
+           gesetzt vom Konto-Kern), zeichnen Einstellungen und Verwaltung neu.
+           Abschluss und Fussleiste fragen beim Zeichnen ohnehin. */
+        if (typeof UPCREW_FREIGABE !== "undefined") {
+            UPCREW_FREIGABE.tabelle(KONFIG.FREIGABEN);
+            UPCREW_FREIGABE.beiWechsel(() => {
+                if (typeof EINSTELLUNGEN !== "undefined" && EINSTELLUNGEN.beimOeffnen) {
+                    EINSTELLUNGEN.beimOeffnen();
+                }
+                if (typeof VERWALTUNGS_BILDSCHIRM !== "undefined" && VERWALTUNGS_BILDSCHIRM.beimOeffnen) {
+                    VERWALTUNGS_BILDSCHIRM.beimOeffnen();
+                }
+            });
+        }
+
         /* Jeder Knopf vibriert kurz beim Antippen (UPCrew-Standard, seit
            v0.140.0) — EIN Zuhörer für die ganze Seite, js\fuehlen.js. */
         FUEHLEN.einrichten(document);

@@ -84,7 +84,8 @@ Object.assign(TEAM_SCHACH, {
 
         /* Ohne Zahl sagt die Zeile, warum (seit v0.170.0) — nur wenn wirklich gewertete Züge da sind, aber
            weniger als WERTUNG.MINDEST_ZUEGE; fehlt der Eintrag (kein Zug, Rechner ausgefallen), bleibt sie still. */
-        if (!rechnet && typeof w.genauigkeit !== "number" && w.gewertet > 0) {
+        if (!rechnet && typeof w.genauigkeit !== "number" && w.gewertet > 0
+                && (typeof UPCREW_FREIGABE === "undefined" || UPCREW_FREIGABE.darf("turm-zu-wenige-zuege"))) {
             block.appendChild(TEAM_SCHACH._element("p", "wertung-glueck wertung-zu-kurz",
                 "zu wenige Züge · ab " + WERTUNG.MINDEST_ZUEGE + " Zügen"));
         }
@@ -124,7 +125,8 @@ Object.assign(TEAM_SCHACH, {
                 UPCREW_LEVELPFAD.knopf(level, () => FORTSCHRITT_KONTO.level());
             }
             zeile.appendChild(level);
-        } else if (gewinn.bisLevel > 0 && gewinn.levelNachher > 0) {
+        } else if (gewinn.bisLevel > 0 && gewinn.levelNachher > 0
+                && (typeof UPCREW_FREIGABE === "undefined" || UPCREW_FREIGABE.darf("xp-bis-level"))) {
             /* Kein neues Level: wie weit es noch ist (seit v0.170.0). */
             zeile.appendChild(TEAM_SCHACH._element("span", "abschluss-xp-rest",
                 "noch " + gewinn.bisLevel + " XP bis Level " + (gewinn.levelNachher + 1)));
