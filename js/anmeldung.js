@@ -760,7 +760,7 @@ const ANMELDUNG = {
         if (wahl === "name") {
             await ANMELDUNG.namenAendern(ich);
         } else if (wahl === "nummer") {
-            await ANMELDUNG.nummerAendern(ich);
+            await UPCREW_KONTO.nummerAendern();
         } else if (wahl === "passwort") {
             await ANMELDUNG.passwortAendern(ich);
         }
@@ -770,16 +770,16 @@ const ANMELDUNG = {
        nicht für Gäste; sonst eine leere Liste. */
     _nummerEintrag(ich) {
         if (!ich || ich.gast === true || typeof KONTO === "undefined" || !KONTO.aktiv()
-                || typeof ANMELDUNG.nummerAendern !== "function") {
+                || typeof UPCREW_KONTO === "undefined") {
             return [];
         }
         return [{ beschriftung: "Nummer ändern", hinweis: "Zurzeit #" + ich.tag, wert: "nummer" }];
     },
 
     async namenAendern(ich) {
-        /* Mit UPCrew-Konto: Name mit Nummer (anmeldung-konto.js). */
+        /* Mit UPCrew-Konto: der Baustein js\upcrew-konto.js (seit v0.172.0). */
         if (KONTO.aktiv()) {
-            await ANMELDUNG._kontoNameAendern(ich);
+            await UPCREW_KONTO.nameAendern();
             return;
         }
 
@@ -822,7 +822,7 @@ const ANMELDUNG = {
      */
     async passwortAendern(ich) {
         if (KONTO.aktiv()) {
-            await ANMELDUNG._kontoPasswortAendern(ich);
+            await UPCREW_KONTO.passwortAendern();
             return;
         }
 
@@ -905,82 +905,21 @@ const ANMELDUNG = {
     /* ---------------------------------------------------------------- *
      * Verwaltung
      *
-     * Ein Zugang für denjenigen, der die Runde betreut: Er darf Spieler aus
-     * der Runde entfernen — etwa jemanden, der sich doppelt angemeldet oder
-     * seine PIN vergessen hat. Auch das Löschen fremder Partien im Schach
-     * hängt an diesem Zugang (VERWALTUNG.verlangen).
-     *
-     * Bis v0.99.0 SCHALTETE der Knopf in den Einstellungen nur um
-     * (verwaltungUmschalten), und die Mitspieler-Liste hing in der
-     * Spieler-Karte. Seitdem ÖFFNET er den eigenen Verwaltungs-Bildschirm
-     * (js\verwaltungs-bildschirm.js) — die Passwort-Abfrage davor ist
-     * unverändert VERWALTUNG.verlangen; beendet wird die Freischaltung
-     * über den Knopf auf dem Bildschirm (verwaltungBeenden).
+     * Der Zugang für Admins (Rolle des UPCrew-Kontos): Spieler entfernen,
+     * Rollen, fremde Partien löschen. Seit v0.173.0 NUR über den
+     * gemeinsamen Baustein js\upcrew-verwaltung.js (Einstellungen › Admin,
+     * wie in Typoluck und Kaffekasse); gezeichnet im eigenen Blatt
+     * js\verwaltungs-bildschirm.js. Der Altweg ohne Konto (Freischaltung
+     * mit VERWALTUNG.verlangen, alte Tabelle, „Verwaltung beenden“) ist weg.
      * ---------------------------------------------------------------- */
 
+    /* Haken `verwaltungOeffnen` des Bausteins upcrew-konto. */
     async verwaltungOeffnen() {
-        /* Mit UPCrew-Konto zählt die ROLLE des angemeldeten Kontos (Admin
-           oder UP#Plus) — kein Extra-Passwort (Nutzer 25.09.2026). */
-        if (KONTO.aktiv()) {
-            if (ANMELDUNG.istAdmin()) {
-                TABS.wechseln("verwaltung");
-            } else {
-                await DIALOG.hinweis("Nur für Admins",
-                    "Rolle Admin nötig");
-            }
+        if (ICH.verwaltungAktiv()) {
+            TABS.wechseln("verwaltung");
             return;
         }
-
-        if (!ICH.verwaltungAktiv()) {
-            const darf = await VERWALTUNG.verlangen(
-                "Verwaltung",
-                "Spieler entfernen · fremde Partien löschen"
-            );
-            if (!darf) {
-                return;
-            }
-        }
-
-        TABS.wechseln("verwaltung");
-    },
-
-    /* Schliesst die Freischaltung auf diesem Gerät sichtbar wieder und führt
-       zurück in die Einstellungen (der Knopf dafür hängt auf dem
-       Verwaltungs-Bildschirm). */
-    verwaltungBeenden() {
-        ICH.verwaltungSetzen(false);
-        ANMELDUNG._anzeigenAuffrischen();
-        TABS.wechseln("einstellungen");
-    },
-
-    /* Entfernt einen Spieler (nur mit aktiver Verwaltung aufrufbar — die
-       Knöpfe dafür baut einstellungen.js). Betrifft absichtlich einen
-       fremden Eintrag: ohne Zusammenführung schreiben. */
-    spielerEntfernen(spielerId) {
-        /* Mit UPCrew-Konto: nur dieser eine Knoten, und nur
-           mit den Rechten des Admin-Kontos (Regeln). */
-        if (KONTO.aktiv()) {
-            return ANMELDUNG._kontoAdminAendern(spielerId, "entfernen");
-        }
-
-        ANMELDUNG.abgleich.aendern(
-            SPIELER.spielerEntfernen(ANMELDUNG.abgleich.daten, spielerId),
-            true,
-            true
-        );
-        ANMELDUNG._anzeigenAuffrischen();
-    },
-
-    /*
-     * Zum Neu-Verbinden freigeben (seit v0.138.0, „Passwort vergessen"):
-     * Der Eintrag bekommt `neuVerbinden: true`. Meldet sich die Person danach
-     * mit Name#Nummer an, legt sie ein neues Passwort fest und behält alles
-     * (KONTO.neuVerbinden). Solange die Freigabe steht, könnte das JEDER mit
-     * diesem Namen und dieser Nummer — also erst freigeben, wenn die Person
-     * bereitsteht.
-     */
-    neuVerbindenFreigeben(spielerId) {
-        return ANMELDUNG._kontoAdminAendern(spielerId, "freigeben");
+        await DIALOG.hinweis("Nur für Admins", "Rolle Admin nötig");
     },
 
     /* ---------------------------------------------------------------- *
@@ -1000,10 +939,10 @@ const ANMELDUNG = {
         if (!ANMELDUNG.ichId) {
             return;
         }
-        /* Mit UPCrew-Konto: Sitzung vergessen, ein Gast wird vorher gefragt
-           (anmeldung-konto.js). */
+        /* Mit UPCrew-Konto: der Baustein (seit v0.172.0) — fragt immer, ein
+           Gast wird gewarnt und samt Eintrag weggeräumt. */
         if (KONTO.aktiv()) {
-            return ANMELDUNG._kontoAbmelden();
+            return UPCREW_KONTO.abmelden();
         }
         ICH.personVergessen();
         ANMELDUNG._ichIdSetzen(null);
@@ -1029,7 +968,7 @@ const ANMELDUNG = {
 
         /* Mit UPCrew-Konto: Eintrag UND Firebase-Konto. */
         if (KONTO.aktiv()) {
-            return ANMELDUNG._kontoLoeschen(ich);
+            return UPCREW_KONTO.kontoLoeschen();
         }
 
         const id = ich.id;
@@ -1064,8 +1003,8 @@ const ANMELDUNG = {
         if (typeof EINSTELLUNGEN !== "undefined" && EINSTELLUNGEN.beimOeffnen) {
             EINSTELLUNGEN.beimOeffnen();
         }
-        /* Auch die Spieler-Tabelle der Verwaltung — nach dem Entfernen
-           eines Spielers muss seine Zeile sofort verschwinden. */
+        /* Auch die Verwaltung — nach dem Entfernen eines Spielers muss
+           seine Zeile sofort verschwinden. */
         if (typeof VERWALTUNGS_BILDSCHIRM !== "undefined"
                 && VERWALTUNGS_BILDSCHIRM.beimOeffnen) {
             VERWALTUNGS_BILDSCHIRM.beimOeffnen();

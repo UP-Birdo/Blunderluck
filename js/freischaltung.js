@@ -81,8 +81,8 @@ const FREISCHALTUNG = {
         return FORTSCHRITT_KONTO.turmOrt();
     },
 
-    /* Die Admin-Freigabe „Brett-Anpassung" (Verwaltung auf diesem Gerät
-       UND der Schalter an) — dieselbe Frage wie `anpassungErlaubt` im
+    /* Die Admin-Freigabe „Brett-Anpassung" (Admin-Rolle des Kontos
+       UND der Schalter auf diesem Gerät an) — dieselbe Frage wie `anpassungErlaubt` im
        3D-Brett. */
     adminAnpassung() {
         return typeof ICH !== "undefined" && typeof ICH.verwaltungAktiv === "function"

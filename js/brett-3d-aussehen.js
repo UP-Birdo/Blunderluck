@@ -178,8 +178,9 @@ const BRETT_3D_AUSSEHEN = {
      * DAS AUSSEHEN STELLT NUR DER ADMIN UM (seit v0.129.0, Nutzer-Ansage
      * 24.09.2026: „die Farben-Einstellungen nur der Admin — in den
      * Admin-Einstellungen ein Anpassungs-Knopf an/aus"). Zu sehen ist der
-     * Paletten-Knopf nur, wenn auf diesem Gerät die Verwaltung freigeschaltet
-     * UND dort „Brett-Anpassung" eingeschaltet ist (`ICH.anpassungAn`).
+     * Paletten-Knopf nur, wenn das Konto die Admin-Rolle hat
+     * (`ICH.verwaltungAktiv`) UND in der Verwaltung auf diesem Gerät
+     * „Brett-Anpassung" eingeschaltet ist (`ICH.anpassungAn`).
      */
     anpassungErlaubt() {
         return typeof ICH !== "undefined" && !!ICH.verwaltungAktiv && ICH.verwaltungAktiv()

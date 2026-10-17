@@ -7,9 +7,9 @@
  * Start (js\upcrew-blatt.js). Die Reihenfolge der Abschnitte legt der
  * Baustein fest:
  *
- *   1. UPCREW-KONTO · ALLE SPIELE — wer angemeldet ist (Name, klein #Tag,
- *      Rolle), Spielstand sichern (nur Gast), Name, Nummer, Passwort
- *      ändern, Abmelden.
+ *   1. UPCREW-KONTO · ALLE SPIELE — seit v0.172.0 aus dem Baustein
+ *      js\upcrew-konto.js (dazu Admin und Gefahr); hier nur die Haken
+ *      (`kontoEinrichten`).
  *   2. AUSSEHEN — Darstellung (Auto / Hell / Dunkel, js\darstellung.js)
  *      und der Weg in die Sammlung (der Schalter „Standard-Schrift" ist
  *      seit v0.157.0 weg, Nutzer 29.09.2026).
@@ -24,7 +24,7 @@
  * KURZE TEXTE (seit v0.157.0, Nutzer 29.09.2026: „zu viele texte sätze"):
  * `unter` höchstens 3 Wörter, `hinweis` höchstens 6 — Längeres zeigt der
  * Baustein ohnehin nicht.
- *   8. ganz unten, rot, mit Rückfrage: UPCrew-Konto löschen.
+ *   8. ganz unten, rot, mit Rückfrage: UPCrew-Konto löschen (Baustein).
  *
  * Bis v0.155 drei Karten „Dieses Gerät", „UPCrew-Konto", „Über
  * Blunderluck" (seit v0.143.0 im Typoluck-Stil).
@@ -141,8 +141,10 @@ const EINSTELLUNGEN = {
      * Abschnitt „Nur in Blunderluck".
      */
     abschnitte() {
-        return [
-            EINSTELLUNGEN._kontoAbschnitt(),
+        /* Konto, Admin, Gefahr aus dem Baustein (seit v0.172.0; seit
+           v0.173.0 ohne Altweg: die Zeile „Verwaltung“ nur für Admins). */
+        const konto = EINSTELLUNGEN.kontoEinrichten() ? UPCREW_KONTO.abschnitte() : [];
+        return konto.concat([
             EINSTELLUNGEN._aussehenAbschnitt(),
             EINSTELLUNGEN._privatAbschnitt(),
             EINSTELLUNGEN._spielAbschnitt(),
@@ -150,66 +152,114 @@ const EINSTELLUNGEN = {
                 { zeichen: "hilfe", titel: "Wunsch oder Fehler melden", rechts: "pfeil",
                     beiKlick: () => WUNSCH.oeffnen() }
             ] },
-            EINSTELLUNGEN._adminAbschnitt(),
-            EINSTELLUNGEN._ueberAbschnitt(),
-            EINSTELLUNGEN._gefahrAbschnitt()
-        ];
+            EINSTELLUNGEN._ueberAbschnitt()
+        ]);
     },
 
     /* ---------------------------------------------------------------- *
-     * 1. Das UPCrew-Konto
-     *
-     * Gezeichnet wird nur mit ICH (Gerätespeicher) und dem, was ANMELDUNG
-     * schon weiss; ANMELDUNG wird sonst erst in den Klick-Behandlern
-     * angefasst — so bleibt der Bildschirm auch ohne die Anmelde-Schicht
-     * zeichenbar (Regressionstest gegen das nachgebaute DOM).
-     *
-     * Abmelden und Löschen bleiben ZWEI Knöpfe mit sehr verschiedener
-     * Tragweite (Bündel A, Schritt 1): Abmelden vergisst nur die Anmeldung
-     * auf diesem Gerät, Löschen nimmt das Konto aus ALLEN UPCrew-Spielen.
-     * Deshalb ist nur Löschen rot, steht ganz unten und fragt nach.
+     * 1. Das UPCrew-Konto — seit v0.172.0 der gemeinsame Baustein
+     *    js\upcrew-konto.js (Abschnitte Konto, Admin, Gefahr; Texte und
+     *    Abläufe gleich in allen UPCrew-Apps, EINBAU-VERWALTUNG.md). Hier
+     *    stehen nur die HAKEN von Blunderluck — dasselbe Objekt nimmt auch
+     *    die Verwaltung (js\upcrew-verwaltung.js).
      * ---------------------------------------------------------------- */
 
-    _kontoEintrag() {
-        const mitKonto = (KONTO.aktiv()
-            && ANMELDUNG.abgleich);
-        return mitKonto ? ANMELDUNG.ich() : null;
+    _kontoEingerichtet: false,
+
+    /* Richtet beide Bausteine einmal ein (gerufen aus app.js und beim
+       Zeichnen). Liefert, ob der Baustein bereit ist. */
+    kontoEinrichten() {
+        if (typeof UPCREW_KONTO === "undefined") {
+            return false;
+        }
+        if (EINSTELLUNGEN._kontoEingerichtet) {
+            return true;
+        }
+        UPCREW_KONTO.einrichten({
+            app: "Blunderluck",
+            daten: () => (ANMELDUNG.abgleich ? ANMELDUNG.abgleich.daten : null),
+            speicher: () => (ANMELDUNG.abgleich ? ANMELDUNG.abgleich.speicher : null),
+            nachladen: () => ANMELDUNG._kontoNachladen(),
+            nachAbmelden: async () => {
+                ICH.personVergessen();
+                ANMELDUNG._ichIdSetzen(null);
+                ANMELDUNG.anmelden();
+            },
+            ich: () => (ANMELDUNG.abgleich ? ANMELDUNG.ich() : null),
+            nachLoeschen: async () => {
+                ICH.personVergessen();
+                ANMELDUNG._ichIdSetzen(null);
+                await ANMELDUNG._kontoNachladen();
+                ANMELDUNG.anmelden();
+            },
+            nachGastSichern: (eintrag) => {
+                if (eintrag) {
+                    ANMELDUNG._uebernehmen(eintrag);
+                }
+                /* Spielzeit, „dabei seit“ und der übrige Gast-Stand vom Gerät
+                   ziehen mit (seit v0.155.0), der Besitz aus dem Shop an
+                   derselben Stelle und auf dieselbe Art. */
+                if (typeof FORTSCHRITT_KONTO !== "undefined") {
+                    FORTSCHRITT_KONTO.gastUebernehmen();
+                }
+                if (typeof BESITZ !== "undefined") {
+                    BESITZ.gastUebernehmen();
+                }
+            },
+            nachKonto: (art, eintrag) => {
+                if (art === "name" && eintrag) {
+                    ICH.personSetzen(eintrag.id, eintrag.name);
+                }
+                ANMELDUNG._anzeigenAuffrischen();
+            },
+            verwaltungOeffnen: () => ANMELDUNG.verwaltungOeffnen(),
+            verwaltungSichtbar: () => typeof UPCREW_FREIGABE === "undefined"
+                || UPCREW_FREIGABE.darf("verwaltung"),
+            spalten: [
+                { titel: "Freunde", wert: (spieler) => String(Array.isArray(spieler.freunde) ? spieler.freunde.length : 0) },
+                { titel: "Spielzeit", wert: (spieler) => EINSTELLUNGEN.spielzeitText(spieler) }
+            ],
+            spielerWerte: EINSTELLUNGEN.spielerWerte(),
+            spiel: () => VERWALTUNGS_BILDSCHIRM._spielAbschnitt(),
+            nachAenderung: () => ANMELDUNG._anzeigenAuffrischen()
+        });
+        /* Kurzmeldungen wie im übrigen Blunderluck (erlaubt laut Einbau). */
+        if (typeof DIALOG !== "undefined" && typeof DIALOG.kurzmeldung === "function") {
+            UPCREW_KONTO.dialog.kurzmeldung = (text) => DIALOG.kurzmeldung(text);
+        }
+        EINSTELLUNGEN._kontoEingerichtet = true;
+        return true;
     },
 
-    _kontoAbschnitt() {
-        const person = ICH.person();
-        if (!person) {
-            return { art: "konto", zeilen: [{ zeichen: "person", titel: "Nicht angemeldet" }] };
+    /* „N min" / „Nh+" aus dem Konto-Fortschritt, „–" ohne (Gast, alt) —
+       Spalte „Spielzeit“ der Verwaltung (Admins sehen sie immer). */
+    spielzeitText(spieler) {
+        if (typeof FORTSCHRITT === "undefined" || typeof FORTSCHRITT.spielzeitText !== "function"
+                || !spieler || !spieler.fortschritt) {
+            return "–";
         }
+        return FORTSCHRITT.spielzeitText(FORTSCHRITT.spielzeitSumme(spieler.fortschritt));
+    },
 
-        /* Mit UPCrew-Konto: Name MIT Nummer und die Rolle;
-           ein Gast sieht, dass sein Stand nur hier liegt. */
-        const eintrag = EINSTELLUNGEN._kontoEintrag();
-        const rolle = eintrag ? KONTO.rolleVon(ANMELDUNG.abgleich.daten, eintrag.uid) : "";
-        const zeilen = [{
-            zeichen: "person",
-            titel: eintrag ? eintrag.name : person.name,
-            tag: eintrag ? KONTO.tagZusatz(eintrag) : "",
-            unter: (eintrag && eintrag.gast === true) ? "Gast · dieses Gerät" : (rolle || "Angemeldet"),
-            klasse: "einstellungen-ich"
-        }];
-
-        if (eintrag && eintrag.gast === true) {
-            zeilen.push({ zeichen: "hoch", titel: "Spielstand sichern", unter: "Konto anlegen",
-                rechts: "pfeil", beiKlick: () => ANMELDUNG.gastSichernOeffnen() });
-        }
-        if (eintrag && eintrag.gast !== true) {
-            zeilen.push({ zeichen: "person", titel: "Name ändern", rechts: "pfeil",
-                beiKlick: () => ANMELDUNG.namenAendern(ANMELDUNG.ich()) });
-            if (typeof ANMELDUNG.nummerAendern === "function") {
-                zeilen.push({ zeichen: "liste", titel: "Nummer ändern", rechts: "pfeil",
-                    beiKlick: () => ANMELDUNG.nummerAendern(ANMELDUNG.ich()).then(() => EINSTELLUNGEN._zeichnen()) });
-            }
-            zeilen.push({ zeichen: "schloss", titel: "Passwort ändern", rechts: "pfeil",
-                beiKlick: () => ANMELDUNG.passwortAendern(ANMELDUNG.ich()) });
-        }
-        zeilen.push({ zeichen: "verlassen", titel: "Abmelden", beiKlick: () => ANMELDUNG.abmelden() });
-        return { art: "konto", zeilen: zeilen };
+    /* Die Rechner der Spielerliste (seit v0.152.1): Level und Serie
+       (FORTSCHRITT, über alle Zweige, ohne Serien-Schutz), Abzeichen
+       (UPCREW_ABZEICHEN), Münzen (UPCREW_MUENZEN, Saldo über alle Zweige —
+       ehrlich, also auch ein kurzes Minus). */
+    spielerWerte() {
+        const serie = (stand) => FORTSCHRITT.serie(stand, FORTSCHRITT.datumVon(Date.now()), 0).tage;
+        return {
+            level: (stand) => ({ level: FORTSCHRITT.level(stand).level, xp: FORTSCHRITT.gesamtXp(stand) }),
+            serie: serie,
+            abzeichen: (stand) => {
+                if (typeof UPCREW_ABZEICHEN === "undefined") {
+                    return null;
+                }
+                const liste = UPCREW_ABZEICHEN.liste(FORTSCHRITT.normalisieren(stand), serie(stand));
+                return { erreicht: liste.filter((e) => e.erreicht > 0).length, alle: liste.length };
+            },
+            muenzen: (eintrag) => ((typeof UPCREW_MUENZEN !== "undefined")
+                ? UPCREW_MUENZEN.saldo(eintrag.fortschritt || null) : undefined)
+        };
     },
 
     /* ---------------------------------------------------------------- *
@@ -306,23 +356,6 @@ const EINSTELLUNGEN = {
     },
 
     /* ---------------------------------------------------------------- *
-     * 5. Admin — EIN Eintrag statt einer eingebetteten Mitspieler-Liste
-     *   . Mit UPCrew-Konto nur für Admins (seit v0.138.0;
-     *    ICH fragt dann die Rolle). Die Verwaltung öffnet als Blatt darüber.
-     * ---------------------------------------------------------------- */
-
-    _adminAbschnitt() {
-        const nurAdmins = (KONTO.aktiv());
-        if (nurAdmins && !ICH.verwaltungAktiv()) {
-            return { art: "admin", zeilen: [] };
-        }
-        return { art: "admin", zeilen: [
-            { zeichen: "werkzeug", titel: "Verwaltung", unter: "nur Admin", rechts: "pfeil",
-                beiKlick: () => ANMELDUNG.verwaltungOeffnen() }
-        ] };
-    },
-
-    /* ---------------------------------------------------------------- *
      * 6. Über Blunderluck — Version und Verbindung
      *
      * Die Versionsanzeige (seit v0.25.0 hier) steht wie in Typoluck ohne
@@ -405,20 +438,6 @@ const EINSTELLUNGEN = {
         }
         const r = UPCREW_FREIGABE.rolle();
         return (r === "beta" || r === "admin") ? r : null;
-    },
-
-    /* 7. Ganz unten, rot und mit Rückfrage: das Konto löschen. */
-    _gefahrAbschnitt() {
-        if (!ICH.person()) {
-            return { art: "gefahr", zeilen: [] };
-        }
-        const knopf = EINSTELLUNGEN._element("button", "up-es-zeile up-es-gefahr", "UPCrew-Konto löschen");
-        knopf.type = "button";
-        return { art: "gefahr", zeilen: [], inhalt: (() => {
-            const gruppe = EINSTELLUNGEN._element("div", "up-es-gruppe");
-            gruppe.appendChild(DIALOG.zweiSchritt(knopf, () => ANMELDUNG.austreten()));
-            return gruppe;
-        })() };
     },
 
     /* Gerufen beim Zeichnen und aus APP.statusZeigen, solange die Karte

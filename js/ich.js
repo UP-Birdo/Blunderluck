@@ -1,8 +1,8 @@
 /*
  * ich.js — was nur auf DIESEM Gerät liegt.
  *
- * Wer ich bin (Kennung und Name), ob die Verwaltung an diesem Gerät offen
- * ist, und welche Partie-Abschlüsse dieses Gerät schon gesehen hat. Kein
+ * Wer ich bin (Kennung und Name), ob die Brett-Anpassung an ist, und
+ * welche Partie-Abschlüsse dieses Gerät schon gesehen hat. Kein
  * Konto, kein Passwort — die PIN-Prüfsummen liegen im gemeinsamen Stand
  * (spieler.js), nie hier.
  *
@@ -13,7 +13,6 @@
 const ICH = {
 
     SCHLUESSEL_PERSON: "blunderluck.ich",
-    SCHLUESSEL_VERWALTUNG: "blunderluck.verwaltung",
     SCHLUESSEL_ANPASSUNG: "blunderluck.anpassung",
     SCHLUESSEL_ABSCHLUSS: "blunderluck.abschluss-gesehen",
     SCHLUESSEL_VIBRATION: "blunderluck.vibration",
@@ -46,27 +45,22 @@ const ICH = {
     /* ---------------------------------------------------------------- *
      * Verwaltung
      *
-     * Merkt sich auf DIESEM Gerät, dass das Verwaltungs-Passwort einmal richtig
-     * eingegeben wurde. Es steht bewusst nur ein Schalter hier und nirgends das
-     * Passwort — wer den Gerätespeicher liest, gewinnt nichts, was er nicht
-     * ohnehin schon hätte.
+     * Ob die Verwaltung offen ist, entscheidet allein die ROLLE des
+     * angemeldeten UPCrew-Kontos (Admin oder UP#Plus) — die Regeln der
+     * Datenbank prüfen dieselbe Rolle. Ohne Konto gibt es keine Verwaltung.
+     * Bis v0.172.0 gab es daneben einen Schalter auf dem Gerät
+     * („blunderluck.verwaltung“, Altweg ohne Konto) — seit v0.173.0 weg.
      * ---------------------------------------------------------------- */
 
     verwaltungAktiv() {
-        /* Mit UPCrew-Konto entscheidet die ROLLE des
-           angemeldeten Kontos (Admin oder UP#Plus), nicht ein Schalter auf
-           dem Gerät — die Regeln der Datenbank prüfen dieselbe Rolle. */
-        if (KONTO.aktiv()) {
-            return typeof ANMELDUNG !== "undefined" && typeof ANMELDUNG.istAdmin === "function"
-                && ANMELDUNG.istAdmin();
-        }
-        return ICH._lesen(ICH.SCHLUESSEL_VERWALTUNG) === true;
+        return KONTO.aktiv() && typeof ANMELDUNG !== "undefined"
+            && typeof ANMELDUNG.istAdmin === "function" && ANMELDUNG.istAdmin() === true;
     },
 
     /*
      * Der Schalter „Brett-Anpassung" aus der Verwaltung:
      * Nur wenn er an ist, zeigt das 3D-Brett dem Admin den Paletten-Knopf.
-     * Er gilt nur auf diesem Gerät, wie die Freischaltung selbst.
+     * Er gilt nur auf diesem Gerät.
      */
     anpassungAn() {
         return ICH._lesen(ICH.SCHLUESSEL_ANPASSUNG) === true;
@@ -118,14 +112,6 @@ const ICH = {
             ICH._schreiben(ICH.SCHLUESSEL_DARSTELLUNG, wert);
         } else {
             ICH._loeschen(ICH.SCHLUESSEL_DARSTELLUNG);
-        }
-    },
-
-    verwaltungSetzen(aktiv) {
-        if (aktiv) {
-            ICH._schreiben(ICH.SCHLUESSEL_VERWALTUNG, true);
-        } else {
-            ICH._loeschen(ICH.SCHLUESSEL_VERWALTUNG);
         }
     },
 

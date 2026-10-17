@@ -985,7 +985,7 @@ const RANGLISTE = {
                 } else if (wahl === "name") {
                     ANMELDUNG.namenAendern(ANMELDUNG.ich());
                 } else if (wahl === "nummer") {
-                    ANMELDUNG.nummerAendern(ANMELDUNG.ich());
+                    UPCREW_KONTO.nummerAendern();
                 } else if (wahl === "passwort") {
                     ANMELDUNG.passwortAendern(ANMELDUNG.ich());
                 }

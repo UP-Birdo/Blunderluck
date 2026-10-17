@@ -214,6 +214,9 @@
     <link rel="stylesheet" href="css/upcrew-levelpfad.css">
     <link rel="stylesheet" href="css/upcrew-profil.css">
     <link rel="stylesheet" href="css/upcrew-einstellungen.css">
+    <!-- Konto und Verwaltung, gleich in allen UPCrew-Apps (seit v0.172.0): gemeinsame Bausteine. -->
+    <link rel="stylesheet" href="css/upcrew-konto.css">
+    <link rel="stylesheet" href="css/upcrew-verwaltung.css">
     <!-- Der dezente Offline-Hinweis (seit v0.167.0, Variante A): Zeichen am
          Profilbild bzw. rechts im Kopf der Partie — gemeinsamer Baustein. -->
     <link rel="stylesheet" href="css/upcrew-offline.css">
@@ -321,7 +324,6 @@
     <script src="js/figuren-flach.js"></script>
     <!-- Brett-Designs des 2D-Bretts (seit v0.159.0). -->
     <script src="js/brett-design.js"></script>
-    <script src="js/verwaltung.js"></script>
     <script src="js/speicher.js"></script>
     <!-- Die Rückwand der UPCrew-Konten (seit v0.160.1 eigene Datei, Baustein
          der UPCrew, nur kopiert) — erbt von
@@ -428,9 +430,13 @@
     <script src="js/freunde.js"></script>
     <!-- Einstellungen und Verwaltung im selben Aufbau (seit v0.156.0). -->
     <script src="js/upcrew-einstellungen.js"></script>
+    <!-- Konto und Verwaltung (seit v0.172.0, Bausteine, nur kopiert): NACH konto.js,
+         upcrew-einstellungen.js, upcrew-blatt.js, upcrew-spielerliste.js; Konto VOR Verwaltung. -->
+    <script src="js/upcrew-konto.js"></script>
+    <script src="js/upcrew-verwaltung.js"></script>
     <script src="js/einstellungen.js"></script>
-    <!-- Die Spieler-Verwaltung als eigener Bildschirm mit Tabelle —
-         erreichbar über den Knopf „Verwaltung" in den Einstellungen. -->
+    <!-- Der Rahmen der Verwaltung (Blatt, Inhalt aus dem Baustein upcrew-verwaltung) —
+         erreichbar über „Verwaltung" in den Einstellungen (nur Admins). -->
     <script src="js/verwaltungs-bildschirm.js"></script>
     <script src="js/wunsch.js"></script>
     <!-- Das eigene Profil als Blatt (seit v0.156.0). -->

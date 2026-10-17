@@ -16,7 +16,7 @@ const KONFIG = {
     /* Version der App (SemVer: 0.MINOR.PATCH — die 0 vorne heisst "noch in
        Entwicklung", 1.0.0 erst bei erfuellten Fertig-Kriterien der ROADMAP).
        Wird im Kopf angezeigt und muss zu CHANGELOG.md passen. */
-    APP_VERSION: "0.171.0",
+    APP_VERSION: "0.173.0",
 
     /*
      * DER FREIGABE-KANAL (seit v0.171.0, Baustein js\freigabe.js, Einbau:
@@ -41,7 +41,8 @@ const KONFIG = {
     FREIGABEN: {
         "xp-bis-level": "alle",         /* v0.170.0 „noch N XP bis Level L+1“ am Abschluss */
         "turm-zu-wenige-zuege": "alle", /* v0.170.0 „zu wenige Züge · ab 4 Zügen“ in der Wertung */
-        "nochmal": "alle"               /* v0.170.0 „Nochmal“ nach freier Bob-Partie (aus: „Neu aufstellen“ wie bis v0.169.0) */
+        "nochmal": "alle",              /* v0.170.0 „Nochmal“ nach freier Bob-Partie (aus: „Neu aufstellen“ wie bis v0.169.0) */
+        "verwaltung": "alle"            /* v0.172.0 Verwaltung aus dem Baustein (gab es schon; sieht trotzdem nur ein Admin) */
     },
 
     speicher: {
@@ -140,7 +141,7 @@ const KONFIG = {
      * eine ungesalzene SHA-256-Prüfsumme über sechs Ziffern — aus dem
      * öffentlichen Quelltext in Sekunden rückrechenbar. Die Verwaltung hängt
      * seit v0.138.0 an der Rolle „admin“ des UPCrew-Kontos, die die
-     * Datenbank-Regeln serverseitig prüfen (js\verwaltung.js, js\ich.js);
+     * Datenbank-Regeln serverseitig prüfen (js\ich.js `verwaltungAktiv`);
      * der Prüfwert öffnete nur noch die Oberfläche ohne Konto und war damit
      * überflüssig und irreführend.
      */

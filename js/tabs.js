@@ -555,7 +555,7 @@ const TABS = {
     },
 
     _blattWechseln(tab, optionen) {
-        /* Liegt das Blatt schon im Stapel (Verwaltung beenden → zurück in
+        /* Liegt das Blatt schon im Stapel (aus der Verwaltung zurück in
            die Einstellungen), gehen nur die Blätter darüber zu. */
         if (TABS._blattTabs.indexOf(tab.id) !== -1) {
             while (TABS._blattTabs.length > 0 && TABS._blattTabs[TABS._blattTabs.length - 1] !== tab.id

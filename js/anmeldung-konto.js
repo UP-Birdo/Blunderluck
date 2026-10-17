@@ -27,11 +27,6 @@ Object.assign(ANMELDUNG, {
     _altDaten: null,
     _altVersprechen: null,
 
-    /* Wie oft ein Gast die App geöffnet hat — jedes dritte Mal kommt die
-       Frage, ob er seinen Spielstand sichern will. Nur auf diesem Gerät. */
-    GAST_ERINNERUNG_SCHLUESSEL: "blunderluck.gast-erinnerung",
-    GAST_ERINNERUNG_JEDES: 3,
-
     /* ---------------------------------------------------------------- *
      * Rollen des angemeldeten Kontos
      * ---------------------------------------------------------------- */
@@ -487,8 +482,9 @@ Object.assign(ANMELDUNG, {
      * auswertung.js `abschlussSchliessen`): einmal kurz fragen. Der Merker
      * wird VOR der Frage gelöscht — so fragt es höchstens einmal je Runde,
      * und nach „Später" erst wieder nach der nächsten Einladungs-Runde.
-     * „Konto erstellen" = der bestehende Weg „Spielstand sichern"
-     * (`gastSichernOeffnen`): Der Gast wird zum Konto, alles bleibt.
+     * „Konto erstellen" = der Weg „Spielstand sichern" aus dem Baustein
+     * (`UPCREW_KONTO.gastSichern`, seit v0.172.0): Der Gast wird zum Konto,
+     * alles bleibt.
      */
     async nachEinladungFragen() {
         let merker = null;
@@ -514,350 +510,10 @@ Object.assign(ANMELDUNG, {
                 { beschriftung: "Konto erstellen", wert: true, stil: "knopf-haupt" }
             ]
         });
-        if (ja) {
-            ANMELDUNG.gastSichernOeffnen();
+        if (ja && typeof UPCREW_KONTO !== "undefined") {
+            UPCREW_KONTO.gastSichern();
         }
         return true;
-    },
-
-    /* ---------------------------------------------------------------- *
-     * Gast: Spielstand sichern
-     * ---------------------------------------------------------------- */
-
-    /* Nach jeder Anmeldung (app.js): Jedes dritte Öffnen fragt ein Gast, ob
-       er seinen Spielstand sichern will. */
-    async gastErinnern() {
-        if (!KONTO.aktiv() || !ANMELDUNG.istGast()) {
-            return;
-        }
-        let zaehler = 0;
-        try {
-            zaehler = Number(window.localStorage.getItem(ANMELDUNG.GAST_ERINNERUNG_SCHLUESSEL)) || 0;
-            window.localStorage.setItem(ANMELDUNG.GAST_ERINNERUNG_SCHLUESSEL, String(zaehler + 1));
-        } catch (fehler) {
-            return;
-        }
-        if ((zaehler + 1) % ANMELDUNG.GAST_ERINNERUNG_JEDES !== 0) {
-            return;
-        }
-        const jetzt = await DIALOG.frage("Spielstand sichern?",
-            "Gast · Spielstand nur auf diesem Gerät · mit Konto überall",
-            "Sichern");
-        if (jetzt) {
-            ANMELDUNG.gastSichernOeffnen();
-        }
-    },
-
-    gastSichernOeffnen() {
-        const eintrag = ANMELDUNG.ich();
-        if (!eintrag || eintrag.gast !== true || !ANMELDUNG.wurzelEl) {
-            return;
-        }
-        ANMELDUNG.anmeldenLaeuft = true;
-        ANMELDUNG.wurzelEl.hidden = false;
-        /* Die Anmeldung sperrt das Seiten-Band (seit v0.161.0, `erlaubt`
-           in app.js) — sofort, nicht erst bei der nächsten Berührung. */
-        if (typeof TABS.bandAuffrischen === "function") {
-            TABS.bandAuffrischen();
-        }
-
-        const kasten = ANMELDUNG._kastenBauen("Spielstand sichern",
-            "Name und Passwort · alles als "
-                + eintrag.name + " bleibt");
-        const name = ANMELDUNG._kontoFeld(kasten, "Name · Buchstaben, Ziffern", "username");
-        ANMELDUNG._nameFeldSaeubern(name.feld);
-        const passwort = ANMELDUNG._kontoFeld(kasten,
-            "Passwort (" + KONTO.passwortRegelText() + ")", "new-password");
-        const wiederholung = ANMELDUNG._kontoFeld(kasten, "Passwort wiederholen", "new-password");
-        const los = ANMELDUNG._knopfBauen("Sichern",
-            "knopf-haupt anmeldung-knopf anmeldung-weiter", null);
-
-        const pruefen = ANMELDUNG._kontoFormularPruefen(name, passwort, wiederholung, los);
-        const allgemein = ANMELDUNG._kontoAllgemein(kasten);
-
-        los.addEventListener("click", async () => {
-            if (los.disabled || !ANMELDUNG._kontoVorSenden(pruefen)) {
-                return;
-            }
-            los.disabled = true;
-            allgemein.fehler.textContent = "";
-            const ergebnis = await KONTO.gastSichern(ANMELDUNG.abgleich.speicher,
-                ANMELDUNG.abgleich.daten, eintrag, name.feld.value, passwort.feld.value);
-            await ANMELDUNG._kontoFertig(ergebnis, name, pruefen, "Gesichert · ",
-                { name: name, passwort: passwort, wiederholung: wiederholung, allgemein: allgemein });
-            /* Spielzeit, „dabei seit" und der übrige Gast-Stand vom Gerät
-               ziehen mit (seit v0.155.0). */
-            if (ergebnis.ok && typeof FORTSCHRITT_KONTO !== "undefined") {
-                FORTSCHRITT_KONTO.gastUebernehmen();
-            }
-            /* Der Besitz aus dem Shop zieht genau hier mit —
-               an derselben Stelle und auf dieselbe Art wie der Fortschritt. */
-            if (ergebnis.ok && typeof BESITZ !== "undefined") {
-                BESITZ.gastUebernehmen();
-            }
-        });
-
-        kasten.appendChild(los);
-        ANMELDUNG._eingabetaste([name, passwort, wiederholung], los);
-        kasten.appendChild(ANMELDUNG._knopfBauen("Später", "knopf-still anmeldung-knopf",
-            () => ANMELDUNG._vollbildSchliessen()));
-        name.feld.focus();
-        pruefen();
-    },
-
-    /* ---------------------------------------------------------------- *
-     * Profil, Verwaltung, Abmelden, Löschen
-     * ---------------------------------------------------------------- */
-
-    async _kontoNameAendern(ich) {
-        const eingabe = await DIALOG.eingabe("Name ändern",
-            "Buchstaben, Ziffern · alle UPCrew-Spiele · Nummer bleibt, "
-                + "wenn frei", ich.name, "Übernehmen", true);
-        if (!eingabe) {
-            return;
-        }
-        const name = KONTO.nameSaeubern(eingabe);
-        if (name === ich.name) {
-            return;
-        }
-        const ergebnis = await KONTO.nameAendern(ANMELDUNG.abgleich.speicher,
-            ANMELDUNG.abgleich.daten, ich, name);
-        if (!ergebnis.ok) {
-            await DIALOG.hinweis("Geht nicht", ergebnis.text);
-            return;
-        }
-        await ANMELDUNG._kontoNachladen();
-        ICH.personSetzen(ich.id, name);
-        ANMELDUNG._anzeigenAuffrischen();
-        DIALOG.kurzmeldung("Umbenannt · " + ergebnis.eintrag.name);
-    },
-
-    /* Die eigene Nummer ändern: würfeln oder selbst
-       wählen. Anmelden geht weiter nur mit Name und Passwort. */
-    async nummerAendern(ich) {
-        if (!ich || ich.gast === true || !KONTO.aktiv()) {
-            return;
-        }
-        const wahl = await DIALOG.liste("Nummer ändern",
-            "Zurzeit #" + ich.tag + " · dein Freundescode",
-            [
-                { beschriftung: "Würfeln", hinweis: "Zufällige freie Nummer", wert: "wuerfeln" },
-                { beschriftung: "Selbst wählen", hinweis: "4 Ziffern", wert: "waehlen" }
-            ],
-            "Abbrechen");
-        if (!wahl) {
-            return;
-        }
-        let wunsch = "";
-        if (wahl === "waehlen") {
-            const eingabe = await DIALOG.eingabe("Nummer wählen", "4 Ziffern, nicht 0000",
-                ich.tag, "Übernehmen", true);
-            if (!eingabe) {
-                return;
-            }
-            wunsch = String(eingabe).replace(/\D/g, "");
-        }
-        const ergebnis = await KONTO.tagAendern(ANMELDUNG.abgleich.speicher,
-            ANMELDUNG.abgleich.daten, ich, wunsch);
-        if (!ergebnis.ok) {
-            await DIALOG.hinweis("Geht nicht", ergebnis.text);
-            return;
-        }
-        await ANMELDUNG._kontoNachladen();
-        ANMELDUNG._anzeigenAuffrischen();
-        FUEHLEN.erfolg();
-        /* Die Nummer ist der Freundescode (seit v0.154.0, Konzept Abschnitt
-           5 Punkt 5): Die alte findet niemanden mehr. */
-        DIALOG.kurzmeldung("Neue Nummer · #" + ergebnis.eintrag.tag + " · Freunde brauchen ab jetzt diese");
-    },
-
-    async _kontoPasswortAendern(ich) {
-        const altes = await DIALOG.passwort("Bisheriges Passwort",
-            "Zur Sicherheit", "Weiter");
-        if (altes === null || altes === undefined) {
-            return;
-        }
-        const probe = await KONTO.anmelden(KONTO.kennungVon(ich), altes);
-        if (!probe.ok) {
-            await DIALOG.hinweis("Nichts geändert", KONTO.fehlerText(probe.fehler));
-            return;
-        }
-        const neues = await ANMELDUNG._neuesPasswortErfragen();
-        if (neues === null) {
-            return;
-        }
-        const ergebnis = await KONTO.passwortAendern(neues);
-        if (!ergebnis.ok) {
-            await DIALOG.hinweis("Nichts geändert", KONTO.fehlerText(ergebnis.fehler));
-            return;
-        }
-        DIALOG.kurzmeldung("Passwort geändert");
-    },
-
-    /* Verwaltung: nur Admins (die Regeln prüfen es noch einmal). */
-    async _kontoAdminAendern(spielerId, wie) {
-        const spieler = SPIELER.spielerFinden(ANMELDUNG.abgleich.daten, spielerId);
-        if (!spieler || !spieler.uid) {
-            return false;
-        }
-        if (KONTO.istOberAdmin(ANMELDUNG.abgleich.daten, spieler.uid)) {
-            await DIALOG.hinweis("Geht nicht", "UP#Plus ist fest");
-            return false;
-        }
-        const speicher = ANMELDUNG.abgleich.speicher;
-        let ergebnis;
-        let wert = null;
-        if (wie === "entfernen") {
-            ergebnis = await KONTO.eintragEntfernen(speicher, spieler);
-        } else if (wie === "freigeben") {
-            ergebnis = await KONTO.freigeben(speicher, spieler);
-        } else {
-            /* Rollen (seit v0.171.0 mit „beta“): was genau geschrieben wird,
-               rechnet `rollenZiel` aus dem GELADENEN Stand — nie ein blindes
-               Umschalten (bis v0.170.0 machte der Admin-Knopf aus „beta“
-               „admin“ und löschte beim Nehmen jede Rolle). */
-            const ziel = ANMELDUNG.rollenZiel(ANMELDUNG.abgleich.daten, spieler.uid, wie);
-            if (ziel.grund) {
-                await DIALOG.hinweis("Nichts geändert", ziel.grund);
-                return false;
-            }
-            wert = ziel.wert;
-            if (wert === "admin" || (wert === null && wie === "admin-nehmen")) {
-                ergebnis = await KONTO.rolleSetzen(speicher, spieler.uid, wert === "admin");
-            } else {
-                const aenderungen = { geaendertAm: Date.now() };
-                aenderungen["rollen/" + spieler.uid] = wert;
-                ergebnis = await KONTO._schreiben(speicher, aenderungen, null);
-            }
-        }
-        if (!ergebnis.ok) {
-            await DIALOG.hinweis("Nicht gespeichert", ANMELDUNG.rollenFehlerText(wert, ergebnis.text));
-            return false;
-        }
-        await ANMELDUNG._kontoNachladen();
-        ANMELDUNG._anzeigenAuffrischen();
-        return true;
-    },
-
-    /* `wie`: "admin-geben" | "admin-nehmen" | "beta-geben" | "beta-nehmen".
-       Ohne `wie` (alter Aufruf): Admin geben oder nehmen nach dem Stand. */
-    rolleUmschalten(spielerId, wie) {
-        if (!wie) {
-            const spieler = SPIELER.spielerFinden(ANMELDUNG.abgleich.daten, spielerId);
-            wie = (spieler && ANMELDUNG._rolleWert(ANMELDUNG.abgleich.daten, spieler.uid) === "admin")
-                ? "admin-nehmen" : "admin-geben";
-        }
-        return ANMELDUNG._kontoAdminAendern(spielerId, wie);
-    },
-
-    /*
-     * BETA-ZUGANG (seit v0.171.0, Freigabe-Kanal, UPCrew bausteine\EINBAU-FREIGABE.md):
-     * UP#Plus vergibt in der Verwaltung neben „Admin“ die Rolle „beta“
-     * (`spieler/rollen/<uid>` = "beta"). Höchstens BETA_HOECHSTENS Konten —
-     * die Grenze hält die App, nicht die Datenbank. Admin schliesst Beta ein:
-     * der Beta-Knopf stuft einen Admin nie herab, „Admin nehmen“ löscht nur
-     * ein „admin“, nie ein „beta“.
-     */
-    BETA_HOECHSTENS: 10,
-
-    /* Der gespeicherte Wert: "admin" | "beta" | null. */
-    _rolleWert(daten, uid) {
-        const w = (uid && daten && daten.rollen && typeof daten.rollen === "object") ? daten.rollen[uid] : null;
-        return (w === "admin" || w === "beta") ? w : null;
-    },
-
-    /* Wie viele Konten die Rolle „beta“ tragen. */
-    betaAnzahl(daten) {
-        const rollen = (daten && daten.rollen && typeof daten.rollen === "object") ? daten.rollen : {};
-        return Object.keys(rollen).filter((uid) => rollen[uid] === "beta").length;
-    },
-
-    /* Rein: was ein Klick schreiben soll → { wert: "admin" | "beta" | null }
-       oder { grund } (nichts schreiben, kurz gesagt warum). */
-    rollenZiel(daten, uid, wie) {
-        if (!uid) {
-            return { grund: "Kein Konto" };
-        }
-        if (KONTO.istOberAdmin(daten, uid)) {
-            return { grund: "UP#Plus ist fest" };
-        }
-        const jetzt = ANMELDUNG._rolleWert(daten, uid);
-        if (wie === "admin-geben") {
-            return jetzt === "admin" ? { grund: "Schon Admin" } : { wert: "admin" };
-        }
-        if (wie === "admin-nehmen") {
-            return jetzt === "admin" ? { wert: null } : { grund: "Kein Admin" };
-        }
-        if (wie === "beta-geben") {
-            if (jetzt === "admin") {
-                return { grund: "Admin sieht Beta schon" };
-            }
-            if (jetzt === "beta") {
-                return { grund: "Schon Beta" };
-            }
-            if (ANMELDUNG.betaAnzahl(daten) >= ANMELDUNG.BETA_HOECHSTENS) {
-                return { grund: "Höchstens " + ANMELDUNG.BETA_HOECHSTENS + " Beta-Konten" };
-            }
-            return { wert: "beta" };
-        }
-        if (wie === "beta-nehmen") {
-            return jetzt === "beta" ? { wert: null } : { grund: "Kein Beta" };
-        }
-        return { grund: "Unbekannt" };
-    },
-
-    /* Die Meldung, wenn das Schreiben scheitert. Lehnt die Datenbank „beta“
-       ab (HTTP 400/401/403), fehlt die Regel mit Beta noch — die alte lässt
-       unter `rollen` nur "admin" zu. */
-    rollenFehlerText(wert, text) {
-        if (wert === "beta" && /HTTP 40[013]\b/.test(String(text || ""))) {
-            return "Regel mit Beta noch nicht eingespielt";
-        }
-        return "Keine Berechtigung · oder kein Netz";
-    },
-
-    /* Abmelden: Ein Gast verliert dabei alles — vorher fragen und sein
-       Konto wegräumen, damit keine verwaisten Gäste bleiben. */
-    async _kontoAbmelden() {
-        const ich = ANMELDUNG.ich();
-        if (ich && ich.gast === true) {
-            const sicher = await DIALOG.frage("Als Gast abmelden?",
-                "Spielstand weg · vorher sichern: Einstellungen",
-                "Trotzdem abmelden", true);
-            if (!sicher) {
-                return;
-            }
-            await KONTO.eintragEntfernen(ANMELDUNG.abgleich.speicher, ich);
-            await KONTO.loeschen();
-        }
-        KONTO.abmelden();
-        ICH.personVergessen();
-        ANMELDUNG._ichIdSetzen(null);
-        ANMELDUNG.anmelden();
-    },
-
-    async _kontoLoeschen(ich) {
-        let ergebnis;
-        if (ich.gast === true) {
-            ergebnis = await KONTO.eintragEntfernen(ANMELDUNG.abgleich.speicher, ich);
-            await KONTO.loeschen();
-            KONTO.abmelden();
-        } else {
-            const passwort = await DIALOG.passwort("UPCrew-Konto löschen",
-                "Konto weg · in allen UPCrew-Spielen", "Endgültig löschen");
-            if (passwort === null || passwort === undefined) {
-                return;
-            }
-            ergebnis = await KONTO.kontoLoeschen(ANMELDUNG.abgleich.speicher, ich, passwort);
-        }
-        if (!ergebnis.ok) {
-            await DIALOG.hinweis("Nicht gelöscht", ergebnis.text);
-            return;
-        }
-        ICH.personVergessen();
-        ANMELDUNG._ichIdSetzen(null);
-        await ANMELDUNG._kontoNachladen();
-        ANMELDUNG.anmelden();
     },
 
     /* ---------------------------------------------------------------- *
@@ -1013,9 +669,15 @@ Object.assign(ANMELDUNG, {
     },
 
     /* Die Spielerliste frisch vom Server — nach jedem Konto-Ablauf, damit
-       Namen, Nummern und Rollen sofort stimmen. */
+       Namen, Nummern und Rollen sofort stimmen. Seit v0.172.0 auch der
+       Haken `nachladen` der Bausteine upcrew-konto/upcrew-verwaltung:
+       liefert den NEUEN Stand, bei Fehler null (dann schreiben die
+       Bausteine nicht). */
     async _kontoNachladen() {
         const abgleich = ANMELDUNG.abgleich;
+        if (!abgleich) {
+            return null;
+        }
         abgleich.eigenerVorgangBeginnt();
         try {
             abgleich.daten = await abgleich.speicher.laden();
@@ -1025,8 +687,10 @@ Object.assign(ANMELDUNG, {
                Stand ein zweites Mal als ersten. */
             abgleich.geladen = true;
             abgleich.beiDaten(abgleich.daten);
+            return abgleich.daten;
         } catch (fehler) {
             /* Kein Netz: Die regelmässige Abfrage holt es nach. */
+            return null;
         } finally {
             abgleich.eigenerVorgangEndet();
         }

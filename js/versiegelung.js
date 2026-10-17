@@ -3,7 +3,7 @@
  *
  * Bis v0.167.2 auch für das Verwaltungs-Passwort (`verwaltungPruefen` mit
  * eigener Admin-Zutat) — entfernt mit v0.168.0, die Verwaltung hängt allein
- * an der Admin-Rolle des UPCrew-Kontos (js\verwaltung.js). Der Test wacht,
+ * an der Admin-Rolle des UPCrew-Kontos (js\ich.js). Der Test wacht,
  * dass die alte Zutat hier nicht wieder auftaucht — auch nicht im Kommentar.
  *
  * Die gemeinsame Ablage liegt in einer öffentlich erreichbaren Datenbank und

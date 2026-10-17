@@ -5511,17 +5511,17 @@ const TEAM_SCHACH = {
      * Fehlgriff auf einem fremden Handy.
      */
     async partieLoeschen(partie) {
-        const darf = await VERWALTUNG.verlangen(
-            "Partie löschen",
-            "Für alle weg · Passwort nötig"
-        );
-        if (!darf) {
+        /* Seit v0.173.0 ohne VERWALTUNG.verlangen (Altweg weg): Es zählt
+           allein die Admin-Rolle des UPCrew-Kontos (ICH.verwaltungAktiv),
+           dieselbe prüfen die Regeln der Datenbank. */
+        if (!ICH.verwaltungAktiv()) {
+            await DIALOG.hinweis("Partie löschen", "Rolle Admin nötig");
             return;
         }
 
         /* Die „Wirklich?"-Frage stellt seit v0.112 der Knopf selbst
            (`DIALOG.zweiSchritt` in der Übersicht) — hier bleibt nur noch
-           die Passwort-Schranke oben. */
+           die Rollen-Schranke oben. */
 
         const abgleich = TEAM_SCHACH.abgleich;
         let tafel = abgleich.daten;
@@ -5530,7 +5530,7 @@ const TEAM_SCHACH = {
            regelmässige Abfrage die eben gelöschte Partie zurück (seit v0.52,
            siehe `spielartGewaehlt`). */
         /* „Nochmal" wiederholt NUR das Löschen, nicht die
-           Passwort-Schranke oben — deshalb die Schleife statt eines neuen
+           Rollen-Schranke oben — deshalb die Schleife statt eines neuen
            Aufrufs. Löschen ist wiederholbar: Was schon weg ist, bleibt weg. */
         let nochmal = true;
         while (nochmal) {

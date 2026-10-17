@@ -661,6 +661,11 @@ const APP = {
            Knopf „Verwaltung" in den Einstellungen. */
         TABS.registrieren(VERWALTUNGS_BILDSCHIRM);
 
+        /* Konto und Verwaltung aus den gemeinsamen Bausteinen (seit v0.172.0,
+           js\upcrew-konto.js + js\upcrew-verwaltung.js): die Haken von
+           Blunderluck einmal einrichten (js\einstellungen.js). */
+        EINSTELLUNGEN.kontoEinrichten();
+
         /* Die gewählte Darstellung VOR dem ersten Zeichnen anwenden — sonst
            blitzt kurz das falsche Design auf (seit v0.119). */
         EINSTELLUNGEN.laden();
@@ -769,8 +774,10 @@ const APP = {
             START.wiedereinstieg();
 
             /* Ein Gast wird hin und wieder gefragt, ob er seinen Spielstand
-               sichern will (seit v0.138.0, anmeldung-konto.js). */
-            ANMELDUNG.gastErinnern();
+               sichern will (seit v0.172.0 der Baustein js\upcrew-konto.js). */
+            if (EINSTELLUNGEN.kontoEinrichten()) {
+                UPCREW_KONTO.gastErinnern();
+            }
         };
 
         /* Angemeldet wird erst, wenn BEIDE Stände da sind: die
