@@ -16,7 +16,7 @@ const KONFIG = {
     /* Version der App (SemVer: 0.MINOR.PATCH — die 0 vorne heisst "noch in
        Entwicklung", 1.0.0 erst bei erfuellten Fertig-Kriterien der ROADMAP).
        Wird im Kopf angezeigt und muss zu CHANGELOG.md passen. */
-    APP_VERSION: "0.173.0",
+    APP_VERSION: "0.173.1",
 
     /*
      * DER FREIGABE-KANAL (seit v0.171.0, Baustein js\freigabe.js, Einbau:
